@@ -81,11 +81,12 @@ class WorkflowTriggerAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.workflows import WorkflowTriggerUpsert, WorkflowScheduledTriggerRule
+                >>> from zoneinfo import ZoneInfo
                 >>> client = CogniteClient()
                 >>> client.workflows.triggers.upsert(
                 ...     WorkflowTriggerUpsert(
                 ...         external_id="my_trigger",
-                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *", timezone=ZoneInfo("UTC")),
                 ...         workflow_external_id="my_workflow",
                 ...         workflow_version="1",
                 ...         input={"a": 1, "b": 2},

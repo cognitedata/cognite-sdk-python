@@ -454,6 +454,7 @@ class TemplateInstancesAPI(APIClient):
         self, external_id: str, version: int, item: TemplateInstanceUpdate | Sequence[TemplateInstanceUpdate]
     ) -> TemplateInstance | TemplateInstanceList:
         """`Update one or more template instances`
+
         Args:
             external_id (str): No description.
             version (int): No description.

@@ -297,6 +297,14 @@ class TestFilesAPI:
 
         cognite_client.files.delete(session.file_metadata.id)
 
+    def test_upload_content_error_modes(self, cognite_client, tmp_path):
+        with pytest.raises(IsADirectoryError):
+            cognite_client.files.upload_content(str(tmp_path))
+
+        missing_file = tmp_path / "does_not_exist.txt"
+        with pytest.raises(FileNotFoundError):
+            cognite_client.files.upload_content(str(missing_file))
+
     def test_create_retrieve_update_delete_with_instance_id(
         self, cognite_client: CogniteClient, instance_id_test_space: str
     ) -> None:

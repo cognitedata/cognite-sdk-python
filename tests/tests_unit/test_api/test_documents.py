@@ -8,7 +8,7 @@ from cognite.client.data_classes import Document
 
 
 @pytest.fixture
-def mock_documents_response(rsps, cognite_client):
+def mock_documents_list_response(rsps, cognite_client):
     response_body = {
         "items": [
             {
@@ -104,8 +104,39 @@ def mock_documents_response(rsps, cognite_client):
     yield rsps
 
 
+@pytest.fixture
+def mock_documents_search_response(rsps, cognite_client):
+    response_body = {
+        "items": [
+            {
+                "item": {
+                    "id": 952558513813,
+                    "sourceFile": {
+                        "name": "04.pdf",
+                    },
+                    "externalId": "7a05f794-d6b0-413a-a0ff-c03eb38d9e83",
+                    "type": "PDF",
+                    "truncatedContent": "test",
+                    "createdTime": 1659617852965,
+                    "modifiedTime": 970589816000,
+                    "lastIndexedTime": 1707210718089,
+                },
+            },
+        ]
+    }
+    response_body_with_cursor = response_body | {"nextCursor": "foo"}
+
+    url_pattern = re.compile(re.escape(cognite_client.documents._get_base_url_with_base_path()) + "/.+")
+    rsps.assert_all_requests_are_fired = False
+
+    rsps.add(rsps.POST, url_pattern, status=200, json=response_body_with_cursor)
+    rsps.add(rsps.POST, url_pattern, status=200, json=response_body_with_cursor)
+    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
+    yield rsps
+
+
 class TestDocumentsAPI:
-    def test_list(self, cognite_client, mock_documents_response):
+    def test_list(self, cognite_client, mock_documents_list_response):
         documents = cognite_client.documents.list()
         assert len(documents) == 2
         file_with_instance_id, file_wo_instance_id = documents
@@ -116,5 +147,9 @@ class TestDocumentsAPI:
         assert file_with_instance_id.instance_id.external_id == "7a05f794-d6b0-413a-a0ff-c03eb38d9e83"
         assert file_wo_instance_id.instance_id is None
         for i, doc in enumerate(documents):
-            expected = mock_documents_response.calls[0].response.json()["items"][i]
+            expected = mock_documents_list_response.calls[0].response.json()["items"][i]
             assert expected == doc.dump(camel_case=True)
+
+    def test_search_limit(self, cognite_client, mock_documents_search_response):
+        documents = cognite_client.documents.search(query="a", limit=1)
+        assert len(documents) == 1

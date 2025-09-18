@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import time
 import unittest
+from collections.abc import Iterator
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -76,14 +78,23 @@ def data_set(cognite_client: CogniteClient) -> DataSet:
     return cognite_client.data_sets.list(limit=1)[0]
 
 
-@pytest.fixture
-def new_workflow(cognite_client: CogniteClient, data_set: DataSet):
+def _new_workflow(cognite_client: CogniteClient, data_set: DataSet) -> Iterator[Workflow]:
     workflow = WorkflowUpsert(
         external_id=f"integration_test-workflow_{random_string(5)}",
         data_set_id=data_set.id,
     )
     yield cognite_client.workflows.upsert(workflow)
     cognite_client.workflows.delete(workflow.external_id, ignore_unknown_ids=True)
+
+
+@pytest.fixture(scope="session")
+def new_workflow(cognite_client: CogniteClient, data_set: DataSet):
+    yield from _new_workflow(cognite_client, data_set)
+
+
+@pytest.fixture
+def new_workflow_test_scoped(cognite_client: CogniteClient, data_set: DataSet):
+    yield from _new_workflow(cognite_client, data_set)
 
 
 @pytest.fixture(scope="class")
@@ -107,15 +118,14 @@ def persisted_workflow_list(cognite_client: CogniteClient, data_set: DataSet) ->
     return workflows
 
 
-@pytest.fixture
-def new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow):
+def _new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersion]:
     version = WorkflowVersionUpsert(
         workflow_external_id=new_workflow.external_id,
         version="1",
         workflow_definition=WorkflowDefinitionUpsert(
             tasks=[
                 WorkflowTask(
-                    external_id=f"{new_workflow.external_id}-1-task1",
+                    external_id=f"{new_workflow.external_id}-1-task1-{random_string(5)}",
                     parameters=CDFTaskParameters(
                         resource_path="/timeseries",
                         method="GET",
@@ -128,8 +138,17 @@ def new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow):
     cognite_client.workflows.versions.delete(version.as_id(), ignore_unknown_ids=True)
 
 
+@pytest.fixture(scope="session")
+def new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow):
+    yield from _new_workflow_version(cognite_client, new_workflow)
+
+
 @pytest.fixture
-def async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow):
+def new_workflow_version_test_scoped(cognite_client: CogniteClient, new_workflow_test_scoped: Workflow):
+    yield from _new_workflow_version(cognite_client, new_workflow_test_scoped)
+
+
+def _new_async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersion]:
     version = WorkflowVersionUpsert(
         workflow_external_id=new_workflow.external_id,
         version="1",
@@ -152,8 +171,17 @@ def async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow
     cognite_client.workflows.versions.delete((new_workflow.external_id, version.version), ignore_unknown_ids=True)
 
 
+@pytest.fixture(scope="session")
+def async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow):
+    yield from _new_async_workflow_version(cognite_client, new_workflow)
+
+
 @pytest.fixture
-def workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow):
+def async_workflow_version_test_scoped(cognite_client: CogniteClient, new_workflow_test_scoped: Workflow):
+    yield from _new_async_workflow_version(cognite_client, new_workflow_test_scoped)
+
+
+def _new_workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersionList]:
     version_1 = WorkflowVersionUpsert(
         workflow_external_id=new_workflow.external_id,
         version="1",
@@ -217,8 +245,19 @@ def workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow)
     cognite_client.workflows.versions.delete(upserted_versions.as_ids(), ignore_unknown_ids=True)
 
 
+@pytest.fixture(scope="session")
+def workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersionList]:
+    yield from _new_workflow_version_list(cognite_client, new_workflow)
+
+
 @pytest.fixture
-def workflow_execution_list(cognite_client: CogniteClient, new_workflow_version: WorkflowVersion):
+def workflow_version_list_test_scoped(
+    cognite_client: CogniteClient, new_workflow_test_scoped: Workflow
+) -> Iterator[WorkflowVersionList]:
+    yield from _new_workflow_version_list(cognite_client, new_workflow_test_scoped)
+
+
+def _new_workflow_execution_list(cognite_client: CogniteClient, new_workflow_version: WorkflowVersion):
     run_1 = cognite_client.workflows.executions.run(
         new_workflow_version.workflow_external_id,
         new_workflow_version.version,
@@ -239,6 +278,17 @@ def workflow_execution_list(cognite_client: CogniteClient, new_workflow_version:
     )
     run_2 = cognite_client.workflows.executions.cancel(id=run_2.id, reason="test cancel")
     return WorkflowExecutionList([run_1, run_2])
+
+
+@pytest.fixture(scope="session")
+def workflow_execution_list(cognite_client: CogniteClient, new_workflow_version: WorkflowVersion):
+    return _new_workflow_execution_list(cognite_client, new_workflow_version)
+
+
+def workflow_execution_list_test_scoped(
+    cognite_client: CogniteClient, new_workflow_version_test_scoped: WorkflowVersion
+):
+    return _new_workflow_execution_list(cognite_client, new_workflow_version_test_scoped)
 
 
 # We cannot use a never trigger expression as the API check for it:
@@ -308,7 +358,7 @@ def permanent_data_modeling_trigger(cognite_client: CogniteClient, permanent_wor
         external_id=f"data-modeling-trigger_{version.workflow_external_id}",
         trigger_rule=WorkflowDataModelingTriggerRule(
             data_modeling_query=WorkflowTriggerDataModelingQuery(
-                with_={"timeseries": NodeResultSetExpression()},
+                with_={"timeseries": NodeResultSetExpression(limit=500)},
                 select={
                     "timeseries": Select(
                         sources=[SourceSelector(ViewId("cdf_cdm", "CogniteTimeSeries", "v1"), ["name"])]
@@ -436,13 +486,18 @@ class TestWorkflowVersions:
                 )
                 cognite_client.workflows.delete(created_version.workflow_external_id)
 
-    def test_upsert_preexisting(self, cognite_client: CogniteClient, new_workflow_version: WorkflowVersion) -> None:
-        new_workflow_version.workflow_definition.description = "Updated description for testing purposes"
-        updated_version = cognite_client.workflows.versions.upsert(new_workflow_version.as_write())
+    def test_upsert_preexisting(
+        self, cognite_client: CogniteClient, new_workflow_version_test_scoped: WorkflowVersion
+    ) -> None:
+        new_workflow_version_test_scoped.workflow_definition.description = "Updated description for testing purposes"
+        updated_version = cognite_client.workflows.versions.upsert(new_workflow_version_test_scoped.as_write())
 
-        assert updated_version.workflow_external_id == new_workflow_version.workflow_external_id
-        assert updated_version.version == new_workflow_version.version
-        assert updated_version.workflow_definition.description == new_workflow_version.workflow_definition.description
+        assert updated_version.workflow_external_id == new_workflow_version_test_scoped.workflow_external_id
+        assert updated_version.version == new_workflow_version_test_scoped.version
+        assert (
+            updated_version.workflow_definition.description
+            == new_workflow_version_test_scoped.workflow_definition.description
+        )
 
     def test_list_workflow_versions(
         self, cognite_client: CogniteClient, workflow_version_list: WorkflowVersionList
@@ -464,27 +519,31 @@ class TestWorkflowVersions:
         assert len(listed_limit) == 1
 
     def test_delete_non_existing_raise(
-        self, cognite_client: CogniteClient, new_workflow_version: WorkflowVersion
+        self, cognite_client: CogniteClient, new_workflow_version_test_scoped: WorkflowVersion
     ) -> None:
         with pytest.raises(CogniteAPIError, match="not found"):
             cognite_client.workflows.versions.delete(
                 [
-                    (new_workflow_version.workflow_external_id, new_workflow_version.version),
-                    (new_workflow_version.workflow_external_id, "non_existing_version"),
+                    (new_workflow_version_test_scoped.workflow_external_id, new_workflow_version_test_scoped.version),
+                    (new_workflow_version_test_scoped.workflow_external_id, "non_existing_version"),
                 ],
                 ignore_unknown_ids=False,
             )
-        assert cognite_client.workflows.versions.retrieve(*new_workflow_version.as_id().as_primitive()) is not None
+        assert (
+            cognite_client.workflows.versions.retrieve(*new_workflow_version_test_scoped.as_id().as_tuple()) is not None
+        )
 
-    def test_delete_non_existing(self, cognite_client: CogniteClient, new_workflow_version: WorkflowVersion) -> None:
+    def test_delete_non_existing(
+        self, cognite_client: CogniteClient, new_workflow_version_test_scoped: WorkflowVersion
+    ) -> None:
         cognite_client.workflows.versions.delete(
             [
-                (new_workflow_version.workflow_external_id, new_workflow_version.version),
-                (new_workflow_version.workflow_external_id, "non_existing_version"),
+                (new_workflow_version_test_scoped.workflow_external_id, new_workflow_version_test_scoped.version),
+                (new_workflow_version_test_scoped.workflow_external_id, "non_existing_version"),
             ],
             ignore_unknown_ids=True,
         )
-        assert cognite_client.workflows.versions.retrieve(new_workflow_version.as_id().as_tuple()) is None
+        assert cognite_client.workflows.versions.retrieve(new_workflow_version_test_scoped.as_id().as_tuple()) is None
 
     def test_retrieve_workflow(self, cognite_client: CogniteClient, new_workflow_version: WorkflowVersion) -> None:
         retrieved = cognite_client.workflows.versions.retrieve(new_workflow_version.as_id().as_tuple())
@@ -593,7 +652,7 @@ class TestWorkflowTriggers:
             created = cognite_client.workflows.triggers.upsert(existing)
 
             update = WorkflowTriggerUpsert._load(existing.dump())
-            new_rule = WorkflowScheduledTriggerRule(cron_expression="0 * * * *")
+            new_rule = WorkflowScheduledTriggerRule(cron_expression="0 * * * *", timezone=ZoneInfo("Europe/Oslo"))
             update.trigger_rule = new_rule
 
             updated = cognite_client.workflows.triggers.upsert(update)
@@ -612,7 +671,7 @@ class TestWorkflowTriggers:
         assert permanent_data_modeling_trigger.external_id.startswith("data-modeling-trigger_integration_test-workflow")
         assert permanent_data_modeling_trigger.trigger_rule == WorkflowDataModelingTriggerRule(
             data_modeling_query=WorkflowTriggerDataModelingQuery(
-                with_={"timeseries": NodeResultSetExpression()},
+                with_={"timeseries": NodeResultSetExpression(limit=500)},
                 select={
                     "timeseries": Select(
                         sources=[SourceSelector(ViewId("cdf_cdm", "CogniteTimeSeries", "v1"), ["name"])]
@@ -631,7 +690,7 @@ class TestWorkflowTriggers:
                 external_id=permanent_data_modeling_trigger.external_id,
                 trigger_rule=WorkflowDataModelingTriggerRule(
                     data_modeling_query=WorkflowTriggerDataModelingQuery(
-                        with_={"timeseries": NodeResultSetExpression()},
+                        with_={"timeseries": NodeResultSetExpression(limit=100)},
                         select={
                             "timeseries": Select(
                                 sources=[SourceSelector(ViewId("cdf_cdm", "CogniteTimeSeries", "v1"), ["name"])]
@@ -649,7 +708,7 @@ class TestWorkflowTriggers:
         assert updated_trigger.external_id == permanent_data_modeling_trigger.external_id
         assert updated_trigger.trigger_rule == WorkflowDataModelingTriggerRule(
             data_modeling_query=WorkflowTriggerDataModelingQuery(
-                with_={"timeseries": NodeResultSetExpression()},
+                with_={"timeseries": NodeResultSetExpression(limit=100)},
                 select={
                     "timeseries": Select(
                         sources=[SourceSelector(ViewId("cdf_cdm", "CogniteTimeSeries", "v1"), ["name"])]

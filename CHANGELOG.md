@@ -8,14 +8,65 @@ The changelog for SDK version 0.x.x can be found [here](https://github.com/cogni
 
 For users wanting to upgrade major version, a migration guide can be found [here](MIGRATION_GUIDE.md).
 
-Changes are grouped as follows
-- `Added` for new features.
-- `Changed` for changes in existing functionality.
-- `Deprecated` for soon-to-be removed features.
-- `Improved` for transparent changes, e.g. better performance.
-- `Removed` for now removed features.
-- `Fixed` for any bug fixes.
-- `Security` in case of vulnerabilities.
+As of 2025-08-29, changes are grouped as follows
+- ✨ Features: New features or additions to existing features.
+- 🐛 Bug Fixes: Bug fixes.
+- ⚡ Improvements: Transparent changes, e.g. better performance.
+
+## [7.84.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.83.1...v7.84.0) (2025-09-18)
+
+
+### Features
+
+* [CDF-25309] Add service principal API ([#2332](https://github.com/cognitedata/cognite-sdk-python/issues/2332)) ([10f3ea8](https://github.com/cognitedata/cognite-sdk-python/commit/10f3ea8087c569fff49cc13d53e796f15ee73551))
+* add helper methods to access simulator quantities and units ([#2305](https://github.com/cognitedata/cognite-sdk-python/issues/2305)) ([0c16785](https://github.com/cognitedata/cognite-sdk-python/commit/0c16785ff2009747bd1d4f500a741d7ab19f1328))
+* add pandas DataFrame conversion methods to SimulatorRoutineRevisionCore ([#2228](https://github.com/cognitedata/cognite-sdk-python/issues/2228)) ([de2f810](https://github.com/cognitedata/cognite-sdk-python/commit/de2f810ca019b22be47b10cfe3402d517f8d01db))
+* **iam:** add support for attributes in groups create, groups list ([#2231](https://github.com/cognitedata/cognite-sdk-python/issues/2231)) ([3c0148e](https://github.com/cognitedata/cognite-sdk-python/commit/3c0148e7047c45f2ed16d5ee58e6ab9a496b26b7))
+* **simint-alpha:** change mouthfull class names ([#2277](https://github.com/cognitedata/cognite-sdk-python/issues/2277)) ([15bc400](https://github.com/cognitedata/cognite-sdk-python/commit/15bc4001e2c310667092759856360ba7bc9f8ebd))
+* **simulators:** Add created_time and simulation_time filters to simulation runs list method ([#2274](https://github.com/cognitedata/cognite-sdk-python/issues/2274)) ([e54c6eb](https://github.com/cognitedata/cognite-sdk-python/commit/e54c6eb4776e8f3879ef3db4ea1f2ca3e8ff0a8b))
+
+
+### Bug Fixes
+
+* DMS triggers tests: set explicit _with limit when referenced from select ([#2333](https://github.com/cognitedata/cognite-sdk-python/issues/2333)) ([f087e6d](https://github.com/cognitedata/cognite-sdk-python/commit/f087e6d185893388da39c3106e93d4203a5eb071))
+* **documents:** stop paginating at limit ([#2331](https://github.com/cognitedata/cognite-sdk-python/issues/2331)) ([affcd1d](https://github.com/cognitedata/cognite-sdk-python/commit/affcd1d2b9b3edb092435a90c6e7e59718e4d9dc))
+* make filters throw warning when used in a boolean context ([#2330](https://github.com/cognitedata/cognite-sdk-python/issues/2330)) ([66390e6](https://github.com/cognitedata/cognite-sdk-python/commit/66390e6046d7ea4a44791c84d39154de6fb3df72))
+* **simint:** retrieve(..) overloads and enable mypy checks ([#2315](https://github.com/cognitedata/cognite-sdk-python/issues/2315)) ([05b164b](https://github.com/cognitedata/cognite-sdk-python/commit/05b164bcb2c6eff4a070e04b3d3ff1dd0f828630))
+
+
+### Performance Improvements
+
+* **functions:** Use exponential instead of constant backoff for FunctionCall:wait ([#2312](https://github.com/cognitedata/cognite-sdk-python/issues/2312)) ([ce24f0c](https://github.com/cognitedata/cognite-sdk-python/commit/ce24f0cad58387165867f0084f084be06f16a9e6))
+
+## [7.83.1] - 2025-08-30
+### Changed
+- [beta] Agents API updated to beta maturity (SDK implementation remains alpha).
+
+## [7.83.0] - 2025-08-28
+### Added
+- Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.
+
+## [Unreleased]
+### Added
+- [alpha] Support for `created_time` and `simulation_time` filters in `client.simulators.runs.list()` to filter simulation runs by timestamp ranges.
+- Added `get_quantities()` and `get_units()` methods to the `Simulator` class for easier access to simulator unit quantities and their units.
+
+## [7.82.1] - 2025-08-28
+### Fixed
+- Fix documentation of files.upload_content. It does not support directories. Use more meaningful errors when the path is not a file. 
+
+## [7.82.0] - 2025-08-26
+### Added
+- Added support for specifying `max_text_size` in DMS text properties.
+
+## [7.81.3] - 2025-08-26
+### Added
+- Added missing parameter `nonce` to the `FunctionScheduleWrite` method to allow passing 
+  a custom nonce.
+
+## [7.81.2] - 2025-08-21
+### Changed
+- Attributes `run_time` and `simulation_time` are now automatically converted to timestamp format (when calling `to_pandas(...)`)
 
 ## [Unreleased]
 ### Added
