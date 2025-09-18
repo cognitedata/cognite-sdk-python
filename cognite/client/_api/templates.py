@@ -266,7 +266,9 @@ class TemplateGroupVersionsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TemplateGroup
                 >>> client = CogniteClient()
-                >>> template_group = TemplateGroup("sdk-test-group", "This template group models Covid-19 spread")
+                >>> template_group = TemplateGroup(
+                ...     "sdk-test-group", "This template group models Covid-19 spread"
+                ... )
                 >>> client.templates.groups.create(template_group)
                 >>> schema = '''
                 >>>     type Demographics @template {
@@ -313,7 +315,9 @@ class TemplateGroupVersionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> template_group_list = client.templates.versions.list("template-group-ext-id", limit=5)
+                >>> template_group_list = client.templates.versions.list(
+                ...     "template-group-ext-id", limit=5
+                ... )
         """
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id)
@@ -388,7 +392,9 @@ class TemplateInstancesAPI(APIClient):
                 >>>                                   "growthRate": ConstantResolver(value=0.02)
                 >>>                                   }
                 >>>                               )
-                >>> client.templates.instances.create("sdk-test-group", 1, [template_instance_1, template_instance_2])
+                >>> client.templates.instances.create(
+                ...     "sdk-test-group", 1, [template_instance_1, template_instance_2]
+                ... )
         """
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
@@ -436,7 +442,9 @@ class TemplateInstancesAPI(APIClient):
             >>>           "growthRate": ConstantResolver(0.02)
             >>>           }
             >>>   )
-            >>> client.templates.instances.upsert("sdk-test-group", 1, [template_instance_1, template_instance_2])
+            >>> client.templates.instances.upsert(
+            ...     "sdk-test-group", 1, [template_instance_1, template_instance_2]
+            ... )
         """
         TemplatesAPI._deprecation_warning()
         if isinstance(instances, TemplateInstance):
@@ -469,7 +477,9 @@ class TemplateInstancesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TemplateInstanceUpdate
                 >>> client = CogniteClient()
-                >>> my_update = TemplateInstanceUpdate(external_id="test").field_resolvers.add({ "name": ConstantResolver("Norway") })
+                >>> my_update = TemplateInstanceUpdate(external_id="test").field_resolvers.add(
+                ...     {"name": ConstantResolver("Norway")}
+                ... )
                 >>> res = client.templates.instances.update("sdk-test-group", 1, my_update)
         """
         TemplatesAPI._deprecation_warning()
@@ -501,7 +511,9 @@ class TemplateInstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.templates.instances.retrieve_multiple(external_id="sdk-test-group", version=1, external_ids=["abc", "def"])
+                >>> res = client.templates.instances.retrieve_multiple(
+                ...     external_id="sdk-test-group", version=1, external_ids=["abc", "def"]
+                ... )
         """
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
@@ -540,7 +552,9 @@ class TemplateInstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> template_instances_list = client.templates.instances.list("template-group-ext-id", 1, limit=5)
+                >>> template_instances_list = client.templates.instances.list(
+                ...     "template-group-ext-id", 1, limit=5
+                ... )
         """
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
@@ -697,7 +711,9 @@ class TemplateViewsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.templates.views.resolve("template-group-ext-id", 1, "view", { "startTime": 10 }, limit=5)
+                >>> client.templates.views.resolve(
+                ...     "template-group-ext-id", 1, "view", {"startTime": 10}, limit=5
+                ... )
         """
         TemplatesAPI._deprecation_warning()
         url_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/resolve"

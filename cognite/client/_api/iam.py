@@ -147,26 +147,28 @@ class IAMAPI(APIClient):
                 >>> to_check = [
                 ...     AssetsAcl(
                 ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],
-                ...         scope=AssetsAcl.Scope.All()),
+                ...         scope=AssetsAcl.Scope.All(),
+                ...     ),
                 ...     EventsAcl(
                 ...         actions=[EventsAcl.Action.Write],
                 ...         scope=EventsAcl.Scope.DataSet([123]),
-                ... )]
+                ...     ),
+                ... ]
                 >>> missing = client.iam.compare_capabilities(
-                ...     existing_capabilities=my_groups,
-                ...     desired_capabilities=to_check)
+                ...     existing_capabilities=my_groups, desired_capabilities=to_check
+                ... )
                 >>> if missing:
                 ...     pass  # do something
 
             Capabilities can also be passed as dictionaries:
 
                 >>> to_check = [
-                ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
-                ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
+                ...     {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+                ...     {"eventsAcl": {"actions": ["WRITE"], "scope": {"datasetScope": {"ids": [123]}}}},
                 ... ]
                 >>> missing = client.iam.compare_capabilities(
-                ...     existing_capabilities=my_groups,
-                ...     desired_capabilities=to_check)
+                ...     existing_capabilities=my_groups, desired_capabilities=to_check
+                ... )
 
             You may also load capabilities from a dict-representation directly into ACLs (access-control list)
             by using ``Capability.load``. This will also ensure that the capabilities are valid.
@@ -248,19 +250,21 @@ class IAMAPI(APIClient):
                 >>> to_check = [
                 ...     AssetsAcl(
                 ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],
-                ...         scope=AssetsAcl.Scope.All()),
+                ...         scope=AssetsAcl.Scope.All(),
+                ...     ),
                 ...     EventsAcl(
                 ...         actions=[EventsAcl.Action.Write],
                 ...         scope=EventsAcl.Scope.DataSet([123]),
-                ... )]
+                ...     ),
+                ... ]
                 >>> if missing := client.iam.verify_capabilities(to_check):
                 ...     pass  # do something
 
             Capabilities can also be passed as dictionaries:
 
                 >>> to_check = [
-                ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
-                ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
+                ...     {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+                ...     {"eventsAcl": {"actions": ["WRITE"], "scope": {"datasetScope": {"ids": [123]}}}},
                 ... ]
                 >>> missing = client.iam.verify_capabilities(to_check)
 
@@ -363,7 +367,8 @@ class GroupsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> my_capabilities = [
                 ...     AssetsAcl([AssetsAcl.Action.Read], AssetsAcl.Scope.All()),
-                ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456]))]
+                ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456])),
+                ... ]
                 >>> my_group = GroupWrite(name="My Group", capabilities=my_capabilities)
                 >>> res = client.iam.groups.create(my_group)
 
@@ -374,7 +379,8 @@ class GroupsAPI(APIClient):
                 >>> grp = GroupWrite(
                 ...     name="Externally managed group",
                 ...     capabilities=my_capabilities,
-                ...     source_id="b7c9a5a4...")
+                ...     source_id="b7c9a5a4...",
+                ... )
                 >>> res = client.iam.groups.create(grp)
 
             Create a group whose members are managed internally by Cognite. This group may grant access through
@@ -391,7 +397,8 @@ class GroupsAPI(APIClient):
                 >>> user_list_group = GroupWrite(
                 ...     name="Specfic users only",
                 ...     capabilities=my_capabilities,
-                ...     members=["XRsSD1k3mTIKG", "M0SxY6bM9Jl"])
+                ...     members=["XRsSD1k3mTIKG", "M0SxY6bM9Jl"],
+                ... )
                 >>> res = client.iam.groups.create([user_list_group, all_group])
 
             Capabilities are often defined in configuration files, like YAML or JSON. You may convert capabilities
@@ -400,8 +407,8 @@ class GroupsAPI(APIClient):
 
                 >>> from cognite.client.data_classes.capabilities import Capability
                 >>> unparsed_capabilities = [
-                ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
-                ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
+                ...     {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+                ...     {"eventsAcl": {"actions": ["WRITE"], "scope": {"datasetScope": {"ids": [123]}}}},
                 ... ]
                 >>> acls = [Capability.load(cap) for cap in unparsed_capabilities]
                 >>> group = GroupWrite(name="Another group", capabilities=acls)

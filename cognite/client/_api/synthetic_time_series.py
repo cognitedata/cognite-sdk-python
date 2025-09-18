@@ -89,9 +89,8 @@ class SyntheticDatapointsAPI(APIClient):
                 ...     + ts{space:'my-space',externalId:'my-ts-xid'}
                 ... '''
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions=expression,
-                ...     start="2w-ago",
-                ...     end="now")
+                ...     expressions=expression, start="2w-ago", end="now"
+                ... )
 
             You can also specify variables for an easier query syntax:
 
@@ -103,20 +102,22 @@ class SyntheticDatapointsAPI(APIClient):
                 ...     "C": NodeId("my-space", "my-ts-xid"),
                 ... }
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions="A+B+C", start="2w-ago", end="2w-ahead", variables=variables)
+                ...     expressions="A+B+C", start="2w-ago", end="2w-ahead", variables=variables
+                ... )
 
             Use sympy to build complex expressions:
 
                 >>> from sympy import symbols, cos, sin
                 >>> x, y = symbols("x y")
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     [sin(x), y*cos(x)],
+                ...     [sin(x), y * cos(x)],
                 ...     start="2w-ago",
                 ...     end="now",
                 ...     variables={x: "foo", y: "bar"},
                 ...     aggregate="interpolation",
                 ...     granularity="15m",
-                ...     target_unit="temperature:deg_c")
+                ...     target_unit="temperature:deg_c",
+                ... )
         """
         if is_unlimited(limit):
             limit = cast(int, float("inf"))

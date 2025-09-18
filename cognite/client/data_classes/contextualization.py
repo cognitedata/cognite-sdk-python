@@ -1162,14 +1162,17 @@ class DiagramDetectConfig(CogniteObject):
         Configure a call to digrams detect endpoint:
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.contextualization import ConnectionFlags, DiagramDetectConfig
+            >>> from cognite.client.data_classes.contextualization import (
+            ...     ConnectionFlags,
+            ...     DiagramDetectConfig,
+            ... )
             >>> client = CogniteClient()
             >>> config = DiagramDetectConfig(
             ...     remove_leading_zeros=True,
             ...     connection_flags=ConnectionFlags(
             ...         no_text_inbetween=True,
             ...         natural_reading_order=True,
-            ...     )
+            ...     ),
             ... )
             >>> job = client.diagrams.detect(entities=[{"name": "A1"}], file_id=123, config=config)
 

@@ -187,8 +187,7 @@ class SimulatorRunsAPI(APIClient):
 
             Filter runs by status and simulator external ids:
                 >>> res = client.simulators.runs.list(
-                ...     simulator_external_ids=["PROSPER", "DWSIM"],
-                ...     status="success"
+                ...     simulator_external_ids=["PROSPER", "DWSIM"], status="success"
                 ... )
 
             Filter runs by time ranges:
