@@ -89,11 +89,13 @@ def test_POST_endpoint_idempotency_vs_retries(api: str, apis_matching_non_idempo
     # So you've added a new API to the SDK, but suddenly this test is failing - what's the deal?!
     # Answer the following:
     # Is this new API fully idempotent, i.e. can all its POST endpoints be safely retried automatically?
-    # if yes  -> add the url base path allow list below... but always(!): add tests to TestRetryableEndpoints!
+    # if yes  -> add the url base path allow list below.
     # if no -> look up '_NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN' and add a regex for the relevant url path(s)
+    # ... but always(!): add tests to TestRetryableEndpoints!
     idempotent_api_allow_list = {
         "groups",
         "models",
+        "principals",
         "securitycategories",
         "sessions",  # TODO: Review this with the sessions team
         "templategroups",  # Won't do: Deprecated API. TODO: remove when we remove the templates API
