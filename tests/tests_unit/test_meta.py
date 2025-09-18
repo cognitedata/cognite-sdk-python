@@ -1,6 +1,4 @@
 import inspect
-import re
-import textwrap
 from pathlib import Path
 
 import pytest
@@ -78,16 +76,7 @@ def test_ensure_identifier_mixins(lst_cls):
 @pytest.fixture(scope="session")
 def apis_matching_non_idempotent_POST_regex() -> set[str]:
     regex = APIClient._NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN
-    return {
-        re.sub(r"\([^)]*\)\?", "", part)  # remove optional groups
-        .replace("(", "")
-        .replace(")", "")  # remove parentheses
-        .replace("[^/]+", "")  # remove dynamic segments
-        .strip("^$/ ")
-        .split("/")[0]  # take first segment
-        for part in regex.pattern.split("|")
-        if part.strip("^$/ ")
-    }
+    return {part.removeprefix("^/").removeprefix("(").split("/")[0] for part in regex.pattern.split("|")}
 
 
 @pytest.mark.parametrize(
@@ -116,20 +105,13 @@ def test_POST_endpoint_idempotency_vs_retries(api: str, apis_matching_non_idempo
 
     if treated_as_idempotent and not is_whitelisted_as_idempotent:
         pytest.fail(
-            textwrap.dedent(
-                f"""\
-            API '{api}' is treated as a fully idempotent API, but it's not whitelisted as idempotent.
-            If all the POST endpoints of this API are idempotent, you can whitelist it. If not you'll need to match
-            the endpoints in _NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN and add tests to TestRetryableEndpoints!
-            """
-            )
+            f"API '{api}' is treated as a fully idempotent API, but it's not whitelisted as idempotent."
+            "If all the POST endpoints of this API are idempotent, you can whitelist it. If not you'll need to match"
+            "the endpoints in _NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN and add tests to TestRetryableEndpoints!"
         )
     if not treated_as_idempotent and is_whitelisted_as_idempotent:
         pytest.fail(
-            textwrap.dedent(
-                f"""\
-            API '{api}' matches the non-idempotent regex, but it's also whitelisted as idempotent.
-            You'll need to either remove it from the whitelist or from _NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN.
-            """
-            )
+            f"API '{api}' matches the non-idempotent regex, but it's also whitelisted as idempotent. "
+            "You'll need to either remove it from the whitelist or from "
+            "_NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN."
         )

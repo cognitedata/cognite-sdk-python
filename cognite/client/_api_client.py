@@ -319,7 +319,7 @@ class APIClient:
         if not match:
             raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
         path = match.group(1)
-        return not re.match(cls._NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN, path)
+        return not cls._NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN.match(path)
 
     def _retrieve(
         self,
