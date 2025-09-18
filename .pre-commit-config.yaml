@@ -36,6 +36,7 @@ repos:
           tests/tests_unit/test_utils/test_time.py
           tests/tests_integration/test_api/test_datapoints.py
           tests/tests_integration/test_api/test_simulators
+          tests/tests_integration/test_api/test_principals.py
           tests/tests_unit/test_api/test_simulators
           tests/tests_unit/test_data_classes/test_simulators.py
         files: ^.*.(py|pyi)$
