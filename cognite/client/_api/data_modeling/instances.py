@@ -29,6 +29,7 @@ from cognite.client.data_classes.aggregations import (
     HistogramValue,
     MetricAggregation,
 )
+from cognite.client.data_classes.data_modeling.debug import DebugNoticeList
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
     NodeId,
@@ -81,6 +82,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
+    from cognite.client.data_classes.data_modeling.debug import DebugParameters
 
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
     {filters.Nested, filters.HasData, filters.MatchAll, filters.Overlaps, filters.InstanceReferences}
@@ -110,21 +112,21 @@ class _TypedNodeOrEdgeListAdapter:
         self._list_cls = NodeList if issubclass(instance_cls, TypedNode) else EdgeList
 
     def __call__(self, items: Any, cognite_client: CogniteClient | None = None) -> Any:
-        return self._list_cls(items, None, cognite_client)
+        return self._list_cls(items, cognite_client=cognite_client)
 
     def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
-        return self._list_cls([self._instance_cls._load(item) for item in data], None, cognite_client)  # type: ignore[return-value, attr-defined]
+        return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client=cognite_client)  # type: ignore[return-value, attr-defined]
 
-    @classmethod
     def _load_raw_api_response(self, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> T_Node | T_Edge:
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
+        debug_notices = next((DebugNoticeList._load(r["debug"]["notices"]) for r in responses if "debug" in r), None)
         resources = [
             self._instance_cls._load(item, cognite_client=cognite_client)  # type: ignore[attr-defined]
             for response in responses
             for item in response["items"]
         ]
-        return self._list_cls(resources, typing, cognite_client=cognite_client)  # type: ignore[return-value]
+        return self._list_cls(resources, typing, debug_notices, cognite_client=cognite_client)  # type: ignore[return-value]
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
@@ -181,6 +183,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> Iterator[Node]: ...
 
     @overload
@@ -194,6 +197,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> Iterator[Edge]: ...
 
     @overload
@@ -207,6 +211,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> Iterator[NodeList]: ...
 
     @overload
@@ -220,6 +225,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> Iterator[EdgeList]: ...
 
     def __call__(
@@ -232,6 +238,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]:
         """Iterate over nodes or edges.
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
@@ -245,6 +252,7 @@ class InstancesAPI(APIClient):
             space (str | SequenceNotStr[str] | None): Only return instances in the given space (or list of spaces).
             sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
+            debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
 
         Returns:
             Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
@@ -252,7 +260,7 @@ class InstancesAPI(APIClient):
         self._validate_filter(filter)
         filter = self._merge_space_into_filter(instance_type, space, filter)
         other_params = self._create_other_params(
-            include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
+            include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources, debug=debug
         )
 
         if instance_type == "node":
@@ -262,7 +270,14 @@ class InstancesAPI(APIClient):
             resource_cls, list_cls = Edge, EdgeList
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
-        if not include_typing:
+
+        settings_forcing_raw_response_loading = []
+        if include_typing:
+            settings_forcing_raw_response_loading.append(f"{include_typing=}")
+        if debug:
+            settings_forcing_raw_response_loading.append(f"{debug=}")
+
+        if not settings_forcing_raw_response_loading:
             return cast(
                 Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList],
                 self._list_generator(
@@ -279,7 +294,7 @@ class InstancesAPI(APIClient):
             list_cls._load_raw_api_response([raw], self._cognite_client)  # type: ignore[attr-defined]
             for raw in self._list_generator_raw_responses(
                 method="POST",
-                settings_forcing_raw_response_loading=[f"{include_typing=}"],
+                settings_forcing_raw_response_loading=settings_forcing_raw_response_loading,
                 chunk_size=chunk_size,
                 limit=limit,
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
@@ -880,6 +895,7 @@ class InstancesAPI(APIClient):
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None,
         sources: Source | Sequence[Source] | None,
         instance_type: Literal["node", "edge"] | None,
+        debug: DebugParameters | None = None,
     ) -> dict[str, Any]:
         other_params: dict[str, Any] = {"includeTyping": include_typing}
         if sources:
@@ -896,6 +912,8 @@ class InstancesAPI(APIClient):
                 other_params["sort"] = [cls._dump_instance_sort(s) for s in sort]
         if instance_type:
             other_params["instanceType"] = instance_type
+        if debug:
+            other_params["debug"] = debug.dump()
         return other_params
 
     @staticmethod
@@ -1431,7 +1449,7 @@ class InstancesAPI(APIClient):
         else:
             return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
 
-    def query(self, query: Query, include_typing: bool = False) -> QueryResult:
+    def query(self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
         """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
@@ -1440,6 +1458,7 @@ class InstancesAPI(APIClient):
         Args:
             query (Query): Query.
             include_typing (bool): Should we return property type information as part of the result?
+            debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
 
         Returns:
             QueryResult: The resulting nodes and/or edges from the query.
@@ -1487,11 +1506,22 @@ class InstancesAPI(APIClient):
             To select all properties, use '[*]' in your SourceSelector:
 
                 >>> SourceSelector(source=ViewId("my-space", "my-xid", "v1"), properties=["*"])
+
+            To debug and/or profile your query, you can use the debug parameter:
+
+                >>> from cognite.client.data_classes.data_modeling.debug import DebugParameters
+                >>> debug_params = DebugParameters(
+                ...     emit_results=False,
+                ...     timeout=20*1000,  # 20 sec timeout
+                ...     profile=True
+                ... )
+                >>> res = client.data_modeling.instances.query(query, debug=debug_params)
+                >>> print(res.debug_notices)
         """
         query._validate_for_query()
-        return self._query_or_sync(query, "query", include_typing)
+        return self._query_or_sync(query, "query", include_typing=include_typing, debug=debug)
 
-    def sync(self, query: Query, include_typing: bool = False) -> QueryResult:
+    def sync(self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
         """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
@@ -1499,6 +1529,7 @@ class InstancesAPI(APIClient):
         Args:
             query (Query): Query.
             include_typing (bool): Should we return property type information as part of the result?
+            debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
 
         Returns:
             QueryResult: The resulting nodes and/or edges from the query.
@@ -1532,23 +1563,41 @@ class InstancesAPI(APIClient):
                 >>> res_new = client.data_modeling.instances.sync(query)
 
             In the last example, the res_new will only contain the pumps that have been added with the new work order.
+
+            To debug and/or profile your query, you can use the debug parameter:
+
+                >>> from cognite.client.data_classes.data_modeling.debug import DebugParameters
+                >>> debug_params = DebugParameters(
+                ...     emit_results=False,
+                ...     timeout=20*1000,  # 20 sec timeout
+                ...     profile=True
+                ... )
+                >>> res = client.data_modeling.instances.query(query, debug=debug_params)
+                >>> print(res.debug_notices)
         """
         query._validate_for_sync()
-        return self._query_or_sync(query, "sync", include_typing=include_typing)
+        return self._query_or_sync(query, "sync", include_typing=include_typing, debug=debug)
 
-    def _query_or_sync(self, query: Query, endpoint: Literal["query", "sync"], include_typing: bool) -> QueryResult:
+    def _query_or_sync(
+        self, query: Query, endpoint: Literal["query", "sync"], include_typing: bool, debug: DebugParameters | None
+    ) -> QueryResult:
         body = query.dump(camel_case=True)
         if include_typing:
             body["includeTyping"] = include_typing
+        if debug:
+            body["debug"] = debug.dump(camel_case=True)
 
         result = self._post(url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body)
 
         json_payload = result.json()
         default_by_reference = query.instance_type_by_result_expression()
         results = QueryResult.load(
-            json_payload["items"], default_by_reference, json_payload["nextCursor"], json_payload.get("typing")
+            json_payload["items"],
+            instance_list_type_by_result_expression_name=default_by_reference,
+            cursors=json_payload["nextCursor"],
+            typing=json_payload.get("typing"),
+            debug=json_payload.get("debug", {}).get("notices"),
         )
-
         return results
 
     @overload
@@ -1561,6 +1610,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> NodeList[Node]: ...
 
     @overload
@@ -1573,6 +1623,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> EdgeList[Edge]: ...
 
     @overload
@@ -1584,6 +1635,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> NodeList[T_Node]: ...
 
     @overload
@@ -1595,6 +1647,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> EdgeList[T_Edge]: ...
 
     def list(
@@ -1606,6 +1659,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
         """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
@@ -1617,6 +1671,7 @@ class InstancesAPI(APIClient):
             limit (int | None): Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
+            debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
 
         Returns:
             NodeList[T_Node] | EdgeList[T_Edge]: List of requested instances
@@ -1655,13 +1710,30 @@ class InstancesAPI(APIClient):
             List instances with a view as source:
 
                 >>> from cognite.client.data_classes.data_modeling import ViewId
-                >>> instance_list = client.data_modeling.instances.list(sources=ViewId("mySpace", "myView", "v1"))
+                >>> my_view = ViewId("mySpace", "myView", "v1")
+                >>> instance_list = client.data_modeling.instances.list(sources=my_view)
 
-            Convert instances to pandas DataFrame with expanded properties:
+            Convert instances to pandas DataFrame with expanded properties (``expand_properties=True``).
+            This will add the properties directly as dataframe columns. Specifying ``camel_case=True``
+            will convert the basic columns to camel case (e.g. externalId), but leave the property names as-is.
 
-                >>> df = instance_list.to_pandas(expand_properties=True, camel_case=True)
-                >>> # expand_properties=True will add the properties directly as dataframe columns
-                >>> # camel_case=True will convert the DataFrame column names to camel case (e.g. externalId)
+                >>> df = instance_list.to_pandas(
+                ...     expand_properties=True,
+                ...     camel_case=True,
+                ... )
+
+            To get debug information in the response, pass ``DebugParameters``:
+
+                >>> from cognite.client.data_classes.data_modeling.debug import DebugParameters
+                >>> res = client.data_modeling.instances.list(
+                ...     debug=DebugParameters(
+                ...         emit_results=False,
+                ...         timeout=20*1000,  # 20 sec timeout
+                ...         profile=True
+                ...     ),
+                ...     sources=my_view,
+                ... )
+                >>> print(res.debug_notices)
         """
         self._validate_filter(filter)
         instance_type_str = self._to_instance_type_str(instance_type)
@@ -1670,7 +1742,11 @@ class InstancesAPI(APIClient):
         filter = self._merge_space_into_filter(instance_type_str, space, filter)
 
         other_params = self._create_other_params(
-            include_typing=include_typing, instance_type=instance_type_str, sort=sort, sources=sources
+            include_typing=include_typing,
+            instance_type=instance_type_str,
+            sort=sort,
+            sources=sources,
+            debug=debug,
         )
 
         if instance_type == "node":
@@ -1687,6 +1763,12 @@ class InstancesAPI(APIClient):
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
+        settings_forcing_raw_response_loading = []
+        if include_typing:
+            settings_forcing_raw_response_loading.append(f"{include_typing=}")
+        if debug:
+            settings_forcing_raw_response_loading.append(f"{debug=}")
+
         return cast(
             NodeList[T_Node] | EdgeList[T_Edge],
             self._list(
@@ -1696,7 +1778,7 @@ class InstancesAPI(APIClient):
                 limit=limit,
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
-                settings_forcing_raw_response_loading=[f"{include_typing=}"] if include_typing else [],
+                settings_forcing_raw_response_loading=settings_forcing_raw_response_loading,
             ),
         )
 
