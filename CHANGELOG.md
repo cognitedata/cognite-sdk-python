@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.85.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.84.0...v7.85.0) (2025-09-19)
+
+
+### Features
+
+* **simulators:** Add support for model revision data ([#2268](https://github.com/cognitedata/cognite-sdk-python/issues/2268)) ([af56d56](https://github.com/cognitedata/cognite-sdk-python/commit/af56d569e97e442c46506690a125784db803bac4))
+
 ## [7.84.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.83.1...v7.84.0) (2025-09-18)
 
 
