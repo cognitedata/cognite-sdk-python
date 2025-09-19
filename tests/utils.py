@@ -51,6 +51,7 @@ from cognite.client.data_classes.datapoints import (
 from cognite.client.data_classes.filters import Filter
 from cognite.client.data_classes.hosted_extractors.jobs import BodyLoad, NextUrlLoad, RestConfig
 from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineStepArguments
+from cognite.client.data_classes.simulators.runs import SimulationRunWrite
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationWrite
 from cognite.client.data_classes.transformations.schedules import TransformationScheduleWrite
 from cognite.client.data_classes.transformations.schema import TransformationSchemaUnknownType
@@ -483,6 +484,16 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments.pop("max_list_size", None)
         elif resource_cls is SimulatorRoutineStepArguments:
             keyword_arguments = {"data": {"reference_id": self._random_string(50), "arg2": self._random_string(50)}}
+        elif resource_cls is SimulationRunWrite:
+            # SimulationRunWrite requires either routine_external_id alone OR both routine_revision_external_id and model_revision_external_id
+            if self._random.choice([True, False]):
+                # Use revision-based parameters
+                keyword_arguments.pop("routine_revision_external_id", None)
+                keyword_arguments.pop("model_revision_external_id", None)
+                keyword_arguments["routine_external_id"] = self._random_string(50)
+            else:
+                # Use routine_external_id only
+                keyword_arguments.pop("routine_external_id", None)
 
         return resource_cls(*positional_arguments, **keyword_arguments)
 
