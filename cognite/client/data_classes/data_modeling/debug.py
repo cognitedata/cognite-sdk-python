@@ -82,7 +82,7 @@ class ExcessiveTimeoutNotice(InvalidDebugOptionsNotice):
     code: Literal["excessiveTimeout"]
     category: Literal["invalidDebugOptions"]
     level: Literal["warning"]
-    hint: Literal["Cannot specify too large timeout"]
+    hint: str
     timeout: int
 
     @classmethod
@@ -106,7 +106,7 @@ class NoTimeoutWithResultsNotice(InvalidDebugOptionsNotice):
     code: Literal["noTimeoutWithResults"]
     category: Literal["invalidDebugOptions"]
     level: Literal["warning"]
-    hint: Literal["Ignoring timeout setting since emitResults=true"]
+    hint: str
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -129,9 +129,7 @@ class IntractableDirectRelationsCursorNotice(CursoringNotice):
     category: Literal["cursoring"]
     level: Literal["warning"]
     grade: Literal["D"]
-    hint: Literal[
-        "Cursoring combined with chaining to a list of direct relations requires a run-time sort and is therefore inherently intractable."
-    ]
+    hint: str
     result_expression: str
 
     @classmethod
@@ -163,9 +161,7 @@ class UnindexedThroughNotice(IndexingNotice):
     category: Literal["indexing"]
     level: Literal["warning"]
     grade: Literal["E"]
-    hint: Literal[
-        "The result expression has a `through` on an unindexed direct relation. This will become untenable when the container grows."
-    ]
+    hint: str
     result_expression: str
     property: list[str]
 
@@ -199,7 +195,7 @@ class ContainersWithoutIndexesInvolvedNotice(IndexingNotice):
     category: Literal["indexing"]
     level: Literal["warning"]
     grade: Literal["C"]
-    hint: Literal["The query is using one or more containers that doesn't have any indexes declared."]
+    hint: str
     result_expression: str | None
     containers: list[ContainerId]
 
@@ -238,7 +234,7 @@ class SelectiveExternalIDFilterNotice(FilteringNotice):
     category: Literal["filtering"]
     level: Literal["info"]
     grade: Literal["A"]
-    hint: Literal["The filter on the instances' primary key should always be selective."]
+    hint: str
     result_expression: str
     via_from: str | None
 
@@ -272,9 +268,7 @@ class SignificantHasDataFiltersNotice(FilteringNotice):
     category: Literal["filtering"]
     level: Literal["warning"]
     grade: Literal["C"]
-    hint: Literal[
-        "The provided `hasData` filters expand to several joins, which can be problematic depending on data distribution. Consider `requires` constraints, which can enable query time join pruning."
-    ]
+    hint: str
     result_expression: str
     containers: list[ContainerId]
 
@@ -308,7 +302,7 @@ class SignificantPostFilteringNotice(FilteringNotice):
     category: Literal["filtering"]
     level: Literal["warning"]
     grade: Literal["C"]
-    hint: Literal["A lot more rows than selected by the expression are involved to compute the result."]
+    hint: str
     result_expression: str
     limit: int
     max_involved_rows: int
@@ -350,9 +344,7 @@ class SortNotBackedByIndexNotice(SortingNotice):
     category: Literal["sorting"]
     level: Literal["warning"]
     grade: Literal["C"]
-    hint: Literal[
-        "The sort is not backed by a cursorable index, which means query time sorting is necessary, which in turn means a lot more data must be read. Consider whether a cursorable index is a good fit."
-    ]
+    hint: str
     result_expression: str
     sort: list[InstanceSort]
 
@@ -386,7 +378,7 @@ class FilterMatchesCursorableSortNotice(SortingNotice):
     category: Literal["sorting"]
     level: Literal["info"]
     grade: Literal["A", "B"]
-    hint: Literal["The provided filter and sort combination appear to match a backing index."]
+    hint: str
     result_expression: str
     sort: list[InstanceSort]
 
