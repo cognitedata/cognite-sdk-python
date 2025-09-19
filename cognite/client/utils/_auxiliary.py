@@ -4,7 +4,9 @@ import functools
 import math
 import platform
 import warnings
+from abc import ABC
 from collections.abc import Hashable, Iterable, Iterator, Sequence
+from inspect import isabstract
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -31,6 +33,18 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 K = TypeVar("K")
 THashable = TypeVar("THashable", bound=Hashable)
+
+
+def all_subclasses(base: type[T], exclude: set[type[T]] | None = None) -> set[type[T]]:
+    """Recursively find all subclasses of a given class."""
+    return set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c)) - (
+        exclude or set()
+    )
+
+
+def all_concrete_subclasses(base: type[T], exclude: set[type[T]] | None = None) -> set[type[T]]:
+    """Recursively find all non-abstract subclasses of a given class."""
+    return {cls for cls in all_subclasses(base, exclude) if ABC not in cls.__bases__ and not isabstract(cls)}
 
 
 def no_op(x: T) -> T:
