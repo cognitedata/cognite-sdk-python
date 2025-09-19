@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from cognite.client.data_classes.simulators.models import (
@@ -22,6 +24,7 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationOutput,
     SimulationRunDataItem,
     SimulationRunDataList,
+    SimulationRunWrite,
     SimulationValueUnitName,
 )
 from cognite.client.data_classes.simulators.simulators import (
@@ -464,3 +467,30 @@ class TestSimulator:
         units = simulator.get_units("empty")
         assert units == []
         assert len(units) == 0
+
+
+class TestSimulationRunWrite:
+    def test_error_handling(self) -> None:
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                "Cannot specify both 'routine_external_id' and revision-based parameters ('routine_revision_external_id', 'model_revision_external_id'). Use either routine_external_id alone, or both routine_revision_external_id and model_revision_external_id."
+            ),
+        ):
+            SimulationRunWrite(
+                routine_external_id="routine_external_id_1",
+                routine_revision_external_id="routine_revision_external_id_1",
+                model_revision_external_id="model_revision_external_id_1",
+                run_type="external",
+            )
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                "Must specify either 'routine_external_id' alone, or both 'routine_revision_external_id' and 'model_revision_external_id' together."
+            ),
+        ):
+            SimulationRunWrite(
+                routine_revision_external_id="routine_revision_external_id_1",
+                run_type="external",
+            )
