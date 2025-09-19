@@ -2442,7 +2442,7 @@ class DatapointsPoster:
 
         for i in range(n_first, len(lst), n):
             chunk = lst[i : i + n]
-            yield lst[i : i + n], len(chunk) == n
+            yield chunk, len(chunk) == n
 
     @staticmethod
     def _verify_dps_object_for_insertion(dps: Datapoints | DatapointsArray) -> None:
