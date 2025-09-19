@@ -68,6 +68,10 @@ class TestSimulatorRuns:
                 None,
             ),
         ],
+        ids=[
+            "with_routine_revision_and_model_revision",
+            "with_routine_only",
+        ],
     )
     async def test_run_with_wait_and_retrieve(
         self,
