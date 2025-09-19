@@ -164,21 +164,6 @@ class SimulationRunWrite(SimulationRunCore):
         routine_revision_external_id = resource.get("routineRevisionExternalId", None)
         model_revision_external_id = resource.get("modelRevisionExternalId", None)
         routine_external_id = resource.get("routineExternalId", None)
-        is_run_by_revisions = routine_revision_external_id is not None and model_revision_external_id is not None
-
-        run_args: dict[str, str] = {}
-
-        if is_run_by_revisions:
-            run_args.update(
-                routine_revision_external_id=routine_revision_external_id,
-                model_revision_external_id=model_revision_external_id,
-                **run_args,
-            )
-        else:
-            run_args.update(
-                routine_external_id=routine_external_id,
-                **run_args,
-            )
 
         return cls(
             run_type=resource.get("runType"),
@@ -186,7 +171,9 @@ class SimulationRunWrite(SimulationRunCore):
             queue=resource.get("queue"),
             log_severity=resource.get("logSeverity"),
             inputs=([SimulationInputOverride._load(_input) for _input in inputs] if inputs else None),
-            **run_args,
+            routine_external_id=routine_external_id,
+            routine_revision_external_id=routine_revision_external_id,
+            model_revision_external_id=model_revision_external_id,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
