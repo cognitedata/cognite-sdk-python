@@ -66,7 +66,7 @@ class MyResource(CogniteResource):
         self._cognite_client = cognite_client
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             var_a=resource.get("varA"),
             var_b=resource.get("varB"),

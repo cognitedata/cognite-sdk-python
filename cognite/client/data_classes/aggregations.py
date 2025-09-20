@@ -23,7 +23,7 @@ from cognite.client.data_classes.labels import Label
 from cognite.client.utils._text import convert_all_keys_recursive
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class CountAggregate(CogniteObject):
@@ -38,7 +38,7 @@ class CountAggregate(CogniteObject):
         self.count = count
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> CountAggregate:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> CountAggregate:
         return cls(count=resource["count"])
 
 
@@ -49,7 +49,7 @@ class Aggregation(CogniteObject, ABC):
     property: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Aggregation:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Aggregation:
         if "avg" in resource:
             return Avg(property=resource["avg"]["property"])
         elif "count" in resource:
@@ -125,7 +125,7 @@ class AggregatedValue(CogniteObject, ABC):
     property: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         if "aggregate" not in resource:
             raise ValueError("Missing aggregate, this is required")
         aggregate = resource["aggregate"]
@@ -384,7 +384,7 @@ class UniqueResult(CogniteObject):
         return self.values[0]
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> UniqueResult:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> UniqueResult:
         return cls(
             count=resource["count"],
             values=resource["values"],

@@ -19,7 +19,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     import sympy
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
@@ -43,7 +43,7 @@ def _supported_sympy_functions(operation: type[sympy.Basic]) -> str | None:
 class SyntheticDatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/synthetic"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DPS_LIMIT_SYNTH = 10_000
 

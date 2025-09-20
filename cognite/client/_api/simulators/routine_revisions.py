@@ -18,13 +18,13 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class SimulatorRoutineRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/routines/revisions"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
