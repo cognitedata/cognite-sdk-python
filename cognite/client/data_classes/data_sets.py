@@ -22,7 +22,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.shared import TimestampRange
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class DataSetCore(WriteableCogniteResource["DataSetWrite"]):
@@ -65,7 +65,7 @@ class DataSet(DataSetCore):
         name (str | None): The name of the data set.
         description (str | None): The description of the data set.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -78,7 +78,7 @@ class DataSet(DataSetCore):
         name: str | None,
         description: str | None,
         metadata: dict[str, str] | None,
-        cognite_client: CogniteClient | None,
+        cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -90,10 +90,10 @@ class DataSet(DataSetCore):
         self.id: int = id
         self.created_time: int = created_time
         self.last_updated_time: int = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -149,7 +149,7 @@ class DataSetWrite(DataSetCore):
         return self
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource.get("externalId"),
             name=resource.get("name"),

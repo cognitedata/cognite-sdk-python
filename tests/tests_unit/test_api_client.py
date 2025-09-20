@@ -260,10 +260,10 @@ class SomeResource(WriteableCogniteResource):
         self.y = y
         self.id = id
         self.external_id = external_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             x=resource.get("x"),
             y=resource.get("y"),

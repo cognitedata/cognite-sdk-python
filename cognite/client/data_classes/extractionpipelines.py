@@ -25,7 +25,7 @@ from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class ExtractionPipelineContact(CogniteObject):
@@ -51,7 +51,7 @@ class ExtractionPipelineContact(CogniteObject):
         self.send_notification = send_notification
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             name=resource.get("name"),
             email=resource.get("email"),
@@ -72,7 +72,7 @@ class ExtractionPipelineNotificationConfiguration(CogniteObject):
     allowed_not_seen_range_in_minutes: int | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             allowed_not_seen_range_in_minutes=resource.get("allowedNotSeenRangeInMinutes"),
         )
@@ -158,7 +158,7 @@ class ExtractionPipeline(ExtractionPipelineCore):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_by (str | None): Extraction pipeline creator, usually an email.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -182,7 +182,7 @@ class ExtractionPipeline(ExtractionPipelineCore):
         created_time: int,
         last_updated_time: int,
         created_by: str | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -205,7 +205,7 @@ class ExtractionPipeline(ExtractionPipelineCore):
         self.last_failure = last_failure
         self.last_message = last_message
         self.last_seen = last_seen
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     def as_write(self) -> ExtractionPipelineWrite:
         """Returns this ExtractionPipeline as a ExtractionPipelineWrite"""
@@ -227,7 +227,7 @@ class ExtractionPipeline(ExtractionPipelineCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipeline:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> ExtractionPipeline:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -310,7 +310,7 @@ class ExtractionPipelineWrite(ExtractionPipelineCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineWrite:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> ExtractionPipelineWrite:
         return cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -468,7 +468,7 @@ class ExtractionPipelineRun(ExtractionPipelineRunCore):
         status (str): success/failure/seen.
         message (str | None): Optional status message.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -478,7 +478,7 @@ class ExtractionPipelineRun(ExtractionPipelineRunCore):
         status: str,
         message: str | None,
         created_time: int | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             status=status,
@@ -487,7 +487,7 @@ class ExtractionPipelineRun(ExtractionPipelineRunCore):
         )
         self.id = id
         self.extpipe_external_id = extpipe_external_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     def as_write(self) -> ExtractionPipelineRunWrite:
         """Returns this ExtractionPipelineRun as a ExtractionPipelineRunWrite"""
@@ -504,7 +504,7 @@ class ExtractionPipelineRun(ExtractionPipelineRunCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineRun:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> ExtractionPipelineRun:
         return cls(
             id=resource["id"],
             extpipe_external_id=resource.get("externalId"),
@@ -555,7 +555,7 @@ class ExtractionPipelineRunWrite(ExtractionPipelineRunCore):
         self.extpipe_external_id = extpipe_external_id
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineRunWrite:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> ExtractionPipelineRunWrite:
         return cls(
             extpipe_external_id=resource["externalId"],
             status=resource["status"],
@@ -639,7 +639,7 @@ class ExtractionPipelineConfigRevision(CogniteResource):
         revision (int): The revision number of this config as a positive integer.
         description (str | None): Short description of this configuration revision.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -648,16 +648,16 @@ class ExtractionPipelineConfigRevision(CogniteResource):
         revision: int,
         description: str | None,
         created_time: int,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.external_id = external_id
         self.revision = revision
         self.description = description
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             revision=resource["revision"],
@@ -696,7 +696,7 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigCore):
         revision (int): The revision number of this config as a positive integer.
         description (str | None): Short description of this configuration revision.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -706,7 +706,7 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigCore):
         revision: int,
         description: str | None,
         created_time: int,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -715,10 +715,10 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigCore):
         )
         self.revision = revision
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             config=resource.get("config"),
@@ -758,7 +758,7 @@ class ExtractionPipelineConfigWrite(ExtractionPipelineConfigCore):
 
     @classmethod
     def _load(
-        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
     ) -> ExtractionPipelineConfigWrite:
         return cls(
             external_id=resource["externalId"],

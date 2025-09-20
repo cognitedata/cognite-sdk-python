@@ -40,7 +40,7 @@ from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_ti
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
@@ -89,24 +89,24 @@ T_CogniteResponse = TypeVar("T_CogniteResponse", bound=CogniteResponse)
 
 class _WithClientMixin:
     @property
-    def _cognite_client(self) -> CogniteClient:
+    def _cognite_client(self) -> AsyncCogniteClient:
         with suppress(AttributeError):
             if self.__cognite_client is not None:
                 return self.__cognite_client
         raise CogniteMissingClientError(self)
 
     @_cognite_client.setter
-    def _cognite_client(self, value: CogniteClient | None) -> None:
-        from cognite.client import CogniteClient
+    def _cognite_client(self, value: AsyncCogniteClient | None) -> None:
+        from cognite.client import AsyncCogniteClient
 
-        if value is None or isinstance(value, CogniteClient):
+        if value is None or isinstance(value, AsyncCogniteClient):
             self.__cognite_client = value
         else:
             raise AttributeError(
-                "Can't set the CogniteClient reference to anything else than a CogniteClient instance or None"
+                "Can't set the AsyncCogniteClient reference to anything else than a AsyncCogniteClient instance or None"
             )
 
-    def _get_cognite_client(self) -> CogniteClient | None:
+    def _get_cognite_client(self) -> AsyncCogniteClient | None:
         """Get Cognite client reference without raising (when missing)"""
         return self.__cognite_client
 
@@ -146,13 +146,13 @@ class CogniteObject(ABC):
 
     @final
     @classmethod
-    def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
+    def load(cls, resource: dict | str, cognite_client: AsyncCogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
         loaded = load_resource_to_dict(resource)
         return cls._load(loaded, cognite_client=cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         """
         This is the internal load method that is called by the public load method.
         It has a default implementation that can be overridden by subclasses.
@@ -165,7 +165,7 @@ class CogniteObject(ABC):
 
         Args:
             resource (dict[str, Any]): The resource to load.
-            cognite_client (CogniteClient | None): Cognite client to associate with the resource.
+            cognite_client (AsyncCogniteClient | None): Cognite client to associate with the resource.
 
         Returns:
             Self: The loaded resource.
@@ -178,7 +178,7 @@ class UnknownCogniteObject(CogniteObject):
         self.__data = data
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(resource)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -194,7 +194,7 @@ class CogniteResource(CogniteObject, _WithClientMixin, ABC):
     endpoints that can be used to interact with the resource.
     """
 
-    __cognite_client: CogniteClient | None
+    __cognite_client: AsyncCogniteClient | None
 
     def to_pandas(
         self,
@@ -251,16 +251,16 @@ T_WritableCogniteResource = TypeVar("T_WritableCogniteResource", bound=Writeable
 
 class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin):
     _RESOURCE: type[T_CogniteResource]
-    __cognite_client: CogniteClient | None
+    __cognite_client: AsyncCogniteClient | None
 
-    def __init__(self, resources: Iterable[Any], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(self, resources: Iterable[Any], cognite_client: AsyncCogniteClient | None = None) -> None:
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(
                     f"All resources for class '{self.__class__.__name__}' must be of type "
                     f"'{self._RESOURCE.__name__}', not '{type(resource)}'."
                 )
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
         super().__init__(resources)
         self._build_id_mappings()
 
@@ -391,7 +391,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 
     @final
     @classmethod
-    def load(cls, resource: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None) -> Self:
+    def load(cls, resource: Iterable[dict[str, Any]] | str, cognite_client: AsyncCogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or iterable of dict."""
         if isinstance(resource, str):
             resource = load_yaml_or_json(resource)
@@ -405,13 +405,13 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
     def _load(
         cls,
         resource_list: Iterable[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> Self:
         resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
         return cls(resources, cognite_client=cognite_client)
 
     @classmethod
-    def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
+    def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: AsyncCogniteClient) -> Self:
         # Certain classes may need more than just 'items' from the raw response. These need to provide
         # an implementation of this method
         raise NotImplementedError
@@ -722,7 +722,7 @@ class Geometry(CogniteObject):
         self.geometries = geometries and list(geometries)
 
     @classmethod
-    def _load(cls, raw_geometry: dict[str, Any], cognite_client: CogniteClient | None = None) -> Geometry:
+    def _load(cls, raw_geometry: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Geometry:
         return cls(
             type=raw_geometry["type"],
             coordinates=raw_geometry["coordinates"],

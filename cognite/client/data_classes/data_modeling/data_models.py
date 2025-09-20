@@ -18,7 +18,7 @@ from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
 from cognite.client.data_classes.data_modeling.views import View, ViewApply
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class DataModelCore(DataModelingSchemaResource["DataModelApply"], ABC):
@@ -80,7 +80,7 @@ class DataModelApply(DataModelCore):
             return ViewApply._load(view_data)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> DataModelApply:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> DataModelApply:
         return DataModelApply(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -147,7 +147,7 @@ class DataModel(DataModelCore, Generic[T_View]):
             return cast(T_View, View._load(view_data))
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],

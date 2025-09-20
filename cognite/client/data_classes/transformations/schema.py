@@ -9,7 +9,7 @@ from cognite.client.data_classes._base import CogniteObject, CogniteResource, Co
 from cognite.client.utils._text import convert_all_keys_recursive
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class TransformationSchemaType(CogniteObject, ABC):
@@ -24,7 +24,7 @@ class TransformationSchemaArrayType(TransformationSchemaType):
         self.contains_null = contains_null
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             type=resource["type"],
             element_type=resource.get("elementType"),
@@ -43,7 +43,7 @@ class TransformationSchemaStructType(TransformationSchemaType):
         return convert_all_keys_recursive(dumped, camel_case=camel_case)  # <-- 'fields' is a nested object
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(type=resource["type"], fields=resource.get("fields"))
 
 
@@ -62,7 +62,7 @@ class TransformationSchemaMapType(TransformationSchemaType):
 
     @classmethod
     def _load(
-        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
     ) -> TransformationSchemaMapType:
         return cls(
             type=resource["type"],
@@ -82,7 +82,7 @@ class TransformationSchemaUnknownType(TransformationSchemaType):
         return {"type": self.type, **self.__raw_schema}
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(raw_schema=resource)
 
 
@@ -94,7 +94,7 @@ class TransformationSchemaColumn(CogniteResource):
         sql_type (str): Type of the column in sql format.
         type (TransformationSchemaType): Type of the column in json format.
         nullable (bool): Values for the column can be null or not
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -103,13 +103,13 @@ class TransformationSchemaColumn(CogniteResource):
         sql_type: str,
         type: TransformationSchemaType,
         nullable: bool,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.name = name
         self.sql_type = sql_type
         self.type = type
         self.nullable = nullable
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -118,7 +118,7 @@ class TransformationSchemaColumn(CogniteResource):
         return output
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationSchemaColumn:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TransformationSchemaColumn:
         resource_type = resource["type"]
         match resource_type:
             case dict():

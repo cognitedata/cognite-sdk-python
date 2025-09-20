@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
@@ -95,7 +95,7 @@ class AgentUpsert(AgentCore):
         return self
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentUpsert:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> AgentUpsert:
         tools = (
             [AgentTool._load(item, cognite_client).as_write() for item in resource.get("tools", [])]
             if isinstance(resource.get("tools"), Sequence)
@@ -182,7 +182,7 @@ class Agent(AgentCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Agent:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Agent:
         instance = cls(
             external_id=resource["externalId"],
             name=resource["name"],

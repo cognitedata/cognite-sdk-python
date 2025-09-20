@@ -36,7 +36,7 @@ from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class JobStatus(Enum):
@@ -93,14 +93,14 @@ class ContextualizationJob(CogniteResource, ABC):
         status_time: int,
         created_time: int,
         error_message: str | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.job_id = job_id
         self.status = status
         self.created_time = created_time
         self.status_time = status_time
         self.error_message = error_message
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
         self._result: dict[str, Any] | None = None
         self.job_token: str | None = None
 
@@ -183,7 +183,7 @@ class EntityMatchingModel(CogniteResource):
         name: str | None = None,
         description: str | None = None,
         external_id: str | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.id = id
         self.created_time = created_time
@@ -198,10 +198,10 @@ class EntityMatchingModel(CogniteResource):
         self.name = name
         self.description = description
         self.external_id = external_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             status=resource.get("status"),
@@ -387,15 +387,15 @@ class DiagramConvertPage(CogniteResource):
         page: int,
         png_url: str,
         svg_url: str,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.page = page
         self.png_url = png_url
         self.svg_url = svg_url
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             page=resource["page"],
             png_url=resource["pngUrl"],
@@ -414,15 +414,15 @@ class DiagramConvertItem(CogniteResource):
         file_id: int,
         file_external_id: str | None,
         results: list[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.results = results
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             file_id=resource["fileId"],
             file_external_id=resource.get("fileExternalId"),
@@ -463,7 +463,7 @@ class DiagramConvertResults(ContextualizationJob):
         items: list[DiagramConvertItem],
         start_time: int,
         error_message: str | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             job_id=job_id,
@@ -477,7 +477,7 @@ class DiagramConvertResults(ContextualizationJob):
         self.start_time = start_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -535,7 +535,7 @@ class DiagramDetectItem(CogniteResource):
         annotations: list[dict[str, Any]] | None,
         page_range: dict[str, int] | None,
         page_count: int | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -543,10 +543,10 @@ class DiagramDetectItem(CogniteResource):
         self.annotations = annotations or []
         self.page_range = page_range
         self.page_count = page_count
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             file_id=resource["fileId"],
             file_external_id=resource.get("fileExternalId"),
@@ -582,7 +582,7 @@ class DiagramDetectResults(ContextualizationJob):
         items: list[DiagramDetectItem],
         start_time: int,
         error_message: str | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             job_id=job_id,
@@ -596,7 +596,7 @@ class DiagramDetectResults(ContextualizationJob):
         self.start_time = start_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -773,7 +773,7 @@ class AssetTagDetectionParameters(VisionResource, ThresholdParameter):
     asset_subtree_ids: list[int] | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             threshold=resource.get("threshold"),
             partial_match=resource.get("partialMatch"),
@@ -784,28 +784,28 @@ class AssetTagDetectionParameters(VisionResource, ThresholdParameter):
 @dataclass
 class TextDetectionParameters(VisionResource, ThresholdParameter):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
 class PeopleDetectionParameters(VisionResource, ThresholdParameter):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
 class IndustrialObjectDetectionParameters(VisionResource, ThresholdParameter):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
 class PersonalProtectiveEquipmentDetectionParameters(VisionResource, ThresholdParameter):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(threshold=resource.get("threshold"))
 
 
@@ -817,7 +817,7 @@ class DialGaugeDetection(VisionResource, ThresholdParameter):
     non_linear_angle: float | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             threshold=resource.get("threshold"),
             min_level=resource.get("minLevel"),
@@ -833,7 +833,7 @@ class LevelGaugeDetection(VisionResource, ThresholdParameter):
     max_level: float | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             threshold=resource.get("threshold"),
             min_level=resource.get("minLevel"),
@@ -848,7 +848,7 @@ class DigitalGaugeDetection(VisionResource, ThresholdParameter):
     max_num_digits: int | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             threshold=resource.get("threshold"),
             comma_position=resource.get("commaPosition"),
@@ -860,7 +860,7 @@ class DigitalGaugeDetection(VisionResource, ThresholdParameter):
 @dataclass
 class ValveDetection(VisionResource, ThresholdParameter):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(threshold=resource.get("threshold"))
 
 
@@ -869,13 +869,13 @@ class DetectJobBundle:
     _STATUS_PATH = "/context/diagram/detect/status"
     _WAIT_TIME = 2
 
-    def __init__(self, job_ids: list[int], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(self, job_ids: list[int], cognite_client: AsyncCogniteClient | None = None) -> None:
         warnings.warn(
             "DetectJobBundle.result is calling a beta endpoint which is still in development. "
             "Breaking changes can happen in between patch versions."
         )
 
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
         if not job_ids:
             raise ValueError("You need to specify job_ids")
         self.job_ids = job_ids
@@ -999,7 +999,7 @@ class VisionExtractItem(CogniteResource):
         predictions: VisionExtractPredictions,
         file_external_id: str | None,
         error_message: str | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -1007,10 +1007,10 @@ class VisionExtractItem(CogniteResource):
         self.predictions = predictions
 
         self._predictions_dict = predictions  # The "raw" predictions dict returned by the endpoint
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> VisionExtractItem:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> VisionExtractItem:
         return cls(
             file_id=resource["fileId"],
             predictions=VisionExtractPredictions._load(resource["predictions"], cognite_client=cognite_client)
@@ -1041,7 +1041,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
         items: list[VisionExtractItem],
         start_time: int | None,
         error_message: str | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             job_id=job_id,
@@ -1058,7 +1058,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
         return f"/context/vision/extract/{self.job_id}"
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> VisionExtractJob:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> VisionExtractJob:
         return cls(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -1189,7 +1189,7 @@ class EntityMatchingPredictionResult(ContextualizationJob):
         created_time: int,
         start_time: int,
         error_message: str | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             job_id=job_id,
@@ -1202,7 +1202,7 @@ class EntityMatchingPredictionResult(ContextualizationJob):
         self.start_time = start_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -1237,14 +1237,14 @@ class EntityMatchingPredictionResult(ContextualizationJob):
 
 class ResourceReference(CogniteResource):
     def __init__(
-        self, id: int | None = None, external_id: str | None = None, cognite_client: None | CogniteClient = None
+        self, id: int | None = None, external_id: str | None = None, cognite_client: None | AsyncCogniteClient = None
     ) -> None:
         self.id = id
         self.external_id = external_id
         self._cognite_client = None  # Read only
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource.get("id"),
             external_id=resource.get("externalId"),
@@ -1281,7 +1281,7 @@ class DirectionWeights(CogniteObject):
         self.down = down
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             left=resource.get("left"),
             right=resource.get("right"),
@@ -1310,7 +1310,7 @@ class CustomizeFuzziness(CogniteObject):
         self.min_chars = min_chars
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             fuzzy_score=resource.get("fuzzyScore"),
             max_boxes=resource.get("maxBoxes"),
@@ -1343,7 +1343,7 @@ class ConnectionFlags:
         return [k for k, v in self._flags.items() if v]
 
     @classmethod
-    def load(cls, resource: list[str], cognite_client: CogniteClient | None = None) -> Self:
+    def load(cls, resource: list[str], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(**{flag: True for flag in resource})
 
 
@@ -1443,7 +1443,7 @@ class DiagramDetectConfig(CogniteObject):
         return dumped
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         resource_copy = resource.copy()
 
         if con_flg := resource_copy.pop("connectionFlags", None):

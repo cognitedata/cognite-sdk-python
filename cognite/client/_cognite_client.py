@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     import httpx
 
 
-class CogniteClient:
+class AsyncCogniteClient:
     """Main entrypoint into Cognite Python SDK.
 
     All services are made available through this object. See examples below.
@@ -53,7 +53,7 @@ class CogniteClient:
     def __init__(self, config: ClientConfig | None = None) -> None:
         if (client_config := config or global_config.default_client_config) is None:
             raise ValueError(
-                "No ClientConfig has been provided, either pass it directly to CogniteClient "
+                "No ClientConfig has been provided, either pass it directly to AsyncCogniteClient "
                 "or set global_config.default_client_config."
             )
         else:
@@ -144,9 +144,9 @@ class CogniteClient:
         cdf_cluster: str,
         credentials: CredentialProvider,
         client_name: str | None = None,
-    ) -> CogniteClient:
+    ) -> AsyncCogniteClient:
         """
-        Create a CogniteClient with default configuration.
+        Create a AsyncCogniteClient with default configuration.
 
         The default configuration creates the URLs based on the project and cluster:
 
@@ -159,7 +159,7 @@ class CogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            CogniteClient: A CogniteClient instance with default configurations.
+            AsyncCogniteClient: A AsyncCogniteClient instance with default configurations.
         """
         return cls(ClientConfig.default(project, cdf_cluster, credentials, client_name=client_name))
 
@@ -172,9 +172,9 @@ class CogniteClient:
         client_id: str,
         client_secret: str,
         client_name: str | None = None,
-    ) -> CogniteClient:
+    ) -> AsyncCogniteClient:
         """
-        Create a CogniteClient with default configuration using a client credentials flow.
+        Create a AsyncCogniteClient with default configuration using a client credentials flow.
 
         The default configuration creates the URLs based on the project and cluster:
 
@@ -191,7 +191,7 @@ class CogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            CogniteClient: A CogniteClient instance with default configurations.
+            AsyncCogniteClient: A AsyncCogniteClient instance with default configurations.
         """
 
         credentials = OAuthClientCredentials.default_for_azure_ad(tenant_id, client_id, client_secret, cdf_cluster)
@@ -206,9 +206,9 @@ class CogniteClient:
         tenant_id: str,
         client_id: str,
         client_name: str | None = None,
-    ) -> CogniteClient:
+    ) -> AsyncCogniteClient:
         """
-        Create a CogniteClient with default configuration using the interactive flow.
+        Create a AsyncCogniteClient with default configuration using the interactive flow.
 
         The default configuration creates the URLs based on the tenant_id and cluster:
 
@@ -224,20 +224,20 @@ class CogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            CogniteClient: A CogniteClient instance with default configurations.
+            AsyncCogniteClient: A AsyncCogniteClient instance with default configurations.
         """
         credentials = OAuthInteractive.default_for_azure_ad(tenant_id, client_id, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod
-    def load(cls, config: dict[str, Any] | str) -> CogniteClient:
+    def load(cls, config: dict[str, Any] | str) -> AsyncCogniteClient:
         """Load a cognite client object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the CogniteClient class.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the AsyncCogniteClient class.
 
         Returns:
-            CogniteClient: A cognite client object.
+            AsyncCogniteClient: A cognite client object.
 
         Examples:
 
@@ -258,7 +258,7 @@ class CogniteClient:
                 ...         },
                 ...     },
                 ... }
-                >>> client = CogniteClient.load(config)
+                >>> client = AsyncCogniteClient.load(config)
         """
         loaded = load_resource_to_dict(config)
         return cls(config=ClientConfig.load(loaded))

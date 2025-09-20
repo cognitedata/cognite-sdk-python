@@ -11,14 +11,14 @@ from cognite.client.data_classes.data_modeling.statistics import (
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import CogniteClient
+    from cognite.client._cognite_client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class SpaceStatisticsAPI(APIClient):
     _RESOURCE_PATH = "/models/statistics/spaces"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._RETRIEVE_LIMIT = 100
 
