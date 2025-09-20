@@ -25,7 +25,7 @@ from cognite.client.utils._text import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 logger = logging.getLogger(__name__)
 
@@ -298,7 +298,9 @@ class ProjectCapability(CogniteResource):
         Projects = ProjectsScope
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Self:
+    def _load(
+        cls, resource: dict, cognite_client: AsyncCogniteClient | None = None, allow_unknown: bool = False
+    ) -> Self:
         (keys := set(resource)).remove(ProjectScope.name)
         project_scope_dct = {ProjectScope.name: resource[ProjectScope.name]}
         return cls(
@@ -319,7 +321,7 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
     def _load(
         cls,
         resource_list: Iterable[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> Self:
         return cls(

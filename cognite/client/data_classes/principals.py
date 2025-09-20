@@ -13,7 +13,7 @@ from cognite.client.data_classes._base import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class Principal(CogniteResource, ABC):
@@ -29,7 +29,7 @@ class Principal(CogniteResource, ABC):
         raise NotImplementedError("This method should be implemented in subclasses.")
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -114,7 +114,7 @@ class ServiceAccountCreator(CogniteObject):
     user_id: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(org_id=resource["orgId"], user_id=resource["userId"])
 
 

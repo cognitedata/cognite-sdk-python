@@ -19,10 +19,10 @@ from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._session import create_session_and_return_nonce
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
-def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identifier) -> int:
+def _get_function_internal_id(cognite_client: AsyncCogniteClient, identifier: Identifier) -> int:
     primitive = identifier.as_primitive()
     if identifier.is_id:
         return primitive
@@ -238,7 +238,7 @@ class FunctionSchedulesAPI(APIClient):
             There are several ways to authenticate the function schedule — the order of priority is as follows:
                 1. ``nonce`` (if provided in the ``FunctionScheduleWrite`` object)
                 2. ``client_credentials`` (if provided)
-                3. The credentials of *this* CogniteClient.
+                3. The credentials of *this* AsyncCogniteClient.
 
         Warning:
             Do not pass secrets or other confidential information via the ``data`` argument. There is a dedicated
@@ -266,7 +266,7 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
             You may also create a schedule that runs with your -current- credentials, i.e. the same credentials you used
-            to instantiate the ``CogniteClient`` (that you're using right now). **Note**: Unless you happen to already use
+            to instantiate the ``AsyncCogniteClient`` (that you're using right now). **Note**: Unless you happen to already use
             client credentials, *this is not a recommended way to create schedules*, as it will create an explicit dependency
             on your user account, which it will run the function "on behalf of" (until the schedule is eventually removed):
 

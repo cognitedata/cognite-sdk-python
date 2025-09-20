@@ -26,7 +26,7 @@ from cognite.client.utils._text import shorten
 from cognite.client.utils._url import resolve_url
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import CogniteClient
+    from cognite.client._cognite_client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
@@ -109,7 +109,7 @@ class FailedRequestHandler:
             extra=drop_none_values(extra),
         )
 
-    def raise_api_error(self, cognite_client: CogniteClient) -> NoReturn:
+    def raise_api_error(self, cognite_client: AsyncCogniteClient) -> NoReturn:
         cluster = cognite_client._config.cdf_cluster
         project = cognite_client._config.project
 
@@ -124,7 +124,7 @@ class FailedRequestHandler:
                 self._raise_api_error(CogniteAPIError, cluster, project)
 
     def _raise_no_project_access_error(
-        self, cognite_client: CogniteClient, cluster: str | None, project: str
+        self, cognite_client: AsyncCogniteClient, cluster: str | None, project: str
     ) -> NoReturn:
         raise CogniteProjectAccessError(
             client=cognite_client,
@@ -167,7 +167,7 @@ def get_user_agent() -> str:
 
 
 class BasicAPIClient:
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         self._config = config
         self._api_version = api_version
         self._api_subversion = config.api_subversion

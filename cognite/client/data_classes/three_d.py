@@ -22,7 +22,7 @@ from cognite.client.data_classes._base import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class RevisionCameraProperties(CogniteObject):
@@ -38,7 +38,7 @@ class RevisionCameraProperties(CogniteObject):
         self.position = position
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             target=resource["target"],
             position=resource["position"],
@@ -58,7 +58,7 @@ class BoundingBox3D(CogniteObject):
         self.min = min
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             max=resource["max"],
             min=resource["min"],
@@ -96,7 +96,7 @@ class ThreeDModel(ThreeDModelCore):
         created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
         data_set_id (int | None): The id of the dataset this 3D model belongs to.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -106,7 +106,7 @@ class ThreeDModel(ThreeDModelCore):
         created_time: int,
         data_set_id: int | None,
         metadata: dict[str, str] | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -115,10 +115,10 @@ class ThreeDModel(ThreeDModelCore):
         )
         self.id: int = id
         self.created_time: int = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             name=resource["name"],
             id=resource["id"],
@@ -163,7 +163,7 @@ class ThreeDModelWrite(ThreeDModelCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ThreeDModelWrite:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> ThreeDModelWrite:
         return cls(
             name=resource["name"],
             data_set_id=resource.get("dataSetId"),
@@ -280,7 +280,7 @@ class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite
         self.metadata = metadata
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.camera, dict):
             instance.camera = RevisionCameraProperties._load(instance.camera)
@@ -311,7 +311,7 @@ class ThreeDModelRevision(ThreeDModelRevisionCore):
         thumbnail_url (str | None): The URL of a thumbnail for the revision.
         asset_mapping_count (int): The number of asset mappings for this revision.
         created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -329,7 +329,7 @@ class ThreeDModelRevision(ThreeDModelRevisionCore):
         thumbnail_url: str | None,
         asset_mapping_count: int,
         created_time: int,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             file_id=file_id,
@@ -346,10 +346,10 @@ class ThreeDModelRevision(ThreeDModelRevisionCore):
         self.thumbnail_threed_file_id = thumbnail_threed_file_id
         self.thumbnail_url = thumbnail_url
         self.asset_mapping_count = asset_mapping_count
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             file_id=resource["fileId"],
@@ -417,7 +417,7 @@ class ThreeDModelRevisionWrite(ThreeDModelRevisionCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ThreeDModelRevisionWrite:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> ThreeDModelRevisionWrite:
         return cls(
             file_id=resource["fileId"],
             published=resource.get("published", False),
@@ -535,7 +535,7 @@ class ThreeDNode(CogniteResource):
         subtree_size (int): The number of descendants of the node, plus one (counting itself).
         properties (dict[str, dict[str, str]] | None): Properties extracted from 3D model, with property categories containing key/value string pairs.
         bounding_box (BoundingBox3D | None): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -548,7 +548,7 @@ class ThreeDNode(CogniteResource):
         subtree_size: int,
         properties: dict[str, dict[str, str]] | None,
         bounding_box: BoundingBox3D | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.id = id
         self.tree_index = tree_index
@@ -558,10 +558,10 @@ class ThreeDNode(CogniteResource):
         self.subtree_size = subtree_size
         self.properties = properties
         self.bounding_box = bounding_box
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ThreeDNode:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> ThreeDNode:
         return cls(
             id=resource["id"],
             tree_index=resource["treeIndex"],
@@ -611,7 +611,7 @@ class ThreeDAssetMapping(ThreeDAssetMappingCore):
         asset_id (int | None): The ID of the associated asset (Cognite's Assets API).
         tree_index (int | None): A number describing the position of this node in the 3D hierarchy, starting from 0. The tree is traversed in a depth-first order.
         subtree_size (int | None): The number of nodes in the subtree of this node (this number included the node itself).
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -620,7 +620,7 @@ class ThreeDAssetMapping(ThreeDAssetMappingCore):
         asset_id: int | None,
         tree_index: int | None,
         subtree_size: int | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             node_id=node_id,
@@ -628,10 +628,10 @@ class ThreeDAssetMapping(ThreeDAssetMappingCore):
         )
         self.tree_index = tree_index
         self.subtree_size = subtree_size
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             node_id=resource["nodeId"],
             asset_id=resource.get("assetId"),
@@ -663,7 +663,9 @@ class ThreeDAssetMappingWrite(ThreeDAssetMappingCore):
         super().__init__(node_id=node_id, asset_id=asset_id)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> ThreeDAssetMappingWrite:
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
+    ) -> ThreeDAssetMappingWrite:
         return cls(
             node_id=resource["nodeId"],
             asset_id=resource.get("assetId"),

@@ -14,14 +14,14 @@ from cognite.client.data_classes.simulators.simulators import Simulator, Simulat
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class SimulatorsAPI(APIClient):
     _RESOURCE_PATH = "/simulators"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.integrations = SimulatorIntegrationsAPI(config, api_version, cognite_client)
         self.models = SimulatorModelsAPI(config, api_version, cognite_client)

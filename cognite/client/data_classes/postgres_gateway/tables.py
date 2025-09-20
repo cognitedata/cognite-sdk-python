@@ -18,7 +18,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.data_modeling.ids import ViewId
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 ColumnType: TypeAlias = Literal[
     "BIGINT",
@@ -47,7 +47,7 @@ class RawTableOptions(CogniteObject):
     primary_key: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             database=resource["database"],
             table=resource["table"],
@@ -61,7 +61,7 @@ class Column(CogniteResource):
     type: ColumnType
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             name=resource["propertyName"],
             type=resource["type"],
@@ -115,7 +115,7 @@ class TableWrite(_TableCore, ABC):
         return self
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -211,7 +211,7 @@ class Table(_TableCore, ABC):
         self.created_time = created_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
