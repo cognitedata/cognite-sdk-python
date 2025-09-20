@@ -20,7 +20,7 @@ from cognite.client.data_classes._base import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisionWrite"], ABC):
@@ -39,7 +39,7 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
         self.external_dependencies = external_dependencies
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             model_external_id=resource["modelExternalId"],
@@ -67,7 +67,7 @@ class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
 
     @classmethod
     def _load(
-        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
     ) -> SimulatorModelRevisionWrite:
         return cls(
             external_id=resource["externalId"],
@@ -143,7 +143,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         self.simulator_external_id = simulator_external_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -215,7 +215,7 @@ class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
         self.description = description
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             simulator_external_id=resource["simulatorExternalId"],
@@ -282,7 +282,7 @@ class SimulatorModel(SimulatorModelCore):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -363,7 +363,7 @@ class SimulatorModelDependencyFileId(SimulatorModelDependencyFileReference):
     id: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(id=resource["id"])
 
 
@@ -380,7 +380,7 @@ class SimulatorModelRevisionDependency(CogniteObject):
     arguments: dict[str, str]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             file=SimulatorModelDependencyFileId.load(resource["file"])
             if "id" in resource["file"]
@@ -399,6 +399,6 @@ class SimulatorModelRevisionDependency(CogniteObject):
 
     @classmethod
     def _load_list(
-        cls, resource: list[dict[str, Any]], cognite_client: CogniteClient | None = None
+        cls, resource: list[dict[str, Any]], cognite_client: AsyncCogniteClient | None = None
     ) -> list[SimulatorModelRevisionDependency]:
         return [cls._load(item, cognite_client) for item in resource]

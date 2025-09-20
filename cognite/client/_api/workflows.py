@@ -40,7 +40,7 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
     from cognite.client.data_classes import ClientCredentials
 
 WorkflowIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str] | str
@@ -58,7 +58,7 @@ def wrap_workflow_ids(
 class WorkflowTriggerAPI(APIClient):
     _RESOURCE_PATH = "/workflows/triggers"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 1
 
@@ -545,7 +545,7 @@ class WorkflowExecutionAPI(APIClient):
 class WorkflowVersionAPI(APIClient):
     _RESOURCE_PATH = "/workflows/versions"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 1
@@ -837,7 +837,7 @@ class WorkflowAPI(APIClient):
         self,
         config: ClientConfig,
         api_version: str | None,
-        cognite_client: CogniteClient,
+        cognite_client: AsyncCogniteClient,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self.versions = WorkflowVersionAPI(config, api_version, cognite_client)
