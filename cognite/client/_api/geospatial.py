@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numbers
 import urllib.parse
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from pathlib import Path
 from typing import Any, overload
 
@@ -662,14 +662,14 @@ class GeospatialAPI(APIClient):
         )
         return FeatureList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def stream_features(
+    async def stream_features(
         self,
         feature_type_external_id: str,
         filter: dict[str, Any] | None = None,
         properties: dict[str, Any] | None = None,
         allow_crs_transformation: bool = False,
         allow_dimensionality_mismatch: bool = False,
-    ) -> Iterator[Feature]:
+    ) -> AsyncIterator[Feature]:
         """`Stream features`
         <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeaturesStreaming>
 
@@ -721,8 +721,10 @@ class GeospatialAPI(APIClient):
             "allowCrsTransformation": allow_crs_transformation,
             "allowDimensionalityMismatch": allow_dimensionality_mismatch,
         }
-        with self._stream("POST", url_path=resource_path, json=payload) as resp:
-            yield from (Feature._load(_json.loads(line)) for line in resp.iter_lines())
+        stream = self._stream("POST", url_path=resource_path, json=payload)
+        async with stream as response:
+            async for line in response.aiter_lines():
+                yield Feature._load(_json.loads(line))
 
     def aggregate_features(
         self,
