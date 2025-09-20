@@ -25,7 +25,7 @@ class UserProfilesAPI(APIClient):
     def me(self) -> UserProfile:
         """`Retrieve your own user profile <https://developer.cognite.com/api#tag/User-profiles/operation/getRequesterUserProfile>`_
 
-        Retrieves the user profile of the principal issuing the request, i.e. the principal *this* CogniteClient was instantiated with.
+        Retrieves the user profile of the principal issuing the request, i.e. the principal *this* AsyncCogniteClient was instantiated with.
 
         Returns:
             UserProfile: Your own user profile.

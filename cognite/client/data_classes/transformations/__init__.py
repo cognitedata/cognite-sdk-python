@@ -33,7 +33,7 @@ from cognite.client.exceptions import CogniteAPIError, PyodideJsException
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class SessionDetails:
@@ -132,7 +132,7 @@ class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
 
     def _process_credentials(
         self,
-        cognite_client: CogniteClient,
+        cognite_client: AsyncCogniteClient,
         sessions_cache: dict[str, NonceCredentials] | None = None,
         keep_none: bool = False,
     ) -> None:
@@ -167,7 +167,7 @@ class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
         sessions_cache: dict[str, NonceCredentials],
         keep_none: bool,
         credentials_name: Literal["source", "destination"],
-        cognite_client: CogniteClient,
+        cognite_client: AsyncCogniteClient,
     ) -> NonceCredentials | None:
         if keep_none and oidc_credentials is None:
             return None
@@ -186,13 +186,13 @@ class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
             # We want to create a session using the supplied 'oidc_credentials' (either 'source_oidc_credentials'
             # or 'destination_oidc_credentials') and send the nonce to the Transformations backend, to avoid sending
             # (and it having to store) the full set of client credentials. However, there is no easy way to do this
-            # without instantiating a new 'CogniteClient' with the given credentials:
-            from cognite.client import CogniteClient
+            # without instantiating a new 'AsyncCogniteClient' with the given credentials:
+            from cognite.client import AsyncCogniteClient
 
             config = deepcopy(cognite_client.config)
             config.project = project
             config.credentials = oidc_credentials.as_credential_provider()
-            other_client = CogniteClient(config)
+            other_client = AsyncCogniteClient(config)
             try:
                 session = other_client.iam.sessions.create(credentials)
                 ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
@@ -241,7 +241,7 @@ class Transformation(TransformationCore):
         source_session (SessionDetails | None): Details for the session used to read from the source project.
         destination_session (SessionDetails | None): Details for the session used to write to the destination project.
         tags (list[str] | None): No description.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -270,7 +270,7 @@ class Transformation(TransformationCore):
         source_session: SessionDetails | None,
         destination_session: SessionDetails | None,
         tags: list[str] | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -298,7 +298,7 @@ class Transformation(TransformationCore):
         self.source_session = source_session
         self.destination_session = destination_session
         self.tags = tags or []
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
         if self.has_source_oidc_credentials or self.has_destination_oidc_credentials:
             warnings.warn(
@@ -402,7 +402,7 @@ class Transformation(TransformationCore):
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Transformation:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Transformation:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -492,7 +492,7 @@ class TransformationWrite(TransformationCore):
         self.tags = tags
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationWrite:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TransformationWrite:
         return cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -733,21 +733,21 @@ class TransformationPreviewResult(CogniteResource):
     Args:
         schema (TransformationSchemaColumnList): List of column descriptions.
         results (list[dict]): List of resulting rows. Each row is a dictionary where the key is the column name and the value is the entry.
-        cognite_client (CogniteClient | None): No description.
+        cognite_client (AsyncCogniteClient | None): No description.
     """
 
     def __init__(
         self,
         schema: TransformationSchemaColumnList,
         results: list[dict],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.schema = schema
         self.results = results
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationPreviewResult:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TransformationPreviewResult:
         return cls(
             schema=(items := resource["schema"].get("items"))
             and TransformationSchemaColumnList._load(items, cognite_client=cognite_client),

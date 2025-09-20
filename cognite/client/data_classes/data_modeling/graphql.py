@@ -10,7 +10,7 @@ from cognite.client.data_classes.data_modeling.ids import DataModelId
 from cognite.client.utils import _json
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 @dataclass
@@ -34,7 +34,7 @@ class DMLApplyResult(CogniteObject):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -51,5 +51,5 @@ class GraphQlQueryResult(CogniteObject):
     items: list[dict[str, Any]]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(resource["items"])
