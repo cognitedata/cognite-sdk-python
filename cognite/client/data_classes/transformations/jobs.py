@@ -16,7 +16,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.transformations.common import TransformationDestination
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class TransformationJobStatus(str, Enum):
@@ -33,7 +33,7 @@ class TransformationJobMetric(CogniteResource):
         timestamp (int): Time of the last metric update.
         name (str): Name of the metric.
         count (int): Value of the metric.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -41,15 +41,15 @@ class TransformationJobMetric(CogniteResource):
         timestamp: int,
         name: str,
         count: int,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.name = name
         self.count = count
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             timestamp=resource["timestamp"],
             name=resource["name"],
@@ -81,7 +81,7 @@ class TransformationJob(CogniteResource):
         started_time (int | None): Time when the job started running.
         finished_time (int | None): Time when the job finished running.
         last_seen_time (int | None): Time of the last status update from the job.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -101,7 +101,7 @@ class TransformationJob(CogniteResource):
         started_time: int | None,
         finished_time: int | None,
         last_seen_time: int | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.id = id
         self.status = status
@@ -118,7 +118,7 @@ class TransformationJob(CogniteResource):
         self.started_time = started_time
         self.finished_time = finished_time
         self.last_seen_time = last_seen_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     def update(self) -> None:
         """`Get updated job status.`"""
@@ -264,7 +264,7 @@ class TransformationJob(CogniteResource):
         return output
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationJob:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TransformationJob:
         return cls(
             id=resource["id"],
             status=TransformationJobStatus(resource["status"]),

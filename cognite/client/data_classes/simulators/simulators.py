@@ -14,7 +14,7 @@ from cognite.client.data_classes._base import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class Simulator(CogniteResource):
@@ -60,7 +60,7 @@ class Simulator(CogniteResource):
         self.id = id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -147,7 +147,7 @@ class SimulatorUnitEntry(CogniteObject):
     name: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             label=resource["label"],
             name=resource["name"],
@@ -160,7 +160,7 @@ class SimulatorStepOption(CogniteObject):
     value: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             label=resource["label"],
             value=resource["value"],
@@ -173,7 +173,7 @@ class SimulatorModelType(CogniteObject):
     key: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             name=resource["name"],
             key=resource["key"],
@@ -183,7 +183,7 @@ class SimulatorModelType(CogniteObject):
     def _load_list(
         cls,
         resource: dict[str, Any] | list[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> list[SimulatorModelType]:
         if isinstance(resource, dict):
             return [cls._load(resource, cognite_client)]
@@ -200,7 +200,7 @@ class SimulatorQuantity(CogniteObject):
     units: Sequence[SimulatorUnitEntry]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             name=resource["name"],
             label=resource["label"],
@@ -211,7 +211,7 @@ class SimulatorQuantity(CogniteObject):
     def _load_list(
         cls,
         resource: dict[str, Any] | list[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> list[SimulatorQuantity]:
         if isinstance(resource, dict):
             return [cls._load(resource, cognite_client)]
@@ -235,7 +235,7 @@ class SimulatorStepField(CogniteObject):
     options: Sequence[SimulatorStepOption] | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             name=resource["name"],
             label=resource["label"],
@@ -268,7 +268,7 @@ class SimulatorModelDependencyFields(CogniteObject):
     info: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             name=resource["name"],
             label=resource["label"],
@@ -289,7 +289,7 @@ class SimulatorModelDependency(CogniteObject):
     fields: Sequence[SimulatorModelDependencyFields]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             file_extension_types=resource["fileExtensionTypes"],
             fields=[SimulatorModelDependencyFields._load(field_, cognite_client) for field_ in resource["fields"]],
@@ -299,7 +299,7 @@ class SimulatorModelDependency(CogniteObject):
     def _load_list(
         cls,
         resource: dict[str, Any] | list[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> list[SimulatorModelDependency]:
         if isinstance(resource, dict):
             return [cls._load(resource, cognite_client)]
@@ -321,7 +321,7 @@ class SimulatorStep(CogniteObject):
     fields: Sequence[SimulatorStepField]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             step_type=resource["stepType"],
             fields=[SimulatorStepField._load(field_, cognite_client) for field_ in resource["fields"]],
@@ -331,7 +331,7 @@ class SimulatorStep(CogniteObject):
     def _load_list(
         cls,
         resource: dict[str, Any] | list[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> list[SimulatorStep]:
         if isinstance(resource, dict):
             return [cls._load(resource, cognite_client)]
@@ -414,7 +414,7 @@ class SimulatorIntegration(CogniteResource):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             active=resource["active"],

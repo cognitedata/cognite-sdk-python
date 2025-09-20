@@ -76,7 +76,7 @@ if TYPE_CHECKING:
 
     import pandas as pd
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 DEFAULT_DATAPOINTS_CHUNK_SIZE = 100_000
@@ -499,7 +499,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 class DatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/data"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.synthetic = SyntheticDatapointsAPI(config, api_version, cognite_client)
         self._FETCH_TS_LIMIT = 100
@@ -616,7 +616,7 @@ class DatapointsAPI(APIClient):
             directly to an insert method. The only assumption below is that the time series have already been created in the target project.
 
                 >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
-                >>> target_client = CogniteClient()
+                >>> target_client = AsyncCogniteClient()
                 >>> ts_to_copy = client.time_series.list(data_set_external_ids="my-use-case")
                 >>> queries = [
                 ...     DatapointsQuery(

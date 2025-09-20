@@ -9,14 +9,14 @@ from cognite.client.data_classes.data_modeling.statistics import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import CogniteClient
+    from cognite.client._cognite_client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class StatisticsAPI(APIClient):
     _RESOURCE_PATH = "/models/statistics"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.spaces = SpaceStatisticsAPI(config, api_version, cognite_client)
 

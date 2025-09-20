@@ -9,10 +9,10 @@ from cognite.client.data_classes.functions import FunctionCallsFilter
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
-def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identifier) -> int:
+def _get_function_internal_id(cognite_client: AsyncCogniteClient, identifier: Identifier) -> int:
     primitive = identifier.as_primitive()
     if identifier.is_id:
         return primitive

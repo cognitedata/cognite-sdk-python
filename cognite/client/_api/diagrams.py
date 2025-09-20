@@ -19,7 +19,7 @@ from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 _T = TypeVar("_T")
@@ -28,7 +28,7 @@ _T = TypeVar("_T")
 class DiagramsAPI(APIClient):
     _RESOURCE_PATH = "/context/diagram"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         # https://developer.cognite.com/api#tag/Engineering-diagrams/operation/diagramDetect
         self._DETECT_API_FILE_LIMIT = 50

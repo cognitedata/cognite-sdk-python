@@ -17,7 +17,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class LabelDefinitionCore(WriteableCogniteResource["LabelDefinitionWrite"], ABC):
@@ -54,7 +54,7 @@ class LabelDefinition(LabelDefinitionCore):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         description (str | None): Description of the label.
         data_set_id (int | None): The id of the dataset this label belongs to.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -64,7 +64,7 @@ class LabelDefinition(LabelDefinitionCore):
         created_time: int,
         description: str | None,
         data_set_id: int | None,
-        cognite_client: CogniteClient | None,
+        cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -73,10 +73,10 @@ class LabelDefinition(LabelDefinitionCore):
             data_set_id=data_set_id,
         )
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -124,7 +124,7 @@ class LabelDefinitionWrite(LabelDefinitionCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> LabelDefinitionWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> LabelDefinitionWrite:
         return cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -144,7 +144,7 @@ class LabelDefinitionFilter(CogniteFilter):
         name (str | None): Returns the label definitions matching that name.
         external_id_prefix (str | None): filter label definitions with external ids starting with the prefix specified
         data_set_ids (list[dict[str, Any]] | None): Only include labels that belong to these datasets.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -152,12 +152,12 @@ class LabelDefinitionFilter(CogniteFilter):
         name: str | None = None,
         external_id_prefix: str | None = None,
         data_set_ids: list[dict[str, Any]] | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.name = name
         self.external_id_prefix = external_id_prefix
         self.data_set_ids = data_set_ids
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
 
 class LabelDefinitionWriteList(CogniteResourceList[LabelDefinitionWrite], ExternalIDTransformerMixin):
@@ -187,7 +187,7 @@ class Label(CogniteObject):
         self.external_id = external_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(external_id=resource["externalId"])
 
     @classmethod
@@ -222,7 +222,7 @@ class LabelFilter(CogniteFilter):
     Args:
         contains_any (list[str] | None): The resource item contains at least one of the listed labels. The labels are defined by a list of external ids.
         contains_all (list[str] | None): The resource item contains all the listed labels. The labels are defined by a list of external ids.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
 
     Examples:
 
@@ -241,11 +241,11 @@ class LabelFilter(CogniteFilter):
         self,
         contains_any: list[str] | None = None,
         contains_all: list[str] | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.contains_any = contains_any
         self.contains_all = contains_all
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, label_filter: dict[str, Any]) -> LabelFilter:
