@@ -4,8 +4,8 @@ import functools
 import logging
 import random
 import time
-from collections.abc import AsyncIterable, Callable, Coroutine, Iterable, Mapping, MutableMapping
-from contextlib import suppress
+from collections.abc import AsyncIterable, AsyncIterator, Callable, Coroutine, Iterable, Mapping, MutableMapping
+from contextlib import asynccontextmanager, suppress
 from http.cookiejar import Cookie, CookieJar
 from json import JSONDecodeError
 from typing import Any, Literal
@@ -177,7 +177,7 @@ class HTTPClientWithRetry:
     ) -> None:
         self.config = config
         self.refresh_auth_header = refresh_auth_header
-        self.httpx_client = httpx_client or get_global_async_httpx_client()
+        self.httpx_async_client = httpx_client or get_global_async_httpx_client()
         self._event_loop_executor = ConcurrencySettings._get_event_loop_executor()
 
     def __call__(
@@ -194,7 +194,7 @@ class HTTPClientWithRetry:
         follow_redirects: bool = False,
         timeout: float | None = None,
     ) -> httpx.Response:
-        fn: Coroutine[Any, Any, httpx.Response] = self.httpx_client.request(
+        fn: Coroutine[Any, Any, httpx.Response] = self.httpx_async_client.request(
             method,
             url,
             content=content,
@@ -207,7 +207,8 @@ class HTTPClientWithRetry:
         )
         return self._with_retry(fn, url=url, headers=headers)
 
-    def stream(
+    @asynccontextmanager
+    async def stream(
         self,
         method: Literal["GET", "POST"],
         /,
@@ -216,26 +217,32 @@ class HTTPClientWithRetry:
         json: Any = None,
         headers: MutableMapping[str, str] | None = None,
         timeout: float | None = None,
-    ) -> AbstractAsyncContextManager[httpx.Response]:
-        # TODO: This requires some more thought...
-        fn: Callable[..., AbstractContextManager[httpx.Response]] = functools.partial(
-            self.httpx_client.stream, method, url, json=json, headers=headers, timeout=timeout
+    ) -> AsyncIterator[httpx.Response]:
+        # This method is basically a clone of httpx.AsyncClient.stream() so that we may add our own retry logic.
+        request = self.httpx_async_client.build_request(
+            method=method, url=url, json=json, headers=headers, timeout=timeout
         )
-        return self._with_retry(fn, url=url, headers=headers, stream=True)
+        response: httpx.Response | None = None
+        coro = self.httpx_async_client.send(request, stream=True)
+        try:
+            yield (response := await self._with_retry(coro, url=url, headers=headers))
+        finally:
+            if response:
+                await response.aclose()
 
-    def _with_retry(
+    async def _with_retry(
         self,
         coro: Coroutine[Any, Any, httpx.Response],
         *,
         url: str,
         headers: MutableMapping[str, str] | None,
-        is_auto_retryable: bool = False,
     ) -> httpx.Response:
+        is_auto_retryable = False
         retry_tracker = RetryTracker(self.config)
         accepts_json = (headers or {}).get("accept") == "application/json"
         while True:
             try:
-                res = self._event_loop_executor.run_coro(coro)
+                res = await coro
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
                     # TODO: Can this be removed now if we check the 'cdf-is-auto-retryable' header?
