@@ -55,7 +55,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes import EventList, FileMetadataList, SequenceList, TimeSeriesList
     from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
 
@@ -82,7 +82,7 @@ class AggregateResultItem(CogniteObject):
         self.path = path
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             child_count=resource.get("childCount"),
             depth=resource.get("depth"),
@@ -165,7 +165,7 @@ class Asset(AssetCore):
         geo_location (GeoLocation | None): The geographic metadata of the asset.
         root_id (int | None): ID of the root asset.
         aggregates (AggregateResultItem | None): Aggregated metrics of the asset
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -185,7 +185,7 @@ class Asset(AssetCore):
         geo_location: GeoLocation | None,
         root_id: int | None,
         aggregates: AggregateResultItem | None,
-        cognite_client: CogniteClient | None,
+        cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -204,10 +204,10 @@ class Asset(AssetCore):
         self.last_updated_time: int = last_updated_time
         self.root_id = root_id
         self.aggregates = aggregates
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -419,7 +419,7 @@ class AssetWrite(AssetCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> AssetWrite:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> AssetWrite:
         return cls(
             external_id=resource.get("externalId"),
             name=resource["name"],

@@ -18,7 +18,7 @@ class GlobalConfig:
 
     Attributes:
         default_client_config (Optional[ClientConfig]): A default instance of a client configuration. This will be used
-            by the CogniteClient constructor if no config is passed directly. Defaults to None.
+            by the AsyncCogniteClient constructor if no config is passed directly. Defaults to None.
         disable_gzip (bool): Whether or not to disable gzipping of json bodies. Defaults to False.
         disable_pypi_version_check (bool): Whether or not to check for newer SDK versions when instantiating a new client.
             Defaults to False.
@@ -44,7 +44,7 @@ class GlobalConfig:
             raise TypeError(
                 "GlobalConfig is a singleton and cannot be instantiated directly. Use `global_config` instead, "
                 "`from cognite.client import global_config`, then apply the wanted settings, e.g. `global_config.max_workers = 5`. "
-                "Settings are only guaranteed to take effect if applied before instantiating a CogniteClient."
+                "Settings are only guaranteed to take effect if applied before instantiating a AsyncCogniteClient."
             )
         cls._instance = super().__new__(cls)
         return cls._instance
@@ -73,7 +73,7 @@ class GlobalConfig:
             All settings in the dictionary will be applied unless an invalid key is provided, a ValueError will instead be raised and no settings will be applied.
 
         Warning:
-            This must be done before instantiating a CogniteClient for the configuration to take effect.
+            This must be done before instantiating a AsyncCogniteClient for the configuration to take effect.
 
         Args:
             settings (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the GlobalConfig class.

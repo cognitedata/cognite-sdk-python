@@ -15,7 +15,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class TransformationNotificationCore(WriteableCogniteResource["TransformationNotificationWrite"], ABC):
@@ -43,7 +43,7 @@ class TransformationNotification(TransformationNotificationCore):
         destination (str): Email address where notifications should be sent.
         created_time (int): Time when the notification was created.
         last_updated_time (int): Time when the notification was last updated.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -54,7 +54,7 @@ class TransformationNotification(TransformationNotificationCore):
         destination: str,
         created_time: int,
         last_updated_time: int,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(destination)
         self.id: int = id
@@ -62,13 +62,13 @@ class TransformationNotification(TransformationNotificationCore):
         self.transformation_external_id: str = transformation_external_id
         self.created_time: int = created_time
         self.last_updated_time: int = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     def __hash__(self) -> int:
         return hash(self.id)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             transformation_id=resource["transformationId"],
@@ -117,7 +117,7 @@ class TransformationNotificationWrite(TransformationNotificationCore):
 
     @classmethod
     def _load(
-        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
     ) -> TransformationNotificationWrite:
         return cls(
             destination=resource["destination"],

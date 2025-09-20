@@ -15,7 +15,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.utils import _json
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class DataModelingResource(CogniteResource, ABC):
@@ -92,7 +92,7 @@ class DataModelingSort(CogniteObject):
         return str(self)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         if not isinstance(resource, dict):
             raise TypeError(f"Resource must be mapping, not {type(resource)}")
 

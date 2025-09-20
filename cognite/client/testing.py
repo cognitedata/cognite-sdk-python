@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient
 from cognite.client._api.agents import AgentsAPI
 from cognite.client._api.ai import AIAPI
 from cognite.client._api.ai.tools import AIToolsAPI
@@ -94,8 +94,8 @@ from cognite.client._api.workflows.triggers import WorkflowTriggerAPI
 from cognite.client._api.workflows.versions import WorkflowVersionAPI
 
 
-class CogniteClientMock(MagicMock):
-    """Mock for CogniteClient object
+class AsyncCogniteClientMock(MagicMock):
+    """Mock for AsyncCogniteClient object
 
     All APIs are replaced with specced MagicMock objects.
     """
@@ -104,7 +104,7 @@ class CogniteClientMock(MagicMock):
         if "parent" in kwargs:
             super().__init__(*args, **kwargs)
             return None
-        super().__init__(spec=CogniteClient, *args, **kwargs)
+        super().__init__(spec=AsyncCogniteClient, *args, **kwargs)
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - For nested APIs:
@@ -219,13 +219,13 @@ class CogniteClientMock(MagicMock):
 
 
 @contextmanager
-def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
-    """Context manager for monkeypatching the CogniteClient.
+def monkeypatch_cognite_client() -> Iterator[AsyncCogniteClientMock]:
+    """Context manager for monkeypatching the AsyncCogniteClient.
 
     Will patch all clients and replace them with specced MagicMock objects.
 
     Yields:
-        CogniteClientMock: The mock with which the CogniteClient has been replaced
+        AsyncCogniteClientMock: The mock with which the AsyncCogniteClient has been replaced
 
     Examples:
 
@@ -236,7 +236,7 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
             >>> with monkeypatch_cognite_client():
-            >>>     client = CogniteClient()
+            >>>     client = AsyncCogniteClient()
             >>>     client.time_series.create(TimeSeriesWrite(external_id="blabla"))
 
         This example shows how to set the return value of a given method::
@@ -249,7 +249,7 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>>     c_mock.iam.token.inspect.return_value = TokenInspection(
             >>>         subject="subject", projects=[], capabilities=[]
             >>>     )
-            >>>     client = CogniteClient()
+            >>>     client = AsyncCogniteClient()
             >>>     res = client.iam.token.inspect()
             >>>     assert "subject" == res.subject
 
@@ -261,14 +261,14 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>>
             >>> with monkeypatch_cognite_client() as c_mock:
             >>>     c_mock.iam.token.inspect.side_effect = CogniteAPIError(message="Something went wrong", code=400)
-            >>>     client = CogniteClient()
+            >>>     client = AsyncCogniteClient()
             >>>     try:
             >>>         res = client.iam.token.inspect()
             >>>     except CogniteAPIError as e:
             >>>         assert 400 == e.code
             >>>         assert "Something went wrong" == e.message
     """
-    cognite_client_mock = CogniteClientMock()
-    CogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock  # type: ignore[method-assign]
+    cognite_client_mock = AsyncCogniteClientMock()
+    AsyncCogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock  # type: ignore[method-assign]
     yield cognite_client_mock
-    CogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)  # type: ignore[method-assign]
+    AsyncCogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)  # type: ignore[method-assign]

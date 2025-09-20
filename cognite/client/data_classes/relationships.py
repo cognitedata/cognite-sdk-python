@@ -28,7 +28,7 @@ from cognite.client.data_classes.time_series import TimeSeries
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 RelationshipType: TypeAlias = Literal["asset", "timeseries", "file", "event", "sequence"]
 
@@ -111,7 +111,7 @@ class Relationship(RelationshipCore):
         confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
         data_set_id (int | None): The id of the dataset this relationship belongs to.
         labels (SequenceNotStr[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -130,7 +130,7 @@ class Relationship(RelationshipCore):
         confidence: float | None,
         data_set_id: int | None,
         labels: SequenceNotStr[Label | str | LabelDefinition | dict] | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -148,7 +148,7 @@ class Relationship(RelationshipCore):
         self.target = target
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     def as_write(self) -> RelationshipWrite:
         """Returns this Relationship in its writing version."""
@@ -188,7 +188,7 @@ class Relationship(RelationshipCore):
         return external_id, cast(RelationshipType, resource_type)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Relationship:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Relationship:
         return cls(
             external_id=resource["externalId"],
             created_time=resource["createdTime"],
@@ -219,7 +219,7 @@ class Relationship(RelationshipCore):
 
     @staticmethod
     def _convert_resource(
-        resource: dict[str, Any], resource_type: str | None, cognite_client: CogniteClient | None = None
+        resource: dict[str, Any], resource_type: str | None, cognite_client: AsyncCogniteClient | None = None
     ) -> dict[str, Any] | TimeSeries | Asset | Sequence | FileMetadata | Event:
         resource_type = resource_type.lower() if resource_type else resource_type
         if resource_type == "timeseries":
@@ -279,7 +279,7 @@ class RelationshipWrite(RelationshipCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> RelationshipWrite:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> RelationshipWrite:
         return cls(
             external_id=resource["externalId"],
             source_external_id=resource["sourceExternalId"],
