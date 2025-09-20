@@ -17,14 +17,14 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case
 from cognite.client.utils._validation import assert_type
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class AnnotationsAPI(APIClient):
     _RESOURCE_PATH = "/annotations"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._reverse_lookup_warning = FeaturePreviewWarning(
             api_maturity="beta", sdk_maturity="beta", feature_name="Annotation reverse lookup"

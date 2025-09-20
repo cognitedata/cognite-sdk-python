@@ -35,7 +35,7 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 ValueType: TypeAlias = Literal["STRING", "DOUBLE", "LONG"]
 
@@ -66,7 +66,7 @@ class SequenceColumnCore(WriteableCogniteResource["SequenceColumnWrite"], ABC):
         self.metadata = metadata
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         # Snake case is supported for backwards compatibility
         resource = convert_all_keys_to_camel_case(resource)
         return super()._load(resource, cognite_client)
@@ -106,7 +106,7 @@ class SequenceColumn(SequenceColumnCore):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             created_time=resource.get("createdTime"),
@@ -159,7 +159,7 @@ class SequenceColumnWrite(SequenceColumnCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SequenceColumnWrite:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> SequenceColumnWrite:
         return cls(
             external_id=resource["externalId"],
             name=resource.get("name"),
@@ -247,7 +247,7 @@ class Sequence(SequenceCore):
         metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. The maximum length of the key is 32 bytes, the value 512 bytes, with up to 16 key-value pairs.
         columns (typing.Sequence[SequenceColumn]): List of column definitions
         data_set_id (int | None): Data set that this sequence belongs to
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -262,7 +262,7 @@ class Sequence(SequenceCore):
         metadata: dict[str, Any] | None,
         columns: typing.Sequence[SequenceColumn],
         data_set_id: int | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -291,10 +291,10 @@ class Sequence(SequenceCore):
             self.columns = SequenceColumnList._load(columns)
         else:
             raise ValueError(f"columns must be a sequence of SequenceColumn objects not {type(columns)}")
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -408,7 +408,7 @@ class SequenceWrite(SequenceCore):
             raise ValueError(f"columns must be a sequence of SequenceColumnWrite objects not {type(columns)}")
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             columns=SequenceColumnWriteList._load(resource["columns"]),
             name=resource.get("name"),
@@ -640,7 +640,7 @@ class SequenceRow(CogniteResource):
         self.values = values
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             row_number=resource["rowNumber"],
             values=resource["values"],
@@ -756,7 +756,7 @@ class SequenceRows(CogniteResource):
         return dumped
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             rows=[SequenceRow._load(r) for r in resource["rows"]],
             columns=SequenceColumnList._load(resource["columns"]),

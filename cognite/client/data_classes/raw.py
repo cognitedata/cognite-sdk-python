@@ -16,7 +16,7 @@ from cognite.client.utils._importing import local_import
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class RowCore(WriteableCogniteResource["RowWrite"], ABC):
@@ -77,7 +77,7 @@ class Row(RowCore):
         key (str): Unique row key
         columns (dict[str, Any]): Row data stored as a JSON object.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -85,14 +85,14 @@ class Row(RowCore):
         key: str,
         columns: dict[str, Any],
         last_updated_time: int,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(key, columns)
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             key=resource["key"],
             columns=resource["columns"],
@@ -120,7 +120,7 @@ class RowWrite(RowCore):
         super().__init__(key, columns)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> RowWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> RowWrite:
         return cls(resource["key"], resource["columns"])
 
     def as_write(self) -> RowWrite:
@@ -175,23 +175,23 @@ class Table(TableCore):
     Args:
         name (str): Unique name of the table
         created_time (int | None): Time the table was created.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
         name: str,
         created_time: int | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(name)
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
         self._db_name: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(name=resource["name"], created_time=resource.get("createdTime"), cognite_client=cognite_client)
 
     def as_write(self) -> TableWrite:
@@ -238,7 +238,7 @@ class TableWrite(TableCore):
         super().__init__(name)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TableWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> TableWrite:
         return cls(resource["name"])
 
     def as_write(self) -> TableWrite:
@@ -275,21 +275,21 @@ class Database(DatabaseCore):
     Args:
         name (str): Unique name of a database.
         created_time (int | None): Time the database was created.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
         name: str,
         created_time: int | None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(name)
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(name=resource["name"], created_time=resource.get("createdTime"), cognite_client=cognite_client)
 
     def as_write(self) -> DatabaseWrite:
@@ -323,7 +323,7 @@ class DatabaseWrite(DatabaseCore):
         super().__init__(name)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> DatabaseWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> DatabaseWrite:
         return cls(resource["name"])
 
     def as_write(self) -> DatabaseWrite:

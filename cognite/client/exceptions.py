@@ -9,7 +9,7 @@ from cognite.client.utils._time import timed_cache
 from cognite.client.utils._url import resolve_url
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import CogniteClient
+    from cognite.client._cognite_client import AsyncCogniteClient
     from cognite.client.data_classes import AssetHierarchy
 
 
@@ -21,7 +21,7 @@ class CogniteProjectAccessError(CogniteException):
     """Raised when we get a 401 response from the API which means we don't have project access at all."""
 
     def __init__(
-        self, client: CogniteClient, project: str, x_request_id: str | None, cluster: str | None = None
+        self, client: AsyncCogniteClient, project: str, x_request_id: str | None, cluster: str | None = None
     ) -> None:
         self.x_request_id = x_request_id
         self.cluster = cluster
@@ -30,7 +30,7 @@ class CogniteProjectAccessError(CogniteException):
 
     @staticmethod
     @timed_cache(ttl=5)  # Don't spam requests when using concurrency
-    def _attempt_to_get_projects(client: CogniteClient, current_project: str) -> list[str] | None:
+    def _attempt_to_get_projects(client: AsyncCogniteClient, current_project: str) -> list[str] | None:
         # To avoid an infinte loop, we can't just use client.iam.token.inspect(), but use http_client directly:
         api_client = client.iam.token
         _, full_url = resolve_url("GET", "/api/v1/token/inspect", api_client._api_version, api_client._config)
@@ -293,7 +293,7 @@ class CogniteMissingClientError(CogniteException):
 
     def __str__(self) -> str:
         return (
-            f"A CogniteClient has not been set on this object ({self.type}), did you create it yourself? "
+            f"A AsyncCogniteClient has not been set on this object ({self.type}), did you create it yourself? "
             "Hint: You can pass an instantiated client along when you initialise the object."
         )
 

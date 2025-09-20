@@ -46,7 +46,7 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
@@ -58,7 +58,7 @@ UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
 ALLOWED_HANDLE_ARGS = frozenset({"data", "client", "secrets", "function_call_info"})
 
 
-def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identifier) -> int:
+def _get_function_internal_id(cognite_client: AsyncCogniteClient, identifier: Identifier) -> int:
     primitive = identifier.as_primitive()
     if identifier.is_id:
         return primitive
@@ -79,7 +79,7 @@ class FunctionsAPI(APIClient):
         self,
         config: ClientConfig,
         api_version: str | None,
-        cognite_client: CogniteClient,
+        cognite_client: AsyncCogniteClient,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self.calls = FunctionCallsAPI(config, api_version, cognite_client)
