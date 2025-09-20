@@ -4,8 +4,8 @@ import functools
 import gzip
 import logging
 import platform
-from collections.abc import Iterable, Iterator, MutableMapping
-from contextlib import contextmanager
+from collections.abc import AsyncIterator, MutableMapping
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
 
@@ -16,11 +16,9 @@ from cognite.client._http_client import HTTPClientWithRetry, HTTPClientWithRetry
 from cognite.client.config import global_config
 from cognite.client.exceptions import (
     CogniteAPIError,
-    CogniteConnectionError,
     CogniteDuplicatedError,
     CogniteNotFoundError,
     CogniteProjectAccessError,
-    CogniteRequestError,
 )
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import drop_none_values
@@ -214,8 +212,8 @@ class BasicAPIClient:
         self._log_successful_request(res)
         return res
 
-    @contextmanager
-    def _stream(
+    @asynccontextmanager
+    async def _stream(
         self,
         method: Literal["GET", "POST"],
         /,
@@ -227,26 +225,23 @@ class BasicAPIClient:
         full_headers: dict[str, Any] | None = None,
         timeout: float | None = None,
         api_subversion: str | None = None,
-    ) -> Iterator[httpx.Response]:
+    ) -> AsyncIterator[httpx.Response]:
         assert url_path or full_url
         full_url = full_url or resolve_url("GET", cast(str, url_path), self._api_version, self._config)[1]
         if full_headers is None:
             full_headers = self._configure_headers(headers, api_subversion)
+
+        ctx = self._http_client_with_retry.stream(
+            method, full_url, json=json, headers=full_headers, timeout=timeout or self._config.timeout
+        )
         try:
-            with self._http_client_with_retry.stream(
-                method, full_url, json=json, headers=full_headers, timeout=timeout or self._config.timeout
-            ) as resp:
-                try:
-                    resp.raise_for_status()
-                except httpx.HTTPStatusError as err:
-                    self._handle_status_error(err, stream=True)
-                else:
-                    self._log_successful_request(resp, stream=True)
-                    yield resp
-        except (httpx.NetworkError, httpx.DecodingError) as err:
-            raise CogniteConnectionError(err)
-        except httpx.RequestError as err:
-            raise CogniteRequestError from err
+            async with ctx as resp:
+                # Request is sent when entering the context manager, so if we get here, it was successful:
+                self._log_successful_request(resp, payload=json, stream=True)
+                yield resp
+
+        except httpx.HTTPStatusError as err:
+            self._handle_status_error(err, stream=True)
 
     def _get(
         self,
