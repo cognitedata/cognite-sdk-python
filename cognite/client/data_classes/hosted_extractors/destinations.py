@@ -19,7 +19,7 @@ from cognite.client.data_classes._base import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 @dataclass
@@ -27,7 +27,7 @@ class SessionWrite(CogniteObject):
     nonce: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(nonce=resource["nonce"])
 
 
@@ -59,7 +59,7 @@ class DestinationWrite(_DestinationCore):
         self.credentials = credentials
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> DestinationWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> DestinationWrite:
         return cls(
             external_id=resource["externalId"],
             credentials=SessionWrite._load(resource["credentials"]),
@@ -110,7 +110,7 @@ class Destination(_DestinationCore):
         self.session_id = session_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Destination:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Destination:
         return cls(
             external_id=resource["externalId"],
             created_time=resource["createdTime"],

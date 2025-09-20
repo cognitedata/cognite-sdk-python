@@ -8,7 +8,7 @@ from typing_extensions import Self
 from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geometry, UnknownCogniteObject
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class TimestampRange(CogniteObject):
@@ -25,7 +25,7 @@ class TimestampRange(CogniteObject):
         self.min = min
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(max=resource.get("max"), min=resource.get("min"))
 
 
@@ -40,7 +40,7 @@ class AggregateResult(CogniteObject):
         self.count = count
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(count=resource["count"])
 
 
@@ -57,7 +57,7 @@ class AggregateUniqueValuesResult(AggregateResult):
         self.value = value
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(count=resource["count"], value=resource.get("value"))
 
 
@@ -155,7 +155,7 @@ class GeoLocation(CogniteObject):
         self.properties = properties
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeoLocation:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> GeoLocation:
         if "type" in resource:
             return cls(
                 type=resource["type"],
@@ -185,7 +185,7 @@ class GeoLocationFilter(CogniteObject):
         self.shape = shape
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeoLocationFilter:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> GeoLocationFilter:
         return cls(relation=resource["relation"], shape=resource["shape"])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

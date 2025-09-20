@@ -29,7 +29,7 @@ from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class EndTimeFilter(CogniteObject):
@@ -50,7 +50,7 @@ class EndTimeFilter(CogniteObject):
         self.is_null = is_null
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             max=resource.get("max"),
             min=resource.get("min"),
@@ -117,7 +117,7 @@ class Event(EventCore):
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
         asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
         source (str | None): The source of this event.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -135,7 +135,7 @@ class Event(EventCore):
         metadata: dict[str, str] | None,
         asset_ids: Sequence[int] | None,
         source: str | None,
-        cognite_client: CogniteClient | None,
+        cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -152,10 +152,10 @@ class Event(EventCore):
         self.id: int = id
         self.created_time: int = created_time
         self.last_updated_time: int = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             last_updated_time=resource["lastUpdatedTime"],
@@ -237,7 +237,7 @@ class EventWrite(EventCore):
         return self
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource.get("externalId"),
             data_set_id=resource.get("dataSetId"),

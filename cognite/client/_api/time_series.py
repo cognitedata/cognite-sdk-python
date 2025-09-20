@@ -29,7 +29,7 @@ from cognite.client.utils._validation import prepare_filter_sort, process_asset_
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 SortSpec: TypeAlias = (
@@ -46,7 +46,7 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 class TimeSeriesAPI(APIClient):
     _RESOURCE_PATH = "/timeseries"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.data = DatapointsAPI(config, api_version, cognite_client)
         self.subscriptions = DatapointsSubscriptionAPI(config, api_version, cognite_client)

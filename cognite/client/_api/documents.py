@@ -20,7 +20,7 @@ from cognite.client.data_classes.documents import (
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
     {filters.InAssetSubtree, filters.Search, filters.GeoJSONIntersects, filters.GeoJSONDisjoint, filters.GeoJSONWithin}
@@ -30,7 +30,7 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
 class DocumentsAPI(APIClient):
     _RESOURCE_PATH = "/documents"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.previews = DocumentPreviewAPI(config, api_version, cognite_client)
 
