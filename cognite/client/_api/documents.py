@@ -351,7 +351,7 @@ class DocumentsAPI(APIClient):
         """
         return self._post(f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json={"id": id}).content
 
-    def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
+    async def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
         """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
@@ -377,13 +377,14 @@ class DocumentsAPI(APIClient):
         """
         from cognite.client import global_config
 
-        with self._stream(
+        stream = self._stream(
             "GET",
             url_path=f"{self._RESOURCE_PATH}/{id}/content",
             headers={"accept": "text/plain"},
             timeout=self._config.file_transfer_timeout,
-        ) as resp:
-            for chunk in resp.iter_bytes(chunk_size=global_config.file_download_chunk_size):
+        )
+        async with stream as response:
+            async for chunk in response.aiter_bytes(chunk_size=global_config.file_download_chunk_size):
                 buffer.write(chunk)
 
     @overload
