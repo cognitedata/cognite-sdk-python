@@ -33,7 +33,7 @@ from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes import Asset, Datapoint
 
 
@@ -96,7 +96,7 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         return output
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.instance_id, dict):
             instance.instance_id = NodeId.load(instance.instance_id)
@@ -125,7 +125,7 @@ class TimeSeries(TimeSeriesCore):
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
         legacy_name (str | None): This field is not used by the API and will be removed October 2024.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -146,7 +146,7 @@ class TimeSeries(TimeSeriesCore):
         security_categories: Sequence[int] | None,
         data_set_id: int | None,
         legacy_name: str | None,
-        cognite_client: CogniteClient | None,
+        cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -166,10 +166,10 @@ class TimeSeries(TimeSeriesCore):
         self.last_updated_time: int = last_updated_time
         self.is_string = is_string
         self.is_step = is_step
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -323,7 +323,7 @@ class TimeSeriesWrite(TimeSeriesCore):
         self.is_step = is_step
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource.get("externalId"),
             instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,

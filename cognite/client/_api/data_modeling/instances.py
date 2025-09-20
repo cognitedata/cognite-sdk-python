@@ -81,7 +81,7 @@ from cognite.client.utils._text import random_string
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
     from cognite.client.data_classes.data_modeling.debug import DebugParameters
 
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
@@ -99,7 +99,7 @@ class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
         self._node_cls = node_cls
         self._edge_cls = edge_cls
 
-    def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
+    def _load(self, data: str | dict, cognite_client: AsyncCogniteClient | None = None) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return self._node_cls._load(data)  # type: ignore[return-value]
@@ -111,14 +111,14 @@ class _TypedNodeOrEdgeListAdapter:
         self._instance_cls = instance_cls
         self._list_cls = NodeList if issubclass(instance_cls, TypedNode) else EdgeList
 
-    def __call__(self, items: Any, cognite_client: CogniteClient | None = None) -> Any:
+    def __call__(self, items: Any, cognite_client: AsyncCogniteClient | None = None) -> Any:
         return self._list_cls(items, cognite_client=cognite_client)
 
-    def _load(self, data: str | dict, cognite_client: CogniteClient | None = None) -> T_Node | T_Edge:
+    def _load(self, data: str | dict, cognite_client: AsyncCogniteClient | None = None) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client=cognite_client)  # type: ignore[return-value, attr-defined]
 
-    def _load_raw_api_response(self, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> T_Node | T_Edge:
+    def _load_raw_api_response(self, responses: list[dict[str, Any]], cognite_client: AsyncCogniteClient) -> T_Node | T_Edge:
         from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
@@ -136,7 +136,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
     @classmethod
     def _load(
-        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None
+        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: AsyncCogniteClient | None = None
     ) -> _NodeOrEdgeApplyResultList:
         resource_list = load_yaml_or_json(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[NodeApplyResult | EdgeApplyResult] = [
@@ -151,7 +151,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
 class _NodeOrEdgeApplyResultAdapter:
     @staticmethod
-    def load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApplyResult | EdgeApplyResult:
+    def load(data: str | dict, cognite_client: AsyncCogniteClient | None = None) -> NodeApplyResult | EdgeApplyResult:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApplyResult._load(data)
@@ -160,7 +160,7 @@ class _NodeOrEdgeApplyResultAdapter:
 
 class _NodeOrEdgeApplyAdapter:
     @staticmethod
-    def _load(data: dict, cognite_client: CogniteClient | None = None) -> NodeApply | EdgeApply:
+    def _load(data: dict, cognite_client: AsyncCogniteClient | None = None) -> NodeApply | EdgeApply:
         if data["instanceType"] == "node":
             return NodeApply._load(data)
         return EdgeApply._load(data)
@@ -169,7 +169,7 @@ class _NodeOrEdgeApplyAdapter:
 class InstancesAPI(APIClient):
     _RESOURCE_PATH = "/models/instances"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._AGGREGATE_LIMIT = 1000
         self._SEARCH_LIMIT = 1000
@@ -603,14 +603,14 @@ class InstancesAPI(APIClient):
                 self,
                 resources: list[Node | Edge],
                 typing: TypeInformation | None,
-                cognite_client: CogniteClient | None,
+                cognite_client: AsyncCogniteClient | None,
             ):
                 super().__init__(resources, cognite_client)
                 self.typing = typing
 
             @classmethod
             def _load(
-                cls, resource_list: Iterable[dict[str, Any]], cognite_client: CogniteClient | None = None
+                cls, resource_list: Iterable[dict[str, Any]], cognite_client: AsyncCogniteClient | None = None
             ) -> _NodeOrEdgeList:
                 resources: list[Node | Edge] = [
                     node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)
@@ -620,7 +620,7 @@ class InstancesAPI(APIClient):
 
             @classmethod
             def _load_raw_api_response(
-                cls, responses: list[dict[str, Any]], cognite_client: CogniteClient
+                cls, responses: list[dict[str, Any]], cognite_client: AsyncCogniteClient
             ) -> _NodeOrEdgeList:
                 typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
                 resources = [

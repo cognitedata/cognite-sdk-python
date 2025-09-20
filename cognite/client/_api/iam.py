@@ -44,7 +44,7 @@ from cognite.client.data_classes.iam import (
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 ComparableCapability: TypeAlias = (
@@ -98,7 +98,7 @@ def _convert_capability_to_tuples(
 
 
 class IAMAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.groups = GroupsAPI(config, api_version, cognite_client)
         self.security_categories = SecurityCategoriesAPI(config, api_version, cognite_client)
@@ -126,7 +126,7 @@ class IAMAPI(APIClient):
             desired_capabilities (ComparableCapability): List of wanted capabilities to check against existing.
             project (str | None): If a ProjectCapability or ProjectCapabilityList is passed, we need to know which CDF project
                 to pull capabilities from (existing might be from several). If project is not passed, and ProjectCapabilityList
-                is used, it will be inferred from the CogniteClient used to call retrieve it via token/inspect.
+                is used, it will be inferred from the AsyncCogniteClient used to call retrieve it via token/inspect.
             ignore_allscope_meaning (bool): Option on how to treat scopes that encompass other scopes, like allScope. When True,
                 this function will return e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. The
                 same logic applies to RawAcl scoped to a specific database->table, even when the user have access to all tables
@@ -279,7 +279,7 @@ class _GroupListAdapter(GroupList):
     def _load(  # type: ignore[override]
         cls,
         resource_list: Iterable[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> GroupList:
         return GroupList._load(resource_list, cognite_client=cognite_client, allow_unknown=True)
@@ -290,7 +290,7 @@ class _GroupAdapter(Group):
     def _load(  # type: ignore[override]
         cls,
         resource: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> Group:
         return Group._load(resource, cognite_client=cognite_client, allow_unknown=True)
@@ -304,7 +304,7 @@ class _GroupWriteAdapter(GroupWrite):
     def _load(  # type: ignore[override]
         cls,
         resource: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> GroupWrite:
         return GroupWrite._load(resource, cognite_client=cognite_client, allow_unknown=True)
@@ -531,7 +531,7 @@ class TokenAPI(APIClient):
 class SessionsAPI(APIClient):
     _RESOURCE_PATH = "/sessions"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
         self._DELETE_LIMIT = (
@@ -550,7 +550,7 @@ class SessionsAPI(APIClient):
                 if session_type is set to 'CLIENT_CREDENTIALS'.
             session_type (SessionType | Literal['DEFAULT']): The type of session to create. Can be
                 either 'CLIENT_CREDENTIALS', 'TOKEN_EXCHANGE', 'ONESHOT_TOKEN_EXCHANGE' or 'DEFAULT'.
-                Defaults to 'DEFAULT' which will use -this- CogniteClient object to create the session.
+                Defaults to 'DEFAULT' which will use -this- AsyncCogniteClient object to create the session.
                 If this client was created using a token, 'TOKEN_EXCHANGE' will be used, and if
                 this client was created using client credentials, 'CLIENT_CREDENTIALS' will be used.
 

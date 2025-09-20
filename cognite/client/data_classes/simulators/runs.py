@@ -24,7 +24,7 @@ from cognite.client.utils._text import to_snake_case
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 _WARNING = FeaturePreviewWarning(api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators")
 
@@ -34,7 +34,7 @@ class SimulationValueUnitName(CogniteObject):
     name: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             name=resource.get("name"),
         )
@@ -48,7 +48,7 @@ class SimulationValueUnit(SimulationValueUnitName):
     external_id: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource.get("externalId"),
             name=resource.get("name"),
@@ -65,7 +65,7 @@ class SimulationInputOverride(CogniteObject):
     unit: SimulationValueUnitName | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
@@ -127,7 +127,7 @@ class SimulationRunWrite(SimulationRunCore):
         self.inputs = inputs
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRunWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> SimulationRunWrite:
         inputs = resource.get("inputs", None)
         return cls(
             run_type=resource.get("runType"),
@@ -180,7 +180,7 @@ class SimulationRun(SimulationRunCore):
         status_message (str | None): The status message of the simulation run
         simulation_time (int | None): Simulation time in milliseconds. Timestamp when the input data was sampled. Used for indexing input and output time series.
         run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
-        cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
+        cognite_client (AsyncCogniteClient | None): An optional AsyncCogniteClient to associate with this data class.
 
     """
 
@@ -203,7 +203,7 @@ class SimulationRun(SimulationRunCore):
         status_message: str | None = None,
         simulation_time: int | None = None,
         run_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             run_type=run_type,
@@ -224,7 +224,7 @@ class SimulationRun(SimulationRunCore):
         self.data_set_id = data_set_id
         self.user_id = user_id
         self.log_id = log_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     def as_write(self) -> SimulationRunWrite:
         return SimulationRunWrite(
@@ -284,7 +284,7 @@ class SimulationRun(SimulationRunCore):
             time.sleep(sleep_time)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRun:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> SimulationRun:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -330,7 +330,7 @@ class SimulationValueBase(CogniteObject):
         self.timeseries_external_id = timeseries_external_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
@@ -378,7 +378,7 @@ class SimulationInput(SimulationValueBase):
         self.overridden = overridden
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
@@ -424,7 +424,7 @@ class SimulationRunDataItem(CogniteResource):
         self.outputs = outputs
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         inputs = [SimulationInput._load(input_) for input_ in resource["inputs"]]
         outputs = [SimulationOutput._load(output_) for output_ in resource["outputs"]]
         return cls(

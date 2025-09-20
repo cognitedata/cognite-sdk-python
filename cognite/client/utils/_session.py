@@ -7,11 +7,11 @@ from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.exceptions import CogniteAuthError
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 def create_session_and_return_nonce(
-    client: CogniteClient, api_name: str, client_credentials: dict | ClientCredentials | None = None
+    client: AsyncCogniteClient, api_name: str, client_credentials: dict | ClientCredentials | None = None
 ) -> str:
     if client_credentials is None:
         if isinstance(client._config.credentials, OAuthClientCertificate):
