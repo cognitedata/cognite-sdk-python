@@ -12,11 +12,7 @@
     },
     {
       "enabled": false,
-      "matchPackageNames": ["mcr.microsoft.com/devcontainers/python"]
-    },
-    {
-      "enabled": false,
-      "matchPackageNames": ["cognite-toolkit"]
+      "matchPackageNames": ["mcr.microsoft.com/devcontainers/python", "cognite-toolkit"]
     }
   ],
   "vulnerabilityAlerts": {
