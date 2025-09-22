@@ -17,6 +17,45 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class DebugInfo(CogniteResource):
+    """
+    Contains the requested debug information.
+
+    Args:
+        notices (DebugNoticeList | None): A list of notices that provide insights into the query's execution.
+            These can highlight potential performance issues, offer optimization suggestions, or explain aspects
+            of the query processing. Each notice falls into a category, such as indexing, sorting, filtering, or
+            cursoring, to help identify areas for improvement.
+        translated_query (TranslatedQuery | None): The internal representation of the query.
+        execution_plan (ExecutionPlan | None): The execution plan for the query.
+    """
+
+    notices: DebugNoticeList | None = None
+    translated_query: TranslatedQuery | None = None
+    execution_plan: ExecutionPlan | None = None
+
+    @classmethod
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> DebugInfo:
+        return cls(
+            notices=DebugNoticeList._load(data["notices"], cognite_client) if "notices" in data else None,
+            translated_query=TranslatedQuery._load(data["translatedQuery"]) if "translatedQuery" in data else None,
+            execution_plan=ExecutionPlan._load(data["executionPlan"]) if "executionPlan" in data else None,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        obj: dict[str, Any] = {}
+        if self.notices is not None:
+            obj["notices"] = self.notices.dump(camel_case=camel_case)
+        if self.translated_query is not None:
+            key = "translatedQuery" if camel_case else "translated_query"
+            obj[key] = self.translated_query.dump(camel_case=camel_case)
+        if self.execution_plan is not None:
+            key = "executionPlan" if camel_case else "execution_plan"
+            obj[key] = self.execution_plan.dump(camel_case=camel_case)
+        return obj
+
+
+@dataclass
 class TranslatedQuery(CogniteResource):
     """
     Internal representation of query. Depends on postgres-controlled output, hence the generic dict types.
