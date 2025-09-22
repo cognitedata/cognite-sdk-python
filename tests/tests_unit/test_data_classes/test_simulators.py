@@ -471,11 +471,10 @@ class TestSimulator:
 
 class TestSimulationRunWrite:
     def test_error_handling(self) -> None:
+        error_message = "Must specify either 'routine_external_id' alone, or both 'routine_revision_external_id' and 'model_revision_external_id' together."
         with pytest.raises(
             ValueError,
-            match=re.escape(
-                "Cannot specify both 'routine_external_id' and revision-based parameters ('routine_revision_external_id', 'model_revision_external_id'). Use either routine_external_id alone, or both routine_revision_external_id and model_revision_external_id."
-            ),
+            match=re.escape(error_message),
         ):
             SimulationRunWrite(
                 routine_external_id="routine_external_id_1",
@@ -486,9 +485,7 @@ class TestSimulationRunWrite:
 
         with pytest.raises(
             ValueError,
-            match=re.escape(
-                "Must specify either 'routine_external_id' alone, or both 'routine_revision_external_id' and 'model_revision_external_id' together."
-            ),
+            match=re.escape(error_message),
         ):
             SimulationRunWrite(
                 routine_revision_external_id="routine_revision_external_id_1",
