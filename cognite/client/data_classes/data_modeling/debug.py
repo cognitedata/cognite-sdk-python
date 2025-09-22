@@ -16,6 +16,58 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
+@dataclass
+class TranslatedQuery(CogniteResource):
+    """
+    Internal representation of query. Depends on postgres-controlled output, hence the generic dict types.
+
+    Args:
+        query (object): Parameterized query.
+        parameters (object): Parameter values for query.
+    """
+
+    query: dict[str, Any]
+    parameters: dict[str, Any]
+
+    @classmethod
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> TranslatedQuery:
+        return cls(query=data["query"], parameters=data["parameters"])
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"query": self.query, "parameters": self.parameters}
+
+
+@dataclass
+class ExecutionPlan(CogniteResource):
+    """
+    Execution plan for the query.
+
+    Args:
+        full_plan (dict[str, Any]): The full execution plan.
+        profiled (bool): The execution plan has been profiled.
+        by_identifier (dict[str, Any]): The execution plan grouped by query identifiers.
+    """
+
+    full_plan: dict[str, Any]
+    profiled: bool
+    by_identifier: dict[str, Any]
+
+    @classmethod
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ExecutionPlan:
+        return cls(
+            full_plan=data["fullPlan"],
+            profiled=data["profiled"],
+            by_identifier=data["byIdentifier"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "fullPlan" if camel_case else "full_plan": self.full_plan,
+            "profiled": self.profiled,
+            "byIdentifier" if camel_case else "by_identifier": self.by_identifier,
+        }
+
+
 @dataclass(kw_only=True)
 class DebugParameters:
     """
