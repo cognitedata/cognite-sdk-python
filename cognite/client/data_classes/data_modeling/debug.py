@@ -74,14 +74,22 @@ class DebugParameters:
     Debug parameters for debugging and analyzing queries.
 
     Args:
-        emit_results (bool): Include the query result in the response. emit_results=False is required for advanced query analysis features.
+        emit_results (bool): Include the query result in the response. Using emit_results=False is required for advanced query analysis features.
         timeout (int | None): Query timeout in milliseconds. Can be used to override the default timeout when analysing queries. Requires emit_results=False.
+        include_translated_query (bool): Include the internal representation of the query.
+        include_plan (bool): Include the execution plan for the query.
         profile (bool): Most thorough level of query analysis. Requires emit_results=False.
     """
 
     emit_results: bool = True
     timeout: int | None = None
+    include_translated_query: bool = False
+    include_plan: bool = False
     profile: bool = False
+
+    @property
+    def requires_alpha_header(self) -> bool:
+        return self.include_translated_query or self.include_plan
 
     def dump(self, camel_case: bool = True) -> dict[str, bool | int]:
         res: dict[str, bool | int] = {
@@ -90,6 +98,12 @@ class DebugParameters:
         }
         if self.timeout is not None:
             res["timeout"] = self.timeout
+        if self.include_translated_query:
+            key = "includeTranslatedQuery" if camel_case else "include_translated_query"
+            res[key] = self.include_translated_query
+        if self.include_plan:
+            key = "includePlan" if camel_case else "include_plan"
+            res[key] = self.include_plan
         return res
 
 
