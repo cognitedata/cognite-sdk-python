@@ -29,7 +29,6 @@ from cognite.client.data_classes.aggregations import (
     HistogramValue,
     MetricAggregation,
 )
-from cognite.client.data_classes.data_modeling.debug import DebugNoticeList
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
     NodeId,
@@ -75,6 +74,7 @@ from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.utils._auxiliary import is_unlimited, load_yaml_or_json
 from cognite.client.utils._concurrency import ConcurrencySettings
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 from cognite.client.utils._retry import Backoff
 from cognite.client.utils._text import random_string
@@ -119,14 +119,16 @@ class _TypedNodeOrEdgeListAdapter:
         return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client=cognite_client)  # type: ignore[return-value, attr-defined]
 
     def _load_raw_api_response(self, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> T_Node | T_Edge:
+        from cognite.client.data_classes.data_modeling.debug import DebugInfo
+
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
-        debug_notices = next((DebugNoticeList._load(r["debug"]["notices"]) for r in responses if "debug" in r), None)
+        debug = next((DebugInfo._load(r["debug"]) for r in responses if "debug" in r), None)
         resources = [
             self._instance_cls._load(item, cognite_client=cognite_client)  # type: ignore[attr-defined]
             for response in responses
             for item in response["items"]
         ]
-        return self._list_cls(resources, typing, debug_notices, cognite_client=cognite_client)  # type: ignore[return-value]
+        return self._list_cls(resources, typing, debug, cognite_client=cognite_client)  # type: ignore[return-value]
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
@@ -171,6 +173,13 @@ class InstancesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._AGGREGATE_LIMIT = 1000
         self._SEARCH_LIMIT = 1000
+
+        self._warn_on_alpha_debug_settings = FeaturePreviewWarning(
+            api_maturity="alpha",
+            sdk_maturity="beta",
+            feature_name="Data modeling debug parameters 'includeTranslatedQuery' and 'includePlan'",
+            pluralize=True,
+        )
 
     @overload
     def __call__(
@@ -271,11 +280,15 @@ class InstancesAPI(APIClient):
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
+        headers: None | dict[str, str] = None
         settings_forcing_raw_response_loading = []
         if include_typing:
             settings_forcing_raw_response_loading.append(f"{include_typing=}")
         if debug:
             settings_forcing_raw_response_loading.append(f"{debug=}")
+            if debug.requires_alpha_header:
+                self._warn_on_alpha_debug_settings.warn()
+                headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
 
         if not settings_forcing_raw_response_loading:
             return cast(
@@ -288,6 +301,7 @@ class InstancesAPI(APIClient):
                     limit=limit,
                     filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                     other_params=other_params,
+                    headers=headers,
                 ),
             )
         return (
@@ -299,6 +313,7 @@ class InstancesAPI(APIClient):
                 limit=limit,
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
+                headers=headers,
             )
         )
 
@@ -1581,13 +1596,17 @@ class InstancesAPI(APIClient):
     def _query_or_sync(
         self, query: Query, endpoint: Literal["query", "sync"], include_typing: bool, debug: DebugParameters | None
     ) -> QueryResult:
+        headers: None | dict[str, str] = None
         body = query.dump(camel_case=True)
         if include_typing:
             body["includeTyping"] = include_typing
         if debug:
             body["debug"] = debug.dump(camel_case=True)
+            if debug.requires_alpha_header:
+                self._warn_on_alpha_debug_settings.warn()
+                headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
 
-        result = self._post(url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body)
+        result = self._post(url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body, headers=headers)
 
         json_payload = result.json()
         default_by_reference = query.instance_type_by_result_expression()
@@ -1596,7 +1615,7 @@ class InstancesAPI(APIClient):
             instance_list_type_by_result_expression_name=default_by_reference,
             cursors=json_payload["nextCursor"],
             typing=json_payload.get("typing"),
-            debug=json_payload.get("debug", {}).get("notices"),
+            debug=json_payload.get("debug"),
         )
         return results
 
@@ -1763,11 +1782,15 @@ class InstancesAPI(APIClient):
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
+        headers: None | dict[str, str] = None
         settings_forcing_raw_response_loading = []
         if include_typing:
             settings_forcing_raw_response_loading.append(f"{include_typing=}")
         if debug:
             settings_forcing_raw_response_loading.append(f"{debug=}")
+            if debug.requires_alpha_header:
+                self._warn_on_alpha_debug_settings.warn()
+                headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
 
         return cast(
             NodeList[T_Node] | EdgeList[T_Edge],
@@ -1779,6 +1802,7 @@ class InstancesAPI(APIClient):
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
                 settings_forcing_raw_response_loading=settings_forcing_raw_response_loading,
+                headers=headers,
             ),
         )
 
