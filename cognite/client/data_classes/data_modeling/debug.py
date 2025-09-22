@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from dataclasses import dataclass
 from functools import cache
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast, get_args, get_type_hints
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, cast, get_args, get_type_hints
 
 from typing_extensions import Self
 
@@ -408,19 +408,20 @@ class FilterMatchesCursorableSortNotice(SortingNotice):
 
 @dataclass
 class UnknownDebugNotice(DebugNotice):
-    category: str | None  # type: ignore [assignment]
-    code: str | None  # type: ignore [assignment]
-    hint: str | None  # type: ignore [assignment]
-    level: str | None  # type: ignore [assignment]
+    _MISSING: ClassVar[str] = "MISSING/UNKNOWN"
+    category: str
+    code: str
+    hint: str
+    level: str
     data: dict[str, Any]
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         data = data.copy()
-        category = data.pop("category", None)
-        code = data.pop("code", None)
-        hint = data.pop("hint", None)
-        level = data.pop("level", None)
+        category = data.pop("category", cls._MISSING)
+        code = data.pop("code", cls._MISSING)
+        hint = data.pop("hint", cls._MISSING)
+        level = data.pop("level", cls._MISSING)
         return cls(category=category, code=code, hint=hint, level=level, data=data)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -433,14 +434,10 @@ class UnknownDebugNotice(DebugNotice):
                 stacklevel=2,
             )
         output = {}
-        if self.category is not None:
-            output["category"] = self.category
-        if self.code is not None:
-            output["code"] = self.code
-        if self.hint is not None:
-            output["hint"] = self.hint
-        if self.level is not None:
-            output["level"] = self.level
+        for field in ["category", "code", "hint", "level"]:
+            value = getattr(self, field)
+            if value is not None and value != self._MISSING:
+                output[field] = value
         return output | self.data.copy()
 
 
