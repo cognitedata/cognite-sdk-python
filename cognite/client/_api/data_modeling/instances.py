@@ -176,7 +176,7 @@ class InstancesAPI(APIClient):
 
         self._warn_on_alpha_debug_settings = FeaturePreviewWarning(
             api_maturity="alpha",
-            sdk_maturity="beta",
+            sdk_maturity="alpha",
             feature_name="Data modeling debug parameters 'includeTranslatedQuery' and 'includePlan'",
             pluralize=True,
         )
@@ -1527,11 +1527,12 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling.debug import DebugParameters
                 >>> debug_params = DebugParameters(
                 ...     emit_results=False,
-                ...     timeout=20*1000,  # 20 sec timeout
-                ...     profile=True
+                ...     include_plan=True,  # Include the postgres execution plan
+                ...     include_translated_query=True,  # Include the internal representation of the query.
+                ...     profile=True,
                 ... )
                 >>> res = client.data_modeling.instances.query(query, debug=debug_params)
-                >>> print(res.debug_notices)
+                >>> print(res.debug)
         """
         query._validate_for_query()
         return self._query_or_sync(query, "query", include_typing=include_typing, debug=debug)
@@ -1584,11 +1585,12 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling.debug import DebugParameters
                 >>> debug_params = DebugParameters(
                 ...     emit_results=False,
-                ...     timeout=20*1000,  # 20 sec timeout
-                ...     profile=True
+                ...     include_plan=True,  # Include the postgres execution plan
+                ...     include_translated_query=True,  # Include the internal representation of the query.
+                ...     profile=True,
                 ... )
-                >>> res = client.data_modeling.instances.query(query, debug=debug_params)
-                >>> print(res.debug_notices)
+                >>> res = client.data_modeling.instances.sync(query, debug=debug_params)
+                >>> print(res.debug)
         """
         query._validate_for_sync()
         return self._query_or_sync(query, "sync", include_typing=include_typing, debug=debug)
@@ -1741,18 +1743,19 @@ class InstancesAPI(APIClient):
                 ...     camel_case=True,
                 ... )
 
-            To get debug information in the response, pass ``DebugParameters``:
+            To debug and/or profile your query, you can use the debug parameter:
 
                 >>> from cognite.client.data_classes.data_modeling.debug import DebugParameters
-                >>> res = client.data_modeling.instances.list(
-                ...     debug=DebugParameters(
-                ...         emit_results=False,
-                ...         timeout=20*1000,  # 20 sec timeout
-                ...         profile=True
-                ...     ),
-                ...     sources=my_view,
+                >>> debug_params = DebugParameters(
+                ...     emit_results=False,
+                ...     include_plan=True,  # Include the postgres execution plan
+                ...     include_translated_query=True,  # Include the internal representation of the query.
+                ...     profile=True,
                 ... )
-                >>> print(res.debug_notices)
+                >>> res = client.data_modeling.instances.list(
+                ...     debug=debug_params, sources=my_view
+                ... )
+                >>> print(res.debug)
         """
         self._validate_filter(filter)
         instance_type_str = self._to_instance_type_str(instance_type)
