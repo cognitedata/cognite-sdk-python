@@ -52,7 +52,6 @@ from cognite.client.utils._concurrency import (
     execute_async_tasks,
 )
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._importing import import_as_completed
 from cognite.client.utils._text import to_camel_case
 from cognite.client.utils._validation import (
     assert_type,
@@ -65,7 +64,6 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     from concurrent.futures import Future, ThreadPoolExecutor
 
-as_completed = import_as_completed()
 
 AggregateAssetProperty: TypeAlias = Literal["child_count", "path", "depth"]
 
