@@ -45,17 +45,3 @@ def local_import(*module: str) -> ModuleType | tuple[ModuleType, ...]:
         except ImportError as e:
             raise CogniteImportError(name.split(".")[0]) from e
     return tuple(modules)
-
-
-def import_as_completed() -> Callable[[Iterable[Future[_T]]], Iterator[Future[_T]]]:
-    from cognite.client._constants import _RUNNING_IN_BROWSER
-
-    if not _RUNNING_IN_BROWSER:
-        from concurrent.futures import as_completed
-    else:
-        from copy import copy
-
-        def as_completed(fs: Iterable[Future[_T]], timeout: float | None = None) -> Iterator[Future[_T]]:  # type: ignore [misc]
-            return iter(copy(fs))
-
-    return as_completed
