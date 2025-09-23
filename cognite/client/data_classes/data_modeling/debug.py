@@ -27,19 +27,19 @@ class DebugInfo(CogniteResource):
             of the query processing. Each notice falls into a category, such as indexing, sorting, filtering, or
             cursoring, to help identify areas for improvement.
         translated_query (TranslatedQuery | None): The internal representation of the query.
-        execution_plan (ExecutionPlan | None): The execution plan for the query.
+        plan (ExecutionPlan | None): The execution plan for the query.
     """
 
     notices: DebugNoticeList | None = None
     translated_query: TranslatedQuery | None = None
-    execution_plan: ExecutionPlan | None = None
+    plan: ExecutionPlan | None = None
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> DebugInfo:
         return cls(
             notices=DebugNoticeList._load(data["notices"], cognite_client) if "notices" in data else None,
             translated_query=TranslatedQuery._load(data["translatedQuery"]) if "translatedQuery" in data else None,
-            execution_plan=ExecutionPlan._load(data["executionPlan"]) if "executionPlan" in data else None,
+            plan=ExecutionPlan._load(data["plan"]) if "plan" in data else None,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -49,9 +49,8 @@ class DebugInfo(CogniteResource):
         if self.translated_query is not None:
             key = "translatedQuery" if camel_case else "translated_query"
             obj[key] = self.translated_query.dump(camel_case=camel_case)
-        if self.execution_plan is not None:
-            key = "executionPlan" if camel_case else "execution_plan"
-            obj[key] = self.execution_plan.dump(camel_case=camel_case)
+        if self.plan is not None:
+            obj["plan"] = self.plan.dump(camel_case=camel_case)
         return obj
 
 
@@ -187,7 +186,6 @@ class ExcessiveTimeoutNotice(InvalidDebugOptionsNotice):
     code: Literal["excessiveTimeout"]
     category: Literal["invalidDebugOptions"]
     level: Literal["warning"]
-    hint: str
     timeout: int
 
     @classmethod
@@ -211,7 +209,6 @@ class NoTimeoutWithResultsNotice(InvalidDebugOptionsNotice):
     code: Literal["noTimeoutWithResults"]
     category: Literal["invalidDebugOptions"]
     level: Literal["warning"]
-    hint: str
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -234,7 +231,6 @@ class IntractableDirectRelationsCursorNotice(CursoringNotice):
     category: Literal["cursoring"]
     level: Literal["warning"]
     grade: Literal["D"]
-    hint: str
     result_expression: str
 
     @classmethod
@@ -266,7 +262,6 @@ class UnindexedThroughNotice(IndexingNotice):
     category: Literal["indexing"]
     level: Literal["warning"]
     grade: Literal["E"]
-    hint: str
     result_expression: str
     property: list[str]
 
@@ -300,7 +295,6 @@ class ContainersWithoutIndexesInvolvedNotice(IndexingNotice):
     category: Literal["indexing"]
     level: Literal["warning"]
     grade: Literal["C"]
-    hint: str
     result_expression: str | None
     containers: list[ContainerId]
 
@@ -339,7 +333,6 @@ class SelectiveExternalIDFilterNotice(FilteringNotice):
     category: Literal["filtering"]
     level: Literal["info"]
     grade: Literal["A"]
-    hint: str
     result_expression: str
     via_from: str | None
 
@@ -373,7 +366,6 @@ class SignificantHasDataFiltersNotice(FilteringNotice):
     category: Literal["filtering"]
     level: Literal["warning"]
     grade: Literal["C"]
-    hint: str
     result_expression: str
     containers: list[ContainerId]
 
@@ -407,7 +399,6 @@ class SignificantPostFilteringNotice(FilteringNotice):
     category: Literal["filtering"]
     level: Literal["warning"]
     grade: Literal["C"]
-    hint: str
     result_expression: str
     limit: int
     max_involved_rows: int
@@ -449,7 +440,6 @@ class SortNotBackedByIndexNotice(SortingNotice):
     category: Literal["sorting"]
     level: Literal["warning"]
     grade: Literal["C"]
-    hint: str
     result_expression: str
     sort: list[InstanceSort]
 
@@ -483,7 +473,6 @@ class FilterMatchesCursorableSortNotice(SortingNotice):
     category: Literal["sorting"]
     level: Literal["info"]
     grade: Literal["A", "B"]
-    hint: str
     result_expression: str
     sort: list[InstanceSort]
 
@@ -514,10 +503,6 @@ class FilterMatchesCursorableSortNotice(SortingNotice):
 @dataclass
 class UnknownDebugNotice(DebugNotice):
     _MISSING: ClassVar[str] = "MISSING/UNKNOWN"
-    category: str
-    code: str
-    hint: str
-    level: str
     data: dict[str, Any]
 
     @classmethod
@@ -558,7 +543,7 @@ def _create_debug_notice_subclass_map() -> dict[tuple[str, str], type[DebugNotic
     from cognite.client import CogniteClient
 
     lookup = {}
-    subclasses: set[type[DebugNotice]] = all_concrete_subclasses(DebugNotice)
+    subclasses: set[type[DebugNotice]] = all_concrete_subclasses(DebugNotice, exclude={UnknownDebugNotice})
     for sub_cls in subclasses:
         # When we do 'get_type_hints', we evaluate forward refs., and we reference InstanceSort in a file
         # that only imports CogniteClient while TYPE_CHECKING, so it is not available at runtime which we need:

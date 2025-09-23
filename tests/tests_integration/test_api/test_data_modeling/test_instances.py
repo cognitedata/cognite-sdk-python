@@ -48,9 +48,12 @@ from cognite.client.data_classes.data_modeling import (
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteAsset, CogniteAssetApply
 from cognite.client.data_classes.data_modeling.data_types import DirectRelation, Int64, UnitReference
 from cognite.client.data_classes.data_modeling.debug import (
+    DebugInfo,
     DebugNoticeList,
     DebugParameters,
-    NoTimeoutWithResultsNotice,
+    ExecutionPlan,
+    SortNotBackedByIndexNotice,
+    TranslatedQuery,
 )
 from cognite.client.data_classes.data_modeling.instances import (
     InstanceInspectResult,
@@ -1372,12 +1375,14 @@ class TestInstancesAPI:
 
     @pytest.mark.parametrize("include_typing", [True, False])
     @pytest.mark.usefixtures("cognite_asset_nodes")
-    def test_instance_list__and___call___debug_notices(
-        self, cognite_client: CogniteClient, include_typing: bool
-    ) -> None:
-        # Test that debug notices, which are returned at the root level of the response, are properly handled.
+    def test_instance_list__and___call___debug_info(self, cognite_client: CogniteClient, include_typing: bool) -> None:
+        # Verify that debug info, which is returned at the root level of the response, is properly handled.
         # We also test with and without 'include_typing' which is returned the same way.
-        debug_params = DebugParameters(emit_results=True, timeout=20 * 1000, profile=True)
+        debug_params = DebugParameters(
+            emit_results=False, profile=False, include_translated_query=True, include_plan=True
+        )
+        # Sorting by this should return SortNotBackedByIndexNotice:
+        bad_sort = InstanceSort(CogniteAsset.get_source().as_property_ref("sourceCreatedTime"))
 
         # Test using a typed node:
         res1 = cognite_client.data_modeling.instances.list(
@@ -1386,6 +1391,7 @@ class TestInstancesAPI:
             sources=None,
             include_typing=include_typing,
             debug=debug_params,
+            sort=bad_sort,
             limit=10,
         )
         # Test by specifying a view:
@@ -1394,6 +1400,7 @@ class TestInstancesAPI:
             sources=CogniteAsset.get_source(),
             include_typing=include_typing,
             debug=debug_params,
+            sort=bad_sort,
             limit=10,
         )
         # Test using __call__:
@@ -1402,6 +1409,7 @@ class TestInstancesAPI:
             sources=CogniteAsset.get_source(),
             include_typing=include_typing,
             debug=debug_params,
+            sort=bad_sort,
             limit=10,
             chunk_size=5,
         )
@@ -1409,42 +1417,48 @@ class TestInstancesAPI:
 
         for res in res1, res2, res3:
             assert isinstance(res, NodeList)
-            assert isinstance(res.debug_notices, DebugNoticeList)
-            assert len(res.debug_notices) == 1
-            # Since we specify both emit_results and timeout, we should get...:
-            assert isinstance(res.debug_notices[0], NoTimeoutWithResultsNotice)
+            assert isinstance(res.debug, DebugInfo)
+            assert isinstance(res.debug.translated_query, TranslatedQuery)
+            assert isinstance(res.debug.plan, ExecutionPlan)
+            assert isinstance(res.debug.notices, DebugNoticeList)
+            assert len(res.debug.notices) == 1
+            assert isinstance(res.debug.notices[0], SortNotBackedByIndexNotice)
 
             if include_typing:
                 assert res.typing is not None
 
     @pytest.mark.usefixtures("cognite_asset_nodes")
-    def test_instance_query_and_sync_debug_notices(self, cognite_client: CogniteClient) -> None:
-        debug_params = DebugParameters(emit_results=True, timeout=20 * 1000, profile=True)
-        query = Query(
-            with_={
-                "result": NodeResultSetExpression(
-                    filter=filters.Prefix(["node", "externalId"], "asset:"),
-                )
-            },
-            select={
-                "result": Select([SourceSelector(source=CogniteAsset.get_source(), properties=["name", "parent"])])
-            },
+    def test_instance_query_and_sync_debug_info(self, cognite_client: CogniteClient) -> None:
+        debug_params = DebugParameters(
+            emit_results=False, profile=False, include_translated_query=True, include_plan=True
         )
+        rse_with_sort = NodeResultSetExpression(
+            sort=[InstanceSort(CogniteAsset.get_source().as_property_ref("sourceCreatedTime"))],
+        )
+        select = Select([SourceSelector(source=CogniteAsset.get_source(), properties=["name", "parent"])])
+        query_query = Query(with_={"result": rse_with_sort}, select={"result": select})
+        query_sync = Query(with_={"result": NodeResultSetExpression()}, select={"result": select})
 
-        res1 = cognite_client.data_modeling.instances.query(query, debug=debug_params)
-        res2 = cognite_client.data_modeling.instances.sync(query, debug=debug_params)
+        res_query = cognite_client.data_modeling.instances.query(query_query, debug=debug_params)
+        res_sync = cognite_client.data_modeling.instances.sync(query_sync, debug=debug_params)
 
-        for res in res1, res2:
+        for res in res_query, res_sync:
             assert isinstance(res, QueryResult)
-            assert isinstance(res.debug_notices, DebugNoticeList)
-            assert len(res.debug_notices) == 1
-            # Since we specify both emit_results and timeout, we should get...:
-            assert isinstance(res.debug_notices[0], NoTimeoutWithResultsNotice)
+            assert isinstance(res.debug, DebugInfo)
+            assert isinstance(res.debug.translated_query, TranslatedQuery)
+            assert isinstance(res.debug.plan, ExecutionPlan)
+            assert isinstance(res.debug.notices, DebugNoticeList)
+            if res is res_query:  # Sort not allowed for /sync
+                assert len(res.debug.notices) == 1
+                # Since we specify both emit_results and timeout, we should get...:
+                assert isinstance(res.debug.notices[0], SortNotBackedByIndexNotice)
 
             for node_lst in res.values():
                 assert isinstance(node_lst, NodeList)
-                assert isinstance(node_lst.debug_notices, DebugNoticeList)
-                assert res.debug_notices is node_lst.debug_notices
+                assert isinstance(node_lst.debug, DebugInfo)
+                assert isinstance(node_lst.debug.translated_query, TranslatedQuery)
+                assert isinstance(node_lst.debug.plan, ExecutionPlan)
+                assert res.debug.notices is node_lst.debug.notices
 
 
 class TestInstancesSync:
