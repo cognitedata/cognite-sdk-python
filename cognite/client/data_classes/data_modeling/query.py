@@ -481,9 +481,9 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
             edges["direction"] = self.direction
         if self.filter is not None:
             edges["filter"] = self.filter.dump()
-        if self.node_filter:
+        if self.node_filter is not None:
             edges["nodeFilter" if camel_case else "node_filter"] = self.node_filter.dump()
-        if self.termination_filter:
+        if self.termination_filter is not None:
             edges["terminationFilter" if camel_case else "termination_filter"] = self.termination_filter.dump()
         if self.limit_each:
             edges["limitEach" if camel_case else "limit_each"] = self.limit_each
