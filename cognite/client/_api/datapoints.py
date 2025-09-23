@@ -58,7 +58,7 @@ from cognite.client.utils._auxiliary import (
 )
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
-from cognite.client.utils._importing import import_as_completed, local_import
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._time import (
     ZoneInfo,
     align_large_granularity,
@@ -79,8 +79,6 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
-
-as_completed = import_as_completed()
 
 PoolSubtaskType = tuple[float, int, BaseDpsFetchSubtask]
 
