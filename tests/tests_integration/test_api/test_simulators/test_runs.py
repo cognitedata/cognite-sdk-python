@@ -5,7 +5,6 @@ import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes import TimestampRange
-from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevision
 from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
     SimulationOutput,
@@ -54,40 +53,13 @@ class TestSimulatorRuns:
         )
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize(
-        "routine_external_id, routine_revision_external_id, model_revision_external_id",
-        [
-            (
-                None,
-                f"{RESOURCES.simulator_routine_external_id}_v1",
-                RESOURCES.simulator_model_revision_external_id,
-            ),
-            (
-                RESOURCES.simulator_routine_external_id,
-                None,
-                None,
-            ),
-        ],
-        ids=[
-            "with_routine_revision_and_model_revision",
-            "with_routine_only",
-        ],
-    )
     async def test_run_with_wait_and_retrieve(
-        self,
-        cognite_client: CogniteClient,
-        routine_external_id: str | None,
-        routine_revision_external_id: str | None,
-        model_revision_external_id: str | None,
+        self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
     ) -> None:
+        routine_external_id = seed_resource_names.simulator_routine_external_id
+
         run_task = asyncio.create_task(
-            asyncio.to_thread(
-                lambda: cognite_client.simulators.routines.run(
-                    routine_external_id=routine_external_id,
-                    routine_revision_external_id=routine_revision_external_id,
-                    model_revision_external_id=model_revision_external_id,
-                )
-            )
+            asyncio.to_thread(lambda: cognite_client.simulators.routines.run(routine_external_id=routine_external_id))
         )
 
         run_to_update: SimulationRun | None = None
@@ -97,9 +69,7 @@ class TestSimulatorRuns:
         # 2. Emulate it being finished by the simulator
         while run_to_update is None and time.time() - start_time < 30:
             runs_to_update = cognite_client.simulators.runs.list(
-                routine_external_ids=[routine_external_id] if routine_external_id else None,
-                routine_revision_external_ids=[routine_revision_external_id] if routine_revision_external_id else None,
-                model_revision_external_ids=[model_revision_external_id] if model_revision_external_id else None,
+                routine_external_ids=[routine_external_id],
                 status="ready",
                 limit=5,
             )
@@ -129,11 +99,10 @@ class TestSimulatorRuns:
         assert created_run.id == retrieved_run.id
 
         logs_res = retrieved_run.get_logs()
-        assert logs_res is not None
-
         logs_res2 = cognite_client.simulators.logs.retrieve(ids=created_run.log_id)
-        assert logs_res2 is not None
 
+        assert logs_res is not None
+        assert logs_res2 is not None
         assert logs_res.dump() == logs_res2.dump()
 
         data_res = retrieved_run.get_data()
@@ -141,23 +110,50 @@ class TestSimulatorRuns:
         assert data_res is not None
         assert data_res.dump() == data_res2.dump()
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "routine_external_id, routine_revision_external_id, model_revision_external_id",
+        [
+            (
+                None,
+                f"{RESOURCES.simulator_routine_external_id}_v1",
+                RESOURCES.simulator_model_revision_external_id,
+            ),
+            (
+                RESOURCES.simulator_routine_external_id,
+                None,
+                None,
+            ),
+        ],
+        ids=[
+            "with_routine_revision_and_model_revision",
+            "with_routine_only",
+        ],
+    )
     def test_create_run(
         self,
         cognite_client: CogniteClient,
-        seed_simulator_routine_revisions: tuple[SimulatorRoutineRevision, SimulatorRoutineRevision],
-        seed_resource_names: ResourceNames,
+        routine_external_id: str | None,
+        routine_revision_external_id: str | None,
+        model_revision_external_id: str | None,
     ) -> None:
-        routine_external_id = seed_resource_names.simulator_routine_external_id
         created_runs = cognite_client.simulators.runs.create(
             [
                 SimulationRunWrite(
                     run_type="external",
                     routine_external_id=routine_external_id,
+                    routine_revision_external_id=routine_revision_external_id,
+                    model_revision_external_id=model_revision_external_id,
                 )
             ]
         )
+        is_run_by_revision = routine_revision_external_id is not None and model_revision_external_id is not None
+        if is_run_by_revision:
+            assert created_runs[0].routine_revision_external_id == routine_revision_external_id
+            assert created_runs[0].model_revision_external_id == model_revision_external_id
+        else:
+            assert created_runs[0].routine_external_id == routine_external_id
         assert len(created_runs) == 1
-        assert created_runs[0].routine_external_id == routine_external_id
         assert created_runs[0].id is not None
 
     def test_list_filtering_timestamp_ranges(
