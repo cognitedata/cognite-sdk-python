@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import warnings
 from collections.abc import Callable, MutableMapping
@@ -14,6 +15,9 @@ if TYPE_CHECKING:
     from requests import Session
 
     from cognite.client._http_client import HTTPClient, HTTPClientConfig
+
+
+logger = logging.getLogger(__name__)
 
 
 def patch_sdk_for_pyodide() -> None:
@@ -55,6 +59,18 @@ def patch_sdk_for_pyodide() -> None:
     #   >>> client = CogniteClient()
     if os.getenv("COGNITE_FUSION_NOTEBOOK") is not None:
         global_config.default_client_config = FusionNotebookConfig()
+
+    try:
+        import micropip  # type: ignore [import-not-found]
+        from pyodide.ffi import run_sync  # type: ignore [import-not-found]
+
+        # This convenience will only work for chromium-based browsers:
+        run_sync(micropip.install("tzdata"))
+    except Exception:
+        logger.debug(
+            "Could not load 'tzdata' package automatically in pyodide. You may need to do this manually:"
+            "import micropip; await micropip.install('tzdata')"
+        )
 
 
 def http_client__init__(
