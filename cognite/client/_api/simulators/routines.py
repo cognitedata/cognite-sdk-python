@@ -226,6 +226,33 @@ class SimulatorRoutinesAPI(APIClient):
             filter=routines_filter.dump(),
         )
 
+    @overload
+    def run(
+        self,
+        *,
+        routine_external_id: str,
+        inputs: Sequence[SimulationInputOverride] | None = None,
+        run_time: int | None = None,
+        queue: bool | None = None,
+        log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
+        wait: bool = True,
+        timeout: float = 60,
+    ) -> SimulationRun: ...
+
+    @overload
+    def run(
+        self,
+        *,
+        routine_revision_external_id: str,
+        model_revision_external_id: str,
+        inputs: Sequence[SimulationInputOverride] | None = None,
+        run_time: int | None = None,
+        queue: bool | None = None,
+        log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
+        wait: bool = True,
+        timeout: float = 60,
+    ) -> SimulationRun: ...
+
     def run(
         self,
         routine_external_id: str | None = None,
