@@ -350,14 +350,16 @@ class And(CompoundFilter):
             >>> from cognite.client.data_classes.filters import And, Equals, In
             >>> flt = And(
             ...     Equals(("space", "view_xid/version", "some_property"), 42),
-            ...     In(("space", "view_xid/version", "another_property"), ["a", "b", "c"]))
+            ...     In(("space", "view_xid/version", "another_property"), ["a", "b", "c"]),
+            ... )
 
         - Using the ``View.as_property_ref`` method to reference the property:
 
             >>> from cognite.client.data_classes.filters import And, Equals, In
             >>> flt = And(
             ...     Equals(my_view.as_property_ref("some_property"), 42),
-            ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
+            ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]),
+            ... )
 
         Using the "&" operator:
 
@@ -382,13 +384,15 @@ class Or(CompoundFilter):
             >>> from cognite.client.data_classes.filters import Or, Equals, In
             >>> flt = Or(
             ...     Equals(("space", "view_xid/version", "some_property"), 42),
-            ...     In(("space", "view_xid/version", "another_property"), ["a", "b", "c"]))
+            ...     In(("space", "view_xid/version", "another_property"), ["a", "b", "c"]),
+            ... )
 
         - Using the ``View.as_property_ref`` method to reference the property:
 
             >>> flt = Or(
             ...     Equals(my_view.as_property_ref("some_property"), 42),
-            ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
+            ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]),
+            ... )
 
         Using the "|" operator:
 
@@ -450,13 +454,15 @@ class Nested(Filter):
             >>> from cognite.client.data_classes.filters import Nested, Equals
             >>> flt = Nested(
             ...     scope=("space", "viewA_xid/view_version", "viewB-ID"),
-            ...     filter=Equals(("space", "viewB_xid/view_version", "viewB-Property"), 42))
+            ...     filter=Equals(("space", "viewB_xid/view_version", "viewB-Property"), 42),
+            ... )
 
         - Composing the property reference using the ``View.as_property_ref`` method:
 
             >>> flt = Nested(
             ...     scope=viewA.as_property_ref("viewB-ID"),
-            ...     filter=Equals(viewB.as_property_ref("viewB-Property"), 42))
+            ...     filter=Equals(viewB.as_property_ref("viewB-Property"), 42),
+            ... )
     """
 
     _filter_name = "nested"
@@ -608,14 +614,18 @@ class Overlaps(Filter):
             >>> flt = Overlaps(
             ...     ("space", "view_xid/version", "some_start_property"),
             ...     ("space", "view_xid/version", "some_end_property"),
-            ...     gt=42, lt=100)
+            ...     gt=42,
+            ...     lt=100,
+            ... )
 
         - Composing the property reference using the ``View.as_property_ref`` method:
 
             >>> flt = Overlaps(
             ...     my_view.as_property_ref("some_start_property"),
             ...     my_view.as_property_ref("some_end_property"),
-            ...     gt=42, lt=100)
+            ...     gt=42,
+            ...     lt=100,
+            ... )
     """
 
     _filter_name = "overlaps"
@@ -856,7 +866,7 @@ class InAssetSubtree(FilterWithPropertyAndValueList):
             >>> client.documents.aggregate_count(
             ...     filter=filters.InAssetSubtree(
             ...         property=DocumentProperty.asset_external_ids,
-            ...         values=['Plant_1', 'Plant_2'],
+            ...         values=["Plant_1", "Plant_2"],
             ...     )
             ... )
     """

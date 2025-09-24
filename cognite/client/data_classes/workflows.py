@@ -193,7 +193,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         For example, if you have a workflow containing two tasks, and the external_id of the first task is `task1` then,
         you can specify the data for the second task as follows:
 
-            >>> from cognite.client.data_classes  import WorkflowTask, FunctionTaskParameters
+            >>> from cognite.client.data_classes import WorkflowTask, FunctionTaskParameters
             >>> task = WorkflowTask(
             ...     external_id="task2",
             ...     parameters=FunctionTaskParameters(
@@ -201,7 +201,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             ...         data={
             ...             "workflow_data": "${workflow.input}",
             ...             "task1_input": "${task1.input}",
-            ...             "task1_output": "${task1.output}"
+            ...             "task1_output": "${task1.output}",
             ...         },
             ...     ),
             ... )

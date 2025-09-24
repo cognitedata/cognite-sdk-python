@@ -176,8 +176,15 @@ class TransformationsAPI(APIClient):
             Create new transformations:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import TransformationWrite, TransformationDestination
-                >>> from cognite.client.data_classes.transformations.common import ViewInfo, EdgeType, DataModelInfo
+                >>> from cognite.client.data_classes import (
+                ...     TransformationWrite,
+                ...     TransformationDestination,
+                ... )
+                >>> from cognite.client.data_classes.transformations.common import (
+                ...     ViewInfo,
+                ...     EdgeType,
+                ...     DataModelInfo,
+                ... )
                 >>> client = CogniteClient()
                 >>> transformations = [
                 >>>     TransformationWrite(
@@ -402,7 +409,9 @@ class TransformationsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.transformations.retrieve_multiple(ids=[1,2,3], external_ids=['transform-1','transform-2'])
+                >>> res = client.transformations.retrieve_multiple(
+                ...     ids=[1, 2, 3], external_ids=["transform-1", "transform-2"]
+                ... )
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -456,7 +465,11 @@ class TransformationsAPI(APIClient):
             Perform a partial update on a transformation, updating the query and making it private:
 
                 >>> from cognite.client.data_classes import TransformationUpdate
-                >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
+                >>> my_update = (
+                ...     TransformationUpdate(id=1)
+                ...     .query.set("SELECT * FROM _cdf.assets")
+                ...     .is_public.set(False)
+                ... )
                 >>> res = client.transformations.update(my_update)
 
             Update the session used for reading (source) and writing (destination) when authenticating for all
@@ -468,7 +481,7 @@ class TransformationsAPI(APIClient):
                 >>> new_nonce = NonceCredentials(
                 ...     session_id=new_session.id,
                 ...     nonce=new_session.nonce,
-                ...     cdf_project_name=client.config.project
+                ...     cdf_project_name=client.config.project,
                 ... )
                 >>> for tr in to_update:
                 ...     tr.source_nonce = new_nonce
@@ -526,12 +539,12 @@ class TransformationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>>
-                >>> res = client.transformations.run(transformation_id = 1)
+                >>> res = client.transformations.run(transformation_id=1)
 
             Start running transformation by id:
 
                 >>>
-                >>> res = client.transformations.run(transformation_id = 1, wait = False)
+                >>> res = client.transformations.run(transformation_id=1, wait=False)
         """
         IdentifierSequence.load(transformation_id, transformation_external_id).assert_singleton()
 
@@ -598,7 +611,7 @@ class TransformationsAPI(APIClient):
                 >>> from cognite.client.data_classes import TransformationJobStatus
                 >>> client = CogniteClient()
                 >>>
-                >>> res = client.transformations.run(id = 1, timeout = 60.0)
+                >>> res = client.transformations.run(id=1, timeout=60.0)
                 >>> if res.status == TransformationJobStatus.RUNNING:
                 >>>     res.cancel()
         """
@@ -649,14 +662,18 @@ class TransformationsAPI(APIClient):
             For example, given that you have a query that reads from a raw table with 10,903 rows
 
                 >>>
-                >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None)
+                >>> result = client.transformations.preview(
+                ...     query="select * from my_raw_db.my_raw_table", limit=None
+                ... )
                 >>> print(result.results)
                 100
 
             To get all rows, you also need to set the `source_limit` to None:
 
                 >>>
-                >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None, source_limit=None)
+                >>> result = client.transformations.preview(
+                ...     query="select * from my_raw_db.my_raw_table", limit=None, source_limit=None
+                ... )
                 >>> print(result.results)
                 10903
 

@@ -97,8 +97,11 @@ class TablesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes.postgres_gateway import ViewTableWrite
                 >>> client = CogniteClient()
-                >>> table = ViewTableWrite(tablename="myCustom", options=ViewId(space="mySpace", external_id="myExternalId", version="v1"))
-                >>> res = client.postgres_gateway.tables.create("myUserName",table)
+                >>> table = ViewTableWrite(
+                ...     tablename="myCustom",
+                ...     options=ViewId(space="mySpace", external_id="myExternalId", version="v1"),
+                ... )
+                >>> res = client.postgres_gateway.tables.create("myUserName", table)
 
         """
         return self._create_multiple(
@@ -141,11 +144,13 @@ class TablesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.postgres_gateway.tables.retrieve("myUserName", 'myCustom')
+                >>> res = client.postgres_gateway.tables.retrieve("myUserName", "myCustom")
 
             Get multiple custom tables by id:
 
-                >>> res = client.postgres_gateway.tables.retrieve("myUserName", ["myCustom", "myCustom2"])
+                >>> res = client.postgres_gateway.tables.retrieve(
+                ...     "myUserName", ["myCustom", "myCustom2"]
+                ... )
 
         """
         return self._retrieve_multiple(
@@ -211,12 +216,12 @@ class TablesAPI(APIClient):
             Iterate over tables:
 
                 >>> for table in client.postgres_gateway.tables:
-                ...     table # do something with the custom table
+                ...     table  # do something with the custom table
 
             Iterate over chunks of tables to reduce memory load:
 
                 >>> for table_list in client.postgres_gateway.tables(chunk_size=25):
-                ...     table_list # do something with the custom tables
+                ...     table_list  # do something with the custom tables
 
         """
         return self._list(

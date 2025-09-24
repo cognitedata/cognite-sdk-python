@@ -263,14 +263,14 @@ class FunctionsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> function = client.functions.create(
-                ...     name="myfunction",
-                ...     folder="path/to/code",
-                ...     function_path="path/to/function.py")
+                ...     name="myfunction", folder="path/to/code", function_path="path/to/function.py"
+                ... )
 
             Create function with file_id from already uploaded source code:
 
                 >>> function = client.functions.create(
-                ...     name="myfunction", file_id=123, function_path="path/to/function.py")
+                ...     name="myfunction", file_id=123, function_path="path/to/function.py"
+                ... )
 
             Create function with predefined function object named `handle`:
 
@@ -1285,7 +1285,9 @@ class FunctionSchedulesAPI(APIClient):
                 ...     name="My schedule",
                 ...     function_id=123,
                 ...     cron_expression="*/5 * * * *",
-                ...     client_credentials=ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"]),
+                ...     client_credentials=ClientCredentials(
+                ...         "my-client-id", os.environ["MY_CLIENT_SECRET"]
+                ...     ),
                 ...     description="This schedule does magic stuff.",
                 ...     data={"magic": "stuff"},
                 ... )
@@ -1312,7 +1314,7 @@ class FunctionSchedulesAPI(APIClient):
                 ...         function_id=456,
                 ...         cron_expression="*/5 * * * *",
                 ...         description="A schedule just used for some temporary testing.",
-                ...         nonce=session.nonce
+                ...         nonce=session.nonce,
                 ...     ),
                 ... )
 
@@ -1369,7 +1371,7 @@ class FunctionSchedulesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.functions.schedules.delete(id = 123)
+                >>> client.functions.schedules.delete(id=123)
 
         """
         url = f"{self._RESOURCE_PATH}/delete"

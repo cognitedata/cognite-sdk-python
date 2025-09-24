@@ -123,7 +123,7 @@ class ViewsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
+                >>> res = client.data_modeling.views.retrieve(("mySpace", "myView", "v1"))
 
         """
         identifier = _load_identifier(ids, "view")
@@ -152,7 +152,7 @@ class ViewsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.data_modeling.views.delete(('mySpace', 'myView', 'v1'))
+                >>> client.data_modeling.views.delete(("mySpace", "myView", "v1"))
         """
         deleted_views = cast(
             list,
@@ -196,12 +196,12 @@ class ViewsAPI(APIClient):
             Iterate over views:
 
                 >>> for view in client.data_modeling.views:
-                ...     view # do something with the view
+                ...     view  # do something with the view
 
             Iterate over chunks of views to reduce memory load:
 
                 >>> for view_list in client.data_modeling.views(chunk_size=10):
-                ...     view_list # do something with the views
+                ...     view_list  # do something with the views
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
 
@@ -229,7 +229,11 @@ class ViewsAPI(APIClient):
             Create new views:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import ViewApply, MappedPropertyApply, ContainerId
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     ViewApply,
+                ...     MappedPropertyApply,
+                ...     ContainerId,
+                ... )
                 >>> client = CogniteClient()
                 >>> views = [
                 ...     ViewApply(
@@ -241,8 +245,8 @@ class ViewsAPI(APIClient):
                 ...                 container=ContainerId("mySpace", "myContainer"),
                 ...                 container_property_identifier="someProperty",
                 ...             ),
-                ...         }
-                ...    )
+                ...         },
+                ...     )
                 ... ]
                 >>> res = client.data_modeling.views.apply(views)
 
@@ -255,9 +259,11 @@ class ViewsAPI(APIClient):
                 ...     MappedPropertyApply,
                 ...     MultiEdgeConnectionApply,
                 ...     ViewApply,
-                ...     ViewId
+                ...     ViewId,
                 ... )
-                >>> work_order_for_asset = DirectRelationReference(space="mySpace", external_id="work_order_for_asset")
+                >>> work_order_for_asset = DirectRelationReference(
+                ...     space="mySpace", external_id="work_order_for_asset"
+                ... )
                 >>> work_order_view = ViewApply(
                 ...     space="mySpace",
                 ...     external_id="WorkOrder",
@@ -274,7 +280,7 @@ class ViewsAPI(APIClient):
                 ...             source=ViewId("mySpace", "Asset", "v1"),
                 ...             name="asset",
                 ...         ),
-                ...     }
+                ...     },
                 ... )
                 >>> asset_view = ViewApply(
                 ...     space="mySpace",
@@ -293,7 +299,7 @@ class ViewsAPI(APIClient):
                 ...             source=ViewId("mySpace", "WorkOrder", "v1"),
                 ...             name="work_orders",
                 ...         ),
-                ...     }
+                ...     },
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
         """
