@@ -60,11 +60,14 @@ def patch_sdk_for_pyodide() -> None:
     if os.getenv("COGNITE_FUSION_NOTEBOOK") is not None:
         global_config.default_client_config = FusionNotebookConfig()
 
+    # - We attempt to load the package 'tzdata' automatically, as pyodide can't read IANA timezone info from
+    #   the OS and thus need this extra package. We need the timezone info because we use zoneinfo.ZoneInfo
+    #   internally for e.g. datapoints and workflows.
+    #   Note: This convenience will only work in chromium-based browsers (as of Sept 2025)
     try:
         import micropip  # type: ignore [import-not-found]
         from pyodide.ffi import run_sync  # type: ignore [import-not-found]
 
-        # This convenience will only work for chromium-based browsers:
         run_sync(micropip.install("tzdata"))
     except Exception:
         logger.debug(
