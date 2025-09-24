@@ -1185,7 +1185,7 @@ class InstancesAPI(APIClient):
             body["properties"] = properties
         if include_typing:
             body["includeTyping"] = include_typing
-        if filter:
+        if filter is not None:
             body["filter"] = filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter
         if target_units:
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
@@ -1309,7 +1309,7 @@ class InstancesAPI(APIClient):
         ]
         if group_by:
             body["groupBy"] = [group_by] if isinstance(group_by, str) else group_by
-        if filter:
+        if filter is not None:
             body["filter"] = filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter
         if query:
             body["query"] = query
@@ -1416,7 +1416,7 @@ class InstancesAPI(APIClient):
                 raise TypeError(f"Not a histogram: {histogram}")
 
         body["aggregates"] = [histogram.dump(camel_case=True) for histogram in histogram_seq]
-        if filter:
+        if filter is not None:
             body["filter"] = filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter
         if query:
             body["query"] = query

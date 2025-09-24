@@ -340,7 +340,7 @@ def test_compound_filters_require_at_least_one_filter(compound_flt: type[f.Compo
 def test_merge_space_into_filter(
     space: str | list[str] | None, user_filter: f.Filter | None, pass_as_dict: bool
 ) -> None:
-    flt_used = user_filter.dump() if pass_as_dict and user_filter else user_filter
+    flt_used = user_filter.dump() if pass_as_dict and user_filter is not None else user_filter
     res = InstancesAPI._merge_space_into_filter(
         instance_type="node",
         space=space,

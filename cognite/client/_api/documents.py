@@ -599,7 +599,7 @@ class DocumentsAPI(APIClient):
         """
         self._validate_filter(filter)
         body: dict[str, str | int | bool | dict | list] = {"search": {"query": query}}
-        if filter:
+        if filter is not None:
             body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
         if sort:
             body["sort"] = [DocumentSort.load(sort).dump()]
