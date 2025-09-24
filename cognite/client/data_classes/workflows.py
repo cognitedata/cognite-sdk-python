@@ -19,6 +19,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.data_modeling.query import Query, ResultSetExpression, Select
 from cognite.client.data_classes.simulators.runs import (
     SimulationInputOverride,
@@ -136,7 +137,7 @@ class WorkflowList(WriteableCogniteResourceList[WorkflowUpsert, Workflow], Exter
         return WorkflowUpsertList([workflow.as_write() for workflow in self.data])
 
 
-ValidTaskType = Literal["function", "transformation", "cdf", "dynamic", "subworkflow", "simulation"]
+ValidTaskType = Literal["function", "transformation", "cdf", "dynamic", "subworkflow", "simulation", "tagDetection"]
 
 
 class WorkflowTaskParameters(CogniteObject, ABC):
@@ -166,6 +167,8 @@ class WorkflowTaskParameters(CogniteObject, ABC):
             return SubworkflowReferenceParameters._load(parameters)
         elif type_ == "simulation":
             return SimulationTaskParameters._load(parameters)
+        elif type_ == "tagDetection":
+            return TagDetectionTaskParameters._load(parameters)
         else:
             raise ValueError(f"Unknown task type: {type_}. Expected {ValidTaskType}")
 
@@ -513,6 +516,57 @@ class DynamicTaskParameters(WorkflowTaskParameters):
         }
 
 
+class TagDetectionTaskParameters(WorkflowTaskParameters):
+    """
+    The tag detection task parameters are used to specify a tag detection task.
+
+    Args:
+        file_instance_ids (list[NodeId] | str): List of files to detect tags in. Can be a reference.
+        entity_filters (str): The DMS filter query to fetch entities to match on
+        min_tokens (int): Each detected item must match the detected entity on at least this number of tokens. A token is a substring of consecutive letters or digits.
+        partial_match (bool): Allow partial (fuzzy) matching of entities in the engineering diagrams. Creates a match only when it is possible to do so unambiguously.
+        write_annotations (bool): Whether annotations should be automatically be written for the files
+
+    """
+
+    task_type = "tagDetection"
+
+    def __init__(
+        self,
+        file_instance_ids: list[NodeId] | str,
+        entity_filters: str,
+        min_tokens: int,
+        partial_match: bool,
+        write_annotations: bool = False,
+    ) -> None:
+        self.file_instance_ids = file_instance_ids
+        self.entity_filters = entity_filters
+        self.min_tokens = min_tokens
+        self.partial_match = partial_match
+        self.write_annotations = write_annotations
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            file_instance_ids=resource["fileInstanceIds"],
+            entity_filters=resource["entityFilters"],
+            min_tokens=resource["minTokens"],
+            partial_match=resource["partialMatch"],
+            write_annotations=resource["writeAnnotations"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            self.task_type: {
+                "fileInstanceIds": self.file_instance_ids,
+                "entityFilters": self.entity_filters,
+                "minTokens": self.min_tokens,
+                "partialMatch": self.partial_match,
+                "writeAnnotations": self.write_annotations,
+            }
+        }
+
+
 class WorkflowTask(CogniteResource):
     """
     This class represents a workflow task.
@@ -773,6 +827,23 @@ class SubworkflowTaskOutput(WorkflowTaskOutput):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> SubworkflowTaskOutput:
+        return cls()
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        return {}
+
+
+class TagDetectionTaskOutput(WorkflowTaskOutput):
+    """
+    The tag detection task output is used to specify the output of a tag detection task.
+    """
+
+    task_type: ClassVar[str] = "tagDetection"
+
+    def __init__(self) -> None: ...
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> TagDetectionTaskOutput:
         return cls()
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
