@@ -274,7 +274,6 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> run = client.simulators.routines.run(
                 ...     routine_revision_external_id="routine_revision1",
                 ...     model_revision_external_id="model_revision1",
-                ...     log_severity="Debug"
                 ... )
         """
         self._warning.warn()

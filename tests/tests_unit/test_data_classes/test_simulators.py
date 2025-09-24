@@ -480,7 +480,6 @@ class TestSimulationRunWrite:
                 routine_external_id="routine_external_id_1",
                 routine_revision_external_id="routine_revision_external_id_1",
                 model_revision_external_id="model_revision_external_id_1",
-                run_type="external",
             )
 
         with pytest.raises(
@@ -489,5 +488,4 @@ class TestSimulationRunWrite:
         ):
             SimulationRunWrite(
                 routine_revision_external_id="routine_revision_external_id_1",
-                run_type="external",
             )
