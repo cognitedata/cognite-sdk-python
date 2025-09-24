@@ -112,17 +112,18 @@ class TestSimulatorRuns:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "routine_external_id, routine_revision_external_id, model_revision_external_id",
+        "simulation_run_item",
         [
             (
-                None,
-                f"{RESOURCES.simulator_routine_external_id}_v1",
-                RESOURCES.simulator_model_revision_external_id,
+                SimulationRunWrite(
+                    routine_revision_external_id=f"{RESOURCES.simulator_routine_external_id}_v1",
+                    model_revision_external_id=RESOURCES.simulator_model_revision_external_id,
+                )
             ),
             (
-                RESOURCES.simulator_routine_external_id,
-                None,
-                None,
+                SimulationRunWrite(
+                    routine_external_id=RESOURCES.simulator_routine_external_id,
+                )
             ),
         ],
         ids=[
@@ -133,26 +134,18 @@ class TestSimulatorRuns:
     def test_create_run(
         self,
         cognite_client: CogniteClient,
-        routine_external_id: str | None,
-        routine_revision_external_id: str | None,
-        model_revision_external_id: str | None,
+        simulation_run_item: SimulationRunWrite,
     ) -> None:
-        created_runs = cognite_client.simulators.runs.create(
-            [
-                SimulationRunWrite(
-                    run_type="external",
-                    routine_external_id=routine_external_id,
-                    routine_revision_external_id=routine_revision_external_id,
-                    model_revision_external_id=model_revision_external_id,
-                )
-            ]
+        created_runs = cognite_client.simulators.runs.create([simulation_run_item])
+        is_run_by_revision = (
+            simulation_run_item.routine_revision_external_id is not None
+            and simulation_run_item.model_revision_external_id is not None
         )
-        is_run_by_revision = routine_revision_external_id is not None and model_revision_external_id is not None
         if is_run_by_revision:
-            assert created_runs[0].routine_revision_external_id == routine_revision_external_id
-            assert created_runs[0].model_revision_external_id == model_revision_external_id
+            assert created_runs[0].routine_revision_external_id == simulation_run_item.routine_revision_external_id
+            assert created_runs[0].model_revision_external_id == simulation_run_item.model_revision_external_id
         else:
-            assert created_runs[0].routine_external_id == routine_external_id
+            assert created_runs[0].routine_external_id == simulation_run_item.routine_external_id
         assert len(created_runs) == 1
         assert created_runs[0].id is not None
 
