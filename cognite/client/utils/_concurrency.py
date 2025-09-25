@@ -19,15 +19,22 @@ from cognite.client.utils._auxiliary import no_op
 
 
 @cache
-def get_global_semaphore() -> asyncio.Semaphore:
+def get_global_semaphore() -> asyncio.BoundedSemaphore:
     from cognite.client import global_config
 
-    return asyncio.Semaphore(global_config.max_workers)
+    return asyncio.BoundedSemaphore(global_config.max_workers)
 
 
 @cache
-def get_global_data_modeling_semaphore() -> asyncio.Semaphore:
-    return asyncio.Semaphore(2)
+def get_global_datapoints_semaphore() -> asyncio.BoundedSemaphore:
+    from cognite.client import global_config
+
+    return asyncio.BoundedSemaphore(global_config.max_workers)
+
+
+@cache
+def get_global_data_modeling_semaphore() -> asyncio.BoundedSemaphore:
+    return asyncio.BoundedSemaphore(2)
 
 
 class TasksSummary:
