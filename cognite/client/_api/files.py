@@ -571,7 +571,7 @@ class FilesAPI(APIClient):
                         tasks.append(AsyncSDKTask(self._upload_file_from_path, file_metadata, file_path, overwrite))
 
             tasks_summary = await execute_async_tasks(tasks)
-            tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda task: task.args[0].name)
+            tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda task: task[0].name)
             # TODO: Why not tasks_summary.joined_results()?
             return FileMetadataList(tasks_summary.results)
         raise FileNotFoundError(path)
