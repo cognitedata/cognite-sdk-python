@@ -1,20 +1,18 @@
 from __future__ import annotations
 
+import asyncio
 import functools
 import heapq
 import itertools
 import math
-import threading
 import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import (
-    TYPE_CHECKING,
     Any,
     Literal,
     NamedTuple,
-    NoReturn,
     TypeAlias,
     cast,
     overload,
@@ -48,7 +46,6 @@ from cognite.client.exceptions import CogniteAPIError, CogniteMultiException
 from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
 from cognite.client.utils._concurrency import (
     AsyncSDKTask,
-    ConcurrencySettings,
     execute_async_tasks,
 )
 from cognite.client.utils._identifier import IdentifierSequence
@@ -61,11 +58,6 @@ from cognite.client.utils._validation import (
     process_data_set_ids,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from concurrent.futures import Future, ThreadPoolExecutor
-
-as_completed = import_as_completed()
 
 AggregateAssetProperty: TypeAlias = Literal["child_count", "path", "depth"]
 
@@ -566,8 +558,7 @@ class AssetsAPI(APIClient):
             list_cls=AssetList, resource_cls=Asset, items=asset, input_resource_cls=AssetWrite
         )
 
-    # TODO: Make async
-    def create_hierarchy(
+    async def create_hierarchy(
         self,
         assets: Sequence[AssetWrite] | AssetHierarchy,
         *,
@@ -697,7 +688,7 @@ class AssetsAPI(APIClient):
             assert_type(assets, "assets", [Sequence])
             assets = AssetHierarchy(assets, ignore_orphans=True)
 
-        return _AssetHierarchyCreator(assets, assets_api=self).create(upsert, upsert_mode)
+        return await _AssetHierarchyCreator(assets, assets_api=self).create(upsert, upsert_mode)
 
     async def delete(
         self,
@@ -1151,8 +1142,9 @@ class AssetsAPI(APIClient):
 
 class _TaskResult(NamedTuple):
     successful: list[Asset]
-    failed: list[Asset]
-    unknown: list[Asset]
+    failed: list[AssetWrite]
+    unknown: list[AssetWrite]
+    exception: Exception | None = None
 
 
 class _AssetHierarchyCreator:
@@ -1166,35 +1158,30 @@ class _AssetHierarchyCreator:
         self.create_limit = assets_api._CREATE_LIMIT
         self.resource_path = assets_api._RESOURCE_PATH
         self.max_workers = global_config.max_workers
-        self.failed: list[Asset] = []
-        self.unknown: list[Asset] = []
-        # Each thread needs to store its latest exception:
-        self.latest_exception: dict[int, Exception | None] = {}
+        self.failed: list[AssetWrite] = []
+        self.unknown: list[AssetWrite] = []
+        self.latest_exception: Exception | None = None
 
         self._counter = itertools.count().__next__
 
-    def create(self, upsert: bool, upsert_mode: Literal["patch", "replace"]) -> AssetList:
+    async def create(self, upsert: bool, upsert_mode: Literal["patch", "replace"]) -> AssetList:
         insert_fn = functools.partial(self._insert, upsert=upsert, upsert_mode=upsert_mode)
         insert_dct = self.hierarchy.groupby_parent_xid()
         subtree_count = self.hierarchy.count_subtree(insert_dct)
 
-        pool = ConcurrencySettings.get_executor()
-        created_assets = self._create(pool, insert_fn, insert_dct, subtree_count)  # type: ignore [arg-type]
+        created_assets = await self._create(insert_fn, insert_dct, subtree_count)
 
-        if all_exceptions := [exc for exc in self.latest_exception.values() if exc is not None]:
-            self._raise_latest_exception(all_exceptions, created_assets)
+        self._raise_if_exception(created_assets)
         return AssetList(created_assets, cognite_client=self.assets_api._cognite_client)
 
-    def _create(
+    async def _create(
         self,
-        pool: ThreadPoolExecutor,
-        insert_fn: Callable[[list[Asset]], _TaskResult],
-        insert_dct: dict[str | None, list[Asset]],
+        insert_fn: Callable[[list[AssetWrite]], Awaitable[_TaskResult]],
+        insert_dct: dict[str | None, list[AssetWrite]],
         subtree_count: dict[str, int],
     ) -> list[Asset]:
         queue_fn = functools.partial(
             self._queue_tasks,
-            pool=pool,
             insert_fn=insert_fn,
             insert_dct=insert_dct,
             subtree_count=subtree_count,
@@ -1207,66 +1194,78 @@ class _AssetHierarchyCreator:
         futures = queue_fn(insert_dct.pop(None))
 
         while futures:
-            futures.remove(fut := next(as_completed(futures)))
-            new_assets, failed, unknown = fut.result()
-            created_assets.extend(new_assets)
-            if unknown or failed:
-                self.failed.extend(failed)
-                self.unknown.extend(unknown)
-                self._skip_all_descendants(unknown, failed, insert_dct)
+            done, _ = await asyncio.wait(futures, return_when=asyncio.FIRST_COMPLETED)
+            to_create: list[AssetWrite] = []
+            # Note on FIRST_COMPLETED: We may get more than one task 'done':
+            for fut in done:
+                futures.remove(fut)
+                new_assets, failed, unknown, exception = fut.result()
+                created_assets.extend(new_assets)
+                if unknown or failed:
+                    self.failed.extend(failed)
+                    self.unknown.extend(unknown)
+                    self._skip_all_descendants(unknown, failed, insert_dct)
+                if exception:
+                    self.latest_exception = exception
 
-            # Newly created assets are now unblocked as parents for the next iteration:
-            to_create = list(self._pop_child_assets(new_assets, insert_dct))
+                # Newly created assets are now unblocked as parents for the next iteration:
+                to_create.extend(self._pop_child_assets(new_assets, insert_dct))
+
+            # The queue function is clever so if we have multiple done tasks we want to call
+            # it as late as possible:
             futures |= queue_fn(to_create)
         return created_assets
 
     def _queue_tasks(
         self,
-        assets: list[Asset],
+        assets: list[AssetWrite],
         *,
-        pool: ThreadPoolExecutor,
         insert_fn: Callable,
-        insert_dct: dict[str | None, list[Asset]],
+        insert_dct: dict[str | None, list[AssetWrite]],
         subtree_count: dict[str, int],
-    ) -> set[Future]:
+    ) -> set[asyncio.Task]:
         if not assets:
             return set()
         return {
-            pool.submit(insert_fn, task)
+            asyncio.create_task(insert_fn(task))
             for task in self._split_and_prioritise_assets(assets, insert_dct, subtree_count)
         }
 
-    def _insert(
+    async def _insert(
         self,
-        assets: list[Asset],
+        assets: list[AssetWrite],
         *,
         upsert: bool,
         upsert_mode: Literal["patch", "replace"],
         no_recursion: bool = False,
     ) -> _TaskResult:
         try:
-            resp = self.assets_api._post(self.resource_path, self._dump_assets(assets))
+            # Here we do a single batch insert. If one element fails, the entire batch fails:
+            resp = await self.assets_api._post(self.resource_path, self._dump_assets(assets))
             successful = [Asset._load(item) for item in resp.json()["items"]]
             return _TaskResult(successful, failed=[], unknown=[])
         except Exception as err:
-            self._set_latest_exception(err)
+            # Storing the latest exception requires some more thought when using asyncio:
             successful = []
-            failed: list[Asset] = []
-            unknown: list[Asset] = []
+            failed: list[AssetWrite] = []
+            unknown: list[AssetWrite] = []
             # Store to 'failed' or 'unknown':
             err_status = FailedRequestHandler.classify_error(err)
-            bad_assets = {"failed": failed, "unknown": unknown}[err_status]
-            bad_assets.extend(assets)
+            bad_assets = failed if err_status == "failed" else unknown
+            bad_assets.extend(assets)  # One batch - all are in the same category
 
             # Note the last cond.: we got CogniteAPIError and are running with upsert, but no duplicates gotten:
             if no_recursion or not isinstance(err, CogniteAPIError) or err.duplicated is None:
-                return _TaskResult(successful, failed, unknown)
+                return _TaskResult(successful, failed, unknown, exception=err)
 
             # Split assets based on their is-duplicated status:
             non_dupes, dupe_assets = self._split_out_duplicated(cast(list[dict], err.duplicated), assets)
             # We should try to create the non-duplicated assets before running update (as these might be dependent):
+            non_dupe_insert_error = None
             if non_dupes:
-                result = self._insert(non_dupes, no_recursion=True, upsert=False, upsert_mode=upsert_mode)
+                result = await self._insert(non_dupes, no_recursion=True, upsert=False, upsert_mode=upsert_mode)
+                if result.exception:
+                    non_dupe_insert_error = result.exception
                 if result.successful:
                     successful.extend(result.successful)
                     # The assets that were not duplicated should be removed from "bad":
@@ -1274,8 +1273,9 @@ class _AssetHierarchyCreator:
                     bad_assets.extend(dupe_assets)
 
             # If upsert=True, run update on any existing assets:
+            dupe_upsert_error: Exception | None = err  # Only clear this if upsert=True -and- update works
             if upsert and dupe_assets:
-                updated = self._update(dupe_assets, upsert_mode)
+                updated, dupe_upsert_error = await self._update(dupe_assets, upsert_mode)
                 # If update went well: Add to list of successful assets and remove from "bad":
                 if updated is not None:
                     successful.extend(updated)
@@ -1284,26 +1284,36 @@ class _AssetHierarchyCreator:
                     bad_assets.clear()
                     bad_assets.extend(still_bad)
 
-            return _TaskResult(successful, failed, unknown)
+            # Note on exceptions: This is more of a "best-effort" and in the case when we eventually raise, we just want
+            # one of the recent exc. to show up (all its info however match ALL the failed+unknown), see _raise_if_exception
+            match non_dupe_insert_error, dupe_upsert_error:
+                case None, None:
+                    maybe_error = None  # We recovered successfully
+                case Exception(), None:
+                    maybe_error = non_dupe_insert_error
+                case _:
+                    maybe_error = err
 
-    def _update(self, to_update: list[Asset], upsert_mode: Literal["patch", "replace"]) -> list[Asset] | None:
+            return _TaskResult(successful, failed, unknown, maybe_error)
+
+    async def _update(
+        self, to_update: list[AssetWrite], upsert_mode: Literal["patch", "replace"]
+    ) -> tuple[list[Asset] | None, Exception | None]:
         is_patch = upsert_mode == "patch"
         updates = [self._make_asset_updates(asset, patch=is_patch) for asset in to_update]
-        return self._update_post(updates)
+        return await self._update_post(updates)
 
-    def _update_post(self, items: list[AssetUpdate]) -> list[Asset] | None:
+    async def _update_post(self, items: list[AssetUpdate]) -> tuple[list[Asset] | None, Exception | None]:
         try:
-            resp = self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
+            resp = await self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
             updated = [Asset._load(item) for item in resp.json()["items"]]
-            self._set_latest_exception(None)  # Update worked, so we hide exception
-            return updated
+            return updated, None  # Update worked, so we hide exception
         except Exception as err:
             # At this point, we don't care what caused the failure (well, we store error to show the user):
             # All assets that failed the update are already marked as either failed or unknown.
-            self._set_latest_exception(err)
-            return None
+            return None, err
 
-    def _make_asset_updates(self, asset: Asset, patch: bool) -> AssetUpdate:
+    def _make_asset_updates(self, asset: AssetWrite, patch: bool) -> AssetUpdate:
         # Note: The SDK makes it very hard to do full updates... we also rely on the update-object to
         # have an updated list of all "updateable" parameters...
         dumped = asset.dump(camel_case=True)
@@ -1321,10 +1331,6 @@ class _AssetHierarchyCreator:
         upd._update_object = dct_update
         return upd
 
-    def _set_latest_exception(self, err: Exception | None) -> None:
-        thread_id = threading.get_ident()
-        self.latest_exception[thread_id] = err
-
     @cached_property
     def clear_all_update(self) -> MappingProxyType[str, dict[str, Any]]:
         props = {to_camel_case(prop.name) for prop in AssetUpdate._get_update_properties()}
@@ -1338,29 +1344,29 @@ class _AssetHierarchyCreator:
 
     def _split_and_prioritise_assets(
         self,
-        to_create: list[Asset],
-        insert_dct: dict[str | None, list[Asset]],
+        to_create: list[AssetWrite],
+        insert_dct: dict[str | None, list[AssetWrite]],
         subtree_count: dict[str, int],
-    ) -> Iterator[set[Asset]]:
+    ) -> Iterator[set[AssetWrite]]:
         # We want to dive as deep down the hierarchy as possible while prioritising assets with the biggest
         # subtree, that way we more quickly get into a state with enough unblocked parents to always keep
-        # our worker threads fed with create-requests.
+        # up the concurrency budget with create-requests.
         n = len(to_create)
         n_parts = min(n, max(self.max_workers, math.ceil(n / self.create_limit)))
         tasks = [
             self._extend_with_unblocked_from_subtree(set(chunk), insert_dct, subtree_count)
             for chunk in split_into_n_parts(to_create, n=n_parts)
         ]
-        # Also, to not waste worker threads on tiny requests, we might recombine:
+        # Also, to not waste concurrency budget on tiny requests, we might recombine:
         tasks.sort(key=len)
         yield from self._recombine_chunks(tasks, limit=self.create_limit)
 
     @staticmethod
-    def _dump_assets(assets: Sequence[Asset] | Sequence[AssetUpdate]) -> dict[str, list[dict]]:
+    def _dump_assets(assets: Sequence[AssetWrite] | Sequence[AssetUpdate]) -> dict[str, list[dict]]:
         return {"items": [asset.dump(camel_case=True) for asset in assets]}
 
     @staticmethod
-    def _recombine_chunks(lst: list[set[Asset]], limit: int) -> Iterator[set[Asset]]:
+    def _recombine_chunks(lst: list[set[AssetWrite]], limit: int) -> Iterator[set[AssetWrite]]:
         task = lst[0]
         for next_task in lst[1:]:
             if len(task) + len(next_task) > limit:
@@ -1372,10 +1378,10 @@ class _AssetHierarchyCreator:
 
     def _extend_with_unblocked_from_subtree(
         self,
-        to_create: set[Asset],
-        insert_dct: dict[str | None, list[Asset]],
+        to_create: set[AssetWrite],
+        insert_dct: dict[str | None, list[AssetWrite]],
         subtree_count: dict[str, int],
-    ) -> set[Asset]:
+    ) -> set[AssetWrite]:
         pri_q = [(-subtree_count[cast(str, asset.external_id)], self._counter(), asset) for asset in to_create]
         heapq.heapify(pri_q)
 
@@ -1392,40 +1398,46 @@ class _AssetHierarchyCreator:
         return to_create
 
     @staticmethod
-    def _pop_child_assets(assets: Iterable[Asset], insert_dct: dict[str | None, list[Asset]]) -> Iterator[Asset]:
+    def _pop_child_assets(
+        assets: Iterable[AssetWrite], insert_dct: dict[str | None, list[AssetWrite]]
+    ) -> Iterator[AssetWrite]:
         return itertools.chain.from_iterable(insert_dct.pop(asset.external_id, []) for asset in assets)
 
     @staticmethod
-    def _split_out_duplicated(subset: list[dict[str, str]], assets: list[Asset]) -> tuple[list[Asset], list[Asset]]:
+    def _split_out_duplicated(
+        subset: list[dict[str, str]], assets: list[AssetWrite]
+    ) -> tuple[list[AssetWrite], list[AssetWrite]]:
         # Avoids repeated list-lookups (O(N^2))
         duplicated = {asset["externalId"] for asset in subset}
-        split_assets: tuple[list[Asset], list[Asset]] = [], []
+        split_assets: tuple[list[AssetWrite], list[AssetWrite]] = [], []
         for a in assets:
             split_assets[a.external_id in duplicated].append(a)
         return split_assets
 
     def _skip_all_descendants(
         self,
-        unknown: list[Asset],
-        failed: list[Asset],
-        insert_dct: dict[str | None, list[Asset]],
+        unknown: list[AssetWrite],
+        failed: list[AssetWrite],
+        insert_dct: dict[str | None, list[AssetWrite]],
     ) -> None:
         skip_assets = [*unknown, *failed]
         while skip_assets:
             skip_assets = list(self._pop_child_assets(skip_assets, insert_dct))
             self.failed.extend(skip_assets)
 
-    def _raise_latest_exception(self, exceptions: list[Exception], successful: list[Asset]) -> NoReturn:
-        *_, latest_exception = exceptions
+    def _raise_if_exception(self, successful: list[Asset]) -> None:
+        if self.latest_exception is None:
+            return
+
         err_message = "One or more errors happened during asset creation. Latest error:"
-        if isinstance(latest_exception, CogniteAPIError):
+        if isinstance(self.latest_exception, CogniteAPIError):
             raise CogniteAPIError(
-                message=f"{err_message} {latest_exception.message}",
-                x_request_id=latest_exception.x_request_id,
-                code=latest_exception.code,
+                message=f"{err_message} {self.latest_exception.message}",
+                x_request_id=self.latest_exception.x_request_id,
+                code=self.latest_exception.code,
                 cluster=self.assets_api._config.cdf_cluster,
                 project=self.assets_api._config.project,
-                extra=latest_exception.extra,
+                extra=self.latest_exception.extra,
                 successful=successful,
                 unknown=self.unknown,
                 failed=self.failed,
@@ -1437,4 +1449,4 @@ class _AssetHierarchyCreator:
             successful=successful,
             unknown=self.unknown,
             failed=self.failed,
-        ) from latest_exception
+        ) from self.latest_exception
