@@ -65,7 +65,6 @@ sphinx-rtd-theme = ">=1.0.0"
 pytest = ">=7"
 pytest-cov = ">=3"
 pytest-rerunfailures = ">=10"
-pytest-asyncio = ">=0.23.5a0"
 pytest-xdist = ">=2"
 twine = ">=4.0.1"
 pre-commit = "^3"
@@ -88,8 +87,8 @@ tenacity = "^9.1.2"
 ruff = "0.13.2"
 pytest-httpx = ">=0.35"
 types-authlib = "^1.6.2.20250825"
+anyio = "^4.11.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
