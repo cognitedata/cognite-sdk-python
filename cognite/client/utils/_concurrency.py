@@ -252,6 +252,14 @@ class AsyncSDKTask:
     This class stores info about a task that should be run asynchronously (like what function to call,
     and with what arguments). This is quite useful when we later need to map e.g. which input arguments
     (typically, which identifiers) resulted in some failed API request.
+
+    It has a special ``__getitem__`` method for easy argument access:
+
+        >>> task = AsyncSDKTask(some_fn, 123, payload={"a": 1, "b": 2})
+        >>> task[0]  # gets the first positional argument
+        123
+        >>> task["payload"]  # gets the "payload" keyword argument
+        {"a": 1, "b": 2}
     """
 
     def __init__(self, fn: Callable[..., Coroutine], /, *args: Any, **kwargs: Any) -> None:
@@ -259,6 +267,15 @@ class AsyncSDKTask:
         self.args = args
         self.kwargs = kwargs
         self._async_task: asyncio.Task | None = None
+
+    def __getitem__(self, item: int | str) -> Any:
+        match item:
+            case int():
+                return self.args[item]
+            case str():
+                return self.kwargs[item]
+            case _:
+                raise TypeError("Use int to get 'args' and str to get 'kwargs', e.g. task[0], task['payload']")
 
     def schedule(self) -> asyncio.Task:
         """Schedule the task for execution. Can only be called once."""
