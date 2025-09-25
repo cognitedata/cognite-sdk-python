@@ -11,6 +11,7 @@ from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 from collections.abc import AsyncIterator, Callable, Iterable, Iterator, MutableSequence, Sequence
 from itertools import chain
+from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -2354,7 +2355,7 @@ class DatapointsPoster:
         ]
         summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task.args[0],
+            task_unwrap_fn=itemgetter(0),
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
 
@@ -2677,7 +2678,7 @@ class RetrieveLatestDpsFetcher:
         ]
         tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: unpack_items_in_payload(task.kwargs),
+            task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
         result = tasks_summary.joined_results(unpack_items)
