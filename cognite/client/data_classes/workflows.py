@@ -889,21 +889,87 @@ class SubworkflowTaskOutput(WorkflowTaskOutput):
         return {}
 
 
+class TagDetectionJobFilePageRange(CogniteObject):
+    """
+    A list of file page ranges that is being processed or was processed by the job.
+
+    Args:
+        instanceId (NodeId): The identifier of the instance.
+        begin (int): The beginning of the page range.
+        end (int): The end of the page range.
+    """
+
+    def __init__(self, instanceId: NodeId, begin: int, end: int) -> None:
+        self.instanceId = instanceId
+        self.begin = begin
+        self.end = end
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            NodeId.load(resource["instanceId"]),
+            resource["pageRange"]["begin"],
+            resource["pageRange"]["end"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "instanceId": self.instanceId.dump(camel_case=camel_case),
+            "pageRange": {
+                "begin": self.begin,
+                "end": self.end,
+            },
+        }
+
+
+class TagDetectionJob(CogniteObject):
+    """
+        A tag detection job.
+
+        Args:
+            jobId (int): The identifier of the tag detection job
+            status (str): Enum: "Queued" "Distributing" "Running" "Collecting" "Completed" "Failed" "Timeout"
+    The last observed status of the job.
+            filePageRanges (list[TagDetectionJobFilePageRange]): A list of file page ranges that is being processed or was processed by the job.
+    """
+
+    def __init__(self, jobId: int, status: str, filePageRanges: list[TagDetectionJobFilePageRange]) -> None:
+        self.jobId = jobId
+        self.status = status
+        self.filePageRanges = filePageRanges
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        filePageRanges = [
+            TagDetectionJobFilePageRange.load(filePageRange) for filePageRange in resource["filePageRanges"]
+        ]
+
+        return cls(resource["jobId"], resource["status"], filePageRanges)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "jobId": self.jobId,
+            "status": self.status,
+            "filePageRanges": [filePageRange.dump(camel_case) for filePageRange in self.filePageRanges],
+        }
+
+
 class TagDetectionTaskOutput(WorkflowTaskOutput):
     """
-    The tag detection task output is used to specify the output of a tag detection task.
+    The tag detection task output is used to specify the output of tag detection task.
     """
 
-    task_type: ClassVar[str] = "tagDetection"
-
-    def __init__(self) -> None: ...
+    def __init__(self, jobs: list[TagDetectionJob]) -> None:
+        self.jobs = jobs
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> TagDetectionTaskOutput:
-        return cls()
+        return cls([TagDetectionJob.load(tagDetectionJob) for tagDetectionJob in data["jobs"]])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {}
+        return {
+            "jobs": [tagDetectionJob.dump(camel_case) for tagDetectionJob in self.jobs],
+        }
 
 
 class WorkflowTaskExecution(CogniteObject):
