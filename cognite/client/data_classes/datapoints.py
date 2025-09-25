@@ -12,10 +12,10 @@ from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypedDict, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, overload
 from zoneinfo import ZoneInfo
 
-from typing_extensions import NotRequired, Self
+from typing_extensions import Self
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -226,28 +226,6 @@ def _max_dp_class(dct: dict[str, Any]) -> type[MaxDatapoint | MaxDatapointWithSt
     return MaxDatapointWithStatus if "statusCode" in dct else MaxDatapoint
 
 
-class _DatapointsPayloadItem(TypedDict, total=False):
-    # No field required
-    start: int
-    end: int
-    aggregates: list[str] | None
-    granularity: str | None
-    timeZone: str | None
-    targetUnit: str | None
-    targetUnitSystem: str | None
-    limit: int
-    includeOutsidePoints: bool
-    includeStatus: bool
-    ignoreBadDataPoints: bool
-    treatUncertainAsBad: bool
-    cursor: str | None
-
-
-class _DatapointsPayload(_DatapointsPayloadItem):
-    items: list[_DatapointsPayloadItem]
-    ignoreUnknownIds: NotRequired[bool]
-
-
 @dataclass
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
@@ -421,13 +399,13 @@ class DatapointsQuery:
 
         return get_task_orchestrator(self)
 
-    def to_payload_item(self) -> _DatapointsPayloadItem:
-        payload = _DatapointsPayloadItem(
-            **self.identifier.as_dict(),  # type: ignore [typeddict-item]
-            start=self.start,
-            end=self.end,
-            limit=self.capped_limit,
-        )
+    def to_payload_item(self) -> dict[str, Any]:
+        payload = {
+            **self.identifier.as_dict(),
+            "start": self.start,
+            "end": self.end,
+            "limit": self.capped_limit,
+        }
         if self.target_unit is not None:
             payload["targetUnit"] = self.target_unit
         elif self.target_unit_system is not None:
