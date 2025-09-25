@@ -4,7 +4,7 @@ import json
 import math
 import time
 from datetime import date, datetime, timezone
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar, Literal, cast
 
 import pytest
 
@@ -830,6 +830,24 @@ class TestInstancesAPI:
             view_id, query="Quentin", properties=["name"], filter=born_after_2000
         )
         assert len(search_result) == 0
+
+    @pytest.mark.parametrize("operator", ["AND", "OR"])
+    def test_search_node_data_operator_and_and_or(
+        self, cognite_client: CogniteClient, person_view: View, operator: Literal["AND", "OR"]
+    ) -> None:
+        res1 = cognite_client.data_modeling.instances.search(
+            person_view.as_id(), query="Tarantino Ritchie Scorsese", properties=["name"], operator=operator
+        )
+        res2 = cognite_client.data_modeling.instances.search(
+            person_view.as_id(), query="Quentin Tarantino", properties=["name"], operator=operator
+        )
+        # We only got mr. Tarantino:
+        if operator == "OR":
+            assert len(res1) == 1
+            assert len(res2) == 1
+        else:
+            assert len(res1) == 0
+            assert len(res2) == 1
 
     def test_search_with_sort(self, cognite_client: CogniteClient, person_view: View) -> None:
         search = lambda direction: cognite_client.data_modeling.instances.search(
