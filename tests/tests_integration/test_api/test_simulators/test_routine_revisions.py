@@ -1,5 +1,4 @@
 import time
-from typing import Any
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.shared import TimestampRange
@@ -9,11 +8,12 @@ from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineRevision,
     SimulatorRoutineRevisionWrite,
 )
+from cognite.client.data_classes.simulators.routines import SimulatorRoutine
 from cognite.client.utils._time import timestamp_to_ms
 from tests.tests_integration.test_api.test_simulators.seed.data import (
-    SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ,
-    SIMULATOR_ROUTINE_REVISION_OBJ,
-    SIMULATOR_ROUTINE_REVISION_SCRIPT_OBJ,
+    SIMULATOR_ROUTINE_REVISION,
+    SIMULATOR_ROUTINE_REVISION_CONFIG,
+    SIMULATOR_ROUTINE_REVISION_SCRIPT,
     ResourceNames,
     create_simulator_routine_revision,
 )
@@ -23,7 +23,7 @@ class TestSimulatorRoutineRevisions:
     def test_list_and_filtering_routine_revisions(
         self,
         cognite_client: CogniteClient,
-        seed_simulator_routine_revisions: list[dict[str, Any]],
+        seed_simulator_routine_revisions: tuple[SimulatorRoutineRevision, SimulatorRoutineRevision],
         seed_resource_names: ResourceNames,
     ) -> None:
         simulator_routine_external_id = seed_resource_names.simulator_routine_external_id
@@ -61,20 +61,16 @@ class TestSimulatorRoutineRevisions:
         last_revision = revisions_by_model[1]
         assert last_revision.external_id == seed_resource_names.simulator_routine_external_id + "_v2"
 
-        last_revision_script_json = [item.dump() for item in last_revision.script]
-        assert last_revision_script_json == seed_rev2["script"]
-        assert (
-            last_revision.script[0].steps[0].arguments["referenceId"]
-            == seed_rev2["script"][0]["steps"][0]["arguments"]["referenceId"]
-        )
+        assert last_revision.script is not None
+        assert last_revision.script == seed_rev2.script
 
-        last_revision_config_json = last_revision.configuration.dump()
-        assert last_revision_config_json == seed_rev2["configuration"]
+        assert last_revision.configuration is not None
+        assert last_revision.configuration == seed_rev2.configuration
 
     def test_retrieve_routine_revision(
         self,
         cognite_client: CogniteClient,
-        seed_simulator_routine_revisions: list[dict[str, Any]],
+        seed_simulator_routine_revisions: tuple[SimulatorRoutineRevision, SimulatorRoutineRevision],
         seed_resource_names: ResourceNames,
     ) -> None:
         simulator_routine_external_id = seed_resource_names.simulator_routine_external_id
@@ -97,9 +93,9 @@ class TestSimulatorRoutineRevisions:
     def test_create_routine_revision(
         self,
         cognite_client: CogniteClient,
-        seed_simulator_routines: dict[str, Any],
+        seed_simulator_routines: list[SimulatorRoutine],
         seed_resource_names: ResourceNames,
-    ):
+    ) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id
 
         revisions = cognite_client.simulators.routines.revisions.create(
@@ -110,7 +106,7 @@ class TestSimulatorRoutineRevisions:
                 ),
                 SimulatorRoutineRevisionWrite.load(
                     {
-                        **SIMULATOR_ROUTINE_REVISION_OBJ,
+                        **SIMULATOR_ROUTINE_REVISION.dump(),
                         "externalId": f"{routine_external_id}_1_v1",
                         "routineExternalId": f"{routine_external_id}_1",
                     }
@@ -122,15 +118,20 @@ class TestSimulatorRoutineRevisions:
         revision_1 = revisions[0]
         assert revision_1 is not None
         assert revision_1.external_id == f"{routine_external_id}_v3"
-        assert revision_1.configuration.dump() == SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ
-        assert [item.dump(camel_case=True) for item in revision_1.script] == SIMULATOR_ROUTINE_REVISION_SCRIPT_OBJ
+        assert revision_1.configuration is not None
+        assert revision_1.configuration == SIMULATOR_ROUTINE_REVISION_CONFIG
+        assert revision_1.script == SIMULATOR_ROUTINE_REVISION_SCRIPT
         assert revision_1.created_time
         assert revision_1.created_time > int(time.time() - 60) * 1000
 
         revision_2 = revisions[1]
         assert revision_2 is not None
         assert revision_2.external_id == f"{routine_external_id}_1_v1"
+        assert revision_2.configuration is not None
+        assert revision_2.configuration.inputs is not None
         assert revision_2.configuration.inputs[0].reference_id == "CWT"
         assert type(revision_2.configuration.inputs[0]) is SimulatorRoutineInputConstant
+        assert revision_2.configuration.outputs is not None
         assert revision_2.configuration.outputs[0].reference_id == "ST"
+        assert revision_2.script is not None
         assert revision_2.script[0].steps[0].arguments["referenceId"] == "CWT"

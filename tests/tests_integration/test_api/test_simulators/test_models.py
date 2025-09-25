@@ -12,9 +12,17 @@ from cognite.client.data_classes.simulators import (
     SimulatorModelWrite,
 )
 from cognite.client.data_classes.simulators.filters import PropertySort
+from cognite.client.data_classes.simulators.models import (
+    SimulatorFlowsheet,
+    SimulatorModelRevision,
+    SimulatorModelRevisionList,
+)
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.conftest import upload_file
-from tests.tests_integration.test_api.test_simulators.seed.data import ResourceNames
+from tests.tests_integration.test_api.test_simulators.seed.data import (
+    SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET,
+    ResourceNames,
+)
 from tests.tests_integration.test_api.test_simulators.utils import update_logs
 
 
@@ -39,6 +47,7 @@ class TestSimulatorModels:
 
         found_models = cognite_client.simulators.models.retrieve(ids=model_ids)
 
+        assert found_models is not None
         assert len(found_models) == len(model_ids)
 
         assert len(models) > 0
@@ -68,6 +77,7 @@ class TestSimulatorModels:
             model_revision_ids.append(revision.id)
 
         found_revisions = cognite_client.simulators.models.revisions.retrieve(ids=model_revision_ids)
+        assert isinstance(found_revisions, SimulatorModelRevisionList)
         assert len(found_revisions) == len(model_revision_ids)
 
         assert len(revisions) > 0
@@ -114,6 +124,8 @@ class TestSimulatorModels:
         model_revision_external_id = seed_resource_names.simulator_model_revision_external_id
         model_revision = cognite_client.simulators.models.revisions.retrieve(external_ids=model_revision_external_id)
         assert model_revision is not None
+
+        assert isinstance(model_revision, SimulatorModelRevision)
         assert model_revision.model_external_id == seed_resource_names.simulator_model_external_id
 
     @pytest.mark.usefixtures("seed_model_revision_file", "seed_resource_names")
@@ -121,7 +133,7 @@ class TestSimulatorModels:
         self,
         cognite_client: CogniteClient,
         seed_model_revision_file: FileMetadata,
-        seed_resource_names,
+        seed_resource_names: ResourceNames,
     ) -> None:
         model_external_id_1 = random_string(10)
         model_external_id_2 = random_string(10)
@@ -251,12 +263,14 @@ class TestSimulatorModels:
 
             assert model_revision_created is not None
             assert model_revision_created.external_id == model_revision_external_id
+            assert model_revision_created.external_dependencies is not None
             assert isinstance(model_revision_created.external_dependencies[0].file, SimulatorModelDependencyFileId)
+            assert isinstance(external_dependencies[0].file, SimulatorModelDependencyFileId)
             assert model_revision_created.external_dependencies[0].file.id == external_dependencies[0].file.id
         finally:
             cognite_client.simulators.models.delete(external_ids=[model_external_id])
 
-    def test_update_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+    def test_update_model(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
         model_external_id = random_string(10)
         models_to_create = SimulatorModelWrite(
             name="sdk-test-model1",
@@ -276,3 +290,42 @@ class TestSimulatorModels:
         assert model_updated.description == "updated description"
         assert model_updated.name == "updated name"
         cognite_client.simulators.models.delete(external_ids=[model_updated.external_id])
+
+    def test_model_revision_retrieve_data(
+        self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
+    ) -> None:
+        revision_data = cognite_client.simulators._post(
+            "/simulators/models/revisions/data/update",
+            headers={"cdf-version": "alpha"},
+            json={
+                "items": [
+                    {
+                        "modelRevisionExternalId": seed_resource_names.simulator_model_revision_external_id,
+                        "update": {"flowsheets": {"set": SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET}},
+                    }
+                ]
+            },
+        )
+
+        assert revision_data.status_code == 200
+
+        model_revisions = cognite_client.simulators.models.revisions.list(
+            model_external_ids=seed_resource_names.simulator_model_external_id
+        )
+
+        model_revision_data = model_revisions[0].get_data()
+        assert model_revision_data is not None
+
+        model_revision_data_list = cognite_client.simulators.models.revisions.retrieve_data(
+            model_revision_external_id=model_revisions[0].external_id
+        )
+        assert model_revision_data == model_revision_data_list
+
+        model_revision_data_item = model_revision_data[0]
+        assert model_revision_data_item.flowsheets is not None
+        assert (
+            model_revision_data_item.flowsheets[0].dump()
+            == SimulatorFlowsheet._load(
+                SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET[0], cognite_client=cognite_client
+            ).dump()
+        )
