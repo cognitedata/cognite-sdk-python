@@ -44,7 +44,6 @@ from cognite.client.data_classes.datapoints import (
     MaxOrMinDatapoint,
     MinDatapoint,
     MinDatapointWithStatus,
-    _DatapointsPayloadItem,
 )
 from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_finite, is_unlimited
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
@@ -596,7 +595,7 @@ class BaseDpsFetchSubtask:
             self.static_kwargs["timeZone"] = query.timezone
 
     @abstractmethod
-    def get_next_payload_item(self) -> _DatapointsPayloadItem: ...
+    def get_next_payload_item(self) -> dict[str, Any]: ...
 
     @abstractmethod
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None: ...
@@ -605,14 +604,14 @@ class BaseDpsFetchSubtask:
 class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
     """Fetches outside points and stores in parent"""
 
-    def get_next_payload_item(self) -> _DatapointsPayloadItem:
-        return _DatapointsPayloadItem(
-            start=self.start,
-            end=self.end,
-            limit=0,  # Not a bug; it just returns the outside points
-            includeOutsidePoints=True,
-            **self.static_kwargs,  # type: ignore [typeddict-item]
-        )
+    def get_next_payload_item(self) -> dict[str, Any]:
+        return {
+            "start": self.start,
+            "end": self.end,
+            "limit": 0,  # Not a bug; it just returns the outside points
+            "includeOutsidePoints": True,
+            **self.static_kwargs,
+        }
 
     def store_partial_result(self, res: DataPointListItem) -> None:
         # `Oneof` field `datapointType` can be either `numericDatapoints` or `stringDatapoints`
@@ -633,15 +632,15 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         self.next_cursor = first_cursor
         self.uses_cursor = self.parent.query.use_cursors
 
-    def get_next_payload_item(self) -> _DatapointsPayloadItem:
+    def get_next_payload_item(self) -> dict[str, Any]:
         remaining = self.parent.get_remaining_limit()
-        return _DatapointsPayloadItem(
-            start=self.next_start,
-            end=self.end,
-            limit=min(self.max_query_limit, remaining),
-            cursor=self.next_cursor,
-            **self.static_kwargs,  # type: ignore [typeddict-item]
-        )
+        return {
+            "start": self.next_start,
+            "end": self.end,
+            "limit": min(self.max_query_limit, remaining),
+            "cursor": self.next_cursor,
+            **self.static_kwargs,
+        }
 
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         if not self.parent.ts_info:
