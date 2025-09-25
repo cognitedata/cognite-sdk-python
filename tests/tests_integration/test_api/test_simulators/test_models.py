@@ -313,15 +313,13 @@ class TestSimulatorModels:
             model_external_ids=seed_resource_names.simulator_model_external_id
         )
 
-        model_revision_data = model_revisions[0].get_data()
-        assert model_revision_data is not None
+        model_revision_data_item = model_revisions[0].get_data()
+        assert model_revision_data_item is not None
 
         model_revision_data_list = cognite_client.simulators.models.revisions.retrieve_data(
             model_revision_external_id=model_revisions[0].external_id
         )
-        assert model_revision_data == model_revision_data_list
-
-        model_revision_data_item = model_revision_data[0]
+        assert model_revision_data_item == model_revision_data_list[0]
         assert model_revision_data_item.flowsheets is not None
         assert (
             model_revision_data_item.flowsheets[0].dump()
