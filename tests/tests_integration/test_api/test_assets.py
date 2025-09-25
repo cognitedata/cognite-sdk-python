@@ -111,7 +111,9 @@ def generate_asset_tree(root: AssetWrite, first_level_size: int, size: int, dept
             parent = random.choice(last_level)
             identifier = f"test__asset_depth_{level}_asset_{asset_no}"
             asset = AssetWrite(
-                name=f"Asset {asset_no} depth@{level}", external_id=identifier, parent_external_id=parent.external_id
+                name=f"Asset {asset_no} depth@{level}",
+                external_id=identifier,
+                parent_external_id=parent.external_id,
             )
             this_level.append(asset)
         last_level = this_level
