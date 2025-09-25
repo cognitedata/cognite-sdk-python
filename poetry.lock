@@ -80,19 +80,6 @@ files = [
 dev = ["backports.zoneinfo ; python_version < \"3.9\"", "freezegun (>=1.0,<2.0)", "jinja2 (>=3.0)", "pytest (>=6.0)", "pytest-cov", "pytz", "setuptools", "tzdata ; sys_platform == \"win32\""]
 
 [[package]]
-name = "backports-asyncio-runner"
-version = "1.2.0"
-description = "Backport of asyncio.Runner, a context manager that controls event loop life cycle."
-optional = false
-python-versions = "<3.11,>=3.8"
-groups = ["dev"]
-markers = "python_version == \"3.10\""
-files = [
-    {file = "backports_asyncio_runner-1.2.0-py3-none-any.whl", hash = "sha256:0da0a936a8aeb554eccb426dc55af3ba63bcdc69fa1a600b5bb305413a4477b5"},
-    {file = "backports_asyncio_runner-1.2.0.tar.gz", hash = "sha256:a5aa7b2b7d8f8bfcaa2b57313f70792df84e32a2a746f585213373f900b42162"},
-]
-
-[[package]]
 name = "backports-tarfile"
 version = "1.2.0"
 description = "Backport of CPython tarfile module"
@@ -2145,27 +2132,6 @@ tomli = {version = ">=1", markers = "python_version < \"3.11\""}
 dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "requests", "setuptools", "xmlschema"]
 
 [[package]]
-name = "pytest-asyncio"
-version = "1.2.0"
-description = "Pytest support for asyncio"
-optional = false
-python-versions = ">=3.9"
-groups = ["dev"]
-files = [
-    {file = "pytest_asyncio-1.2.0-py3-none-any.whl", hash = "sha256:8e17ae5e46d8e7efe51ab6494dd2010f4ca8dae51652aa3c8d55acf50bfb2e99"},
-    {file = "pytest_asyncio-1.2.0.tar.gz", hash = "sha256:c609a64a2a8768462d0c99811ddb8bd2583c33fd33cf7f21af1c142e824ffb57"},
-]
-
-[package.dependencies]
-backports-asyncio-runner = {version = ">=1.1,<2", markers = "python_version < \"3.11\""}
-pytest = ">=8.2,<9"
-typing-extensions = {version = ">=4.12", markers = "python_version < \"3.13\""}
-
-[package.extras]
-docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1)"]
-testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
-
-[[package]]
 name = "pytest-cov"
 version = "7.0.0"
 description = "Pytest plugin for measuring coverage."
@@ -3182,4 +3148,4 @@ yaml = ["PyYAML"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "edd6c17ed5749d076f3ea077e5375a4620ae459094d7aae2bdfb725eddb8029d"
+content-hash = "5a922a2d41019b702ee71055d9380136d569c51acd833d2a6dd9d4110d62ab23"
