@@ -169,9 +169,9 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
         version (str | None): The version of the query generation strategy to use. A higher number does not necessarily mean a better query. Supported values are "v1" and "v2".
     """
 
-    data_models: Sequence[DataModelInfo] | None = None
-    instance_spaces: InstanceSpaces | None = None
-    version: Literal["v1", "v2"] | str | None = None
+    data_models: Sequence[DataModelInfo] | None
+    instance_spaces: InstanceSpaces | None
+    version: Literal["v1", "v2"] | str | None
 
     @classmethod
     def _load(
