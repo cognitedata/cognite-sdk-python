@@ -19,8 +19,9 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling import NodeId
+from cognite.client.data_classes.data_modeling import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.query import Query, ResultSetExpression, Select
+from cognite.client.data_classes.filters import Filter
 from cognite.client.data_classes.simulators.runs import (
     SimulationInputOverride,
 )
@@ -516,13 +517,39 @@ class DynamicTaskParameters(WorkflowTaskParameters):
         }
 
 
+class TagDetectionTaskEntityFilter(CogniteObject):
+    view: ViewId
+    filters: Filter
+    search_field: str
+
+    def __init__(self, view: ViewId, filters: Filter, search_field: str) -> None:
+        self.view = view
+        self.filters = filters
+        self.search_field = search_field
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            view=ViewId.load(resource["view"]),
+            filters=Filter.load(resource["filters"]),
+            search_field=resource["searchField"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "view": self.view.dump(camel_case=camel_case, include_type=False),
+            "filters": self.filters.dump(),
+            "searchField": self.search_field,
+        }
+
+
 class TagDetectionTaskParameters(WorkflowTaskParameters):
     """
     The tag detection task parameters are used to specify a tag detection task.
 
     Args:
         file_instance_ids (list[NodeId] | str): List of files to detect tags in. Can be a reference.
-        entity_filters (str): The DMS filter query to fetch entities to match on
+        entity_filters (list[TagDetectionTaskEntityFilter]): Entity search specification(s) used to fetch DMS entities to match on.
         min_tokens (int): Each detected item must match the detected entity on at least this number of tokens. A token is a substring of consecutive letters or digits.
         partial_match (bool): Allow partial (fuzzy) matching of entities in the engineering diagrams. Creates a match only when it is possible to do so unambiguously.
         write_annotations (bool): Whether annotations should be automatically be written for the files
@@ -540,7 +567,7 @@ class TagDetectionTaskParameters(WorkflowTaskParameters):
     def __init__(
         self,
         file_instance_ids: list[NodeId] | str,
-        entity_filters: str,
+        entity_filters: list[TagDetectionTaskEntityFilter],
         min_tokens: int,
         partial_match: bool,
         write_annotations: bool = False,
@@ -557,12 +584,18 @@ class TagDetectionTaskParameters(WorkflowTaskParameters):
         file_instance_ids: list[NodeId] | str
         if isinstance(tag_detection["fileInstanceIds"], str):
             file_instance_ids = tag_detection["fileInstanceIds"]
-        else:
+        elif isinstance(tag_detection["fileInstanceIds"], list):
             file_instance_ids = [NodeId.load(file_instance_id) for file_instance_id in tag_detection["fileInstanceIds"]]
+        else:
+            raise ValueError(f"Invalid file instance ids: {tag_detection['fileInstanceIds']}")
+
+        entity_filters: list[TagDetectionTaskEntityFilter] = [
+            TagDetectionTaskEntityFilter.load(item) for item in tag_detection["entityFilters"]
+        ]
 
         return cls(
             file_instance_ids=file_instance_ids,
-            entity_filters=tag_detection["entityFilters"],
+            entity_filters=entity_filters,
             min_tokens=tag_detection["minTokens"],
             partial_match=tag_detection["partialMatch"],
             write_annotations=tag_detection["writeAnnotations"],
@@ -575,10 +608,12 @@ class TagDetectionTaskParameters(WorkflowTaskParameters):
         else:
             fileInstanceIds = [file_instance_id.dump(camel_case) for file_instance_id in self.file_instance_ids]
 
+        entityFilters = [ef.dump(camel_case) for ef in self.entity_filters]
+
         return {
             self.task_type: {
                 "fileInstanceIds": fileInstanceIds,
-                "entityFilters": self.entity_filters,
+                "entityFilters": entityFilters,
                 "minTokens": self.min_tokens,
                 "partialMatch": self.partial_match,
                 "writeAnnotations": self.write_annotations,
