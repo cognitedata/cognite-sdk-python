@@ -527,6 +527,12 @@ class TagDetectionTaskParameters(WorkflowTaskParameters):
         partial_match (bool): Allow partial (fuzzy) matching of entities in the engineering diagrams. Creates a match only when it is possible to do so unambiguously.
         write_annotations (bool): Whether annotations should be automatically be written for the files
 
+    Note:
+        A Reference is an expression that allows dynamically injecting input to a task during execution.
+        References can be used to reference the input of the Workflow, the output of a previous task in the Workflow,
+        or the input of a previous task in the Workflow. Note that the injected value must be valid in the context of
+        the property it is injected into. Example Task reference: ${myTaskExternalId.output.someKey} Example Workflow input reference: ${workflow.input.myKey}
+
     """
 
     task_type = "tagDetection"
@@ -547,18 +553,31 @@ class TagDetectionTaskParameters(WorkflowTaskParameters):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        tag_detection = resource[cls.task_type]
+        file_instance_ids: list[NodeId] | str
+        if isinstance(tag_detection["fileInstanceIds"], str):
+            file_instance_ids = tag_detection["fileInstanceIds"]
+        else:
+            file_instance_ids = [NodeId.load(file_instance_id) for file_instance_id in tag_detection["fileInstanceIds"]]
+
         return cls(
-            file_instance_ids=resource["fileInstanceIds"],
-            entity_filters=resource["entityFilters"],
-            min_tokens=resource["minTokens"],
-            partial_match=resource["partialMatch"],
-            write_annotations=resource["writeAnnotations"],
+            file_instance_ids=file_instance_ids,
+            entity_filters=tag_detection["entityFilters"],
+            min_tokens=tag_detection["minTokens"],
+            partial_match=tag_detection["partialMatch"],
+            write_annotations=tag_detection["writeAnnotations"],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        fileInstanceIds: list[dict[str, str]] | str
+        if isinstance(self.file_instance_ids, str):
+            fileInstanceIds = self.file_instance_ids
+        else:
+            fileInstanceIds = [file_instance_id.dump(camel_case) for file_instance_id in self.file_instance_ids]
+
         return {
             self.task_type: {
-                "fileInstanceIds": self.file_instance_ids,
+                "fileInstanceIds": fileInstanceIds,
                 "entityFilters": self.entity_filters,
                 "minTokens": self.min_tokens,
                 "partialMatch": self.partial_match,
@@ -669,6 +688,8 @@ class WorkflowTaskOutput(ABC):
             return SubworkflowTaskOutput.load(data)
         elif task_type == "simulation":
             return SimulationTaskOutput.load(data)
+        elif task_type == "tagDetection":
+            return TagDetectionTaskOutput.load(data)
         else:
             raise ValueError(f"Unknown task type: {task_type}")
 
