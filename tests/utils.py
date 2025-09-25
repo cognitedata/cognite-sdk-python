@@ -41,6 +41,7 @@ from cognite.client.data_classes.aggregations import Buckets
 from cognite.client.data_classes.capabilities import Capability, LegacyCapability, UnknownAcl
 from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNode, TypedNodeApply
 from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType
+from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
 from cognite.client.data_classes.datapoints import (
     _INT_AGGREGATES,
@@ -68,6 +69,7 @@ from cognite.client.utils._text import random_string, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
+
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -530,7 +532,11 @@ class FakeCogniteResourceGenerator:
         elif container_type is tuple:
             if any(arg is ... for arg in args):
                 return tuple(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
-            raise NotImplementedError(f"Tuple with multiple types is not supported. {self._error_msg}")
+            elif all(arg is str for arg in args):
+                return tuple(self._random_string(self._random.randint(0, 10)) for _ in range(len(args)))
+            raise NotImplementedError(
+                f"Tuple with multiple types is not supported. Add on the above line. {self._error_msg}"
+            )
 
         if var_name == "external_id" and type_ is str:
             return self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
@@ -611,6 +617,8 @@ class FakeCogniteResourceGenerator:
         from cognite.client import CogniteClient
 
         return {
+            "ContainerId": ContainerId,
+            "ViewId": ViewId,
             "CogniteClient": CogniteClient,
             "NumpyDatetime64NSArray": npt.NDArray[np.datetime64],
             "NumpyUInt32Array": npt.NDArray[np.uint32],
