@@ -145,7 +145,7 @@ def node_with_1_1_pressure_in_bar(
     return node
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def edge_type_filter_test_node(cognite_client: CogniteClient, integration_test_space: Space) -> CogniteDescribableNode:
     node_result = cognite_client.data_modeling.instances.apply(
         nodes=[
@@ -161,7 +161,7 @@ def edge_type_filter_test_node(cognite_client: CogniteClient, integration_test_s
     )[0]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def edge_type_filter_test_edge(
     cognite_client: CogniteClient, edge_type_filter_test_node: CogniteDescribableNode
 ) -> CogniteDescribableEdge:
