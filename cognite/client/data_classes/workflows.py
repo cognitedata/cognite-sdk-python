@@ -546,8 +546,8 @@ class TagDetectionTaskParameters(WorkflowTaskParameters):
     Args:
         file_instance_ids (list[NodeId] | str): List of files to detect tags in. Can be a reference.
         entity_filters (list[TagDetectionTaskEntityFilter]): Entity search specification(s) used to fetch DMS entities to match on.
-        min_tokens (int): Each detected item must match the detected entity on at least this number of tokens. A token is a substring of consecutive letters or digits.
-        partial_match (bool): Allow partial (fuzzy) matching of entities in the engineering diagrams. Creates a match only when it is possible to do so unambiguously.
+        min_tokens (int | None): Each detected item must match the detected entity on at least this number of tokens. A token is a substring of consecutive letters or digits.
+        partial_match (bool | None): Allow partial (fuzzy) matching of entities in the engineering diagrams. Creates a match only when it is possible to do so unambiguously.
         write_annotations (bool): Whether annotations should be automatically be written for the files
 
     Note:
@@ -598,18 +598,18 @@ class TagDetectionTaskParameters(WorkflowTaskParameters):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        fileInstanceIds: list[dict[str, str]] | str
+        file_instance_ids: list[dict[str, str]] | str
         if isinstance(self.file_instance_ids, str):
-            fileInstanceIds = self.file_instance_ids
+            file_instance_ids = self.file_instance_ids
         else:
-            fileInstanceIds = [file_instance_id.dump(camel_case) for file_instance_id in self.file_instance_ids]
+            file_instance_ids = [file_instance_id.dump(camel_case) for file_instance_id in self.file_instance_ids]
 
-        entityFilters = [ef.dump(camel_case) for ef in self.entity_filters]
+        entity_filters = [ef.dump(camel_case) for ef in self.entity_filters]
 
         return {
             self.task_type: {
-                "fileInstanceIds": fileInstanceIds,
-                "entityFilters": entityFilters,
+                "fileInstanceIds": file_instance_ids,
+                "entityFilters": entity_filters,
                 "minTokens": self.min_tokens,
                 "partialMatch": self.partial_match,
                 "writeAnnotations": self.write_annotations,
