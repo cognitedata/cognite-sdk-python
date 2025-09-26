@@ -518,10 +518,6 @@ class DynamicTaskParameters(WorkflowTaskParameters):
 
 
 class TagDetectionTaskEntityFilter(CogniteObject):
-    view: ViewId
-    filters: Filter
-    search_field: str
-
     def __init__(self, view: ViewId, filters: Filter, search_field: str) -> None:
         self.view = view
         self.filters = filters
