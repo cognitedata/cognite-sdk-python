@@ -1084,6 +1084,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        operator: Literal["AND", "OR"] = "OR",
     ) -> NodeList[Node]: ...
 
     @overload
@@ -1100,6 +1101,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        operator: Literal["AND", "OR"] = "OR",
     ) -> EdgeList[Edge]: ...
 
     @overload
@@ -1116,6 +1118,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        operator: Literal["AND", "OR"] = "OR",
     ) -> NodeList[T_Node]: ...
 
     @overload
@@ -1132,6 +1135,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        operator: Literal["AND", "OR"] = "OR",
     ) -> EdgeList[T_Edge]: ...
 
     def search(
@@ -1146,6 +1150,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
+        operator: Literal["AND", "OR"] = "OR",
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
         """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
@@ -1161,6 +1166,7 @@ class InstancesAPI(APIClient):
             limit (int | None): Maximum number of instances to return. Defaults to 25. Will return the maximum number
                 of results (1000) if set to None, -1, or math.inf.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
+            operator (Literal['AND', 'OR']): Controls how multiple search terms are combined when matching documents. OR (default): A document matches if it contains any of the query terms in the searchable fields. This typically returns more results but with lower precision. AND: A document matches only if it contains all of the query terms across the searchable fields. This typically returns fewer results but with higher relevance.
 
         Returns:
             NodeList[T_Node] | EdgeList[T_Edge]: Search result with matching nodes or edges.
@@ -1175,19 +1181,21 @@ class InstancesAPI(APIClient):
                 >>> res = client.data_modeling.instances.search(
                 ...     ViewId("mySpace", "PersonView", "v1"),
                 ...     query="Arnold",
-                ...     properties=["name"])
+                ...     properties=["name"],
+                ... )
 
-            Search for Quentin in the person view in the name property, but only born after 1970:
+            Search for Tarantino, Ritchie or Scorsese in the person view in the name property, but only born after 1942:
 
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes import filters
-                >>> born_after_1970 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1970)
+                >>> born_after_1942 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1942)
                 >>> res = client.data_modeling.instances.search(
                 ...     ViewId("mySpace", "PersonView", "v1"),
-                ...     query="Quentin",
+                ...     query="Tarantino Ritchie Scorsese",
                 ...     properties=["name"],
-                ...     filter=born_after_1970)
-
+                ...     filter=born_after_1942,
+                ...     operator="OR"
+                ... )
         """
         self._validate_filter(filter)
         instance_type_str = self._to_instance_type_str(instance_type)
@@ -1211,7 +1219,10 @@ class InstancesAPI(APIClient):
             "view": view.dump(camel_case=True),
             "instanceType": instance_type_str,
             "limit": self._SEARCH_LIMIT if is_unlimited(limit) else limit,
+            "operator": operator.upper(),
         }
+        if body["operator"] not in ["AND", "OR"]:
+            raise ValueError(f"Invalid {operator=}. Must be 'AND' or 'OR'.")
         if query:
             body["query"] = query
         if properties:
