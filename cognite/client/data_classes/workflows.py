@@ -923,14 +923,13 @@ class TagDetectionJobFilePageRange(CogniteObject):
 
 
 class TagDetectionJob(CogniteObject):
-    """
-        A tag detection job.
+    """A tag detection job.
 
-        Args:
-            jobId (int): The identifier of the tag detection job
-            status (str): Enum: "Queued" "Distributing" "Running" "Collecting" "Completed" "Failed" "Timeout"
-    The last observed status of the job.
-            filePageRanges (list[TagDetectionJobFilePageRange]): A list of file page ranges that is being processed or was processed by the job.
+    Args:
+        jobId (int): The identifier of the tag detection job.
+        status (str): The last observed status of the job. One of ``"Queued"``, ``"Distributing"``, ``"Running"``,
+            ``"Collecting"``, ``"Completed"``, ``"Failed"``, ``"Timeout"``.
+        filePageRanges (list[TagDetectionJobFilePageRange]): File page ranges that are or were processed by the job.
     """
 
     def __init__(self, jobId: int, status: str, filePageRanges: list[TagDetectionJobFilePageRange]) -> None:
