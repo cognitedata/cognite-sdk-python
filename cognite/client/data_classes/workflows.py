@@ -928,7 +928,7 @@ class TagDetectionJob(CogniteObject):
         filePageRanges (list[TagDetectionJobFilePageRange]): File page ranges that are or were processed by the job.
     """
 
-    def __init__(self, jobId: int, status: str, filePageRanges: list[TagDetectionJobFilePageRange]) -> None:
+    def __init__(self, jobId: int, status: TagDetectionStatus, filePageRanges: list[TagDetectionJobFilePageRange]) -> None:
         self.jobId = jobId
         self.status = status
         self.filePageRanges = filePageRanges
