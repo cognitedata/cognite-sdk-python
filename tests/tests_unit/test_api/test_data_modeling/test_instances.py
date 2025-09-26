@@ -104,3 +104,9 @@ class TestSearch:
         body = json.loads(call.request.body)
         assert "limit" in body
         assert body["limit"] == cognite_client.data_modeling.instances._SEARCH_LIMIT
+
+    def test_search_using_invalid_operator(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(ValueError, match="Invalid operator='INVALID'"):
+            cognite_client.data_modeling.instances.search(
+                ViewId("my_space", "MyView", "v1"), "dummy text", operator="INVALID"
+            )

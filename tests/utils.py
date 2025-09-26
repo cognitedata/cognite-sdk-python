@@ -20,6 +20,7 @@ from types import UnionType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, get_args, get_origin, get_type_hints
 from zoneinfo import ZoneInfo
 
+import cognite.client.utils._auxiliary
 from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
@@ -40,6 +41,7 @@ from cognite.client.data_classes.aggregations import Buckets
 from cognite.client.data_classes.capabilities import Capability, LegacyCapability, UnknownAcl
 from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNode, TypedNodeApply
 from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType
+from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
 from cognite.client.data_classes.datapoints import (
     _INT_AGGREGATES,
@@ -68,6 +70,7 @@ from cognite.client.utils._text import random_string, to_snake_case
 if TYPE_CHECKING:
     import pandas
 
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 T_Type = TypeVar("T_Type", bound=type)
@@ -90,8 +93,7 @@ def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Typ
     return sorted(
         filter(
             lambda sub: sub.__module__.startswith("cognite.client"),
-            set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c))
-            - (exclude or set()),
+            cognite.client.utils._auxiliary.all_subclasses(base, exclude=exclude),
         ),
         key=str,
     )
@@ -101,7 +103,7 @@ def all_concrete_subclasses(base: T_Type, exclude: set[type] | None = None) -> l
     return [
         sub
         for sub in all_subclasses(base, exclude=exclude)
-        if all(base is not abc.ABC for base in sub.__bases__)
+        if abc.ABC not in sub.__bases__
         and not inspect.isabstract(sub)
         # The FakeCogniteResourceGenerator does not support descriptors, so we exclude the Typed classes
         # as these use the PropertyOptions descriptor.
@@ -530,7 +532,11 @@ class FakeCogniteResourceGenerator:
         elif container_type is tuple:
             if any(arg is ... for arg in args):
                 return tuple(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
-            raise NotImplementedError(f"Tuple with multiple types is not supported. {self._error_msg}")
+            elif all(arg is str for arg in args):
+                return tuple(self._random_string(self._random.randint(0, 10)) for _ in range(len(args)))
+            raise NotImplementedError(
+                f"Tuple with multiple types is not supported. Add on the above line. {self._error_msg}"
+            )
 
         if var_name == "external_id" and type_ is str:
             return self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
@@ -611,6 +617,8 @@ class FakeCogniteResourceGenerator:
         from cognite.client import CogniteClient
 
         return {
+            "ContainerId": ContainerId,
+            "ViewId": ViewId,
             "CogniteClient": CogniteClient,
             "NumpyDatetime64NSArray": npt.NDArray[np.datetime64],
             "NumpyUInt32Array": npt.NDArray[np.uint32],
