@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import importlib
-from collections.abc import Callable, Iterable, Iterator
 from types import ModuleType
 from typing import TYPE_CHECKING, TypeVar, overload
 
 if TYPE_CHECKING:
-    from concurrent.futures import Future
+    pass
 
 
 _T = TypeVar("_T")
