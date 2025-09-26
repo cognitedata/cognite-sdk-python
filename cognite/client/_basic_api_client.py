@@ -110,13 +110,13 @@ class FailedRequestHandler:
             extra=drop_none_values(extra),
         )
 
-    def raise_api_error(self, cognite_client: AsyncCogniteClient) -> NoReturn:
+    async def raise_api_error(self, cognite_client: AsyncCogniteClient) -> NoReturn:
         cluster = cognite_client._config.cdf_cluster
         project = cognite_client._config.project
 
         match self.status_code, self.duplicated, self.missing:
             case 401, *_:
-                self._raise_no_project_access_error(cognite_client, cluster, project)
+                await self._raise_no_project_access_error(cognite_client, cluster, project)
             case 409, list(), None:
                 self._raise_api_error(CogniteDuplicatedError, cluster, project)
             case 400 | 422, None, list():
@@ -124,13 +124,14 @@ class FailedRequestHandler:
             case _:
                 self._raise_api_error(CogniteAPIError, cluster, project)
 
-    def _raise_no_project_access_error(
+    async def _raise_no_project_access_error(
         self, cognite_client: AsyncCogniteClient, cluster: str | None, project: str
     ) -> NoReturn:
+        maybe_projects = await CogniteProjectAccessError._attempt_to_get_projects(cognite_client, project)
         raise CogniteProjectAccessError(
-            client=cognite_client,
             project=project,
             x_request_id=self.x_request_id,
+            maybe_projects=maybe_projects,
             cluster=cluster,
         ) from None  # we don't surface the underlying httpx.HTTPStatusError
 
@@ -374,7 +375,7 @@ class BasicAsyncAPIClient:
         """The response had an HTTP status code of 4xx or 5xx"""
         handler = await FailedRequestHandler.from_status_error(error, stream=stream)
         handler.log_failed_request(payload)
-        handler.raise_api_error(self._cognite_client)
+        await handler.raise_api_error(self._cognite_client)
 
     def _log_successful_request(
         self, res: httpx.Response, payload: dict[str, Any] | None = None, stream: bool = False

@@ -21,22 +21,22 @@ class CogniteProjectAccessError(CogniteException):
     """Raised when we get a 401 response from the API which means we don't have project access at all."""
 
     def __init__(
-        self, client: AsyncCogniteClient, project: str, x_request_id: str | None, cluster: str | None = None
+        self, project: str, x_request_id: str | None, maybe_projects: list[str] | None, cluster: str | None = None
     ) -> None:
         self.x_request_id = x_request_id
         self.cluster = cluster
         self.project = project
-        self.maybe_projects = self._attempt_to_get_projects(client, project)
+        self.maybe_projects = maybe_projects
 
     @staticmethod
     @timed_cache(ttl=5)  # Don't spam requests when using concurrency
-    def _attempt_to_get_projects(client: AsyncCogniteClient, current_project: str) -> list[str] | None:
+    async def _attempt_to_get_projects(client: AsyncCogniteClient, current_project: str) -> list[str] | None:
         # To avoid an infinte loop, we can't just use client.iam.token.inspect(), but use http_client directly:
         api_client = client.iam.token
         _, full_url = resolve_url("GET", "/api/v1/token/inspect", api_client._api_version, api_client._config)
         full_headers = api_client._configure_headers(additional_headers=None, api_subversion=api_client._api_version)
         try:
-            token_inspect = api_client._http_client("GET", full_url, headers=full_headers, timeout=5)
+            token_inspect = await api_client._http_client("GET", full_url, headers=full_headers, timeout=5)
             projects = {proj["projectUrlName"] for proj in token_inspect.json()["projects"]} - {current_project}
             return sorted(projects)
         except Exception:
