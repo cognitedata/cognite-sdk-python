@@ -568,8 +568,8 @@ class TagDetectionTaskParameters(WorkflowTaskParameters):
         self,
         file_instance_ids: list[NodeId] | str,
         entity_filters: list[TagDetectionTaskEntityFilter],
-        min_tokens: int,
-        partial_match: bool,
+        min_tokens: int | None = None,
+        partial_match: bool | None = None,
         write_annotations: bool = False,
     ) -> None:
         self.file_instance_ids = file_instance_ids
