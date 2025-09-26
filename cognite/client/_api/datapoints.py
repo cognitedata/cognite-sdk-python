@@ -127,6 +127,8 @@ class DpsFetchStrategy(ABC):
                 code=400,
                 missing=[q.identifier.as_dict(camel_case=False) for q in to_raise],
                 x_request_id="<no failing request was made>",
+                cluster=self.dps_client._config.cdf_cluster,
+                project=self.dps_client._config.project,
             )
 
     @abstractmethod
