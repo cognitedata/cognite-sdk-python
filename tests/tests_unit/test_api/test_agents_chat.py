@@ -70,6 +70,7 @@ class TestAgentChat:
         call_args = cognite_client.agents._post.call_args
         assert call_args[1]["url_path"] == "/ai/agents/chat"
         assert call_args[1]["json"]["agentExternalId"] == "my_agent"
+        assert "agentId" not in call_args[1]["json"]
         assert len(call_args[1]["json"]["messages"]) == 1
         assert call_args[1]["json"]["messages"][0]["content"]["text"] == "What can you help me with?"
         assert call_args[1]["json"]["messages"][0]["content"]["type"] == "text"

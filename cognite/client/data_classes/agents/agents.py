@@ -27,6 +27,7 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
+            This value is used as ``agentExternalId`` when interacting with the chat API.
         name (str): The name of the agent.
         description (str | None): The description of the agent.
         instructions (str | None): Instructions for the agent.
@@ -46,6 +47,7 @@ class AgentUpsert(AgentCore):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
+            This value is used as ``agentExternalId`` when interacting with the chat API.
         name (str): The name of the agent, for use in user interfaces.
         description (str | None): The human readable description of the agent.
         instructions (str | None): Instructions for the agent.
@@ -112,6 +114,7 @@ class Agent(AgentCore):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
+            This value is used as ``agentExternalId`` when interacting with the chat API.
         name (str): The name of the agent, for use in user interfaces.
         description (str | None): The human readable description of the agent.
         instructions (str | None): Instructions for the agent.

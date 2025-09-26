@@ -218,10 +218,11 @@ class AgentChatResponse(CogniteResource):
     """Response from agent chat.
 
     Args:
-        agent_id (str): The ID of the agent.
+        agent_id (str): The ID of the agent. Deprecated: Will be removed in a future release in favor of `agent_external_id`.
         messages (AgentMessageList): The response messages from the agent.
         type (str): The response type.
         cursor (str | None): Cursor for conversation continuation.
+        agent_external_id (str | None): The external ID of the agent. Prefer this over `agent_id`.
     """
 
     def __init__(
