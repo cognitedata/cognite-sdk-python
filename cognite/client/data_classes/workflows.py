@@ -895,6 +895,16 @@ class SubworkflowTaskOutput(WorkflowTaskOutput):
         return {}
 
 
+@dataclass
+class PageRange(CogniteObject):
+    begin: int
+    end: int
+    
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(resource["begin"], resource["end"])
+
+
 class TagDetectionJobFilePageRange(CogniteObject):
     """
     A list of file page ranges that is being processed or was processed by the job.
@@ -905,27 +915,23 @@ class TagDetectionJobFilePageRange(CogniteObject):
         end (int): The end of the page range.
     """
 
-    def __init__(self, instanceId: NodeId, begin: int, end: int) -> None:
+    def __init__(self, instanceId: NodeId, page_range: PageRange) -> None:
         self.instanceId = instanceId
-        self.begin = begin
-        self.end = end
+        self.page_range = page_range
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             NodeId.load(resource["instanceId"]),
-            resource["pageRange"]["begin"],
-            resource["pageRange"]["end"],
+            PageRange._load(resource["pageRange"]),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "instanceId": self.instanceId.dump(camel_case=camel_case),
-            "pageRange": {
-                "begin": self.begin,
-                "end": self.end,
-            },
+            "pageRange": self.page_range.dump(camel_case=camel_case),
         }
+
 
 
 class TagDetectionJob(CogniteObject):
