@@ -41,7 +41,9 @@ def permanent_agent(cognite_client: CogniteClient) -> Agent:
                             version="v1",
                             view_external_ids=["CogniteAsset"],
                         )
-                    ]
+                    ],
+                    instance_spaces=None,
+                    version="v2",
                 ),
             )
         ],
@@ -80,7 +82,9 @@ class TestAgentsAPI:
                                 version="v1",
                                 view_external_ids=["CogniteAsset"],
                             )
-                        ]
+                        ],
+                        instance_spaces=None,
+                        version="v2",
                     ),
                 ),
                 SummarizeDocumentAgentToolUpsert(
