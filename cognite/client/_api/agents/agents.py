@@ -299,7 +299,8 @@ class AgentsAPI(APIClient):
 
         # Build request body
         body = {
-            "agentId": agent_id,
+            "agentExternalId": agent_id,
+            "agentId": agent_id,  # Deprecated server-side; kept for backward compatibility
             "messages": MessageList(messages).dump(camel_case=True),
         }
 

@@ -19,6 +19,7 @@ from cognite.client.data_classes.agents.chat import (
 def chat_response_body() -> dict:
     return {
         "agentId": "my_agent",
+        "agentExternalId": "my_agent",
         "response": {
             "cursor": "cursor_12345",
             "messages": [
@@ -68,7 +69,7 @@ class TestAgentChat:
         cognite_client.agents._post.assert_called_once()
         call_args = cognite_client.agents._post.call_args
         assert call_args[1]["url_path"] == "/ai/agents/chat"
-        assert call_args[1]["json"]["agentId"] == "my_agent"
+        assert call_args[1]["json"]["agentExternalId"] == "my_agent"
         assert len(call_args[1]["json"]["messages"]) == 1
         assert call_args[1]["json"]["messages"][0]["content"]["text"] == "What can you help me with?"
         assert call_args[1]["json"]["messages"][0]["content"]["type"] == "text"
@@ -138,6 +139,7 @@ class TestAgentChat:
         # Minimal response without data or reasoning
         minimal_response = {
             "agentId": "my_agent",
+            "agentExternalId": "my_agent",
             "response": {
                 "cursor": None,
                 "messages": [
@@ -161,6 +163,30 @@ class TestAgentChat:
         assert response.messages[0].data is None
         assert response.messages[0].reasoning is None
         assert response.text == "Simple response"
+
+    def test_chat_response_with_only_agent_external_id(self, cognite_client: CogniteClient) -> None:
+        # Response includes only agentExternalId, not agentId
+        response_body = {
+            "agentExternalId": "my_agent",
+            "response": {
+                "cursor": None,
+                "messages": [
+                    {
+                        "content": {"text": "Hello", "type": "text"},
+                        "role": "agent",
+                    }
+                ],
+                "type": "result",
+            },
+        }
+
+        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: response_body))
+
+        response = cognite_client.agents.chat(agent_id="my_agent", messages=Message("Hi"))
+
+        assert isinstance(response, AgentChatResponse)
+        assert response.agent_id == "my_agent"
+        assert getattr(response, "agent_external_id") == "my_agent"
 
     def test_message_creation_from_string(self) -> None:
         # Test that string is automatically converted to TextContent
