@@ -45,6 +45,16 @@ TaskStatus: TypeAlias = Literal[
 
 WorkflowStatus: TypeAlias = Literal["completed", "failed", "running", "terminated", "timed_out"]
 
+TagDetectionStatus: TypeAlias = Literal[
+    "Queued",
+    "Distributing",
+    "Running",
+    "Collecting",
+    "Completed",
+    "Failed",
+    "Timeout",
+]
+
 
 class WorkflowCore(WriteableCogniteResource["WorkflowUpsert"], ABC):
     def __init__(self, external_id: str, description: str | None = None, data_set_id: int | None = None) -> None:
@@ -923,12 +933,13 @@ class TagDetectionJob(CogniteObject):
 
     Args:
         jobId (int): The identifier of the tag detection job.
-        status (str): The last observed status of the job. One of ``"Queued"``, ``"Distributing"``, ``"Running"``,
-            ``"Collecting"``, ``"Completed"``, ``"Failed"``, ``"Timeout"``.
+        status (TagDetectionStatus): The last observed status of the job.
         filePageRanges (list[TagDetectionJobFilePageRange]): File page ranges that are or were processed by the job.
     """
 
-    def __init__(self, jobId: int, status: TagDetectionStatus, filePageRanges: list[TagDetectionJobFilePageRange]) -> None:
+    def __init__(
+        self, jobId: int, status: TagDetectionStatus, filePageRanges: list[TagDetectionJobFilePageRange]
+    ) -> None:
         self.jobId = jobId
         self.status = status
         self.filePageRanges = filePageRanges
