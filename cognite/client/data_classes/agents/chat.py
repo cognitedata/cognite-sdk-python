@@ -218,10 +218,11 @@ class AgentChatResponse(CogniteResource):
     """Response from agent chat.
 
     Args:
-        agent_id (str): The ID of the agent.
+        agent_id (str): The ID of the agent. Deprecated: Will be removed in a future release in favor of `agent_external_id`.
         messages (AgentMessageList): The response messages from the agent.
         type (str): The response type.
         cursor (str | None): Cursor for conversation continuation.
+        agent_external_id (str | None): The external ID of the agent. Prefer this over `agent_id`.
     """
 
     def __init__(
@@ -230,15 +231,18 @@ class AgentChatResponse(CogniteResource):
         messages: AgentMessageList,
         type: str,
         cursor: str | None = None,
+        agent_external_id: str | None = None,
     ) -> None:
         self.agent_id = agent_id
+        self.agent_external_id = agent_external_id or agent_id
         self.cursor = cursor
         self.messages = messages
         self.type = type
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = {
-            "agentId" if camel_case else "agent_id": self.agent_id,
+            ("agentExternalId" if camel_case else "agent_external_id"): self.agent_external_id,
+            ("agentId" if camel_case else "agent_id"): self.agent_id,
             "response": {
                 "cursor": self.cursor,
                 "messages": [msg.dump(camel_case=camel_case) for msg in self.messages] if self.messages else [],
@@ -263,11 +267,15 @@ class AgentChatResponse(CogniteResource):
         messages = [AgentMessage._load(msg, cognite_client) for msg in raw_messages]
         messages_list = AgentMessageList(messages)
 
+        agent_external_id = data.get("agentExternalId")
+        agent_id = data.get("agentId") or agent_external_id
+
         instance = cls(
-            agent_id=data["agentId"],
+            agent_id=agent_id,
             cursor=response_data.get("cursor"),
             messages=messages_list,
             type=response_data["type"],
+            agent_external_id=agent_external_id,
         )
 
         return instance

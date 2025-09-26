@@ -252,7 +252,7 @@ class AgentsAPI(APIClient):
         Users can ensure conversation continuity by including the cursor from the previous response in subsequent requests.
 
         Args:
-            agent_id (str): External ID that uniquely identifies the agent.
+            agent_id (str): External ID that uniquely identifies the agent. Deprecated: This parameter will be renamed in a future release. The SDK now sends this value as `agentExternalId` to the API; server-side `agentId` is deprecated.
             messages (Message | Sequence[Message]): A list of one or many input messages to the agent.
             cursor (str | None): The cursor to use for continuation of a conversation. Use this to
                 create multi-turn conversations, as the cursor will keep track of the conversation state.
@@ -299,7 +299,7 @@ class AgentsAPI(APIClient):
 
         # Build request body
         body = {
-            "agentId": agent_id,
+            "agentExternalId": agent_id,
             "messages": MessageList(messages).dump(camel_case=True),
         }
 
