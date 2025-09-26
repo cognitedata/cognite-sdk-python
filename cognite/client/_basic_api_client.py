@@ -111,13 +111,13 @@ class FailedRequestHandler:
             extra=drop_none_values(extra),
         )
 
-    def raise_api_error(self, cognite_client: AsyncCogniteClient) -> NoReturn:
+    async def raise_api_error(self, cognite_client: AsyncCogniteClient) -> NoReturn:
         cluster = cognite_client._config.cdf_cluster
         project = cognite_client._config.project
 
         match self.status_code, self.duplicated, self.missing:
             case 401, *_:
-                self._raise_no_project_access_error(cognite_client, cluster, project)
+                await self._raise_no_project_access_error(cognite_client, cluster, project)
             case 409, list(), None:
                 self._raise_api_error(CogniteDuplicatedError, cluster, project)
             case 400 | 422, None, list():
@@ -125,13 +125,14 @@ class FailedRequestHandler:
             case _:
                 self._raise_api_error(CogniteAPIError, cluster, project)
 
-    def _raise_no_project_access_error(
+    async def _raise_no_project_access_error(
         self, cognite_client: AsyncCogniteClient, cluster: str | None, project: str
     ) -> NoReturn:
+        maybe_projects = await CogniteProjectAccessError._attempt_to_get_projects(cognite_client, project)
         raise CogniteProjectAccessError(
-            client=cognite_client,
             project=project,
             x_request_id=self.x_request_id,
+            maybe_projects=maybe_projects,
             cluster=cluster,
         ) from None  # hide httpx.HTTPStatusError from SDK users
 
@@ -217,7 +218,7 @@ class BasicAsyncAPIClient:
                 method, full_url, content=content, headers=headers, timeout=timeout or self._config.timeout
             )
         except httpx.HTTPStatusError as err:
-            self._handle_status_error(err)
+            await self._handle_status_error(err)
 
         self._log_successful_request(res)
         return res
@@ -251,7 +252,7 @@ class BasicAsyncAPIClient:
                 yield resp
 
         except httpx.HTTPStatusError as err:
-            self._handle_status_error(err, stream=True)
+            await self._handle_status_error(err, stream=True)
 
     async def _get(
         self,
@@ -275,7 +276,7 @@ class BasicAsyncAPIClient:
                 semaphore=semaphore,
             )
         except httpx.HTTPStatusError as err:
-            self._handle_status_error(err)
+            await self._handle_status_error(err)
 
         self._log_successful_request(res)
         return res
@@ -308,7 +309,7 @@ class BasicAsyncAPIClient:
                 semaphore=semaphore,
             )
         except httpx.HTTPStatusError as err:
-            self._handle_status_error(err)
+            await self._handle_status_error(err)
 
         self._log_successful_request(res, payload=json)
         return res
@@ -342,7 +343,7 @@ class BasicAsyncAPIClient:
                 semaphore=semaphore,
             )
         except httpx.HTTPStatusError as err:
-            self._handle_status_error(err)
+            await self._handle_status_error(err)
 
         self._log_successful_request(res, payload=json)
         return res
@@ -369,13 +370,13 @@ class BasicAsyncAPIClient:
         auth_header_name, auth_header_value = self._config.credentials.authorization_header()
         headers[auth_header_name] = auth_header_value
 
-    def _handle_status_error(
+    async def _handle_status_error(
         self, error: httpx.HTTPStatusError, payload: dict | None = None, stream: bool = False
     ) -> NoReturn:
         """The response had an HTTP status code of 4xx or 5xx"""
         handler = FailedRequestHandler.from_status_error(error, stream=stream)
         handler.log_failed_request(payload)
-        handler.raise_api_error(self._cognite_client)
+        await handler.raise_api_error(self._cognite_client)
 
     def _log_successful_request(
         self, res: httpx.Response, payload: dict[str, Any] | None = None, stream: bool = False
