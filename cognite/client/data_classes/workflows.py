@@ -895,11 +895,11 @@ class SubworkflowTaskOutput(WorkflowTaskOutput):
         return {}
 
 
-@dataclass
 class PageRange(CogniteObject):
-    begin: int
-    end: int
-    
+    def __init__(self, begin: int, end: int) -> None:
+        self.begin = begin
+        self.end = end
+
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(resource["begin"], resource["end"])
@@ -911,8 +911,7 @@ class TagDetectionJobFilePageRange(CogniteObject):
 
     Args:
         instanceId (NodeId): The identifier of the instance.
-        begin (int): The beginning of the page range.
-        end (int): The end of the page range.
+        page_range (PageRange): No description.
     """
 
     def __init__(self, instanceId: NodeId, page_range: PageRange) -> None:
@@ -931,7 +930,6 @@ class TagDetectionJobFilePageRange(CogniteObject):
             "instanceId": self.instanceId.dump(camel_case=camel_case),
             "pageRange": self.page_range.dump(camel_case=camel_case),
         }
-
 
 
 class TagDetectionJob(CogniteObject):
