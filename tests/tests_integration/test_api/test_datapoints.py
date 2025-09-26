@@ -139,6 +139,11 @@ def all_numeric_test_time_series(all_test_time_series: TimeSeriesList) -> TimeSe
 
 
 @pytest.fixture
+def all_instance_id_time_series(all_test_time_series: TimeSeriesList) -> TimeSeriesList:
+    return TimeSeriesList([ts for ts in all_test_time_series if ts.instance_id is not None])
+
+
+@pytest.fixture
 def outside_points_ts(all_test_time_series: TimeSeriesList) -> TimeSeriesList:
     return all_test_time_series[:2]
 
@@ -859,6 +864,27 @@ class TestIterateDatapoints:
         for dps_lst in res:
             assert len(dps_lst) == 3
             assert list(map(len, dps_lst)) == [17, 9, 4]
+
+
+class TestRetrieveUsingChunkingMode:
+    def test_combining_instance_ids_with_other_identifier_types_could_report_missing(
+        self, cognite_client: CogniteClient, all_instance_id_time_series: TimeSeriesList
+    ) -> None:
+        instance_ids = [ts.instance_id for ts in all_instance_id_time_series if ts.instance_id is not None]
+        assert len(instance_ids) == 3
+        # Bug prior to 7.86.0, when mixing instance IDs with other identifier types in the same request,
+        # and some of these other were missing, the instance IDs would be reported as missing too.
+        with patch(DATAPOINTS_API.format("EagerDpsFetcher")):  # Ensure chunking mode by patching out eager
+            with pytest.raises(CogniteNotFoundError) as err:
+                cognite_client.time_series.data.retrieve(
+                    id=list(range(1, 11)),
+                    external_id=[f"nope-doesnt-exist-{i}" for i in range(10)],
+                    instance_id=instance_ids,
+                    ignore_unknown_ids=False,
+                )
+            assert len(err.value.not_found) == 20
+            for missing in err.value.not_found:
+                assert ("id" in missing or "external_id" in missing) and "instance_id" not in missing
 
 
 class TestRetrieveRawDatapointsAPI:
