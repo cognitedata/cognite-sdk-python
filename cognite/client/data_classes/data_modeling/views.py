@@ -50,7 +50,7 @@ class ViewCore(DataModelingSchemaResource["ViewApply"], ABC):
 
         if self.implements:
             output["implements"] = [v.dump(camel_case) for v in self.implements]
-        if self.filter:
+        if self.filter is not None:
             output["filter"] = self.filter.dump()
 
         return output

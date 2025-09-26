@@ -27,6 +27,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+    from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
 
 @dataclass
@@ -370,7 +371,7 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
         nodes: dict[str, Any] = {}
         if self.from_:
             nodes["from"] = self.from_
-        if self.filter:
+        if self.filter is not None:
             nodes["filter"] = self.filter.dump()
         if self.through:
             nodes["through"] = self.through.dump(camel_case=camel_case)
@@ -479,11 +480,11 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
             edges["maxDistance" if camel_case else "max_distance"] = self.max_distance
         if self.direction:
             edges["direction"] = self.direction
-        if self.filter:
+        if self.filter is not None:
             edges["filter"] = self.filter.dump()
-        if self.node_filter:
+        if self.node_filter is not None:
             edges["nodeFilter" if camel_case else "node_filter"] = self.node_filter.dump()
-        if self.termination_filter:
+        if self.termination_filter is not None:
             edges["terminationFilter" if camel_case else "termination_filter"] = self.termination_filter.dump()
         if self.limit_each:
             edges["limitEach" if camel_case else "limit_each"] = self.limit_each
@@ -520,12 +521,20 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
 
 
 class QueryResult(UserDict):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self._debug: DebugInfo | None = None
+
     def __getitem__(self, item: str) -> NodeListWithCursor | EdgeListWithCursor:
         return super().__getitem__(item)
 
     @property
     def cursors(self) -> dict[str, str]:
         return {key: value.cursor for key, value in self.items()}
+
+    @property
+    def debug(self) -> DebugInfo | None:
+        return self._debug
 
     @classmethod
     def load(
@@ -534,21 +543,43 @@ class QueryResult(UserDict):
         instance_list_type_by_result_expression_name: dict[str, type[NodeListWithCursor] | type[EdgeListWithCursor]],
         cursors: dict[str, Any],
         typing: dict[str, Any] | None = None,
+        debug: dict[str, Any] | None = None,
     ) -> QueryResult:
+        from cognite.client.data_classes.data_modeling.debug import DebugInfo
+
         instance = cls()
         typing_nodes = TypeInformation._load(typing["nodes"]) if typing and "nodes" in typing else None
         typing_edges = TypeInformation._load(typing["edges"]) if typing and "edges" in typing else None
+
+        instance._debug = debug_info = DebugInfo._load(debug) if debug is not None else None
+
         for key, values in resource.items():
             cursor = cursors.get(key)
             if not values:
-                instance[key] = instance_list_type_by_result_expression_name[key]([], cursor)
+                # When no results, inspection can't tell us if it's nodes or edges:
+                instance_lst_cls = instance_list_type_by_result_expression_name[key]
+                instance[key] = instance_lst_cls(
+                    [],
+                    cursor=cursor,
+                    typing=typing_nodes if instance_lst_cls is NodeListWithCursor else typing_edges,
+                    debug=debug_info,
+                )
             elif values[0]["instanceType"] == "node":
-                instance[key] = NodeListWithCursor([Node._load(node) for node in values], cursor, typing_nodes)
+                instance[key] = NodeListWithCursor(
+                    [Node._load(node) for node in values],
+                    cursor=cursor,
+                    typing=typing_nodes,
+                    debug=debug_info,
+                )
             elif values[0]["instanceType"] == "edge":
-                instance[key] = EdgeListWithCursor([Edge._load(edge) for edge in values], cursor, typing_edges)
+                instance[key] = EdgeListWithCursor(
+                    [Edge._load(edge) for edge in values],
+                    cursor=cursor,
+                    typing=typing_edges,
+                    debug=debug_info,
+                )
             else:
                 raise ValueError(f"Unexpected instance type {values[0].get('instanceType')}")
-
         return instance
 
     def get_nodes(self, result_expression: str) -> NodeListWithCursor:

@@ -4,7 +4,7 @@ import json
 import math
 import time
 from datetime import date, datetime, timezone
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar, Literal, cast
 
 import pytest
 
@@ -45,7 +45,16 @@ from cognite.client.data_classes.data_modeling import (
     filters,
     query,
 )
+from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteAsset, CogniteAssetApply
 from cognite.client.data_classes.data_modeling.data_types import DirectRelation, Int64, UnitReference
+from cognite.client.data_classes.data_modeling.debug import (
+    DebugInfo,
+    DebugNoticeList,
+    DebugParameters,
+    ExecutionPlan,
+    SortNotBackedByIndexNotice,
+    TranslatedQuery,
+)
 from cognite.client.data_classes.data_modeling.instances import (
     InstanceInspectResult,
     InstanceInspectResults,
@@ -432,6 +441,48 @@ def view_with_all_the_types(
     return cognite_client.data_modeling.views.apply(view)
 
 
+@pytest.fixture(scope="session")
+def cognite_asset_nodes(cognite_client: CogniteClient, integration_test_space: Space) -> NodeList:
+    space = integration_test_space.space
+    asset_ids = [
+        (space, "asset:root"),
+        (space, "asset:child_1"),
+        (space, "asset:child_1_1"),
+        (space, "asset:child_1_1_1"),
+        (space, "asset:child_2"),
+    ]
+    asset_nodes = cognite_client.data_modeling.instances.retrieve(
+        nodes=asset_ids,
+        sources=CogniteAsset.get_source(),
+    ).nodes
+    if len(asset_nodes) == 5:
+        return asset_nodes
+
+    to_apply = [
+        CogniteAssetApply(space, "asset:root", name="Root Asset", parent=None),
+        CogniteAssetApply(space, "asset:child_1", name="Child Asset 1", parent=(space, "asset:root")),
+        CogniteAssetApply(
+            space,
+            "asset:child_1_1",
+            name="Child Asset 1.1",
+            parent=(space, "asset:child_1"),
+        ),
+        CogniteAssetApply(
+            space,
+            "asset:child_1_1_1",
+            name="Child Asset 1.1.1",
+            parent=(space, "asset:child_1_1"),
+        ),
+        CogniteAssetApply(space, "asset:child_2", name="Child Asset 2", parent=(space, "asset:root")),
+    ]
+    cognite_client.data_modeling.instances.apply(to_apply).nodes
+    time.sleep(10)  # if we are lucky, path.mat will run, if not, tests will probably fail this cycle
+    return cognite_client.data_modeling.instances.retrieve(
+        nodes=asset_ids,
+        sources=CogniteAsset.get_source(),
+    ).nodes
+
+
 class TestInstancesAPI:
     def test_list_nodes(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
         is_prefix = filters.Or(
@@ -779,6 +830,24 @@ class TestInstancesAPI:
             view_id, query="Quentin", properties=["name"], filter=born_after_2000
         )
         assert len(search_result) == 0
+
+    @pytest.mark.parametrize("operator", ["AND", "OR"])
+    def test_search_node_data_operator_and_and_or(
+        self, cognite_client: CogniteClient, person_view: View, operator: Literal["AND", "OR"]
+    ) -> None:
+        res1 = cognite_client.data_modeling.instances.search(
+            person_view.as_id(), query="Tarantino Ritchie Scorsese", properties=["name"], operator=operator
+        )
+        res2 = cognite_client.data_modeling.instances.search(
+            person_view.as_id(), query="Quentin Tarantino", properties=["name"], operator=operator
+        )
+        # We only got mr. Tarantino:
+        if operator == "OR":
+            assert len(res1) == 1
+            assert len(res2) == 1
+        else:
+            assert len(res1) == 0
+            assert len(res2) == 1
 
     def test_search_with_sort(self, cognite_client: CogniteClient, person_view: View) -> None:
         search = lambda direction: cognite_client.data_modeling.instances.search(
@@ -1321,6 +1390,93 @@ class TestInstancesAPI:
             cognite_client.data_modeling.instances.query(
                 Query(with_={"result": NodeResultSetExpression(**sync_fields)}, select={"result": Select()}),
             )
+
+    @pytest.mark.parametrize("include_typing", [True, False])
+    @pytest.mark.usefixtures("cognite_asset_nodes")
+    def test_instance_list__and___call___debug_info(self, cognite_client: CogniteClient, include_typing: bool) -> None:
+        # Verify that debug info, which is returned at the root level of the response, is properly handled.
+        # We also test with and without 'include_typing' which is returned the same way.
+        debug_params = DebugParameters(
+            emit_results=False, profile=False, include_translated_query=True, include_plan=True
+        )
+        # Sorting by this should return SortNotBackedByIndexNotice:
+        bad_sort = InstanceSort(CogniteAsset.get_source().as_property_ref("sourceCreatedTime"))
+
+        # Test using a typed node:
+        res1 = cognite_client.data_modeling.instances.list(
+            # TODO: type[T_Node] does not accept CogniteAsset, but it should:
+            instance_type=CogniteAsset,  # type: ignore [call-overload]
+            sources=None,
+            include_typing=include_typing,
+            debug=debug_params,
+            sort=bad_sort,
+            limit=10,
+        )
+        # Test by specifying a view:
+        res2 = cognite_client.data_modeling.instances.list(
+            instance_type="node",
+            sources=CogniteAsset.get_source(),
+            include_typing=include_typing,
+            debug=debug_params,
+            sort=bad_sort,
+            limit=10,
+        )
+        # Test using __call__:
+        iterator = cognite_client.data_modeling.instances(
+            instance_type="node",
+            sources=CogniteAsset.get_source(),
+            include_typing=include_typing,
+            debug=debug_params,
+            sort=bad_sort,
+            limit=10,
+            chunk_size=5,
+        )
+        res3 = next(iterator)
+
+        for res in res1, res2, res3:
+            assert isinstance(res, NodeList)
+            assert isinstance(res.debug, DebugInfo)
+            assert isinstance(res.debug.translated_query, TranslatedQuery)
+            assert isinstance(res.debug.plan, ExecutionPlan)
+            assert isinstance(res.debug.notices, DebugNoticeList)
+            assert len(res.debug.notices) == 1
+            assert isinstance(res.debug.notices[0], SortNotBackedByIndexNotice)
+
+            if include_typing:
+                assert res.typing is not None
+
+    @pytest.mark.usefixtures("cognite_asset_nodes")
+    def test_instance_query_and_sync_debug_info(self, cognite_client: CogniteClient) -> None:
+        debug_params = DebugParameters(
+            emit_results=False, profile=False, include_translated_query=True, include_plan=True
+        )
+        rse_with_sort = NodeResultSetExpression(
+            sort=[InstanceSort(CogniteAsset.get_source().as_property_ref("sourceCreatedTime"))],
+        )
+        select = Select([SourceSelector(source=CogniteAsset.get_source(), properties=["name", "parent"])])
+        query_query = Query(with_={"result": rse_with_sort}, select={"result": select})
+        query_sync = Query(with_={"result": NodeResultSetExpression()}, select={"result": select})
+
+        res_query = cognite_client.data_modeling.instances.query(query_query, debug=debug_params)
+        res_sync = cognite_client.data_modeling.instances.sync(query_sync, debug=debug_params)
+
+        for res in res_query, res_sync:
+            assert isinstance(res, QueryResult)
+            assert isinstance(res.debug, DebugInfo)
+            assert isinstance(res.debug.translated_query, TranslatedQuery)
+            assert isinstance(res.debug.plan, ExecutionPlan)
+            assert isinstance(res.debug.notices, DebugNoticeList)
+            if res is res_query:  # Sort not allowed for /sync
+                assert len(res.debug.notices) == 1
+                # Since we specify both emit_results and timeout, we should get...:
+                assert isinstance(res.debug.notices[0], SortNotBackedByIndexNotice)
+
+            for node_lst in res.values():
+                assert isinstance(node_lst, NodeList)
+                assert isinstance(node_lst.debug, DebugInfo)
+                assert isinstance(node_lst.debug.translated_query, TranslatedQuery)
+                assert isinstance(node_lst.debug.plan, ExecutionPlan)
+                assert res.debug.notices is node_lst.debug.notices
 
 
 class TestInstancesSync:
