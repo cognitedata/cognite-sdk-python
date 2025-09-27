@@ -69,6 +69,7 @@ class ThreeDModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.models.retrieve(id=1)
         """
         return await self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
@@ -89,6 +90,7 @@ class ThreeDModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> model_list = client.three_d.models.list()
 
             Iterate over 3d models, one-by-one:
@@ -149,6 +151,7 @@ class ThreeDModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
 
             Create multiple new 3D Models:
@@ -156,6 +159,7 @@ class ThreeDModelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ThreeDModelWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_model = ThreeDModelWrite(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
                 >>> my_other_model = ThreeDModelWrite(name="My Other Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
                 >>> res = client.three_d.models.create([my_model, my_other_model])
@@ -204,6 +208,7 @@ class ThreeDModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> model = client.three_d.models.retrieve(id=1)
                 >>> model.name = "New Name"
                 >>> res = client.three_d.models.update(model)
@@ -237,6 +242,7 @@ class ThreeDModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.models.delete(id=1)
         """
         await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)

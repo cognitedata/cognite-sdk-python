@@ -79,8 +79,9 @@ class DataModelingGraphQLAPI(APIClient):
 
             Apply DML:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.graphql.apply_dml(
                 ...     id=("mySpaceExternalId", "myModelExternalId", "1"),
                 ...     dml="type MyType { id: String! }",
@@ -152,8 +153,9 @@ class DataModelingGraphQLAPI(APIClient):
 
             Execute a graphql query against a given data model:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.graphql.query(
                 ...     id=("mySpace", "myDataModel", "v1"),
                 ...     query="listThings { items { thingProperty } }",

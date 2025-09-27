@@ -108,8 +108,9 @@ class SyntheticDatapointsAPI(APIClient):
             Execute a synthetic time series query with an expression. Here we sum three time series plus a constant. The first is referenced by ID,
             the second by external ID, and the third by instance ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> expression = '''
                 ...     123
                 ...     + ts{id:123}

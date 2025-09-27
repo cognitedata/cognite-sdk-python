@@ -37,8 +37,9 @@ class UserProfilesAPI(APIClient):
 
             Get your own user profile:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.user_profiles.me()
         """
         return UserProfile._load((await self._get(self._RESOURCE_PATH + "/me")).json())
@@ -67,8 +68,9 @@ class UserProfilesAPI(APIClient):
 
             Get a single user profile:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.user_profiles.retrieve("foo")
 
             Get multiple user profiles:
@@ -97,8 +99,9 @@ class UserProfilesAPI(APIClient):
 
             Search for users with first (or second...) name starting with "Alex":
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.user_profiles.search(name="Alex")
         """
         return await self._search(
@@ -123,8 +126,9 @@ class UserProfilesAPI(APIClient):
 
             List all user profiles:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.user_profiles.list(limit=None)
         """
         return await self._list(

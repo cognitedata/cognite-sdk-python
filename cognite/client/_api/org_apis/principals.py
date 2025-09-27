@@ -26,6 +26,7 @@ class PrincipalsAPI(OrgAPIClient):
             Get your own principal:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.principals.me()
         """
         # the /me endpoint is not using the /orgs/{org} base path, so we have to construct the URL manually
@@ -113,6 +114,7 @@ class PrincipalsAPI(OrgAPIClient):
             Retrieve a principal by ID:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.principals.retrieve(id="20u3of8-1234-5678-90ab-cdef12345678")
             Retrieve a principal by external ID:
                 >>> res = client.iam.principals.retrieve(external_id="my_external_id")
@@ -143,6 +145,7 @@ class PrincipalsAPI(OrgAPIClient):
             List principals in the organization:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.principals.list(types="USER", limit=10)
 
         """

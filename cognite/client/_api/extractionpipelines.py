@@ -87,8 +87,9 @@ class ExtractionPipelinesAPI(APIClient):
 
             Get extraction pipeline by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.extraction_pipelines.retrieve(id=1)
 
             Get extraction pipeline by external id:
@@ -121,8 +122,9 @@ class ExtractionPipelinesAPI(APIClient):
 
             Get ExtractionPipelines by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.extraction_pipelines.retrieve_multiple(ids=[1, 2, 3])
 
             Get assets by external id:
@@ -150,8 +152,9 @@ class ExtractionPipelinesAPI(APIClient):
 
             List ExtractionPipelines:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> ep_list = client.extraction_pipelines.list(limit=5)
         """
 
@@ -191,6 +194,7 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> extpipes = [ExtractionPipelineWrite(name="extPipe1",...), ExtractionPipelineWrite(name="extPipe2",...)]
                 >>> res = client.extraction_pipelines.create(extpipes)
         """
@@ -216,8 +220,9 @@ class ExtractionPipelinesAPI(APIClient):
 
             Delete extraction pipelines by id or external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.extraction_pipelines.delete(id=[1,2,3], external_id="3")
         """
         await self._delete_multiple(
@@ -258,6 +263,7 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> update = ExtractionPipelineUpdate(id=1)
                 >>> update.description.set("Another new extpipe")
                 >>> res = client.extraction_pipelines.update(update)
@@ -304,8 +310,9 @@ class ExtractionPipelineRunsAPI(APIClient):
 
             List extraction pipeline runs:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> runsList = client.extraction_pipelines.runs.list(external_id="test ext id", limit=5)
 
             Filter extraction pipeline runs on a given status:
@@ -375,6 +382,7 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineRunWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.extraction_pipelines.runs.create(
                 ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId"))
         """
@@ -409,8 +417,9 @@ class ExtractionPipelineConfigsAPI(APIClient):
 
             Retrieve latest config revision:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.extraction_pipelines.config.retrieve("extId")
         """
         response = await self._get(
@@ -432,8 +441,9 @@ class ExtractionPipelineConfigsAPI(APIClient):
 
             Retrieve a list of config revisions:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.extraction_pipelines.config.list("extId")
         """
         response = await self._get(f"{self._RESOURCE_PATH}/revisions", params={"externalId": external_id})
@@ -457,6 +467,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineConfigWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.extraction_pipelines.config.create(ExtractionPipelineConfigWrite(external_id="extId", config="my config contents"))
         """
         if isinstance(config, ExtractionPipelineConfig):
@@ -478,8 +489,9 @@ class ExtractionPipelineConfigsAPI(APIClient):
 
             Revert a config revision:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.extraction_pipelines.config.revert("extId", 5)
         """
         response = await self._post(

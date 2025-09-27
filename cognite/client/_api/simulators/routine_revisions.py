@@ -153,8 +153,9 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Examples:
             Get simulator routine revision by id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.routines.revisions.retrieve(ids=123)
 
             Get simulator routine revision by external id:
@@ -202,6 +203,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 ...     SimulationValueUnitInput,
                 ... )
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> routine_revisions = [
                 ...     SimulatorRoutineRevisionWrite(
                 ...         external_id="routine_rev_1",
@@ -339,8 +341,9 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Examples:
             List simulator routine revisions:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.routines.revisions.list(limit=10)
 
             List simulator routine revisions with filter:

@@ -75,6 +75,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> sub = DataPointSubscriptionWrite(
                 ...     external_id="my_subscription",
                 ...     name="My subscription",
@@ -128,8 +129,9 @@ class DatapointsSubscriptionAPI(APIClient):
 
             Delete a subscription by external ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.time_series.subscriptions.delete("my_subscription")
         """
 
@@ -152,8 +154,9 @@ class DatapointsSubscriptionAPI(APIClient):
 
             Retrieve a subscription by external ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.time_series.subscriptions.retrieve("my_subscription")
         """
 
@@ -188,6 +191,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> members = client.time_series.subscriptions.list_member_time_series("my_subscription")
                 >>> timeseries_external_ids = members.as_external_ids()
         """
@@ -225,6 +229,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> update = DataPointSubscriptionUpdate("my_subscription").name.set("My New Name")
                 >>> updated = client.time_series.subscriptions.update(update)
 
@@ -283,8 +288,9 @@ class DatapointsSubscriptionAPI(APIClient):
 
             Iterate over changes to subscription timeseries since the beginning until there is no more data:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription"):
                 ...     # Changes to the subscription itself:
                 ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
@@ -340,8 +346,9 @@ class DatapointsSubscriptionAPI(APIClient):
 
             List 5 subscriptions:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> subscriptions = client.time_series.subscriptions.list(limit=5)
 
         """

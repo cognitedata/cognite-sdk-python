@@ -26,6 +26,7 @@ class DocumentPreviewAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
 
             Download an image preview and display using IPython.display.Image (for example in a Jupyter Notebook):
@@ -56,6 +57,7 @@ class DocumentPreviewAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.documents.previews.download_page_as_png("previews", id=123, page_number=5)
         """
         # TODO(doctrino): This can never trigger:
@@ -91,6 +93,7 @@ class DocumentPreviewAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.previews.download_document_as_pdf_bytes(id=123)
         """
         response = await self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf", headers={"accept": "application/pdf"})
@@ -112,6 +115,7 @@ class DocumentPreviewAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.documents.previews.download_document_as_pdf("previews", id=123)
         """
         # TODO(doctrino): This can never trigger:
@@ -145,6 +149,7 @@ class DocumentPreviewAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> link = client.documents.previews.retrieve_pdf_link(id=123)
         """
         res = await self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink")
