@@ -176,6 +176,7 @@ class TransformationsAPI(APIClient):
                 >>> from cognite.client.data_classes import TransformationWrite, TransformationDestination
                 >>> from cognite.client.data_classes.transformations.common import ViewInfo, EdgeType, DataModelInfo
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> transformations = [
                 >>>     TransformationWrite(
                 >>>         external_id="transformation1",
@@ -269,8 +270,9 @@ class TransformationsAPI(APIClient):
 
             Delete transformations by id or external id::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.transformations.delete(id=[1,2,3], external_id="function3")
         """
         await self._delete_multiple(
@@ -319,8 +321,9 @@ class TransformationsAPI(APIClient):
 
             List transformations::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> transformations_list = client.transformations.list()
         """
         ds_ids = IdentifierSequence.load(data_set_ids, data_set_external_ids, id_name="data_set").as_dicts()
@@ -362,8 +365,9 @@ class TransformationsAPI(APIClient):
 
             Get transformation by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.transformations.retrieve(id=1)
 
             Get transformation by external id:
@@ -397,8 +401,9 @@ class TransformationsAPI(APIClient):
 
             Get multiple transformations:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.transformations.retrieve_multiple(ids=[1,2,3], external_ids=['transform-1','transform-2'])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
@@ -444,8 +449,9 @@ class TransformationsAPI(APIClient):
 
             Update a transformation that you have fetched. This will perform a full update of the transformation:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> transformation = client.transformations.retrieve(id=1)
                 >>> transformation.query = "SELECT * FROM _cdf.assets"
                 >>> res = client.transformations.update(transformation)
@@ -520,8 +526,9 @@ class TransformationsAPI(APIClient):
 
             Run transformation to completion by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>>
                 >>> res = client.transformations.run(transformation_id = 1)
 
@@ -593,8 +600,9 @@ class TransformationsAPI(APIClient):
 
             Preview transformation results as schema and list of rows:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>>
                 >>> query_result = client.transformations.preview(query="select * from _cdf.assets")
 

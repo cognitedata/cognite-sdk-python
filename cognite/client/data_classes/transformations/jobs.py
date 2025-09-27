@@ -160,8 +160,9 @@ class TransformationJob(CogniteResource):
         Examples:
             run transformations 1 and 2 in parallel, and run 3 once they finish successfully:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>>
                 >>> job1 = client.transformations.run(id = 1, wait = False)
                 >>> job2 = client.transformations.run(id = 2, wait = False)

@@ -69,8 +69,9 @@ class SpacesAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.spaces.retrieve(spaces='mySpace')
 
             Get multiple spaces by id:
@@ -96,8 +97,9 @@ class SpacesAPI(APIClient):
 
             Delete spaces by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.data_modeling.spaces.delete(spaces=["mySpace", "myOtherSpace"])
         """
         deleted_spaces = cast(
@@ -128,8 +130,9 @@ class SpacesAPI(APIClient):
 
             List spaces and filter on max start time:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> space_list = client.data_modeling.spaces.list(limit=5)
 
             Iterate over spaces, one-by-one:
@@ -172,6 +175,7 @@ class SpacesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import SpaceApply
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> spaces = [SpaceApply(space="mySpace", description="My first space", name="My Space"),
                 ... SpaceApply(space="myOtherSpace", description="My second space", name="My Other Space")]
                 >>> res = client.data_modeling.spaces.apply(spaces)

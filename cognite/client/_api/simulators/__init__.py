@@ -72,8 +72,9 @@ class SimulatorsAPI(APIClient):
 
         Examples:
             List simulators:
-                    >>> from cognite.client import CogniteClient
+                    >>> from cognite.client import CogniteClient, AsyncCogniteClient
                     >>> client = CogniteClient()
+                    >>> # async_client = AsyncCogniteClient()  # another option
                     >>> res = client.simulators.list(limit=10)
 
             Iterate over simulators, one-by-one:
