@@ -106,8 +106,9 @@ class GeospatialAPI(APIClient):
 
             Delete feature type definitions external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.geospatial.delete_feature_types(external_id=["wells", "cities"])
         """
         extra_body_fields = {"recursive": True} if recursive else {}
@@ -129,8 +130,9 @@ class GeospatialAPI(APIClient):
 
             Iterate over feature type definitions:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> for feature_type in client.geospatial.list_feature_types():
                 ...     feature_type # do something with the feature type definition
         """
@@ -161,8 +163,9 @@ class GeospatialAPI(APIClient):
 
             Get Type by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.geospatial.retrieve_feature_types(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_id)
@@ -188,8 +191,9 @@ class GeospatialAPI(APIClient):
             Add one property to a feature type and add indexes
 
                 >>> from cognite.client.data_classes.geospatial import Patches
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.geospatial.patch_feature_types(
                 ...    patch=FeatureTypePatch(
                 ...       external_id="wells",
@@ -321,8 +325,9 @@ class GeospatialAPI(APIClient):
 
             Delete feature type definitions external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.geospatial.delete_features(
                 ...     feature_type_external_id="my_feature_type",
                 ...     external_id=my_feature
@@ -370,8 +375,9 @@ class GeospatialAPI(APIClient):
 
             Retrieve one feature by its external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.geospatial.retrieve_features(
                 ...     feature_type_external_id="my_feature_type",
                 ...     external_id="my_feature"
@@ -428,8 +434,9 @@ class GeospatialAPI(APIClient):
 
             Update one feature:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_feature = client.geospatial.create_features(
                 ...     feature_type_external_id="my_feature_type",
                 ...     feature=Feature(external_id="my_feature", temperature=12.4)
@@ -483,8 +490,9 @@ class GeospatialAPI(APIClient):
 
             List features:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_feature_type = client.geospatial.retrieve_feature_types(
                 ...     external_id="my_feature_type"
                 ... )
@@ -567,8 +575,9 @@ class GeospatialAPI(APIClient):
 
             Search for features:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_feature_type = client.geospatial.retrieve_feature_types(
                 ...     external_id="my_feature_type"
                 ... )
@@ -691,8 +700,9 @@ class GeospatialAPI(APIClient):
 
             Stream features:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_feature = client.geospatial.create_features(
                 ...     feature_type_external_id="my_feature_type",
                 ...     feature=Feature(external_id="my_feature", temperature=12.4)
@@ -751,8 +761,9 @@ class GeospatialAPI(APIClient):
 
             Aggregate property of features:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_feature = client.geospatial.create_features(
                 ...     feature_type_external_id="my_feature_type",
                 ...     feature=Feature(external_id="my_feature", temperature=12.4)
@@ -796,8 +807,9 @@ class GeospatialAPI(APIClient):
 
             Get two CRS definitions:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> crs = client.geospatial.get_coordinate_reference_systems(srids=[4326, 4327])
         """
         if isinstance(srids, (int, numbers.Integral)):
@@ -824,8 +836,9 @@ class GeospatialAPI(APIClient):
 
             Fetch all custom CRSs:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> crs = client.geospatial.list_coordinate_reference_systems(only_custom=True)
         """
         res = await self._get(url_path=f"{self._RESOURCE_PATH}/crs", params={"filterCustom": only_custom})
@@ -912,8 +925,9 @@ class GeospatialAPI(APIClient):
 
             Delete a custom CRS:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> crs = client.geospatial.delete_coordinate_reference_systems(srids=[121111])
         """
         if isinstance(srids, (int, numbers.Integral)):
@@ -957,8 +971,9 @@ class GeospatialAPI(APIClient):
 
             Put a raster in a feature raster property:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> feature_type = ...
                 >>> feature = ...
                 >>> raster_property_name = ...
@@ -998,8 +1013,9 @@ class GeospatialAPI(APIClient):
 
             Delete a raster in a feature raster property:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> feature_type = ...
                 >>> feature = ...
                 >>> raster_property_name = ...
@@ -1041,8 +1057,9 @@ class GeospatialAPI(APIClient):
 
             Get a raster from a feature raster property:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> feature_type = ...
                 >>> feature = ...
                 >>> raster_property_name = ...

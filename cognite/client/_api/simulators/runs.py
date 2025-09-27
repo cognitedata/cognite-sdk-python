@@ -178,8 +178,9 @@ class SimulatorRunsAPI(APIClient):
 
         Examples:
             List simulation runs:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.runs.list()
 
             Iterate over simulation runs, one-by-one:
@@ -245,8 +246,9 @@ class SimulatorRunsAPI(APIClient):
 
         Examples:
             Retrieve a single simulation run by id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> run = client.simulators.runs.retrieve(ids=2)
         """
         self._warning.warn()
@@ -315,8 +317,9 @@ class SimulatorRunsAPI(APIClient):
 
         Examples:
             Get simulation run data by run id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.runs.list_run_data(run_id=12345)
 
             Get simulation run data directly on a simulation run object:

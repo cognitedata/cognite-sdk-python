@@ -186,8 +186,9 @@ class SequencesAPI(APIClient):
 
             Get sequence by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.retrieve(id=1)
 
             Get sequence by external id:
@@ -217,8 +218,9 @@ class SequencesAPI(APIClient):
 
             Get sequences by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.retrieve_multiple(ids=[1, 2, 3])
 
             Get sequences by external id:
@@ -243,8 +245,9 @@ class SequencesAPI(APIClient):
 
             Aggregate sequences:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.aggregate(filter={"external_id_prefix": "prefix"})
         """
         warnings.warn(
@@ -270,8 +273,9 @@ class SequencesAPI(APIClient):
 
             Count the number of time series in your CDF project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.sequences.aggregate_count()
 
             Count the number of sequences with external id prefixed with "mapping:" in your CDF project:
@@ -538,8 +542,9 @@ class SequencesAPI(APIClient):
 
             Delete sequences by id or external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.delete(id=[1,2,3], external_id="3")
         """
         await self._delete_multiple(
@@ -580,8 +585,9 @@ class SequencesAPI(APIClient):
 
             Update a sequence that you have fetched. This will perform a full update of the sequences:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.retrieve(id=1)
                 >>> res.description = "New description"
                 >>> res = client.sequences.update(res)
@@ -816,8 +822,9 @@ class SequencesAPI(APIClient):
 
             Search for a sequence:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.search(name="some name")
         """
         return await self._search(
@@ -942,8 +949,9 @@ class SequencesAPI(APIClient):
 
             List sequences:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.list(limit=5)
 
             Iterate over sequences, one-by-one:

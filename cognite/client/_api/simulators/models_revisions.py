@@ -61,8 +61,9 @@ class SimulatorModelRevisionsAPI(APIClient):
 
         Examples:
             List simulator model revisions:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.models.revisions.list(limit=10)
 
             Specify filter and sort order:
@@ -124,8 +125,9 @@ class SimulatorModelRevisionsAPI(APIClient):
 
         Examples:
             Get simulator model revision by id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.models.revisions.retrieve(ids=1)
 
             Get simulator model revision by external id:
@@ -283,6 +285,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             List simulator model revision data:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.models.revisions.retrieve_data("model_revision_1")
         """
         self._warning.warn()

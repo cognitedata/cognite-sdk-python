@@ -90,8 +90,9 @@ class SourcesAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.hosted_extractors.sources.retrieve('myMQTTSource')
 
             Get multiple sources by id:
@@ -121,8 +122,9 @@ class SourcesAPI(APIClient):
 
             Delete sources by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.hosted_extractors.sources.delete(["myMQTTSource", "MyEventHubSource"])
         """
         self._warning.warn()
@@ -250,8 +252,9 @@ class SourcesAPI(APIClient):
 
             List sources:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> source_list = client.hosted_extractors.sources.list(limit=5)
 
             Iterate over sources, one-by-one:
