@@ -32,7 +32,7 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-        entry: poetry run dmypy run -- cognite tests
+        entry: poetry run dmypy run -- cognite
         files: ^.*.(py|pyi)$
         language: system
         pass_filenames: false
