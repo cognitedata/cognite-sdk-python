@@ -1378,6 +1378,7 @@ class DiagramDetectConfig(CogniteObject):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.contextualization import ConnectionFlags, DiagramDetectConfig
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> config = DiagramDetectConfig(
             ...     remove_leading_zeros=True,
             ...     connection_flags=ConnectionFlags(

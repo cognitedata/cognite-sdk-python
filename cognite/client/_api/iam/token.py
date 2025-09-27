@@ -19,6 +19,7 @@ class TokenAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.token.inspect()
         """
         # To not raise whenever new Acls/actions/scopes are added to the API, we specifically allow the unknown:

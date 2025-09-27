@@ -55,8 +55,9 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
             List simulator models:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.models.list(limit=10)
 
             Iterate over simulator models, one-by-one:
@@ -116,8 +117,9 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
             Get simulator model by id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.models.retrieve(ids=1)
 
             Get simulator model by external id:
@@ -211,6 +213,7 @@ class SimulatorModelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators import SimulatorModelWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> models = [
                 ...     SimulatorModelWrite(
                 ...         name="model1", simulator_external_id="sim1", type="SteadyState",
@@ -246,8 +249,9 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
             Delete simulator models by id or external id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.simulators.models.delete(ids=[1,2,3], external_ids="model_external_id")
         """
         await self._delete_multiple(
@@ -285,8 +289,9 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
             Update a simulator model that you have fetched. This will perform a full update of the model:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> model = client.simulators.models.retrieve(external_ids="model_external_id")
                 >>> model.name = "new_name"
                 >>> res = client.simulators.models.update(model)

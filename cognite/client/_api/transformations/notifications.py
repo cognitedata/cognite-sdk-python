@@ -109,6 +109,7 @@ class TransformationNotificationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationNotification
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> notifications = [TransformationNotification(transformation_id = 1, destination="my@email.com"), TransformationNotification(transformation_external_id="transformation2", destination="other@email.com"))]
                 >>> res = client.transformations.notifications.create(notifications)
         """
@@ -142,14 +143,16 @@ class TransformationNotificationsAPI(APIClient):
 
             List all notifications::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> notifications_list = client.transformations.notifications.list()
 
             List all notifications by transformation id::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> notifications_list = client.transformations.notifications.list(transformation_id = 1)
         """
         filter = TransformationNotificationFilter(
@@ -176,8 +179,9 @@ class TransformationNotificationsAPI(APIClient):
 
             Delete schedules by id or external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.transformations.notifications.delete(id=[1,2,3])
         """
         await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)

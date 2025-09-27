@@ -84,6 +84,7 @@ class UsersAPI(APIClient):
                 >>> from cognite.client.data_classes.postgres_gateway import UserWrite, SessionCredentials
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> session = client.iam.sessions.create(
                 ...     ClientCredentials(os.environ["IDP_CLIENT_ID"], os.environ["IDP_CLIENT_SECRET"]),
                 ...     session_type="CLIENT_CREDENTIALS"
@@ -125,6 +126,7 @@ class UsersAPI(APIClient):
                 >>> from cognite.client.data_classes.postgres_gateway import UserUpdate, SessionCredentials
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> session = client.iam.sessions.create(
                 ...     ClientCredentials(os.environ["IDP_CLIENT_ID"], os.environ["IDP_CLIENT_SECRET"]),
                 ...     session_type="CLIENT_CREDENTIALS"
@@ -154,8 +156,9 @@ class UsersAPI(APIClient):
 
             Delete users:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.postgres_gateway.users.delete(["myUser", "myUser2"])
 
 
@@ -191,8 +194,9 @@ class UsersAPI(APIClient):
 
             Retrieve user:
 
-                    >>> from cognite.client import CogniteClient
+                    >>> from cognite.client import CogniteClient, AsyncCogniteClient
                     >>> client = CogniteClient()
+                    >>> # async_client = AsyncCogniteClient()  # another option
                     >>> res = client.postgres_gateway.users.retrieve("myUser", ignore_unknown_ids=True)
 
         """
@@ -218,8 +222,9 @@ class UsersAPI(APIClient):
 
             List users:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> user_list = client.postgres_gateway.users.list(limit=5)
 
             Iterate over users, one-by-one:

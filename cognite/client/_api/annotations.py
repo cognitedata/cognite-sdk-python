@@ -201,6 +201,7 @@ class AnnotationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AnnotationReverseLookupFilter
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> flt = AnnotationReverseLookupFilter(annotated_resource_type="file")
                 >>> res = client.annotations.reverse_lookup(flt, limit=100)
         """
@@ -237,6 +238,7 @@ class AnnotationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AnnotationFilter
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> flt = AnnotationFilter(annotated_resource_type="file", annotated_resource_ids=[{"id": 123}])
                 >>> res = client.annotations.list(flt, limit=None)
         """

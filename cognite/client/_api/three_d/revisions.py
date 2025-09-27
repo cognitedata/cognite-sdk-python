@@ -71,6 +71,7 @@ class ThreeDRevisionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.retrieve(model_id=1, id=1)
         """
         return await self._retrieve(
@@ -113,6 +114,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ThreeDModelRevisionWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_revision = ThreeDModelRevisionWrite(file_id=1)
                 >>> res = client.three_d.revisions.create(model_id=1, revision=my_revision)
         """
@@ -143,6 +145,7 @@ class ThreeDRevisionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.list(model_id=1, published=True, limit=100)
         """
         return await self._list(
@@ -178,6 +181,7 @@ class ThreeDRevisionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> revision = client.three_d.revisions.retrieve(model_id=1, id=1)
                 >>> revision.status = "New Status"
                 >>> res = client.three_d.revisions.update(model_id=1, item=revision)
@@ -210,6 +214,7 @@ class ThreeDRevisionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.delete(model_id=1, id=1)
         """
         await self._delete_multiple(
@@ -232,6 +237,7 @@ class ThreeDRevisionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.update_thumbnail(model_id=1, revision_id=1, file_id=1)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/thumbnail", model_id, revision_id)
@@ -270,6 +276,7 @@ class ThreeDRevisionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.list_nodes(model_id=1, revision_id=1, limit=10)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
@@ -310,6 +317,7 @@ class ThreeDRevisionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.filter_nodes(model_id=1, revision_id=1, properties={ "PDMS": { "Area": ["AB76", "AB77", "AB78"], "Type": ["PIPE", "BEND", "PIPESUP"] } }, limit=10)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
@@ -343,6 +351,7 @@ class ThreeDRevisionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.list_ancestor_nodes(model_id=1, revision_id=1, node_id=5, limit=10)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)

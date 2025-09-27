@@ -707,6 +707,7 @@ class AssetHierarchy:
         >>> from cognite.client import CogniteClient
         >>> from cognite.client.data_classes import AssetHierarchy
         >>> client = CogniteClient()
+        >>> # async_client = AsyncCogniteClient()  # another option
         >>> hierarchy = AssetHierarchy(assets)
         >>> # Get a report written to the terminal listing any issues:
         >>> hierarchy.validate_and_report()
