@@ -45,8 +45,9 @@ class SpaceStatisticsAPI(APIClient):
 
             Fetch statistics for a single space:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.data_modeling.statistics.spaces.retrieve("my-space")
 
             Fetch statistics for multiple spaces:
@@ -74,8 +75,9 @@ class SpaceStatisticsAPI(APIClient):
 
             Fetch statistics for all spaces in the project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> stats = client.data_modeling.statistics.spaces.list()
                 >>> for space_stats in stats:
                 ...     print(f"Space: {space_stats.space}, Nodes: {space_stats.nodes}")
@@ -106,8 +108,9 @@ class StatisticsAPI(APIClient):
             Fetch project statistics (and limits) and check the current number of data models vs.
             and how many more can be created:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> stats = client.data_modeling.statistics.project()
                 >>> data_model_count = stats.data_models.count
                 >>> available_count = stats.data_models.limit - data_model_count

@@ -256,8 +256,9 @@ class FunctionsAPI(APIClient):
 
             Create function with source code in folder:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> function = client.functions.create(
                 ...     name="myfunction",
                 ...     folder="path/to/code",
@@ -391,8 +392,9 @@ class FunctionsAPI(APIClient):
 
             Delete functions by id or external id::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.functions.delete(id=[1,2,3], external_id="function3")
         """
         await self._delete_multiple(
@@ -430,8 +432,9 @@ class FunctionsAPI(APIClient):
 
             List functions::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> functions_list = client.functions.list()
         """
         if is_unlimited(limit):
@@ -471,8 +474,9 @@ class FunctionsAPI(APIClient):
 
             Get function by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.functions.retrieve(id=1)
 
             Get function by external id:
@@ -502,8 +506,9 @@ class FunctionsAPI(APIClient):
 
             Get function by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.functions.retrieve_multiple(ids=[1, 2, 3])
 
             Get functions by external id:
@@ -546,8 +551,9 @@ class FunctionsAPI(APIClient):
 
             Call a function by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> call = client.functions.call(id=1)
 
             Call a function directly on the `Function` object:
@@ -579,8 +585,9 @@ class FunctionsAPI(APIClient):
 
             Call a function by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> limits = client.functions.limits()
         """
         res = await self._get(self._RESOURCE_PATH + "/limits")
@@ -690,8 +697,9 @@ class FunctionsAPI(APIClient):
 
             Call activate:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> status = client.functions.activate()
         """
         res = await self._post(self._RESOURCE_PATH + "/status")
@@ -707,8 +715,9 @@ class FunctionsAPI(APIClient):
 
             Call status:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> status = client.functions.status()
         """
         res = await self._get(self._RESOURCE_PATH + "/status")
@@ -926,8 +935,9 @@ class FunctionCallsAPI(APIClient):
 
             List function calls:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> calls = client.functions.calls.list(function_id=1)
 
             List function calls directly on a function object:
@@ -974,8 +984,9 @@ class FunctionCallsAPI(APIClient):
 
             Retrieve single function call by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> call = client.functions.calls.retrieve(call_id=2, function_id=1)
 
             Retrieve function call directly on a function object:
@@ -1015,8 +1026,9 @@ class FunctionCallsAPI(APIClient):
 
             Retrieve function call response by call ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> response = client.functions.calls.get_response(call_id=2, function_id=1)
 
             Retrieve function call response directly on a call object:
@@ -1051,8 +1063,9 @@ class FunctionCallsAPI(APIClient):
 
             Retrieve function call logs by call ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> logs = client.functions.calls.get_logs(call_id=2, function_id=1)
 
             Retrieve function call logs directly on a call object:
@@ -1160,8 +1173,9 @@ class FunctionSchedulesAPI(APIClient):
 
             Get function schedule by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.functions.schedules.retrieve(id=1)
 
         """
@@ -1199,8 +1213,9 @@ class FunctionSchedulesAPI(APIClient):
 
             List function schedules:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> schedules = client.functions.schedules.list()
 
             List schedules directly on a function object to get only schedules associated with this particular function:
@@ -1364,8 +1379,9 @@ class FunctionSchedulesAPI(APIClient):
 
             Delete function schedule:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.functions.schedules.delete(id = 123)
 
         """
@@ -1385,8 +1401,9 @@ class FunctionSchedulesAPI(APIClient):
 
             Get schedule input data:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.functions.schedules.get_input_data(id=123)
         """
         url = f"{self._RESOURCE_PATH}/{id}/input_data"

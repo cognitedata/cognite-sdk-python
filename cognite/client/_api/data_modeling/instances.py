@@ -551,8 +551,9 @@ class InstancesAPI(APIClient):
 
             Retrieve instances by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.instances.retrieve(
                 ...     nodes=("mySpace", "myNodeExternalId"),
                 ...     edges=("mySpace", "myEdgeExternalId"),
@@ -702,8 +703,9 @@ class InstancesAPI(APIClient):
 
             Delete instances by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.data_modeling.instances.delete(nodes=("mySpace", "myNode"))
 
             Delete nodes and edges using the built in data class
@@ -1706,8 +1708,9 @@ class InstancesAPI(APIClient):
 
             List instances and limit to 5:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> instance_list = client.data_modeling.instances.list(limit=5)
 
             List some instances in the space 'my-space':

@@ -158,8 +158,9 @@ class WorkflowTriggerAPI(APIClient):
 
             Delete a trigger with external id 'my_trigger':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.triggers.delete("my_trigger")
 
             Delete a list of triggers:
@@ -197,8 +198,9 @@ class WorkflowTriggerAPI(APIClient):
 
             List all triggers:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.triggers.list(limit=None)
         """
         return await self._list(
@@ -238,8 +240,9 @@ class WorkflowTriggerAPI(APIClient):
 
             Get all runs for a trigger with external id 'my_trigger':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.triggers.list_runs("my_trigger", limit=None)
         """
         return await self._list(
@@ -273,8 +276,9 @@ class WorkflowTaskAPI(APIClient):
 
             Update task with id '000560bc-9080-4286-b242-a27bb4819253' to status 'completed':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "completed")
 
             Update task with id '000560bc-9080-4286-b242-a27bb4819253' to status 'failed' with output '{"a": 1, "b": 2}':
@@ -311,8 +315,9 @@ class WorkflowExecutionAPI(APIClient):
 
             Retrieve workflow execution with id '000560bc-9080-4286-b242-a27bb4819253':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.retrieve_detailed("000560bc-9080-4286-b242-a27bb4819253")
 
             List workflow executions and retrieve detailed information for the first one:
@@ -389,8 +394,9 @@ class WorkflowExecutionAPI(APIClient):
 
             Trigger a workflow execution for the workflow "foo", version 1:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.run("foo", "1")
 
             Trigger a workflow execution with input data:
@@ -443,8 +449,9 @@ class WorkflowExecutionAPI(APIClient):
 
             Get all workflow executions for workflows 'my_workflow' version '1':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.list(("my_workflow", "1"))
 
             Get all workflow executions from the last 24 hours:
@@ -502,8 +509,9 @@ class WorkflowExecutionAPI(APIClient):
 
             Trigger a workflow execution for the workflow "foo", version 1 and cancel it:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.run("foo", "1")
                 >>> client.workflows.executions.cancel(id="foo", reason="test cancellation")
         """
@@ -526,8 +534,9 @@ class WorkflowExecutionAPI(APIClient):
         Examples:
             Retry a workflow execution that has been cancelled or failed:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.run("foo", "1")
                 >>> client.workflows.executions.cancel(id=res.id, reason="test cancellation")
                 >>> client.workflows.executions.retry(res.id)
@@ -668,8 +677,9 @@ class WorkflowVersionAPI(APIClient):
 
             Delete workflow version "1" of workflow "my workflow" specified by using a tuple:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.versions.delete(("my workflow", "1"))
 
             Delete workflow version "1" of workflow "my workflow" and workflow version "2" of workflow "my workflow 2" using the WorkflowVersionId class:
@@ -807,8 +817,9 @@ class WorkflowVersionAPI(APIClient):
 
             Get all workflow version for workflows 'my_workflow' and 'my_workflow_2':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.versions.list(["my_workflow", "my_workflow_2"])
 
             Get all workflow versions for workflows 'my_workflow' and 'my_workflow_2' using the WorkflowVersionId class:
@@ -944,8 +955,9 @@ class WorkflowAPI(APIClient):
 
             Retrieve workflow with external ID "my_workflow":
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> workflow = client.workflows.retrieve("my_workflow")
 
             Retrieve multiple workflows:
@@ -983,8 +995,9 @@ class WorkflowAPI(APIClient):
 
             Delete workflow with external_id "my_workflow":
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.delete("my_workflow")
         """
         await self._delete_multiple(
@@ -1006,8 +1019,9 @@ class WorkflowAPI(APIClient):
 
             List all workflows:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.list(limit=None)
         """
         return await self._list(

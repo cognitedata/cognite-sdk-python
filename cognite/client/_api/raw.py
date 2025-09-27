@@ -87,8 +87,9 @@ class RawDatabasesAPI(APIClient):
 
             Create a new database:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.raw.databases.create("db1")
         """
         assert_type(name, "name", [str, Sequence])
@@ -109,8 +110,9 @@ class RawDatabasesAPI(APIClient):
 
             Delete a list of databases:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.raw.databases.delete(["db1", "db2"])
         """
         assert_type(name, "name", [str, Sequence])
@@ -142,8 +144,9 @@ class RawDatabasesAPI(APIClient):
 
             List the first 5 databases:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> db_list = client.raw.databases.list(limit=5)
 
             Iterate over databases, one-by-one:
@@ -217,8 +220,9 @@ class RawTablesAPI(APIClient):
 
             Create a new table in a database:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.raw.tables.create("db1", "table1")
         """
         assert_type(name, "name", [str, Sequence])
@@ -246,8 +250,9 @@ class RawTablesAPI(APIClient):
 
             Delete a list of tables:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.raw.tables.delete("db1", ["table1", "table2"])
         """
         assert_type(name, "name", [str, Sequence])
@@ -294,8 +299,9 @@ class RawTablesAPI(APIClient):
 
             List the first 5 tables:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> table_list = client.raw.tables.list("db1", limit=5)
 
             Iterate over tables, one-by-one:
@@ -640,8 +646,9 @@ class RawRowsAPI(APIClient):
 
             Delete rows from table:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> keys_to_delete = ["k1", "k2", "k3"]
                 >>> client.raw.rows.delete("db1", "table1", keys_to_delete)
         """
@@ -675,8 +682,9 @@ class RawRowsAPI(APIClient):
 
             Retrieve a row with key 'k1' from table 't1' in database 'db1':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> row = client.raw.rows.retrieve("db1", "t1", "k1")
 
             You may access the data directly on the row (like a dict), or use '.get' when keys can be missing:
@@ -738,8 +746,9 @@ class RawRowsAPI(APIClient):
 
             Get dataframe:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
         """
         pd = local_import("pandas")
@@ -807,8 +816,9 @@ class RawRowsAPI(APIClient):
 
             List a few rows:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> row_list = client.raw.rows.list("db1", "tbl1", limit=5)
 
             Read an entire table efficiently by using concurrency (default behavior when ``limit=None``):

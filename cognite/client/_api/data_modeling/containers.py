@@ -100,8 +100,9 @@ class ContainersAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.containers.retrieve(('mySpace', 'myContainer'))
 
             Fetch using the ContainerId:
@@ -128,8 +129,9 @@ class ContainersAPI(APIClient):
 
             Delete containers by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.data_modeling.containers.delete(("mySpace", "myContainer"))
         """
         deleted_containers = cast(
@@ -153,8 +155,9 @@ class ContainersAPI(APIClient):
 
             Delete constraints by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.data_modeling.containers.delete_constraints(
                 ...     [(ContainerId("mySpace", "myContainer"), "myConstraint")]
                 ... )
@@ -172,8 +175,9 @@ class ContainersAPI(APIClient):
 
             Delete indexes by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.data_modeling.containers.delete_indexes(
                 ...     [(ContainerId("mySpace", "myContainer"), "myIndex")]
                 ... )
@@ -226,8 +230,9 @@ class ContainersAPI(APIClient):
 
             List containers and limit to 5:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> container_list = client.data_modeling.containers.list(limit=5)
 
             Iterate over containers, one-by-one:

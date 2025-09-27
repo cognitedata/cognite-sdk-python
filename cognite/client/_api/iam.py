@@ -326,8 +326,9 @@ class GroupsAPI(APIClient):
 
             List your own groups:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_groups = client.iam.groups.list()
 
             List all groups:
@@ -421,8 +422,9 @@ class GroupsAPI(APIClient):
 
             Delete group::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.iam.groups.delete(1)
         """
         await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
@@ -444,8 +446,9 @@ class SecurityCategoriesAPI(APIClient):
 
             List security categories::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.security_categories.list()
         """
         return await self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
@@ -500,8 +503,9 @@ class SecurityCategoriesAPI(APIClient):
 
             Delete security category::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.iam.security_categories.delete(1)
         """
         await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
@@ -520,8 +524,9 @@ class TokenAPI(APIClient):
 
             Inspect token::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.token.inspect()
         """
         # To not raise whenever new Acls/actions/scopes are added to the API, we specifically allow the unknown:

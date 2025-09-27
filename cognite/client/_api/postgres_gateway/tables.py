@@ -128,8 +128,9 @@ class TablesAPI(APIClient):
 
             Retrieve  custom table:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.postgres_gateway.tables.retrieve("myUserName", 'myCustom')
 
             Get multiple custom tables by id:
@@ -159,8 +160,9 @@ class TablesAPI(APIClient):
 
             Delete custom table:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.postgres_gateway.tables.delete("myUserName", ["myCustom", "myCustom2"])
 
 
@@ -195,8 +197,9 @@ class TablesAPI(APIClient):
 
             List tables:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> custom_table_list = client.postgres_gateway.tables.list("myUserName", limit=5)
 
             Iterate over tables, one-by-one:
