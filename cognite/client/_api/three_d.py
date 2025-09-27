@@ -93,8 +93,9 @@ class ThreeDModelsAPI(APIClient):
 
             Get 3d model by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.models.retrieve(id=1)
         """
         return await self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
@@ -113,8 +114,9 @@ class ThreeDModelsAPI(APIClient):
 
             List 3d models:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> model_list = client.three_d.models.list()
 
             Iterate over 3d models, one-by-one:
@@ -173,8 +175,9 @@ class ThreeDModelsAPI(APIClient):
 
             Create new 3d models:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
 
             Create multiple new 3D Models:
@@ -228,8 +231,9 @@ class ThreeDModelsAPI(APIClient):
 
             Update 3d model that you have fetched. This will perform a full update of the model:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> model = client.three_d.models.retrieve(id=1)
                 >>> model.name = "New Name"
                 >>> res = client.three_d.models.update(model)
@@ -261,8 +265,9 @@ class ThreeDModelsAPI(APIClient):
 
             Delete 3d model by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.models.delete(id=1)
         """
         await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
@@ -320,8 +325,9 @@ class ThreeDRevisionsAPI(APIClient):
 
             Retrieve 3d model revision by model id and revision id::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.retrieve(model_id=1, id=1)
         """
         return await self._retrieve(
@@ -392,8 +398,9 @@ class ThreeDRevisionsAPI(APIClient):
 
             List 3d model revisions::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.list(model_id=1, published=True, limit=100)
         """
         return await self._list(
@@ -427,8 +434,9 @@ class ThreeDRevisionsAPI(APIClient):
 
             Update a revision that you have fetched. This will perform a full update of the revision:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> revision = client.three_d.revisions.retrieve(model_id=1, id=1)
                 >>> revision.status = "New Status"
                 >>> res = client.three_d.revisions.update(model_id=1, item=revision)
@@ -459,8 +467,9 @@ class ThreeDRevisionsAPI(APIClient):
 
             Delete 3d model revision by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.delete(model_id=1, id=1)
         """
         await self._delete_multiple(
@@ -481,8 +490,9 @@ class ThreeDRevisionsAPI(APIClient):
 
             Update revision thumbnail::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.update_thumbnail(model_id=1, revision_id=1, file_id=1)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/thumbnail", model_id, revision_id)
@@ -519,8 +529,9 @@ class ThreeDRevisionsAPI(APIClient):
 
             List nodes from the hierarchy in the 3d model:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.list_nodes(model_id=1, revision_id=1, limit=10)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
@@ -559,8 +570,9 @@ class ThreeDRevisionsAPI(APIClient):
 
             Filter nodes from the hierarchy in the 3d model that have one of the values "AB76", "AB77" or "AB78" for property PDMS/Area AND that also have one of the values "PIPE", "BEND" or "PIPESUP" for the property PDMS/Type.
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.filter_nodes(model_id=1, revision_id=1, properties={ "PDMS": { "Area": ["AB76", "AB77", "AB78"], "Type": ["PIPE", "BEND", "PIPESUP"] } }, limit=10)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
@@ -592,8 +604,9 @@ class ThreeDRevisionsAPI(APIClient):
 
             Get a list of ancestor nodes of a given node:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.revisions.list_ancestor_nodes(model_id=1, revision_id=1, node_id=5, limit=10)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
@@ -623,8 +636,9 @@ class ThreeDFilesAPI(APIClient):
 
             Retrieve the contents of a 3d file by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.files.retrieve(1)
         """
         path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", id)
@@ -660,8 +674,9 @@ class ThreeDAssetMappingAPI(APIClient):
 
             List 3d node asset mappings:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.asset_mappings.list(model_id=1, revision_id=1)
 
             List 3d node asset mappings for assets whose bounding box intersects with a given bounding box:
@@ -749,8 +764,9 @@ class ThreeDAssetMappingAPI(APIClient):
 
             Delete 3d node asset mapping:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping_to_delete = client.three_d.asset_mappings.list(model_id=1, revision_id=1)[0]
                 >>> res = client.three_d.asset_mappings.delete(model_id=1, revision_id=1, asset_mapping=mapping_to_delete)
         """

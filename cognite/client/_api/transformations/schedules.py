@@ -122,8 +122,9 @@ class TransformationSchedulesAPI(APIClient):
 
             Get transformation schedule by transformation id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.transformations.schedules.retrieve(id=1)
 
             Get transformation schedule by transformation external id:
@@ -155,8 +156,9 @@ class TransformationSchedulesAPI(APIClient):
 
             Get transformation schedules by transformation ids:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.transformations.schedules.retrieve_multiple(ids=[1, 2, 3])
 
             Get transformation schedules by transformation external ids:
@@ -187,8 +189,9 @@ class TransformationSchedulesAPI(APIClient):
 
             List schedules::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> schedules_list = client.transformations.schedules.list()
         """
         filter = TransformationFilter(include_public=include_public).dump(camel_case=True)
@@ -218,8 +221,9 @@ class TransformationSchedulesAPI(APIClient):
 
             Delete schedules by id or external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.transformations.schedules.delete(id=[1,2,3], external_id="3")
         """
         await self._delete_multiple(
@@ -263,8 +267,9 @@ class TransformationSchedulesAPI(APIClient):
 
             Update a transformation schedule that you have fetched. This will perform a full update of the schedule:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> transformation_schedule = client.transformations.schedules.retrieve(id=1)
                 >>> transformation_schedule.is_paused = True
                 >>> res = client.transformations.schedules.update(transformation_schedule)

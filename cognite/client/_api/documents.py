@@ -45,8 +45,9 @@ class DocumentPreviewAPI(APIClient):
 
             Download image preview of page 5 of file with id 123:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
 
             Download an image preview and display using IPython.display.Image (for example in a Jupyter Notebook):
@@ -74,8 +75,9 @@ class DocumentPreviewAPI(APIClient):
 
             Download Image preview of page 5 of file with id 123 to folder "previews":
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.documents.previews.download_page_as_png("previews", id=123, page_number=5)
         """
         if isinstance(path, IO):
@@ -107,8 +109,9 @@ class DocumentPreviewAPI(APIClient):
 
             Download PDF preview of file with id 123:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.previews.download_document_as_pdf_bytes(id=123)
         """
         return self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf", headers={"accept": "application/pdf"}).content
@@ -127,8 +130,9 @@ class DocumentPreviewAPI(APIClient):
 
             Download PDF preview of file with id 123 to folder "previews":
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.documents.previews.download_document_as_pdf("previews", id=123)
         """
         if isinstance(path, IO):
@@ -159,8 +163,9 @@ class DocumentPreviewAPI(APIClient):
 
             Retrieve the PDF preview download link for document with id 123:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> link = client.documents.previews.retrieve_pdf_link(id=123)
         """
         res = await self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink")
@@ -242,8 +247,9 @@ class DocumentsAPI(APIClient):
 
             Count the number of documents in your CDF project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.documents.aggregate_count()
 
             Count the number of PDF documents in your CDF project:
@@ -342,8 +348,9 @@ class DocumentsAPI(APIClient):
 
             Count the number metadata keys for documents in your CDF project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.documents.aggregate_cardinality_properties()
         """
         self._validate_filter(filter)
@@ -475,8 +482,9 @@ class DocumentsAPI(APIClient):
 
             Retrieve the content of a document with id 123:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.retrieve_content(id=123)
         """
         return self._post(f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json={"id": id}).content

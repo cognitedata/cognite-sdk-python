@@ -181,8 +181,9 @@ class AgentsAPI(APIClient):
 
             Retrieve an agent by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.agents.retrieve(external_ids="my_agent")
 
             Retrieve multiple agents:
@@ -209,8 +210,9 @@ class AgentsAPI(APIClient):
 
             Delete an agent by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.agents.delete(external_ids="my_agent")
 
         """
@@ -231,8 +233,9 @@ class AgentsAPI(APIClient):
 
             List all agents:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> agent_list = client.agents.list()
 
         """

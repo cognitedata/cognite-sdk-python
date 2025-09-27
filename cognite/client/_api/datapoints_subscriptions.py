@@ -129,8 +129,9 @@ class DatapointsSubscriptionAPI(APIClient):
 
             Delete a subscription by external ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.time_series.subscriptions.delete("my_subscription")
         """
 
@@ -153,8 +154,9 @@ class DatapointsSubscriptionAPI(APIClient):
 
             Retrieve a subscription by external ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.time_series.subscriptions.retrieve("my_subscription")
         """
 
@@ -284,8 +286,9 @@ class DatapointsSubscriptionAPI(APIClient):
 
             Iterate over changes to subscription timeseries since the beginning until there is no more data:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription"):
                 ...     # Changes to the subscription itself:
                 ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
@@ -341,8 +344,9 @@ class DatapointsSubscriptionAPI(APIClient):
 
             List 5 subscriptions:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> subscriptions = client.time_series.subscriptions.list(limit=5)
 
         """
