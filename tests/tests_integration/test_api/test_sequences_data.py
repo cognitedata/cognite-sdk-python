@@ -186,7 +186,7 @@ class TestSequencesDataAPI:
     def test_retrieve_multi(
         self, cognite_client: CogniteClient, small_sequence: Sequence, pretend_timeseries: Sequence
     ) -> None:
-        dps = cognite_client.sequences.rows.retrieve(
+        dps = cognite_client.sequences.data.retrieve(
             external_id=get_or_raise(pretend_timeseries.external_id), id=small_sequence.id, start=0, end=None
         )
         assert isinstance(dps, SequenceRowsList)
