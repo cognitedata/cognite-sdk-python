@@ -105,8 +105,9 @@ class LabelsAPI(APIClient):
 
             Get label by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.labels.retrieve(external_id="my_label", ignore_unknown_ids=True)
 
         """
@@ -147,8 +148,9 @@ class LabelsAPI(APIClient):
 
             List Labels and filter on name:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> label_list = client.labels.list(limit=5, name="Pump")
 
             Iterate over label definitions, one-by-one:
@@ -218,8 +220,9 @@ class LabelsAPI(APIClient):
 
             Delete label definitions by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.labels.delete(external_id=["big_pump", "small_pump"])
         """
         await self._delete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)

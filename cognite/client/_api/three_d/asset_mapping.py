@@ -49,6 +49,7 @@ class ThreeDAssetMappingAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.asset_mappings.list(model_id=1, revision_id=1)
 
             List 3d node asset mappings for assets whose bounding box intersects with a given bounding box:
@@ -138,6 +139,7 @@ class ThreeDAssetMappingAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping_to_delete = client.three_d.asset_mappings.list(model_id=1, revision_id=1)[0]
                 >>> res = client.three_d.asset_mappings.delete(model_id=1, revision_id=1, asset_mapping=mapping_to_delete)
         """

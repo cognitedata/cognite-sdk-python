@@ -97,8 +97,9 @@ class JobsAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.hosted_extractors.jobs.retrieve('myJob')
 
             Get multiple jobs by id:
@@ -129,8 +130,9 @@ class JobsAPI(APIClient):
 
             Delete jobs by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.hosted_extractors.jobs.delete(["myMQTTJob", "MyEventHubJob"])
         """
         self._warning.warn()
@@ -244,8 +246,9 @@ class JobsAPI(APIClient):
 
             List jobs:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> job_list = client.hosted_extractors.jobs.list(limit=5)
 
             Iterate over jobs, one-by-one:
@@ -289,8 +292,9 @@ class JobsAPI(APIClient):
 
             Reqests logs for a specific job:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.hosted_extractors.jobs.list_logs(job="myJob")
         """
         self._warning.warn()
@@ -334,8 +338,9 @@ class JobsAPI(APIClient):
 
             Reqests metrics for a specific job:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.hosted_extractors.jobs.list_metrics(job="myJob")
         """
         self._warning.warn()

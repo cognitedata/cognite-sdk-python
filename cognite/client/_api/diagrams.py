@@ -319,8 +319,9 @@ class DiagramsAPI(APIClient):
         Returns:
             DiagramConvertResults: Resulting queued job. Note that .result property of this job will block waiting for results.
         Examples:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> detect_job = client.diagrams.detect(...)
                 >>> client.diagrams.convert(detect_job=detect_job)
 

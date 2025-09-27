@@ -72,6 +72,7 @@ class RawTablesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.raw.tables.create("db1", "table1")
         """
         assert_type(name, "name", [str, Sequence])
@@ -101,6 +102,7 @@ class RawTablesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.raw.tables.delete("db1", ["table1", "table2"])
         """
         assert_type(name, "name", [str, Sequence])
@@ -149,6 +151,7 @@ class RawTablesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> table_list = client.raw.tables.list("db1", limit=5)
 
             Iterate over tables, one-by-one:

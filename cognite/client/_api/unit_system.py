@@ -22,6 +22,7 @@ class UnitSystemAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.units.systems.list()
 
         """

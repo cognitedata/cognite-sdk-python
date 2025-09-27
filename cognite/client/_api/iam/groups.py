@@ -66,6 +66,7 @@ class GroupsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_groups = client.iam.groups.list()
 
             List all groups:
@@ -161,6 +162,7 @@ class GroupsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.iam.groups.delete(1)
         """
         await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)

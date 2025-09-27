@@ -230,8 +230,9 @@ class AssetsAPI(APIClient):
 
             Get asset by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.assets.retrieve(id=1)
 
             Get asset by external id:
@@ -261,8 +262,9 @@ class AssetsAPI(APIClient):
 
             Get assets by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.assets.retrieve_multiple(ids=[1, 2, 3])
 
             Get assets by external id:
@@ -287,8 +289,9 @@ class AssetsAPI(APIClient):
 
             Aggregate assets:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> aggregate_by_prefix = client.assets.aggregate(filter={"external_id_prefix": "prefix"})
         """
         warnings.warn(
@@ -316,8 +319,9 @@ class AssetsAPI(APIClient):
 
         Count the number of assets in your CDF project:
 
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> count = client.assets.aggregate_count()
 
         Count the number of assets with the metadata key "timezone" in your CDF project:
@@ -709,8 +713,9 @@ class AssetsAPI(APIClient):
 
             Delete assets by id or external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.assets.delete(id=[1,2,3], external_id="3")
         """
         await self._delete_multiple(
@@ -927,8 +932,9 @@ class AssetsAPI(APIClient):
 
             Search for assets by fuzzy search on name:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.assets.search(name="some name")
 
             Search for assets by exact search on name:
@@ -1054,8 +1060,9 @@ class AssetsAPI(APIClient):
 
             List assets:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> asset_list = client.assets.list(limit=5)
 
             Iterate over assets, one-by-one:

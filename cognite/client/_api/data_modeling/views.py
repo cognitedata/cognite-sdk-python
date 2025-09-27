@@ -110,8 +110,9 @@ class ViewsAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
 
         """
@@ -138,8 +139,9 @@ class ViewsAPI(APIClient):
 
             Delete views by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.data_modeling.views.delete(('mySpace', 'myView', 'v1'))
         """
         deleted_views = cast(
@@ -176,8 +178,9 @@ class ViewsAPI(APIClient):
 
             List 5 views:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> view_list = client.data_modeling.views.list(limit=5)
 
             Iterate over views, one-by-one:

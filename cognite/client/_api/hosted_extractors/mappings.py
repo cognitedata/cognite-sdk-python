@@ -95,8 +95,9 @@ class MappingsAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.hosted_extractors.mappings.retrieve('myMapping')
 
             Get multiple mappings by id:
@@ -127,8 +128,9 @@ class MappingsAPI(APIClient):
 
             Delete mappings by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.hosted_extractors.mappings.delete(["myMapping", "MyMapping2"])
         """
         self._warning.warn()
@@ -231,8 +233,9 @@ class MappingsAPI(APIClient):
 
             List mappings:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping_list = client.hosted_extractors.mappings.list(limit=5)
 
             Iterate over mappings, one-by-one:

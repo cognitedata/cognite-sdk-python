@@ -48,8 +48,9 @@ class SimulatorLogsAPI(APIClient):
 
         Examples:
             Get simulator logs by simulator model id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> model = client.simulators.models.retrieve(ids=1)
                 >>> logs = client.simulators.logs.retrieve(ids=model.log_id)
 

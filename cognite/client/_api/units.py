@@ -72,8 +72,9 @@ class UnitAPI(APIClient):
 
             Retrive unit 'temperature:deg_c':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.units.retrieve('temperature:deg_c')
 
             Retrive units 'temperature:deg_c' and 'pressure:bar':
@@ -141,8 +142,9 @@ class UnitAPI(APIClient):
 
                 Look up a unit by alias only:
 
-                    >>> from cognite.client import CogniteClient
+                    >>> from cognite.client import CogniteClient, AsyncCogniteClient
                     >>> client = CogniteClient()
+                    >>> # async_client = AsyncCogniteClient()  # another option
                     >>> unit = client.units.from_alias('cmol / L')
 
                 Look up ambiguous alias 'F' by passing quantity 'Temperature':
@@ -217,8 +219,9 @@ class UnitAPI(APIClient):
 
             List all supported units in CDF:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.units.list()
         """
         return await self._list(method="GET", list_cls=UnitList, resource_cls=Unit)
