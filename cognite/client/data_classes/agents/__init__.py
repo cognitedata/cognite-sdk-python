@@ -32,6 +32,11 @@ from cognite.client.data_classes.agents.chat import (
     TextContent,
     UnknownContent,
 )
+from cognite.client.data_classes.agents.client_tools import (
+    ClientTool,
+    ClientToolList,
+    ClientToolParameters,
+)
 
 __all__ = [
     "Agent",
@@ -49,6 +54,9 @@ __all__ = [
     "AgentUpsertList",
     "AskDocumentAgentTool",
     "AskDocumentAgentToolUpsert",
+    "ClientTool",
+    "ClientToolList",
+    "ClientToolParameters",
     "DataModelInfo",
     "InstanceSpaces",
     "Message",
