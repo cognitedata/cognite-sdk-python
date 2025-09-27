@@ -86,8 +86,9 @@ class JobsAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.hosted_extractors.jobs.retrieve('myJob')
 
             Get multiple jobs by id:
@@ -118,8 +119,9 @@ class JobsAPI(APIClient):
 
             Delete jobs by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.hosted_extractors.jobs.delete(["myMQTTJob", "MyEventHubJob"])
         """
         self._warning.warn()
@@ -157,6 +159,7 @@ class JobsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> job_write = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
                 >>> job = client.hosted_extractors.jobs.create(job_write)
         """
@@ -204,6 +207,7 @@ class JobsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> job = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
                 >>> updated_job = client.hosted_extractors.jobs.update(job)
         """
@@ -233,8 +237,9 @@ class JobsAPI(APIClient):
 
             List jobs:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> job_list = client.hosted_extractors.jobs.list(limit=5)
 
             Iterate over jobs, one-by-one:
@@ -278,8 +283,9 @@ class JobsAPI(APIClient):
 
             Reqests logs for a specific job:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.hosted_extractors.jobs.list_logs(job="myJob")
         """
         self._warning.warn()
@@ -323,8 +329,9 @@ class JobsAPI(APIClient):
 
             Reqests metrics for a specific job:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.hosted_extractors.jobs.list_metrics(job="myJob")
         """
         self._warning.warn()

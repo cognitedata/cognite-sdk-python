@@ -35,8 +35,9 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModel | None: Model requested.
 
         Examples:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> retrieved_model = client.entity_matching.retrieve(id=1)
         """
 
@@ -58,8 +59,9 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModelList: Models requested.
 
         Examples:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> retrieved_models = client.entity_matching.retrieve_multiple([1,2,3])
 
         """
@@ -86,8 +88,9 @@ class EntityMatchingAPI(APIClient):
 
         Examples:
             >>> from cognite.client.data_classes.contextualization import EntityMatchingModelUpdate
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> client.entity_matching.update(EntityMatchingModelUpdate(id=1).name.set("New name"))
         """
         return await self._update_multiple(
@@ -121,8 +124,9 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModelList: List of models.
 
         Examples:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> client.entity_matching.list(limit=1, name="test")
         """
         if is_unlimited(limit):
@@ -160,8 +164,9 @@ class EntityMatchingAPI(APIClient):
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
         Examples:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> client.entity_matching.delete(id=1)
         """
 
@@ -205,8 +210,9 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModel: Resulting queued model.
 
         Example:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
             >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
             >>> true_matches = [(1, 101)]
@@ -273,8 +279,9 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingPredictionResult: object which can be used to wait for and retrieve results.
 
         Examples:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> sources = {'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}
             >>> targets = {'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}
             >>> true_matches = [(1, 101)]
@@ -317,8 +324,9 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModel: new model refitted to true_matches.
 
         Examples:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
             >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
             >>> true_matches = [(1, 101)]

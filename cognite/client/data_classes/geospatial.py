@@ -390,8 +390,9 @@ class FeatureListCore(WriteableCogniteResourceList[FeatureWrite, T_Feature], Ext
             Convert a FeatureList into a GeoPandas GeoDataFrame:
 
                 >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> features = client.geospatial.search_features(...)
                 >>> gdf = features.to_geopandas(
                 ...     geometry="position",
@@ -429,8 +430,9 @@ class FeatureListCore(WriteableCogniteResourceList[FeatureWrite, T_Feature], Ext
 
             Create features from a geopandas dataframe:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_feature_type = ... # some feature type with 'position' and 'temperature' properties
                 >>> my_geodataframe = ...  # some geodataframe with 'center_xy', 'temp' and 'id' columns
                 >>> feature_list = FeatureList.from_geopandas(feature_type=my_feature_type, geodataframe=my_geodataframe,

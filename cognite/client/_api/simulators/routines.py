@@ -119,6 +119,7 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators.routines import SimulatorRoutineWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> routines = [
                 ...     SimulatorRoutineWrite(
                 ...         name="routine1",
@@ -160,8 +161,9 @@ class SimulatorRoutinesAPI(APIClient):
 
         Examples:
             Delete simulator routines by id or external id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.simulators.routines.delete(ids=[1,2,3], external_ids="foo")
         """
         self._warning.warn()
@@ -194,8 +196,9 @@ class SimulatorRoutinesAPI(APIClient):
 
         Examples:
             List simulator routines:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.routines.list(limit=10)
 
             Iterate over simulator routines, one-by-one:
@@ -300,8 +303,9 @@ class SimulatorRoutinesAPI(APIClient):
 
         Examples:
             Create new simulation run using routine external ID:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> run = client.simulators.routines.run(
                 ...     routine_external_id="routine1",
                 ...     log_severity="Debug"

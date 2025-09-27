@@ -36,8 +36,9 @@ class AIDocumentsAPI(APIClient):
 
             Summarize a single document using ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.ai.tools.documents.summarize(id=123)
 
             You can also use external ID or instance ID:
@@ -97,8 +98,9 @@ class AIDocumentsAPI(APIClient):
 
             Ask a question about a single document with id=123 and get the answer in English (default):
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.ai.tools.documents.ask_question(
                 ...     question="What model pump was used?",
                 ...     id=123,
