@@ -135,8 +135,9 @@ class DataSetsAPI(APIClient):
 
             Get data set by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_sets.retrieve(id=1)
 
             Get data set by external id:
@@ -166,8 +167,9 @@ class DataSetsAPI(APIClient):
 
             Get data sets by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_sets.retrieve_multiple(ids=[1, 2, 3])
 
             Get data sets by external id:
@@ -192,8 +194,9 @@ class DataSetsAPI(APIClient):
 
             Aggregate data_sets:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> aggregate_protected = client.data_sets.aggregate(filter={"write_protected": True})
         """
 
@@ -231,8 +234,9 @@ class DataSetsAPI(APIClient):
 
             Update a data set that you have fetched. This will perform a full update of the data set:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> data_set = client.data_sets.retrieve(id=1)
                 >>> data_set.description = "New description"
                 >>> res = client.data_sets.update(data_set)
@@ -273,8 +277,9 @@ class DataSetsAPI(APIClient):
 
             List data sets and filter on write_protected:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> data_sets_list = client.data_sets.list(limit=5, write_protected=False)
 
             Iterate over data sets, one-by-one:

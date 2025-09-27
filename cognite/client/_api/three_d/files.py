@@ -22,6 +22,7 @@ class ThreeDFilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.files.retrieve(1)
         """
         path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", id)

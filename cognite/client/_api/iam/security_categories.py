@@ -28,6 +28,7 @@ class SecurityCategoriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.security_categories.list()
         """
         return await self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
@@ -84,6 +85,7 @@ class SecurityCategoriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.iam.security_categories.delete(1)
         """
         await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)

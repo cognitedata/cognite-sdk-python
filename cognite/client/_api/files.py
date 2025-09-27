@@ -234,8 +234,9 @@ class FilesAPI(APIClient):
 
             Get file metadata by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.files.retrieve(id=1)
 
             Get file metadata by external id:
@@ -269,8 +270,9 @@ class FilesAPI(APIClient):
 
             Get file metadatas by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.files.retrieve_multiple(ids=[1, 2, 3])
 
             Get file_metadatas by external id:
@@ -298,8 +300,9 @@ class FilesAPI(APIClient):
 
             List files metadata and filter on external id prefix:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> aggregate_uploaded = client.files.aggregate(filter={"uploaded": True})
         """
 
@@ -322,8 +325,9 @@ class FilesAPI(APIClient):
 
             Delete files by id or external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.files.delete(id=[1,2,3], external_id="3")
         """
         await self._delete_multiple(
@@ -368,8 +372,9 @@ class FilesAPI(APIClient):
 
             Update file metadata that you have fetched. This will perform a full update of the file metadata:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> file_metadata = client.files.retrieve(id=1)
                 >>> file_metadata.description = "New description"
                 >>> res = client.files.update(file_metadata)
@@ -422,8 +427,9 @@ class FilesAPI(APIClient):
 
             Search for a file:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.files.search(name="some name")
 
             Search for an asset with an attached label:
@@ -506,8 +512,9 @@ class FilesAPI(APIClient):
 
             Upload a file in a given path:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.files.upload("/path/to/file", name="my_file")
 
             If name is omitted, this method will use the name of the file
@@ -608,8 +615,9 @@ class FilesAPI(APIClient):
 
             Finish a file creation by uploading the content using external_id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.files.upload_content_bytes(
                 ...     b"some content", external_id="my_file_xid")
 
@@ -706,8 +714,9 @@ class FilesAPI(APIClient):
 
             Upload a file from memory:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
         """
         if isinstance(content, str):
@@ -799,8 +808,9 @@ class FilesAPI(APIClient):
 
             Upload binary data in two chunks:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> with client.files.multipart_upload_session("my_file.txt", parts=2) as session:
                 ...     # Note that the minimum chunk size is 5 MiB.
                 ...     session.upload_part(0, "hello" * 1_200_000)
@@ -876,8 +886,9 @@ class FilesAPI(APIClient):
 
             Upload binary data in two chunks:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> with client.files.multipart_upload_content_session(external_id="external-id", parts=2) as session:
                 ...     # Note that the minimum chunk size is 5 MiB.
                 ...     session.upload_part(0, "hello" * 1_200_000)
@@ -1042,8 +1053,9 @@ class FilesAPI(APIClient):
 
             Download files by id and external id into directory 'my_directory':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
 
             Download files by id to the current directory:
@@ -1175,8 +1187,9 @@ class FilesAPI(APIClient):
         Examples:
 
             Download a file by id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.files.download_to_path("~/mydir/my_downloaded_file.txt", id=123)
         """
         if isinstance(path, str):
@@ -1202,8 +1215,9 @@ class FilesAPI(APIClient):
 
             Download a file's content into memory:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> file_content = client.files.download_bytes(id=1)
 
         Returns:
@@ -1276,8 +1290,9 @@ class FilesAPI(APIClient):
 
             List files metadata and filter on external id prefix:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> file_list = client.files.list(limit=5, external_id_prefix="prefix")
 
             Iterate over files metadata, one-by-one:

@@ -1016,8 +1016,9 @@ class DatapointsAPI(APIClient):
             we are using the time-ago format, ``"2w-ago"`` to get raw data for the time series with id=42 from 2 weeks ago up until now.
             You can also use the time-ahead format, like ``"3d-ahead"``, to specify a relative time in the future.
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> dps = client.time_series.data.retrieve(id=42, start="2w-ago")
                 >>> # You can also use instance_id:
                 >>> from cognite.client.data_classes.data_modeling import NodeId
@@ -1508,8 +1509,9 @@ class DatapointsAPI(APIClient):
 
             Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     id=12345,
                 ...     start="2w-ago",
@@ -1809,8 +1811,9 @@ class DatapointsAPI(APIClient):
             Getting the latest datapoint in a time series. This method returns a Datapoints object, so the datapoint
             (if it exists) will be the first element:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.time_series.data.retrieve_latest(id=1)[0]
 
             You can also use external_id or instance_id; single identifier or list of identifiers:
@@ -2075,8 +2078,9 @@ class DatapointsAPI(APIClient):
 
             Deleting the last week of data from a time series:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.time_series.data.delete_range(start="1w-ago", end="now", id=1)
 
             Deleting the data from now until 2 days in the future from a time series containing e.g. forecasted data:
@@ -2102,8 +2106,9 @@ class DatapointsAPI(APIClient):
 
             Each element in the list ranges must be specify either id or external_id, and a range:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> ranges = [{"id": 1, "start": "2d-ago", "end": "now"},
                 ...           {"external_id": "abc", "start": "2d-ago", "end": "2d-ahead"}]
                 >>> client.time_series.data.delete_ranges(ranges)
@@ -2147,8 +2152,9 @@ class DatapointsAPI(APIClient):
 
                 >>> import numpy as np
                 >>> import pandas as pd
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> ts_xid = "my-foo-ts"
                 >>> idx = pd.date_range(start="2018-01-01", periods=100, freq="1d")
                 >>> noise = np.random.normal(0, 1, 100)

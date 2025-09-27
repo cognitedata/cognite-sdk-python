@@ -38,14 +38,16 @@ class TransformationJobsAPI(APIClient):
 
             List transformation jobs::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> transformation_jobs_list = client.transformations.jobs.list()
 
             List transformation jobs of a single transformation::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> transformation_jobs_list = client.transformations.jobs.list(transformation_id=1)
         """
 
@@ -70,8 +72,9 @@ class TransformationJobsAPI(APIClient):
 
             Get transformation job by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.transformations.jobs.retrieve(id=1)
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
@@ -92,8 +95,9 @@ class TransformationJobsAPI(APIClient):
 
             Get metrics by transformation job id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.transformations.jobs.list_metrics(id=1)
         """
         url_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/metrics", str(id))
@@ -120,8 +124,9 @@ class TransformationJobsAPI(APIClient):
 
             Get jobs by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.transformations.jobs.retrieve_multiple(ids=[1, 2, 3])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=None)

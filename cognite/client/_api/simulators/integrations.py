@@ -97,8 +97,9 @@ class SimulatorIntegrationsAPI(APIClient):
 
         Examples:
             List a few simulator integrations:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.integrations.list(limit=10)
 
             Iterate over simulator integrations, one-by-one:
@@ -134,8 +135,9 @@ class SimulatorIntegrationsAPI(APIClient):
 
         Examples:
             Delete simulator integrations by id or external id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.simulators.integrations.delete(ids=[1,2,3], external_ids="foo")
         """
         await self._delete_multiple(

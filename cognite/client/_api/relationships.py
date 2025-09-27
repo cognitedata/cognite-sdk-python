@@ -170,8 +170,9 @@ class RelationshipsAPI(APIClient):
 
             Get relationship by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.relationships.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_id).as_singleton()
@@ -200,8 +201,9 @@ class RelationshipsAPI(APIClient):
 
             Get relationships by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
@@ -259,8 +261,9 @@ class RelationshipsAPI(APIClient):
 
             List relationships:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> relationship_list = client.relationships.list(limit=5)
 
             Iterate over relationships, one-by-one:
@@ -428,8 +431,9 @@ class RelationshipsAPI(APIClient):
         Examples:
             Update a data set that you have fetched. This will perform a full update of the data set:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> rel = client.relationships.retrieve(external_id="flow1")
                 >>> rel.confidence = 0.75
                 >>> res = client.relationships.update(rel)
@@ -524,8 +528,9 @@ class RelationshipsAPI(APIClient):
 
             Delete relationships by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.relationships.delete(external_id=["a","b"])
         """
         await self._delete_multiple(
