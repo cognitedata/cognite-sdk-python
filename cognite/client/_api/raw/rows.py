@@ -1,11 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import math
-import random
-import threading
-import time
-from collections import defaultdict, deque
-from collections.abc import AsyncIterator, Iterator, Sequence
+from collections import defaultdict
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -28,8 +26,6 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from concurrent.futures import Future
-
     import pandas as pd
 
     from cognite.client import AsyncCogniteClient
@@ -80,10 +76,14 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         partitions: int | None = None,
-    ) -> AsyncIterator[Row] | AsyncIterator[RowList]:
+    ) -> AsyncIterator[Row | RowList]:
         """Iterate over rows.
 
         Fetches rows as they are iterated over, so you keep a limited number of rows in memory.
+
+        Note:
+            When iterating using partitions > 1, the memory usage is bounded at 2 x partitions x chunk_size. This is implemented
+            by halting retrieval speed when the callers code can't keep up.
 
         Args:
             db_name (str): Name of the database
@@ -98,15 +98,11 @@ class RawRowsAPI(APIClient):
                 The setting is capped at ``global_config.max_workers`` and _can_ be used with a finite limit. To prevent unexpected
                 problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
-        Returns:
-            AsyncIterator[Row] | AsyncIterator[RowList]: An iterator yielding the requested row or rows.
-
-        Note:
-            When iterating using partitions > 1, the memory usage is bounded at 2 x partitions x chunk_size. This is implemented
-            by halting retrieval speed when the callers code can't keep up.
+        Yields:
+            Row | RowList: An iterator yielding the requested row or rows.
         """
         if partitions is None or _RUNNING_IN_BROWSER:
-            return self._list_generator(
+            iterator = self._list_generator(
                 list_cls=RowList,
                 resource_cls=Row,
                 resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
@@ -121,18 +117,21 @@ class RawRowsAPI(APIClient):
                     },
                 ),
             )
-        return self._list_generator_concurrent(
-            db_name=db_name,
-            table_name=table_name,
-            chunk_size=chunk_size,
-            limit=limit,
-            min_last_updated_time=min_last_updated_time,
-            max_last_updated_time=max_last_updated_time,
-            columns=columns,
-            partitions=partitions,
-        )
+        else:
+            iterator = self._list_generator_concurrent(
+                db_name=db_name,
+                table_name=table_name,
+                chunk_size=chunk_size,
+                limit=limit,
+                min_last_updated_time=min_last_updated_time,
+                max_last_updated_time=max_last_updated_time,
+                columns=columns,
+                partitions=partitions,
+            )
+        async for res in iterator:
+            yield res
 
-    def _list_generator_concurrent(
+    async def _list_generator_concurrent(
         self,
         db_name: str,
         table_name: str,
@@ -142,17 +141,16 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None,
         columns: list[str] | None,
         partitions: int,
-    ) -> Iterator[RowList]:
-        # We are a bit restrictive on partitioning - especially for "small" limits:
+    ) -> AsyncIterator[RowList]:
         from cognite.client import global_config
 
         partitions = min(partitions, global_config.max_workers)
-        if finite_limit := is_finite(limit):
+        if is_finite(limit):
             partitions = min(partitions, global_config.max_workers, math.ceil(limit / 20_000))
             if chunk_size is not None and limit < chunk_size:
                 raise ValueError(f"chunk_size ({chunk_size}) should be much smaller than limit ({limit})")
 
-        cursors = self._get_parallel_cursors(
+        cursors = await self._get_parallel_cursors(
             db_name, table_name, min_last_updated_time, max_last_updated_time, n_cursors=partitions
         )
         chunk_size = max(1000, chunk_size or 10_000)
@@ -170,59 +168,51 @@ class RawRowsAPI(APIClient):
             )
             for initial in cursors
         ]
+        # Use a bounded queue to buffer the fetched row chunks. If the consumer processes items
+        # slower than they are fetched, the queue will fill up, causing the fetching tasks to pause.
+        # This backpressure prevents hammering the API and strictly bounds memory usage.
+        queue = asyncio.Queue(maxsize=partitions)
+        quit_early = asyncio.Event()
 
-        def exhaust(iterator: Iterator) -> None:
-            for res in iterator:
-                results.append(res)
+        async def _fetch_and_enqueue(iterator: AsyncIterator[RowList]) -> None:
+            async for res in iterator:
                 if quit_early.is_set():
                     return
-                # User code might be processing slower than the rate of row-fetching, and we want this
-                # iteration-based method to have a upper-bounded memory impact, so we keep a max queue
-                # size of unprocessed row-chunks:
-                while len(results) >= partitions:
-                    # Sleep randomly per thread to avoid sending all new fetch requests at the same time
-                    time.sleep(random.uniform(0, partitions))
-                    if quit_early.is_set():
-                        return
+                await queue.put(res)
 
-        quit_early = threading.Event()
-        results: deque[RowList] = deque()  # fifo, not that ordering matters anyway...
-        # TODO: Fix:
-        # pool = ConcurrencySettings.get_thread_pool_executor_or_raise()
-        futures = [pool.submit(exhaust, task) for task in read_iterators]
+        producer_tasks = [asyncio.create_task(_fetch_and_enqueue(it)) for it in read_iterators]
 
-        if finite_limit:
-            yield from self._read_rows_limited(futures, results, cast(int, limit), quit_early)
-        else:
-            yield from self._read_rows_unlimited(futures, results)
+        n_yielded = 0
+        try:
+            while not queue.empty() or not all(task.done() for task in producer_tasks):
+                try:
+                    chunk = queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    # No chunks ready, wait a bit:
+                    await asyncio.sleep(0.5)
+                    continue
 
-        for f in futures:
-            f.cancelled() or f.result()  # Visibility in case anything failed
+                if limit is None:
+                    yield chunk
+                    continue
 
-    def _read_rows_unlimited(self, futures: list[Future], results: deque[RowList]) -> Iterator[RowList]:
-        while not all(f.done() for f in futures):
-            while results:
-                yield results.popleft()
-        yield from results
-
-    def _read_rows_limited(
-        self, futures: list[Future], results: deque[RowList], limit: int, quit_early: threading.Event
-    ) -> Iterator[RowList]:
-        n_total = 0
-        while True:
-            while results:
-                n_new = len(part := results.popleft())
-                if n_total + n_new < limit:
-                    n_total += n_new
-                    yield part
+                n_new = len(chunk)
+                if n_yielded + n_new < limit:
+                    yield chunk
+                    n_yielded += n_new
                 else:
-                    for f in futures:
-                        f.cancel()
+                    yield chunk[: limit - n_yielded]
                     quit_early.set()
-                    yield part[: limit - n_total]
-                    return
-            if all(f.done() for f in futures) and not results:
-                return
+                    # Break the consumer loop; the finally block will clean up producers
+                    break
+        finally:
+            for task in producer_tasks:
+                task.cancel()
+            # We wait for all tasks to acknowledge the cancellation:
+            await asyncio.gather(*producer_tasks, return_exceptions=True)
+
+            for task in producer_tasks:
+                task.cancelled() or task.result()  # Visibility in case anything failed
 
     async def insert(
         self,
@@ -584,6 +574,6 @@ class RawRowsAPI(APIClient):
             partitions=partitions,
         )
         return RowList(
-            [row async for row_list in rows_iterator for row in row_list],
+            [row async for row_list in rows_iterator for row in cast(RowList, row_list)],
             cognite_client=self._cognite_client,
         )
