@@ -13,6 +13,18 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.86.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.85.0...v7.86.0) (2025-09-26)
+
+
+### Features
+
+* **instances/search:** `operator` is now supported (AND/OR) ([#2344](https://github.com/cognitedata/cognite-sdk-python/issues/2344)) ([317439b](https://github.com/cognitedata/cognite-sdk-python/commit/317439b11f8459373137d3ffdff53dd86b155b1e))
+
+
+### Bug Fixes
+
+* filters now accept DirectRelationReference as instance identifier ([#2334](https://github.com/cognitedata/cognite-sdk-python/issues/2334)) ([597f7ca](https://github.com/cognitedata/cognite-sdk-python/commit/597f7ca70493498a13dd3363c018d1c7fec3d887))
+
 ## [7.85.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.84.0...v7.85.0) (2025-09-25)
 
 
