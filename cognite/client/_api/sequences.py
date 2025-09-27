@@ -58,8 +58,16 @@ class SequencesAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self.rows = SequencesDataAPI(config, api_version, cognite_client)
-        self.data = self.rows
+        self.data = SequencesDataAPI(config, api_version, cognite_client)
+
+    @property
+    def rows(self) -> SequencesDataAPI:
+        warnings.warn(
+            "The 'sequences.rows' property is deprecated and may be removed in the future. "
+            "Use 'client.sequences.data' to future-proof your code.",
+            DeprecationWarning,
+        )
+        return self.data
 
     @overload
     def __call__(
