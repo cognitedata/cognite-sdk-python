@@ -476,7 +476,7 @@ class TestSequences:
     def test_retrieve_no_data(
         self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], mock_get_sequence_empty_data: HTTPXMock
     ) -> None:
-        data = cognite_client.sequences.rows.retrieve(id=1, start=0, end=None)
+        data = cognite_client.sequences.data.retrieve(id=1, start=0, end=None)
         assert isinstance(data, SequenceRows)
         assert 0 == len(data)
         assert 2 == len(data.column_external_ids)
