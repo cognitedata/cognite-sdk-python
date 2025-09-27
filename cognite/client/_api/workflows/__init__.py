@@ -139,6 +139,7 @@ class WorkflowAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> workflow = client.workflows.retrieve("my_workflow")
 
             Retrieve multiple workflows:
@@ -178,6 +179,7 @@ class WorkflowAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.delete("my_workflow")
         """
         await self._delete_multiple(
@@ -201,6 +203,7 @@ class WorkflowAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.list(limit=None)
         """
         return await self._list(

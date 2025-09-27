@@ -102,8 +102,9 @@ class DocumentsAPI(APIClient):
 
             Count the number of documents in your CDF project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.documents.aggregate_count()
 
             Count the number of PDF documents in your CDF project:
@@ -202,8 +203,9 @@ class DocumentsAPI(APIClient):
 
             Count the number metadata keys for documents in your CDF project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.documents.aggregate_cardinality_properties()
         """
         self._validate_filter(filter)
@@ -335,8 +337,9 @@ class DocumentsAPI(APIClient):
 
             Retrieve the content of a document with id 123:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.retrieve_content(id=123)
         """
         return self._post(f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json={"id": id}).content

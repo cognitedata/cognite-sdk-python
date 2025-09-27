@@ -207,8 +207,9 @@ class TimeSeriesAPI(APIClient):
 
             Get time series by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.time_series.retrieve(id=1)
 
             Get time series by external id:
@@ -244,8 +245,9 @@ class TimeSeriesAPI(APIClient):
 
             Get time series by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.time_series.retrieve_multiple(ids=[1, 2, 3])
 
             Get time series by external id:
@@ -273,8 +275,9 @@ class TimeSeriesAPI(APIClient):
 
             List time series:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.time_series.aggregate(filter={"unit": "kpa"})
         """
         warnings.warn(
@@ -300,8 +303,9 @@ class TimeSeriesAPI(APIClient):
 
         Count the number of time series in your CDF project:
 
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> count = client.time_series.aggregate_count()
 
         Count the number of numeric time series in your CDF project:
@@ -545,8 +549,9 @@ class TimeSeriesAPI(APIClient):
 
             Delete time series by id or external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.time_series.delete(id=[1,2,3], external_id="3")
         """
         await self._delete_multiple(
@@ -590,8 +595,9 @@ class TimeSeriesAPI(APIClient):
 
             Update a time series that you have fetched. This will perform a full update of the time series:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.time_series.retrieve(id=1)
                 >>> res.description = "New description"
                 >>> res = client.time_series.update(res)
@@ -697,8 +703,9 @@ class TimeSeriesAPI(APIClient):
 
             Search for a time series:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.time_series.search(name="some name")
 
             Search for all time series connected to asset with id 123:
@@ -832,8 +839,9 @@ class TimeSeriesAPI(APIClient):
 
             List time series:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.time_series.list(limit=5)
 
             Iterate over time series, one-by-one:

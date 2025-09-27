@@ -33,8 +33,9 @@ class StatisticsAPI(APIClient):
             Fetch project statistics (and limits) and check the current number of data models vs.
             and how many more can be created:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> stats = client.data_modeling.statistics.project()
                 >>> data_model_count = stats.data_models.count
                 >>> available_count = stats.data_models.limit - data_model_count

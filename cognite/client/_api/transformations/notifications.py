@@ -141,14 +141,16 @@ class TransformationNotificationsAPI(APIClient):
 
             List all notifications::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> notifications_list = client.transformations.notifications.list()
 
             List all notifications by transformation id::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> notifications_list = client.transformations.notifications.list(transformation_id = 1)
         """
         filter = TransformationNotificationFilter(
@@ -175,8 +177,9 @@ class TransformationNotificationsAPI(APIClient):
 
             Delete schedules by id or external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.transformations.notifications.delete(id=[1,2,3])
         """
         await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)

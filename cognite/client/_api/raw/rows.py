@@ -354,8 +354,9 @@ class RawRowsAPI(APIClient):
 
             Delete rows from table:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> keys_to_delete = ["k1", "k2", "k3"]
                 >>> client.raw.rows.delete("db1", "table1", keys_to_delete)
         """
@@ -389,8 +390,9 @@ class RawRowsAPI(APIClient):
 
             Retrieve a row with key 'k1' from table 't1' in database 'db1':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> row = client.raw.rows.retrieve("db1", "t1", "k1")
 
             You may access the data directly on the row (like a dict), or use '.get' when keys can be missing:
@@ -452,8 +454,9 @@ class RawRowsAPI(APIClient):
 
             Get dataframe:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
         """
         pd = local_import("pandas")
@@ -521,8 +524,9 @@ class RawRowsAPI(APIClient):
 
             List a few rows:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> row_list = client.raw.rows.list("db1", "tbl1", limit=5)
 
             Read an entire table efficiently by using concurrency (default behavior when ``limit=None``):

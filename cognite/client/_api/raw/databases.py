@@ -59,6 +59,7 @@ class RawDatabasesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.raw.databases.create("db1")
         """
         assert_type(name, "name", [str, Sequence])
@@ -81,6 +82,7 @@ class RawDatabasesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.raw.databases.delete(["db1", "db2"])
         """
         assert_type(name, "name", [str, Sequence])
@@ -114,6 +116,7 @@ class RawDatabasesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> db_list = client.raw.databases.list(limit=5)
 
             Iterate over databases, one-by-one:
