@@ -3,7 +3,7 @@ from decimal import Decimal
 import pytest
 
 from cognite.client.data_classes._base import CogniteObject
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._importing import local_import
 
 

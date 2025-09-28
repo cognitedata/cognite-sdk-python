@@ -7,7 +7,7 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteObject
 from cognite.client.data_classes.data_modeling.ids import DataModelId
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient

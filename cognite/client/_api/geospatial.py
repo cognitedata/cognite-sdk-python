@@ -26,7 +26,7 @@ from cognite.client.data_classes.geospatial import (
     OrderSpec,
     RasterMetadata,
 )
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 

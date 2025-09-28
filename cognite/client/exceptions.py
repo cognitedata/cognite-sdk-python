@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from cognite.client._constants import _RUNNING_IN_BROWSER
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._time import timed_cache
 from cognite.client.utils._url import resolve_url
 
