@@ -12,7 +12,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     basic_instance_dump,
 )
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
