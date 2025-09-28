@@ -43,7 +43,7 @@ from cognite.client.data_classes.hosted_extractors import Destination, Destinati
 from cognite.client.data_classes.postgres_gateway import TableList, User, UserCreated, UserCreatedList, UserList
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses
 
