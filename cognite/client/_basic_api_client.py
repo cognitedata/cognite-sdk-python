@@ -21,7 +21,7 @@ from cognite.client.exceptions import (
     CogniteNotFoundError,
     CogniteProjectAccessError,
 )
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import drop_none_values
 from cognite.client.utils._text import shorten
 from cognite.client.utils._url import resolve_url
