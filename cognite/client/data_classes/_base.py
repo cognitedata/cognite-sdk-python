@@ -25,7 +25,7 @@ from typing import (
 from typing_extensions import Self
 
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import load_resource_to_dict, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence, InstanceId
 from cognite.client.utils._importing import local_import
