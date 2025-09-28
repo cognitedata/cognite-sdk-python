@@ -20,7 +20,7 @@ from typing_extensions import Self
 from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier, InstanceId
 from cognite.client.utils._importing import local_import
