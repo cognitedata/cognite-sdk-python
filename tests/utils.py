@@ -62,7 +62,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowTaskParameters,
 )
 from cognite.client.testing import CogniteClientMock
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._text import random_string, to_snake_case
 from cognite.client.utils._url import get_base_url_with_base_path
 

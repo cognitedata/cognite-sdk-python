@@ -14,7 +14,7 @@ from typing import (
     overload,
 )
 
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,

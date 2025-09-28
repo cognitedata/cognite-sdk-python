@@ -24,7 +24,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.filters import _BASIC_FILTERS as _FILTERS_SUPPORTED
 from cognite.client.data_classes.filters import Filter, _validate_filter
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 
 if TYPE_CHECKING:

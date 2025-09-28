@@ -11,7 +11,7 @@ from cognite.client.data_classes import (
     ThreeDAssetMappingList,
     ThreeDAssetMappingWrite,
 )
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import split_into_chunks, unpack_items_in_payload
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._url import interpolate_and_url_encode
