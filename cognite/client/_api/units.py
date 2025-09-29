@@ -6,13 +6,9 @@ from functools import cache
 from itertools import chain
 from typing import TYPE_CHECKING, Literal, overload
 
+from cognite.client._api.unit_system import UnitSystemAPI
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.units import (
-    Unit,
-    UnitList,
-    UnitSystem,
-    UnitSystemList,
-)
+from cognite.client.data_classes.units import Unit, UnitList
 from cognite.client.utils._auxiliary import remove_duplicates_keep_order
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -42,12 +38,7 @@ def _create_unit_lookups(unit_client: UnitAPI) -> tuple[dict[str, dict[str, Unit
 class UnitAPI(APIClient):
     _RESOURCE_PATH = "/units"
 
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: str | None,
-        cognite_client: AsyncCogniteClient,
-    ) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.systems = UnitSystemAPI(config, api_version, cognite_client)
 
@@ -226,25 +217,3 @@ class UnitAPI(APIClient):
                 >>> res = client.units.list()
         """
         return await self._list(method="GET", list_cls=UnitList, resource_cls=Unit)
-
-
-class UnitSystemAPI(APIClient):
-    _RESOURCE_PATH = "/units/systems"
-
-    async def list(self) -> UnitSystemList:
-        """`List all supported unit systems <https://developer.cognite.com/api#tag/Unit-Systems/operation/listUnitSystems>`_
-
-        Returns:
-            UnitSystemList: List of unit systems
-
-        Examples:
-
-            List all supported unit systems in CDF:
-
-                >>> from cognite.client import CogniteClient, AsyncCogniteClient
-                >>> client = CogniteClient()
-                >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.units.systems.list()
-
-        """
-        return await self._list(method="GET", list_cls=UnitSystemList, resource_cls=UnitSystem)
