@@ -9,7 +9,7 @@ from cognite.client.data_classes.iam import GroupWrite
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class _GroupListAdapter(GroupList):
@@ -17,7 +17,7 @@ class _GroupListAdapter(GroupList):
     def _load(  # type: ignore[override]
         cls,
         resource_list: Iterable[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> GroupList:
         return GroupList._load(resource_list, cognite_client=cognite_client, allow_unknown=True)
@@ -28,7 +28,7 @@ class _GroupAdapter(Group):
     def _load(  # type: ignore[override]
         cls,
         resource: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> Group:
         return Group._load(resource, cognite_client=cognite_client, allow_unknown=True)
@@ -42,7 +42,7 @@ class _GroupWriteAdapter(GroupWrite):
     def _load(  # type: ignore[override]
         cls,
         resource: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> GroupWrite:
         return GroupWrite._load(resource, cognite_client=cognite_client, allow_unknown=True)
@@ -64,7 +64,7 @@ class GroupsAPI(APIClient):
 
             List your own groups:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_groups = client.iam.groups.list()
@@ -161,7 +161,7 @@ class GroupsAPI(APIClient):
 
             Delete group::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.iam.groups.delete(1)

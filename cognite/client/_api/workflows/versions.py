@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import AsyncIterator, MutableSequence, Sequence
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -15,15 +15,14 @@ from cognite.client.data_classes.workflows import (
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_chunks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import WorkflowVersionIdentifierSequence
 from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, AsyncCogniteClient
-
-WorkflowIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str] | str
-WorkflowVersionIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str]
+    from cognite.client import AsyncCogniteClient, ClientConfig
+    from cognite.client._api.workflows import WorkflowIdentifier, WorkflowVersionIdentifier
 
 
 def wrap_workflow_ids(
@@ -162,7 +161,7 @@ class WorkflowVersionAPI(APIClient):
 
             Delete workflow version "1" of workflow "my workflow" specified by using a tuple:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.versions.delete(("my workflow", "1"))
@@ -303,7 +302,7 @@ class WorkflowVersionAPI(APIClient):
 
             Get all workflow version for workflows 'my_workflow' and 'my_workflow_2':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.versions.list(["my_workflow", "my_workflow_2"])
