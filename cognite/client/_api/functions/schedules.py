@@ -2,8 +2,13 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, overload
+from typing import overload
 
+from cognite.client._api.functions.utils import (
+    _ensure_at_most_one_id_given,
+    _get_function_identifier,
+    _get_function_internal_id,
+)
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -14,38 +19,9 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.functions import FunctionScheduleWrite
-from cognite.client.utils._auxiliary import at_most_one_is_not_none, is_unlimited, split_into_chunks
-from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
+from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._session import create_session_and_return_nonce
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
-
-def _get_function_internal_id(cognite_client: AsyncCogniteClient, identifier: Identifier) -> int:
-    primitive = identifier.as_primitive()
-    if identifier.is_id:
-        return primitive
-
-    if identifier.is_external_id:
-        function = cognite_client.functions.retrieve(external_id=primitive)
-        if function:
-            return function.id
-
-    raise ValueError(f'Function with external ID "{primitive}" is not found')
-
-
-def _get_function_identifier(function_id: int | None, function_external_id: str | None) -> Identifier:
-    identifier = IdentifierSequence.load(function_id, function_external_id, id_name="function")
-    if identifier.is_singleton():
-        return identifier[0]
-    raise ValueError("Exactly one of function_id and function_external_id must be specified")
-
-
-def _ensure_at_most_one_id_given(function_id: int | None, function_external_id: str | None) -> None:
-    if at_most_one_is_not_none(function_id, function_external_id):
-        return
-    raise ValueError("Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither.")
 
 
 class FunctionSchedulesAPI(APIClient):
@@ -140,7 +116,7 @@ class FunctionSchedulesAPI(APIClient):
 
             Get function schedule by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.functions.schedules.retrieve(id=1)
@@ -180,7 +156,7 @@ class FunctionSchedulesAPI(APIClient):
 
             List function schedules:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> schedules = client.functions.schedules.list()
@@ -345,7 +321,7 @@ class FunctionSchedulesAPI(APIClient):
 
             Delete function schedule:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.functions.schedules.delete(id = 123)
@@ -367,7 +343,7 @@ class FunctionSchedulesAPI(APIClient):
 
             Get schedule input data:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.functions.schedules.get_input_data(id=123)
