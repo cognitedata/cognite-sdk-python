@@ -4,9 +4,8 @@ import re
 from collections import defaultdict
 from doctest import DocTestParser, Example
 
-from cognite.client import ClientConfig
+from cognite.client import ClientConfig, CogniteClient
 from cognite.client._api_client import APIClient
-from cognite.client.beta import CogniteClient
 from cognite.client.credentials import Token
 
 
