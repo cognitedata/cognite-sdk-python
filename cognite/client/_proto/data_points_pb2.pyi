@@ -49,8 +49,26 @@ class StringDatapoints(_message.Message):
     datapoints: _containers.RepeatedCompositeFieldContainer[StringDatapoint]
     def __init__(self, datapoints: _Optional[_Iterable[_Union[StringDatapoint, _Mapping]]] = ...) -> None: ...
 
+class StateDatapoint(_message.Message):
+    __slots__ = ("timestamp", "numericValue", "stringValue", "status")
+    TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
+    NUMERICVALUE_FIELD_NUMBER: _ClassVar[int]
+    STRINGVALUE_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    timestamp: int
+    numericValue: int
+    stringValue: str
+    status: Status
+    def __init__(self, timestamp: _Optional[int] = ..., numericValue: _Optional[int] = ..., stringValue: _Optional[str] = ..., status: _Optional[_Union[Status, _Mapping]] = ...) -> None: ...
+
+class StateDatapoints(_message.Message):
+    __slots__ = ("datapoints",)
+    DATAPOINTS_FIELD_NUMBER: _ClassVar[int]
+    datapoints: _containers.RepeatedCompositeFieldContainer[StateDatapoint]
+    def __init__(self, datapoints: _Optional[_Iterable[_Union[StateDatapoint, _Mapping]]] = ...) -> None: ...
+
 class AggregateDatapoint(_message.Message):
-    __slots__ = ("timestamp", "average", "max", "min", "count", "sum", "interpolation", "stepInterpolation", "continuousVariance", "discreteVariance", "totalVariation", "countGood", "countUncertain", "countBad", "durationGood", "durationUncertain", "durationBad", "maxDatapoint", "minDatapoint")
+    __slots__ = ("timestamp", "average", "max", "min", "count", "sum", "interpolation", "stepInterpolation", "continuousVariance", "discreteVariance", "totalVariation", "countGood", "countUncertain", "countBad", "durationGood", "durationUncertain", "durationBad", "maxDatapoint", "minDatapoint", "stateAggregates")
     TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
     AVERAGE_FIELD_NUMBER: _ClassVar[int]
     MAX_FIELD_NUMBER: _ClassVar[int]
@@ -70,6 +88,7 @@ class AggregateDatapoint(_message.Message):
     DURATIONBAD_FIELD_NUMBER: _ClassVar[int]
     MAXDATAPOINT_FIELD_NUMBER: _ClassVar[int]
     MINDATAPOINT_FIELD_NUMBER: _ClassVar[int]
+    STATEAGGREGATES_FIELD_NUMBER: _ClassVar[int]
     timestamp: int
     average: float
     max: float
@@ -89,13 +108,28 @@ class AggregateDatapoint(_message.Message):
     durationBad: float
     maxDatapoint: NumericDatapoint
     minDatapoint: NumericDatapoint
-    def __init__(self, timestamp: _Optional[int] = ..., average: _Optional[float] = ..., max: _Optional[float] = ..., min: _Optional[float] = ..., count: _Optional[float] = ..., sum: _Optional[float] = ..., interpolation: _Optional[float] = ..., stepInterpolation: _Optional[float] = ..., continuousVariance: _Optional[float] = ..., discreteVariance: _Optional[float] = ..., totalVariation: _Optional[float] = ..., countGood: _Optional[float] = ..., countUncertain: _Optional[float] = ..., countBad: _Optional[float] = ..., durationGood: _Optional[float] = ..., durationUncertain: _Optional[float] = ..., durationBad: _Optional[float] = ..., maxDatapoint: _Optional[_Union[NumericDatapoint, _Mapping]] = ..., minDatapoint: _Optional[_Union[NumericDatapoint, _Mapping]] = ...) -> None: ...
+    stateAggregates: _containers.RepeatedCompositeFieldContainer[StateAggregate]
+    def __init__(self, timestamp: _Optional[int] = ..., average: _Optional[float] = ..., max: _Optional[float] = ..., min: _Optional[float] = ..., count: _Optional[float] = ..., sum: _Optional[float] = ..., interpolation: _Optional[float] = ..., stepInterpolation: _Optional[float] = ..., continuousVariance: _Optional[float] = ..., discreteVariance: _Optional[float] = ..., totalVariation: _Optional[float] = ..., countGood: _Optional[float] = ..., countUncertain: _Optional[float] = ..., countBad: _Optional[float] = ..., durationGood: _Optional[float] = ..., durationUncertain: _Optional[float] = ..., durationBad: _Optional[float] = ..., maxDatapoint: _Optional[_Union[NumericDatapoint, _Mapping]] = ..., minDatapoint: _Optional[_Union[NumericDatapoint, _Mapping]] = ..., stateAggregates: _Optional[_Iterable[_Union[StateAggregate, _Mapping]]] = ...) -> None: ...
 
 class AggregateDatapoints(_message.Message):
     __slots__ = ("datapoints",)
     DATAPOINTS_FIELD_NUMBER: _ClassVar[int]
     datapoints: _containers.RepeatedCompositeFieldContainer[AggregateDatapoint]
     def __init__(self, datapoints: _Optional[_Iterable[_Union[AggregateDatapoint, _Mapping]]] = ...) -> None: ...
+
+class StateAggregate(_message.Message):
+    __slots__ = ("numericValue", "stringValue", "stateCount", "stateTransitions", "stateDuration")
+    NUMERICVALUE_FIELD_NUMBER: _ClassVar[int]
+    STRINGVALUE_FIELD_NUMBER: _ClassVar[int]
+    STATECOUNT_FIELD_NUMBER: _ClassVar[int]
+    STATETRANSITIONS_FIELD_NUMBER: _ClassVar[int]
+    STATEDURATION_FIELD_NUMBER: _ClassVar[int]
+    numericValue: int
+    stringValue: str
+    stateCount: int
+    stateTransitions: int
+    stateDuration: int
+    def __init__(self, numericValue: _Optional[int] = ..., stringValue: _Optional[str] = ..., stateCount: _Optional[int] = ..., stateTransitions: _Optional[int] = ..., stateDuration: _Optional[int] = ...) -> None: ...
 
 class InstanceId(_message.Message):
     __slots__ = ("space", "externalId")
