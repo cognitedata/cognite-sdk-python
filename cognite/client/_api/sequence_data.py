@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import typing
 import warnings
+from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
@@ -158,7 +159,9 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+            Delete rows from a sequence:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.data.delete(id=1, rows=[1,2,42])
@@ -181,7 +184,7 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.data.delete_range(id=1, start=0, end=None)
@@ -277,7 +280,7 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.data.retrieve(id=1)
@@ -337,7 +340,7 @@ class SequencesDataAPI(APIClient):
 
             Getting the latest row in a sequence before row number 1000:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.data.retrieve_last_row(id=1, before=1000)
@@ -372,7 +375,7 @@ class SequencesDataAPI(APIClient):
             pandas.DataFrame: The requested sequence data in a pandas DataFrame
 
         Examples:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.sequences.data.retrieve_dataframe(id=1, start=0, end=None)
