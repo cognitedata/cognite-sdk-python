@@ -165,10 +165,19 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
             description=self.description,
         )
 
-    def get_data(self) -> SimulatorModelRevisionDataList:
-        return self._cognite_client.simulators.models.revisions.retrieve_data(
+    def get_data(self) -> SimulatorModelRevisionData | None:
+        """`Retrieve data associated with this simulator model revision. <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revision_data>`_
+
+        Returns:
+            SimulatorModelRevisionData | None: Data for the simulator model revision.
+        """
+        data = self._cognite_client.simulators.models.revisions.retrieve_data(
             model_revision_external_id=self.external_id
         )
+        if data:
+            return data[0]
+
+        return None
 
 
 class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
