@@ -4,9 +4,7 @@ from typing import TYPE_CHECKING
 
 from cognite.client._api.data_modeling.space_statistics import SpaceStatisticsAPI
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.data_modeling.statistics import (
-    ProjectStatistics,
-)
+from cognite.client.data_classes.data_modeling.statistics import ProjectStatistics
 
 if TYPE_CHECKING:
     from cognite.client._cognite_client import AsyncCogniteClient
