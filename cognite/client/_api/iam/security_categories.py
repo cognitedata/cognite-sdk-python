@@ -26,7 +26,7 @@ class SecurityCategoriesAPI(APIClient):
 
             List security categories::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.security_categories.list()
@@ -84,7 +84,7 @@ class SecurityCategoriesAPI(APIClient):
 
             Delete security category::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.iam.security_categories.delete(1)

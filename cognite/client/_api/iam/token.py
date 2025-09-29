@@ -17,7 +17,7 @@ class TokenAPI(APIClient):
 
             Inspect token::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.token.inspect()
