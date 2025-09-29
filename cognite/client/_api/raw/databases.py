@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.raw import Database, DatabaseList
 from cognite.client.utils._auxiliary import split_into_chunks, unpack_items_in_payload
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -57,7 +58,7 @@ class RawDatabasesAPI(APIClient):
 
             Create a new database:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.raw.databases.create("db1")
@@ -80,7 +81,7 @@ class RawDatabasesAPI(APIClient):
 
             Delete a list of databases:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.raw.databases.delete(["db1", "db2"])
@@ -114,7 +115,7 @@ class RawDatabasesAPI(APIClient):
 
             List the first 5 databases:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> db_list = client.raw.databases.list(limit=5)
