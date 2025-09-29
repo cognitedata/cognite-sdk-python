@@ -29,7 +29,7 @@ from cognite.client.data_classes.capabilities import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 ComparableCapability: TypeAlias = (
@@ -83,7 +83,7 @@ def _convert_capability_to_tuples(
 
 
 class IAMAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.groups = GroupsAPI(config, api_version, cognite_client)
         self.security_categories = SecurityCategoriesAPI(config, api_version, cognite_client)
@@ -111,7 +111,7 @@ class IAMAPI(APIClient):
             desired_capabilities (ComparableCapability): List of wanted capabilities to check against existing.
             project (str | None): If a ProjectCapability or ProjectCapabilityList is passed, we need to know which CDF project
                 to pull capabilities from (existing might be from several). If project is not passed, and ProjectCapabilityList
-                is used, it will be inferred from the CogniteClient used to call retrieve it via token/inspect.
+                is used, it will be inferred from the AsyncCogniteClient used to call retrieve it via token/inspect.
             ignore_allscope_meaning (bool): Option on how to treat scopes that encompass other scopes, like allScope. When True,
                 this function will return e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. The
                 same logic applies to RawAcl scoped to a specific database->table, even when the user have access to all tables
