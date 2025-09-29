@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import Any, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import raw
 from cognite.client.utils._auxiliary import split_into_chunks, unpack_items_in_payload
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -67,7 +68,7 @@ class RawTablesAPI(APIClient):
 
             Create a new table in a database:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.raw.tables.create("db1", "table1")
@@ -97,7 +98,7 @@ class RawTablesAPI(APIClient):
 
             Delete a list of tables:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.raw.tables.delete("db1", ["table1", "table2"])
@@ -146,7 +147,7 @@ class RawTablesAPI(APIClient):
 
             List the first 5 tables:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> table_list = client.raw.tables.list("db1", limit=5)
