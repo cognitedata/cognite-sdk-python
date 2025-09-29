@@ -15,11 +15,11 @@ from cognite.client.data_classes.workflows import (
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import at_least_one_is_not_none
-from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._session import create_session_and_return_nonce
+from cognite.client.utils._url import interpolate_and_url_encode
 
 if TYPE_CHECKING:
-    from cognite.client._api.workflows.versions import WorkflowVersionIdentifier
+    from cognite.client._api.workflows import WorkflowVersionIdentifier
     from cognite.client.data_classes import ClientCredentials
 
 
@@ -39,7 +39,7 @@ class WorkflowExecutionAPI(APIClient):
 
             Retrieve workflow execution with id '000560bc-9080-4286-b242-a27bb4819253':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.retrieve_detailed("000560bc-9080-4286-b242-a27bb4819253")
@@ -118,7 +118,7 @@ class WorkflowExecutionAPI(APIClient):
 
             Trigger a workflow execution for the workflow "foo", version 1:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.run("foo", "1")
@@ -173,7 +173,7 @@ class WorkflowExecutionAPI(APIClient):
 
             Get all workflow executions for workflows 'my_workflow' version '1':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.list(("my_workflow", "1"))
@@ -233,7 +233,7 @@ class WorkflowExecutionAPI(APIClient):
 
             Trigger a workflow execution for the workflow "foo", version 1 and cancel it:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.run("foo", "1")
@@ -258,7 +258,7 @@ class WorkflowExecutionAPI(APIClient):
         Examples:
             Retry a workflow execution that has been cancelled or failed:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.run("foo", "1")

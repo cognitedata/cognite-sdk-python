@@ -19,7 +19,7 @@ from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, AsyncCogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
     from cognite.client.data_classes import ClientCredentials
 
 
@@ -126,7 +126,7 @@ class WorkflowTriggerAPI(APIClient):
 
             Delete a trigger with external id 'my_trigger':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.triggers.delete("my_trigger")
@@ -166,7 +166,7 @@ class WorkflowTriggerAPI(APIClient):
 
             List all triggers:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.triggers.list(limit=None)
@@ -208,7 +208,7 @@ class WorkflowTriggerAPI(APIClient):
 
             Get all runs for a trigger with external id 'my_trigger':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.triggers.list_runs("my_trigger", limit=None)
