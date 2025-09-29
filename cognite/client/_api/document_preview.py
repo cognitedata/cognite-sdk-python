@@ -24,7 +24,7 @@ class DocumentPreviewAPI(APIClient):
 
             Download image preview of page 5 of file with id 123:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
@@ -54,7 +54,7 @@ class DocumentPreviewAPI(APIClient):
 
             Download Image preview of page 5 of file with id 123 to folder "previews":
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.documents.previews.download_page_as_png("previews", id=123, page_number=5)
@@ -88,7 +88,7 @@ class DocumentPreviewAPI(APIClient):
 
             Download PDF preview of file with id 123:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.previews.download_document_as_pdf_bytes(id=123)
@@ -109,7 +109,7 @@ class DocumentPreviewAPI(APIClient):
 
             Download PDF preview of file with id 123 to folder "previews":
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.documents.previews.download_document_as_pdf("previews", id=123)
@@ -142,7 +142,7 @@ class DocumentPreviewAPI(APIClient):
 
             Retrieve the PDF preview download link for document with id 123:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> link = client.documents.previews.retrieve_pdf_link(id=123)
