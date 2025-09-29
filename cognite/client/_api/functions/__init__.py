@@ -17,10 +17,12 @@ from zipfile import ZipFile
 
 from cognite.client._api.functions.calls import FunctionCallsAPI
 from cognite.client._api.functions.schedules import FunctionSchedulesAPI
+from cognite.client._api.functions.utils import _get_function_internal_id
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Function,
+    FunctionCall,
     FunctionFilter,
     FunctionList,
     FunctionsLimits,
@@ -28,18 +30,14 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.functions import (
     HANDLER_FILE_NAME,
-    FunctionCall,
     FunctionHandle,
     FunctionsStatus,
     FunctionStatus,
     FunctionWrite,
     RunTime,
 )
-from cognite.client.utils._auxiliary import (
-    is_unlimited,
-    split_into_chunks,
-)
-from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
+from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._session import create_session_and_return_nonce
 from cognite.client.utils._validation import assert_type
@@ -56,19 +54,6 @@ REQUIREMENTS_FILE_NAME = "requirements.txt"
 REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)
 UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
 ALLOWED_HANDLE_ARGS = frozenset({"data", "client", "secrets", "function_call_info"})
-
-
-def _get_function_internal_id(cognite_client: AsyncCogniteClient, identifier: Identifier) -> int:
-    primitive = identifier.as_primitive()
-    if identifier.is_id:
-        return primitive
-
-    if identifier.is_external_id:
-        function = cognite_client.functions.retrieve(external_id=primitive)
-        if function:
-            return function.id
-
-    raise ValueError(f'Function with external ID "{primitive}" is not found')
 
 
 class FunctionsAPI(APIClient):
