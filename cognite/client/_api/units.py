@@ -8,10 +8,7 @@ from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api.unit_system import UnitSystemAPI
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.units import (
-    Unit,
-    UnitList,
-)
+from cognite.client.data_classes.units import Unit, UnitList
 from cognite.client.utils._auxiliary import remove_duplicates_keep_order
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -41,12 +38,7 @@ def _create_unit_lookups(unit_client: UnitAPI) -> tuple[dict[str, dict[str, Unit
 class UnitAPI(APIClient):
     _RESOURCE_PATH = "/units"
 
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: str | None,
-        cognite_client: AsyncCogniteClient,
-    ) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.systems = UnitSystemAPI(config, api_version, cognite_client)
 
