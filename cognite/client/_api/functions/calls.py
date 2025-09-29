@@ -1,35 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
+from cognite.client._api.functions.utils import _get_function_identifier, _get_function_internal_id
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes import FunctionCall, FunctionCallList, FunctionCallLog
+from cognite.client.data_classes import (
+    FunctionCall,
+    FunctionCallList,
+    FunctionCallLog,
+)
 from cognite.client.data_classes.functions import FunctionCallsFilter
-from cognite.client.utils._identifier import Identifier, IdentifierSequence
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
-
-def _get_function_internal_id(cognite_client: AsyncCogniteClient, identifier: Identifier) -> int:
-    primitive = identifier.as_primitive()
-    if identifier.is_id:
-        return primitive
-
-    if identifier.is_external_id:
-        function = cognite_client.functions.retrieve(external_id=primitive)
-        if function:
-            return function.id
-
-    raise ValueError(f'Function with external ID "{primitive}" is not found')
-
-
-def _get_function_identifier(function_id: int | None, function_external_id: str | None) -> Identifier:
-    identifier = IdentifierSequence.load(function_id, function_external_id, id_name="function")
-    if identifier.is_singleton():
-        return identifier[0]
-    raise ValueError("Exactly one of function_id and function_external_id must be specified")
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class FunctionCallsAPI(APIClient):
@@ -65,7 +45,7 @@ class FunctionCallsAPI(APIClient):
 
             List function calls:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> calls = client.functions.calls.list(function_id=1)
@@ -114,7 +94,7 @@ class FunctionCallsAPI(APIClient):
 
             Retrieve single function call by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> call = client.functions.calls.retrieve(call_id=2, function_id=1)
@@ -156,7 +136,7 @@ class FunctionCallsAPI(APIClient):
 
             Retrieve function call response by call ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> response = client.functions.calls.get_response(call_id=2, function_id=1)
@@ -193,7 +173,7 @@ class FunctionCallsAPI(APIClient):
 
             Retrieve function call logs by call ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> logs = client.functions.calls.get_logs(call_id=2, function_id=1)
