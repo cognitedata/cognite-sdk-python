@@ -476,10 +476,10 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
     ) -> tuple[tuple[list[DatapointsQuery], list[DatapointsQuery]], set[DatapointsQuery]]:
         to_raise = set()
         not_missing = (
-        	{("id", r.id) for r in res} | 
-        	{("externalId", r.externalId) for r in res} |
-        	{("instanceId", NodeId(r.instanceId.space, r.instanceId.externalId)) for r in res}
-      	)
+            {("id", r.id) for r in res}
+            | {("externalId", r.externalId) for r in res}
+            | {("instanceId", NodeId(r.instanceId.space, r.instanceId.externalId)) for r in res}
+        )
         for query in chain(agg_queries, raw_queries):
             query.is_missing = query.identifier.as_tuple() not in not_missing
             # Only raise for those time series that can't be missing (individually customisable parameter):
