@@ -42,7 +42,7 @@ from cognite.client._api.hosted_extractors.mappings import MappingsAPI
 from cognite.client._api.hosted_extractors.sources import SourcesAPI
 from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
 from cognite.client._api.labels import LabelsAPI
-from cognite.client._api.organization import PrincipalsAPI
+from cognite.client._api.org_apis.principals import PrincipalsAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.postgres_gateway.tables import TablesAPI as PostgresTablesAPI
 from cognite.client._api.postgres_gateway.users import UsersAPI as PostgresUsersAPI
