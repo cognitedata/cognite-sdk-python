@@ -44,7 +44,7 @@ class SpaceStatisticsAPI(APIClient):
 
             Fetch statistics for a single space:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.data_modeling.statistics.spaces.retrieve("my-space")
@@ -74,7 +74,7 @@ class SpaceStatisticsAPI(APIClient):
 
             Fetch statistics for all spaces in the project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> stats = client.data_modeling.statistics.spaces.list()
@@ -82,6 +82,5 @@ class SpaceStatisticsAPI(APIClient):
                 ...     print(f"Space: {space_stats.space}, Nodes: {space_stats.nodes}")
 
         """
-        # None 2xx responses are handled by the _get method.
         response = await self._get(self._RESOURCE_PATH)
         return SpaceStatisticsList._load(response.json()["items"], self._cognite_client)

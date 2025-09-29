@@ -67,7 +67,7 @@ class ThreeDModelsAPI(APIClient):
 
             Get 3d model by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.models.retrieve(id=1)
@@ -88,7 +88,7 @@ class ThreeDModelsAPI(APIClient):
 
             List 3d models:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> model_list = client.three_d.models.list()
@@ -149,7 +149,7 @@ class ThreeDModelsAPI(APIClient):
 
             Create new 3d models:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
@@ -206,7 +206,7 @@ class ThreeDModelsAPI(APIClient):
 
             Update 3d model that you have fetched. This will perform a full update of the model:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> model = client.three_d.models.retrieve(id=1)
@@ -240,7 +240,7 @@ class ThreeDModelsAPI(APIClient):
 
             Delete 3d model by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.models.delete(id=1)

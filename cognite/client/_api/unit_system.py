@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.units import (
-    UnitSystem,
-    UnitSystemList,
-)
+from cognite.client.data_classes.units import UnitSystem, UnitSystemList
 
 
 class UnitSystemAPI(APIClient):
@@ -20,7 +17,7 @@ class UnitSystemAPI(APIClient):
 
             List all supported unit systems in CDF:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.units.systems.list()

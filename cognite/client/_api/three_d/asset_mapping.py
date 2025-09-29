@@ -47,7 +47,7 @@ class ThreeDAssetMappingAPI(APIClient):
 
             List 3d node asset mappings:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.asset_mappings.list(model_id=1, revision_id=1)
@@ -138,7 +138,7 @@ class ThreeDAssetMappingAPI(APIClient):
 
             Delete 3d node asset mapping:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping_to_delete = client.three_d.asset_mappings.list(model_id=1, revision_id=1)[0]
