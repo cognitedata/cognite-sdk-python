@@ -14,7 +14,7 @@ from typing import (
 )
 
 from cognite.client._constants import _RUNNING_IN_BROWSER
-from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteImportError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import no_op
 
 
@@ -195,18 +195,71 @@ _T = TypeVar("_T")
 class EventLoopThreadExecutor(threading.Thread):
     def __init__(self, loop: asyncio.AbstractEventLoop | None = None, daemon: bool = True) -> None:
         super().__init__(name=type(self).__name__, daemon=daemon)
-        self._event_loop = loop or asyncio.new_event_loop()
+        self._inside_jupyter = self._detect_jupyter()
+        self._event_loop = self._patch_loop_for_jupyter(loop) or asyncio.new_event_loop()
+
+    @staticmethod
+    def _detect_jupyter() -> bool:
+        try:
+            from IPython import get_ipython  # type: ignore [attr-defined]
+
+            return "IPKernelApp" in get_ipython().config
+        except Exception:
+            return False
+
+    def _patch_loop_for_jupyter(self, loop: asyncio.AbstractEventLoop | None) -> asyncio.AbstractEventLoop | None:
+        """
+        From the 'nest_asyncio' package: By design asyncio does not allow its event loop to be nested. This presents a
+        practical problem: When in an environment where the event loop is already running it's impossible to run
+        tasks and wait for the result.
+        """
+        if not self._inside_jupyter:
+            return loop
+
+        if loop is None:
+            try:
+                import nest_asyncio  # type: ignore [import-not-found]
+            except ImportError:
+                raise CogniteImportError(
+                    module="nest_asyncio",
+                    message="Inside Jupyter notebooks, the 'nest_asyncio' package is required if you want to use the "
+                    '"non-async" CogniteClient. This is because Jupyter already runs an event loop that we need '
+                    "to patch (`pip install nest_asyncio`). Alternatively, you can use the AsyncCogniteClient "
+                    "which does not require any extra packages, but requires the use of 'await', e.g.: "
+                    "`dps = await async_client.time_series.data.retrieve(...)`",
+                ) from None
+            try:
+                # Jupyter: reuse the already running loop but patch it:
+                loop = asyncio.get_running_loop()
+                nest_asyncio.apply(loop)
+                return loop
+            except RuntimeError:
+                return None  # this would be very unexpected
+        else:
+            warnings.warn(
+                RuntimeWarning(
+                    "Overriding the event loop is not recommended inside Jupyter notebooks "
+                    "since Jupyter already runs an event loop. Proceeding with the provided loop anyway, "
+                    "beware of potential issues."
+                )
+            )
+            return loop
 
     def run(self) -> None:
-        asyncio.set_event_loop(self._event_loop)
-        self._event_loop.run_forever()
+        if not self._inside_jupyter:
+            asyncio.set_event_loop(self._event_loop)
+            self._event_loop.run_forever()
 
     def stop(self) -> None:
-        self._event_loop.call_soon_threadsafe(self._event_loop.stop)
-        self.join()
+        if not self._inside_jupyter:
+            self._event_loop.call_soon_threadsafe(self._event_loop.stop)
+            self.join()
 
-    def run_coro(self, coro: Coroutine[Any, Any, _T], timeout: float | None = None) -> _T:
-        return asyncio.run_coroutine_threadsafe(coro, self._event_loop).result(timeout)
+    def run_coro(self, coro: Coroutine[_T, Any, _T], timeout: float | None = None) -> _T:
+        if self._inside_jupyter:
+            return asyncio.get_event_loop().run_until_complete(coro)
+        else:
+            return asyncio.run_coroutine_threadsafe(coro, self._event_loop).result(timeout)
 
 
 class _PyodideEventLoopExecutor:
