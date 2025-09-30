@@ -13,6 +13,7 @@ repos:
           - --fix
           - --exit-non-zero-on-fix
           - --force-exclude
+          - --unsafe-fixes
       - id: ruff-format
         name: ruff format
         language: python
