@@ -3,11 +3,9 @@ from __future__ import annotations
 import logging
 import os
 
-
 import cognite.client as cc  # Do not import individual entities
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider
-
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +26,6 @@ def patch_sdk_for_pyodide() -> None:
 
     # - Inject these magic classes into the correct modules so that the user may import them normally:
     cc.config.FusionNotebookConfig = FusionNotebookConfig  # type: ignore [attr-defined]
-
-    # - Set all usage of thread pool executors to use dummy/serial-implementations:
-    # TODO: With httpx.AsyncClient added later, can we make use of the browser event loop?
-    cc.utils._concurrency.ConcurrencySettings.executor_type = "mainthread"
 
     # - If we are running inside of a JupyterLite Notebook spawned from Cognite Data Fusion, we set
     #   the default config to FusionNotebookConfig(). This allows the user to:
