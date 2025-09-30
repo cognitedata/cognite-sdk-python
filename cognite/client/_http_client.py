@@ -33,10 +33,9 @@ class NoCookiesPlease(CookieJar):
         pass
 
 
-def _get_default_async_transport() -> httpx.AsyncBaseTransport:
-    # This is split from 'get_global_async_httpx_client' to allow for easier monkeypatching in pyodide.
-    # Most comments are copied from the underlying code for visibility with our own settings.
-    return httpx.AsyncHTTPTransport(
+@functools.cache
+def get_global_async_httpx_client() -> httpx.AsyncClient:
+    async_transport = httpx.AsyncHTTPTransport(
         proxy=global_config.proxy,
         retries=0,  # 'retries': The maximum number of retries when trying to establish a connection.
         verify=not global_config.disable_ssl,
@@ -53,12 +52,8 @@ def _get_default_async_transport() -> httpx.AsyncBaseTransport:
             keepalive_expiry=5,  # copy httpx default
         ),
     )
-
-
-@functools.cache
-def get_global_async_httpx_client() -> httpx.AsyncClient:
     return httpx.AsyncClient(
-        transport=_get_default_async_transport(),
+        transport=async_transport,
         follow_redirects=global_config.follow_redirects,
         cookies=NoCookiesPlease(),
         # Below should not be needed when we pass transport, but... :)
