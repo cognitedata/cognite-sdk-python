@@ -7,17 +7,7 @@ repos:
         args:
           - --fix
           - --exit-non-zero-on-fix
-          - --line-length=120
-          - --ignore=E731,E501,W605,RUF059
-            # See https://beta.ruff.rs/docs/rules for an overview of ruff rules
-          - --select=E,W,F,I,T,RUF,TID,UP
-          - --fixable=E,W,F,I,T,RUF,TID,UP
-          - --target-version=py310
-          - --exclude=cognite/client/_proto
       - id: ruff-format
-        args:
-          - --line-length=120
-          - --exclude=cognite/client/_proto*
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0

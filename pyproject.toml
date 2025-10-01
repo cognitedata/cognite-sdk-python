@@ -14,6 +14,17 @@ license = "Apache-2.0"
 
 packages = [{ include="cognite", from="." }]
 
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = ["cognite/client/_proto"]
+
+[tool.ruff.lint]
+# See https://beta.ruff.rs/docs/rules for an overview of ruff rules
+ignore = ["E731", "E501", "W605", "RUF059"]
+select = ["E", "W", "F", "I", "T", "RUF", "TID", "UP"]
+fixable = ["E", "W", "F", "I", "T", "RUF", "TID", "UP"]
+
 [tool.ruff.lint.per-file-ignores]
 # let scripts use print statements
 "scripts/*" = ["T201"]
@@ -81,3 +92,4 @@ ruff = "0.13.2"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
