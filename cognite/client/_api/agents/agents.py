@@ -242,7 +242,7 @@ class AgentsAPI(APIClient):
 
     def chat(
         self,
-        agent_id: str,
+        agent_external_id: str,
         messages: Message | Sequence[Message],
         cursor: str | None = None,
     ) -> AgentChatResponse:
@@ -252,7 +252,7 @@ class AgentsAPI(APIClient):
         Users can ensure conversation continuity by including the cursor from the previous response in subsequent requests.
 
         Args:
-            agent_id (str): External ID that uniquely identifies the agent.
+            agent_external_id (str): External ID that uniquely identifies the agent.
             messages (Message | Sequence[Message]): A list of one or many input messages to the agent.
             cursor (str | None): The cursor to use for continuation of a conversation. Use this to
                 create multi-turn conversations, as the cursor will keep track of the conversation state.
@@ -268,7 +268,7 @@ class AgentsAPI(APIClient):
                 >>> from cognite.client.data_classes.agents import Message
                 >>> client = CogniteClient()
                 >>> response = client.agents.chat(
-                ...     agent_id="my_agent",
+                ...     agent_external_id="my_agent",
                 ...     messages=Message("What can you help me with?")
                 ... )
                 >>> print(response.text)
@@ -276,7 +276,7 @@ class AgentsAPI(APIClient):
             Continue a conversation using the cursor:
 
                 >>> follow_up = client.agents.chat(
-                ...     agent_id="my_agent",
+                ...     agent_external_id="my_agent",
                 ...     messages=Message("Tell me more about that"),
                 ...     cursor=response.cursor
                 ... )
@@ -284,7 +284,7 @@ class AgentsAPI(APIClient):
             Send multiple messages at once:
 
                 >>> response = client.agents.chat(
-                ...     agent_id="my_agent",
+                ...     agent_external_id="my_agent",
                 ...     messages=[
                 ...         Message("Help me find the 1st stage compressor."),
                 ...         Message("Once you have found it, find related time series.")
@@ -299,7 +299,7 @@ class AgentsAPI(APIClient):
 
         # Build request body
         body = {
-            "agentId": agent_id,
+            "agentExternalId": agent_external_id,
             "messages": MessageList(messages).dump(camel_case=True),
         }
 
