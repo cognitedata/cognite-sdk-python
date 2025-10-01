@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
+from cognite.client.utils._function_introspection import function_to_json_schema
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
@@ -143,6 +146,119 @@ class ClientToolAction(Action):
             name=client_tool["name"],
             description=client_tool["description"],
             parameters=client_tool["parameters"],
+        )
+
+    @classmethod
+    def from_function(cls, func: Callable[..., Any], name: str | None = None) -> ClientToolAction:
+        """Create a ClientToolAction from a Python function with type hints and docstring.
+
+        This method introspects a Python function to automatically generate an action definition
+        that can be used with agents. The function must have type hints for all parameters.
+
+        **Supported Types:**
+            - Primitives: ``int``, ``float``, ``str``, ``bool``
+            - Lists of primitives: ``list[int]``, ``list[float]``, ``list[str]``, ``list[bool]``
+
+        **Optional Parameters:**
+            Parameters with a default value of ``None`` are treated as optional and will not be
+            included in the ``required`` list of the JSON Schema.
+
+        **Docstring Format:**
+            The function should have a Google-style docstring with:
+                - A short description (used as the action description)
+                - An ``Args:`` section with parameter descriptions
+
+        Args:
+            func (Callable[..., Any]): The Python function to convert to an action.
+            name (str | None): Optional custom name for the action. If not provided, uses the function name.
+
+        Returns:
+            ClientToolAction: An action that can be used in agent chat.
+
+        Raises:
+            TypeError: If a parameter is missing a type annotation or has an unsupported type.
+
+        Examples:
+            Basic usage with primitives::
+
+                def add(a: float, b: float) -> float:
+                    \"\"\"Add two numbers.
+
+                    Args:
+                        a: The first number.
+                        b: The second number.
+
+                    Returns:
+                        The sum of the two numbers.
+                    \"\"\"
+                    return a + b
+
+                action = ClientToolAction.from_function(add)
+
+            With optional parameters::
+
+                def greet(name: str, title: str = None) -> str:
+                    \"\"\"Greet a person.
+
+                    Args:
+                        name: The person's name.
+                        title: Optional title (e.g., "Dr.", "Mr.").
+
+                    Returns:
+                        A greeting message.
+                    \"\"\"
+                    if title:
+                        return f"Hello, {title} {name}!"
+                    return f"Hello, {name}!"
+
+                action = ClientToolAction.from_function(greet)
+                # name is required, title is optional
+
+            With list parameters::
+
+                def sum_numbers(numbers: list[float]) -> float:
+                    \"\"\"Calculate the sum of a list of numbers.
+
+                    Args:
+                        numbers: List of numbers to sum.
+
+                    Returns:
+                        The sum of all numbers.
+                    \"\"\"
+                    return sum(numbers)
+
+                action = ClientToolAction.from_function(sum_numbers)
+
+            With custom name::
+
+                action = ClientToolAction.from_function(add, name="custom_add")
+
+            Use in agent chat::
+
+                response = client.agents.chat(
+                    agent_id="my_agent",
+                    messages=Message("What is 42 plus 58?"),
+                    actions=[ClientToolAction.from_function(add)]
+                )
+        """
+        # Get function name
+        action_name = name or func.__name__
+
+        # Generate JSON Schema from function
+        func_description, parameters_schema = function_to_json_schema(func)
+
+        # Warn if no docstring (description will be function name)
+        if func_description == func.__name__:
+            warnings.warn(
+                f"Function '{func.__name__}' has no docstring, using function name as description",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        return cls(
+            name=action_name,
+            description=func_description,
+            parameters=parameters_schema,
         )
 
 
