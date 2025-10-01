@@ -136,11 +136,11 @@ class TestAgentsAPI:
     def test_chat_minimal(self, cognite_client: CogniteClient, permanent_agent: Agent) -> None:
         """Minimal happy-path chat call to verify the endpoint works end-to-end."""
         response = cognite_client.agents.chat(
-            agent_id=permanent_agent.external_id,
+            agent_external_id=permanent_agent.external_id,
             messages=Message("Hello from SDK integration test"),
         )
 
         assert isinstance(response, AgentChatResponse)
-        assert response.agent_id == permanent_agent.external_id
+        assert response.agent_external_id == permanent_agent.external_id
         assert isinstance(response.type, str) and len(response.type) > 0
         assert response.messages is not None
