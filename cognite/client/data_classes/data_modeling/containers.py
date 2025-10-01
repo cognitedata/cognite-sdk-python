@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import dataclasses
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import Self
@@ -20,7 +21,7 @@ from cognite.client.data_classes.data_modeling.data_types import (
     PropertyType,
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId
-from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_camel_case
+from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -186,8 +187,8 @@ class Container(ContainerCore):
             description=self.description,
             name=self.name,
             used_for=self.used_for,
-            constraints=self.constraints,
-            indexes=self.indexes,
+            constraints={k: c.as_apply() for k, c in self.constraints.items()},
+            indexes={k: i.as_apply() for k, i in self.indexes.items()},
         )
 
     def as_write(self) -> ContainerApply:
@@ -281,17 +282,32 @@ class ContainerProperty(CogniteObject):
 
 
 @dataclass(frozen=True)
-class Constraint(CogniteObject, ABC):
+class _WithState(CogniteObject):
+    state: Literal["current", "failed", "pending"] | None = field(default=None, init=False)
+
+    def as_apply(self) -> Self:
+        # dataclasses.replace does not copy fields with init=False
+        return dataclasses.replace(self)
+
+
+@dataclass(frozen=True)
+class Constraint(_WithState, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Constraint:
-        if resource["constraintType"] == "requires":
-            return RequiresConstraint._load(resource)
-        elif resource["constraintType"] == "uniqueness":
-            return UniquenessConstraint._load(resource)
-        return cast(Constraint, UnknownCogniteObject(resource))
+        constraint: Constraint
+        match resource["constraintType"]:
+            case "requires":
+                constraint = RequiresConstraint._load(resource)
+            case "uniqueness":
+                constraint = UniquenessConstraint._load(resource)
+            case _:
+                return cast(Constraint, UnknownCogniteObject(resource))
+        if state := resource.get("state"):
+            object.__setattr__(constraint, "state", state)
+        return constraint
 
     @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
 
@@ -305,6 +321,8 @@ class RequiresConstraint(Constraint):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"require": self.require.dump(camel_case)}
+        if self.state is not None:
+            output["state"] = self.state
         key = "constraintType" if camel_case else "constraint_type"
         output[key] = "requires"
         return output
@@ -320,23 +338,31 @@ class UniquenessConstraint(Constraint):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"properties": self.properties}
+        if self.state is not None:
+            output["state"] = self.state
         key = "constraintType" if camel_case else "constraint_type"
         output[key] = "uniqueness"
         return output
 
 
 @dataclass(frozen=True)
-class Index(CogniteObject, ABC):
+class Index(_WithState, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Index:
-        if resource["indexType"] == "btree":
-            return BTreeIndex._load(resource)
-        if resource["indexType"] == "inverted":
-            return InvertedIndex._load(resource)
-        return cast(Index, UnknownCogniteObject(resource))
+        index: Index
+        match resource["indexType"]:
+            case "btree":
+                index = BTreeIndex._load(resource)
+            case "inverted":
+                index = InvertedIndex._load(resource)
+            case _:
+                return cast(Index, UnknownCogniteObject(resource))
+        if state := resource.get("state"):
+            object.__setattr__(index, "state", state)
+        return index
 
     @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
 
@@ -353,8 +379,10 @@ class BTreeIndex(Index):
         dumped: dict[str, Any] = {"properties": self.properties}
         if self.cursorable is not None:
             dumped["cursorable"] = self.cursorable
+        if self.state is not None:
+            dumped["state"] = self.state
         dumped["indexType" if camel_case else "index_type"] = "btree"
-        return convert_all_keys_to_camel_case_recursive(dumped) if camel_case else dumped
+        return dumped
 
 
 @dataclass(frozen=True)
@@ -368,4 +396,6 @@ class InvertedIndex(Index):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {"properties": self.properties}
         dumped["indexType" if camel_case else "index_type"] = "inverted"
-        return convert_all_keys_to_camel_case_recursive(dumped) if camel_case else dumped
+        if self.state is not None:
+            dumped["state"] = self.state
+        return dumped
