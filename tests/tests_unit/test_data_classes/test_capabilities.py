@@ -273,7 +273,7 @@ class TestCapabilities:
             Capability.load(unknown_acl, allow_unknown=False)
 
         # when difflib doesnt find any matches, it should be omitted from the err. msg:
-        with pytest.raises(ValueError, match="force loading it as an unknown capability. List of all ACLs"):
+        with pytest.raises(ValueError, match=r"force loading it as an unknown capability\. List of all ACLs"):
             Capability.load(
                 {"does not match anything really": {"actions": ["READ"], "scope": {"all": {}}}},
                 allow_unknown=False,

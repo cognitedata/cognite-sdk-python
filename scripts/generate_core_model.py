@@ -9,6 +9,7 @@ you need to run this script in a Python 3.9 environment.
 from pathlib import Path
 
 from cognite.pygen._generator import generate_typed
+
 from tests.tests_integration.conftest import make_cognite_client
 
 THIS_REPO = Path(__file__).resolve().parent.parent

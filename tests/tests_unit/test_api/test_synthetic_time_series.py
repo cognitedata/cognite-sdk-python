@@ -133,7 +133,7 @@ class TestSyntheticQuery:
     def test_expression_builder_unsupported_missing(self, cognite_client):
         from sympy import cot, symbols
 
-        with pytest.raises(TypeError, match="^Unsupported sympy class cot"):
+        with pytest.raises(TypeError, match=r"^Unsupported sympy class cot"):
             cognite_client.time_series.data.synthetic.query(
                 [symbols("a") + cot(symbols("a"))], start=0, end="now", variables={"a": "a"}
             )

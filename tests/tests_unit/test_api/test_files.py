@@ -376,7 +376,7 @@ class TestFilesAPI:
     def test_update_with_update_class_using_instance_id_and_other_identifier(
         self, extra_identifiers, cognite_client, mock_files_response
     ):
-        with pytest.raises(ValueError, match="Exactly one of 'id', 'external_id' or 'instance_id' must be provided."):
+        with pytest.raises(ValueError, match=r"Exactly one of 'id', 'external_id' or 'instance_id' must be provided\."):
             FileMetadataUpdate(instance_id=NodeId("foo", "bar"), **extra_identifiers)
 
     def test_update_labels_single(self, cognite_client, mock_files_response):
