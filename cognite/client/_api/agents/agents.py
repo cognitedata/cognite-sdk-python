@@ -300,7 +300,7 @@ class AgentsAPI(APIClient):
 
             Chat with client-side actions:
 
-                >>> from cognite.client.data_classes.agents import ClientToolAction, ActionResult
+                >>> from cognite.client.data_classes.agents import ClientToolAction, ClientToolResult
                 >>> add_numbers_action = ClientToolAction(
                 ...     name="add",
                 ...     description="Add two numbers together",
@@ -325,7 +325,7 @@ class AgentsAPI(APIClient):
                 ...         # Send result back
                 ...         response = client.agents.chat(
                 ...             agent_id="my_agent",
-                ...             messages=ActionResult(
+                ...             messages=ClientToolResult(
                 ...                 action_id=call.action_id,
                 ...                 content=f"The result is {result}"
                 ...             ),

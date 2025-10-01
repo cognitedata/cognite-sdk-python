@@ -313,27 +313,50 @@ class MessageList(CogniteResourceList[Message]):
 
 
 @dataclass
-class ActionResult(CogniteResource):
-    """Result of executing a client action, for sending back to the agent.
+class ActionResult(CogniteResource, ABC):
+    """Base class for action execution results."""
+
+    _type: ClassVar[str]
+    action_id: str
+    role: Literal["action"] = "action"
+
+    @classmethod
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionResult:
+        """Dispatch to the correct concrete action result class based on `type`."""
+        action_type = data.get("type", "")
+        action_class = _ACTION_RESULT_CLS_BY_TYPE.get(action_type, UnknownActionResult)
+        return action_class._load_result(data, cognite_client)
+
+    @abstractmethod
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the action result to a dictionary."""
+        ...
+
+    @classmethod
+    @abstractmethod
+    def _load_result(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionResult:
+        """Create a concrete action result instance from raw data."""
+        ...
+
+
+@dataclass
+class ClientToolResult(ActionResult):
+    """Result of executing a client tool, for sending back to the agent.
 
     Args:
         action_id (str): The ID of the action being responded to.
         content (str | MessageContent): The result of executing the action.
-        action_type (str): The type of action (e.g., "clientTool"). Defaults to "clientTool".
         data (list[Any] | None): Optional structured data.
     """
 
-    action_id: str
-    content: MessageContent
-    action_type: str = "clientTool"
-    data: list[Any] | None = None
-    role: Literal["action"] = "action"
+    _type: ClassVar[str] = "clientTool"
+    content: MessageContent = field(init=False)
+    data: list[Any] | None = field(init=False, default=None)
 
     def __init__(
         self,
         action_id: str,
         content: str | MessageContent,
-        action_type: str = "clientTool",
         data: list[Any] | None = None,
     ) -> None:
         self.action_id = action_id
@@ -341,28 +364,61 @@ class ActionResult(CogniteResource):
             self.content = TextContent(text=content)
         else:
             self.content = content
-        self.action_type = action_type
         self.data = data
         self.role = "action"
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "role": self.role,
-            "type": self.action_type,
+            "type": self._type,
             "actionId" if camel_case else "action_id": self.action_id,
             "content": self.content.dump(camel_case=camel_case),
             "data": self.data or [],
         }
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionResult:
+    def _load_result(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolResult:
         content = MessageContent._load(data["content"])
         return cls(
             action_id=data["actionId"],
             content=content,
-            action_type=data.get("type", "clientTool"),
             data=data.get("data"),
         )
+
+
+@dataclass
+class UnknownActionResult(ActionResult):
+    """Unknown action result type for forward compatibility.
+
+    Args:
+        action_id (str): The ID of the action being responded to.
+        type (str): The action result type.
+        data (dict[str, Any]): The raw action result data.
+    """
+
+    type: str = ""
+    data: dict[str, Any] = field(default_factory=dict)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = self.data.copy()
+        result["role"] = self.role
+        result["type"] = self.type
+        result["actionId" if camel_case else "action_id"] = self.action_id
+        return result
+
+    @classmethod
+    def _load_result(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownActionResult:
+        action_type = data.get("type", "")
+        action_id = data.get("actionId", "")
+        return cls(action_id=action_id, data=data, type=action_type)
+
+
+# Build the mapping AFTER concrete classes are defined
+_ACTION_RESULT_CLS_BY_TYPE: dict[str, type[ActionResult]] = {
+    subclass._type: subclass  # type: ignore[type-abstract]
+    for subclass in ActionResult.__subclasses__()
+    if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
+}
 
 
 @dataclass
