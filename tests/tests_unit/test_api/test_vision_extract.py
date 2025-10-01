@@ -189,7 +189,7 @@ class TestVisionExtract:
             # Cannot save prediction of an incomplete job
             with pytest.raises(
                 CogniteException,
-                match="Extract job is not completed. If the job is queued or running, wait for completion and try again",
+                match=r"Extract job is not completed\. If the job is queued or running, wait for completion and try again",
             ):
                 job.save_predictions()
 

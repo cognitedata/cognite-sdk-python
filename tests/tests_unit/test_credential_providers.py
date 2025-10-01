@@ -185,7 +185,7 @@ class TestOauthClientCredentials:
         mock_oauth_session().fetch_token.side_effect = InvalidClientIdError()
         with pytest.raises(
             CogniteAuthError,
-            match="Error generating access token: invalid_request, 400, Invalid client_id parameter value.",
+            match=r"Error generating access token: invalid_request, 400, Invalid client_id parameter value\.",
         ):
             creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
             creds._refresh_access_token()

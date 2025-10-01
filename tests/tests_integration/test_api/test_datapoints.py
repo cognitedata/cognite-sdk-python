@@ -3058,11 +3058,11 @@ class TestRetrieveLatestDatapointsAPI:
         self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList
     ) -> None:
         ts = all_test_time_series[0]
-        with pytest.raises(ValueError, match="You must use either 'target_unit' or 'target_unit_system', not both."):
+        with pytest.raises(ValueError, match=r"You must use either 'target_unit' or 'target_unit_system', not both\."):
             cognite_client.time_series.data.retrieve_latest(
                 id=ts.id, before="1h-ago", target_unit="temperature:deg_f", target_unit_system="imperial"
             )
-        with pytest.raises(ValueError, match="You must use either 'target_unit' or 'target_unit_system', not both."):
+        with pytest.raises(ValueError, match=r"You must use either 'target_unit' or 'target_unit_system', not both\."):
             cognite_client.time_series.data.retrieve_latest(
                 id=LatestDatapointQuery(
                     id=ts.id, before="1h-ago", target_unit="temperature:deg_f", target_unit_system="imperial"
@@ -3385,13 +3385,13 @@ class TestInsertDatapointsAPI:
         cognite_client.time_series.data.delete_ranges([{"start": "2d-ago", "end": "now", "id": new_ts.id}])
 
     def test_invalid_status_code(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
-        with pytest.raises(CogniteAPIError, match="^Invalid status code"):
+        with pytest.raises(CogniteAPIError, match=r"^Invalid status code"):
             # code=1 is not allowed: When info type is 00, all info bits must be 0
             cognite_client.time_series.data.insert(datapoints=[(1, 3.1, 1)], id=new_ts.id)
 
     def test_invalid_status_symbol(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
         symbol = random.choice(("good", "uncertain", "bad"))  # should be PascalCased
-        with pytest.raises(CogniteAPIError, match="^Invalid status code symbol"):
+        with pytest.raises(CogniteAPIError, match=r"^Invalid status code symbol"):
             datapoints: list[dict] = [{"timestamp": 0, "value": 2.3, "status": {"symbol": symbol}}]
             cognite_client.time_series.data.insert(datapoints=datapoints, id=new_ts.id)
 
