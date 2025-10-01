@@ -251,6 +251,7 @@ class AgentsAPI(APIClient):
         messages: Message | ActionResult | Sequence[Message | ActionResult],
         cursor: str | None = None,
         actions: Sequence[Action] | None = None,
+        timeout: int = 60,
     ) -> AgentChatResponse:
         """`Chat with an agent. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_session_ai_agents_chat_post/>`_
 
@@ -258,10 +259,8 @@ class AgentsAPI(APIClient):
         Users can ensure conversation continuity by including the cursor from the previous response in subsequent requests.
 
         Note:
-            Agents can take time to execute and may not finish within the default timeout.
-            If you experience timeout errors, you can increase the timeout by setting:
-
-                >>> client.config.timeout = 60  # Set timeout to 60 seconds
+            Agent execution can take time and may exceed the default client timeout. This method uses a default
+            timeout of 60 seconds. You can adjust this by passing a custom timeout value.
 
         Args:
             agent_external_id (str): External ID that uniquely identifies the agent.
@@ -269,6 +268,7 @@ class AgentsAPI(APIClient):
             cursor (str | None): The cursor to use for continuation of a conversation. Use this to
                 create multi-turn conversations, as the cursor will keep track of the conversation state.
             actions (Sequence[Action] | None): A list of client-side actions that can be called by the agent.
+            timeout (int): The timeout for the request in seconds. Defaults to 60 seconds.
 
         Returns:
             AgentChatResponse: The response from the agent.
@@ -320,7 +320,7 @@ class AgentsAPI(APIClient):
                 ...     }
                 ... )
                 >>> response = client.agents.chat(
-                ...     agent_id="my_agent",
+                ...     agent_external_id="my_agent",
                 ...     messages=Message("What is 42 plus 58?"),
                 ...     actions=[add_numbers_action]
                 ... )
@@ -330,7 +330,7 @@ class AgentsAPI(APIClient):
                 ...         result = call.arguments["a"] + call.arguments["b"]
                 ...         # Send result back
                 ...         response = client.agents.chat(
-                ...             agent_id="my_agent",
+                ...             agent_external_id="my_agent",
                 ...             messages=ClientToolResult(
                 ...                 action_id=call.action_id,
                 ...                 content=f"The result is {result}"
@@ -358,9 +358,11 @@ class AgentsAPI(APIClient):
             body["actions"] = [action.dump(camel_case=True) for action in actions]
 
         # Make the API call
-        response = self._post(
+        response = self._do_request(
+            "POST",
             url_path=self._RESOURCE_PATH + "/chat",
             json=body,
+            timeout=timeout,
         )
 
         return AgentChatResponse._load(response.json(), cognite_client=self._cognite_client)
