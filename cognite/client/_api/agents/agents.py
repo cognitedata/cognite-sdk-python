@@ -245,6 +245,7 @@ class AgentsAPI(APIClient):
         agent_id: str,
         messages: Message | Sequence[Message],
         cursor: str | None = None,
+        timeout: int = 60,
     ) -> AgentChatResponse:
         """`Chat with an agent. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_session_ai_agents_chat_post/>`_
 
@@ -252,16 +253,15 @@ class AgentsAPI(APIClient):
         Users can ensure conversation continuity by including the cursor from the previous response in subsequent requests.
 
         Note:
-            Agents can take time to execute and may not finish within the default timeout.
-            If you experience timeout errors, you can increase the timeout by setting:
-
-                >>> client.config.timeout = 60  # Set timeout to 60 seconds
+            Agent execution can take time and may exceed the default client timeout. This method uses a default
+            timeout of 60 seconds. You can adjust this by passing a custom timeout value.
 
         Args:
             agent_id (str): External ID that uniquely identifies the agent.
             messages (Message | Sequence[Message]): A list of one or many input messages to the agent.
             cursor (str | None): The cursor to use for continuation of a conversation. Use this to
                 create multi-turn conversations, as the cursor will keep track of the conversation state.
+            timeout (int): The timeout for the request in seconds. Defaults to 60 seconds.
 
         Returns:
             AgentChatResponse: The response from the agent.
@@ -296,6 +296,14 @@ class AgentsAPI(APIClient):
                 ...         Message("Once you have found it, find related time series.")
                 ...     ]
                 ... )
+
+            Use a custom timeout for long-running operations:
+
+                >>> response = client.agents.chat(
+                ...     agent_id="my_agent",
+                ...     messages=Message("Perform a complex analysis"),
+                ...     timeout=120  # 120 seconds
+                ... )
         """
         self._warnings.warn()
 
@@ -313,9 +321,11 @@ class AgentsAPI(APIClient):
             body["cursor"] = cursor
 
         # Make the API call
-        response = self._post(
+        response = self._do_request(
+            "POST",
             url_path=self._RESOURCE_PATH + "/chat",
             json=body,
+            timeout=timeout,
         )
 
         return AgentChatResponse._load(response.json(), cognite_client=self._cognite_client)
