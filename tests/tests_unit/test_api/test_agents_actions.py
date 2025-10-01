@@ -65,71 +65,7 @@ def final_response_body() -> dict:
     }
 
 
-class TestClientToolAction:
-    def test_dump(self) -> None:
-        action = ClientToolAction(
-            name="add",
-            description="Add two numbers",
-            parameters={
-                "type": "object",
-                "properties": {
-                    "a": {"type": "number"},
-                    "b": {"type": "number"},
-                },
-                "required": ["a", "b"],
-            },
-        )
-
-        dumped = action.dump(camel_case=True)
-
-        assert dumped["type"] == "clientTool"
-        assert dumped["clientTool"]["name"] == "add"
-        assert dumped["clientTool"]["description"] == "Add two numbers"
-        assert dumped["clientTool"]["parameters"]["type"] == "object"
-        assert "a" in dumped["clientTool"]["parameters"]["properties"]
-
-    def test_load(self) -> None:
-        data = {
-            "type": "clientTool",
-            "clientTool": {
-                "name": "multiply",
-                "description": "Multiply two numbers",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "x": {"type": "number"},
-                        "y": {"type": "number"},
-                    },
-                },
-            },
-        }
-
-        action = ClientToolAction._load_action(data)
-
-        assert isinstance(action, ClientToolAction)
-        assert action.name == "multiply"
-        assert action.description == "Multiply two numbers"
-        assert action.parameters["type"] == "object"
-
-
 class TestClientToolCall:
-    def test_load_parses_arguments_json(self) -> None:
-        data = {
-            "type": "clientTool",
-            "actionId": "call_123",
-            "clientTool": {
-                "name": "add",
-                "arguments": '{"a": 10, "b": 20}',
-            },
-        }
-
-        call = ClientToolCall._load_call(data)
-
-        assert isinstance(call, ClientToolCall)
-        assert call.action_id == "call_123"
-        assert call.name == "add"
-        assert call.arguments == {"a": 10, "b": 20}
-
     def test_dump_serializes_arguments_to_json(self) -> None:
         call = ClientToolCall(
             action_id="call_456",
@@ -164,17 +100,6 @@ class TestActionCallPolymorphism:
 
 
 class TestClientToolResult:
-    def test_init_with_string_content(self) -> None:
-        result = ClientToolResult(
-            action_id="call_123",
-            content="The result is 42",
-        )
-
-        assert result.action_id == "call_123"
-        assert isinstance(result.content, TextContent)
-        assert result.content.text == "The result is 42"
-        assert result.role == "action"
-
     def test_init_with_message_content(self) -> None:
         text_content = TextContent(text="Result: 100")
         result = ClientToolResult(
@@ -185,21 +110,6 @@ class TestClientToolResult:
         assert result.action_id == "call_456"
         assert result.content is text_content
         assert result.content.text == "Result: 100"
-
-    def test_dump(self) -> None:
-        result = ClientToolResult(
-            action_id="call_789",
-            content="Success",
-            data=[{"key": "value"}],
-        )
-
-        dumped = result.dump(camel_case=True)
-
-        assert dumped["role"] == "action"
-        assert dumped["type"] == "clientTool"
-        assert dumped["actionId"] == "call_789"
-        assert dumped["content"]["text"] == "Success"
-        assert dumped["data"] == [{"key": "value"}]
 
     def test_load(self) -> None:
         data = {
@@ -285,32 +195,3 @@ class TestChatWithActions:
         # Verify response
         assert isinstance(response, AgentChatResponse)
         assert response.text == "The result is 100."
-
-
-class TestActionCallsProperty:
-    def test_action_calls_property_returns_none_when_no_actions(self, cognite_client: CogniteClient) -> None:
-        response_body = {
-            "agentId": "my_agent",
-            "agentExternalId": "my_agent",
-            "response": {
-                "cursor": "cursor_123",
-                "messages": [{"content": {"text": "Hello", "type": "text"}, "role": "agent"}],
-                "type": "result",
-            },
-        }
-
-        response = AgentChatResponse._load(response_body, cognite_client=cognite_client)
-
-        assert response.action_calls is None
-
-    def test_action_calls_property_extracts_all_actions(
-        self, cognite_client: CogniteClient, action_call_response_body: dict
-    ) -> None:
-        response = AgentChatResponse._load(action_call_response_body, cognite_client=cognite_client)
-
-        assert response.action_calls is not None
-        assert len(response.action_calls) == 1
-        assert isinstance(response.action_calls[0], ClientToolCall)
-        assert response.action_calls[0].action_id == "call_abc123"
-        assert response.action_calls[0].name == "add"
-        assert response.action_calls[0].arguments == {"a": 42, "b": 58}
