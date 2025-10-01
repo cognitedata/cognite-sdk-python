@@ -35,7 +35,7 @@ def test_shorten(obj, width, placeholder, expected):
 
 
 def test_shorten__fails():
-    with pytest.raises(ValueError, match="^Width must be larger than "):
+    with pytest.raises(ValueError, match=r"^Width must be larger than "):
         shorten(object(), width=2, placeholder="...")
 
 
