@@ -145,7 +145,7 @@ class TestChatWithActions:
         )
 
         response = cognite_client.agents.chat(
-            agent_id="my_agent",
+            agent_external_id="my_agent",
             messages=Message("What is 42 plus 58?"),
             actions=[add_action],
         )
@@ -177,7 +177,7 @@ class TestChatWithActions:
         )
 
         response = cognite_client.agents.chat(
-            agent_id="my_agent",
+            agent_external_id="my_agent",
             messages=result,
             cursor="cursor_12345",
             actions=[add_action],
