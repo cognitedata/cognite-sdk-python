@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
@@ -86,6 +87,194 @@ _MESSAGE_CONTENT_CLS_BY_TYPE: dict[str, type[MessageContent]] = {
 
 
 @dataclass
+class Action(CogniteObject, ABC):
+    """Base class for all action types that can be provided to an agent."""
+
+    _type: ClassVar[str]
+
+    @classmethod
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Action:
+        """Dispatch to the correct concrete action class based on `type`."""
+        action_type = data.get("type", "")
+        action_class = _ACTION_CLS_BY_TYPE.get(action_type, UnknownAction)
+        return action_class._load_action(data, cognite_client)
+
+    @abstractmethod
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the action to a dictionary."""
+        ...
+
+    @classmethod
+    @abstractmethod
+    def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Action:
+        """Create a concrete action instance from raw data."""
+        ...
+
+
+@dataclass
+class ClientToolAction(Action):
+    """A client-side tool definition that can be called by the agent.
+
+    Args:
+        name (str): The name of the client tool to call.
+        description (str): A description of what the function does. The language model will use this description when selecting the function and interpreting its parameters.
+        parameters (dict[str, Any]): The parameters the function accepts, described as a JSON Schema object.
+    """
+
+    _type: ClassVar[str] = "clientTool"
+    name: str
+    description: str
+    parameters: dict[str, Any]
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "type": self._type,
+            "clientTool": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": self.parameters,
+            },
+        }
+
+    @classmethod
+    def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolAction:
+        client_tool = data["clientTool"]
+        return cls(
+            name=client_tool["name"],
+            description=client_tool["description"],
+            parameters=client_tool["parameters"],
+        )
+
+
+@dataclass
+class UnknownAction(Action):
+    """Unknown action type for forward compatibility.
+
+    Args:
+        type (str): The action type.
+        data (dict[str, Any]): The raw action data.
+    """
+
+    type: str
+    data: dict[str, Any] = field(default_factory=dict)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = self.data.copy()
+        result["type"] = self.type
+        return result
+
+    @classmethod
+    def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownAction:
+        action_type = data.get("type", "")
+        return cls(data=data, type=action_type)
+
+
+# Build the mapping AFTER concrete classes are defined
+_ACTION_CLS_BY_TYPE: dict[str, type[Action]] = {
+    subclass._type: subclass  # type: ignore[type-abstract]
+    for subclass in Action.__subclasses__()
+    if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
+}
+
+
+@dataclass
+class ActionCall(CogniteObject, ABC):
+    """Base class for action calls requested by the agent."""
+
+    _type: ClassVar[str]
+    action_id: str
+
+    @classmethod
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionCall:
+        """Dispatch to the correct concrete action call class based on `type`."""
+        action_type = data.get("type", "")
+        action_class = _ACTION_CALL_CLS_BY_TYPE.get(action_type, UnknownActionCall)
+        return action_class._load_call(data, cognite_client)
+
+    @abstractmethod
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the action call to a dictionary."""
+        ...
+
+    @classmethod
+    @abstractmethod
+    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionCall:
+        """Create a concrete action call instance from raw data."""
+        ...
+
+
+@dataclass
+class ClientToolCall(ActionCall):
+    """A client tool call requested by the agent.
+
+    Args:
+        action_id (str): The unique identifier for this action call.
+        name (str): The name of the client tool being called.
+        arguments (dict[str, Any]): The parsed arguments for the tool call.
+    """
+
+    _type: ClassVar[str] = "clientTool"
+    action_id: str
+    name: str
+    arguments: dict[str, Any]
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "type": self._type,
+            "actionId" if camel_case else "action_id": self.action_id,
+            "clientTool": {
+                "name": self.name,
+                "arguments": json.dumps(self.arguments),
+            },
+        }
+
+    @classmethod
+    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolCall:
+        client_tool = data["clientTool"]
+        arguments_str = client_tool["arguments"]
+        return cls(
+            action_id=data["actionId"],
+            name=client_tool["name"],
+            arguments=json.loads(arguments_str),
+        )
+
+
+@dataclass
+class UnknownActionCall(ActionCall):
+    """Unknown action call type for forward compatibility.
+
+    Args:
+        action_id (str): The unique identifier for this action call.
+        type (str): The action call type.
+        data (dict[str, Any]): The raw action call data.
+    """
+
+    action_id: str
+    type: str
+    data: dict[str, Any] = field(default_factory=dict)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = self.data.copy()
+        result["type"] = self.type
+        result["actionId" if camel_case else "action_id"] = self.action_id
+        return result
+
+    @classmethod
+    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownActionCall:
+        action_type = data.get("type", "")
+        action_id = data.get("actionId", "")
+        return cls(action_id=action_id, data=data, type=action_type)
+
+
+# Build the mapping AFTER concrete classes are defined
+_ACTION_CALL_CLS_BY_TYPE: dict[str, type[ActionCall]] = {
+    subclass._type: subclass  # type: ignore[type-abstract]
+    for subclass in ActionCall.__subclasses__()
+    if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
+}
+
+
+@dataclass
 class Message(CogniteResource):
     """A message to send to an agent.
 
@@ -121,6 +310,59 @@ class MessageList(CogniteResourceList[Message]):
     """List of messages."""
 
     _RESOURCE = Message
+
+
+@dataclass
+class ActionResult(CogniteResource):
+    """Result of executing a client action, for sending back to the agent.
+
+    Args:
+        action_id (str): The ID of the action being responded to.
+        content (str | MessageContent): The result of executing the action.
+        action_type (str): The type of action (e.g., "clientTool"). Defaults to "clientTool".
+        data (list[Any] | None): Optional structured data.
+    """
+
+    action_id: str
+    content: MessageContent
+    action_type: str = "clientTool"
+    data: list[Any] | None = None
+    role: Literal["action"] = "action"
+
+    def __init__(
+        self,
+        action_id: str,
+        content: str | MessageContent,
+        action_type: str = "clientTool",
+        data: list[Any] | None = None,
+    ) -> None:
+        self.action_id = action_id
+        if isinstance(content, str):
+            self.content = TextContent(text=content)
+        else:
+            self.content = content
+        self.action_type = action_type
+        self.data = data
+        self.role = "action"
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "role": self.role,
+            "type": self.action_type,
+            "actionId" if camel_case else "action_id": self.action_id,
+            "content": self.content.dump(camel_case=camel_case),
+            "data": self.data or [],
+        }
+
+    @classmethod
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionResult:
+        content = MessageContent._load(data["content"])
+        return cls(
+            action_id=data["actionId"],
+            content=content,
+            action_type=data.get("type", "clientTool"),
+            data=data.get("data"),
+        )
 
 
 @dataclass
@@ -177,12 +419,14 @@ class AgentMessage(CogniteResource):
         content (MessageContent | None): The message content.
         data (list[AgentDataItem] | None): Data items in the response.
         reasoning (list[AgentReasoningItem] | None): Reasoning items in the response.
+        actions (list[ActionCall] | None): Action calls requested by the agent.
         role (Literal["agent"]): The role of the message sender.
     """
 
     content: MessageContent | None = None
     data: list[AgentDataItem] | None = None
     reasoning: list[AgentReasoningItem] | None = None
+    actions: list[ActionCall] | None = None
     role: Literal["agent"] = "agent"
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -193,6 +437,8 @@ class AgentMessage(CogniteResource):
             result["data"] = [item.dump(camel_case=camel_case) for item in self.data]
         if self.reasoning is not None:
             result["reasoning"] = [item.dump(camel_case=camel_case) for item in self.reasoning]
+        if self.actions is not None:
+            result["actions"] = [item.dump(camel_case=camel_case) for item in self.actions]
         return result
 
     @classmethod
@@ -200,10 +446,12 @@ class AgentMessage(CogniteResource):
         content = MessageContent._load(data["content"]) if "content" in data else None
         data_items = [AgentDataItem._load(item, cognite_client) for item in data.get("data", [])]
         reasoning_items = [AgentReasoningItem._load(item, cognite_client) for item in data.get("reasoning", [])]
+        action_calls = [ActionCall._load(item, cognite_client) for item in data.get("actions", [])]
         return cls(
             content=content,
             data=data_items if data_items else None,
             reasoning=reasoning_items if reasoning_items else None,
+            actions=action_calls if action_calls else None,
             role=data["role"],
         )
 
@@ -254,6 +502,17 @@ class AgentChatResponse(CogniteResource):
             for message in self.messages:
                 if message.content and isinstance(message.content, TextContent):
                     return message.content.text
+        return None
+
+    @property
+    def action_calls(self) -> list[ActionCall] | None:
+        """Get all action calls from all messages."""
+        if self.messages:
+            all_actions = []
+            for message in self.messages:
+                if message.actions:
+                    all_actions.extend(message.actions)
+            return all_actions if all_actions else None
         return None
 
     @classmethod
