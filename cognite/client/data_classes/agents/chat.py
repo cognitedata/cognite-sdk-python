@@ -261,8 +261,8 @@ class UnknownActionCall(ActionCall):
 
     @classmethod
     def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownActionCall:
-        action_type = data.get("type", "")
-        action_id = data.get("actionId", "")
+        action_type = data["type"]
+        action_id = data["actionId"]
         return cls(action_id=action_id, data=data, type=action_type)
 
 
