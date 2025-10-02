@@ -28,8 +28,7 @@ if TYPE_CHECKING:
 class ContainersAPI(APIClient):
     _RESOURCE_PATH = "/models/containers"
 
-    def __init__(self,
-                 config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
