@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -8,6 +7,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.agents import Message
 from cognite.client.data_classes.agents.chat import (
+    Action,
     ActionCall,
     AgentChatResponse,
     ClientToolAction,
@@ -87,52 +87,47 @@ def mock_final_response(rsps: MagicMock, cognite_client: CogniteClient, final_re
     yield rsps
 
 
-class TestClientToolCall:
-    def test_dump_serializes_arguments_to_json(self) -> None:
-        call = ClientToolCall(
-            action_id="call_456",
-            name="multiply",
-            arguments={"x": 5, "y": 7},
-        )
-
-        dumped = call.dump(camel_case=True)
-
-        assert dumped["type"] == "clientTool"
-        assert dumped["actionId"] == "call_456"
-        assert dumped["clientTool"]["name"] == "multiply"
-
-        # Arguments should be JSON string
-        assert json.loads(dumped["clientTool"]["arguments"]) == {"x": 5, "y": 7}
-
-
-class TestActionCallPolymorphism:
-    def test_unknown_action_call_loaded_for_unknown_type(self) -> None:
+class TestClientToolAction:
+    def test_load_and_dump(self) -> None:
         data = {
-            "type": "unknownActionType",
-            "actionId": "call_999",
-            "someField": "someValue",
+            "type": "clientTool",
+            "clientTool": {
+                "name": "add",
+                "description": "Add two numbers",
+                "parameters": {"type": "object", "properties": {"a": {"type": "number"}}, "required": ["a"]},
+            },
         }
+        action = Action._load(data)
+        assert isinstance(action, ClientToolAction)
+        assert action.dump(camel_case=True) == data
 
+
+class TestClientToolCall:
+    def test_load_and_dump(self) -> None:
+        data = {
+            "type": "clientTool",
+            "actionId": "call_456",
+            "clientTool": {"name": "multiply", "arguments": '{"x": 5}'},
+        }
         call = ActionCall._load(data)
-
-        assert isinstance(call, UnknownActionCall)
-        assert call.action_id == "call_999"
-        assert call.type == "unknownActionType"
+        assert isinstance(call, ClientToolCall)
+        assert call.arguments == {"x": 5}
+        assert call.dump(camel_case=True) == data
 
 
 class TestClientToolResult:
-    def test_init_with_message_content(self) -> None:
-        text_content = TextContent(text="Result: 100")
-        result = ClientToolResult(
-            action_id="call_456",
-            content=text_content,
-        )
+    def test_init_with_string_and_dump(self) -> None:
+        result = ClientToolResult(action_id="call_456", content="Result: 100")
+        assert isinstance(result.content, TextContent)
+        assert result.dump(camel_case=True) == {
+            "role": "action",
+            "type": "clientTool",
+            "actionId": "call_456",
+            "content": {"text": "Result: 100", "type": "text"},
+            "data": [],
+        }
 
-        assert result.action_id == "call_456"
-        assert result.content is text_content
-        assert result.content.text == "Result: 100"
-
-    def test_load(self) -> None:
+    def test_load_and_dump(self) -> None:
         data = {
             "type": "clientTool",
             "actionId": "call_abc",
@@ -140,81 +135,56 @@ class TestClientToolResult:
             "content": {"text": "Done", "type": "text"},
             "data": [],
         }
-
         result = ClientToolResult._load_result(data)
-
         assert isinstance(result, ClientToolResult)
-        assert result.action_id == "call_abc"
-        assert result.content.text == "Done"
+        assert result.dump(camel_case=True) == data
+
+
+class TestUnknownActionCall:
+    def test_load_and_dump(self) -> None:
+        data = {"type": "unknownActionType", "actionId": "call_999", "someField": "someValue"}
+        call = ActionCall._load(data)
+        assert isinstance(call, UnknownActionCall)
+        assert call.dump(camel_case=True) == data
 
 
 class TestChatWithActions:
     def test_chat_with_actions_parameter(
         self, cognite_client: CogniteClient, mock_action_call_response: MagicMock
     ) -> None:
-        add_action = ClientToolAction(
-            name="add",
-            description="Add two numbers",
-            parameters={
-                "type": "object",
-                "properties": {
-                    "a": {"type": "number"},
-                    "b": {"type": "number"},
-                },
-                "required": ["a", "b"],
-            },
-        )
-
         response = cognite_client.agents.chat(
             agent_external_id="my_agent",
             messages=Message("What is 42 plus 58?"),
-            actions=[add_action],
+            actions=[
+                ClientToolAction(
+                    name="add",
+                    description="Add two numbers",
+                    parameters={
+                        "type": "object",
+                        "properties": {"a": {"type": "number"}, "b": {"type": "number"}},
+                        "required": ["a", "b"],
+                    },
+                )
+            ],
         )
-
-        # Verify actions were sent in request
         request_body = jsgz_load(mock_action_call_response.calls[-1].request.body)
-        assert "actions" in request_body
-        assert len(request_body["actions"]) == 1
-        assert request_body["actions"][0]["type"] == "clientTool"
         assert request_body["actions"][0]["clientTool"]["name"] == "add"
-
-        # Verify response
         assert isinstance(response, AgentChatResponse)
-        assert response.action_calls is not None
         assert len(response.action_calls) == 1
+        assert isinstance(response.action_calls[0], ClientToolCall)
 
     def test_chat_with_action_result_message(
         self, cognite_client: CogniteClient, mock_final_response: MagicMock
     ) -> None:
-        add_action = ClientToolAction(
-            name="add",
-            description="Add two numbers",
-            parameters={"type": "object", "properties": {"a": {"type": "number"}, "b": {"type": "number"}}},
-        )
-
-        result = ClientToolResult(
-            action_id="call_abc123",
-            content="The result is 100",
-        )
-
         response = cognite_client.agents.chat(
             agent_external_id="my_agent",
-            messages=result,
+            messages=ClientToolResult(action_id="call_abc123", content="The result is 100"),
             cursor="cursor_12345",
-            actions=[add_action],
+            actions=[ClientToolAction(name="add", description="Add two numbers", parameters={"type": "object"})],
         )
-
-        # Verify action result was sent
         request_body = jsgz_load(mock_final_response.calls[-1].request.body)
         assert request_body["cursor"] == "cursor_12345"
-        assert len(request_body["messages"]) == 1
-        msg = request_body["messages"][0]
-        assert msg["role"] == "action"
-        assert msg["type"] == "clientTool"
-        assert msg["actionId"] == "call_abc123"
-
-        # Verify response
-        assert isinstance(response, AgentChatResponse)
+        assert request_body["messages"][0]["actionId"] == "call_abc123"
         assert response.text == "The result is 100."
 
 
