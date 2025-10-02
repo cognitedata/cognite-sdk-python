@@ -261,17 +261,3 @@ class AsyncCogniteClient:
         """
         loaded = load_resource_to_dict(config)
         return cls(config=ClientConfig.load(loaded))
-
-
-class CogniteClient:
-    """Main entrypoint into the Cognite Python SDK.
-
-    All Cognite Data Fusion APIs are accessible through this synchronous client.
-    For the asynchronous client, see :class:`~cognite.client._cognite_client.AsyncCogniteClient`.
-
-    Args:
-        config (ClientConfig | None): The configuration for this client.
-    """
-
-    def __init__(self, config: ClientConfig | None = None) -> None:
-        raise NotImplementedError
