@@ -196,7 +196,7 @@ class Function(FunctionCore):
         self.id: int = id  # type: ignore
         self.created_time: int = created_time  # type: ignore
         self.status: str = status  # type: ignore
-        self.runtime_version: RunTime | None = runtime_version
+        self.runtime_version: str | None = runtime_version
         self.error = error
         self._cognite_client = cast("CogniteClient", cognite_client)
 
