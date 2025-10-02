@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
@@ -43,40 +43,10 @@ class SimulatorRunsAPI(APIClient):
         )
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
-        model_external_ids: SequenceNotStr[str] | None = None,
-        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
-        simulator_external_ids: SequenceNotStr[str] | None = None,
-        routine_external_ids: SequenceNotStr[str] | None = None,
-        routine_revision_external_ids: SequenceNotStr[str] | None = None,
-        model_revision_external_ids: SequenceNotStr[str] | None = None,
-        created_time: TimestampRange | None = None,
-        simulation_time: TimestampRange | None = None,
-        sort: SimulationRunsSort | None = None,
-    ) -> Iterator[SimulationRunList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[SimulationRunList]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
-        model_external_ids: SequenceNotStr[str] | None = None,
-        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
-        simulator_external_ids: SequenceNotStr[str] | None = None,
-        routine_external_ids: SequenceNotStr[str] | None = None,
-        routine_revision_external_ids: SequenceNotStr[str] | None = None,
-        model_revision_external_ids: SequenceNotStr[str] | None = None,
-        created_time: TimestampRange | None = None,
-        simulation_time: TimestampRange | None = None,
-        sort: SimulationRunsSort | None = None,
-    ) -> Iterator[SimulationRun]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[SimulationRun]: ...
 
     async def __call__(
         self,
@@ -93,7 +63,7 @@ class SimulatorRunsAPI(APIClient):
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
         sort: SimulationRunsSort | None = None,
-    ) -> Iterator[SimulationRun] | Iterator[SimulationRunList]:
+    ) -> AsyncIterator[SimulationRun | SimulationRunList]:
         """Iterate over simulation runs
 
         Fetches simulation runs as they are iterated over, so you keep a limited number of simulation runs in memory.
@@ -113,8 +83,8 @@ class SimulatorRunsAPI(APIClient):
             simulation_time (TimestampRange | None): Filter by simulation time
             sort (SimulationRunsSort | None): The criteria to sort by.
 
-        Returns:
-            Iterator[SimulationRun] | Iterator[SimulationRunList]: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
+        Yields:
+            SimulationRun | SimulationRunList: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
         """
 
         filter_runs = SimulatorRunsFilter(
@@ -130,7 +100,7 @@ class SimulatorRunsAPI(APIClient):
             simulation_time=simulation_time,
         )
 
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=SimulationRunList,
             resource_cls=SimulationRun,
             method="POST",
@@ -138,7 +108,8 @@ class SimulatorRunsAPI(APIClient):
             sort=[SimulationRunsSort.load(sort).dump()] if sort else None,
             chunk_size=chunk_size,
             limit=limit,
-        )
+        ):
+            yield item
 
     async def list(
         self,

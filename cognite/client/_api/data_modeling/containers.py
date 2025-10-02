@@ -34,22 +34,10 @@ class ContainersAPI(APIClient):
         self._CREATE_LIMIT = 100
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        space: str | None = None,
-        include_global: bool = False,
-        limit: int | None = None,
-    ) -> AsyncIterator[Container]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Container]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        space: str | None = None,
-        include_global: bool = False,
-        limit: int | None = None,
-    ) -> AsyncIterator[ContainerList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[ContainerList]: ...
 
     async def __call__(
         self,
@@ -57,7 +45,7 @@ class ContainersAPI(APIClient):
         space: str | None = None,
         include_global: bool = False,
         limit: int | None = None,
-    ) -> AsyncIterator[Container] | AsyncIterator[ContainerList]:
+    ) -> AsyncIterator[Container | ContainerList]:
         """Iterate over containers
 
         Fetches containers as they are iterated over, so you keep a limited number of containers in memory.
@@ -68,18 +56,19 @@ class ContainersAPI(APIClient):
             include_global (bool): Whether the global containers should be returned.
             limit (int | None): Maximum number of containers to return. Defaults to returning all items.
 
-        Returns:
-            AsyncIterator[Container] | AsyncIterator[ContainerList]: yields Container one by one if chunk_size is not specified, else ContainerList objects.
+        Yields:
+            Container | ContainerList: yields Container one by one if chunk_size is not specified, else ContainerList objects.
         """
         flt = _ContainerFilter(space, include_global)
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=ContainerList,
             resource_cls=Container,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             filter=flt.dump(camel_case=True),
-        )
+        ):
+            yield item
 
     @overload
     async def retrieve(self, ids: ContainerIdentifier) -> Container | None: ...

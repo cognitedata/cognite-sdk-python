@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -24,24 +24,16 @@ class SpacesAPI(APIClient):
         self._CREATE_LIMIT = 100
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-    ) -> Iterator[Space]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Space]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-    ) -> Iterator[SpaceList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[SpaceList]: ...
 
     async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-    ) -> Iterator[Space] | Iterator[SpaceList]:
+    ) -> AsyncIterator[Space | SpaceList]:
         """Iterate over spaces
 
         Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
@@ -50,16 +42,17 @@ class SpacesAPI(APIClient):
             chunk_size (int | None): Number of spaces to return in each chunk. Defaults to yielding one space a time.
             limit (int | None): Maximum number of spaces to return. Defaults to returning all items.
 
-        Returns:
-            Iterator[Space] | Iterator[SpaceList]: yields Space one by one if chunk_size is not specified, else SpaceList objects.
+        Yields:
+            Space | SpaceList: yields Space one by one if chunk_size is not specified, else SpaceList objects.
         """
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=SpaceList,
             resource_cls=Space,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
-        )
+        ):
+            yield item
 
     @overload
     async def retrieve(self, spaces: str) -> Space | None: ...
@@ -163,10 +156,10 @@ class SpacesAPI(APIClient):
         )
 
     @overload
-    def apply(self, spaces: Sequence[SpaceApply]) -> SpaceList: ...
+    async def apply(self, spaces: Sequence[SpaceApply]) -> SpaceList: ...
 
     @overload
-    def apply(self, spaces: SpaceApply) -> Space: ...
+    async def apply(self, spaces: SpaceApply) -> Space: ...
 
     async def apply(self, spaces: SpaceApply | Sequence[SpaceApply]) -> Space | SpaceList:
         """`Create or patch one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/ApplySpaces>`_

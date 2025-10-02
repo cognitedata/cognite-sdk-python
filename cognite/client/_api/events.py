@@ -38,56 +38,10 @@ class EventsAPI(APIClient):
     _RESOURCE_PATH = "/events"
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        start_time: dict[str, Any] | TimestampRange | None = None,
-        end_time: dict[str, Any] | EndTimeFilter | None = None,
-        active_at_time: dict[str, Any] | TimestampRange | None = None,
-        type: str | None = None,
-        subtype: str | None = None,
-        metadata: dict[str, str] | None = None,
-        asset_ids: Sequence[int] | None = None,
-        asset_external_ids: SequenceNotStr[str] | None = None,
-        asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-        source: str | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        external_id_prefix: str | None = None,
-        sort: SortSpec | list[SortSpec] | None = None,
-        limit: int | None = None,
-        partitions: int | None = None,
-        advanced_filter: Filter | dict[str, Any] | None = None,
-    ) -> AsyncIterator[Event]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Event]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        start_time: dict[str, Any] | TimestampRange | None = None,
-        end_time: dict[str, Any] | EndTimeFilter | None = None,
-        active_at_time: dict[str, Any] | TimestampRange | None = None,
-        type: str | None = None,
-        subtype: str | None = None,
-        metadata: dict[str, str] | None = None,
-        asset_ids: Sequence[int] | None = None,
-        asset_external_ids: SequenceNotStr[str] | None = None,
-        asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-        source: str | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        external_id_prefix: str | None = None,
-        sort: SortSpec | list[SortSpec] | None = None,
-        limit: int | None = None,
-        partitions: int | None = None,
-        advanced_filter: Filter | dict[str, Any] | None = None,
-    ) -> AsyncIterator[EventList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[EventList]: ...
 
     async def __call__(
         self,
@@ -112,7 +66,7 @@ class EventsAPI(APIClient):
         limit: int | None = None,
         partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
-    ) -> AsyncIterator[Event] | AsyncIterator[EventList]:
+    ) -> AsyncIterator[Event | EventList]:
         """Iterate over events
 
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
@@ -140,8 +94,8 @@ class EventsAPI(APIClient):
             partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
 
-        Returns:
-            AsyncIterator[Event] | AsyncIterator[EventList]: yields Event one by one if chunk_size is not specified, else EventList objects.
+        Yields:
+            Event | EventList: yields Event one by one if chunk_size is not specified, else EventList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -166,7 +120,7 @@ class EventsAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, EventSort)
         self._validate_filter(advanced_filter)
 
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=EventList,
             resource_cls=Event,
             method="POST",
@@ -176,7 +130,8 @@ class EventsAPI(APIClient):
             limit=limit,
             sort=prep_sort,
             partitions=partitions,
-        )
+        ):
+            yield item
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
         """`Retrieve a single event by id. <https://developer.cognite.com/api#tag/Events/operation/getEventByInternalId>`_

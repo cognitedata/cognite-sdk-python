@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Awaitable
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -130,7 +129,7 @@ class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
                 ret[name] = prop.dump(camel_case=camel_case)
         return ret
 
-    def _process_credentials(
+    async def _process_credentials(
         self,
         cognite_client: AsyncCogniteClient,
         sessions_cache: dict[str, NonceCredentials] | None = None,
@@ -140,7 +139,7 @@ class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
             sessions_cache = {}
 
         if self.source_nonce is None and self.source_oidc_credentials:
-            self.source_nonce = self._try_get_or_create_nonce(
+            self.source_nonce = await self._try_get_or_create_nonce(
                 self.source_oidc_credentials,
                 sessions_cache,
                 keep_none,
@@ -151,7 +150,7 @@ class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
                 self.source_oidc_credentials = None
 
         if self.destination_nonce is None and self.destination_oidc_credentials:
-            self.destination_nonce = self._try_get_or_create_nonce(
+            self.destination_nonce = await self._try_get_or_create_nonce(
                 self.destination_oidc_credentials,
                 sessions_cache,
                 keep_none,
@@ -162,7 +161,7 @@ class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
                 self.destination_oidc_credentials = None
 
     @staticmethod
-    def _try_get_or_create_nonce(
+    async def _try_get_or_create_nonce(
         oidc_credentials: OidcCredentials,
         sessions_cache: dict[str, NonceCredentials],
         keep_none: bool,
@@ -194,7 +193,7 @@ class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
             config.credentials = oidc_credentials.as_credential_provider()
             other_client = AsyncCogniteClient(config)
             try:
-                session = other_client.iam.sessions.create(credentials)
+                session = await other_client.iam.sessions.create(credentials)
                 ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
             except CogniteAPIError as err:
                 # This is fine, we might be missing SessionsACL. The OIDC credentials will then be passed
@@ -381,25 +380,22 @@ class Transformation(TransformationCore):
             cognite_client=None,  # skip cognite client
         )
 
-    def _process_credentials(  # type: ignore[override]
+    async def _process_credentials(  # type: ignore[override]
         self, sessions_cache: dict[str, NonceCredentials] | None = None, keep_none: bool = False
     ) -> None:
-        super()._process_credentials(self._cognite_client, sessions_cache=sessions_cache, keep_none=keep_none)
+        await super()._process_credentials(self._cognite_client, sessions_cache=sessions_cache, keep_none=keep_none)
 
-    def run(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
-        return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
+    async def run(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
+        return await self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
 
-    def cancel(self) -> None:
+    async def cancel(self) -> None:
         if self.id is None:
-            self._cognite_client.transformations.cancel(transformation_external_id=self.external_id)
+            await self._cognite_client.transformations.cancel(transformation_external_id=self.external_id)
         else:
-            self._cognite_client.transformations.cancel(transformation_id=self.id)
+            await self._cognite_client.transformations.cancel(transformation_id=self.id)
 
-    def run_async(self, timeout: float | None = None) -> Awaitable[TransformationJob]:
-        return self._cognite_client.transformations.run_async(transformation_id=self.id, timeout=timeout)
-
-    def jobs(self) -> TransformationJobList:
-        return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
+    async def jobs(self) -> TransformationJobList:
+        return await self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Transformation:

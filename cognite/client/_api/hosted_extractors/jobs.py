@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -38,24 +38,16 @@ class JobsAPI(APIClient):
         self._UPDATE_LIMIT = 10
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-    ) -> Iterator[Job]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Job]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-    ) -> Iterator[JobList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[JobList]: ...
 
     async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-    ) -> Iterator[Job] | Iterator[JobList]:
+    ) -> AsyncIterator[Job | JobList]:
         """Iterate over jobs
 
         Fetches jobs as they are iterated over, so you keep a limited number of jobs in memory.
@@ -64,18 +56,19 @@ class JobsAPI(APIClient):
             chunk_size (int | None): Number of jobs to return in each chunk. Defaults to yielding one job a time.
             limit (int | None): Maximum number of jobs to return. Defaults to returning all items.
 
-        Returns:
-            Iterator[Job] | Iterator[JobList]: yields Job one by one if chunk_size is not specified, else JobList objects.
+        Yields:
+            Job | JobList: yields Job one by one if chunk_size is not specified, else JobList objects.
         """
         self._warning.warn()
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=JobList,
             resource_cls=Job,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             headers={"cdf-version": "beta"},
-        )
+        ):
+            yield item
 
     @overload
     async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Job | None: ...

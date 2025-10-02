@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
 import cognite.client.data_classes.postgres_gateway.tables as pg
@@ -25,24 +25,16 @@ class TablesAPI(APIClient):
         self._RETRIEVE_LIMIT = 10
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-    ) -> Iterator[pg.Table]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[pg.Table]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-    ) -> Iterator[pg.TableList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[pg.TableList]: ...
 
     async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-    ) -> Iterator[pg.Table] | Iterator[pg.TableList]:
+    ) -> AsyncIterator[pg.Table | pg.TableList]:
         """Iterate over custom tables
 
         Fetches custom tables as they are iterated over, so you keep a limited number of custom tables in memory.
@@ -51,16 +43,17 @@ class TablesAPI(APIClient):
             chunk_size (int | None): Number of custom tables to return in each chunk. Defaults to yielding one custom table at a time.
             limit (int | None): Maximum number of custom tables to return. Defaults to return all.
 
-        Returns:
-            Iterator[pg.Table] | Iterator[pg.TableList]: yields Table one by one if chunk_size is not specified, else TableList objects.
+        Yields:
+            pg.Table | pg.TableList: yields Table one by one if chunk_size is not specified, else TableList objects.
         """
-        return await self._list_generator(
+        async for item in self._list_generator(  # type: ignore [call-overload]
             list_cls=pg.TableList,
-            resource_cls=pg.Table,  # type: ignore[type-abstract]
+            resource_cls=pg.Table,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
-        )
+        ):
+            yield item
 
     @overload
     async def create(self, username: str, items: pg.TableWrite) -> pg.Table: ...

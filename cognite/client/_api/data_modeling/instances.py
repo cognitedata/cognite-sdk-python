@@ -2,11 +2,7 @@ from __future__ import annotations
 
 import inspect
 import logging
-import random
-import time
-from collections.abc import Callable, Iterable, Iterator, Sequence
-from datetime import datetime, timezone
-from threading import Thread
+from collections.abc import AsyncIterator, Iterable, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -54,7 +50,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResult,
     NodeApplyResultList,
     NodeList,
-    SubscriptionContext,
     T_Edge,
     T_Node,
     TargetUnit,
@@ -64,7 +59,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.query import (
-    NodeOrEdgeResultSetExpression,
     Query,
     QueryResult,
     SourceSelector,
@@ -75,8 +69,6 @@ from cognite.client.utils._auxiliary import is_unlimited, load_yaml_or_json, unp
 from cognite.client.utils._concurrency import get_global_data_modeling_semaphore
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
-from cognite.client.utils._retry import Backoff
-from cognite.client.utils._text import random_string
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -184,60 +176,16 @@ class InstancesAPI(APIClient):
         )
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        instance_type: Literal["node"] = "node",
-        limit: int | None = None,
-        include_typing: bool = False,
-        sources: Source | Sequence[Source] | None = None,
-        space: str | SequenceNotStr[str] | None = None,
-        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
-        filter: Filter | dict[str, Any] | None = None,
-        debug: DebugParameters | None = None,
-    ) -> Iterator[Node]: ...
+    def __call__(self, chunk_size: None = None, instance_type: Literal["node"] = "node") -> AsyncIterator[Node]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None,
-        instance_type: Literal["edge"],
-        limit: int | None = None,
-        include_typing: bool = False,
-        sources: Source | Sequence[Source] | None = None,
-        space: str | SequenceNotStr[str] | None = None,
-        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
-        filter: Filter | dict[str, Any] | None = None,
-        debug: DebugParameters | None = None,
-    ) -> Iterator[Edge]: ...
+    def __call__(self, chunk_size: None, instance_type: Literal["edge"]) -> AsyncIterator[Edge]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        instance_type: Literal["node"] = "node",
-        limit: int | None = None,
-        include_typing: bool = False,
-        sources: Source | Sequence[Source] | None = None,
-        space: str | SequenceNotStr[str] | None = None,
-        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
-        filter: Filter | dict[str, Any] | None = None,
-        debug: DebugParameters | None = None,
-    ) -> Iterator[NodeList]: ...
+    def __call__(self, chunk_size: int, instance_type: Literal["node"] = "node") -> AsyncIterator[NodeList]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        instance_type: Literal["edge"],
-        limit: int | None = None,
-        include_typing: bool = False,
-        sources: Source | Sequence[Source] | None = None,
-        space: str | SequenceNotStr[str] | None = None,
-        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
-        filter: Filter | dict[str, Any] | None = None,
-        debug: DebugParameters | None = None,
-    ) -> Iterator[EdgeList]: ...
+    def __call__(self, chunk_size: int, instance_type: Literal["edge"]) -> AsyncIterator[EdgeList]: ...
 
     async def __call__(
         self,
@@ -250,7 +198,7 @@ class InstancesAPI(APIClient):
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
         debug: DebugParameters | None = None,
-    ) -> Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]:
+    ) -> AsyncIterator[Edge | EdgeList | Node | NodeList]:
         """Iterate over nodes or edges.
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
 
@@ -261,26 +209,26 @@ class InstancesAPI(APIClient):
             include_typing (bool): Whether to return property type information as part of the result.
             sources (Source | Sequence[Source] | None): Views to retrieve properties from.
             space (str | SequenceNotStr[str] | None): Only return instances in the given space (or list of spaces).
-            sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
+            sort (list[InstanceSort | dict] | InstanceSort | dict | None): Sort(s) to apply to the returned instances. For nontrivial amounts of data, you need to have a backing, cursorable index.
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
             debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
 
-        Returns:
-            Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
+        Yields:
+            Edge | EdgeList | Node | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
         self._validate_filter(filter)
         filter = self._merge_space_into_filter(instance_type, space, filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources, debug=debug
         )
-
-        if instance_type == "node":
-            resource_cls: type = Node
-            list_cls: type = NodeList
-        elif instance_type == "edge":
-            resource_cls, list_cls = Edge, EdgeList
-        else:
-            raise ValueError(f"Invalid instance type: {instance_type}")
+        match instance_type:
+            case "node":
+                resource_cls: type[Node | Edge] = Node
+                list_cls: type[NodeList | EdgeList] = NodeList
+            case "edge":
+                resource_cls, list_cls = Edge, EdgeList
+            case _:
+                raise ValueError(f"Invalid instance type: {instance_type}")
 
         headers: None | dict[str, str] = None
         settings_forcing_raw_response_loading = []
@@ -292,37 +240,34 @@ class InstancesAPI(APIClient):
                 self._warn_on_alpha_debug_settings.warn()
                 headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
 
-        if not settings_forcing_raw_response_loading:
-            return cast(
-                Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList],
-                self._list_generator(
-                    list_cls=list_cls,
-                    resource_cls=resource_cls,
-                    method="POST",
-                    chunk_size=chunk_size,
-                    limit=limit,
-                    filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
-                    other_params=other_params,
-                    headers=headers,
-                    semaphore=self.__dm_semaphore,
-                ),
-            )
-        return (
-            list_cls._load_raw_api_response([raw], self._cognite_client)  # type: ignore[attr-defined]
-            for raw in self._list_generator_raw_responses(
+        if not include_typing:
+            async for item in self._list_generator(
+                list_cls=list_cls,
+                resource_cls=resource_cls,
                 method="POST",
-                settings_forcing_raw_response_loading=settings_forcing_raw_response_loading,
                 chunk_size=chunk_size,
                 limit=limit,
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
                 headers=headers,
                 semaphore=self.__dm_semaphore,
-            )
-        )
+            ):
+                yield item
+
+        async for raw in self._list_generator_raw_responses(
+            method="POST",
+            settings_forcing_raw_response_loading=settings_forcing_raw_response_loading,
+            chunk_size=chunk_size,
+            limit=limit,
+            filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
+            other_params=other_params,
+            headers=headers,
+            semaphore=self.__dm_semaphore,
+        ):
+            yield list_cls._load_raw_api_response([raw], self._cognite_client)
 
     @overload
-    def retrieve_edges(
+    async def retrieve_edges(
         self,
         edges: EdgeId | tuple[str, str],
         *,
@@ -330,7 +275,7 @@ class InstancesAPI(APIClient):
     ) -> T_Edge | None: ...
 
     @overload
-    def retrieve_edges(
+    async def retrieve_edges(
         self,
         edges: EdgeId | tuple[str, str],
         *,
@@ -339,7 +284,7 @@ class InstancesAPI(APIClient):
     ) -> Edge | None: ...
 
     @overload
-    def retrieve_edges(
+    async def retrieve_edges(
         self,
         edges: Sequence[EdgeId] | Sequence[tuple[str, str]],
         *,
@@ -347,7 +292,7 @@ class InstancesAPI(APIClient):
     ) -> EdgeList[T_Edge]: ...
 
     @overload
-    def retrieve_edges(
+    async def retrieve_edges(
         self,
         edges: Sequence[EdgeId] | Sequence[tuple[str, str]],
         *,
@@ -355,7 +300,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
     ) -> EdgeList[Edge]: ...
 
-    def retrieve_edges(
+    async def retrieve_edges(
         self,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
         edge_cls: type[T_Edge] = Edge,  # type: ignore
@@ -365,8 +310,8 @@ class InstancesAPI(APIClient):
         """`Retrieve one or more edges by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
 
         Note:
-            This method should be used for retrieving edges with a custom edge class.You can use it
-            without providing a custom node class, but in that case, the retrieved nodes will be of the
+            This method should be used for retrieving edges with a custom edge class. You can use it
+            without providing a custom edge class, but in that case, the retrieved edges will be of the
             built-in Edge class.
 
 
@@ -379,9 +324,11 @@ class InstancesAPI(APIClient):
         Returns:
             EdgeList[T_Edge] | T_Edge | Edge | None: The requested edges.
 
-        Retrieve edges using a custom typed class "Flow". Any property that you want to look up by a different attribute name,
-        e.g. you want `my_edge.flow_rate` to return the data for property `flowRate`, must use the PropertyOptions as shown below.
-        We strongly suggest you use snake_cased attribute names, as is done here:
+        Examples:
+
+            Retrieve edges using a custom typed class "Flow". Any property that you want to look up by a different attribute name,
+            e.g. you want `my_edge.flow_rate` to return the data for property `flowRate`, must use the PropertyOptions as shown below.
+            We strongly suggest you use snake_cased attribute names, as is done here:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeId, TypedEdge, PropertyOptions, DirectRelationReference, ViewId
@@ -416,7 +363,7 @@ class InstancesAPI(APIClient):
                 ... )
                 >>> isinstance(res, Flow)
         """
-        res = self._retrieve_typed(
+        res = await self._retrieve_typed(
             nodes=None, edges=edges, node_cls=Node, edge_cls=edge_cls, sources=sources, include_typing=include_typing
         )
         if isinstance(edges, EdgeId) or (isinstance(edges, tuple) and all(isinstance(i, str) for i in edges)):
@@ -424,7 +371,7 @@ class InstancesAPI(APIClient):
         return res.edges
 
     @overload
-    def retrieve_nodes(
+    async def retrieve_nodes(
         self,
         nodes: NodeId | tuple[str, str],
         *,
@@ -432,7 +379,7 @@ class InstancesAPI(APIClient):
     ) -> T_Node | None: ...
 
     @overload
-    def retrieve_nodes(
+    async def retrieve_nodes(
         self,
         nodes: NodeId | tuple[str, str],
         *,
@@ -441,7 +388,7 @@ class InstancesAPI(APIClient):
     ) -> Node | None: ...
 
     @overload
-    def retrieve_nodes(
+    async def retrieve_nodes(
         self,
         nodes: Sequence[NodeId] | Sequence[tuple[str, str]],
         *,
@@ -449,7 +396,7 @@ class InstancesAPI(APIClient):
     ) -> NodeList[T_Node]: ...
 
     @overload
-    def retrieve_nodes(
+    async def retrieve_nodes(
         self,
         nodes: Sequence[NodeId] | Sequence[tuple[str, str]],
         *,
@@ -457,7 +404,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
     ) -> NodeList[Node]: ...
 
-    def retrieve_nodes(
+    async def retrieve_nodes(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
         node_cls: type[T_Node] = Node,  # type: ignore
@@ -480,10 +427,11 @@ class InstancesAPI(APIClient):
         Returns:
             NodeList[T_Node] | T_Node | Node | None: The requested edges.
 
-        Retrieve nodes using a custom typed node class "Person". Any property that you want to look up by a different attribute name,
-        e.g. you want `my_node.birth_year` to return the data for property `birthYear`, must use the PropertyOptions as shown below.
-        We strongly suggest you use snake_cased attribute names, as is done here:
+        Examples:
 
+            Retrieve nodes using a custom typed node class "Person". Any property that you want to look up by a different attribute name,
+            e.g. you want `my_node.birth_year` to return the data for property `birthYear`, must use the PropertyOptions as shown below.
+            We strongly suggest you use snake_cased attribute names, as is done here:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, TypedNode, PropertyOptions, DirectRelationReference, ViewId
@@ -524,7 +472,7 @@ class InstancesAPI(APIClient):
                 ... )
                 >>> isinstance(res, Person)
         """
-        res = self._retrieve_typed(
+        res = await self._retrieve_typed(
             nodes=nodes, edges=None, node_cls=node_cls, edge_cls=Edge, sources=sources, include_typing=include_typing
         )
         if isinstance(nodes, NodeId) or (isinstance(nodes, tuple) and all(isinstance(i, str) for i in nodes)):
@@ -699,7 +647,7 @@ class InstancesAPI(APIClient):
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
 
         Returns:
-            InstancesDeleteResult: The instance(s) which has been deleted. Empty list if nothing was deleted.
+            InstancesDeleteResult: The instance ID(s) that was deleted. Empty list if nothing was deleted.
 
         Examples:
 
@@ -803,102 +751,103 @@ class InstancesAPI(APIClient):
             edges=InstanceInspectResultList._load([edge for edge in items if edge["instanceType"] == "edge"]),
         )
 
-    def subscribe(
-        self,
-        query: Query,
-        callback: Callable[[QueryResult], None],
-        poll_delay_seconds: float = 30,
-        throttle_seconds: float = 1,
-    ) -> SubscriptionContext:
-        """Subscribe to a query and get updates when the result set changes. This invokes the sync() method in a loop
-        in a background thread.
+    # TODO: Update for use with async client
+    # def subscribe(
+    #     self,
+    #     query: Query,
+    #     callback: Callable[[QueryResult], None],
+    #     poll_delay_seconds: float = 30,
+    #     throttle_seconds: float = 1,
+    # ) -> SubscriptionContext:
+    #     """Subscribe to a query and get updates when the result set changes. This invokes the sync() method in a loop
+    #     in a background thread.
 
-        We do not support chaining result sets when subscribing to a query.
+    #     We do not support chaining result sets when subscribing to a query.
 
-        Args:
-            query (Query): The query to subscribe to.
-            callback (Callable[[QueryResult], None]): The callback function to call when the result set changes.
-            poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
-            throttle_seconds (float): The time to wait between polls despite data being present.
+    #     Args:
+    #         query (Query): The query to subscribe to.
+    #         callback (Callable[[QueryResult], None]): The callback function to call when the result set changes.
+    #         poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
+    #         throttle_seconds (float): The time to wait between polls despite data being present.
 
-        Returns:
-            SubscriptionContext: An object that can be used to cancel the subscription.
+    #     Returns:
+    #         SubscriptionContext: An object that can be used to cancel the subscription.
 
-        Examples:
+    #     Examples:
 
-            Subscribe to a given query and print the changed data:
+    #         Subscribe to a given query and print the changed data:
 
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling.query import Query, QueryResult, NodeResultSetExpression, Select, SourceSelector
-                >>> from cognite.client.data_classes.data_modeling import ViewId
-                >>> from cognite.client.data_classes.filters import Range
-                >>>
-                >>> client = CogniteClient()
-                >>> def just_print_the_result(result: QueryResult) -> None:
-                ...     print(result)
-                ...
-                >>> view_id = ViewId("someSpace", "someView", "v1")
-                >>> filter = Range(view_id.as_property_ref("createdYear"), lt=2023)
-                >>> query = Query(
-                ...     with_={"work_orders": NodeResultSetExpression(filter=filter)},
-                ...     select={"work_orders": Select([SourceSelector(view_id, ["createdYear"])])}
-                ... )
-                >>> subscription_context = client.data_modeling.instances.subscribe(query, just_print_the_result)
-                >>> subscription_context.cancel()
-        """
-        for result_set_expression in query.with_.values():
-            if (
-                isinstance(result_set_expression, NodeOrEdgeResultSetExpression)
-                and result_set_expression.from_ is not None
-            ):
-                raise ValueError("Cannot chain result sets when subscribing to a query")
+    #             >>> from cognite.client import CogniteClient
+    #             >>> from cognite.client.data_classes.data_modeling.query import Query, QueryResult, NodeResultSetExpression, Select, SourceSelector
+    #             >>> from cognite.client.data_classes.data_modeling import ViewId
+    #             >>> from cognite.client.data_classes.filters import Range
+    #             >>>
+    #             >>> client = CogniteClient()
+    #             >>> def just_print_the_result(result: QueryResult) -> None:
+    #             ...     print(result)
+    #             ...
+    #             >>> view_id = ViewId("someSpace", "someView", "v1")
+    #             >>> filter = Range(view_id.as_property_ref("createdYear"), lt=2023)
+    #             >>> query = Query(
+    #             ...     with_={"work_orders": NodeResultSetExpression(filter=filter)},
+    #             ...     select={"work_orders": Select([SourceSelector(view_id, ["createdYear"])])}
+    #             ... )
+    #             >>> subscription_context = client.data_modeling.instances.subscribe(query, just_print_the_result)
+    #             >>> subscription_context.cancel()
+    #     """
+    #     for result_set_expression in query.with_.values():
+    #         if (
+    #             isinstance(result_set_expression, NodeOrEdgeResultSetExpression)
+    #             and result_set_expression.from_ is not None
+    #         ):
+    #             raise ValueError("Cannot chain result sets when subscribing to a query")
 
-        subscription_context = SubscriptionContext()
+    #     subscription_context = SubscriptionContext()
 
-        def _poll_delay(seconds: float) -> None:
-            if not hasattr(_poll_delay, "has_been_invoked"):
-                # smear if first invocation
-                delay = random.uniform(0, poll_delay_seconds)
-                setattr(_poll_delay, "has_been_invoked", True)
-            else:
-                delay = seconds
-            logger.debug(f"Waiting {delay} seconds before polling sync endpoint again...")
-            time.sleep(delay)
+    #     def _poll_delay(seconds: float) -> None:
+    #         if not hasattr(_poll_delay, "has_been_invoked"):
+    #             # smear if first invocation
+    #             delay = random.uniform(0, poll_delay_seconds)
+    #             setattr(_poll_delay, "has_been_invoked", True)
+    #         else:
+    #             delay = seconds
+    #         logger.debug(f"Waiting {delay} seconds before polling sync endpoint again...")
+    #         time.sleep(delay)
 
-        def _do_subscribe() -> None:
-            cursors = query.cursors
-            error_backoff = Backoff(max_wait=30)
-            while not subscription_context._canceled:
-                # No need to resync if we encountered an error in the callback last iteration
-                if not error_backoff.has_progressed():
-                    query.cursors = cursors
-                    result = self.sync(query)
-                    subscription_context.last_successful_sync = datetime.now(tz=timezone.utc)
+    #     def _do_subscribe() -> None:
+    #         cursors = query.cursors
+    #         error_backoff = Backoff(max_wait=30)
+    #         while not subscription_context._canceled:
+    #             # No need to resync if we encountered an error in the callback last iteration
+    #             if not error_backoff.has_progressed():
+    #                 query.cursors = cursors
+    #                 result = self.sync(query)
+    #                 subscription_context.last_successful_sync = datetime.now(tz=timezone.utc)
 
-                try:
-                    callback(result)
-                except Exception:
-                    logger.exception("Unhandled exception in sync subscriber callback. Backing off and retrying...")
-                    time.sleep(next(error_backoff))
-                    continue
+    #             try:
+    #                 callback(result)
+    #             except Exception:
+    #                 logger.exception("Unhandled exception in sync subscriber callback. Backing off and retrying...")
+    #                 time.sleep(next(error_backoff))
+    #                 continue
 
-                subscription_context.last_successful_callback = datetime.now(tz=timezone.utc)
-                # only progress the cursor if the callback executed successfully
-                cursors = result.cursors
+    #             subscription_context.last_successful_callback = datetime.now(tz=timezone.utc)
+    #             # only progress the cursor if the callback executed successfully
+    #             cursors = result.cursors
 
-                data_is_present = any(len(instances) > 0 for instances in result.data.values())
-                if data_is_present:
-                    _poll_delay(throttle_seconds)
-                else:
-                    _poll_delay(poll_delay_seconds)
+    #             data_is_present = any(len(instances) > 0 for instances in result.data.values())
+    #             if data_is_present:
+    #                 _poll_delay(throttle_seconds)
+    #             else:
+    #                 _poll_delay(poll_delay_seconds)
 
-                error_backoff.reset()
+    #             error_backoff.reset()
 
-        thread_name = f"instances-sync-subscriber-{random_string(10)}"
-        thread = Thread(target=_do_subscribe, name=thread_name, daemon=True)
-        thread.start()
-        subscription_context._thread = thread
-        return subscription_context
+    #     thread_name = f"instances-sync-subscriber-{random_string(10)}"
+    #     thread = Thread(target=_do_subscribe, name=thread_name, daemon=True)
+    #     thread.start()
+    #     subscription_context._thread = thread
+    #     return subscription_context
 
     @classmethod
     def _create_other_params(
@@ -933,7 +882,7 @@ class InstancesAPI(APIClient):
     def _dump_instance_sort(sort: InstanceSort | dict) -> dict:
         return sort.dump(camel_case=True) if isinstance(sort, InstanceSort) else sort
 
-    def apply(
+    async def apply(
         self,
         nodes: NodeApply | Sequence[NodeApply] | None = None,
         edges: EdgeApply | Sequence[EdgeApply] | None = None,
@@ -1055,7 +1004,7 @@ class InstancesAPI(APIClient):
         edges = edges or []
         edges = edges if isinstance(edges, Sequence) else [edges]
 
-        res = self._create_multiple(
+        res = await self._create_multiple(
             items=cast(Sequence[WriteableCogniteResource], (*nodes, *edges)),
             list_cls=_NodeOrEdgeApplyResultList,
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
@@ -1371,7 +1320,7 @@ class InstancesAPI(APIClient):
             return result_list[0].aggregates
 
     @overload
-    def histogram(
+    async def histogram(
         self,
         view: ViewId,
         histograms: Histogram,
@@ -1385,7 +1334,7 @@ class InstancesAPI(APIClient):
     ) -> HistogramValue: ...
 
     @overload
-    def histogram(
+    async def histogram(
         self,
         view: ViewId,
         histograms: Sequence[Histogram],
@@ -1473,7 +1422,9 @@ class InstancesAPI(APIClient):
         else:
             return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
 
-    def query(self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
+    async def query(
+        self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None
+    ) -> QueryResult:
         """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
@@ -1544,9 +1495,11 @@ class InstancesAPI(APIClient):
                 >>> print(res.debug)
         """
         query._validate_for_query()
-        return self._query_or_sync(query, "query", include_typing=include_typing, debug=debug)
+        return await self._query_or_sync(query, "query", include_typing=include_typing, debug=debug)
 
-    def sync(self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
+    async def sync(
+        self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None
+    ) -> QueryResult:
         """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
@@ -1602,7 +1555,7 @@ class InstancesAPI(APIClient):
                 >>> print(res.debug)
         """
         query._validate_for_sync()
-        return self._query_or_sync(query, "sync", include_typing=include_typing, debug=debug)
+        return await self._query_or_sync(query, "sync", include_typing=include_typing, debug=debug)
 
     async def _query_or_sync(
         self, query: Query, endpoint: Literal["query", "sync"], include_typing: bool, debug: DebugParameters | None

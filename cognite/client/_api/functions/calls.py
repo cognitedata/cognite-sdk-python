@@ -57,7 +57,7 @@ class FunctionCallsAPI(APIClient):
 
         """
         identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
+        function_id = await _get_function_internal_id(self._cognite_client, identifier)
         filter = FunctionCallsFilter(
             status=status,
             schedule_id=schedule_id,
@@ -105,7 +105,7 @@ class FunctionCallsAPI(APIClient):
                 >>> call = func.retrieve_call(id=2)
         """
         identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
+        function_id = await _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH.format(function_id)
 
@@ -116,7 +116,7 @@ class FunctionCallsAPI(APIClient):
             list_cls=FunctionCallList,
         )
 
-    def get_response(
+    async def get_response(
         self,
         call_id: int,
         function_id: int | None = None,
@@ -148,12 +148,13 @@ class FunctionCallsAPI(APIClient):
 
         """
         identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
+        function_id = await _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH_RESPONSE.format(function_id, call_id)
-        return self._get(resource_path).json().get("response")
+        response = await self._get(resource_path)
+        return response.json().get("response")
 
-    def get_logs(
+    async def get_logs(
         self,
         call_id: int,
         function_id: int | None = None,
@@ -185,7 +186,8 @@ class FunctionCallsAPI(APIClient):
 
         """
         identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
+        function_id = await _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH_LOGS.format(function_id, call_id)
-        return FunctionCallLog._load(self._get(resource_path).json()["items"])
+        response = await self._get(resource_path)
+        return FunctionCallLog._load(response.json()["items"])

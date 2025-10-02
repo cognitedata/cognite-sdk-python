@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import overload
 
 from cognite.client._api_client import APIClient
@@ -22,24 +22,10 @@ class TransformationNotificationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/notifications"
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        transformation_id: int | None = None,
-        transformation_external_id: str | None = None,
-        destination: str | None = None,
-        limit: int | None = None,
-    ) -> Iterator[TransformationNotification]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[TransformationNotification]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        transformation_id: int | None = None,
-        transformation_external_id: str | None = None,
-        destination: str | None = None,
-        limit: int | None = None,
-    ) -> Iterator[TransformationNotificationList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[TransformationNotificationList]: ...
 
     async def __call__(
         self,
@@ -48,7 +34,7 @@ class TransformationNotificationsAPI(APIClient):
         transformation_external_id: str | None = None,
         destination: str | None = None,
         limit: int | None = None,
-    ) -> Iterator[TransformationNotification] | Iterator[TransformationNotificationList]:
+    ) -> AsyncIterator[TransformationNotification | TransformationNotificationList]:
         """Iterate over transformation notifications
 
         Args:
@@ -58,8 +44,8 @@ class TransformationNotificationsAPI(APIClient):
             destination (str | None): Filter by notification destination.
             limit (int | None): Limits the number of results to be returned. Defaults to yielding all notifications.
 
-        Returns:
-            Iterator[TransformationNotification] | Iterator[TransformationNotificationList]: Yields notifications one by one if chunk_size is None, otherwise yields lists of notifications.
+        Yields:
+            TransformationNotification | TransformationNotificationList: Yields notifications one by one if chunk_size is None, otherwise yields lists of notifications.
         """
         filter_ = TransformationNotificationFilter(
             transformation_id=transformation_id,
@@ -67,14 +53,15 @@ class TransformationNotificationsAPI(APIClient):
             destination=destination,
         ).dump(camel_case=True)
 
-        return await self._list_generator(
+        async for item in self._list_generator(
             method="GET",
             limit=limit,
             resource_cls=TransformationNotification,
             list_cls=TransformationNotificationList,
             filter=filter_,
             chunk_size=chunk_size,
-        )
+        ):
+            yield item
 
     @overload
     async def create(

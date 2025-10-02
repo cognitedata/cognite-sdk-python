@@ -41,29 +41,33 @@ class RawRowsAPI(APIClient):
         self._LIST_LIMIT = 10000
 
     @overload
-    async def __call__(
+    def __call__(
         self,
         db_name: str,
         table_name: str,
-        chunk_size: None = None,
-        limit: int | None = None,
-        min_last_updated_time: int | None = None,
-        max_last_updated_time: int | None = None,
-        columns: list[str] | None = None,
-        partitions: int | None = None,
+        *,
+        chunk_size: None,
+        partitions: None,
     ) -> AsyncIterator[Row]: ...
 
     @overload
-    async def __call__(
+    def __call__(
         self,
         db_name: str,
         table_name: str,
+        *,
+        chunk_size: None,
+        partitions: int,
+    ) -> AsyncIterator[RowList]: ...
+
+    @overload
+    def __call__(
+        self,
+        db_name: str,
+        table_name: str,
+        *,
         chunk_size: int,
-        limit: int | None = None,
-        min_last_updated_time: int | None = None,
-        max_last_updated_time: int | None = None,
-        columns: list[str] | None = None,
-        partitions: int | None = None,
+        partitions: None,
     ) -> AsyncIterator[RowList]: ...
 
     async def __call__(
@@ -155,23 +159,26 @@ class RawRowsAPI(APIClient):
         )
         chunk_size = max(1000, chunk_size or 10_000)
         column_string = self._make_columns_param(columns)
-        read_iterators = [
-            self._list_generator(
-                list_cls=RowList,
-                resource_cls=Row,
-                resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
-                chunk_size=chunk_size,
-                method="GET",
-                filter={"columns": column_string},  # we don't need X_last_updated_time
-                limit=None,
-                initial_cursor=initial,
-            )
-            for initial in cursors
-        ]
+        read_iterators = cast(
+            list[AsyncIterator[RowList]],
+            [
+                self._list_generator(
+                    list_cls=RowList,
+                    resource_cls=Row,
+                    resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+                    chunk_size=chunk_size,
+                    method="GET",
+                    filter={"columns": column_string},  # we don't need X_last_updated_time
+                    limit=None,
+                    initial_cursor=initial,
+                )
+                for initial in cursors
+            ],
+        )
         # Use a bounded queue to buffer the fetched row chunks. If the consumer processes items
         # slower than they are fetched, the queue will fill up, causing the fetching tasks to pause.
         # This backpressure prevents hammering the API and strictly bounds memory usage.
-        queue = asyncio.Queue(maxsize=partitions)
+        queue: asyncio.Queue[RowList] = asyncio.Queue(maxsize=partitions)
         quit_early = asyncio.Event()
 
         async def _fetch_and_enqueue(iterator: AsyncIterator[RowList]) -> None:
@@ -263,7 +270,7 @@ class RawRowsAPI(APIClient):
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda row: row.get("key")
         )
 
-    def insert_dataframe(
+    async def insert_dataframe(
         self,
         db_name: str,
         table_name: str,
@@ -302,7 +309,7 @@ class RawRowsAPI(APIClient):
             raise ValueError(f"Dataframe columns are not unique: {sorted(find_duplicates(dataframe.columns))}")
 
         rows = self._df_to_rows_skip_nans(dataframe) if dropna else dataframe.to_dict(orient="index")
-        self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
+        await self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
     @staticmethod
     def _df_to_rows_skip_nans(df: pd.DataFrame) -> dict[str, dict[str, Any]]:
@@ -560,6 +567,7 @@ class RawRowsAPI(APIClient):
             chunk_size = 10_000
         elif partitions is None:
             if is_unlimited(limit):
+                # TODO: Change this?
                 # Before 'partitions' was introduced, existing logic was that 'limit=None' meant 'partitions=max_workers'.
                 from cognite.client import global_config
 
@@ -567,9 +575,11 @@ class RawRowsAPI(APIClient):
             else:
                 chunk_size = limit  # We fetch serially, but don't want rows one-by-one
 
-        rows_iterator = self(
-            db_name=db_name,
-            table_name=table_name,
+        # Mypy does not understand that at least one of chunk_size or partitions is an integer here.
+        # Even adding an assert does not help, hence multiple type-ignore-comments:
+        rows_iterator = self(  # type: ignore [misc, call-overload]
+            db_name,
+            table_name,
             chunk_size=chunk_size,
             limit=limit,
             min_last_updated_time=min_last_updated_time,
@@ -578,6 +588,6 @@ class RawRowsAPI(APIClient):
             partitions=partitions,
         )
         return RowList(
-            [row async for row_list in rows_iterator for row in cast(RowList, row_list)],
+            [row async for row_list in rows_iterator for row in row_list],
             cognite_client=self._cognite_client,
         )

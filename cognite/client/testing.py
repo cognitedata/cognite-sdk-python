@@ -29,11 +29,9 @@ from cognite.client._api.document_preview import DocumentPreviewAPI
 from cognite.client._api.documents import DocumentsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
-from cognite.client._api.extractionpipelines import (
-    ExtractionPipelineConfigsAPI,
-    ExtractionPipelineRunsAPI,
-    ExtractionPipelinesAPI,
-)
+from cognite.client._api.extractionpipelines import ExtractionPipelinesAPI
+from cognite.client._api.extractionpipelines.configs import ExtractionPipelineConfigsAPI
+from cognite.client._api.extractionpipelines.runs import ExtractionPipelineRunsAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionsAPI
 from cognite.client._api.functions.calls import FunctionCallsAPI
@@ -76,13 +74,11 @@ from cognite.client._api.three_d.files import ThreeDFilesAPI
 from cognite.client._api.three_d.models import ThreeDModelsAPI
 from cognite.client._api.three_d.revisions import ThreeDRevisionsAPI
 from cognite.client._api.time_series import TimeSeriesAPI
-from cognite.client._api.transformations import (
-    TransformationJobsAPI,
-    TransformationNotificationsAPI,
-    TransformationsAPI,
-    TransformationSchedulesAPI,
-    TransformationSchemaAPI,
-)
+from cognite.client._api.transformations import TransformationsAPI
+from cognite.client._api.transformations.jobs import TransformationJobsAPI
+from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
+from cognite.client._api.transformations.schedules import TransformationSchedulesAPI
+from cognite.client._api.transformations.schema import TransformationSchemaAPI
 from cognite.client._api.unit_system import UnitSystemAPI
 from cognite.client._api.units import UnitAPI
 from cognite.client._api.user_profiles import UserProfilesAPI

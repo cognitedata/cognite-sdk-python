@@ -46,42 +46,10 @@ class TransformationsAPI(APIClient):
         self.notifications = TransformationNotificationsAPI(config, api_version, cognite_client)
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        include_public: bool = True,
-        name_regex: str | None = None,
-        query_regex: str | None = None,
-        destination_type: str | None = None,
-        conflict_mode: str | None = None,
-        cdf_project_name: str | None = None,
-        has_blocked_error: bool | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        data_set_ids: list[int] | None = None,
-        data_set_external_ids: list[str] | None = None,
-        tags: TagsFilter | None = None,
-        limit: int | None = None,
-    ) -> AsyncIterator[Transformation]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Transformation]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        include_public: bool = True,
-        name_regex: str | None = None,
-        query_regex: str | None = None,
-        destination_type: str | None = None,
-        conflict_mode: str | None = None,
-        cdf_project_name: str | None = None,
-        has_blocked_error: bool | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        data_set_ids: list[int] | None = None,
-        data_set_external_ids: list[str] | None = None,
-        tags: TagsFilter | None = None,
-        limit: int | None = None,
-    ) -> AsyncIterator[TransformationList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[TransformationList]: ...
 
     async def __call__(
         self,
@@ -99,7 +67,7 @@ class TransformationsAPI(APIClient):
         data_set_external_ids: str | list[str] | None = None,
         tags: TagsFilter | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[Transformation] | AsyncIterator[TransformationList]:
+    ) -> AsyncIterator[Transformation | TransformationList]:
         """Iterate over transformations
 
         Args:
@@ -118,8 +86,8 @@ class TransformationsAPI(APIClient):
             tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
             limit (int | None): Limits the number of results to be returned. Defaults to yielding all transformations.
 
-        Returns:
-            AsyncIterator[Transformation] | AsyncIterator[TransformationList]: Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
+        Yields:
+            Transformation | TransformationList: Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
         """
         ds_ids = IdentifierSequence.load(data_set_ids, data_set_external_ids, id_name="data_set").as_dicts()
 
@@ -137,7 +105,7 @@ class TransformationsAPI(APIClient):
             data_set_ids=ds_ids or None,
         ).dump(camel_case=True)
 
-        return await self._list_generator(
+        async for item in self._list_generator(
             method="POST",
             url_path=f"{self._RESOURCE_PATH}/filter",
             limit=limit,
@@ -145,7 +113,8 @@ class TransformationsAPI(APIClient):
             filter=filter_,
             resource_cls=Transformation,
             list_cls=TransformationList,
-        )
+        ):
+            yield item
 
     @overload
     async def create(self, transformation: Transformation | TransformationWrite) -> Transformation: ...
@@ -232,13 +201,13 @@ class TransformationsAPI(APIClient):
             # When calling as_write() the transformation is copied
             transformation = [t.as_write() if isinstance(t, Transformation) else t.copy() for t in transformation]
             for t in transformation:
-                t._process_credentials(cognite_client=self._cognite_client, sessions_cache=sessions)
+                await t._process_credentials(cognite_client=self._cognite_client, sessions_cache=sessions)
         elif isinstance(transformation, Transformation):
             transformation = transformation.as_write()
-            transformation._process_credentials(self._cognite_client)
+            await transformation._process_credentials(self._cognite_client)
         elif isinstance(transformation, TransformationWrite):
             transformation = transformation.copy()
-            transformation._process_credentials(self._cognite_client)
+            await transformation._process_credentials(self._cognite_client)
         else:
             raise TypeError(
                 "transformation must be Sequence[Transformation] or Sequence[TransformationWrite] or Transformation or TransformationWrite"
@@ -484,11 +453,11 @@ class TransformationsAPI(APIClient):
                     t = t.copy()
                     item[i] = t
                     t._cognite_client = self._cognite_client
-                    t._process_credentials(sessions_cache=sessions, keep_none=True)
+                    await t._process_credentials(sessions_cache=sessions, keep_none=True)
         elif isinstance(item, Transformation):
             item = item.copy()
             item._cognite_client = self._cognite_client
-            item._process_credentials(keep_none=True)
+            await item._process_credentials(keep_none=True)
         elif not isinstance(item, TransformationUpdate):
             raise TypeError(
                 "item must be one of: TransformationUpdate, Transformation, Sequence[TransformationUpdate | Transformation]."

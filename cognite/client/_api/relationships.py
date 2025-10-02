@@ -35,48 +35,10 @@ class RelationshipsAPI(APIClient):
         self._LIST_SUBQUERY_LIMIT = 1000
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        source_external_ids: SequenceNotStr[str] | None = None,
-        source_types: SequenceNotStr[str] | None = None,
-        target_external_ids: SequenceNotStr[str] | None = None,
-        target_types: SequenceNotStr[str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-        start_time: dict[str, int] | None = None,
-        end_time: dict[str, int] | None = None,
-        confidence: dict[str, int] | None = None,
-        last_updated_time: dict[str, int] | None = None,
-        created_time: dict[str, int] | None = None,
-        active_at_time: dict[str, int] | None = None,
-        labels: LabelFilter | None = None,
-        limit: int | None = None,
-        fetch_resources: bool = False,
-        partitions: int | None = None,
-    ) -> AsyncIterator[Relationship]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Relationship]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        source_external_ids: SequenceNotStr[str] | None = None,
-        source_types: SequenceNotStr[str] | None = None,
-        target_external_ids: SequenceNotStr[str] | None = None,
-        target_types: SequenceNotStr[str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-        start_time: dict[str, int] | None = None,
-        end_time: dict[str, int] | None = None,
-        confidence: dict[str, int] | None = None,
-        last_updated_time: dict[str, int] | None = None,
-        created_time: dict[str, int] | None = None,
-        active_at_time: dict[str, int] | None = None,
-        labels: LabelFilter | None = None,
-        limit: int | None = None,
-        fetch_resources: bool = False,
-        partitions: int | None = None,
-    ) -> AsyncIterator[RelationshipList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[RelationshipList]: ...
 
     async def __call__(
         self,
@@ -97,7 +59,7 @@ class RelationshipsAPI(APIClient):
         limit: int | None = None,
         fetch_resources: bool = False,
         partitions: int | None = None,
-    ) -> AsyncIterator[Relationship] | AsyncIterator[RelationshipList]:
+    ) -> AsyncIterator[Relationship | RelationshipList]:
         """Iterate over relationships
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
@@ -121,8 +83,8 @@ class RelationshipsAPI(APIClient):
             fetch_resources (bool): No description.
             partitions (int | None): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
 
-        Returns:
-            AsyncIterator[Relationship] | AsyncIterator[RelationshipList]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
+        Yields:
+            Relationship | RelationshipList: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
         filter = RelationshipFilter(
@@ -145,7 +107,7 @@ class RelationshipsAPI(APIClient):
                 f"For queries with more than {self._LIST_SUBQUERY_LIMIT} source_external_ids or "
                 "target_external_ids, only `list` is supported"
             )
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=RelationshipList,
             resource_cls=Relationship,
             method="POST",
@@ -154,7 +116,8 @@ class RelationshipsAPI(APIClient):
             chunk_size=chunk_size,
             partitions=partitions,
             other_params={"fetchResources": fetch_resources},
-        )
+        ):
+            yield item
 
     async def retrieve(self, external_id: str, fetch_resources: bool = False) -> Relationship | None:
         """Retrieve a single relationship by external id.

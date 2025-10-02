@@ -556,7 +556,7 @@ class Datapoint(CogniteResource):
             camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
 
         Returns:
-            pandas.DataFrame: pandas.DataFrame
+            pandas.DataFrame: The DataFrame representation of the datapoint.
         """
         pd = local_import("pandas")
 
