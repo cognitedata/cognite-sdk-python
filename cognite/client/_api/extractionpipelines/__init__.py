@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, TypeAlias, overload
 
 from cognite.client._api.extractionpipelines.configs import ExtractionPipelineConfigsAPI
@@ -37,31 +37,32 @@ class ExtractionPipelinesAPI(APIClient):
         self.config = ExtractionPipelineConfigsAPI(config, api_version, cognite_client)
 
     @overload
-    async def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[ExtractionPipeline]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[ExtractionPipeline]: ...
 
     @overload
-    async def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[ExtractionPipelineList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[ExtractionPipelineList]: ...
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[ExtractionPipeline] | Iterator[ExtractionPipelineList]:
+    ) -> AsyncIterator[ExtractionPipeline | ExtractionPipelineList]:
         """Iterate over extraction pipelines
 
         Args:
             chunk_size (int | None): Number of extraction pipelines to yield per chunk. Defaults to yielding extraction pipelines one by one.
             limit (int | None): Limits the number of results to be returned. Defaults to yielding all extraction pipelines.
 
-        Returns:
-            Iterator[ExtractionPipeline] | Iterator[ExtractionPipelineList]: Yields extraction pipelines one by one or in chunks up to the chunk size.
+        Yields:
+            ExtractionPipeline | ExtractionPipelineList: Yields extraction pipelines one by one or in chunks up to the chunk size.
 
         """
-        return await self._list_generator(
+        async for item in self._list_generator(
             method="GET",
             limit=limit,
             chunk_size=chunk_size,
             resource_cls=ExtractionPipeline,
             list_cls=ExtractionPipelineList,
-        )
+        ):
+            yield item
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> ExtractionPipeline | None:
         """`Retrieve a single extraction pipeline by id. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/showExtPipe>`_

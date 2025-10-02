@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import time
+import asyncio
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, cast
 
@@ -19,6 +19,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._retry import Backoff
 from cognite.client.utils._time import ms_to_datetime
 
@@ -234,7 +235,7 @@ class Function(FunctionCore):
             metadata=self.metadata,
         )
 
-    def call(self, data: dict[str, object] | None = None, wait: bool = True) -> FunctionCall:
+    async def call(self, data: dict[str, object] | None = None, wait: bool = True) -> FunctionCall:
         """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
 
         Args:
@@ -244,9 +245,9 @@ class Function(FunctionCore):
         Returns:
             FunctionCall: A function call object.
         """
-        return self._cognite_client.functions.call(id=self.id, data=data, wait=wait)
+        return await self._cognite_client.functions.call(id=self.id, data=data, wait=wait)
 
-    def list_calls(
+    async def list_calls(
         self,
         status: str | None = None,
         schedule_id: int | None = None,
@@ -266,7 +267,7 @@ class Function(FunctionCore):
         Returns:
             FunctionCallList: List of function calls
         """
-        return self._cognite_client.functions.calls.list(
+        return await self._cognite_client.functions.calls.list(
             function_id=self.id,
             status=status,
             schedule_id=schedule_id,
@@ -275,7 +276,7 @@ class Function(FunctionCore):
             limit=limit,
         )
 
-    def list_schedules(self, limit: int | None = DEFAULT_LIMIT_READ) -> FunctionSchedulesList:
+    async def list_schedules(self, limit: int | None = DEFAULT_LIMIT_READ) -> FunctionSchedulesList:
         """`List all schedules associated with this function. <https://docs.cognite.com/api/v1/#operation/getFunctionSchedules>`_
 
         Args:
@@ -284,9 +285,9 @@ class Function(FunctionCore):
         Returns:
             FunctionSchedulesList: List of function schedules
         """
-        return self._cognite_client.functions.schedules.list(function_id=self.id, limit=limit)
+        return await self._cognite_client.functions.schedules.list(function_id=self.id, limit=limit)
 
-    def retrieve_call(self, id: int) -> FunctionCall | None:
+    async def retrieve_call(self, id: int) -> FunctionCall | None:
         """`Retrieve call by id. <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_
 
         Args:
@@ -295,7 +296,7 @@ class Function(FunctionCore):
         Returns:
             FunctionCall | None: Requested function call or None if not found.
         """
-        return self._cognite_client.functions.calls.retrieve(call_id=id, function_id=self.id)
+        return await self._cognite_client.functions.calls.retrieve(call_id=id, function_id=self.id)
 
     async def update(self) -> None:
         """Update the function object. Can be useful to check for the latet status of the function ('Queued', 'Deploying', 'Ready' or 'Failed')."""
@@ -511,16 +512,22 @@ class FunctionSchedule(FunctionScheduleCore):
         """Returns a writeable version of this function schedule."""
         if self.cron_expression is None or self.name is None:
             raise ValueError("cron_expression or name are required to create a FunctionSchedule")
+
+        # TODO: This workaround seems overly hacky. If the schedule is returned without data from the API,
+        # we should probably do the same or not support 'as_write' at all for FunctionSchedule.
+        executor = ConcurrencySettings._get_event_loop_executor()
+        data = executor.run_coro(self.get_input_data())
+
         return FunctionScheduleWrite(
             name=self.name,
             cron_expression=self.cron_expression,
             function_id=self.function_id,
             function_external_id=self.function_external_id,
             description=self.description,
-            data=self.get_input_data(),
+            data=data,
         )
 
-    def get_input_data(self) -> dict | None:
+    async def get_input_data(self) -> dict | None:
         """
         Retrieve the input data to the associated function.
 
@@ -529,7 +536,7 @@ class FunctionSchedule(FunctionScheduleCore):
         """
         if self.id is None:
             raise ValueError("FunctionSchedule is missing 'id'")
-        return self._cognite_client.functions.schedules.get_input_data(id=self.id)
+        return await self._cognite_client.functions.schedules.get_input_data(id=self.id)
 
 
 class FunctionScheduleWrite(FunctionScheduleCore):
@@ -680,23 +687,23 @@ class FunctionCall(CogniteResource):
             cognite_client=cognite_client,
         )
 
-    def get_response(self) -> dict[str, object] | None:
+    async def get_response(self) -> dict[str, object] | None:
         """Retrieve the response from this function call.
 
         Returns:
             dict[str, object] | None: Response from the function call.
         """
         call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
-        return self._cognite_client.functions.calls.get_response(call_id=call_id, function_id=function_id)
+        return await self._cognite_client.functions.calls.get_response(call_id=call_id, function_id=function_id)
 
-    def get_logs(self) -> FunctionCallLog:
+    async def get_logs(self) -> FunctionCallLog:
         """`Retrieve logs for this function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCallLogs>`_
 
         Returns:
             FunctionCallLog: Log for the function call.
         """
         call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
-        return self._cognite_client.functions.calls.get_logs(call_id=call_id, function_id=function_id)
+        return await self._cognite_client.functions.calls.get_logs(call_id=call_id, function_id=function_id)
 
     async def update(self) -> None:
         """Update the function call object. Can be useful if the call was made with wait=False."""
@@ -715,11 +722,11 @@ class FunctionCall(CogniteResource):
             raise ValueError("FunctionCall is missing one or more of: [id, function_id]")
         return call_id, function_id
 
-    def wait(self) -> None:
+    async def wait(self) -> None:
         backoff = Backoff(max_wait=10, base=2, multiplier=0.3)
         while self.status == "Running":
-            self.update()
-            time.sleep(next(backoff))
+            await self.update()
+            await asyncio.sleep(next(backoff))
 
 
 class FunctionCallList(CogniteResourceList[FunctionCall], InternalIdTransformerMixin):

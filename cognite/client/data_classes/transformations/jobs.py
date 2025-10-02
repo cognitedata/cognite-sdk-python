@@ -134,16 +134,18 @@ class TransformationJob(CogniteResource):
         self.finished_time = updated.finished_time
         self.last_seen_time = updated.last_seen_time
 
-    def cancel(self) -> None:
+    async def cancel(self) -> None:
         if self.transformation_id is None:
-            self._cognite_client.transformations.cancel(transformation_external_id=self.transformation_external_id)
+            await self._cognite_client.transformations.cancel(
+                transformation_external_id=self.transformation_external_id
+            )
         else:
-            self._cognite_client.transformations.cancel(transformation_id=self.transformation_id)
+            await self._cognite_client.transformations.cancel(transformation_id=self.transformation_id)
 
-    def metrics(self) -> TransformationJobMetricList:
+    async def metrics(self) -> TransformationJobMetricList:
         """`Get job metrics.`"""
         assert self.id is not None
-        return self._cognite_client.transformations.jobs.list_metrics(self.id)
+        return await self._cognite_client.transformations.jobs.list_metrics(self.id)
 
     async def wait(self, polling_interval: float = 5, timeout: float | None = None) -> TransformationJob:
         """`Waits for the job to finish.`

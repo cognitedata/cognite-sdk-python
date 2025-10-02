@@ -2,7 +2,7 @@ from itertools import pairwise
 
 import pytest
 
-from cognite.client._cognite_client import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.data_classes.simulators.filters import PropertySort
 from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevision
 from cognite.client.data_classes.simulators.routines import SimulatorRoutine, SimulatorRoutineWrite

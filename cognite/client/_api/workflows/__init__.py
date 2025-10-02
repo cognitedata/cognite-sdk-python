@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, TypeAlias, overload
 
 from cognite.client._api.workflows.executions import WorkflowExecutionAPI
@@ -49,27 +49,28 @@ class WorkflowAPI(APIClient):
         self._DELETE_LIMIT = 100
 
     @overload
-    async def __call__(self, chunk_size: None = None, limit: None = None) -> Iterator[Workflow]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Workflow]: ...
 
     @overload
-    async def __call__(self, chunk_size: int, limit: None) -> Iterator[Workflow]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[WorkflowList]: ...
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[Workflow] | Iterator[WorkflowList]:
+    ) -> AsyncIterator[Workflow | WorkflowList]:
         """Iterate over workflows
 
         Args:
             chunk_size (int | None): The number of workflows to return in each chunk. Defaults to yielding one workflow at a time.
             limit (int | None): Maximum number of workflows to return. Defaults to returning all items.
 
-        Returns:
-            Iterator[Workflow] | Iterator[WorkflowList]: Yields Workflow one by one if chunk_size is None, otherwise yields WorkflowList objects.
+        Yields:
+            Workflow | WorkflowList: Yields Workflow one by one if chunk_size is None, otherwise yields WorkflowList objects.
 
         """
-        return await self._list_generator(
+        async for item in self._list_generator(
             method="GET", resource_cls=Workflow, list_cls=WorkflowList, limit=limit, chunk_size=chunk_size
-        )
+        ):
+            yield item
 
     @overload
     async def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow: ...

@@ -148,7 +148,7 @@ class FailedRequestHandler:
         ) from None
 
     @staticmethod
-    def classify_error(err: Exception) -> Literal["failed", "unknown"]:
+    def classify_error(err: BaseException) -> Literal["failed", "unknown"]:
         if isinstance(err, CogniteAPIError) and err.code >= 500:
             return "unknown"
         return "failed"

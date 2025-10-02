@@ -7,7 +7,7 @@ import re
 import sys
 import textwrap
 import time
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import AsyncIterator, Callable, Sequence
 from inspect import getdoc, getsource, signature
 from multiprocessing import Process, Queue
 from pathlib import Path
@@ -73,32 +73,10 @@ class FunctionsAPI(APIClient):
         self._DELETE_LIMIT = 10
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        name: str | None = None,
-        owner: str | None = None,
-        file_id: int | None = None,
-        status: FunctionStatus | None = None,
-        external_id_prefix: str | None = None,
-        created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
-        metadata: dict[str, str] | None = None,
-        limit: int | None = None,
-    ) -> Iterator[Function]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Function]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        name: str | None = None,
-        owner: str | None = None,
-        file_id: int | None = None,
-        status: FunctionStatus | None = None,
-        external_id_prefix: str | None = None,
-        created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
-        metadata: dict[str, str] | None = None,
-        limit: int | None = None,
-    ) -> Iterator[FunctionList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[FunctionList]: ...
 
     async def __call__(
         self,
@@ -111,7 +89,7 @@ class FunctionsAPI(APIClient):
         created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
         metadata: dict[str, str] | None = None,
         limit: int | None = None,
-    ) -> Iterator[Function] | Iterator[FunctionList]:
+    ) -> AsyncIterator[Function | FunctionList]:
         """Iterate over functions.
 
         Args:
@@ -125,12 +103,12 @@ class FunctionsAPI(APIClient):
             metadata (dict[str, str] | None): No description.
             limit (int | None): Maximum number of functions to return. Defaults to yielding all functions.
 
-        Returns:
-            Iterator[Function] | Iterator[FunctionList]: An iterator over functions.
+        Yields:
+            Function | FunctionList: An iterator over functions.
         """
         # The _list_generator method is not used as the /list endpoint does not
         # respond with a cursor (pagination is not supported)
-        functions = self.list(
+        functions = await self.list(
             name=name,
             owner=owner,
             file_id=file_id,
@@ -141,11 +119,11 @@ class FunctionsAPI(APIClient):
             limit=limit,
         )
         if chunk_size is None:
-            return iter(functions)
-        return (
-            FunctionList(chunk, cognite_client=self._cognite_client)
-            for chunk in split_into_chunks(functions.data, chunk_size)
-        )
+            for fn in functions:
+                yield fn
+        else:
+            for chunk in split_into_chunks(functions, chunk_size):
+                yield FunctionList(chunk, cognite_client=self._cognite_client)
 
     async def create(
         self,
@@ -168,7 +146,7 @@ class FunctionsAPI(APIClient):
         skip_folder_validation: bool = False,
         data_set_id: int | None = None,
     ) -> Function:
-        '''`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
+        """`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
         the source code can be specified in one of three ways:
 
         - Via the `folder` argument, which is the path to the folder where the source code is located. `function_path` must point to a python file in the folder within which a function named `handle` must be defined.
@@ -232,11 +210,11 @@ class FunctionsAPI(APIClient):
             Create function with predefined function object named `handle` with dependencies:
 
                 >>> def handle(client, data):
-                >>>     """
+                >>>     '''
                 >>>     [requirements]
                 >>>     numpy
                 >>>     [/requirements]
-                >>>     """
+                >>>     '''
                 >>>     pass
                 >>>
                 >>> function = client.functions.create(name="myfunction", function_handle=handle)
@@ -244,29 +222,29 @@ class FunctionsAPI(APIClient):
             .. note:
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring.
                 The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
-        '''
+        """
         if isinstance(name, FunctionWrite):
             function_input = name
         else:
-            function_input = self._create_function_obj(
-                name,
-                folder,
-                file_id,
-                function_path,
-                function_handle,
-                external_id,
-                description,
-                owner,
-                secrets,
-                env_vars,
-                cpu,
-                memory,
-                runtime,
-                metadata,
-                index_url,
-                extra_index_urls,
-                skip_folder_validation,
-                data_set_id,
+            function_input = await self._create_function_obj(
+                name=name,
+                folder=folder,
+                file_id=file_id,
+                function_path=function_path,
+                function_handle=function_handle,
+                external_id=external_id,
+                description=description,
+                owner=owner,
+                secrets=secrets,
+                env_vars=env_vars,
+                cpu=cpu,
+                memory=memory,
+                runtime=runtime,
+                metadata=metadata,
+                index_url=index_url,
+                extra_index_urls=extra_index_urls,
+                skip_folder_validation=skip_folder_validation,
+                data_set_id=data_set_id,
             )
 
         # The exactly_one_is_not_none check ensures that function is not None
@@ -299,10 +277,10 @@ class FunctionsAPI(APIClient):
         # without having uploaded the code to the files API.
         if folder:
             validate_function_folder(folder, function_path, skip_folder_validation)
-            file_id = self._zip_and_upload_folder(folder, name, external_id, data_set_id)
+            file_id = await self._zip_and_upload_folder(folder, name, external_id, data_set_id)
         elif function_handle:
             _validate_function_handle(function_handle)
-            file_id = self._zip_and_upload_handle(function_handle, name, external_id, data_set_id)
+            file_id = await self._zip_and_upload_handle(function_handle, name, external_id, data_set_id)
         assert_type(cpu, "cpu", [float], allow_none=True)
         assert_type(memory, "memory", [float], allow_none=True)
         sleep_time = 1.0  # seconds
@@ -518,8 +496,8 @@ class FunctionsAPI(APIClient):
                 >>> call = func.call()
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()[0]
-        id = _get_function_internal_id(self._cognite_client, identifier)
-        nonce = nonce or create_session_and_return_nonce(self._cognite_client, api_name="Functions API")
+        id = await _get_function_internal_id(self._cognite_client, identifier)
+        nonce = nonce or await create_session_and_return_nonce(self._cognite_client, api_name="Functions API")
 
         if data is None:
             data = {}
@@ -528,7 +506,7 @@ class FunctionsAPI(APIClient):
 
         function_call = FunctionCall._load(res.json(), cognite_client=self._cognite_client)
         if wait:
-            function_call.wait()
+            await function_call.wait_async()
         return function_call
 
     async def limits(self) -> FunctionsLimits:

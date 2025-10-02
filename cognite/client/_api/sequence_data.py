@@ -17,7 +17,7 @@ from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    import pandas
+    import pandas as pd
 
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
@@ -85,38 +85,44 @@ class SequencesDataAPI(APIClient):
                 >>> client.sequences.data.insert(rows=data, id=1,columns=None)
         """
         columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
-        if isinstance(rows, SequenceRows):
-            columns = rows.column_external_ids
-            rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
 
-        if isinstance(rows, dict):
-            all_rows: typing.Sequence = [{"rowNumber": k, "values": v} for k, v in rows.items()]
-        elif isinstance(rows, typing.Sequence) and len(rows) > 0 and isinstance(rows[0], dict):
-            all_rows = rows
-        elif isinstance(rows, typing.Sequence) and (len(rows) == 0 or isinstance(rows[0], tuple)):
-            all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
-        else:
-            raise TypeError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
+        match rows:
+            case SequenceRows():
+                columns = rows.column_external_ids
+                all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+            case []:
+                all_rows = []
+            case dict():
+                all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+            case [dict(), *_]:  # Assume homogeneous
+                all_rows = list(rows)  # type: ignore [arg-type]
+            case [(_, _), *_]:  # more assume homogeneous
+                all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
+            case _:
+                raise TypeError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
 
         base_obj = Identifier.of_either(id, external_id).as_dict()
         base_obj.update(self._wrap_columns(columns))
 
-        if len(all_rows) > 0:
-            rows_per_request = min(
-                self._SEQ_POST_LIMIT_ROWS, int(self._SEQ_POST_LIMIT_VALUES / len(all_rows[0]["values"]))
-            )
-        else:
+        if len(all_rows) == 0:
             rows_per_request = self._SEQ_POST_LIMIT_ROWS
+        else:
+            try:
+                length = len(all_rows[0].get("values"))  # type: ignore [arg-type]
+            except (KeyError, TypeError):
+                raise ValueError("Could not determine number of columns from first row, is the format correct?")
+
+            rows_per_request = min(self._SEQ_POST_LIMIT_ROWS, int(self._SEQ_POST_LIMIT_VALUES / length))
 
         tasks = [
-            AsyncSDKTask(self._insert_data, task=base_obj | row_chunk)
+            AsyncSDKTask(self._insert_data, task=base_obj | {"rows": row_chunk})
             for row_chunk in split_into_chunks(all_rows, rows_per_request)
         ]
         summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks()
 
     async def insert_dataframe(
-        self, dataframe: pandas.DataFrame, id: int | None = None, external_id: str | None = None, dropna: bool = True
+        self, dataframe: pd.DataFrame, id: int | None = None, external_id: str | None = None, dropna: bool = True
     ) -> None:
         """`Insert a Pandas dataframe. <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
 
@@ -124,7 +130,7 @@ class SequencesDataAPI(APIClient):
         The sequence and columns must already exist.
 
         Args:
-            dataframe (pandas.DataFrame):  Pandas DataFrame object containing the sequence data.
+            dataframe (pd.DataFrame):  Pandas DataFrame object containing the sequence data.
             id (int | None): Id of sequence to insert rows into.
             external_id (str | None): External id of sequence to insert rows into.
             dropna (bool): Whether to drop rows where all values are missing. Default: True.
@@ -194,9 +200,9 @@ class SequencesDataAPI(APIClient):
         post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj.update(self._wrap_columns(column_external_ids=sequence.column_external_ids))
         post_obj.update({"start": start, "end": end})
-        for resp in self._fetch_data(post_obj):
+        async for resp in self._fetch_data(post_obj):
             if rows := resp["rows"]:
-                self.delete(rows=[r["rowNumber"] for r in rows], external_id=external_id, id=id)
+                await self.delete(rows=[r["rowNumber"] for r in rows], external_id=external_id, id=id)
 
     @overload
     async def retrieve(
@@ -359,7 +365,7 @@ class SequencesDataAPI(APIClient):
         column_names: str | None = None,
         id: int | None = None,
         limit: int | None = None,
-    ) -> pandas.DataFrame:
+    ) -> pd.DataFrame:
         """`Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
 
         Args:
@@ -372,7 +378,7 @@ class SequencesDataAPI(APIClient):
             limit (int | None): Maximum number of rows to return per sequence.
 
         Returns:
-            pandas.DataFrame: The requested sequence data in a pandas DataFrame
+            pd.DataFrame: The requested sequence data in a pandas DataFrame
 
         Examples:
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient

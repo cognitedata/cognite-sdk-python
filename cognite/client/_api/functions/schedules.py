@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import overload
 
 from cognite.client._api.functions.utils import (
@@ -28,28 +28,10 @@ class FunctionSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/functions/schedules"
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        name: str | None = None,
-        function_id: int | None = None,
-        function_external_id: str | None = None,
-        created_time: dict[str, int] | TimestampRange | None = None,
-        cron_expression: str | None = None,
-        limit: int | None = None,
-    ) -> Iterator[FunctionSchedule]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[FunctionSchedule]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        name: str | None = None,
-        function_id: int | None = None,
-        function_external_id: str | None = None,
-        created_time: dict[str, int] | TimestampRange | None = None,
-        cron_expression: str | None = None,
-        limit: int | None = None,
-    ) -> Iterator[FunctionSchedulesList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[FunctionSchedulesList]: ...
 
     async def __call__(
         self,
@@ -60,7 +42,7 @@ class FunctionSchedulesAPI(APIClient):
         created_time: dict[str, int] | TimestampRange | None = None,
         cron_expression: str | None = None,
         limit: int | None = None,
-    ) -> Iterator[FunctionSchedule] | Iterator[FunctionSchedulesList]:
+    ) -> AsyncIterator[FunctionSchedule | FunctionSchedulesList]:
         """Iterate over function schedules
 
         Args:
@@ -72,13 +54,13 @@ class FunctionSchedulesAPI(APIClient):
             cron_expression (str | None): Cron expression.
             limit (int | None): Maximum schedules to return. Defaults to return all schedules.
 
-        Returns:
-            Iterator[FunctionSchedule] | Iterator[FunctionSchedulesList]: yields function schedules.
+        Yields:
+            FunctionSchedule | FunctionSchedulesList: Function schedules.
 
         """
         _ensure_at_most_one_id_given(function_id, function_external_id)
 
-        schedules = self.list(
+        schedules = await self.list(
             name=name,
             function_id=function_id,
             function_external_id=function_external_id,
@@ -86,13 +68,12 @@ class FunctionSchedulesAPI(APIClient):
             cron_expression=cron_expression,
             limit=limit,
         )
-
         if chunk_size is None:
-            return iter(schedules)
-        return (
-            FunctionSchedulesList(chunk, cognite_client=self._cognite_client)
-            for chunk in split_into_chunks(schedules.data, chunk_size)
-        )
+            for s in schedules:
+                yield s
+        else:
+            for chunk in split_into_chunks(schedules.data, chunk_size):
+                yield FunctionSchedulesList(chunk, cognite_client=self._cognite_client)
 
     @overload
     async def retrieve(self, id: int, ignore_unknown_ids: bool = False) -> FunctionSchedule | None: ...
@@ -293,13 +274,13 @@ class FunctionSchedulesAPI(APIClient):
                 stacklevel=2,
             )
         if item.function_id is None:
-            item.function_id = _get_function_internal_id(self._cognite_client, identifier)
+            item.function_id = await _get_function_internal_id(self._cognite_client, identifier)
             # API requires 'function_id' set and not 'function_external_id'.
             item.function_external_id = None
 
         dumped = item.dump()
         if "nonce" not in dumped:
-            dumped["nonce"] = create_session_and_return_nonce(
+            dumped["nonce"] = await create_session_and_return_nonce(
                 self._cognite_client,
                 api_name="Functions API",
                 client_credentials=client_credentials,

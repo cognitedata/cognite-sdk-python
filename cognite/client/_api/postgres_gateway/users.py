@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
@@ -32,24 +32,16 @@ class UsersAPI(APIClient):
         self._RETRIEVE_LIMIT = 10
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-    ) -> Iterator[User]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[User]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-    ) -> Iterator[UserList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[UserList]: ...
 
     async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-    ) -> Iterator[User] | Iterator[UserList]:
+    ) -> AsyncIterator[User | UserList]:
         """Iterate over users
 
         Fetches user as they are iterated over, so you keep a limited number of users in memory.
@@ -58,17 +50,17 @@ class UsersAPI(APIClient):
             chunk_size (int | None): Number of users to return in each chunk. Defaults to yielding one user at a time.
             limit (int | None): Maximum number of users to return. Defaults to return all.
 
-
-        Returns:
-            Iterator[User] | Iterator[UserList]: yields User one by one if chunk_size is not specified, else UserList objects.
+        Yields:
+            User | UserList: yields User one by one if chunk_size is not specified, else UserList objects.
         """
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=UserList,
             resource_cls=User,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
-        )
+        ):
+            yield item
 
     @overload
     async def create(self, user: UserWrite) -> UserCreated: ...

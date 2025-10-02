@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -28,26 +28,10 @@ class ViewsAPI(APIClient):
         self._CREATE_LIMIT = 100
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-        space: str | None = None,
-        include_inherited_properties: bool = True,
-        all_versions: bool = False,
-        include_global: bool = False,
-    ) -> Iterator[View]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[View]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-        space: str | None = None,
-        include_inherited_properties: bool = True,
-        all_versions: bool = False,
-        include_global: bool = False,
-    ) -> Iterator[ViewList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[ViewList]: ...
 
     async def __call__(
         self,
@@ -57,7 +41,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[View] | Iterator[ViewList]:
+    ) -> AsyncIterator[View | ViewList]:
         """Iterate over views
 
         Fetches views as they are iterated over, so you keep a limited number of views in memory.
@@ -70,18 +54,19 @@ class ViewsAPI(APIClient):
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
 
-        Returns:
-            Iterator[View] | Iterator[ViewList]: yields View one by one if chunk_size is not specified, else ViewList objects.
+        Yields:
+            View | ViewList: yields View one by one if chunk_size is not specified, else ViewList objects.
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=ViewList,
             resource_cls=View,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             filter=filter_.dump(camel_case=True),
-        )
+        ):
+            yield item
 
     def _get_latest_views(self, views: ViewList) -> ViewList:
         views_by_space_and_xid = defaultdict(list)
@@ -200,10 +185,10 @@ class ViewsAPI(APIClient):
         )
 
     @overload
-    def apply(self, view: Sequence[ViewApply]) -> ViewList: ...
+    async def apply(self, view: Sequence[ViewApply]) -> ViewList: ...
 
     @overload
-    def apply(self, view: ViewApply) -> View: ...
+    async def apply(self, view: ViewApply) -> View: ...
 
     async def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
         """`Create or update (upsert) one or more views. <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_

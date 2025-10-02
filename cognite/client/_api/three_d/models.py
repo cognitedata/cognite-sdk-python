@@ -20,18 +20,14 @@ class ThreeDModelsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models"
 
     @overload
-    async def __call__(
-        self, chunk_size: None = None, published: bool | None = None, limit: int | None = None
-    ) -> AsyncIterator[ThreeDModel]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[ThreeDModel]: ...
 
     @overload
-    async def __call__(
-        self, chunk_size: int, published: bool | None = None, limit: int | None = None
-    ) -> AsyncIterator[ThreeDModelList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[ThreeDModelList]: ...
 
     async def __call__(
         self, chunk_size: int | None = None, published: bool | None = None, limit: int | None = None
-    ) -> AsyncIterator[ThreeDModel] | AsyncIterator[ThreeDModelList]:
+    ) -> AsyncIterator[ThreeDModel | ThreeDModelList]:
         """Iterate over 3d models
 
         Fetches 3d models as they are iterated over, so you keep a limited number of 3d models in memory.
@@ -41,17 +37,18 @@ class ThreeDModelsAPI(APIClient):
             published (bool | None): Filter based on whether or not the model has published revisions.
             limit (int | None): Maximum number of 3d models to return. Defaults to return all items.
 
-        Returns:
-            AsyncIterator[ThreeDModel] | AsyncIterator[ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
+        Yields:
+            ThreeDModel | ThreeDModelList: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
         """
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=ThreeDModelList,
             resource_cls=ThreeDModel,
             method="GET",
             chunk_size=chunk_size,
             filter=drop_none_values({"published": published}),
             limit=limit,
-        )
+        ):
+            yield item
 
     async def retrieve(self, id: int) -> ThreeDModel | None:
         """`Retrieve a 3d model by id <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModel>`_

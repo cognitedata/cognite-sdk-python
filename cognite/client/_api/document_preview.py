@@ -10,7 +10,7 @@ from cognite.client.data_classes.documents import TemporaryLink
 class DocumentPreviewAPI(APIClient):
     _RESOURCE_PATH = "/documents"
 
-    def download_page_as_png_bytes(self, id: int, page_number: int = 1) -> bytes:
+    async def download_page_as_png_bytes(self, id: int, page_number: int = 1) -> bytes:
         """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
 
         Args:
@@ -35,11 +35,12 @@ class DocumentPreviewAPI(APIClient):
                 >>> binary_png = client.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
                 >>> Image(binary_png)
         """
-        return self._get(
+        response = await self._get(
             f"{self._RESOURCE_PATH}/{id}/preview/image/pages/{page_number}", headers={"accept": "image/png"}
-        ).content
+        )
+        return response.content
 
-    def download_page_as_png(
+    async def download_page_as_png(
         self, path: Path | str | IO, id: int, page_number: int = 1, overwrite: bool = False
     ) -> None:
         """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
@@ -59,8 +60,9 @@ class DocumentPreviewAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.documents.previews.download_page_as_png("previews", id=123, page_number=5)
         """
+        # TODO(doctrino): This can never trigger:
         if isinstance(path, IO):
-            content = self.download_page_as_png_bytes(id)
+            content = await self.download_page_as_png_bytes(id)
             path.write(content)
             return
 
@@ -70,10 +72,11 @@ class DocumentPreviewAPI(APIClient):
             raise ValueError("Path must be a directory or end with .png")
         if not overwrite and path.exists():
             raise FileExistsError(f"File {path} already exists. Use overwrite=True to overwrite existing file.")
-        content = self.download_page_as_png_bytes(id, page_number)
+
+        content = await self.download_page_as_png_bytes(id, page_number)
         path.write_bytes(content)
 
-    def download_document_as_pdf_bytes(self, id: int) -> bytes:
+    async def download_document_as_pdf_bytes(self, id: int) -> bytes:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
 
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
@@ -93,9 +96,10 @@ class DocumentPreviewAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.previews.download_document_as_pdf_bytes(id=123)
         """
-        return self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf", headers={"accept": "application/pdf"}).content
+        response = await self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf", headers={"accept": "application/pdf"})
+        return response.content
 
-    def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
+    async def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
 
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
@@ -114,9 +118,9 @@ class DocumentPreviewAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.documents.previews.download_document_as_pdf("previews", id=123)
         """
+        # TODO(doctrino): This can never trigger:
         if isinstance(path, IO):
-            # TODO(doctrino): This seems impossible to trigger
-            content = self.download_document_as_pdf_bytes(id)
+            content = await self.download_document_as_pdf_bytes(id)
             path.write(content)
             return
 
@@ -126,7 +130,8 @@ class DocumentPreviewAPI(APIClient):
             raise ValueError("Path must be a directory or end with .pdf")
         if not overwrite and path.exists():
             raise FileExistsError(f"File {path} already exists. Use overwrite=True to overwrite existing file.")
-        content = self.download_document_as_pdf_bytes(id)
+
+        content = await self.download_document_as_pdf_bytes(id)
         path.write_bytes(content)
 
     async def retrieve_pdf_link(self, id: int) -> TemporaryLink:

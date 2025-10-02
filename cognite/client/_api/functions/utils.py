@@ -10,13 +10,13 @@ if TYPE_CHECKING:
     from cognite.client.utils._identifier import Identifier
 
 
-def _get_function_internal_id(cognite_client: AsyncCogniteClient, identifier: Identifier) -> int:
+async def _get_function_internal_id(cognite_client: AsyncCogniteClient, identifier: Identifier) -> int:
     primitive = identifier.as_primitive()
     if identifier.is_id:
         return primitive
 
     if identifier.is_external_id:
-        function = cognite_client.functions.retrieve(external_id=primitive)
+        function = await cognite_client.functions.retrieve(external_id=primitive)
         if function:
             return function.id
 

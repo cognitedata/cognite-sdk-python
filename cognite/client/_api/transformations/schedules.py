@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -32,18 +32,14 @@ class TransformationSchedulesAPI(APIClient):
         self._UPDATE_LIMIT = 5
 
     @overload
-    async def __call__(
-        self, chunk_size: None = None, include_public: bool = True, limit: int | None = None
-    ) -> Iterator[TransformationSchedule]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[TransformationSchedule]: ...
 
     @overload
-    async def __call__(
-        self, chunk_size: int, include_public: bool = True, limit: int | None = None
-    ) -> Iterator[TransformationScheduleList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[TransformationScheduleList]: ...
 
     async def __call__(
         self, chunk_size: int | None = None, include_public: bool = True, limit: int | None = None
-    ) -> Iterator[TransformationSchedule] | Iterator[TransformationScheduleList]:
+    ) -> AsyncIterator[TransformationSchedule | TransformationScheduleList]:
         """Iterate over transformation schedules
 
         Args:
@@ -51,18 +47,19 @@ class TransformationSchedulesAPI(APIClient):
             include_public (bool):  Whether public transformations should be included in the results. (default true).
             limit (int | None):  Limits the number of results to be returned. Defaults to yielding all schedules.
 
-        Returns:
-            Iterator[TransformationSchedule] | Iterator[TransformationScheduleList]: Yields schedules one by one if chunk_size is None, otherwise yields lists of schedules.
+        Yields:
+            TransformationSchedule | TransformationScheduleList: Yields schedules one by one if chunk_size is None, otherwise yields lists of schedules.
 
         """
-        return await self._list_generator(
+        async for item in self._list_generator(
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             resource_cls=TransformationSchedule,
             list_cls=TransformationScheduleList,
             filter=TransformationFilter(include_public=include_public).dump(camel_case=True),
-        )
+        ):
+            yield item
 
     @overload
     async def create(
