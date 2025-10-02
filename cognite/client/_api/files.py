@@ -4,7 +4,7 @@ import copy
 import os
 import warnings
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from io import BufferedReader
 from pathlib import Path
 from typing import Any, BinaryIO, Literal, overload
@@ -39,59 +39,9 @@ class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        name: str | None = None,
-        mime_type: str | None = None,
-        metadata: dict[str, str] | None = None,
-        asset_ids: Sequence[int] | None = None,
-        asset_external_ids: SequenceNotStr[str] | None = None,
-        asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-        labels: LabelFilter | None = None,
-        geo_location: GeoLocationFilter | None = None,
-        source: str | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        source_created_time: dict[str, Any] | TimestampRange | None = None,
-        source_modified_time: dict[str, Any] | TimestampRange | None = None,
-        uploaded_time: dict[str, Any] | TimestampRange | None = None,
-        external_id_prefix: str | None = None,
-        directory_prefix: str | None = None,
-        uploaded: bool | None = None,
-        limit: int | None = None,
-        partitions: int | None = None,
-    ) -> Iterator[FileMetadata]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[FileMetadata]: ...
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        name: str | None = None,
-        mime_type: str | None = None,
-        metadata: dict[str, str] | None = None,
-        asset_ids: Sequence[int] | None = None,
-        asset_external_ids: SequenceNotStr[str] | None = None,
-        asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-        labels: LabelFilter | None = None,
-        geo_location: GeoLocationFilter | None = None,
-        source: str | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        source_created_time: dict[str, Any] | TimestampRange | None = None,
-        source_modified_time: dict[str, Any] | TimestampRange | None = None,
-        uploaded_time: dict[str, Any] | TimestampRange | None = None,
-        external_id_prefix: str | None = None,
-        directory_prefix: str | None = None,
-        uploaded: bool | None = None,
-        limit: int | None = None,
-        partitions: int | None = None,
-    ) -> Iterator[FileMetadataList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[FileMetadataList]: ...
 
     async def __call__(
         self,
@@ -118,7 +68,7 @@ class FilesAPI(APIClient):
         uploaded: bool | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[FileMetadata] | Iterator[FileMetadataList]:
+    ) -> AsyncIterator[FileMetadata | FileMetadataList]:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
@@ -148,8 +98,8 @@ class FilesAPI(APIClient):
             limit (int | None): Maximum number of files to return. Defaults to return all items.
             partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
 
-        Returns:
-            Iterator[FileMetadata] | Iterator[FileMetadataList]: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
+        Yields:
+            FileMetadata | FileMetadataList: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -174,7 +124,8 @@ class FilesAPI(APIClient):
             uploaded=uploaded,
             data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
-        return await self._list_generator(
+
+        async for item in self._list_generator(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
             method="POST",
@@ -182,7 +133,8 @@ class FilesAPI(APIClient):
             filter=filter,
             limit=limit,
             partitions=partitions,
-        )
+        ):
+            yield item
 
     async def create(
         self, file_metadata: FileMetadata | FileMetadataWrite, overwrite: bool = False
@@ -645,16 +597,16 @@ class FilesAPI(APIClient):
                 ) from e
             raise
 
-        return self._upload_bytes(content, res.json()["items"][0])
+        return await self._upload_bytes(content, res.json()["items"][0])
 
-    def _upload_bytes(self, content: bytes | BinaryIO, returned_file_metadata: dict) -> FileMetadata:
+    async def _upload_bytes(self, content: bytes | BinaryIO, returned_file_metadata: dict) -> FileMetadata:
         upload_url = returned_file_metadata["uploadUrl"]
         if urlparse(upload_url).netloc:
             full_upload_url = upload_url
         else:
             full_upload_url = urljoin(self._config.base_url, upload_url)
         file_metadata = FileMetadata._load(returned_file_metadata)
-        upload_response = self._request(
+        upload_response = await self._request(
             "PUT",
             full_upload_url,
             content=content,
@@ -754,7 +706,7 @@ class FilesAPI(APIClient):
                 ) from e
             raise
 
-        return self._upload_bytes(content, res.json())
+        return await self._upload_bytes(content, res.json())
 
     async def multipart_upload_session(
         self,
@@ -920,10 +872,11 @@ class FilesAPI(APIClient):
             FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
         )
 
-    def _upload_multipart_part(self, upload_url: str, content: str | bytes | BinaryIO) -> None:
+    async def _upload_multipart_part(self, upload_url: str, content: str | bytes | BinaryIO) -> None:
         """Upload part of a file to an upload URL returned from `multipart_upload_session`.
-        Note that if `content` does not somehow expose its length, this method may not work
-        on Azure. See `requests.utils.super_len`.
+
+        Note:
+            If `content` does not somehow expose its length, this method may not work on Azure.
 
         Args:
             upload_url (str): URL to upload file chunk to.
@@ -932,7 +885,7 @@ class FilesAPI(APIClient):
         if isinstance(content, str):
             content = content.encode("utf-8")
 
-        upload_response = self._request(
+        upload_response = await self._request(
             "PUT",
             full_url=upload_url,
             content=content,
@@ -1124,7 +1077,8 @@ class FilesAPI(APIClient):
         ids = [id["id"] for id in all_ids if "id" in id]
         external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
         instance_ids = [id["instanceId"] for id in all_ids if "instanceId" in id]
-        return await self.retrieve_multiple(ids=ids, external_ids=external_ids, instance_ids=instance_ids)._id_to_item
+        resource_lst = await self.retrieve_multiple(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
+        return resource_lst._id_to_item
 
     async def _download_files_to_directory(
         self,
@@ -1228,9 +1182,10 @@ class FilesAPI(APIClient):
         return await self._download_file(download_link)
 
     async def _download_file(self, download_link: str) -> bytes:
-        return await self._request(
+        response = await self._request(
             "GET", full_url=download_link, headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
-        ).content
+        )
+        return response.content
 
     async def list(
         self,

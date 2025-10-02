@@ -330,7 +330,7 @@ class Sequence(SequenceCore):
             dumped["columns"] = self.columns.dump(camel_case)
         return dumped
 
-    def rows(self, start: int, end: int | None) -> SequenceRows:
+    async def rows(self, start: int, end: int | None) -> SequenceRows:
         """Retrieves rows from this sequence.
 
         Args:
@@ -341,9 +341,11 @@ class Sequence(SequenceCore):
             SequenceRows: List of sequence data.
         """
         if self.external_id is not None:
-            return self._cognite_client.sequences.data.retrieve(external_id=self.external_id, start=start, end=end)
+            return await self._cognite_client.sequences.data.retrieve(
+                external_id=self.external_id, start=start, end=end
+            )
         elif self.id is not None:
-            return self._cognite_client.sequences.data.retrieve(id=self.id, start=start, end=end)
+            return await self._cognite_client.sequences.data.retrieve(id=self.id, start=start, end=end)
         raise ValueError("Sequence must have either id or external_id set")
 
     @property

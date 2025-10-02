@@ -82,7 +82,7 @@ class DiagramsAPI(APIClient):
         return processed_ids
 
     @overload
-    def detect(
+    async def detect(
         self,
         entities: Sequence[dict | CogniteResource],
         search_field: str = "name",
@@ -99,7 +99,7 @@ class DiagramsAPI(APIClient):
     ) -> DiagramDetectResults: ...
 
     @overload
-    def detect(
+    async def detect(
         self,
         entities: Sequence[dict | CogniteResource],
         search_field: str = "name",
@@ -115,7 +115,7 @@ class DiagramsAPI(APIClient):
         multiple_jobs: Literal[True],
     ) -> tuple[DetectJobBundle, list[dict[str, Any]]]: ...
 
-    def detect(
+    async def detect(
         self,
         entities: Sequence[dict | CogniteResource],
         search_field: str = "name",
@@ -224,7 +224,7 @@ class DiagramsAPI(APIClient):
         ]
 
         if not multiple_jobs:
-            return self.__run_detect_job(
+            return await self.__run_detect_job(
                 items=items,
                 entities=entities_dumped,
                 partial_match=partial_match,
@@ -245,7 +245,7 @@ class DiagramsAPI(APIClient):
         for i in range(num_new_jobs):
             batch = items[(self._DETECT_API_FILE_LIMIT * i) : self._DETECT_API_FILE_LIMIT * (i + 1)]
             try:
-                job = self.__run_detect_job(
+                job = await self.__run_detect_job(
                     items=items,
                     entities=entities_dumped,
                     partial_match=partial_match,
@@ -326,12 +326,10 @@ class DiagramsAPI(APIClient):
                 >>> client.diagrams.convert(detect_job=detect_job)
 
         """
-        if any(item.get("page_range") is not None for item in detect_job.result["items"]):
+        result = await detect_job.wait_for_result()
+        if any(item.get("page_range") is not None for item in result["items"]):
             raise NotImplementedError("Can not run convert on a detect job that used the page range feature")
-        items = [
-            {"annotations": item.get("annotations"), "fileId": item.get("fileId")}
-            for item in detect_job.result["items"]
-        ]
+        items = [{"annotations": item.get("annotations"), "fileId": item.get("fileId")} for item in result["items"]]
         response = await self._post(f"{self._RESOURCE_PATH}/convert", json={"items": items})
         return DiagramConvertResults._load_with_job_token(
             data=response.json(),

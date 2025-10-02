@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
@@ -34,34 +34,10 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         self._RETRIEVE_LIMIT = 20
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        routine_external_ids: SequenceNotStr[str] | None = None,
-        model_external_ids: SequenceNotStr[str] | None = None,
-        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
-        simulator_external_ids: SequenceNotStr[str] | None = None,
-        created_time: TimestampRange | None = None,
-        all_versions: bool = False,
-        include_all_fields: bool = False,
-        limit: int | None = None,
-        sort: PropertySort | None = None,
-    ) -> Iterator[SimulatorRoutineRevisionList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[SimulatorRoutineRevisionList]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        routine_external_ids: SequenceNotStr[str] | None = None,
-        model_external_ids: SequenceNotStr[str] | None = None,
-        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
-        simulator_external_ids: SequenceNotStr[str] | None = None,
-        created_time: TimestampRange | None = None,
-        all_versions: bool = False,
-        include_all_fields: bool = False,
-        limit: int | None = None,
-        sort: PropertySort | None = None,
-    ) -> Iterator[SimulatorRoutineRevision]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[SimulatorRoutineRevision]: ...
 
     async def __call__(
         self,
@@ -75,7 +51,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         include_all_fields: bool = False,
         limit: int | None = None,
         sort: PropertySort | None = None,
-    ) -> Iterator[SimulatorRoutineRevision] | Iterator[SimulatorRoutineRevisionList]:
+    ) -> AsyncIterator[SimulatorRoutineRevision | SimulatorRoutineRevisionList]:
         """Iterate over simulator routine revisions
 
         Fetches simulator routine revisions as they are iterated over, so you keep a limited number of simulator routine revisions in memory.
@@ -92,8 +68,8 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             limit (int | None): Maximum number of simulator routine revisions to return. Defaults to return all items.
             sort (PropertySort | None): The criteria to sort by.
 
-        Returns:
-            Iterator[SimulatorRoutineRevision] | Iterator[SimulatorRoutineRevisionList]: yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionList objects.
+        Yields:
+            SimulatorRoutineRevision | SimulatorRoutineRevisionList: yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionList objects.
         """
         self._warning.warn()
         filter = SimulatorRoutineRevisionsFilter(
@@ -104,7 +80,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             simulator_external_ids=simulator_external_ids,
             created_time=created_time,
         )
-        return await self._list_generator(
+        async for item in self._list_generator(
             method="POST",
             limit=limit,
             url_path=self._RESOURCE_PATH + "/list",
@@ -114,7 +90,8 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             filter=filter.dump(),
             sort=[PropertySort.load(sort).dump()] if sort else None,
             other_params={"includeAllFields": include_all_fields},
-        )
+        ):
+            yield item
 
     @overload
     async def retrieve(self, *, ids: int) -> SimulatorRoutineRevision | None: ...

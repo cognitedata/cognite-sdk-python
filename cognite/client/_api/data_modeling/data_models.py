@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -29,26 +29,10 @@ class DataModelsAPI(APIClient):
         self._CREATE_LIMIT = 100
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-        space: str | None = None,
-        inline_views: bool = False,
-        all_versions: bool = False,
-        include_global: bool = False,
-    ) -> Iterator[DataModel]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[DataModel]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-        space: str | None = None,
-        inline_views: bool = False,
-        all_versions: bool = False,
-        include_global: bool = False,
-    ) -> Iterator[DataModelList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[DataModelList]: ...
 
     async def __call__(
         self,
@@ -58,7 +42,7 @@ class DataModelsAPI(APIClient):
         inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[DataModel] | Iterator[DataModelList]:
+    ) -> AsyncIterator[DataModel | DataModelList]:
         """Iterate over data model
 
         Fetches data model as they are iterated over, so you keep a limited number of data model in memory.
@@ -71,19 +55,20 @@ class DataModelsAPI(APIClient):
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
 
-        Returns:
-            Iterator[DataModel] | Iterator[DataModelList]: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
+        Yields:
+            DataModel | DataModelList: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
         """
         filter = DataModelFilter(space, inline_views, all_versions, include_global)
 
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=DataModelList,
             resource_cls=DataModel,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             filter=filter.dump(camel_case=True),
-        )
+        ):
+            yield item
 
     @overload
     async def retrieve(
@@ -218,10 +203,10 @@ class DataModelsAPI(APIClient):
         )
 
     @overload
-    def apply(self, data_model: Sequence[DataModelApply]) -> DataModelList: ...
+    async def apply(self, data_model: Sequence[DataModelApply]) -> DataModelList: ...
 
     @overload
-    def apply(self, data_model: DataModelApply) -> DataModel: ...
+    async def apply(self, data_model: DataModelApply) -> DataModel: ...
 
     async def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
         """`Create or update one or more data model. <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_

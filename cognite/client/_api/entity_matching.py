@@ -335,4 +335,4 @@ class EntityMatchingAPI(APIClient):
         model = await self.retrieve(id=id, external_id=external_id)
         # TODO: Change assert to proper error
         assert model
-        return model.refit(true_matches=true_matches)
+        return await model.refit(true_matches=true_matches)

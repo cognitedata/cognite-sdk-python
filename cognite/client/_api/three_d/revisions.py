@@ -23,17 +23,14 @@ class ThreeDRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions"
 
     @overload
-    async def __call__(
-        self, model_id: int, chunk_size: None = None, published: bool = False, limit: int | None = None
-    ) -> AsyncIterator[ThreeDModelRevision]: ...
+    def __call__(self, model_id: int, chunk_size: None = None) -> AsyncIterator[ThreeDModelRevision]: ...
+
     @overload
-    async def __call__(
-        self, model_id: int, chunk_size: int, published: bool = False, limit: int | None = None
-    ) -> AsyncIterator[ThreeDModelRevisionList]: ...
+    def __call__(self, model_id: int, chunk_size: int) -> AsyncIterator[ThreeDModelRevisionList]: ...
 
     async def __call__(
         self, model_id: int, chunk_size: int | None = None, published: bool = False, limit: int | None = None
-    ) -> AsyncIterator[ThreeDModelRevision] | AsyncIterator[ThreeDModelRevisionList]:
+    ) -> AsyncIterator[ThreeDModelRevision | ThreeDModelRevisionList]:
         """Iterate over 3d model revisions
 
         Fetches 3d model revisions as they are iterated over, so you keep a limited number of 3d model revisions in memory.
@@ -44,10 +41,10 @@ class ThreeDRevisionsAPI(APIClient):
             published (bool): Filter based on whether or not the revision has been published.
             limit (int | None): Maximum number of 3d model revisions to return. Defaults to return all items.
 
-        Returns:
-            AsyncIterator[ThreeDModelRevision] | AsyncIterator[ThreeDModelRevisionList]: yields ThreeDModelRevision one by one if chunk is not specified, else ThreeDModelRevisionList objects.
+        Yields:
+            ThreeDModelRevision | ThreeDModelRevisionList: yields ThreeDModelRevision one by one if chunk is not specified, else ThreeDModelRevisionList objects.
         """
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
@@ -55,7 +52,8 @@ class ThreeDRevisionsAPI(APIClient):
             chunk_size=chunk_size,
             filter={"published": published},
             limit=limit,
-        )
+        ):
+            yield item
 
     async def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision | None:
         """`Retrieve a 3d model revision by id <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevision>`_

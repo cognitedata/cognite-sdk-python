@@ -257,7 +257,7 @@ class Asset(AssetCore):
             raise ValueError("parent_id is None, is this a root asset?")
         return cast(Asset, self._cognite_client.assets.retrieve(id=self.parent_id))
 
-    def children(self) -> AssetList:
+    async def children(self) -> AssetList:
         """Returns the children of this asset.
 
         Returns:
@@ -265,7 +265,7 @@ class Asset(AssetCore):
         """
         if self.id is None:
             raise ValueError("Unable to fetch child assets: id is missing")
-        return self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
+        return await self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
 
     async def subtree(self, depth: int | None = None) -> AssetList:
         """Returns the subtree of this asset up to a specified depth.
@@ -280,7 +280,7 @@ class Asset(AssetCore):
             raise ValueError("Unable to fetch asset subtree: id is missing")
         return await self._cognite_client.assets.retrieve_subtree(id=self.id, depth=depth)
 
-    def time_series(self, **kwargs: Any) -> TimeSeriesList:
+    async def time_series(self, **kwargs: Any) -> TimeSeriesList:
         """Retrieve all time series related to this asset.
 
         Args:
@@ -289,9 +289,9 @@ class Asset(AssetCore):
             TimeSeriesList: All time series related to this asset.
         """
         asset_ids = self._prepare_asset_ids("time series", kwargs)
-        return self._cognite_client.time_series.list(asset_ids=asset_ids, **kwargs)
+        return await self._cognite_client.time_series.list(asset_ids=asset_ids, **kwargs)
 
-    def sequences(self, **kwargs: Any) -> SequenceList:
+    async def sequences(self, **kwargs: Any) -> SequenceList:
         """Retrieve all sequences related to this asset.
 
         Args:
@@ -300,9 +300,9 @@ class Asset(AssetCore):
             SequenceList: All sequences related to this asset.
         """
         asset_ids = self._prepare_asset_ids("sequences", kwargs)
-        return self._cognite_client.sequences.list(asset_ids=asset_ids, **kwargs)
+        return await self._cognite_client.sequences.list(asset_ids=asset_ids, **kwargs)
 
-    def events(self, **kwargs: Any) -> EventList:
+    async def events(self, **kwargs: Any) -> EventList:
         """Retrieve all events related to this asset.
 
         Args:
@@ -311,9 +311,9 @@ class Asset(AssetCore):
             EventList: All events related to this asset.
         """
         asset_ids = self._prepare_asset_ids("events", kwargs)
-        return self._cognite_client.events.list(asset_ids=asset_ids, **kwargs)
+        return await self._cognite_client.events.list(asset_ids=asset_ids, **kwargs)
 
-    def files(self, **kwargs: Any) -> FileMetadataList:
+    async def files(self, **kwargs: Any) -> FileMetadataList:
         """Retrieve all files metadata related to this asset.
 
         Args:
@@ -322,7 +322,7 @@ class Asset(AssetCore):
             FileMetadataList: Metadata about all files related to this asset.
         """
         asset_ids = self._prepare_asset_ids("files", kwargs)
-        return self._cognite_client.files.list(asset_ids=asset_ids, **kwargs)
+        return await self._cognite_client.files.list(asset_ids=asset_ids, **kwargs)
 
     def _prepare_asset_ids(self, resource: str, user_kwargs: dict[str, Any]) -> list[int]:
         if self.id is None:
@@ -550,7 +550,7 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
     def as_write(self) -> AssetWriteList:
         return AssetWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
 
-    def time_series(self, **kwargs: Any) -> TimeSeriesList:
+    async def time_series(self, **kwargs: Any) -> TimeSeriesList:
         """Retrieve all time series related to these assets.
 
         Args:
@@ -560,9 +560,9 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         """
         from cognite.client.data_classes import TimeSeriesList
 
-        return self._retrieve_related_resources(TimeSeriesList, self._cognite_client.time_series, kwargs)
+        return await self._retrieve_related_resources(TimeSeriesList, self._cognite_client.time_series, kwargs)
 
-    def sequences(self, **kwargs: Any) -> SequenceList:
+    async def sequences(self, **kwargs: Any) -> SequenceList:
         """Retrieve all sequences related to these assets.
 
         Args:
@@ -572,9 +572,9 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         """
         from cognite.client.data_classes import SequenceList
 
-        return self._retrieve_related_resources(SequenceList, self._cognite_client.sequences, kwargs)
+        return await self._retrieve_related_resources(SequenceList, self._cognite_client.sequences, kwargs)
 
-    def events(self, **kwargs: Any) -> EventList:
+    async def events(self, **kwargs: Any) -> EventList:
         """Retrieve all events related to these assets.
 
         Args:
@@ -584,9 +584,9 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         """
         from cognite.client.data_classes import EventList
 
-        return self._retrieve_related_resources(EventList, self._cognite_client.events, kwargs, chunk_size=5000)
+        return await self._retrieve_related_resources(EventList, self._cognite_client.events, kwargs, chunk_size=5000)
 
-    def files(self, **kwargs: Any) -> FileMetadataList:
+    async def files(self, **kwargs: Any) -> FileMetadataList:
         """Retrieve all files metadata related to these assets.
 
         Args:
@@ -596,7 +596,7 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         """
         from cognite.client.data_classes import FileMetadataList
 
-        return self._retrieve_related_resources(FileMetadataList, self._cognite_client.files, kwargs)
+        return await self._retrieve_related_resources(FileMetadataList, self._cognite_client.files, kwargs)
 
     async def _retrieve_related_resources(
         self,
@@ -623,7 +623,7 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         task_summary = await execute_async_tasks(tasks)
         # TODO: Using .results here may need to be changed to .joined_results()
         return resource_list_class(
-            list(itertools.chain.from_iterable(task_summary.result)), cognite_client=self._cognite_client
+            list(itertools.chain.from_iterable(task_summary.results)), cognite_client=self._cognite_client
         )
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -30,24 +30,16 @@ class SourcesAPI(APIClient):
         self._UPDATE_LIMIT = 10
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-    ) -> Iterator[Source]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Source]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-    ) -> Iterator[SourceList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[SourceList]: ...
 
     async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-    ) -> Iterator[Source] | Iterator[SourceList]:
+    ) -> AsyncIterator[Source | SourceList]:
         """Iterate over sources
 
         Fetches sources as they are iterated over, so you keep a limited number of sources in memory.
@@ -56,19 +48,20 @@ class SourcesAPI(APIClient):
             chunk_size (int | None): Number of sources to return in each chunk. Defaults to yielding one source a time.
             limit (int | None): Maximum number of sources to return. Defaults to returning all items.
 
-        Returns:
-            Iterator[Source] | Iterator[SourceList]: yields Source one by one if chunk_size is not specified, else SourceList objects.
+        Yields:
+            Source | SourceList: yields Source one by one if chunk_size is not specified, else SourceList objects.
         """
         self._warning.warn()
 
-        return await self._list_generator(
+        async for item in self._list_generator(  # type: ignore [call-overload]
             list_cls=SourceList,
-            resource_cls=Source,  # type: ignore[type-abstract]
+            resource_cls=Source,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             headers={"cdf-version": "beta"},
-        )
+        ):
+            yield item
 
     @overload
     async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source: ...

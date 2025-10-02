@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
-from cognite.client.data_classes.simulators.simulators import (
-    SimulatorIntegration,
-    SimulatorIntegrationList,
-)
+from cognite.client.data_classes.simulators.simulators import SimulatorIntegration, SimulatorIntegrationList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -30,22 +27,10 @@ class SimulatorIntegrationsAPI(APIClient):
         )
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        simulator_external_ids: str | SequenceNotStr[str] | None = None,
-        active: bool | None = None,
-        limit: int | None = None,
-    ) -> Iterator[SimulatorIntegrationList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[SimulatorIntegrationList]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        simulator_external_ids: str | SequenceNotStr[str] | None = None,
-        active: bool | None = None,
-        limit: int | None = None,
-    ) -> Iterator[SimulatorIntegration]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[SimulatorIntegration]: ...
 
     async def __call__(
         self,
@@ -53,7 +38,7 @@ class SimulatorIntegrationsAPI(APIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]:
+    ) -> AsyncIterator[SimulatorIntegration | SimulatorIntegrationList]:
         """Iterate over simulator integrations
 
         Fetches simulator integrations as they are iterated over, so you keep a limited number of simulator integrations in memory.
@@ -64,18 +49,19 @@ class SimulatorIntegrationsAPI(APIClient):
             active (bool | None): Filter on active status of the simulator integration.
             limit (int | None): The maximum number of simulator integrations to return, pass None to return all.
 
-        Returns:
-            Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]: yields SimulatorIntegration one by one if chunk_size is not specified, else SimulatorIntegrationList objects.
+        Yields:
+            SimulatorIntegration | SimulatorIntegrationList: yields SimulatorIntegration one by one if chunk_size is not specified, else SimulatorIntegrationList objects.
         """
         integrations_filter = SimulatorIntegrationFilter(simulator_external_ids=simulator_external_ids, active=active)
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=SimulatorIntegrationList,
             resource_cls=SimulatorIntegration,
             method="POST",
             filter=integrations_filter.dump(),
             chunk_size=chunk_size,
             limit=limit,
-        )
+        ):
+            yield item
 
     async def list(
         self,

@@ -33,6 +33,7 @@ from cognite.client._api.datapoint_tasks import (
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
+from cognite.client._constants import DEFAULT_DATAPOINTS_CHUNK_SIZE
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes import (
     Datapoints,
@@ -71,12 +72,10 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
-DEFAULT_DATAPOINTS_CHUNK_SIZE = 100_000
 
 PoolSubtaskType = tuple[float, int, BaseDpsFetchSubtask]
 
 _T = TypeVar("_T")
-_TResLst = TypeVar("_TResLst", DatapointsList, DatapointsArrayList)
 
 
 class DpsFetchStrategy(ABC):
@@ -133,7 +132,7 @@ class DpsFetchStrategy(ABC):
             )
 
     @abstractmethod
-    async def _fetch_all(self, use_numpy: bool) -> AsyncIterator[BaseTaskOrchestrator]:
+    def _fetch_all(self, use_numpy: bool) -> AsyncIterator[BaseTaskOrchestrator]:
         raise NotImplementedError
 
 
@@ -401,7 +400,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
     def _combine_subtasks_into_new_request(
         self,
     ) -> tuple[dict[str, list], list[BaseDpsFetchSubtask]]:
-        next_items = []
+        next_items: list[dict[str, Any]] = []
         next_subtasks: list[BaseDpsFetchSubtask] = []
         fetch_limits = (self.dps_client._DPS_LIMIT_AGG, self.dps_client._DPS_LIMIT_RAW)
 
@@ -526,7 +525,7 @@ class DatapointsAPI(APIClient):
         self.query_validator = _DpsQueryValidator(dps_limit_raw=self._DPS_LIMIT_RAW, dps_limit_agg=self._DPS_LIMIT_AGG)
 
     @overload
-    async def __call__(
+    def __call__(
         self,
         queries: DatapointsQuery,
         *,
@@ -536,7 +535,7 @@ class DatapointsAPI(APIClient):
     ) -> AsyncIterator[DatapointsArray]: ...
 
     @overload
-    async def __call__(
+    def __call__(
         self,
         queries: Sequence[DatapointsQuery],
         *,
@@ -546,7 +545,7 @@ class DatapointsAPI(APIClient):
     ) -> AsyncIterator[DatapointsArrayList]: ...
 
     @overload
-    async def __call__(
+    def __call__(
         self,
         queries: DatapointsQuery,
         *,
@@ -556,7 +555,7 @@ class DatapointsAPI(APIClient):
     ) -> AsyncIterator[Datapoints]: ...
 
     @overload
-    async def __call__(
+    def __call__(
         self,
         queries: Sequence[DatapointsQuery],
         *,
@@ -712,7 +711,7 @@ class DatapointsAPI(APIClient):
                 yield dps_lst[0] if is_single else dps_lst
             elif is_single:
                 for chunk in chunk_fn(dps_lst[0]):
-                    yield chunk
+                    yield chunk  # type: ignore [misc]
             else:
                 for all_chunks in itertools.zip_longest(*map(chunk_fn, dps_lst)):
                     # Filter out dps as ts get exhausted, then rebuild the Dps(Array)List container and yield chunk:

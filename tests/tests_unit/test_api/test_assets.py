@@ -1,6 +1,6 @@
 import re
 from collections.abc import Iterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -12,6 +12,9 @@ from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_url, jsgz_load
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 EXAMPLE_ASSET = {
     "externalId": "string",

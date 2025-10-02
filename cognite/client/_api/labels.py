@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -21,26 +21,10 @@ class LabelsAPI(APIClient):
     _RESOURCE_PATH = "/labels"
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        name: str | None = None,
-        external_id_prefix: str | None = None,
-        limit: int | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-    ) -> Iterator[LabelDefinition]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[LabelDefinition]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        name: str | None = None,
-        external_id_prefix: str | None = None,
-        limit: int | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-    ) -> Iterator[LabelDefinitionList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[LabelDefinitionList]: ...
 
     async def __call__(
         self,
@@ -50,7 +34,7 @@ class LabelsAPI(APIClient):
         limit: int | None = None,
         data_set_ids: int | Sequence[int] | None = None,
         data_set_external_ids: str | SequenceNotStr[str] | None = None,
-    ) -> Iterator[LabelDefinition] | Iterator[LabelDefinitionList]:
+    ) -> AsyncIterator[LabelDefinition | LabelDefinitionList]:
         """Iterate over Labels
 
         Args:
@@ -61,22 +45,24 @@ class LabelsAPI(APIClient):
             data_set_ids (int | Sequence[int] | None): return only labels in the data sets with this id / these ids.
             data_set_external_ids (str | SequenceNotStr[str] | None): return only labels in the data sets with this external id / these external ids.
 
-        Returns:
-            Iterator[LabelDefinition] | Iterator[LabelDefinitionList]: yields Labels one by one or in chunks.
+        Yields:
+            LabelDefinition | LabelDefinitionList: yields Labels one by one or in chunks.
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
-        filter = LabelDefinitionFilter(
+        flt = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)
-        return await self._list_generator(
+
+        async for item in self._list_generator(
             list_cls=LabelDefinitionList,
             resource_cls=LabelDefinition,
             method="POST",
             limit=limit,
-            filter=filter,
+            filter=flt,
             chunk_size=chunk_size,
-        )
+        ):
+            yield item
 
     @overload
     async def retrieve(self, external_id: str, ignore_unknown_ids: Literal[True]) -> LabelDefinition | None: ...

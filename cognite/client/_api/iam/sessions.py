@@ -72,13 +72,15 @@ class SessionsAPI(APIClient):
             items = {"oneshotTokenExchange": True}
         else:
             raise ValueError(f"Session type not understood: {session_type}")
-        return CreatedSession.load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
+
+        response = await self._post(self._RESOURCE_PATH, {"items": [items]})
+        return CreatedSession.load(response.json()["items"][0])
 
     @overload
-    def revoke(self, id: int) -> Session: ...
+    async def revoke(self, id: int) -> Session: ...
 
     @overload
-    def revoke(self, id: Sequence[int]) -> SessionList: ...
+    async def revoke(self, id: Sequence[int]) -> SessionList: ...
 
     async def revoke(self, id: int | Sequence[int]) -> Session | SessionList:
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_
