@@ -75,6 +75,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from cognite.client import CogniteClient
+    from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
 PropertyValue: TypeAlias = (
     str | int | float | bool | dict | list[str] | list[int] | list[float] | list[bool] | list[dict]
@@ -154,6 +155,7 @@ NodeOrEdgeData = SourceData
 
 class InstanceCore(DataModelingResource, ABC):
     """A node or edge
+
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
@@ -1173,10 +1175,12 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
         self,
         resources: Collection[Any],
         typing: TypeInformation | None = None,
+        debug: DebugInfo | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(resources, cognite_client)
         self.typing = typing
+        self.debug = debug
 
     def as_ids(self) -> list[NodeId]:
         """
@@ -1193,13 +1197,16 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
+        from cognite.client.data_classes.data_modeling.debug import DebugInfo
+
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
+        debug = next((DebugInfo._load(r["debug"]) for r in responses if "debug" in r), None)
         resources = [
             cls._RESOURCE._load(item, cognite_client=cognite_client)
             for response in responses
             for item in response.get("items", [])
         ]
-        return cls(resources, typing, cognite_client=cognite_client)
+        return cls(resources, typing, debug, cognite_client=cognite_client)
 
     def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
@@ -1207,6 +1214,8 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
         }
         if self.typing:
             output["typing"] = self.typing.dump(camel_case)
+        if self.debug:
+            output["debug"] = self.debug.dump(camel_case)
         return output
 
 
@@ -1216,9 +1225,10 @@ class NodeListWithCursor(NodeList[T_Node]):
         resources: Collection[Any],
         cursor: str | None,
         typing: TypeInformation | None = None,
+        debug: DebugInfo | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        super().__init__(resources, typing, cognite_client)
+        super().__init__(resources, typing, debug, cognite_client)
         self.cursor = cursor
 
     def extend(self, other: NodeListWithCursor) -> None:  # type: ignore[override]
@@ -1269,10 +1279,12 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
         self,
         resources: Collection[Any],
         typing: TypeInformation | None = None,
+        debug: DebugInfo | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(resources, cognite_client)
         self.typing = typing
+        self.debug = debug
 
     def as_ids(self) -> list[EdgeId]:
         """
@@ -1289,13 +1301,16 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
+        from cognite.client.data_classes.data_modeling.debug import DebugInfo
+
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
+        debug = next((DebugInfo._load(r["debug"]) for r in responses if "debug" in r), None)
         resources = [
             cls._RESOURCE._load(item, cognite_client=cognite_client)
             for response in responses
             for item in response.get("items", [])
         ]
-        return cls(resources, typing, cognite_client=cognite_client)
+        return cls(resources, typing, debug, cognite_client=cognite_client)
 
     def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
@@ -1303,6 +1318,8 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
         }
         if self.typing:
             output["typing"] = self.typing.dump(camel_case)
+        if self.debug:
+            output["debug"] = self.debug.dump(camel_case)
         return output
 
 
@@ -1312,9 +1329,10 @@ class EdgeListWithCursor(EdgeList):
         resources: Collection[Any],
         cursor: str | None,
         typing: TypeInformation | None = None,
+        debug: DebugInfo | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        super().__init__(resources, typing, cognite_client)
+        super().__init__(resources, typing, debug, cognite_client)
         self.cursor = cursor
 
     def extend(self, other: EdgeListWithCursor) -> None:  # type: ignore[override]
@@ -1334,6 +1352,7 @@ class EdgeListWithCursor(EdgeList):
 class InstancesApply:
     """
     This represents the write request of an instance query
+
     Args:
         nodes (NodeApplyList): A list of nodes.
         edges (EdgeApplyList): A list of edges.

@@ -598,10 +598,8 @@ class DocumentsAPI(APIClient):
                 ...     filter=filters.And(is_plain_text, last_week))
         """
         self._validate_filter(filter)
-        results = []
-        next_cursor = None
         body: dict[str, str | int | bool | dict | list] = {"search": {"query": query}}
-        if filter:
+        if filter is not None:
             body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
         if sort:
             body["sort"] = [DocumentSort.load(sort).dump()]
@@ -609,15 +607,10 @@ class DocumentsAPI(APIClient):
             body["limit"] = limit
         if highlight:
             body["highlight"] = highlight
-        while True:
-            if next_cursor:
-                body["cursor"] = next_cursor
 
-            response = self._post(f"{self._RESOURCE_PATH}/search", json=body)
-            json_content = response.json()
-            results.extend(json_content["items"])
-            if not (next_cursor := json_content.get("nextCursor")):
-                break
+        response = self._post(f"{self._RESOURCE_PATH}/search", json=body)
+        json_content = response.json()
+        results = json_content["items"]
 
         if highlight:
             return DocumentHighlightList._load(

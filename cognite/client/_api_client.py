@@ -8,6 +8,7 @@ import re
 import warnings
 from collections import UserList
 from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -77,43 +78,59 @@ VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "un
 
 class APIClient:
     _RESOURCE_PATH: str
-    # TODO: When Cognite Experimental SDK is deprecated, remove frozenset in favour of re.compile:
-    _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: ClassVar[frozenset[str]] = frozenset(
-        [
-            r"|".join(
-                rf"^/{path}(\?.*)?$"
-                for path in (
-                    "(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
-                    "files/downloadlink",
-                    "timeseries/(data(/(list|latest|delete))?|synthetic/query)",
-                    "sequences/data(/(list|delete))?",
-                    "raw/dbs/[^/]+/tables/[^/]+/rows(/delete)?",
-                    "context/entitymatching/(byids|list|jobs)",
-                    "sessions/revoke",
-                    "models/.*",
-                    "streams/[^/]/records",
-                    "streams/[^/]/records/(list|delete|aggregate|filter|sync)",
-                    ".*/graphql",
-                    "units/.*",
-                    "annotations/(list|byids|reverselookup)",
-                    r"functions/(list|byids|status|schedules/(list|byids)|\d+/calls/(list|byids))",
-                    r"3d/models/\d+/revisions/\d+/(mappings/list|nodes/(list|byids))",
-                    "documents/(aggregate|list|search|content|status|passages/search)",
-                    "profiles/(byids|search)",
-                    "geospatial/(compute|crs/byids|featuretypes/(byids|list))",
-                    "geospatial/featuretypes/[A-Za-z][A-Za-z0-9_]{0,31}/features/(aggregate|list|byids|search|search-streaming|[A-Za-z][A-Za-z0-9_]{0,255}/rasters/[A-Za-z][A-Za-z0-9_]{0,31})",
-                    "transformations/(filter|byids|jobs/byids|schedules/byids|query/run)",
-                    "simulators/list",
-                    "extpipes/(list|byids|runs/list)",
-                    "workflows/.*",
-                    "hostedextractors/.*",
-                    "postgresgateway/.*",
-                    "context/diagram/.*",
-                    "ai/tools/documents/(summarize|ask)",
-                    "ai/agents(/(byids|delete))?",
-                )
+    __NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS: ClassVar[list[str]] = [
+        "annotations",
+        "assets",
+        "context/entitymatching",
+        "datasets",
+        "documents",
+        "events",
+        "extpipes",
+        "extpipes/config",
+        "extpipes/runs",
+        "files",
+        "functions",
+        "functions/[^/]+/call",
+        "functions/schedules",
+        "geospatial",
+        "geospatial/crs",
+        "geospatial/featuretypes",
+        "geospatial/featuretypes/[^/]+/features",
+        "hostedextractors",
+        "labels",
+        "postgresgateway",
+        "profiles",
+        "raw/dbs$",
+        "raw/dbs/[^/]+/tables$",
+        "relationships",
+        "sequences",
+        "simulators",
+        "simulators/models",
+        "simulators/models/revisions",
+        "simulators/models/routines",
+        "simulators/models/routines/revisions",
+        "timeseries",
+        "transformations",
+        "transformations/schedules",
+        "3d/models",
+        "3d/models/[^/]+/revisions",
+        "3d/models/[^/]+/revisions/[^/]+/mappings",
+        "3d/models/[^/]+/revisions/[^/]+/nodes",
+    ]
+
+    _NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN: ClassVar[Pattern[str]] = re.compile(
+        r"|".join(
+            rf"^/{path}(\?.*)?$"
+            for path in (
+                f"({r'|'.join(__NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS)})(/delete)?$",
+                "ai/tools/documents/task",
+                "annotations/suggest",
+                "extpipes/config/revert",
+                "transformations/cancel",
+                "transformations/notifications",
+                "transformations/run",
             )
-        ]
+        )
     )
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
@@ -302,7 +319,7 @@ class APIClient:
         if not match:
             raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
         path = match.group(1)
-        return any(re.match(pattern, path) for pattern in cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS)
+        return not cls._NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN.match(path)
 
     def _retrieve(
         self,
@@ -548,7 +565,7 @@ class APIClient:
             body: dict[str, Any] = {}
             if filter:
                 body["filter"] = filter
-            if advanced_filter:
+            if advanced_filter is not None:
                 if isinstance(advanced_filter, Filter):
                     # TODO: Does our json.dumps now understand Filter?
                     body["advancedFilter"] = advanced_filter.dump(camel_case_property=True)
@@ -680,7 +697,7 @@ class APIClient:
                         "partition": partition,
                         **(other_params or {}),
                     }
-                    if advanced_filter:
+                    if advanced_filter is not None:
                         body["advancedFilter"] = (
                             advanced_filter.dump(camel_case_property=True)
                             if isinstance(advanced_filter, Filter)

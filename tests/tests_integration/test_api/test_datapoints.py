@@ -139,6 +139,11 @@ def all_numeric_test_time_series(all_test_time_series: TimeSeriesList) -> TimeSe
 
 
 @pytest.fixture
+def all_instance_id_time_series(all_test_time_series: TimeSeriesList) -> TimeSeriesList:
+    return TimeSeriesList([ts for ts in all_test_time_series if ts.instance_id is not None])
+
+
+@pytest.fixture
 def outside_points_ts(all_test_time_series: TimeSeriesList) -> TimeSeriesList:
     return all_test_time_series[:2]
 
@@ -859,6 +864,27 @@ class TestIterateDatapoints:
         for dps_lst in res:
             assert len(dps_lst) == 3
             assert list(map(len, dps_lst)) == [17, 9, 4]
+
+
+class TestRetrieveUsingChunkingMode:
+    def test_combining_instance_ids_with_other_identifier_types_could_report_missing(
+        self, cognite_client: CogniteClient, all_instance_id_time_series: TimeSeriesList
+    ) -> None:
+        instance_ids = [ts.instance_id for ts in all_instance_id_time_series if ts.instance_id is not None]
+        assert len(instance_ids) == 3
+        # Bug prior to 7.86.0, when mixing instance IDs with other identifier types in the same request,
+        # and some of these other were missing, the instance IDs would be reported as missing too.
+        with patch(DATAPOINTS_API.format("EagerDpsFetcher")):  # Ensure chunking mode by patching out eager
+            with pytest.raises(CogniteNotFoundError) as err:
+                cognite_client.time_series.data.retrieve(
+                    id=list(range(1, 11)),
+                    external_id=[f"nope-doesnt-exist-{i}" for i in range(10)],
+                    instance_id=instance_ids,
+                    ignore_unknown_ids=False,
+                )
+            assert len(err.value.not_found) == 20
+            for missing in err.value.not_found:
+                assert ("id" in missing or "external_id" in missing) and "instance_id" not in missing
 
 
 class TestRetrieveRawDatapointsAPI:
@@ -3032,11 +3058,11 @@ class TestRetrieveLatestDatapointsAPI:
         self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList
     ) -> None:
         ts = all_test_time_series[0]
-        with pytest.raises(ValueError, match="You must use either 'target_unit' or 'target_unit_system', not both."):
+        with pytest.raises(ValueError, match=r"You must use either 'target_unit' or 'target_unit_system', not both\."):
             cognite_client.time_series.data.retrieve_latest(
                 id=ts.id, before="1h-ago", target_unit="temperature:deg_f", target_unit_system="imperial"
             )
-        with pytest.raises(ValueError, match="You must use either 'target_unit' or 'target_unit_system', not both."):
+        with pytest.raises(ValueError, match=r"You must use either 'target_unit' or 'target_unit_system', not both\."):
             cognite_client.time_series.data.retrieve_latest(
                 id=LatestDatapointQuery(
                     id=ts.id, before="1h-ago", target_unit="temperature:deg_f", target_unit_system="imperial"
@@ -3359,13 +3385,13 @@ class TestInsertDatapointsAPI:
         cognite_client.time_series.data.delete_ranges([{"start": "2d-ago", "end": "now", "id": new_ts.id}])
 
     def test_invalid_status_code(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
-        with pytest.raises(CogniteAPIError, match="^Invalid status code"):
+        with pytest.raises(CogniteAPIError, match=r"^Invalid status code"):
             # code=1 is not allowed: When info type is 00, all info bits must be 0
             cognite_client.time_series.data.insert(datapoints=[(1, 3.1, 1)], id=new_ts.id)
 
     def test_invalid_status_symbol(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
         symbol = random.choice(("good", "uncertain", "bad"))  # should be PascalCased
-        with pytest.raises(CogniteAPIError, match="^Invalid status code symbol"):
+        with pytest.raises(CogniteAPIError, match=r"^Invalid status code symbol"):
             datapoints: list[dict] = [{"timestamp": 0, "value": 2.3, "status": {"symbol": symbol}}]
             cognite_client.time_series.data.insert(datapoints=datapoints, id=new_ts.id)
 

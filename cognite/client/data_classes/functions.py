@@ -17,12 +17,13 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._retry import Backoff
 from cognite.client.utils._time import ms_to_datetime
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
-RunTime: TypeAlias = Literal["py39", "py310", "py311"]
+RunTime: TypeAlias = Literal["py39", "py310", "py311", "py312"]
 FunctionStatus: TypeAlias = Literal["Queued", "Deploying", "Ready", "Failed"]
 HANDLER_FILE_NAME = "handler.py"
 
@@ -89,7 +90,7 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
         cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
         memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        runtime (str | None): Runtime of the function. Allowed values are ["py39","py310", "py311"]. The runtime "py311" resolves to the latest version of the Python 3.11 series.
+        runtime (str | None): Runtime of the function. Allowed values are ["py39","py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
     """
 
@@ -145,7 +146,7 @@ class Function(FunctionCore):
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
         cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
         memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        runtime (str | None): Runtime of the function. Allowed values are ["py39","py310", "py311"]. The runtime "py311" resolves to the latest version of the Python 3.11s series.
+        runtime (str | None): Runtime of the function. Allowed values are ["py39","py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
         runtime_version (str | None): The complete specification of the function runtime with major, minor and patch version numbers.
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
         error (dict | None): Dictionary with keys "message" and "trace", which is populated if deployment fails.
@@ -309,7 +310,7 @@ class FunctionWrite(FunctionCore):
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
         cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
         memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        runtime (RunTime | None): Runtime of the function. Allowed values are ["py39","py310", "py311"]. The runtime "py311" resolves to the latest version of the Python 3.11 series.
+        runtime (RunTime | None): Runtime of the function. Allowed values are ["py39","py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
         index_url (str | None): Specify a different python package index, allowing for packages published in private repositories. Supports basic HTTP authentication as described in pip basic authentication. See the documentation for additional information related to the security risks of using this option.
         extra_index_urls (list[str] | None): Extra package index URLs to use when building the function, allowing for packages published in private repositories. Supports basic HTTP authentication as described in pip basic authentication. See the documentation for additional information related to the security risks of using this option.
@@ -521,6 +522,10 @@ class FunctionScheduleWrite(FunctionScheduleCore):
         function_external_id (str | None): External ID of the function.
         description (str | None): Description of the function schedule.
         data (dict | None): Input data to the function (only present if provided on the schedule). This data is passed deserialized into the function through one of the arguments called data. WARNING: Secrets or other confidential information should not be passed via the data object. There is a dedicated secrets object in the request body to "Create functions" for this purpose.
+        nonce (str | None): Nonce retrieved from sessions API when creating a session. This will be used to bind the
+                session before executing the function. The corresponding access token will be passed to the
+                function and used to instantiate the client of the handle() function. You can create a session
+                via the Sessions API.
     """
 
     def __init__(
@@ -531,6 +536,7 @@ class FunctionScheduleWrite(FunctionScheduleCore):
         function_external_id: str | None = None,
         description: str | None = None,
         data: dict | None = None,
+        nonce: str | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -540,6 +546,7 @@ class FunctionScheduleWrite(FunctionScheduleCore):
             cron_expression=cron_expression,
         )
         self.data = data
+        self.nonce = nonce
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> FunctionScheduleWrite:
@@ -550,6 +557,7 @@ class FunctionScheduleWrite(FunctionScheduleCore):
             description=resource.get("description"),
             cron_expression=resource["cronExpression"],
             data=resource.get("data"),
+            nonce=resource.get("nonce"),
         )
 
     def as_write(self) -> FunctionScheduleWrite:
@@ -678,9 +686,10 @@ class FunctionCall(CogniteResource):
         return call_id, function_id
 
     def wait(self) -> None:
+        backoff = Backoff(max_wait=10, base=2, multiplier=0.3)
         while self.status == "Running":
             self.update()
-            time.sleep(1.0)
+            time.sleep(next(backoff))
 
 
 class FunctionCallList(CogniteResourceList[FunctionCall], InternalIdTransformerMixin):
@@ -736,7 +745,7 @@ class FunctionsLimits(CogniteResponse):
         timeout_minutes (int): Timeout of each function call.
         cpu_cores (dict[str, float]): The number of CPU cores per function execution (i.e. function call).
         memory_gb (dict[str, float]): The amount of available memory in GB per function execution (i.e. function call).
-        runtimes (list[str]): Available runtimes. For example, "py311" translates to the latest version of the Python 3.11 series.
+        runtimes (list[str]): Available runtimes. For example, "py312" translates to the latest version of the Python 3.12 series.
         response_size_mb (int | None): Maximum response size of function calls.
     """
 

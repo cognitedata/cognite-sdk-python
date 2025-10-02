@@ -7,6 +7,7 @@ import re
 import sys
 import textwrap
 import time
+import warnings
 from collections.abc import Callable, Iterator, Sequence
 from inspect import getdoc, getsource, signature
 from multiprocessing import Process, Queue
@@ -245,7 +246,7 @@ class FunctionsAPI(APIClient):
             env_vars (dict[str, str] | None): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
             cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
             memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            runtime (RunTime | None): The function runtime. Valid values are ["py39", "py310", "py311", `None`], and `None` translates to the API default which will change over time. The runtime "py311" resolves to the latest version of the Python 3.11 series.
+            runtime (RunTime | None): The function runtime. Valid values are ["py39", "py310", "py311", "py312", `None`], and `None` translates to the API default which will change over time. The runtime "py312" resolves to the latest version of the Python 3.12 series.
             metadata (dict[str, str] | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
@@ -1248,13 +1249,21 @@ class FunctionSchedulesAPI(APIClient):
             name (str | FunctionScheduleWrite): Name of the schedule or FunctionSchedule object. If a function schedule object is passed, the other arguments are ignored except for the client_credentials argument.
             cron_expression (str | None): Cron expression.
             function_id (int | None): Id of the function to attach the schedule to.
-            function_external_id (str | None): External id of the function to attach the schedule to. Will be converted to (internal) ID before creating the schedule.
-            client_credentials (dict[str, str] | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
+            function_external_id (str | None): (DEPRECATED) External id of the function to attach the schedule to.
+                Note: Will be automatically converted to (internal) ID, as schedules must be bound to an ID.
+            client_credentials (dict[str, str] | ClientCredentials | None): Instance of ClientCredentials
+                or a dictionary containing client credentials: 'client_id' and 'client_secret'.
             description (str | None): Description of the schedule.
             data (dict[str, object] | None): Data to be passed to the scheduled run.
 
         Returns:
             FunctionSchedule: Created function schedule.
+
+        Note:
+            There are several ways to authenticate the function schedule — the order of priority is as follows:
+                1. ``nonce`` (if provided in the ``FunctionScheduleWrite`` object)
+                2. ``client_credentials`` (if provided)
+                3. The credentials of *this* CogniteClient.
 
         Warning:
             Do not pass secrets or other confidential information via the ``data`` argument. There is a dedicated
@@ -1293,6 +1302,20 @@ class FunctionSchedulesAPI(APIClient):
                 ...     description="A schedule just used for some temporary testing.",
                 ... )
 
+            Create a function schedule with an oneshot session (typically used for testing purposes):
+
+                >>> from cognite.client.data_classes.functions import FunctionScheduleWrite
+                >>> session = client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
+                >>> schedule = client.functions.schedules.create(
+                ...     FunctionScheduleWrite(
+                ...         name="My schedule",
+                ...         function_id=456,
+                ...         cron_expression="*/5 * * * *",
+                ...         description="A schedule just used for some temporary testing.",
+                ...         nonce=session.nonce
+                ...     ),
+                ... )
+
         """
         if isinstance(name, str):
             if cron_expression is None:
@@ -1309,17 +1332,24 @@ class FunctionSchedulesAPI(APIClient):
             # We serialize the object as we mutate `item` using the result from _get_function_internal_id.
             item = FunctionScheduleWrite._load(name.dump())
         identifier = _get_function_identifier(item.function_id, item.function_external_id)
+        if item.function_external_id is not None:
+            warnings.warn(
+                "'function_external_id' is not supported in the API. Looking up 'function_id' and using that instead.",
+                UserWarning,
+                stacklevel=2,
+            )
         if item.function_id is None:
             item.function_id = _get_function_internal_id(self._cognite_client, identifier)
-            # API requires 'Exactly one of 'function_id' and 'function_external_id' must be set '
+            # API requires 'function_id' set and not 'function_external_id'.
             item.function_external_id = None
 
         dumped = item.dump()
-        dumped["nonce"] = create_session_and_return_nonce(
-            self._cognite_client,
-            api_name="Functions API",
-            client_credentials=client_credentials,
-        )
+        if "nonce" not in dumped:
+            dumped["nonce"] = create_session_and_return_nonce(
+                self._cognite_client,
+                api_name="Functions API",
+                client_credentials=client_credentials,
+            )
         return self._create_multiple(
             items=dumped,
             resource_cls=FunctionSchedule,
@@ -1347,6 +1377,7 @@ class FunctionSchedulesAPI(APIClient):
 
     def get_input_data(self, id: int) -> dict[str, object] | None:
         """`Retrieve the input data to the associated function. <https://developer.cognite.com/api#tag/Function-schedules/operation/getFunctionScheduleInputData>`_
+
         Args:
             id (int): Id of the schedule
 

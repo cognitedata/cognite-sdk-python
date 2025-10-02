@@ -3,10 +3,13 @@ import random
 import re
 import time
 import uuid
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from tenacity import Retrying, retry_if_exception, stop_after_attempt, wait_exponential_jitter
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import Asset
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
@@ -19,7 +22,7 @@ from cognite.client.data_classes.geospatial import (
     OrderSpec,
     Patches,
 )
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._importing import local_import
 from tests.utils import set_request_limit
 
@@ -28,15 +31,23 @@ FIXED_SRID = 121111 + random.randint(0, 1_000)
 GEOSPATIAL_TEST_RESOURCES = Path(__file__).parent / "geospatial_test_resources"
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def test_crs(cognite_client):
     wkt = """GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,
     AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],
     PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,
     AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]"""
     proj_string = """+proj=longlat +a=6377276.345 +b=6356075.41314024 +no_defs"""
-    crs = cognite_client.geospatial.create_coordinate_reference_systems(
-        crs=CoordinateReferenceSystem(srid=FIXED_SRID, wkt=wkt, proj_string=proj_string)
+
+    # The request often fails with a 409 since we run this test suite with a high degree of parallelism.
+    crs = Retrying(
+        retry=retry_if_exception(lambda exc: isinstance(exc, CogniteAPIError) and exc.code == 409),
+        wait=wait_exponential_jitter(),
+        stop=stop_after_attempt(3),
+        reraise=True,
+    )(
+        cognite_client.geospatial.create_coordinate_reference_systems,
+        crs=CoordinateReferenceSystem(srid=FIXED_SRID, wkt=wkt, proj_string=proj_string),
     )
     yield crs[0]
     cognite_client.geospatial.delete_coordinate_reference_systems(srids=[FIXED_SRID])
@@ -47,8 +58,18 @@ def allow_crs_transformation(request):
     yield request.param
 
 
-@pytest.fixture()
-def test_feature_type(cognite_client):
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_old_feature_types(cognite_client):
+    res = cognite_client.geospatial.list_feature_types()
+    old_feature_types = [ft.external_id for ft in res if ((time.time() * 1000 - ft.created_time) / 1000 / 60 / 60) > 1]
+    for i in range(0, len(old_feature_types), 10):
+        try:
+            cognite_client.geospatial.delete_feature_types(old_feature_types[i : i + 10], recursive=True)
+        except CogniteNotFoundError:
+            ...
+
+
+def _new_feature_type(cognite_client: CogniteClient) -> Iterator[FeatureType]:
     external_id = f"FT_{uuid.uuid4().hex[:10]}"
     feature_type = cognite_client.geospatial.create_feature_types(
         FeatureType(
@@ -67,7 +88,17 @@ def test_feature_type(cognite_client):
     cognite_client.geospatial.delete_feature_types(external_id=external_id, recursive=True)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
+def test_feature_type(cognite_client: CogniteClient) -> Iterator[FeatureType]:
+    yield from _new_feature_type(cognite_client)
+
+
+@pytest.fixture
+def test_feature_type_test_scoped(cognite_client):
+    yield from _new_feature_type(cognite_client)
+
+
+@pytest.fixture(scope="session")
 def large_feature_type(cognite_client):
     external_id = f"FT_{uuid.uuid4().hex[:10]}"
     feature_type_spec = FeatureType(
@@ -77,7 +108,7 @@ def large_feature_type(cognite_client):
     cognite_client.geospatial.delete_feature_types(external_id=external_id)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def another_test_feature_type(cognite_client):
     external_id = f"FT_{uuid.uuid4().hex[:10]}"
     feature_type = cognite_client.geospatial.create_feature_types(
@@ -87,8 +118,7 @@ def another_test_feature_type(cognite_client):
     cognite_client.geospatial.delete_feature_types(external_id=external_id)
 
 
-@pytest.fixture
-def test_feature(cognite_client, test_feature_type):
+def _new_feature(cognite_client: CogniteClient, test_feature_type: FeatureType) -> Iterator[Feature]:
     external_id = f"F_{uuid.uuid4().hex[:10]}"
     feature = cognite_client.geospatial.create_features(
         test_feature_type.external_id,
@@ -104,6 +134,18 @@ def test_feature(cognite_client, test_feature_type):
     cognite_client.geospatial.delete_features(test_feature_type.external_id, external_id=external_id)
 
 
+@pytest.fixture(scope="session")
+def test_feature(cognite_client: CogniteClient, test_feature_type: FeatureType) -> Iterator[Feature]:
+    yield from _new_feature(cognite_client, test_feature_type)
+
+
+@pytest.fixture
+def test_feature_test_scoped(
+    cognite_client: CogniteClient, test_feature_type_test_scoped: FeatureType
+) -> Iterator[Feature]:
+    yield from _new_feature(cognite_client, test_feature_type_test_scoped)
+
+
 @pytest.fixture
 def test_feature_with_raster(cognite_client, test_feature_type, test_feature):
     cognite_client.geospatial.put_raster(
@@ -117,8 +159,7 @@ def test_feature_with_raster(cognite_client, test_feature_type, test_feature):
     yield test_feature
 
 
-@pytest.fixture
-def test_features(cognite_client, test_feature_type, new_asset):
+def _new_feature_list(cognite_client, test_feature_type):
     external_ids = [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)]
     features = [
         Feature(
@@ -157,6 +198,18 @@ def test_features(cognite_client, test_feature_type, new_asset):
     cognite_client.geospatial.delete_features(
         feature_type_external_id=test_feature_type.external_id, external_id=external_ids
     )
+
+
+@pytest.fixture(scope="session")
+def test_feature_list(cognite_client: CogniteClient, test_feature_type: FeatureType) -> Iterator[FeatureList]:
+    yield from _new_feature_list(cognite_client, test_feature_type)
+
+
+@pytest.fixture
+def test_feature_list_test_scoped(
+    cognite_client: CogniteClient, test_feature_type_test_scoped: FeatureType
+) -> Iterator[FeatureList]:
+    yield from _new_feature_list(cognite_client, test_feature_type_test_scoped)
 
 
 @pytest.fixture
@@ -210,7 +263,7 @@ def clean_old_custom_crs(cognite_client):
         pass
 
 
-@pytest.fixture(autouse=True, scope="module")
+@pytest.fixture(autouse=True, scope="session")
 def new_asset(cognite_client):
     asset = cognite_client.assets.create(Asset(name="any", description="haha", metadata={"a": "b"}))
     yield asset
@@ -218,10 +271,10 @@ def new_asset(cognite_client):
 
 
 class TestGeospatialAPI:
-    def test_create_features(self, cognite_client, test_feature_type, allow_crs_transformation, new_asset):
+    def test_create_features(self, cognite_client, test_feature_type_test_scoped, allow_crs_transformation, new_asset):
         external_id = f"F_{uuid.uuid4().hex[:10]}"
         cognite_client.geospatial.create_features(
-            test_feature_type.external_id,
+            test_feature_type_test_scoped.external_id,
             Feature(
                 external_id=external_id,
                 position={"wkt": "POINT(50 50)"},
@@ -231,7 +284,7 @@ class TestGeospatialAPI:
             ),
             allow_crs_transformation=allow_crs_transformation,
         )
-        cognite_client.geospatial.delete_features(test_feature_type.external_id, external_id=external_id)
+        cognite_client.geospatial.delete_features(test_feature_type_test_scoped.external_id, external_id=external_id)
 
     def test_retrieve_single_feature_type_by_external_id(self, cognite_client, test_feature_type):
         assert (
@@ -250,12 +303,17 @@ class TestGeospatialAPI:
         assert res.external_id == test_feature.external_id
 
     def test_update_single_feature(
-        self, cognite_client, allow_crs_transformation, test_feature_type, test_feature, new_asset
+        self,
+        cognite_client,
+        allow_crs_transformation,
+        test_feature_type_test_scoped,
+        test_feature_test_scoped,
+        new_asset,
     ):
         res = cognite_client.geospatial.update_features(
-            feature_type_external_id=test_feature_type.external_id,
+            feature_type_external_id=test_feature_type_test_scoped.external_id,
             feature=Feature(
-                external_id=test_feature.external_id,
+                external_id=test_feature_test_scoped.external_id,
                 temperature=6.237,
                 pressure=12.21,
                 volume=34.43,
@@ -263,22 +321,24 @@ class TestGeospatialAPI:
             ),
             allow_crs_transformation=allow_crs_transformation,
         )
-        assert res.external_id == test_feature.external_id
+        assert res.external_id == test_feature_test_scoped.external_id
         assert res.temperature == 6.237
         # assert res.asset_ids == [new_asset.id]
 
     @pytest.mark.skip("flaky")
-    def test_update_multiple_features(self, cognite_client, allow_crs_transformation, test_feature_type, test_features):
+    def test_update_multiple_features(
+        self, cognite_client, allow_crs_transformation, test_feature_type_test_scoped, test_feature_list_test_scoped
+    ):
         results = cognite_client.geospatial.update_features(
-            feature_type_external_id=test_feature_type.external_id,
+            feature_type_external_id=test_feature_type_test_scoped.external_id,
             feature=[
                 Feature(external_id=test_feat.external_id, temperature=6.237, pressure=12.21, volume=34.43)
-                for test_feat in test_features
+                for test_feat in test_feature_list_test_scoped
             ],
             allow_crs_transformation=allow_crs_transformation,
             chunk_size=2,
         )
-        for res, test_feat in zip(results, test_features):
+        for res, test_feat in zip(results, test_feature_list_test_scoped):
             assert res.external_id == test_feat.external_id
             assert res.temperature == 6.237
 
@@ -443,10 +503,10 @@ class TestGeospatialAPI:
         assert res[0].temperature == 12.4
         assert res[1].temperature == -10.8
 
-    def test_patch_feature_types(self, cognite_client, test_feature_type):
+    def test_patch_feature_types(self, cognite_client, test_feature_type_test_scoped):
         res = cognite_client.geospatial.patch_feature_types(
             patch=FeatureTypePatch(
-                external_id=test_feature_type.external_id,
+                external_id=test_feature_type_test_scoped.external_id,
                 property_patches=Patches(add={"altitude": {"type": "DOUBLE", "optional": True}}, remove=["volume"]),
                 search_spec_patches=Patches(
                     add={
@@ -458,8 +518,8 @@ class TestGeospatialAPI:
             )
         )
         assert len(res) == 1
-        assert len(res[0].properties) == len(test_feature_type.properties)
-        assert len(res[0].search_spec) == len(test_feature_type.search_spec) + 1
+        assert len(res[0].properties) == len(test_feature_type_test_scoped.properties)
+        assert len(res[0].search_spec) == len(test_feature_type_test_scoped.search_spec) + 1
 
     def test_stream_features(self, cognite_client, large_feature_type, many_features):
         features = cognite_client.geospatial.stream_features(
@@ -496,7 +556,7 @@ class TestGeospatialAPI:
         assert len(res) == 1
         assert res[0].external_id == test_feature.external_id
 
-    def test_list(self, cognite_client, test_feature_type, test_features):
+    def test_list(self, cognite_client, test_feature_type, test_feature_list):
         with set_request_limit(cognite_client.geospatial, 2):
             res = cognite_client.geospatial.list_features(
                 feature_type_external_id=test_feature_type.external_id, properties={"externalId": {}}, limit=4
@@ -506,8 +566,8 @@ class TestGeospatialAPI:
         df = res.to_pandas()
         assert list(df) == ["external_id"]
 
-    def test_to_pandas(self, test_feature_type, test_features):
-        df = test_features.to_pandas(camel_case=True)
+    def test_to_pandas(self, test_feature_type, test_feature_list):
+        df = test_feature_list.to_pandas(camel_case=True)
         assert list(df) == [
             "externalId",
             "position",
@@ -518,8 +578,8 @@ class TestGeospatialAPI:
             "lastUpdatedTime",
         ]
 
-    def test_to_geopandas(self, test_feature_type, test_features):
-        gdf = test_features.to_geopandas(geometry="position", camel_case=True)
+    def test_to_geopandas(self, test_feature_type, test_feature_list):
+        gdf = test_feature_list.to_geopandas(geometry="position", camel_case=True)
         assert list(gdf) == [
             "externalId",
             "position",
@@ -590,7 +650,7 @@ class TestGeospatialAPI:
         res = cognite_client.geospatial.create_features(test_feature_type.external_id, fl)
         assert len(res) == 4
 
-    def test_aggregate__temperature_property_min_max(self, cognite_client, test_feature_type, test_features):
+    def test_aggregate__temperature_property_min_max(self, cognite_client, test_feature_type, test_feature_list):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
             output={
@@ -601,19 +661,19 @@ class TestGeospatialAPI:
         assert res[0].min == 3.4
         assert res[0].max == 23.4
 
-    def test_aggregate__range_gt_lt(self, cognite_client, test_feature_type, test_features):
+    def test_aggregate__range_gt_lt(self, cognite_client, test_feature_type_test_scoped, test_feature_list_test_scoped):
         res = cognite_client.geospatial.aggregate_features(
-            feature_type_external_id=test_feature_type.external_id,
+            feature_type_external_id=test_feature_type_test_scoped.external_id,
             filter={"range": {"property": "temperature", "gt": 12.0, "lt": 13.0}},
             output={"count": {"count": {"property": "temperature"}}},
         )
         assert res[0].count == 1
 
     def test_aggregate__temperature_property_min_max_groupby_xid(
-        self, cognite_client, test_feature_type, test_features
+        self, cognite_client, test_feature_type_test_scoped, test_feature_list_test_scoped
     ):
         res = cognite_client.geospatial.aggregate_features(
-            feature_type_external_id=test_feature_type.external_id,
+            feature_type_external_id=test_feature_type_test_scoped.external_id,
             output={
                 "min": {"min": {"property": "temperature"}},
                 "max": {"max": {"property": "temperature"}},
@@ -622,7 +682,7 @@ class TestGeospatialAPI:
         )
         assert len(res) == 4
 
-    def test_aggregate_with_order_by(self, cognite_client, test_feature_type, test_features):
+    def test_aggregate_with_order_by(self, cognite_client, test_feature_type, test_feature_list):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
             output={"count": {"count": {"property": "temperature"}}},
@@ -639,9 +699,9 @@ class TestGeospatialAPI:
         )
         assert external_ids == [item.external_id for item in res_asc]
 
-    def test_aggregate_output(self, cognite_client, test_feature_type, test_features):
+    def test_aggregate_output(self, cognite_client, test_feature_type_test_scoped, test_feature_list_test_scoped):
         res = cognite_client.geospatial.aggregate_features(
-            feature_type_external_id=test_feature_type.external_id,
+            feature_type_external_id=test_feature_type_test_scoped.external_id,
             filter={"range": {"property": "temperature", "gt": 12.0, "lt": 13.0}},
             output={"count": {"count": {"property": "temperature"}}},
         )

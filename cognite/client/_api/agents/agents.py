@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
-from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
+from cognite.client.data_classes.agents.chat import AgentChatResponse, Message, MessageList
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -22,7 +23,8 @@ class AgentsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._api_subversion = "alpha"
+        self._warnings = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Agents")
+        self._api_subversion = "beta"
         self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 1
 
@@ -33,7 +35,7 @@ class AgentsAPI(APIClient):
     def upsert(self, agents: Sequence[AgentUpsert]) -> AgentList: ...
 
     def upsert(self, agents: AgentUpsert | Sequence[AgentUpsert]) -> Agent | AgentList:
-        """`Create or update (upsert) one or more agents. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/main_api_v1_projects__projectName__ai_agents_post>`_
+        """`Create or update (upsert) one or more agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/main_ai_agents_post/>`_
 
         Args:
             agents (AgentUpsert | Sequence[AgentUpsert]): Agent or list of agents to create or update.
@@ -168,7 +170,7 @@ class AgentsAPI(APIClient):
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Agent | AgentList | None:
-        """`Retrieve one or more agents by external ID. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/get_agents_by_ids_api_v1_projects__projectName__ai_agents_byids_post>`_
+        """`Retrieve one or more agents by external ID. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/get_agents_by_ids_ai_agents_byids_post/>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external id of the agent(s) to retrieve.
@@ -198,7 +200,7 @@ class AgentsAPI(APIClient):
         )
 
     def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
-        """`Delete one or more agents. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/agent_delete_api_v1_projects__projectName__ai_agents_delete_post>`_
+        """`Delete one or more agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_delete_ai_agents_delete_post/>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): External ID of the agent or a list of external ids.
@@ -220,7 +222,7 @@ class AgentsAPI(APIClient):
         )
 
     def list(self) -> AgentList:  # The API does not yet support limit or pagination
-        """`List agents. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/agent_list_api_v1_projects__projectName__ai_agents_get>`_
+        """`List agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_list_ai_agents_get/>`_
 
         Returns:
             AgentList: The list of agents.
@@ -236,3 +238,77 @@ class AgentsAPI(APIClient):
         """
         res = self._get(url_path=self._RESOURCE_PATH)
         return AgentList._load(res.json()["items"], cognite_client=self._cognite_client)
+
+    def chat(
+        self,
+        agent_external_id: str,
+        messages: Message | Sequence[Message],
+        cursor: str | None = None,
+    ) -> AgentChatResponse:
+        """`Chat with an agent. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_session_ai_agents_chat_post/>`_
+
+        Given a user query, the Atlas AI agent responds by reasoning and using the tools associated with it.
+        Users can ensure conversation continuity by including the cursor from the previous response in subsequent requests.
+
+        Args:
+            agent_external_id (str): External ID that uniquely identifies the agent.
+            messages (Message | Sequence[Message]): A list of one or many input messages to the agent.
+            cursor (str | None): The cursor to use for continuation of a conversation. Use this to
+                create multi-turn conversations, as the cursor will keep track of the conversation state.
+
+        Returns:
+            AgentChatResponse: The response from the agent.
+
+        Examples:
+
+            Start a simple chat with an agent:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.agents import Message
+                >>> client = CogniteClient()
+                >>> response = client.agents.chat(
+                ...     agent_external_id="my_agent",
+                ...     messages=Message("What can you help me with?")
+                ... )
+                >>> print(response.text)
+
+            Continue a conversation using the cursor:
+
+                >>> follow_up = client.agents.chat(
+                ...     agent_external_id="my_agent",
+                ...     messages=Message("Tell me more about that"),
+                ...     cursor=response.cursor
+                ... )
+
+            Send multiple messages at once:
+
+                >>> response = client.agents.chat(
+                ...     agent_external_id="my_agent",
+                ...     messages=[
+                ...         Message("Help me find the 1st stage compressor."),
+                ...         Message("Once you have found it, find related time series.")
+                ...     ]
+                ... )
+        """
+        self._warnings.warn()
+
+        # Convert single message to list
+        if isinstance(messages, Message):
+            messages = [messages]
+
+        # Build request body
+        body = {
+            "agentExternalId": agent_external_id,
+            "messages": MessageList(messages).dump(camel_case=True),
+        }
+
+        if cursor is not None:
+            body["cursor"] = cursor
+
+        # Make the API call
+        response = self._post(
+            url_path=self._RESOURCE_PATH + "/chat",
+            json=body,
+        )
+
+        return AgentChatResponse._load(response.json(), cognite_client=self._cognite_client)

@@ -128,9 +128,11 @@ class TestDatetimeToMs:
     def test_naive_datetime_to_ms_windows(self) -> None:
         with pytest.raises(
             ValueError,
-            match="Failed to convert datetime to epoch. "
-            "This likely because you are using a naive datetime. "
-            "Try using a timezone aware datetime instead.",
+            match=re.escape(
+                "Failed to convert datetime to epoch. "
+                "This likely because you are using a naive datetime. "
+                "Try using a timezone aware datetime instead."
+            ),
         ):
             datetime_to_ms(datetime(1925, 8, 3))
 
@@ -239,7 +241,7 @@ class TestTimestampToMs:
 
     @pytest.mark.parametrize("t", [MIN_TIMESTAMP_MS - 1, datetime(1899, 12, 31, tzinfo=timezone.utc), "100000000w-ago"])
     def test_negative(self, t: int | float | str | datetime) -> None:
-        with pytest.raises(ValueError, match="must represent a time after 1.1.1900"):
+        with pytest.raises(ValueError, match=re.escape("must represent a time after 1.1.1900")):
             timestamp_to_ms(t)
 
 
@@ -329,6 +331,10 @@ class TestObjectTimeConversion:
             ([{"source_modified_time": 0}], [{"source_modified_time": "1970-01-01 00:00:00.000+00:00"}]),
             ([{"not_a_time": 0}], [{"not_a_time": 0}]),
             ([{"created_time": int(1e15)}], [{"created_time": int(1e15)}]),
+            ({"run_time": 1609459200000}, {"run_time": "2021-01-01 00:00:00.000+00:00"}),
+            ({"simulation_time": 1609459200000}, {"simulation_time": "2021-01-01 00:00:00.000+00:00"}),
+            ({"runTime": 1609459200000}, {"runTime": "2021-01-01 00:00:00.000+00:00"}),
+            ({"simulationTime": 1609459200000}, {"simulationTime": "2021-01-01 00:00:00.000+00:00"}),
         ],
     )
     def test_convert_and_isoformat_time_attrs(self, item: dict[str, int], expected_output: dict[str, str]) -> None:
@@ -781,7 +787,7 @@ class TestDateTimeAligner:
         assert expected == MonthAligner.ceil(dt)
 
     def test_month_aligner_ceil__invalid_date(self) -> None:
-        with pytest.raises(ValueError, match="^day is out of range for month$"):
+        with pytest.raises(ValueError, match=r"^day is out of range for month$"):
             MonthAligner.add_units(datetime(2023, 7, 31), 2)  # sept has 30 days
 
     @pytest.mark.parametrize(
@@ -800,7 +806,7 @@ class TestDateTimeAligner:
         assert expected == MonthAligner.add_units(dt, n_units)
 
     def test_month_aligner_add_unites__invalid_date(self) -> None:
-        with pytest.raises(ValueError, match="^day is out of range for month$"):
+        with pytest.raises(ValueError, match=r"^day is out of range for month$"):
             MonthAligner.add_units(datetime(2023, 1, 29), 1)  # 2023 = non-leap year
 
 
