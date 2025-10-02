@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -14,6 +15,9 @@ from cognite.client.data_classes.agents.agent_tools import (
     QueryKnowledgeGraphAgentToolUpsert,
 )
 from tests.utils import get_url
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @pytest.fixture

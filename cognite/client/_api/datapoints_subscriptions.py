@@ -31,32 +31,31 @@ class DatapointsSubscriptionAPI(APIClient):
         self._DELETE_LIMIT = 1
 
     @overload
-    async def __call__(
-        self, chunk_size: None = None, limit: int | None = None
-    ) -> AsyncIterator[DatapointSubscription]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[DatapointSubscription]: ...
 
     @overload
-    async def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[DatapointSubscriptionList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[DatapointSubscriptionList]: ...
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> AsyncIterator[DatapointSubscription] | AsyncIterator[DatapointSubscriptionList]:
+    ) -> AsyncIterator[DatapointSubscription | DatapointSubscriptionList]:
         """Iterate over all datapoint subscriptions.
 
         Args:
             chunk_size (int | None): The number of datapoint subscriptions to fetch per request. Defaults to yielding one datapoint subscription at a time.
             limit (int | None): Maximum number of items to return. Defaults to return all datapoint subscriptions.
 
-        Returns:
-            AsyncIterator[DatapointSubscription] | AsyncIterator[DatapointSubscriptionList]: Yields datapoint subscriptions one by one if chunk is not specified, otherwise returns a list of datapoint subscriptions.
+        Yields:
+            DatapointSubscription | DatapointSubscriptionList: Yields datapoint subscriptions one by one if chunk is not specified, otherwise returns a list of datapoint subscriptions.
         """
-        return await self._list_generator(
+        async for item in self._list_generator(
             method="GET",
             limit=limit,
             chunk_size=chunk_size,
             list_cls=DatapointSubscriptionList,
             resource_cls=DatapointSubscription,
-        )
+        ):
+            yield item
 
     async def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:
         """`Create a subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/postSubscriptions>`_

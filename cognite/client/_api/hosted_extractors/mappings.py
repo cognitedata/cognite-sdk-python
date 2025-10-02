@@ -1,16 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.hosted_extractors import (
-    Mapping,
-    MappingList,
-    MappingUpdate,
-    MappingWrite,
-)
+from cognite.client.data_classes.hosted_extractors import Mapping, MappingList, MappingUpdate, MappingWrite
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -34,24 +29,16 @@ class MappingsAPI(APIClient):
         self._UPDATE_LIMIT = 10
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-    ) -> Iterator[Mapping]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Mapping]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-    ) -> Iterator[Mapping]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[Mapping]: ...
 
     async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-    ) -> Iterator[Mapping] | Iterator[MappingList]:
+    ) -> AsyncIterator[Mapping | MappingList]:
         """Iterate over mappings
 
         Fetches Mapping as they are iterated over, so you keep a limited number of mappings in memory.
@@ -60,19 +47,20 @@ class MappingsAPI(APIClient):
             chunk_size (int | None): Number of Mappings to return in each chunk. Defaults to yielding one mapping at a time.
             limit (int | None): Maximum number of mappings to return. Defaults to returning all items.
 
-        Returns:
-            Iterator[Mapping] | Iterator[MappingList]: yields Mapping one by one if chunk_size is not specified, else MappingList objects.
+        Yields:
+            Mapping | MappingList: yields Mapping one by one if chunk_size is not specified, else MappingList objects.
         """
         self._warning.warn()
 
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=MappingList,
             resource_cls=Mapping,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             headers={"cdf-version": "beta"},
-        )
+        ):
+            yield item
 
     @overload
     async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Mapping: ...

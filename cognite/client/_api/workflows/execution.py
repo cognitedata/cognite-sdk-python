@@ -58,7 +58,7 @@ class WorkflowExecutionAPI(APIClient):
             raise
         return WorkflowExecutionDetailed._load(response.json())
 
-    def trigger(
+    async def trigger(
         self,
         workflow_external_id: str,
         version: str,
@@ -76,7 +76,7 @@ class WorkflowExecutionAPI(APIClient):
             "This methods has been deprecated, use '.run' instead. It will completely removed in the next major release.",
             UserWarning,
         )
-        return self.run(workflow_external_id, version, input, metadata, client_credentials)
+        return await self.run(workflow_external_id, version, input, metadata, client_credentials)
 
     async def run(
         self,
@@ -134,7 +134,7 @@ class WorkflowExecutionAPI(APIClient):
                 >>> credentials = ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"])
                 >>> res = client.workflows.executions.run("foo", "1", client_credentials=credentials)
         """
-        nonce = nonce or create_session_and_return_nonce(
+        nonce = nonce or await create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
         body = {"authentication": {"nonce": nonce}}
@@ -265,7 +265,7 @@ class WorkflowExecutionAPI(APIClient):
                 >>> client.workflows.executions.cancel(id=res.id, reason="test cancellation")
                 >>> client.workflows.executions.retry(res.id)
         """
-        nonce = create_session_and_return_nonce(
+        nonce = await create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
         response = await self._post(

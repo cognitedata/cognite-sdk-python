@@ -170,6 +170,49 @@ class APIClient(BasicAsyncAPIClient):
                 return None
         return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
 
+    @overload
+    def _list_generator(
+        self,
+        method: Literal["GET", "POST"],
+        list_cls: type[T_CogniteResourceList],
+        resource_cls: type[T_CogniteResource],
+        resource_path: str | None = None,
+        url_path: str | None = None,
+        limit: int | None = None,
+        chunk_size: None = None,
+        filter: dict[str, Any] | None = None,
+        sort: SequenceNotStr | None = None,
+        other_params: dict[str, Any] | None = None,
+        partitions: int | None = None,
+        headers: dict[str, Any] | None = None,
+        initial_cursor: str | None = None,
+        advanced_filter: dict | Filter | None = None,
+        api_subversion: str | None = None,
+        semaphore: asyncio.Semaphore | None = None,
+    ) -> AsyncIterator[T_CogniteResource]: ...
+
+    @overload
+    def _list_generator(
+        self,
+        method: Literal["GET", "POST"],
+        list_cls: type[T_CogniteResourceList],
+        resource_cls: type[T_CogniteResource],
+        resource_path: str | None = None,
+        url_path: str | None = None,
+        limit: int | None = None,
+        *,
+        chunk_size: int,
+        filter: dict[str, Any] | None = None,
+        sort: SequenceNotStr | None = None,
+        other_params: dict[str, Any] | None = None,
+        partitions: int | None = None,
+        headers: dict[str, Any] | None = None,
+        initial_cursor: str | None = None,
+        advanced_filter: dict | Filter | None = None,
+        api_subversion: str | None = None,
+        semaphore: asyncio.Semaphore | None = None,
+    ) -> AsyncIterator[T_CogniteResourceList]: ...
+
     async def _list_generator(
         self,
         method: Literal["GET", "POST"],
@@ -188,7 +231,7 @@ class APIClient(BasicAsyncAPIClient):
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
         semaphore: asyncio.Semaphore | None = None,
-    ) -> AsyncIterator[T_CogniteResourceList] | AsyncIterator[T_CogniteResource]:
+    ) -> AsyncIterator[T_CogniteResourceList | T_CogniteResource]:
         if partitions:
             warnings.warn("passing `partitions` to a generator method is not supported, so it's being ignored")
             # set chunk_size to None in order to not break the existing API.
@@ -318,6 +361,26 @@ class APIClient(BasicAsyncAPIClient):
             return limit, url_path, body
         raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
 
+    @overload
+    def _process_into_chunks(
+        self,
+        response: dict[str, Any],
+        chunk_size: None,
+        resource_cls: type[T_CogniteResource],
+        list_cls: type[T_CogniteResourceList],
+        unprocessed_items: list[dict[str, Any]],
+    ) -> Iterator[T_CogniteResource]: ...
+
+    @overload
+    def _process_into_chunks(
+        self,
+        response: dict[str, Any],
+        chunk_size: int,
+        resource_cls: type[T_CogniteResource],
+        list_cls: type[T_CogniteResourceList],
+        unprocessed_items: list[dict[str, Any]],
+    ) -> Iterator[T_CogniteResourceList]: ...
+
     def _process_into_chunks(
         self,
         response: dict[str, Any],
@@ -325,8 +388,8 @@ class APIClient(BasicAsyncAPIClient):
         resource_cls: type[T_CogniteResource],
         list_cls: type[T_CogniteResourceList],
         unprocessed_items: list[dict[str, Any]],
-    ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
-        if not chunk_size:
+    ) -> Iterator[T_CogniteResourceList | T_CogniteResource]:
+        if chunk_size is None:
             for item in response["items"]:
                 yield resource_cls._load(item, cognite_client=self._cognite_client)
         else:
@@ -383,7 +446,33 @@ class APIClient(BasicAsyncAPIClient):
                 headers=headers,
                 semaphore=semaphore,
             )
-        fetch_kwargs = dict(
+        if settings_forcing_raw_response_loading:
+            raw_response_fetcher = self._list_generator_raw_responses(
+                method,
+                settings_forcing_raw_response_loading,
+                resource_path=resource_path or self._RESOURCE_PATH,
+                url_path=url_path,
+                limit=limit,
+                chunk_size=self._LIST_LIMIT,
+                filter=filter,
+                sort=sort,
+                other_params=other_params,
+                headers=headers,
+                initial_cursor=initial_cursor,
+                advanced_filter=advanced_filter,
+                api_subversion=api_subversion,
+                semaphore=semaphore,
+            )
+            return list_cls._load_raw_api_response(
+                [r async for r in raw_response_fetcher],
+                cognite_client=self._cognite_client,
+            )
+        # TODO: List generator loads each chunk into 'list_cls', so kind of weird for us to chain
+        #       elements, then do it again. Perhaps a modified version of 'raw responses' should be used:
+        async_gen = self._list_generator(
+            method,
+            list_cls,
+            resource_cls,
             resource_path=resource_path or self._RESOURCE_PATH,
             url_path=url_path,
             limit=limit,
@@ -397,21 +486,9 @@ class APIClient(BasicAsyncAPIClient):
             api_subversion=api_subversion,
             semaphore=semaphore,
         )
-        if settings_forcing_raw_response_loading:
-            raw_response_fetcher = self._list_generator_raw_responses(
-                method,
-                settings_forcing_raw_response_loading,
-                **fetch_kwargs,  # type: ignore [arg-type]
-            )
-            return list_cls._load_raw_api_response(
-                [r async for r in raw_response_fetcher],
-                cognite_client=self._cognite_client,
-            )
-        # TODO: List generator loads each chunk into 'list_cls', so kind of weird for us to chain
-        #       elements, then do it again. Perhaps a modified version of 'raw responses' should be used:
-        resource_lists = [rl async for rl in self._list_generator(method, list_cls, resource_cls, **fetch_kwargs)]
+        resource_lists = [rl async for rl in async_gen]
         return list_cls(
-            list(itertools.chain.from_iterable(resource_lists)),
+            list(itertools.chain.from_iterable(cast(T_CogniteResourceList, resource_lists))),
             cognite_client=self._cognite_client,
         )
 

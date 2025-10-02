@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api.simulators.integrations import SimulatorIntegrationsAPI
@@ -33,14 +33,14 @@ class SimulatorsAPI(APIClient):
         )
 
     @overload
-    async def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Simulator]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Simulator]: ...
 
     @overload
-    async def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[SimulatorList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[SimulatorList]: ...
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[Simulator] | Iterator[SimulatorList]:
+    ) -> AsyncIterator[Simulator | SimulatorList]:
         """Iterate over simulators
 
         Fetches simulators as they are iterated over, so you keep a limited number of simulators in memory.
@@ -49,16 +49,17 @@ class SimulatorsAPI(APIClient):
             chunk_size (int | None): Number of simulators to return in each chunk. Defaults to yielding one simulator a time.
             limit (int | None): Maximum number of simulators to return. Defaults to return all items.
 
-        Returns:
-            Iterator[Simulator] | Iterator[SimulatorList]: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
+        Yields:
+            Simulator | SimulatorList: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
         """
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=SimulatorList,
             resource_cls=Simulator,
             method="POST",
             chunk_size=chunk_size,
             limit=limit,
-        )
+        ):
+            yield item
 
     async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SimulatorList:
         """`List all simulators <https://developer.cognite.com/api#tag/Simulators/operation/filter_simulators_simulators_list_post>`_

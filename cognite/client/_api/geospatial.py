@@ -50,10 +50,10 @@ class GeospatialAPI(APIClient):
         )
 
     @overload
-    def create_feature_types(self, feature_type: FeatureType | FeatureTypeWrite) -> FeatureType: ...
+    async def create_feature_types(self, feature_type: FeatureType | FeatureTypeWrite) -> FeatureType: ...
 
     @overload
-    def create_feature_types(
+    async def create_feature_types(
         self, feature_type: Sequence[FeatureType] | Sequence[FeatureTypeWrite]
     ) -> FeatureTypeList: ...
 
@@ -144,10 +144,10 @@ class GeospatialAPI(APIClient):
         )
 
     @overload
-    def retrieve_feature_types(self, external_id: str) -> FeatureType: ...
+    async def retrieve_feature_types(self, external_id: str) -> FeatureType: ...
 
     @overload
-    def retrieve_feature_types(self, external_id: list[str]) -> FeatureTypeList: ...
+    async def retrieve_feature_types(self, external_id: list[str]) -> FeatureTypeList: ...
 
     async def retrieve_feature_types(self, external_id: str | list[str]) -> FeatureType | FeatureTypeList:
         """`Retrieve feature types`
@@ -232,7 +232,7 @@ class GeospatialAPI(APIClient):
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     @overload
-    def create_features(
+    async def create_features(
         self,
         feature_type_external_id: str,
         feature: Feature | FeatureWrite,
@@ -241,7 +241,7 @@ class GeospatialAPI(APIClient):
     ) -> Feature: ...
 
     @overload
-    def create_features(
+    async def create_features(
         self,
         feature_type_external_id: str,
         feature: Sequence[Feature] | Sequence[FeatureWrite] | FeatureList | FeatureWriteList,
@@ -339,7 +339,7 @@ class GeospatialAPI(APIClient):
         )
 
     @overload
-    def retrieve_features(
+    async def retrieve_features(
         self,
         feature_type_external_id: str,
         external_id: str,
@@ -347,7 +347,7 @@ class GeospatialAPI(APIClient):
     ) -> Feature: ...
 
     @overload
-    def retrieve_features(
+    async def retrieve_features(
         self,
         feature_type_external_id: str,
         external_id: list[str],
@@ -394,7 +394,7 @@ class GeospatialAPI(APIClient):
         )
 
     @overload
-    def update_features(
+    async def update_features(
         self,
         feature_type_external_id: str,
         feature: Feature | FeatureWrite,
@@ -403,7 +403,7 @@ class GeospatialAPI(APIClient):
     ) -> Feature: ...
 
     @overload
-    def update_features(
+    async def update_features(
         self,
         feature_type_external_id: str,
         feature: Sequence[Feature] | Sequence[FeatureWrite],
@@ -411,7 +411,7 @@ class GeospatialAPI(APIClient):
         chunk_size: int | None = None,
     ) -> FeatureList: ...
 
-    def update_features(
+    async def update_features(
         self,
         feature_type_external_id: str,
         feature: Feature | FeatureWrite | Sequence[Feature] | Sequence[FeatureWrite],
@@ -454,7 +454,7 @@ class GeospatialAPI(APIClient):
         # they are more like a replace so an update looks like a feature creation
         resource_path = self._feature_resource_path(feature_type_external_id) + "/update"
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=FeatureList,
             resource_cls=Feature,
             items=feature,
@@ -1067,7 +1067,7 @@ class GeospatialAPI(APIClient):
                 ...    raster_property_name, "XYZ", {"SIGNIFICANT_DIGITS": "4"})
         """
         url_path = self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name)
-        return self._post(
+        response = await self._post(
             url_path,
             json={
                 "format": raster_format,
@@ -1077,7 +1077,8 @@ class GeospatialAPI(APIClient):
                 "scaleX": raster_scale_x,
                 "scaleY": raster_scale_y,
             },
-        ).content
+        )
+        return response.content
 
     async def compute(
         self,

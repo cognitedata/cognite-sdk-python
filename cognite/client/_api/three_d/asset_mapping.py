@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, overload
+from typing import overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -16,9 +16,6 @@ from cognite.client.utils._auxiliary import split_into_chunks, unpack_items_in_p
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
-
-if TYPE_CHECKING:
-    pass
 
 
 class ThreeDAssetMappingAPI(APIClient):

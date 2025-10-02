@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from copy import deepcopy
 from datetime import datetime, timezone
 from random import randint, random, shuffle
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -20,6 +20,9 @@ from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, L
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import get_url, jsgz_load, random_gamma_dist_integer
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 

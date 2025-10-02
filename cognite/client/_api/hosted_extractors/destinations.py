@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -34,24 +34,16 @@ class DestinationsAPI(APIClient):
         self._UPDATE_LIMIT = 10
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-    ) -> Iterator[Destination]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Destination]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-    ) -> Iterator[Destination]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[Destination]: ...
 
     async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-    ) -> Iterator[Destination] | Iterator[DestinationList]:
+    ) -> AsyncIterator[Destination | DestinationList]:
         """Iterate over destinations
 
         Fetches Destination as they are iterated over, so you keep a limited number of destinations in memory.
@@ -60,19 +52,20 @@ class DestinationsAPI(APIClient):
             chunk_size (int | None): Number of Destinations to return in each chunk. Defaults to yielding one Destination a time.
             limit (int | None): Maximum number of Destination to return. Defaults to returning all items.
 
-        Returns:
-            Iterator[Destination] | Iterator[DestinationList]: yields Destination one by one if chunk_size is not specified, else DestinationList objects.
+        Yields:
+            Destination | DestinationList: yields Destination one by one if chunk_size is not specified, else DestinationList objects.
         """
         self._warning.warn()
 
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=DestinationList,
             resource_cls=Destination,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             headers={"cdf-version": "beta"},
-        )
+        ):
+            yield item
 
     @overload
     async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Destination: ...

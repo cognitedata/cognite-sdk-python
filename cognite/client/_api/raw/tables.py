@@ -17,18 +17,14 @@ class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
 
     @overload
-    async def __call__(
-        self, db_name: str, chunk_size: None = None, limit: int | None = None
-    ) -> AsyncIterator[raw.Table]: ...
+    async def __call__(self, db_name: str, chunk_size: None = None) -> AsyncIterator[raw.Table]: ...
 
     @overload
-    async def __call__(
-        self, db_name: str, chunk_size: int, limit: int | None = None
-    ) -> AsyncIterator[raw.TableList]: ...
+    async def __call__(self, db_name: str, chunk_size: int) -> AsyncIterator[raw.TableList]: ...
 
     async def __call__(
         self, db_name: str, chunk_size: int | None = None, limit: int | None = None
-    ) -> AsyncIterator[raw.Table] | AsyncIterator[raw.TableList]:
+    ) -> AsyncIterator[raw.Table | raw.TableList]:
         """Iterate over tables
 
         Fetches tables as they are iterated over, so you keep a limited number of tables in memory.
@@ -39,7 +35,7 @@ class RawTablesAPI(APIClient):
             limit (int | None): Maximum number of tables to return. Defaults to return all items.
 
         Returns:
-            AsyncIterator[raw.Table] | AsyncIterator[raw.TableList]: No description.
+            AsyncIterator[raw.Table | raw.TableList]: No description.
         """
         table_iterator = self._list_generator(
             list_cls=raw.TableList,
@@ -81,7 +77,7 @@ class RawTablesAPI(APIClient):
             items: dict[str, Any] | list[dict[str, Any]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
-        tb = self._create_multiple(
+        tb = await self._create_multiple(
             list_cls=raw.TableList,
             resource_cls=raw.Table,
             input_resource_cls=raw.TableWrite,
@@ -131,8 +127,8 @@ class RawTablesAPI(APIClient):
         raise TypeError("tb must be raw.Table or raw.TableList")
 
     async def _set_db_name_on_tables_generator(
-        self, table_iterator: AsyncIterator[raw.Table] | AsyncIterator[raw.TableList], db_name: str
-    ) -> AsyncIterator[raw.Table] | AsyncIterator[raw.TableList]:
+        self, table_iterator: AsyncIterator[raw.Table | raw.TableList], db_name: str
+    ) -> AsyncIterator[raw.Table | raw.TableList]:
         async for tbl in table_iterator:
             yield self._set_db_name_on_tables(tbl, db_name)
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator, MutableSequence, Sequence
+from collections.abc import AsyncIterator, MutableSequence, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -43,27 +43,17 @@ class WorkflowVersionAPI(APIClient):
         self._DELETE_LIMIT = 100
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
-        limit: int | None = None,
-    ) -> Iterator[WorkflowVersion]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[WorkflowVersion]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
-        limit: int | None = None,
-    ) -> Iterator[WorkflowVersionList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[WorkflowVersionList]: ...
 
     async def __call__(
         self,
         chunk_size: int | None = None,
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int | None = None,
-    ) -> Iterator[WorkflowVersion] | Iterator[WorkflowVersionList]:
+    ) -> AsyncIterator[WorkflowVersion | WorkflowVersionList]:
         """Iterate over workflow versions
 
         Args:
@@ -71,17 +61,18 @@ class WorkflowVersionAPI(APIClient):
             workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
             limit (int | None): Maximum number of workflow versions to return. Defaults to returning all.
 
-        Returns:
-            Iterator[WorkflowVersion] | Iterator[WorkflowVersionList]: Yields WorkflowVersion one by one if chunk_size is None, otherwise yields WorkflowVersionList objects.
+        Yields:
+            WorkflowVersion | WorkflowVersionList: Yields WorkflowVersion one by one if chunk_size is None, otherwise yields WorkflowVersionList objects.
         """
-        return await self._list_generator(
+        async for item in self._list_generator(
             method="GET",
             resource_cls=WorkflowVersion,
             list_cls=WorkflowVersionList,
             filter={"workflowFilters": wrap_workflow_ids(workflow_version_ids)},
             limit=limit,
             chunk_size=chunk_size,
-        )
+        ):
+            yield item
 
     @overload
     async def upsert(self, version: WorkflowVersionUpsert) -> WorkflowVersion: ...
@@ -273,7 +264,7 @@ class WorkflowVersionAPI(APIClient):
             isinstance(workflow_external_id, tuple) and len(given_wf_ids) == 1
         )
         if is_single:
-            return get_single(given_wf_ids[0], ignore_missing=True)
+            return await get_single(given_wf_ids[0], ignore_missing=True)
 
         # Not really a point in splitting into chunks when chunk_size is 1, but...
         tasks = [AsyncSDKTask(get_single, wf_xid) for wf_xid in split_into_chunks(given_wf_ids, self._RETRIEVE_LIMIT)]

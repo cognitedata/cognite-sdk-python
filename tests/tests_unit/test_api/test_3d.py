@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import unquote_plus
 
 import pytest
@@ -22,6 +22,9 @@ from cognite.client.data_classes.three_d import (
 )
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import get_url, jsgz_load
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @pytest.fixture
