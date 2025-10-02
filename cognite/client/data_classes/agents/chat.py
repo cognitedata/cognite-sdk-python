@@ -129,7 +129,7 @@ class ClientToolAction(Action):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "type": self._type,
-            "clientTool": {
+            self._type: {
                 "name": self.name,
                 "description": self.description,
                 "parameters": self.parameters,
@@ -138,7 +138,7 @@ class ClientToolAction(Action):
 
     @classmethod
     def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolAction:
-        client_tool = data["clientTool"]
+        client_tool = data[cls._type]
         return cls(
             name=client_tool["name"],
             description=client_tool["description"],
@@ -222,7 +222,7 @@ class ClientToolCall(ActionCall):
         return {
             "type": self._type,
             "actionId" if camel_case else "action_id": self.action_id,
-            "clientTool": {
+            self._type: {
                 "name": self.name,
                 "arguments": json.dumps(self.arguments),
             },
@@ -230,7 +230,7 @@ class ClientToolCall(ActionCall):
 
     @classmethod
     def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolCall:
-        client_tool = data["clientTool"]
+        client_tool = data[cls._type]
         arguments_str = client_tool["arguments"]
         return cls(
             action_id=data["actionId"],
@@ -266,7 +266,7 @@ class ToolConfirmationCall(ActionCall):
         result: dict[str, Any] = {
             "type": self._type,
             "actionId" if camel_case else "action_id": self.action_id,
-            "toolConfirmation": {
+            self._type: {
                 "content": self.content.dump(camel_case=camel_case),
                 "toolName" if camel_case else "tool_name": self.tool_name,
                 "toolArguments" if camel_case else "tool_arguments": self.tool_arguments,
@@ -275,12 +275,12 @@ class ToolConfirmationCall(ActionCall):
             },
         }
         if self.details is not None:
-            result["toolConfirmation"]["details"] = self.details
+            result[self._type]["details"] = self.details
         return result
 
     @classmethod
     def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ToolConfirmationCall:
-        tool_confirmation = data["toolConfirmation"]
+        tool_confirmation = data[cls._type]
         content = MessageContent._load(tool_confirmation["content"])
         return cls(
             action_id=data["actionId"],
