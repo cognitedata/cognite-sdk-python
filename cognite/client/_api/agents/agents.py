@@ -336,7 +336,7 @@ class AgentsAPI(APIClient):
         self._warnings.warn()
 
         # Convert single message to list
-        if isinstance(messages, (Message, ActionResult)):
+        if isinstance(messages, Message | ActionResult):
             messages = [messages]
 
         # Build request body
