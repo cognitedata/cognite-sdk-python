@@ -216,7 +216,7 @@ class ClientToolCall(ActionCall):
     _type: ClassVar[str] = "clientTool"
     action_id: str
     name: str
-    arguments: dict[str, Any]
+    arguments: dict[str, Any]  # Always a json string, in line with OpenAI's API pattern
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -78,9 +79,8 @@ class TestClientToolCall:
         assert dumped["type"] == "clientTool"
         assert dumped["actionId"] == "call_456"
         assert dumped["clientTool"]["name"] == "multiply"
-        # Arguments should be JSON string
-        import json
 
+        # Arguments should be JSON string
         assert json.loads(dumped["clientTool"]["arguments"]) == {"x": 5, "y": 7}
 
 
