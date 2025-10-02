@@ -1,13 +1,26 @@
 ---
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.2
+  # We use a local ruff hook so that the ruff version matches the one in dev-dependencies
+  - repo: local
     hooks:
-      - id: ruff
+      - id: ruff-check
+        name: ruff check
+        language: python
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+        entry: ruff check
         args:
           - --fix
           - --exit-non-zero-on-fix
+          - --force-exclude
       - id: ruff-format
+        name: ruff format
+        language: python
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+        entry: ruff format
+        args:
+          - --force-exclude
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
