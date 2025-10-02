@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
 from cognite.client._api.datapoints import DatapointsAPI
@@ -52,55 +52,11 @@ class TimeSeriesAPI(APIClient):
         self.subscriptions = DatapointsSubscriptionAPI(config, api_version, cognite_client)
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        name: str | None = None,
-        unit: str | None = None,
-        unit_external_id: str | None = None,
-        unit_quantity: str | None = None,
-        is_string: bool | None = None,
-        is_step: bool | None = None,
-        asset_ids: Sequence[int] | None = None,
-        asset_external_ids: SequenceNotStr[str] | None = None,
-        asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-        metadata: dict[str, Any] | None = None,
-        external_id_prefix: str | None = None,
-        created_time: dict[str, Any] | None = None,
-        last_updated_time: dict[str, Any] | None = None,
-        limit: int | None = None,
-        partitions: int | None = None,
-        advanced_filter: Filter | dict[str, Any] | None = None,
-        sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[TimeSeries]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[TimeSeries]: ...
+
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        name: str | None = None,
-        unit: str | None = None,
-        unit_external_id: str | None = None,
-        unit_quantity: str | None = None,
-        is_string: bool | None = None,
-        is_step: bool | None = None,
-        asset_ids: Sequence[int] | None = None,
-        asset_external_ids: SequenceNotStr[str] | None = None,
-        asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-        metadata: dict[str, Any] | None = None,
-        external_id_prefix: str | None = None,
-        created_time: dict[str, Any] | None = None,
-        last_updated_time: dict[str, Any] | None = None,
-        limit: int | None = None,
-        partitions: int | None = None,
-        advanced_filter: Filter | dict[str, Any] | None = None,
-        sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[TimeSeriesList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[TimeSeriesList]: ...
+
     async def __call__(
         self,
         chunk_size: int | None = None,
@@ -124,7 +80,7 @@ class TimeSeriesAPI(APIClient):
         partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[TimeSeries] | Iterator[TimeSeriesList]:
+    ) -> AsyncIterator[TimeSeries | TimeSeriesList]:
         """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
@@ -152,8 +108,8 @@ class TimeSeriesAPI(APIClient):
             advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
-        Returns:
-            Iterator[TimeSeries] | Iterator[TimeSeriesList]: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
+        Yields:
+            TimeSeries | TimeSeriesList: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -178,7 +134,7 @@ class TimeSeriesAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, TimeSeriesSort)
         self._validate_filter(advanced_filter)
 
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             method="POST",
@@ -188,7 +144,8 @@ class TimeSeriesAPI(APIClient):
             limit=limit,
             partitions=partitions,
             sort=prep_sort,
-        )
+        ):
+            yield item
 
     async def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None

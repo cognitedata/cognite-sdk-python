@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -30,28 +30,10 @@ class DataSetsAPI(APIClient):
         self._CREATE_LIMIT = 10
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        metadata: dict[str, str] | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        external_id_prefix: str | None = None,
-        write_protected: bool | None = None,
-        limit: int | None = None,
-    ) -> Iterator[DataSet]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[DataSet]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        metadata: dict[str, str] | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        external_id_prefix: str | None = None,
-        write_protected: bool | None = None,
-        limit: int | None = None,
-    ) -> Iterator[DataSetList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[DataSetList]: ...
 
     async def __call__(
         self,
@@ -62,7 +44,7 @@ class DataSetsAPI(APIClient):
         external_id_prefix: str | None = None,
         write_protected: bool | None = None,
         limit: int | None = None,
-    ) -> Iterator[DataSet] | Iterator[DataSetList]:
+    ) -> AsyncIterator[DataSet | DataSetList]:
         """Iterate over data sets
 
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
@@ -76,8 +58,8 @@ class DataSetsAPI(APIClient):
             write_protected (bool | None): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
             limit (int | None): Maximum number of data sets to return. Defaults to return all items.
 
-        Returns:
-            Iterator[DataSet] | Iterator[DataSetList]: yields DataSet one by one if chunk is not specified, else DataSetList objects.
+        Yields:
+            DataSet | DataSetList: yields DataSet one by one if chunk is not specified, else DataSetList objects.
         """
         filter = DataSetFilter(
             metadata=metadata,
@@ -86,9 +68,10 @@ class DataSetsAPI(APIClient):
             external_id_prefix=external_id_prefix,
             write_protected=write_protected,
         ).dump(camel_case=True)
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=DataSetList, resource_cls=DataSet, method="POST", chunk_size=chunk_size, filter=filter, limit=limit
-        )
+        ):
+            yield item
 
     @overload
     async def create(self, data_set: Sequence[DataSet] | Sequence[DataSetWrite]) -> DataSetList: ...

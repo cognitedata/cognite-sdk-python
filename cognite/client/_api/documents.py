@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal, overload
 
 from cognite.client._api.document_preview import DocumentPreviewAPI
@@ -35,24 +35,10 @@ class DocumentsAPI(APIClient):
         self.previews = DocumentPreviewAPI(config, api_version, cognite_client)
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        filter: Filter | dict[str, Any] | None = None,
-        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
-        limit: int | None = None,
-        partitions: int | None = None,
-    ) -> Iterator[DocumentList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[DocumentList]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: Literal[None] = None,
-        filter: Filter | dict[str, Any] | None = None,
-        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
-        limit: int | None = None,
-        partitions: int | None = None,
-    ) -> Iterator[Document]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Document]: ...
 
     async def __call__(
         self,
@@ -61,7 +47,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[Document] | Iterator[DocumentList]:
+    ) -> AsyncIterator[Document | DocumentList]:
         """Iterate over documents
 
         Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
@@ -73,11 +59,11 @@ class DocumentsAPI(APIClient):
             limit (int | None): Maximum number of documents to return. Default to return all items.
             partitions (int | None): Retrieve documents in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
-        Returns:
-            Iterator[Document] | Iterator[DocumentList]: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
+        Yields:
+            Document | DocumentList: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
         """
         self._validate_filter(filter)
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=DocumentList,
             resource_cls=Document,
             sort=[DocumentSort.load(sort).dump()] if sort else None,
@@ -86,7 +72,8 @@ class DocumentsAPI(APIClient):
             filter=filter.dump() if isinstance(filter, Filter) else filter,
             limit=limit,
             partitions=partitions,
-        )
+        ):
+            yield item
 
     async def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
         """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
@@ -317,7 +304,7 @@ class DocumentsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve_content(self, id: int) -> bytes:
+    async def retrieve_content(self, id: int) -> bytes:
         """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
@@ -342,7 +329,8 @@ class DocumentsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.retrieve_content(id=123)
         """
-        return self._post(f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json={"id": id}).content
+        response = await self._post(f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json={"id": id})
+        return response.content
 
     async def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
         """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_

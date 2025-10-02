@@ -2,11 +2,7 @@ from __future__ import annotations
 
 import importlib
 from types import ModuleType
-from typing import TYPE_CHECKING, TypeVar, overload
-
-if TYPE_CHECKING:
-    pass
-
+from typing import TypeVar, overload
 
 _T = TypeVar("_T")
 

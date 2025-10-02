@@ -3,7 +3,7 @@ from __future__ import annotations
 import collections
 import typing
 import warnings
-from collections.abc import Iterator, Mapping
+from collections.abc import AsyncIterator, Mapping
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
 
 from cognite.client._api.sequence_data import SequencesDataAPI
@@ -70,44 +70,10 @@ class SequencesAPI(APIClient):
         return self.data
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        name: str | None = None,
-        external_id_prefix: str | None = None,
-        metadata: dict[str, str] | None = None,
-        asset_ids: typing.Sequence[int] | None = None,
-        asset_subtree_ids: int | typing.Sequence[int] | None = None,
-        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
-        data_set_ids: int | typing.Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-        created_time: dict[str, Any] | None = None,
-        last_updated_time: dict[str, Any] | None = None,
-        limit: int | None = None,
-        partitions: int | None = None,
-        advanced_filter: Filter | dict[str, Any] | None = None,
-        sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[Sequence]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Sequence]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        name: str | None = None,
-        external_id_prefix: str | None = None,
-        metadata: dict[str, str] | None = None,
-        asset_ids: typing.Sequence[int] | None = None,
-        asset_subtree_ids: int | typing.Sequence[int] | None = None,
-        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
-        data_set_ids: int | typing.Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-        created_time: dict[str, Any] | None = None,
-        last_updated_time: dict[str, Any] | None = None,
-        limit: int | None = None,
-        partitions: int | None = None,
-        advanced_filter: Filter | dict[str, Any] | None = None,
-        sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[SequenceList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[SequenceList]: ...
 
     async def __call__(
         self,
@@ -126,7 +92,7 @@ class SequencesAPI(APIClient):
         partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[Sequence] | Iterator[SequenceList]:
+    ) -> AsyncIterator[Sequence | SequenceList]:
         """Iterate over sequences
 
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
@@ -148,8 +114,8 @@ class SequencesAPI(APIClient):
             advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
-        Returns:
-            Iterator[Sequence] | Iterator[SequenceList]: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
+        Yields:
+            Sequence | SequenceList: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -168,7 +134,7 @@ class SequencesAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, SequenceSort)
         self._validate_filter(advanced_filter)
 
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=SequenceList,
             resource_cls=Sequence,
             method="POST",
@@ -178,7 +144,8 @@ class SequencesAPI(APIClient):
             limit=limit,
             sort=prep_sort,
             partitions=partitions,
-        )
+        ):
+            yield item
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
         """`Retrieve a single sequence by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
@@ -655,7 +622,7 @@ class SequencesAPI(APIClient):
                 >>> my_update = SequenceUpdate(id=1).columns.modify(column_updates)
                 >>> res = client.sequences.update(my_update)
         """
-        cdf_item_by_id = self._get_cdf_item_by_id(item, "updating")
+        cdf_item_by_id = await self._get_cdf_item_by_id(item, "updating")
         return await self._update_multiple(
             list_cls=SequenceList,
             resource_cls=Sequence,
@@ -708,7 +675,7 @@ class SequencesAPI(APIClient):
                 >>> res = client.sequences.upsert([existing_sequence, new_sequence], mode="replace")
         """
 
-        cdf_item_by_id = self._get_cdf_item_by_id(item, "upserting")
+        cdf_item_by_id = await self._get_cdf_item_by_id(item, "upserting")
         return await self._upsert_multiple(
             item,
             list_cls=SequenceList,
@@ -719,7 +686,7 @@ class SequencesAPI(APIClient):
             cdf_item_by_id=cdf_item_by_id,
         )
 
-    def _get_cdf_item_by_id(
+    async def _get_cdf_item_by_id(
         self,
         item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
         operation: Literal["updating", "upserting"],
@@ -727,16 +694,16 @@ class SequencesAPI(APIClient):
         if isinstance(item, SequenceWrite):
             if item.external_id is None:
                 raise ValueError(f"External ID must be set when {operation} a SequenceWrite object.")
-            cdf_item = self.retrieve(external_id=item.external_id)
+            cdf_item = await self.retrieve(external_id=item.external_id)
             if cdf_item and cdf_item.external_id:
                 return {cdf_item.external_id: cdf_item}
         elif isinstance(item, Sequence):
             if item.external_id:
-                cdf_item = self.retrieve(external_id=item.external_id)
+                cdf_item = await self.retrieve(external_id=item.external_id)
                 if cdf_item and cdf_item.external_id:
                     return {cdf_item.external_id: cdf_item}
             else:
-                cdf_item = self.retrieve(id=item.id)
+                cdf_item = await self.retrieve(id=item.id)
                 if cdf_item and cdf_item.id:
                     return {cdf_item.id: cdf_item}
         elif isinstance(item, collections.abc.Sequence):
@@ -745,7 +712,7 @@ class SequencesAPI(APIClient):
                 raise ValueError(f"External ID must be set when {operation} using one or more SequenceWrite object(s).")
             external_ids.extend(i.external_id for i in item if isinstance(i, Sequence) and i.external_id)
             internal_ids = [i.id for i in item if isinstance(i, Sequence) and not i.external_id]
-            cdf_items = self.retrieve_multiple(
+            cdf_items = await self.retrieve_multiple(
                 ids=internal_ids, external_ids=typing.cast(list[str], external_ids), ignore_unknown_ids=True
             )
             return {item.external_id if item.external_id is not None else item.id: item for item in cdf_items}

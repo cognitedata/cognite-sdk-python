@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -8,6 +9,9 @@ from _pytest.monkeypatch import MonkeyPatch
 from cognite.client import CogniteClient
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client.data_classes.contextualization import DetectJobBundle, DiagramDetectResults
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class TestPNIDParsingUnit:

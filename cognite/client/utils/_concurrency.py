@@ -44,7 +44,7 @@ class TasksSummary:
         successful_tasks: list[AsyncSDKTask],
         unsuccessful_tasks: list[AsyncSDKTask] | None = None,
         skipped_tasks: list[AsyncSDKTask] | None = None,
-        exceptions: list[Exception] | None = None,
+        exceptions: list[BaseException] | None = None,
     ) -> None:
         self.results = results
         self.successful_tasks = successful_tasks
@@ -53,7 +53,7 @@ class TasksSummary:
 
         self.not_found_error: CogniteNotFoundError | None = None
         self.duplicated_error: CogniteDuplicatedError | None = None
-        self.unknown_error: Exception | None = None
+        self.unknown_error: BaseException | None = None
         self.missing, self.duplicated, self.cluster, self.project = self._inspect_exceptions(exceptions or [])
 
     @staticmethod
@@ -62,9 +62,9 @@ class TasksSummary:
     ) -> tuple[list[AsyncSDKTask], list[AsyncSDKTask]]:
         from cognite.client._basic_api_client import FailedRequestHandler
 
-        unknown_and_failed = [], []
+        unknown_and_failed: tuple[list[AsyncSDKTask], list[AsyncSDKTask]] = [], []
         for task in unsuccessful_tasks:
-            err = cast(Exception, task.exception())  # Task is unsuccessful exactly because this is set
+            err = cast(BaseException, task.exception())  # Task is unsuccessful exactly because this is set
             is_failed = FailedRequestHandler.classify_error(err) == "failed"
             unknown_and_failed[is_failed].append(task)
         return unknown_and_failed
@@ -122,7 +122,7 @@ class TasksSummary:
                 skipped=skipped,
             )
 
-    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[list, list, str | None, str | None]:
+    def _inspect_exceptions(self, exceptions: list[BaseException]) -> tuple[list, list, str | None, str | None]:
         cluster = None
         project = None
         missing: list[dict] = []

@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from cognite.client._cognite_client import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.seed.data import SIMULATOR_INTEGRATION, ResourceNames

@@ -22,7 +22,7 @@ class UserProfilesAPI(APIClient):
         res = await self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": False}}}})
         return UserProfilesConfiguration._load(res.json()["userProfilesConfiguration"])
 
-    def me(self) -> UserProfile:
+    async def me(self) -> UserProfile:
         """`Retrieve your own user profile <https://developer.cognite.com/api#tag/User-profiles/operation/getRequesterUserProfile>`_
 
         Retrieves the user profile of the principal issuing the request, i.e. the principal *this* AsyncCogniteClient was instantiated with.
@@ -42,7 +42,7 @@ class UserProfilesAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.user_profiles.me()
         """
-        return UserProfile._load(self._get(self._RESOURCE_PATH + "/me").json())
+        return UserProfile._load((await self._get(self._RESOURCE_PATH + "/me")).json())
 
     @overload
     async def retrieve(self, user_identifier: str) -> UserProfile | None: ...

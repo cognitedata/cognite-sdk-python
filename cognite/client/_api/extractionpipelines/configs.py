@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
     ExtractionPipelineConfig,
@@ -9,9 +7,6 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.extractionpipelines import ExtractionPipelineConfigWrite
 from cognite.client.utils._auxiliary import drop_none_values
-
-if TYPE_CHECKING:
-    pass
 
 
 class ExtractionPipelineConfigsAPI(APIClient):

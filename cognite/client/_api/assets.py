@@ -6,7 +6,7 @@ import heapq
 import itertools
 import math
 import warnings
-from collections.abc import AsyncIterator, Callable, Iterable, Iterator, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import (
@@ -75,56 +75,10 @@ class AssetsAPI(APIClient):
     _RESOURCE_PATH = "/assets"
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        name: str | None = None,
-        parent_ids: Sequence[int] | None = None,
-        parent_external_ids: SequenceNotStr[str] | None = None,
-        asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
-        metadata: dict[str, str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-        labels: LabelFilter | None = None,
-        geo_location: GeoLocationFilter | None = None,
-        source: str | None = None,
-        created_time: TimestampRange | dict[str, Any] | None = None,
-        last_updated_time: TimestampRange | dict[str, Any] | None = None,
-        root: bool | None = None,
-        external_id_prefix: str | None = None,
-        aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
-        limit: int | None = None,
-        partitions: int | None = None,
-        advanced_filter: Filter | dict[str, Any] | None = None,
-        sort: SortSpec | list[SortSpec] | None = None,
-    ) -> AsyncIterator[Asset]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Asset]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        name: str | None = None,
-        parent_ids: Sequence[int] | None = None,
-        parent_external_ids: SequenceNotStr[str] | None = None,
-        asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
-        metadata: dict[str, str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | SequenceNotStr[str] | None = None,
-        labels: LabelFilter | None = None,
-        geo_location: GeoLocationFilter | None = None,
-        source: str | None = None,
-        created_time: TimestampRange | dict[str, Any] | None = None,
-        last_updated_time: TimestampRange | dict[str, Any] | None = None,
-        root: bool | None = None,
-        external_id_prefix: str | None = None,
-        aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
-        limit: int | None = None,
-        partitions: int | None = None,
-        advanced_filter: Filter | dict[str, Any] | None = None,
-        sort: SortSpec | list[SortSpec] | None = None,
-    ) -> AsyncIterator[AssetList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[AssetList]: ...
 
     async def __call__(
         self,
@@ -149,7 +103,7 @@ class AssetsAPI(APIClient):
         partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> AsyncIterator[Asset] | AsyncIterator[AssetList]:
+    ) -> AsyncIterator[Asset | AssetList]:
         """Iterate over assets
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
@@ -177,8 +131,8 @@ class AssetsAPI(APIClient):
             advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
-        Returns:
-            AsyncIterator[Asset] | AsyncIterator[AssetList]: yields Asset one by one if chunk_size is not specified, else AssetList objects.
+        Yields:
+            Asset | AssetList: yields Asset one by one if chunk_size is not specified, else AssetList objects.
         """
         agg_props = self._process_aggregated_props(aggregated_properties)
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
@@ -203,7 +157,7 @@ class AssetsAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, AssetSort)
         self._validate_filter(advanced_filter)
 
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=AssetList,
             resource_cls=Asset,
             method="POST",
@@ -214,7 +168,8 @@ class AssetsAPI(APIClient):
             limit=limit,
             partitions=partitions,
             other_params=agg_props,
-        )
+        ):
+            yield item
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Asset | None:
         """`Retrieve a single asset by id. <https://developer.cognite.com/api#tag/Assets/operation/getAsset>`_
@@ -1183,7 +1138,7 @@ class _AssetHierarchyCreator:
 
     async def _create(
         self,
-        insert_fn: Callable[[list[AssetWrite]], _TaskResult],
+        insert_fn: Callable[[list[AssetWrite]], Awaitable[_TaskResult]],
         insert_dct: dict[str | None, list[AssetWrite]],
         subtree_count: dict[str, int],
     ) -> list[Asset]:
@@ -1202,7 +1157,7 @@ class _AssetHierarchyCreator:
 
         while futures:
             done, _ = await asyncio.wait(futures, return_when=asyncio.FIRST_COMPLETED)
-            to_create = []
+            to_create: list[AssetWrite] = []
             # Note on FIRST_COMPLETED: We may get more than one task 'done':
             for fut in done:
                 futures.remove(fut)
@@ -1280,7 +1235,7 @@ class _AssetHierarchyCreator:
                     bad_assets.extend(dupe_assets)
 
             # If upsert=True, run update on any existing assets:
-            dupe_upsert_error = err  # Only clear this if upsert=True -and- update works
+            dupe_upsert_error: Exception | None = err  # Only clear this if upsert=True -and- update works
             if upsert and dupe_assets:
                 updated, dupe_upsert_error = await self._update(dupe_assets, upsert_mode)
                 # If update went well: Add to list of successful assets and remove from "bad":
@@ -1295,11 +1250,13 @@ class _AssetHierarchyCreator:
             # one of the recent exc. to show up (all its info however match ALL the failed+unknown), see _raise_if_exception
             match non_dupe_insert_error, dupe_upsert_error:
                 case None, None:
-                    err = None  # We recovered successfully
+                    maybe_error = None  # We recovered successfully
                 case Exception(), None:
-                    err = non_dupe_insert_error
+                    maybe_error = non_dupe_insert_error
+                case _:
+                    maybe_error = err
 
-            return _TaskResult(successful, failed, unknown, err)
+            return _TaskResult(successful, failed, unknown, maybe_error)
 
     async def _update(
         self, to_update: list[AssetWrite], upsert_mode: Literal["patch", "replace"]

@@ -16,14 +16,14 @@ class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
 
     @overload
-    async def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Database]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[Database]: ...
 
     @overload
-    async def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[DatabaseList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[DatabaseList]: ...
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> AsyncIterator[Database] | AsyncIterator[DatabaseList]:
+    ) -> AsyncIterator[Database | DatabaseList]:
         """Iterate over databases
 
         Fetches dbs as they are iterated over, so you keep a limited number of dbs in memory.
@@ -32,12 +32,13 @@ class RawDatabasesAPI(APIClient):
             chunk_size (int | None): Number of dbs to return in each chunk. Defaults to yielding one db a time.
             limit (int | None): Maximum number of dbs to return. Defaults to return all items.
 
-        Returns:
-            AsyncIterator[Database] | AsyncIterator[DatabaseList]: No description.
+        Yields:
+            Database | DatabaseList: No description.
         """
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
-        )
+        ):
+            yield item
 
     @overload
     async def create(self, name: str) -> Database: ...

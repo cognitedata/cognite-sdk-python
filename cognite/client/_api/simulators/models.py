@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api.simulators.models_revisions import SimulatorModelRevisionsAPI
@@ -142,22 +142,10 @@ class SimulatorModelsAPI(APIClient):
         )
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: None = None,
-        simulator_external_ids: str | SequenceNotStr[str] | None = None,
-        sort: PropertySort | None = None,
-        limit: int | None = None,
-    ) -> Iterator[SimulatorModel]: ...
+    def __call__(self, chunk_size: None = None) -> AsyncIterator[SimulatorModel]: ...
 
     @overload
-    async def __call__(
-        self,
-        chunk_size: int,
-        simulator_external_ids: str | SequenceNotStr[str] | None = None,
-        sort: PropertySort | None = None,
-        limit: int | None = None,
-    ) -> Iterator[SimulatorModelList]: ...
+    def __call__(self, chunk_size: int) -> AsyncIterator[SimulatorModelList]: ...
 
     async def __call__(
         self,
@@ -165,7 +153,7 @@ class SimulatorModelsAPI(APIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         sort: PropertySort | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorModel] | Iterator[SimulatorModelList]:
+    ) -> AsyncIterator[SimulatorModel | SimulatorModelList]:
         """Iterate over simulator simulator models
 
         Fetches simulator models as they are iterated over, so you keep a limited number of simulator models in memory.
@@ -176,11 +164,12 @@ class SimulatorModelsAPI(APIClient):
             sort (PropertySort | None): The criteria to sort by.
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
-        Returns:
-            Iterator[SimulatorModel] | Iterator[SimulatorModelList]: yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
+        Yields:
+            SimulatorModel | SimulatorModelList: yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
         """
+        # TODO: sort is unused
         model_filter = SimulatorModelsFilter(simulator_external_ids=simulator_external_ids)
-        return await self._list_generator(
+        async for item in self._list_generator(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             method="POST",
@@ -188,7 +177,8 @@ class SimulatorModelsAPI(APIClient):
             sort=[PropertySort.load(sort).dump()] if sort else None,
             chunk_size=chunk_size,
             limit=limit,
-        )
+        ):
+            yield item
 
     @overload
     async def create(self, items: SimulatorModelWrite) -> SimulatorModel: ...

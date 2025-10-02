@@ -196,7 +196,7 @@ class AsyncHTTPClientWithRetry:
         headers: MutableMapping[str, str] | None = None,
         follow_redirects: bool = False,
         timeout: float | None = None,
-        semaphore: asyncio.Semaphore | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> httpx.Response:
         def coro_factory() -> HTTPResponseCoro:
             return self.httpx_async_client.request(
@@ -245,7 +245,7 @@ class AsyncHTTPClientWithRetry:
         *,
         url: str,
         headers: MutableMapping[str, str] | None,
-        semaphore: asyncio.Semaphore | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> httpx.Response:
         if semaphore is None:
             # By default, we run with a semaphore decided by user settings of 'max_workers' in 'global_config'.
