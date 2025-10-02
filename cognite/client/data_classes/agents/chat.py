@@ -240,6 +240,60 @@ class ClientToolCall(ActionCall):
 
 
 @dataclass
+class ToolConfirmationCall(ActionCall):
+    """A tool confirmation request from the agent.
+
+    Args:
+        action_id (str): The unique identifier for this action call.
+        content (MessageContent): The confirmation message content.
+        tool_name (str): The name of the tool requiring confirmation.
+        tool_arguments (dict[str, Any]): The arguments for the tool call.
+        tool_description (str): Description of what the tool does.
+        tool_type (str): The type of tool (e.g., "runPythonCode", "callRestApi").
+        details (dict[str, Any] | None): Optional additional details about the tool call.
+    """
+
+    _type: ClassVar[str] = "toolConfirmation"
+    action_id: str
+    content: MessageContent
+    tool_name: str
+    tool_arguments: dict[str, Any]
+    tool_description: str
+    tool_type: str
+    details: dict[str, Any] | None = None
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "type": self._type,
+            "actionId" if camel_case else "action_id": self.action_id,
+            "toolConfirmation": {
+                "content": self.content.dump(camel_case=camel_case),
+                "toolName" if camel_case else "tool_name": self.tool_name,
+                "toolArguments" if camel_case else "tool_arguments": self.tool_arguments,
+                "toolDescription" if camel_case else "tool_description": self.tool_description,
+                "toolType" if camel_case else "tool_type": self.tool_type,
+            },
+        }
+        if self.details is not None:
+            result["toolConfirmation"]["details"] = self.details
+        return result
+
+    @classmethod
+    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ToolConfirmationCall:
+        tool_confirmation = data["toolConfirmation"]
+        content = MessageContent._load(tool_confirmation["content"])
+        return cls(
+            action_id=data["actionId"],
+            content=content,
+            tool_name=tool_confirmation["toolName"],
+            tool_arguments=tool_confirmation["toolArguments"],
+            tool_description=tool_confirmation["toolDescription"],
+            tool_type=tool_confirmation["toolType"],
+            details=tool_confirmation.get("details"),
+        )
+
+
+@dataclass
 class UnknownActionCall(ActionCall):
     """Unknown action call type for forward compatibility.
 
@@ -383,6 +437,39 @@ class ClientToolResult(ActionResult):
             action_id=data["actionId"],
             content=content,
             data=data.get("data"),
+        )
+
+
+@dataclass
+class ToolConfirmationResult(ActionResult):
+    """Result of a tool confirmation request.
+
+    Args:
+        action_id (str): The ID of the action being responded to.
+        status (Literal["ALLOW", "DENY"]): Whether to allow or deny the tool execution.
+    """
+
+    _type: ClassVar[str] = "toolConfirmation"
+    status: Literal["ALLOW", "DENY"] = field(init=False)
+
+    def __init__(self, action_id: str, status: Literal["ALLOW", "DENY"]) -> None:
+        self.action_id = action_id
+        self.status = status
+        self.role = "action"
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "role": self.role,
+            "type": self._type,
+            "actionId" if camel_case else "action_id": self.action_id,
+            "status": self.status,
+        }
+
+    @classmethod
+    def _load_result(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ToolConfirmationResult:
+        return cls(
+            action_id=data["actionId"],
+            status=data["status"],
         )
 
 

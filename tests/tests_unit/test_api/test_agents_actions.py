@@ -14,6 +14,8 @@ from cognite.client.data_classes.agents.chat import (
     ClientToolCall,
     ClientToolResult,
     TextContent,
+    ToolConfirmationCall,
+    ToolConfirmationResult,
     UnknownActionCall,
 )
 
@@ -195,3 +197,77 @@ class TestChatWithActions:
         # Verify response
         assert isinstance(response, AgentChatResponse)
         assert response.text == "The result is 100."
+
+
+class TestToolConfirmationCall:
+    def test_load_and_dump(self) -> None:
+        data = {
+            "actionId": "call_123",
+            "type": "toolConfirmation",
+            "toolConfirmation": {
+                "content": {"type": "text", "text": "Please confirm the action."},
+                "toolName": "Add",
+                "toolArguments": {"number1": 48, "number2": 82},
+                "toolDescription": "This is a simple calculator that adds two numbers.",
+                "toolType": "runPythonCode",
+            },
+        }
+
+        call = ActionCall._load(data)
+
+        assert isinstance(call, ToolConfirmationCall)
+        assert call.action_id == "call_123"
+        assert call.tool_name == "Add"
+        assert call.tool_type == "runPythonCode"
+        assert call.details is None
+        assert call.dump(camel_case=True) == data
+
+    def test_load_with_rest_api_details(self) -> None:
+        data = {
+            "actionId": "call_456",
+            "type": "toolConfirmation",
+            "toolConfirmation": {
+                "content": {"type": "text", "text": "Confirm?"},
+                "toolName": "Work with databases",
+                "toolArguments": {"limit": 25},
+                "toolDescription": "Tool to retrieve data.",
+                "toolType": "callRestApi",
+                "details": {"endpointMethod": "GET", "endpointPath": "/raw/dbs"},
+            },
+        }
+
+        call = ActionCall._load(data)
+
+        assert isinstance(call, ToolConfirmationCall)
+        assert call.details == {"endpointMethod": "GET", "endpointPath": "/raw/dbs"}
+        assert call.dump(camel_case=True) == data
+
+
+class TestToolConfirmationResult:
+    def test_load_and_dump_allow(self) -> None:
+        data = {
+            "role": "action",
+            "type": "toolConfirmation",
+            "actionId": "call_123",
+            "status": "ALLOW",
+        }
+
+        result = ToolConfirmationResult._load_result(data)
+
+        assert isinstance(result, ToolConfirmationResult)
+        assert result.status == "ALLOW"
+        assert result.dump(camel_case=True) == data
+
+    def test_load_and_dump_deny(self) -> None:
+        data = {
+            "role": "action",
+            "type": "toolConfirmation",
+            "actionId": "call_456",
+            "status": "DENY",
+        }
+
+        result = ToolConfirmationResult._load_result(data)
+
+        assert isinstance(result, ToolConfirmationResult)
+        assert result.status == "DENY"
+        assert result.dump(camel_case=True) == data
