@@ -61,3 +61,4 @@ my_file.txt
 .venv/
 *.env
 .envrc
+.ropeproject
