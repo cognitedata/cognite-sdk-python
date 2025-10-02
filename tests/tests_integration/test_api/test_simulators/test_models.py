@@ -41,6 +41,7 @@ class TestSimulatorModels:
         for model in cognite_client.simulators.models(
             limit=2,
             simulator_external_ids=[seed_resource_names.simulator_external_id],
+            sort=PropertySort(order="asc", property="createdTime"),
         ):
             assert model.created_time is not None
             model_ids.append(model.id)
@@ -72,7 +73,10 @@ class TestSimulatorModels:
         )
 
         model_revision_ids = []
-        for revision in cognite_client.simulators.models.revisions(limit=2):
+        for revision in cognite_client.simulators.models.revisions(
+            limit=2,
+            sort=PropertySort(order="desc", property="createdTime"),
+        ):
             assert revision.created_time is not None
             model_revision_ids.append(revision.id)
 
