@@ -18,6 +18,7 @@ from cognite.client.data_classes.agents.chat import (
     ToolConfirmationResult,
     UnknownActionCall,
 )
+from tests.utils import jsgz_load
 
 
 @pytest.fixture
@@ -66,6 +67,24 @@ def final_response_body() -> dict:
             "type": "result",
         },
     }
+
+
+@pytest.fixture
+def mock_action_call_response(
+    rsps: MagicMock, cognite_client: CogniteClient, action_call_response_body: dict
+) -> MagicMock:
+    """Mock HTTP response for agent chat that returns an action call."""
+    url = cognite_client.agents._get_base_url_with_base_path() + cognite_client.agents._RESOURCE_PATH + "/chat"
+    rsps.add(rsps.POST, url, status=200, json=action_call_response_body)
+    yield rsps
+
+
+@pytest.fixture
+def mock_final_response(rsps: MagicMock, cognite_client: CogniteClient, final_response_body: dict) -> MagicMock:
+    """Mock HTTP response for final agent response."""
+    url = cognite_client.agents._get_base_url_with_base_path() + cognite_client.agents._RESOURCE_PATH + "/chat"
+    rsps.add(rsps.POST, url, status=200, json=final_response_body)
+    yield rsps
 
 
 class TestClientToolCall:
@@ -130,9 +149,9 @@ class TestClientToolResult:
 
 
 class TestChatWithActions:
-    def test_chat_with_actions_parameter(self, cognite_client: CogniteClient, action_call_response_body: dict) -> None:
-        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: action_call_response_body))
-
+    def test_chat_with_actions_parameter(
+        self, cognite_client: CogniteClient, mock_action_call_response: MagicMock
+    ) -> None:
         add_action = ClientToolAction(
             name="add",
             description="Add two numbers",
@@ -153,20 +172,20 @@ class TestChatWithActions:
         )
 
         # Verify actions were sent in request
-        call_args = cognite_client.agents._post.call_args
-        assert "actions" in call_args[1]["json"]
-        assert len(call_args[1]["json"]["actions"]) == 1
-        assert call_args[1]["json"]["actions"][0]["type"] == "clientTool"
-        assert call_args[1]["json"]["actions"][0]["clientTool"]["name"] == "add"
+        request_body = jsgz_load(mock_action_call_response.calls[-1].request.body)
+        assert "actions" in request_body
+        assert len(request_body["actions"]) == 1
+        assert request_body["actions"][0]["type"] == "clientTool"
+        assert request_body["actions"][0]["clientTool"]["name"] == "add"
 
         # Verify response
         assert isinstance(response, AgentChatResponse)
         assert response.action_calls is not None
         assert len(response.action_calls) == 1
 
-    def test_chat_with_action_result_message(self, cognite_client: CogniteClient, final_response_body: dict) -> None:
-        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: final_response_body))
-
+    def test_chat_with_action_result_message(
+        self, cognite_client: CogniteClient, mock_final_response: MagicMock
+    ) -> None:
         add_action = ClientToolAction(
             name="add",
             description="Add two numbers",
@@ -186,10 +205,10 @@ class TestChatWithActions:
         )
 
         # Verify action result was sent
-        call_args = cognite_client.agents._post.call_args
-        assert call_args[1]["json"]["cursor"] == "cursor_12345"
-        assert len(call_args[1]["json"]["messages"]) == 1
-        msg = call_args[1]["json"]["messages"][0]
+        request_body = jsgz_load(mock_final_response.calls[-1].request.body)
+        assert request_body["cursor"] == "cursor_12345"
+        assert len(request_body["messages"]) == 1
+        msg = request_body["messages"][0]
         assert msg["role"] == "action"
         assert msg["type"] == "clientTool"
         assert msg["actionId"] == "call_abc123"
