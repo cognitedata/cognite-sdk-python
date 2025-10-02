@@ -291,8 +291,6 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.simulators.models.revisions.retrieve_data("model_revision_1")
         """
-        self._warning.warn()
-
         response = self._post(
             url_path=f"{self._RESOURCE_PATH}/data/list",
             headers={"cdf-version": "alpha"},

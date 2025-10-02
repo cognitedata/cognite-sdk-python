@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, overload
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
 from cognite.client.data_classes.agents.chat import AgentChatResponse, Message, MessageList
-from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
