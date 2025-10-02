@@ -90,7 +90,7 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
         cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
         memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        runtime (str | None): Runtime of the function. Allowed values are ["py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
+        runtime (RunTime | None): Runtime of the function. Allowed values are ["py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
     """
 
@@ -106,7 +106,7 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
         env_vars: dict[str, str] | None = None,
         cpu: float | None = None,
         memory: float | None = None,
-        runtime: str | None = None,
+        runtime: RunTime | None = None,
         metadata: dict[str, str] | None = None,
     ) -> None:
         # name/file_id are required when using the class to read,
@@ -124,7 +124,7 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
         self.env_vars = env_vars
         self.cpu = cpu
         self.memory = memory
-        self.runtime = runtime
+        self.runtime: RunTime | None = runtime
         self.metadata = metadata
 
 
@@ -146,7 +146,7 @@ class Function(FunctionCore):
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
         cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
         memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        runtime (str | None): Runtime of the function. Allowed values are ["py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
+        runtime (RunTime | None): Runtime of the function. Allowed values are ["py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
         runtime_version (str | None): The complete specification of the function runtime with major, minor and patch version numbers.
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
         error (dict | None): Dictionary with keys "message" and "trace", which is populated if deployment fails.
@@ -168,7 +168,7 @@ class Function(FunctionCore):
         env_vars: dict[str, str] | None = None,
         cpu: float | None = None,
         memory: float | None = None,
-        runtime: str | None = None,
+        runtime: RunTime | None = None,
         runtime_version: str | None = None,
         metadata: dict[str, str] | None = None,
         error: dict | None = None,
@@ -196,7 +196,7 @@ class Function(FunctionCore):
         self.id: int = id  # type: ignore
         self.created_time: int = created_time  # type: ignore
         self.status: str = status  # type: ignore
-        self.runtime_version = runtime_version
+        self.runtime_version: RunTime | None = runtime_version
         self.error = error
         self._cognite_client = cast("CogniteClient", cognite_client)
 
@@ -215,7 +215,7 @@ class Function(FunctionCore):
             env_vars=self.env_vars,
             cpu=self.cpu,
             memory=self.memory,
-            runtime=cast(RunTime, self.runtime),
+            runtime=self.runtime,
             metadata=self.metadata,
         )
 
@@ -745,7 +745,7 @@ class FunctionsLimits(CogniteResponse):
         timeout_minutes (int): Timeout of each function call.
         cpu_cores (dict[str, float]): The number of CPU cores per function execution (i.e. function call).
         memory_gb (dict[str, float]): The amount of available memory in GB per function execution (i.e. function call).
-        runtimes (list[str]): Available runtimes. For example, "py312" translates to the latest version of the Python 3.12 series.
+        runtimes (list[RunTime]): Available runtimes. For example, "py312" translates to the latest version of the Python 3.12 series.
         response_size_mb (int | None): Maximum response size of function calls.
     """
 
@@ -754,13 +754,13 @@ class FunctionsLimits(CogniteResponse):
         timeout_minutes: int,
         cpu_cores: dict[str, float],
         memory_gb: dict[str, float],
-        runtimes: list[str],
+        runtimes: list[RunTime],
         response_size_mb: int | None = None,
     ) -> None:
         self.timeout_minutes = timeout_minutes
         self.cpu_cores = cpu_cores
         self.memory_gb = memory_gb
-        self.runtimes = runtimes
+        self.runtimes: list[RunTime] = runtimes
         self.response_size_mb = response_size_mb
 
     @classmethod
