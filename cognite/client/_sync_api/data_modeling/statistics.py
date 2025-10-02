@@ -1,0 +1,56 @@
+"""
+===============================================================================
+a4c510989006c674b4ae203ce2c6918d
+This file is auto-generated from the Async API modules, - do not edit manually!
+===============================================================================
+"""
+
+from __future__ import annotations
+
+from collections.abc import Coroutine
+from typing import TYPE_CHECKING, Any, TypeVar
+
+from cognite.client import AsyncCogniteClient
+from cognite.client._sync_api.data_modeling.space_statistics import SyncSpaceStatisticsAPI
+from cognite.client.data_classes.data_modeling.statistics import ProjectStatistics
+from cognite.client.utils._concurrency import ConcurrencySettings
+
+if TYPE_CHECKING:
+    from cognite.client._cognite_client import AsyncCogniteClient
+
+_T = TypeVar("_T")
+
+
+class SyncStatisticsAPI:
+    """Auto-generated, do not modify manually."""
+
+    def __init__(self, async_client: AsyncCogniteClient):
+        self.__async_client = async_client
+        self.spaces = SyncSpaceStatisticsAPI(async_client)
+
+    def _run_sync(self, coro: Coroutine[Any, Any, _T]) -> _T:
+        executor = ConcurrencySettings._get_event_loop_executor()
+        return executor.run_coro(coro)
+
+    def project(self) -> ProjectStatistics:
+        """
+        `Retrieve project-wide usage data and limits <https://developer.cognite.com/api#tag/Statistics/operation/getStatistics>`_
+
+        Returns the usage data and limits for a project's data modelling usage, including data model schemas and graph instances
+
+        Returns:
+            ProjectStatistics: The requested statistics and limits
+
+        Examples:
+
+            Fetch project statistics (and limits) and check the current number of data models vs.
+            and how many more can be created:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> stats = client.data_modeling.statistics.project()
+                >>> data_model_count = stats.data_models.count
+                >>> available_count = stats.data_models.limit - data_model_count
+        """
+        return self._run_sync(self.__async_client.data_modeling.statistics.project())
