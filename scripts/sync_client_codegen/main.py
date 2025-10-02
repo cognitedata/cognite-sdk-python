@@ -30,13 +30,9 @@ from cognite.client.config import ClientConfig, global_config  # noqa: E402
 from cognite.client.credentials import Token  # noqa: E402
 
 EIGHT_SPACES = " " * 8
-SKIP_API_NAMES = {
-    "PrincipalsAPI",
-}
 KNOWN_FILES_SKIP_LIST = {
     Path("cognite/client/_api/datapoint_tasks.py"),
     Path("cognite/client/_api/functions/utils.py"),
-    Path("cognite/client/_api/org_apis/principals.py"),  # TODO?
 }
 MAYBE_IMPORTS = (
     "SortSpec: TypeAlias",
@@ -66,14 +62,12 @@ from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils._concurrency import ConcurrencySettings
-from typing import Any, Iterator, TypeVar, TYPE_CHECKING, overload
+from typing import Any, Iterator, TYPE_CHECKING, overload
 from collections.abc import Coroutine
 
 if TYPE_CHECKING:
     import pandas as pd
     {type_checking_imports}
-
-_T = TypeVar("_T")
 
 
 class Sync{class_name}(SyncAPIClient):
@@ -98,7 +92,7 @@ def get_api_class_by_attribute(cls_: object, parent_name: tuple[str, ...] = ()) 
 
 
 def find_api_class_name(source_code: str, file: Path, raise_on_missing: bool = True) -> str | None:
-    match re.findall(r"class (\w+API)\(APIClient\):", source_code):
+    match re.findall(r"class (\w+API)\((?:Org)?APIClient\):", source_code):
         case []:
             return None
         case [cls_name]:
@@ -164,12 +158,10 @@ def get_module_level_type_checking_imports(tree: ast.Module) -> str:
             continue
 
         match node.test:
-            # check for "if TYPE_CHECKING:"
             case ast.Name(id="TYPE_CHECKING"):
-                pass
-            # or "if typing.TYPE_CHECKING:"
+                pass  # we found: `if TYPE_CHECKING:`
             case ast.Attribute(value=ast.Name(id="typing"), attr="TYPE_CHECKING"):
-                pass
+                pass  # we found: `if typing.TYPE_CHECKING:`
             case _:
                 continue
 
@@ -232,7 +224,6 @@ def find_self_assignments(class_node: ast.ClassDef) -> tuple[list[str], list[str
                 and t.value.id == "self"
                 and isinstance(stmt.value, ast.Call)
                 and stmt.value.func.id.endswith("API")
-                and stmt.value.func.id not in SKIP_API_NAMES
             ):
                 names.append(cls_name := foolish_cls_name_rewrite(stmt.value.func.id))
                 nested_apis.append(
@@ -374,7 +365,7 @@ def fix_imports_for_sync_apis(all_imports: str, lst_of_api_names: list[str]) -> 
     if not lst_of_api_names:
         return all_imports
 
-    api_name_options = "|".join(map(re.escape, lst_of_api_names))  # escape is prob overkill
+    api_name_options = "|".join(map(inverse_foolish_cls_name_rewrite, lst_of_api_names))
     pattern = re.compile(rf"^from cognite\.client\._api(\..*? import\s+)(.*?)({api_name_options})(.*)$", re.MULTILINE)
 
     def replacer(match: re.Match) -> str:
@@ -391,7 +382,7 @@ def fix_imports_for_sync_apis(all_imports: str, lst_of_api_names: list[str]) -> 
                 "to:\n"
                 "from cognite.client._sync_api.time_series import SyncDatapointsAPI\n"
             )
-        return f"from cognite.client._sync_api{module_and_import}Sync{matched_api_name}"
+        return f"from cognite.client._sync_api{module_and_import}Sync{foolish_cls_name_rewrite(matched_api_name)}"
 
     # Perform the substitution in a single pass:
     return pattern.sub(replacer, all_imports)
@@ -518,8 +509,9 @@ def create_sync_cognite_client(
     content = COGNITE_CLIENT_TEMPLATE.format(
         file_hash="TODO", all_api_imports="\n".join(all_imports), nested_apis_init="        ".join(all_apis)
     )
-    SYNC_CLIENT_PATH.write_text(content)
-    print(f"- Generated sync CogniteClient in: '{SYNC_CLIENT_PATH}' ✅")
+    if content != SYNC_CLIENT_PATH.read_text():
+        SYNC_CLIENT_PATH.write_text(content)
+        print(f"- Updated sync CogniteClient: '{SYNC_CLIENT_PATH}' ✅")
 
 
 def clean_up_files(all_expected_files: list[Path]) -> None:
@@ -549,23 +541,26 @@ if __name__ == "__main__":
 
     # Run convert on all AsyncSomethingAPIs:
     all_expected_files = []
-    files_needing_lint = []
+    files_needing_lint = [SYNC_CLIENT_PATH]
+    something_failed = False
     for read_file in filter(is_pyfile, list_apis()):
         try:
             write_file, was_modified = main(read_file, dot_path_lookup)
             if write_file is not None:
                 all_expected_files.append(write_file)
-            if was_modified:
-                files_needing_lint.append(write_file)
+                if was_modified:
+                    files_needing_lint.append(write_file)
         except Exception as e:
             print(f"- Failed to generate sync client code for: '{read_file}' ❌ {e}")
+            something_failed = True
             continue
+
+    # Gather all sync APIs into the CogniteClient class itself:
+    create_sync_cognite_client(dot_path_lookup, file_path_lookup)
 
     # Invoke run via pre-commit (subprocess) as it doesn't have a python API interface:
     run_ruff(files_needing_lint)
 
     # Clean up files that are no longer needed:
-    clean_up_files(all_expected_files)
-
-    # Finally, gather all sync APIs into the CogniteClient class itself:
-    create_sync_cognite_client(dot_path_lookup, file_path_lookup)
+    if not something_failed:
+        clean_up_files(all_expected_files)
