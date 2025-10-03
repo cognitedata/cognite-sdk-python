@@ -2961,6 +2961,74 @@ class TestRetrieveDataFrameAPI:
                 include_granularity_name=None,  # type: ignore[arg-type]
             )
 
+    @pytest.mark.parametrize(
+        "include_status, expected_unit_columns",
+        (
+            (True, pd.Index(["temperature:deg_c"] + [np.nan] * 5, dtype="object", name="Units")),
+            (False, pd.Index(["temperature:deg_c", np.nan], dtype="object", name="Units")),
+        ),
+    )
+    def test_include_unit(
+        self,
+        cognite_client: CogniteClient,
+        timeseries_degree_c_minus40_0_100: TimeSeries,
+        one_mill_dps_ts: tuple,
+        include_status: bool,
+        expected_unit_columns: pd.Index,
+        ts_status_codes: TimeSeriesList,
+    ) -> None:
+        aggregates = ["average", "min"]
+        assert timeseries_degree_c_minus40_0_100.external_id is not None
+        assert ts_status_codes[0].external_id is not None
+        ex_ids = [timeseries_degree_c_minus40_0_100.external_id, ts_status_codes[0].external_id]
+        res = cognite_client.time_series.data.retrieve_dataframe(
+            external_id=ex_ids,
+            include_unit=True,
+            aggregates=aggregates,
+            granularity="1d",
+            include_status=include_status,
+        )
+        expected_res = pd.Index(["temperature:deg_c"] * 2 + [np.nan] * 2, dtype="object", name="Units")
+        pd.testing.assert_index_equal(expected_res, res.columns.get_level_values(1))
+
+        res = cognite_client.time_series.data.retrieve(
+            external_id=ex_ids, aggregates=aggregates, granularity="1d", include_status=include_status
+        )
+        res = res.to_pandas(include_unit=True)
+        pd.testing.assert_index_equal(expected_res, res.columns.get_level_values(1))
+
+        res = cognite_client.time_series.data.retrieve_dataframe(
+            external_id=ex_ids, include_unit=True, include_status=include_status
+        )
+        pd.testing.assert_index_equal(expected_unit_columns, res.columns.get_level_values(1))
+
+        res = cognite_client.time_series.data.retrieve(external_id=ex_ids, include_status=include_status)
+        res = res.to_pandas(include_unit=True)
+        pd.testing.assert_index_equal(expected_unit_columns, res.columns.get_level_values(1))
+
+        res = cognite_client.time_series.data.retrieve_dataframe(
+            external_id=one_mill_dps_ts[0].external_id,
+            include_unit=True,
+            aggregates=aggregates,
+            granularity="100d",
+            include_status=include_status,
+        )
+        assert type(res.columns) is pd.core.indexes.base.Index
+
+        res = cognite_client.time_series.data.synthetic.query(
+            expressions=["A / (A  - A)"],
+            start=pd.Timestamp("1970-01-01"),
+            end=pd.Timestamp("2025-02-01"),
+            limit=1,
+            variables={"A": ex_ids[0]},
+            aggregate="average",
+            granularity="1d",
+            target_unit="temperature:deg_c",
+        )
+        assert isinstance(res, DatapointsList)
+        res = res[0].to_pandas(include_errors=True, include_unit=True)
+        assert type(res.columns) is pd.core.indexes.base.Index
+
 
 @pytest.fixture
 def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
