@@ -1955,19 +1955,6 @@ docs = ["sphinx", "sphinx-rtd-theme", "zope.interface"]
 tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
-name = "pyodide-http"
-version = "0.2.2"
-description = "Patch requests, urllib and urllib3 to make them work in Pyodide"
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "extra == \"pyodide\""
-files = [
-    {file = "pyodide_http-0.2.2-py3-none-any.whl", hash = "sha256:cf006ea593c1643b5badeb4d42ed24a6eebd830276171fa1f82de0777b3fb608"},
-    {file = "pyodide_http-0.2.2.tar.gz", hash = "sha256:d98132c664a621c950d4d795fa013b763b0ebc223f6107d06483b736802b61c0"},
-]
-
-[[package]]
 name = "pyogrio"
 version = "0.11.1"
 description = "Vectorized spatial vector file format I/O using GDAL/OGR"
@@ -3195,11 +3182,11 @@ functions = ["pip"]
 geo = ["geopandas", "shapely"]
 numpy = ["numpy"]
 pandas = ["pandas"]
-pyodide = ["pyodide-http", "tzdata"]
+pyodide = ["tzdata"]
 sympy = ["sympy"]
 yaml = ["PyYAML"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "710c686446e4446ee31729d22040f3c4979baaadb42675479f557453c804a70c"
+content-hash = "97d681ee441d82918562f16f2260e4ce32f378f6cb35829d774a8ba9d38d6994"
