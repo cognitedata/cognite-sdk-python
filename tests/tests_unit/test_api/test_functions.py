@@ -405,6 +405,7 @@ class TestFunctionsAPI:
         [
             (".", "handler.py", None),
             ("function_code", "./handler.py", None),
+            ("function_with_handle_assignment", "handler.py", None),
             ("bad_function_code", "handler.py", FileNotFoundError),
             ("bad_function_code2", "handler.py", TypeError),
         ],
