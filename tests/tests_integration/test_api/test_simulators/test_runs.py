@@ -1,11 +1,12 @@
 import asyncio
 import time
+from itertools import pairwise
 
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes import TimestampRange
-from cognite.client.data_classes.simulators.filters import PropertySort
+from cognite.client.data_classes.simulators.filters import SimulationRunsSort
 from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevision
 from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
@@ -185,29 +186,29 @@ class TestSimulatorRuns:
     def test_list_sort(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id
 
-        # Test list with sort
+        # Test list with sort by createdTime
         runs_asc = cognite_client.simulators.runs.list(
             routine_external_ids=[routine_external_id],
-            sort=PropertySort(order="asc", property="createdTime"),
+            sort=SimulationRunsSort(order="asc", property="createdTime"),
             limit=5,
         )
 
         if len(runs_asc) > 1:
-            for i in range(1, len(runs_asc)):
-                assert runs_asc[i].created_time >= runs_asc[i - 1].created_time
+            for prev, curr in pairwise(runs_asc):
+                assert curr.created_time >= prev.created_time
 
-        # Test iterator with sort
-        runs_iter = []
-        for run in cognite_client.simulators.runs(
-            routine_external_ids=[routine_external_id],
-            sort=PropertySort(order="desc", property="createdTime"),
-            limit=3,
-        ):
-            runs_iter.append(run)
+        # Test iterator with sort by createdTime descending
+        runs_iter = list(
+            cognite_client.simulators.runs(
+                routine_external_ids=[routine_external_id],
+                sort=SimulationRunsSort(order="desc", property="createdTime"),
+                limit=3,
+            )
+        )
 
         if len(runs_iter) > 1:
-            for i in range(1, len(runs_iter)):
-                assert runs_iter[i].created_time <= runs_iter[i - 1].created_time
+            for prev, curr in pairwise(runs_iter):
+                assert curr.created_time <= prev.created_time
 
     def test_list_run_data(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id

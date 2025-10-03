@@ -102,6 +102,20 @@ class PropertySort(CogniteSort):
         return dumped
 
 
+class SimulationRunsSort(CogniteSort):
+    def __init__(
+        self,
+        property: Literal["createdTime", "simulationTime"] = "createdTime",
+        order: Literal["asc", "desc"] = "asc",
+    ):
+        super().__init__(property, order)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        dumped["property"] = self.property
+        return dumped
+
+
 class SimulatorRoutineRevisionsFilter(CogniteFilter):
     def __init__(
         self,
