@@ -81,6 +81,7 @@ EXAMPLE_FUNCTION = {
     "memory": 1,
     "runtime": "py311",
     "runtimeVersion": "Python 3.11.11",
+    "lastCalled": 1585925306822,
 }
 CALL_RUNNING = {
     "id": CALL_ID,
