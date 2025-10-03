@@ -151,6 +151,7 @@ class Function(FunctionCore):
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
         error (dict | None): Dictionary with keys "message" and "trace", which is populated if deployment fails.
         cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
+        last_called (int | None): Last time the function was called, in UNIX timestamp milliseconds.
     """
 
     def __init__(
@@ -173,6 +174,7 @@ class Function(FunctionCore):
         metadata: dict[str, str] | None = None,
         error: dict | None = None,
         cognite_client: CogniteClient | None = None,
+        last_called: int | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -199,6 +201,7 @@ class Function(FunctionCore):
         self.runtime_version: str | None = runtime_version
         self.error = error
         self._cognite_client = cast("CogniteClient", cognite_client)
+        self.last_called = last_called
 
     def as_write(self) -> FunctionWrite:
         """Returns a writeable version of this function."""
