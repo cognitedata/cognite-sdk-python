@@ -17,14 +17,16 @@ from cognite.client._api.data_modeling.containers import ContainersAPI
 from cognite.client._api.data_modeling.data_models import DataModelsAPI
 from cognite.client._api.data_modeling.graphql import DataModelingGraphQLAPI
 from cognite.client._api.data_modeling.instances import InstancesAPI
+from cognite.client._api.data_modeling.space_statistics import SpaceStatisticsAPI
 from cognite.client._api.data_modeling.spaces import SpacesAPI
-from cognite.client._api.data_modeling.statistics import SpaceStatisticsAPI, StatisticsAPI
+from cognite.client._api.data_modeling.statistics import StatisticsAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api.diagrams import DiagramsAPI
-from cognite.client._api.documents import DocumentPreviewAPI, DocumentsAPI
+from cognite.client._api.document_preview import DocumentPreviewAPI
+from cognite.client._api.documents import DocumentsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.extractionpipelines import (
@@ -33,14 +35,20 @@ from cognite.client._api.extractionpipelines import (
     ExtractionPipelinesAPI,
 )
 from cognite.client._api.files import FilesAPI
-from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
+from cognite.client._api.functions import FunctionsAPI
+from cognite.client._api.functions.calls import FunctionCallsAPI
+from cognite.client._api.functions.schedules import FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.hosted_extractors import HostedExtractorsAPI
 from cognite.client._api.hosted_extractors.destinations import DestinationsAPI
 from cognite.client._api.hosted_extractors.jobs import JobsAPI
 from cognite.client._api.hosted_extractors.mappings import MappingsAPI
 from cognite.client._api.hosted_extractors.sources import SourcesAPI
-from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
+from cognite.client._api.iam import IAMAPI
+from cognite.client._api.iam.groups import GroupsAPI
+from cognite.client._api.iam.security_categories import SecurityCategoriesAPI
+from cognite.client._api.iam.sessions import SessionsAPI
+from cognite.client._api.iam.token import TokenAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.org_apis.principals import PrincipalsAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
@@ -51,7 +59,8 @@ from cognite.client._api.raw.databases import RawDatabasesAPI
 from cognite.client._api.raw.rows import RawRowsAPI
 from cognite.client._api.raw.tables import RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
-from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
+from cognite.client._api.sequence_data import SequencesDataAPI
+from cognite.client._api.sequences import SequencesAPI
 from cognite.client._api.simulators import SimulatorsAPI
 from cognite.client._api.simulators.integrations import SimulatorIntegrationsAPI
 from cognite.client._api.simulators.logs import SimulatorLogsAPI
@@ -68,13 +77,11 @@ from cognite.client._api.templates import (
     TemplatesAPI,
     TemplateViewsAPI,
 )
-from cognite.client._api.three_d import (
-    ThreeDAPI,
-    ThreeDAssetMappingAPI,
-    ThreeDFilesAPI,
-    ThreeDModelsAPI,
-    ThreeDRevisionsAPI,
-)
+from cognite.client._api.three_d import ThreeDAPI
+from cognite.client._api.three_d.asset_mapping import ThreeDAssetMappingAPI
+from cognite.client._api.three_d.files import ThreeDFilesAPI
+from cognite.client._api.three_d.models import ThreeDModelsAPI
+from cognite.client._api.three_d.revisions import ThreeDRevisionsAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api.transformations import (
     TransformationJobsAPI,
@@ -83,16 +90,15 @@ from cognite.client._api.transformations import (
     TransformationSchedulesAPI,
     TransformationSchemaAPI,
 )
-from cognite.client._api.units import UnitAPI, UnitSystemAPI
+from cognite.client._api.unit_system import UnitSystemAPI
+from cognite.client._api.units import UnitAPI
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api.vision import VisionAPI
-from cognite.client._api.workflows import (
-    WorkflowAPI,
-    WorkflowExecutionAPI,
-    WorkflowTaskAPI,
-    WorkflowTriggerAPI,
-    WorkflowVersionAPI,
-)
+from cognite.client._api.workflows import WorkflowAPI
+from cognite.client._api.workflows.executions import WorkflowExecutionAPI
+from cognite.client._api.workflows.tasks import WorkflowTaskAPI
+from cognite.client._api.workflows.triggers import WorkflowTriggerAPI
+from cognite.client._api.workflows.versions import WorkflowVersionAPI
 
 
 class CogniteClientMock(MagicMock):
