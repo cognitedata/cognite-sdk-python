@@ -91,7 +91,7 @@ class SimulatorRoutinesFilter(CogniteFilter):
 class PropertySort(CogniteSort):
     def __init__(
         self,
-        property: Literal["createdTime"] = "createdTime",
+        property: Literal["created_time"] = "created_time",
         order: Literal["asc", "desc"] = "asc",
     ):
         super().__init__(property, order)
@@ -105,7 +105,7 @@ class PropertySort(CogniteSort):
 class SimulationRunsSort(CogniteSort):
     def __init__(
         self,
-        property: Literal["createdTime", "simulationTime"] = "createdTime",
+        property: Literal["created_time", "simulation_time"] = "created_time",
         order: Literal["asc", "desc"] = "asc",
     ):
         super().__init__(property, order)

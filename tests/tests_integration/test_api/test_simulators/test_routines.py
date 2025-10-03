@@ -48,7 +48,7 @@ class TestSimulatorRoutines:
 
         routines_asc = cognite_client.simulators.routines.list(
             simulator_integration_external_ids=[simulator_integration_unique_external_id],
-            sort=PropertySort(order="asc", property="createdTime"),
+            sort=PropertySort(order="asc", property="created_time"),
         )
 
         assert len(routines_asc) > 1
@@ -59,7 +59,7 @@ class TestSimulatorRoutines:
         routines_iter = list(
             cognite_client.simulators.routines(
                 simulator_integration_external_ids=[simulator_integration_unique_external_id],
-                sort=PropertySort(order="asc", property="createdTime"),
+                sort=PropertySort(order="asc", property="created_time"),
                 limit=3,
             )
         )

@@ -189,7 +189,7 @@ class TestSimulatorRuns:
         # Test list with sort by createdTime
         runs_asc = cognite_client.simulators.runs.list(
             routine_external_ids=[routine_external_id],
-            sort=SimulationRunsSort(order="asc", property="createdTime"),
+            sort=SimulationRunsSort(order="asc", property="created_time"),
             limit=5,
         )
 
@@ -201,7 +201,7 @@ class TestSimulatorRuns:
         runs_iter = list(
             cognite_client.simulators.runs(
                 routine_external_ids=[routine_external_id],
-                sort=SimulationRunsSort(order="desc", property="createdTime"),
+                sort=SimulationRunsSort(order="desc", property="created_time"),
                 limit=3,
             )
         )
