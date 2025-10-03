@@ -46,7 +46,10 @@ from cognite.client._api.org_apis.principals import PrincipalsAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.postgres_gateway.tables import TablesAPI as PostgresTablesAPI
 from cognite.client._api.postgres_gateway.users import UsersAPI as PostgresUsersAPI
-from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
+from cognite.client._api.raw import RawAPI
+from cognite.client._api.raw.databases import RawDatabasesAPI
+from cognite.client._api.raw.rows import RawRowsAPI
+from cognite.client._api.raw.tables import RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
 from cognite.client._api.simulators import SimulatorsAPI
