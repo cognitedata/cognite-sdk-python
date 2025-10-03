@@ -688,15 +688,15 @@ class FunctionsAPI(APIClient):
 
 
 def get_handle_function_node(file_path: Path) -> ast.FunctionDef | ast.Name | None:
-    return next(
-        (
-            item
-            for item in ast.walk(ast.parse(file_path.read_text()))
-            if (isinstance(item, ast.FunctionDef) and item.name == "handle")
-            or (isinstance(item, ast.Name) and item.id == "handle")
-        ),
-        None,
-    )
+    tree = ast.parse(file_path.read_text())
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == "handle":
+            return node
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "handle":
+                    return target
+    return None
 
 
 def _run_import_check(queue: Queue, root_path: str, module_path: str) -> None:
