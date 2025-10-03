@@ -15,7 +15,7 @@ from cognite.client.data_classes.hosted_extractors.jobs import (
     JobUpdate,
     JobWrite,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -23,14 +23,14 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
+@warn_on_all_method_invocations(
+    FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Hosted Extractors")
+)
 class JobsAPI(APIClient):
     _RESOURCE_PATH = "/hostedextractors/jobs"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="beta", sdk_maturity="alpha", feature_name="Hosted Extractors"
-        )
         self._CREATE_LIMIT = 10
         self._LIST_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
@@ -67,7 +67,6 @@ class JobsAPI(APIClient):
         Returns:
             Iterator[Job] | Iterator[JobList]: yields Job one by one if chunk_size is not specified, else JobList objects.
         """
-        self._warning.warn()
         return self._list_generator(
             list_cls=JobList,
             resource_cls=Job,
@@ -116,7 +115,6 @@ class JobsAPI(APIClient):
                 >>> res = client.hosted_extractors.jobs.retrieve(["myJob", "myOtherJob"], ignore_unknown_ids=True)
 
         """
-        self._warning.warn()
         return self._retrieve_multiple(
             list_cls=JobList,
             resource_cls=Job,
@@ -143,7 +141,6 @@ class JobsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.hosted_extractors.jobs.delete(["myMQTTJob", "MyEventHubJob"])
         """
-        self._warning.warn()
         extra_body_fields: dict[str, Any] = {}
         if ignore_unknown_ids:
             extra_body_fields["ignoreUnknownIds"] = True
@@ -181,7 +178,6 @@ class JobsAPI(APIClient):
                 >>> job_write = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
                 >>> job = client.hosted_extractors.jobs.create(job_write)
         """
-        self._warning.warn()
         return self._create_multiple(
             list_cls=JobList,
             resource_cls=Job,
@@ -228,7 +224,6 @@ class JobsAPI(APIClient):
                 >>> job = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
                 >>> updated_job = client.hosted_extractors.jobs.update(job)
         """
-        self._warning.warn()
         return self._update_multiple(
             items=items,
             list_cls=JobList,
@@ -268,7 +263,6 @@ class JobsAPI(APIClient):
                 >>> for job_list in client.hosted_extractors.jobs(chunk_size=25):
                 ...     job_list # do something with the jobs
         """
-        self._warning.warn()
         return self._list(
             list_cls=JobList,
             resource_cls=Job,
@@ -303,7 +297,6 @@ class JobsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.jobs.list_logs(job="myJob")
         """
-        self._warning.warn()
         filter_: dict[str, Any] = {}
         if job:
             filter_["job"] = job
@@ -348,7 +341,6 @@ class JobsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.jobs.list_metrics(job="myJob")
         """
-        self._warning.warn()
         filter_: dict[str, Any] = {}
         if job:
             filter_["job"] = job

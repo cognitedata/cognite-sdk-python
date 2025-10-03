@@ -115,6 +115,11 @@ As of 2025-08-29, changes are grouped as follows
 - Added missing parameter `description` to `DatapointSubscriptionUpdate` object such that it can be updated
   in the `client.time_series.subscriptions.update(...)` method.
 
+
+## [7.81.0] - 2025-08-14
+### Added
+- [alpha] Alpha support for Streams & Records APIs. Note that both the SDK and API implementation may be changed at any time.
+
 ## [7.80.1] - 2025-08-14
 ### Fixed
 - Make CogniteAPIError.response_code non-nullable again, addressing a regression introduced in the previous version.

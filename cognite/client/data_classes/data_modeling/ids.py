@@ -183,6 +183,8 @@ ContainerIdentifier = ContainerId | tuple[str, str]
 ConstraintIdentifier = tuple[ContainerId, str]
 IndexIdentifier = tuple[ContainerId, str]
 ViewIdentifier = ViewId | tuple[str, str] | tuple[str, str, str]
+SourceIdentifier = ContainerIdentifier | ViewIdentifier
+SourceId = ContainerId | ViewId
 DataModelIdentifier = DataModelId | tuple[str, str] | tuple[str, str, str]
 NodeIdentifier = NodeId | tuple[str, str, str]
 EdgeIdentifier = EdgeId | tuple[str, str, str]
@@ -195,6 +197,20 @@ def _load_space_identifier(ids: str | SequenceNotStr[str]) -> DataModelingIdenti
     spaces = [ids] if isinstance(ids, str) else ids
     return DataModelingIdentifierSequence(
         identifiers=[DataModelingIdentifier(space) for space in spaces], is_singleton=not is_sequence
+    )
+
+
+def _load_source_id(source_identifier: SourceIdentifier) -> SourceId:
+    match source_identifier:
+        case ContainerId() | ViewId():
+            return source_identifier
+        case (str(space), str(view_external_id), str(version)):
+            return ViewId(space=space, external_id=view_external_id, version=version)
+        case (str(space), str(container_external_id)):
+            return ContainerId(space, container_external_id)
+    raise ValueError(
+        "Invalid source identifier format. Expected ContainerId or ViewId or tuple of "
+        "strings((space, externalId) for container or (space, externalId, version) for views)."
     )
 
 

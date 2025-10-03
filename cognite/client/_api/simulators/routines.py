@@ -17,7 +17,7 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationRun,
     SimulationRunWrite,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -26,15 +26,15 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
+@warn_on_all_method_invocations(
+    FeaturePreviewWarning(api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators")
+)
 class SimulatorRoutinesAPI(APIClient):
     _RESOURCE_PATH = "/simulators/routines"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.revisions = SimulatorRoutineRevisionsAPI(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
-        )
         self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 1
 
@@ -86,7 +86,6 @@ class SimulatorRoutinesAPI(APIClient):
         Returns:
             Iterator[SimulatorRoutine] | Iterator[SimulatorRoutineList]: yields SimulatorRoutine one by one if chunk is not specified, else SimulatorRoutineList objects.
         """
-        self._warning.warn()
         routines_filter = SimulatorRoutinesFilter(
             model_external_ids=model_external_ids,
             simulator_integration_external_ids=simulator_integration_external_ids,
@@ -139,7 +138,6 @@ class SimulatorRoutinesAPI(APIClient):
                 ... ]
                 >>> res = client.simulators.routines.create(routines)
         """
-        self._warning.warn()
         assert_type(routine, "simulator_routines", [SimulatorRoutineWrite, Sequence])
 
         return self._create_multiple(
@@ -167,7 +165,6 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.simulators.routines.delete(ids=[1,2,3], external_ids="foo")
         """
-        self._warning.warn()
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             wrap_ids=True,
@@ -210,12 +207,10 @@ class SimulatorRoutinesAPI(APIClient):
                 ... )
 
         """
-        self._warning.warn()
         routines_filter = SimulatorRoutinesFilter(
             model_external_ids=model_external_ids,
             simulator_integration_external_ids=simulator_integration_external_ids,
         )
-        self._warning.warn()
         return self._list(
             limit=limit,
             method="POST",
@@ -261,7 +256,6 @@ class SimulatorRoutinesAPI(APIClient):
                 ...     log_severity="Debug"
                 ... )
         """
-        self._warning.warn()
         run_object = SimulationRunWrite(
             routine_external_id=routine_external_id,
             inputs=list(inputs) if inputs is not None else None,

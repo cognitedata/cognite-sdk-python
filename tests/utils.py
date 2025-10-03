@@ -14,7 +14,7 @@ import string
 import typing
 from collections.abc import Mapping
 from contextlib import contextmanager
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import UnionType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, get_args, get_origin, get_type_hints
@@ -485,7 +485,8 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments.pop("max_list_size", None)
         elif resource_cls is SimulatorRoutineStepArguments:
             keyword_arguments = {"data": {"reference_id": self._random_string(50), "arg2": self._random_string(50)}}
-
+        elif resource_cls is datetime:
+            return datetime(year=2000, month=1, day=1)
         return resource_cls(*positional_arguments, **keyword_arguments)
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
