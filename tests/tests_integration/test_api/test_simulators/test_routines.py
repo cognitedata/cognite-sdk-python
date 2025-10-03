@@ -1,3 +1,5 @@
+from itertools import pairwise
+
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
@@ -46,9 +48,22 @@ class TestSimulatorRoutines:
 
         routines_asc = cognite_client.simulators.routines.list(
             simulator_integration_external_ids=[simulator_integration_unique_external_id],
-            sort=PropertySort(order="asc", property="createdTime"),
+            sort=PropertySort(order="asc", property="created_time"),
         )
 
         assert len(routines_asc) > 1
         for i in range(1, len(routines_asc)):
             assert routines_asc[i].created_time >= routines_asc[i - 1].created_time
+
+        # Test iterator with sort
+        routines_iter = list(
+            cognite_client.simulators.routines(
+                simulator_integration_external_ids=[simulator_integration_unique_external_id],
+                sort=PropertySort(order="asc", property="created_time"),
+                limit=3,
+            )
+        )
+
+        assert len(routines_iter) == 3
+        for prev, curr in pairwise(routines_iter):
+            assert curr.created_time >= prev.created_time

@@ -189,6 +189,7 @@ class SimulatorModelsAPI(APIClient):
             resource_cls=SimulatorModel,
             method="POST",
             filter=model_filter.dump(),
+            sort=[PropertySort.load(sort).dump()] if sort else None,
             chunk_size=chunk_size,
             limit=limit,
         )

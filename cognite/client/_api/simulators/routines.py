@@ -54,6 +54,7 @@ class SimulatorRoutinesAPI(APIClient):
         chunk_size: int,
         model_external_ids: Sequence[str] | None = None,
         simulator_integration_external_ids: Sequence[str] | None = None,
+        sort: PropertySort | None = None,
         limit: int | None = None,
     ) -> Iterator[SimulatorRoutineList]: ...
 
@@ -63,6 +64,7 @@ class SimulatorRoutinesAPI(APIClient):
         chunk_size: None = None,
         model_external_ids: Sequence[str] | None = None,
         simulator_integration_external_ids: Sequence[str] | None = None,
+        sort: PropertySort | None = None,
         limit: int | None = None,
     ) -> Iterator[SimulatorRoutine]: ...
 
@@ -71,6 +73,7 @@ class SimulatorRoutinesAPI(APIClient):
         chunk_size: int | None = None,
         model_external_ids: Sequence[str] | None = None,
         simulator_integration_external_ids: Sequence[str] | None = None,
+        sort: PropertySort | None = None,
         limit: int | None = None,
     ) -> Iterator[SimulatorRoutine] | Iterator[SimulatorRoutineList]:
         """Iterate over simulator routines
@@ -81,6 +84,7 @@ class SimulatorRoutinesAPI(APIClient):
             chunk_size (int | None): Number of simulator routines to return in each chunk. Defaults to yielding one simulator routine a time.
             model_external_ids (Sequence[str] | None): Filter on model external ids.
             simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
+            sort (PropertySort | None): The criteria to sort by.
             limit (int | None): Maximum number of simulator routines to return. Defaults to return all items.
 
         Returns:
@@ -96,6 +100,7 @@ class SimulatorRoutinesAPI(APIClient):
             resource_cls=SimulatorRoutine,
             method="POST",
             filter=routines_filter.dump(),
+            sort=[PropertySort.load(sort).dump()] if sort else None,
             chunk_size=chunk_size,
             limit=limit,
         )

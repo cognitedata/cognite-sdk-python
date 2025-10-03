@@ -220,6 +220,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             resource_cls=SimulatorModelRevision,
             method="POST",
             filter=model_revisions_filter.dump(),
+            sort=[PropertySort.load(sort).dump()] if sort else None,
             chunk_size=chunk_size,
             limit=limit,
         )

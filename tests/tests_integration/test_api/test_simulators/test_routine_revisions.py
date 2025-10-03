@@ -38,7 +38,7 @@ class TestSimulatorRoutineRevisions:
         revisions_by_model: list[SimulatorRoutineRevision] = []
 
         for revision in cognite_client.simulators.routines.revisions(
-            sort=PropertySort(order="asc", property="createdTime"),
+            sort=PropertySort(order="asc", property="created_time"),
             model_external_ids=[model_external_id],
             all_versions=True,
             include_all_fields=True,

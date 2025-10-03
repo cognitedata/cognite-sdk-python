@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteSort
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._text import to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
@@ -91,14 +92,30 @@ class SimulatorRoutinesFilter(CogniteFilter):
 class PropertySort(CogniteSort):
     def __init__(
         self,
-        property: Literal["createdTime"] = "createdTime",
+        property: Literal["created_time"] = "created_time",
         order: Literal["asc", "desc"] = "asc",
     ):
         super().__init__(property, order)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
-        dumped["property"] = self.property
+        prop = cast(str, self.property)
+        dumped["property"] = to_camel_case(prop) if camel_case else prop
+        return dumped
+
+
+class SimulationRunsSort(CogniteSort):
+    def __init__(
+        self,
+        property: Literal["created_time", "simulation_time"] = "created_time",
+        order: Literal["asc", "desc"] = "asc",
+    ):
+        super().__init__(property, order)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        prop = cast(str, self.property)
+        dumped["property"] = to_camel_case(prop) if camel_case else prop
         return dumped
 
 

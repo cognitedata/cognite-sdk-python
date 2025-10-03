@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.data_classes.simulators.filters import SimulatorRunsFilter
+from cognite.client.data_classes.simulators.filters import SimulationRunsSort, SimulatorRunsFilter
 from cognite.client.data_classes.simulators.runs import (
     SimulationRun,
     SimulationRunDataList,
@@ -67,6 +67,7 @@ class SimulatorRunsAPI(APIClient):
         model_revision_external_ids: SequenceNotStr[str] | None = None,
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
+        sort: SimulationRunsSort | None = None,
     ) -> Iterator[SimulationRunList]: ...
 
     @overload
@@ -84,6 +85,7 @@ class SimulatorRunsAPI(APIClient):
         model_revision_external_ids: SequenceNotStr[str] | None = None,
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
+        sort: SimulationRunsSort | None = None,
     ) -> Iterator[SimulationRun]: ...
 
     def __call__(
@@ -100,6 +102,7 @@ class SimulatorRunsAPI(APIClient):
         model_revision_external_ids: SequenceNotStr[str] | None = None,
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
+        sort: SimulationRunsSort | None = None,
     ) -> Iterator[SimulationRun] | Iterator[SimulationRunList]:
         """Iterate over simulation runs
 
@@ -118,6 +121,7 @@ class SimulatorRunsAPI(APIClient):
             model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
             created_time (TimestampRange | None): Filter by created time
             simulation_time (TimestampRange | None): Filter by simulation time
+            sort (SimulationRunsSort | None): The criteria to sort by.
 
         Returns:
             Iterator[SimulationRun] | Iterator[SimulationRunList]: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
@@ -141,6 +145,7 @@ class SimulatorRunsAPI(APIClient):
             resource_cls=SimulationRun,
             method="POST",
             filter=filter_runs.dump(),
+            sort=[SimulationRunsSort.load(sort).dump()] if sort else None,
             chunk_size=chunk_size,
             limit=limit,
         )
@@ -158,6 +163,7 @@ class SimulatorRunsAPI(APIClient):
         model_revision_external_ids: SequenceNotStr[str] | None = None,
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
+        sort: SimulationRunsSort | None = None,
     ) -> SimulationRunList:
         """`Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
 
@@ -175,6 +181,7 @@ class SimulatorRunsAPI(APIClient):
             model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
             created_time (TimestampRange | None): Filter by created time
             simulation_time (TimestampRange | None): Filter by simulation time
+            sort (SimulationRunsSort | None): The criteria to sort by.
 
         Returns:
             SimulationRunList: List of simulation runs
@@ -218,6 +225,7 @@ class SimulatorRunsAPI(APIClient):
             resource_cls=SimulationRun,
             list_cls=SimulationRunList,
             filter=filter_runs.dump(),
+            sort=[SimulationRunsSort.load(sort).dump()] if sort else None,
         )
 
     @overload
