@@ -687,12 +687,13 @@ class FunctionsAPI(APIClient):
         return FunctionsStatus.load(res.json())
 
 
-def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:
+def get_handle_function_node(file_path: Path) -> ast.FunctionDef | ast.Name | None:
     return next(
         (
             item
             for item in ast.walk(ast.parse(file_path.read_text()))
-            if isinstance(item, ast.FunctionDef) and item.name == "handle"
+            if (isinstance(item, ast.FunctionDef) and item.name == "handle")
+            or (isinstance(item, ast.Name) and item.id == "handle")
         ),
         None,
     )
@@ -763,14 +764,18 @@ def validate_function_folder(root_path: str, function_path: str, skip_folder_val
 
 
 def _validate_function_handle(
-    handle_obj: Callable[..., object] | ast.FunctionDef,
+    handle_obj: Callable[..., object] | ast.FunctionDef | ast.Name,
 ) -> None:
-    if isinstance(handle_obj, ast.FunctionDef):
-        name = handle_obj.name
-        accepts_args = {arg.arg for arg in handle_obj.args.args}
-    else:
-        name = handle_obj.__name__
-        accepts_args = set(signature(handle_obj).parameters)
+    match handle_obj:
+        case ast.FunctionDef():
+            name = handle_obj.name
+            accepts_args = {arg.arg for arg in handle_obj.args.args}
+        case ast.Name():
+            name = handle_obj.id
+            accepts_args = set()
+        case _:
+            name = handle_obj.__name__
+            accepts_args = set(signature(handle_obj).parameters)
 
     if name != "handle":
         raise TypeError(f"Function is named '{name}' but must be named 'handle'.")

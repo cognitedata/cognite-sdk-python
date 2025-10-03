@@ -303,6 +303,15 @@ def function_handle_illegal_name():
 
 
 @pytest.fixture
+def function_handle_as_callable():
+    def func(data, client, secrets):
+        pass
+
+    handle = func
+    return handle
+
+
+@pytest.fixture
 def function_handle_illegal_argument():
     def handle(client, input):
         pass
@@ -466,6 +475,14 @@ class TestFunctionsAPI:
 
     def test_create_with_function_handle(self, mock_functions_create_response, function_handle, cognite_client):
         res = cognite_client.functions.create(name="myfunction", function_handle=function_handle)
+
+        assert isinstance(res, Function)
+        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
+
+    def test_create_with_function_handle_as_callable(
+        self, mock_functions_create_response, function_handle_as_callable, cognite_client
+    ):
+        res = cognite_client.functions.create(name="myfunction", function_handle=function_handle_as_callable)
 
         assert isinstance(res, Function)
         assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
