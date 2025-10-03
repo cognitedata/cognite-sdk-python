@@ -1,12 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from cognite.client._api_client import APIClient
 from cognite.client.utils._auxiliary import interpolate_and_url_encode
-
-if TYPE_CHECKING:
-    pass
 
 
 class ThreeDFilesAPI(APIClient):

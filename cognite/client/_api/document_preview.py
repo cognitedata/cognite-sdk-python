@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import IO, TYPE_CHECKING
+from typing import IO
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.documents import (
     TemporaryLink,
 )
-
-if TYPE_CHECKING:
-    pass
 
 
 class DocumentPreviewAPI(APIClient):

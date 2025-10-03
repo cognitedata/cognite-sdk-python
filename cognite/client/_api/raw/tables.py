@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, cast, overload
+from typing import Any, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -10,9 +10,6 @@ from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_in
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    pass
 
 
 class RawTablesAPI(APIClient):
