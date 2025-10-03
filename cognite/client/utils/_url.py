@@ -48,17 +48,16 @@ NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS: tuple[str, ...] = (
     "3d/models/[^/]+/revisions/[^/]+/nodes",
 )
 NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN: re.Pattern[str] = re.compile(
-        r"|".join(
-            rf"^/{path}(\?.*)?$"
-            for path in (
-                f"({r'|'.join(NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS)})(/delete)?$",
-                "ai/tools/documents/task",
-                "annotations/suggest",
-                "extpipes/config/revert",
-                "transformations/cancel",
-                "transformations/notifications",
-                "transformations/run",
-            )
+    r"|".join(
+        rf"^/{path}(\?.*)?$"
+        for path in (
+            f"({r'|'.join(NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS)})(/delete)?$",
+            "ai/tools/documents/task",
+            "annotations/suggest",
+            "extpipes/config/revert",
+            "transformations/cancel",
+            "transformations/notifications",
+            "transformations/run",
         )
     )
 )
