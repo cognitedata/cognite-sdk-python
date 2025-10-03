@@ -246,7 +246,8 @@ class FunctionsAPI(APIClient):
             env_vars (dict[str, str] | None): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
             cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
             memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            runtime (RunTime | None): The function runtime. Valid values are ["py39", "py310", "py311", "py312", `None`], and `None` translates to the API default which will change over time. The runtime "py312" resolves to the latest version of the Python 3.12 series.metadata (dict[str, str] | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
+            runtime (RunTime | None): The function runtime. Valid values are ["py39", "py310", "py311", "py312", `None`], and `None` translates to the API default which will change over time. The runtime "py312" resolves to the latest version of the Python 3.12 series.
+            metadata (dict[str, str] | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             skip_folder_validation (bool): When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
@@ -716,15 +717,15 @@ class FunctionsAPI(APIClient):
 
 
 def get_handle_function_node(file_path: Path) -> ast.FunctionDef | ast.Name | None:
-    return next(
-        (
-            item
-            for item in ast.walk(ast.parse(file_path.read_text()))
-            if (isinstance(item, ast.FunctionDef) and item.name == "handle")
-            or (isinstance(item, ast.Name) and item.id == "handle")
-        ),
-        None,
-    )
+    tree = ast.parse(file_path.read_text())
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == "handle":
+            return node
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "handle":
+                    return target
+    return None
 
 
 def _run_import_check(queue: Queue, root_path: str, module_path: str) -> None:
