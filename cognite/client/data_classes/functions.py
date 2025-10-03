@@ -150,8 +150,8 @@ class Function(FunctionCore):
         runtime_version (str | None): The complete specification of the function runtime with major, minor and patch version numbers.
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
         error (dict | None): Dictionary with keys "message" and "trace", which is populated if deployment fails.
-        last_called (int | None): Last time the function was called, in UNIX timestamp milliseconds.
         cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
+        last_called (int | None): Last time the function was called, in UNIX timestamp milliseconds.
     """
 
     def __init__(
