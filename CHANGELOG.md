@@ -13,6 +13,12 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [Unreleased]
+
+### Features
+
+* **functions:** add `last_called` field to Function data class
+
 ## [7.86.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.85.0...v7.86.0) (2025-10-02)
 
 
