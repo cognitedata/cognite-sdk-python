@@ -1,4 +1,18 @@
-class PrincipalsAPI(OrgAPI):
+from __future__ import annotations
+
+import warnings
+from collections.abc import Sequence
+from typing import overload
+from urllib.parse import urljoin
+
+from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._org_client import OrgAPIClient
+from cognite.client.data_classes.principals import Principal, PrincipalList
+from cognite.client.utils._identifier import PrincipalIdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
+
+
+class PrincipalsAPI(OrgAPIClient):
     _RESOURCE_PATH = "/principals"
 
     def me(self) -> Principal:
@@ -15,9 +29,10 @@ class PrincipalsAPI(OrgAPI):
                 >>> res = client.iam.principals.me()
         """
         # the /me endpoint is not using the /orgs/{org} base path, so we have to construct the URL manually
-        path = "/principals/me"
+        path = f"{self._RESOURCE_PATH}/me"
         if self._api_version:
             path = f"/api/{self._api_version}{path}"
+
         full_url = urljoin(self._auth_url, path)
         headers = self._configure_headers(
             "application/json",

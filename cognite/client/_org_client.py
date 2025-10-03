@@ -1,21 +1,14 @@
 from __future__ import annotations
 
-import warnings
 from abc import ABC
-from collections.abc import Sequence
 from functools import cached_property
-from typing import overload
 from urllib.parse import urljoin
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.principals import Principal, PrincipalList
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._identifier import PrincipalIdentifierSequence
-from cognite.client.utils.useful_types import SequenceNotStr
 
 
-class OrgAPI(APIClient, ABC):
+class OrgAPIClient(APIClient, ABC):
     _auth_url = "https://auth.cognite.com"
 
     def _get_base_url_with_base_path(self) -> str:
