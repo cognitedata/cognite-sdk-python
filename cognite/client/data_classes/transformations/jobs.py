@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-import time
 from enum import Enum
 from typing import TYPE_CHECKING, Any, cast
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -14,7 +15,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.transformations.common import TransformationDestination
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class TransformationJobStatus(str, Enum):
@@ -28,25 +29,32 @@ class TransformationJobMetric(CogniteResource):
     """The transformation job metric resource allows following details of execution of a transformation run.
 
     Args:
-        id (int | None): No description.
-        timestamp (int | None): Time of the last metric update.
-        name (str | None): Name of the metric.
-        count (int | None): Value of the metric.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        timestamp (int): Time of the last metric update.
+        name (str): Name of the metric.
+        count (int): Value of the metric.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        timestamp: int | None = None,
-        name: str | None = None,
-        count: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        timestamp: int,
+        name: str,
+        count: int,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.name = name
         self.count = count
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            timestamp=resource["timestamp"],
+            name=resource["name"],
+            count=resource["count"],
+            cognite_client=cognite_client,
+        )
 
 
 class TransformationJobMetricList(CogniteResourceList[TransformationJobMetric], InternalIdTransformerMixin):
@@ -57,42 +65,42 @@ class TransformationJob(CogniteResource):
     """The transformation job resource allows following the status of execution of a transformation run.
 
     Args:
-        id (int | None): A server-generated ID for the object.
-        status (TransformationJobStatus | None): Status of the job.
-        transformation_id (int | None): Server-generated ID of the transformation.
-        transformation_external_id (str | None): external ID of the transformation.
-        source_project (str | None): Name of the CDF project the data will be read from.
-        destination_project (str | None): Name of the CDF project the data will be written to.
-        destination (TransformationDestination | None): No description.
-        conflict_mode (str | None): What to do in case of id collisions: either "abort", "upsert", "update" or "delete".
-        query (str | None): Query of the transformation that is being executed.
+        id (int): A server-generated ID for the object.
+        status (TransformationJobStatus): Status of the job.
+        transformation_id (int): Server-generated ID of the transformation.
+        transformation_external_id (str): external ID of the transformation.
+        source_project (str): Name of the CDF project the data will be read from.
+        destination_project (str): Name of the CDF project the data will be written to.
+        destination (TransformationDestination): No description.
+        conflict_mode (str): What to do in case of id collisions: either "abort", "upsert", "update" or "delete".
+        query (str): Query of the transformation that is being executed.
         error (str | None): Error message from the server.
         ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
         created_time (int | None): Time when the job was created.
         started_time (int | None): Time when the job started running.
         finished_time (int | None): Time when the job finished running.
         last_seen_time (int | None): Time of the last status update from the job.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        status: TransformationJobStatus | None = None,
-        transformation_id: int | None = None,
-        transformation_external_id: str | None = None,
-        source_project: str | None = None,
-        destination_project: str | None = None,
-        destination: TransformationDestination | None = None,
-        conflict_mode: str | None = None,
-        query: str | None = None,
-        error: str | None = None,
-        ignore_null_fields: bool = False,
-        created_time: int | None = None,
-        started_time: int | None = None,
-        finished_time: int | None = None,
-        last_seen_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        id: int,
+        status: TransformationJobStatus,
+        transformation_id: int,
+        transformation_external_id: str,
+        source_project: str,
+        destination_project: str,
+        destination: TransformationDestination,
+        conflict_mode: str,
+        query: str,
+        error: str | None,
+        ignore_null_fields: bool,
+        created_time: int | None,
+        started_time: int | None,
+        finished_time: int | None,
+        last_seen_time: int | None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.id = id
         self.status = status
@@ -109,14 +117,14 @@ class TransformationJob(CogniteResource):
         self.started_time = started_time
         self.finished_time = finished_time
         self.last_seen_time = last_seen_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
-    def update(self) -> None:
+    async def update(self) -> None:
         """`Get updated job status.`"""
         if self.id is None:
             raise ValueError("Unable to update, TransformationJob is missing 'id'")
 
-        updated = self._cognite_client.transformations.jobs.retrieve(id=self.id)
+        updated = await self._cognite_client.transformations.jobs.retrieve(id=self.id)
         if updated is None:
             raise RuntimeError("Unable to update the transformation. Has it been deleted?")
 
@@ -126,18 +134,20 @@ class TransformationJob(CogniteResource):
         self.finished_time = updated.finished_time
         self.last_seen_time = updated.last_seen_time
 
-    def cancel(self) -> None:
+    async def cancel(self) -> None:
         if self.transformation_id is None:
-            self._cognite_client.transformations.cancel(transformation_external_id=self.transformation_external_id)
+            await self._cognite_client.transformations.cancel(
+                transformation_external_id=self.transformation_external_id
+            )
         else:
-            self._cognite_client.transformations.cancel(transformation_id=self.transformation_id)
+            await self._cognite_client.transformations.cancel(transformation_id=self.transformation_id)
 
-    def metrics(self) -> TransformationJobMetricList:
+    async def metrics(self) -> TransformationJobMetricList:
         """`Get job metrics.`"""
         assert self.id is not None
-        return self._cognite_client.transformations.jobs.list_metrics(self.id)
+        return await self._cognite_client.transformations.jobs.list_metrics(self.id)
 
-    def wait(self, polling_interval: float = 1, timeout: float | None = None) -> TransformationJob:
+    async def wait(self, polling_interval: float = 5, timeout: float | None = None) -> TransformationJob:
         """`Waits for the job to finish.`
 
         Args:
@@ -150,8 +160,9 @@ class TransformationJob(CogniteResource):
         Examples:
             run transformations 1 and 2 in parallel, and run 3 once they finish successfully:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>>
                 >>> job1 = client.transformations.run(id = 1, wait = False)
                 >>> job2 = client.transformations.run(id = 2, wait = False)
@@ -172,66 +183,7 @@ class TransformationJob(CogniteResource):
                 >>> else:
                 >>>     # do something if job is still running
         """
-        self.update()
-        if timeout is None:
-            timeout = float("inf")
-        waited = 0.0
-        while waited < timeout and self.status not in [
-            TransformationJobStatus.FAILED,
-            TransformationJobStatus.COMPLETED,
-        ]:
-            to_wait = min(timeout - waited, polling_interval)
-            time.sleep(to_wait)
-            self.update()
-            waited += polling_interval
-
-        return self
-
-    async def wait_async(self, polling_interval: float = 1, timeout: float | None = None) -> TransformationJob:
-        """Asyncio coroutine, waits for the job to finish asynchronously.
-
-        Args:
-            polling_interval (float): time (s) to wait between job status updates, default is one second.
-            timeout (float | None): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status.
-
-        Returns:
-            TransformationJob: coroutine object that will finish when the job finishes and resolves to self.
-
-        Examples:
-
-            run transformations 1 and 2 in parallel, and run 3 once they finish successfully:
-
-                >>> from asyncio import ensure_future
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>>
-                >>> async def run_successive_transformations():
-                >>>     job1 = client.transformations.run(id = 1, wait = False)
-                >>>     job2 = client.transformations.run(id = 2, wait = False)
-                >>>     await job1.wait_async()
-                >>>     await job2.wait_async()
-                >>>     if TransformationJobStatus.FAILED not in [job1.status, job2.status]:
-                >>>         client.transformations.run(id = 3, wait = False)
-                >>>
-                >>> ensure_future(run_successive_transformations())
-
-            wait transformation for 5 minutes and do something if still running:
-
-                >>> from asyncio import ensure_future
-                >>>
-                >>> async def run_successive_transformations():
-                >>>     job = client.transformations.run(id = 1, wait = False)
-                >>>     await job.wait_async(timeout = 5.0*60)
-                >>>     if job.status == TransformationJobStatus.FAILED:
-                >>>         # do something if job failed
-                >>>     elif job.status == TransformationJobStatus.COMPLETED:
-                >>>         # do something if job completed successfully
-                >>>     else:
-                >>>         # do something if job is still running
-                >>>
-                >>> ensure_future(run_successive_transformations())
-        """
-        self.update()
+        await self.update()
         if timeout is None:
             timeout = float("inf")
         waited = 0.0
@@ -241,7 +193,7 @@ class TransformationJob(CogniteResource):
         ]:
             to_wait = min(timeout - waited, polling_interval)
             await asyncio.sleep(to_wait)
-            self.update()
+            await self.update()
             waited += polling_interval
 
         return self
@@ -255,15 +207,27 @@ class TransformationJob(CogniteResource):
         return output
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationJob:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(instance.destination, dict):
-            instance.destination = TransformationDestination._load(instance.destination)
-        elif isinstance(instance.destination, str):
-            instance.destination = TransformationDestination(type=instance.destination)
-        if isinstance(instance.status, str):
-            instance.status = TransformationJobStatus(instance.status)
-        return instance
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TransformationJob:
+        return cls(
+            id=resource["id"],
+            status=TransformationJobStatus(resource["status"]),
+            transformation_id=resource["transformationId"],
+            transformation_external_id=resource["transformationExternalId"],
+            source_project=resource["sourceProject"],
+            destination_project=resource["destinationProject"],
+            destination=TransformationDestination._load(resource["destination"])
+            if isinstance(resource["destination"], dict)
+            else TransformationDestination(type=resource["destination"]),
+            conflict_mode=resource["conflictMode"],
+            query=resource["query"],
+            error=resource.get("error"),
+            ignore_null_fields=resource["ignoreNullFields"],
+            created_time=resource.get("createdTime"),
+            started_time=resource.get("startedTime"),
+            finished_time=resource.get("finishedTime"),
+            last_seen_time=resource.get("lastSeenTime"),
+            cognite_client=cognite_client,
+        )
 
     def __hash__(self) -> int:
         return hash(self.id)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, cast
@@ -24,7 +25,7 @@ from cognite.client.utils._text import to_snake_case
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 _WARNING = FeaturePreviewWarning(api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators")
 
@@ -34,7 +35,7 @@ class SimulationValueUnitName(CogniteObject):
     name: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             name=resource.get("name"),
         )
@@ -48,7 +49,7 @@ class SimulationValueUnit(SimulationValueUnitName):
     external_id: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource.get("externalId"),
             name=resource.get("name"),
@@ -65,7 +66,7 @@ class SimulationInputOverride(CogniteObject):
     unit: SimulationValueUnitName | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
@@ -127,7 +128,7 @@ class SimulationRunWrite(SimulationRunCore):
         self.inputs = inputs
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRunWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> SimulationRunWrite:
         inputs = resource.get("inputs", None)
         return cls(
             run_type=resource.get("runType"),
@@ -180,7 +181,7 @@ class SimulationRun(SimulationRunCore):
         status_message (str | None): The status message of the simulation run
         simulation_time (int | None): Simulation time in milliseconds. Timestamp when the input data was sampled. Used for indexing input and output time series.
         run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
-        cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
+        cognite_client (AsyncCogniteClient | None): An optional AsyncCogniteClient to associate with this data class.
 
     """
 
@@ -203,7 +204,7 @@ class SimulationRun(SimulationRunCore):
         status_message: str | None = None,
         simulation_time: int | None = None,
         run_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             run_type=run_type,
@@ -224,7 +225,7 @@ class SimulationRun(SimulationRunCore):
         self.data_set_id = data_set_id
         self.user_id = user_id
         self.log_id = log_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     def as_write(self) -> SimulationRunWrite:
         return SimulationRunWrite(
@@ -233,30 +234,30 @@ class SimulationRun(SimulationRunCore):
             run_time=self.run_time,
         )
 
-    def get_logs(self) -> SimulatorLog | None:
+    async def get_logs(self) -> SimulatorLog | None:
         """`Retrieve logs for this simulation run. <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
 
         Returns:
             SimulatorLog | None: Log for the simulation run.
         """
-        return self._cognite_client.simulators.logs.retrieve(ids=self.log_id)
+        return await self._cognite_client.simulators.logs.retrieve(ids=self.log_id)
 
-    def get_data(self) -> SimulationRunDataItem | None:
+    async def get_data(self) -> SimulationRunDataItem | None:
         """`Retrieve data associated with this simulation run. <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
 
         Returns:
             SimulationRunDataItem | None: Data for the simulation run.
         """
-        data = self._cognite_client.simulators.runs.list_run_data(run_id=self.id)
+        data = await self._cognite_client.simulators.runs.list_run_data(run_id=self.id)
         if data:
             return data[0]
 
         return None
 
-    def update(self) -> None:
+    async def update(self) -> None:
         """Update the simulation run object to the latest state. Useful if the run was created with wait=False."""
         # same logic as Cognite Functions
-        latest = self._cognite_client.simulators.runs.retrieve(ids=self.id)
+        latest = await self._cognite_client.simulators.runs.retrieve(ids=self.id)
         if latest is None:
             raise RuntimeError("Unable to update the simulation run object (it was not found)")
         else:
@@ -265,7 +266,7 @@ class SimulationRun(SimulationRunCore):
             self.simulation_time = latest.simulation_time
             self.last_updated_time = latest.last_updated_time
 
-    def wait(self, timeout: float = 60) -> None:
+    async def wait(self, timeout: float = 60) -> None:
         """Waits for simulation status to become either success or failure.
         This is generally not needed to call directly, as client.simulators.routines.run(...) will wait for the simulation to finish by default.
 
@@ -277,14 +278,14 @@ class SimulationRun(SimulationRunCore):
         poll_backoff = Backoff(max_wait=30, base=10)
 
         while time.time() < end_time:
-            self.update()
+            await self.update()
             if self.status in ["success", "failure"]:
                 return
             sleep_time = min(next(poll_backoff) + 1, end_time - time.time())
-            time.sleep(sleep_time)
+            await asyncio.sleep(sleep_time)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRun:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> SimulationRun:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -330,7 +331,7 @@ class SimulationValueBase(CogniteObject):
         self.timeseries_external_id = timeseries_external_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
@@ -378,7 +379,7 @@ class SimulationInput(SimulationValueBase):
         self.overridden = overridden
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
@@ -424,7 +425,7 @@ class SimulationRunDataItem(CogniteResource):
         self.outputs = outputs
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         inputs = [SimulationInput._load(input_) for input_ in resource["inputs"]]
         outputs = [SimulationOutput._load(output_) for output_ in resource["outputs"]]
         return cls(

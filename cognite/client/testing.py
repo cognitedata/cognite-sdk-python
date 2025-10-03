@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient
 from cognite.client._api.agents import AgentsAPI
 from cognite.client._api.ai import AIAPI
 from cognite.client._api.ai.tools import AIToolsAPI
@@ -17,38 +17,48 @@ from cognite.client._api.data_modeling.containers import ContainersAPI
 from cognite.client._api.data_modeling.data_models import DataModelsAPI
 from cognite.client._api.data_modeling.graphql import DataModelingGraphQLAPI
 from cognite.client._api.data_modeling.instances import InstancesAPI
+from cognite.client._api.data_modeling.space_statistics import SpaceStatisticsAPI
 from cognite.client._api.data_modeling.spaces import SpacesAPI
-from cognite.client._api.data_modeling.statistics import SpaceStatisticsAPI, StatisticsAPI
+from cognite.client._api.data_modeling.statistics import StatisticsAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api.diagrams import DiagramsAPI
-from cognite.client._api.documents import DocumentPreviewAPI, DocumentsAPI
+from cognite.client._api.document_preview import DocumentPreviewAPI
+from cognite.client._api.documents import DocumentsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
-from cognite.client._api.extractionpipelines import (
-    ExtractionPipelineConfigsAPI,
-    ExtractionPipelineRunsAPI,
-    ExtractionPipelinesAPI,
-)
+from cognite.client._api.extractionpipelines import ExtractionPipelinesAPI
+from cognite.client._api.extractionpipelines.configs import ExtractionPipelineConfigsAPI
+from cognite.client._api.extractionpipelines.runs import ExtractionPipelineRunsAPI
 from cognite.client._api.files import FilesAPI
-from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
+from cognite.client._api.functions import FunctionsAPI
+from cognite.client._api.functions.calls import FunctionCallsAPI
+from cognite.client._api.functions.schedules import FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.hosted_extractors import HostedExtractorsAPI
 from cognite.client._api.hosted_extractors.destinations import DestinationsAPI
 from cognite.client._api.hosted_extractors.jobs import JobsAPI
 from cognite.client._api.hosted_extractors.mappings import MappingsAPI
 from cognite.client._api.hosted_extractors.sources import SourcesAPI
-from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
+from cognite.client._api.iam import IAMAPI
+from cognite.client._api.iam.groups import GroupsAPI
+from cognite.client._api.iam.security_categories import SecurityCategoriesAPI
+from cognite.client._api.iam.sessions import SessionsAPI
+from cognite.client._api.iam.token import TokenAPI
 from cognite.client._api.labels import LabelsAPI
-from cognite.client._api.organization import PrincipalsAPI
+from cognite.client._api.org_apis.principals import PrincipalsAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.postgres_gateway.tables import TablesAPI as PostgresTablesAPI
 from cognite.client._api.postgres_gateway.users import UsersAPI as PostgresUsersAPI
-from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
+from cognite.client._api.raw import RawAPI
+from cognite.client._api.raw.databases import RawDatabasesAPI
+from cognite.client._api.raw.rows import RawRowsAPI
+from cognite.client._api.raw.tables import RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
-from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
+from cognite.client._api.sequence_data import SequencesDataAPI
+from cognite.client._api.sequences import SequencesAPI
 from cognite.client._api.simulators import SimulatorsAPI
 from cognite.client._api.simulators.integrations import SimulatorIntegrationsAPI
 from cognite.client._api.simulators.logs import SimulatorLogsAPI
@@ -58,42 +68,30 @@ from cognite.client._api.simulators.routine_revisions import SimulatorRoutineRev
 from cognite.client._api.simulators.routines import SimulatorRoutinesAPI
 from cognite.client._api.simulators.runs import SimulatorRunsAPI
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
-from cognite.client._api.templates import (
-    TemplateGroupsAPI,
-    TemplateGroupVersionsAPI,
-    TemplateInstancesAPI,
-    TemplatesAPI,
-    TemplateViewsAPI,
-)
-from cognite.client._api.three_d import (
-    ThreeDAPI,
-    ThreeDAssetMappingAPI,
-    ThreeDFilesAPI,
-    ThreeDModelsAPI,
-    ThreeDRevisionsAPI,
-)
+from cognite.client._api.three_d import ThreeDAPI
+from cognite.client._api.three_d.asset_mapping import ThreeDAssetMappingAPI
+from cognite.client._api.three_d.files import ThreeDFilesAPI
+from cognite.client._api.three_d.models import ThreeDModelsAPI
+from cognite.client._api.three_d.revisions import ThreeDRevisionsAPI
 from cognite.client._api.time_series import TimeSeriesAPI
-from cognite.client._api.transformations import (
-    TransformationJobsAPI,
-    TransformationNotificationsAPI,
-    TransformationsAPI,
-    TransformationSchedulesAPI,
-    TransformationSchemaAPI,
-)
-from cognite.client._api.units import UnitAPI, UnitSystemAPI
+from cognite.client._api.transformations import TransformationsAPI
+from cognite.client._api.transformations.jobs import TransformationJobsAPI
+from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
+from cognite.client._api.transformations.schedules import TransformationSchedulesAPI
+from cognite.client._api.transformations.schema import TransformationSchemaAPI
+from cognite.client._api.unit_system import UnitSystemAPI
+from cognite.client._api.units import UnitAPI
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api.vision import VisionAPI
-from cognite.client._api.workflows import (
-    WorkflowAPI,
-    WorkflowExecutionAPI,
-    WorkflowTaskAPI,
-    WorkflowTriggerAPI,
-    WorkflowVersionAPI,
-)
+from cognite.client._api.workflows import WorkflowAPI
+from cognite.client._api.workflows.execution import WorkflowExecutionAPI
+from cognite.client._api.workflows.task import WorkflowTaskAPI
+from cognite.client._api.workflows.trigger import WorkflowTriggerAPI
+from cognite.client._api.workflows.version import WorkflowVersionAPI
 
 
-class CogniteClientMock(MagicMock):
-    """Mock for CogniteClient object
+class AsyncCogniteClientMock(MagicMock):
+    """Mock for AsyncCogniteClient object
 
     All APIs are replaced with specced MagicMock objects.
     """
@@ -102,7 +100,7 @@ class CogniteClientMock(MagicMock):
         if "parent" in kwargs:
             super().__init__(*args, **kwargs)
             return None
-        super().__init__(spec=CogniteClient, *args, **kwargs)
+        super().__init__(spec=AsyncCogniteClient, *args, **kwargs)
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - For nested APIs:
@@ -174,7 +172,6 @@ class CogniteClientMock(MagicMock):
         self.simulators.logs = MagicMock(spec_set=SimulatorLogsAPI)
 
         self.sequences = MagicMock(spec=SequencesAPI)
-        self.sequences.rows = MagicMock(spec_set=SequencesDataAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
 
         self.hosted_extractors = MagicMock(spec=HostedExtractorsAPI)
@@ -186,12 +183,6 @@ class CogniteClientMock(MagicMock):
         self.postgres_gateway = MagicMock(spec=PostgresGatewaysAPI)
         self.postgres_gateway.users = MagicMock(spec_set=PostgresUsersAPI)
         self.postgres_gateway.tables = MagicMock(spec_set=PostgresTablesAPI)
-
-        self.templates = MagicMock(spec=TemplatesAPI)
-        self.templates.groups = MagicMock(spec_set=TemplateGroupsAPI)
-        self.templates.instances = MagicMock(spec_set=TemplateInstancesAPI)
-        self.templates.versions = MagicMock(spec_set=TemplateGroupVersionsAPI)
-        self.templates.views = MagicMock(spec_set=TemplateViewsAPI)
 
         self.three_d = MagicMock(spec=ThreeDAPI)
         self.three_d.asset_mappings = MagicMock(spec_set=ThreeDAssetMappingAPI)
@@ -223,25 +214,25 @@ class CogniteClientMock(MagicMock):
 
 
 @contextmanager
-def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
-    """Context manager for monkeypatching the CogniteClient.
+def monkeypatch_cognite_client() -> Iterator[AsyncCogniteClientMock]:
+    """Context manager for monkeypatching the AsyncCogniteClient.
 
     Will patch all clients and replace them with specced MagicMock objects.
 
     Yields:
-        CogniteClientMock: The mock with which the CogniteClient has been replaced
+        AsyncCogniteClientMock: The mock with which the AsyncCogniteClient has been replaced
 
     Examples:
 
         In this example we can run the following code without actually executing the underlying API calls::
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import TimeSeries
+            >>> from cognite.client.data_classes import TimeSeriesWrite
             >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
             >>> with monkeypatch_cognite_client():
-            >>>     client = CogniteClient()
-            >>>     client.time_series.create(TimeSeries(external_id="blabla"))
+            >>>     client = AsyncCogniteClient()
+            >>>     client.time_series.create(TimeSeriesWrite(external_id="blabla"))
 
         This example shows how to set the return value of a given method::
 
@@ -253,7 +244,7 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>>     c_mock.iam.token.inspect.return_value = TokenInspection(
             >>>         subject="subject", projects=[], capabilities=[]
             >>>     )
-            >>>     client = CogniteClient()
+            >>>     client = AsyncCogniteClient()
             >>>     res = client.iam.token.inspect()
             >>>     assert "subject" == res.subject
 
@@ -265,14 +256,14 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>>
             >>> with monkeypatch_cognite_client() as c_mock:
             >>>     c_mock.iam.token.inspect.side_effect = CogniteAPIError(message="Something went wrong", code=400)
-            >>>     client = CogniteClient()
+            >>>     client = AsyncCogniteClient()
             >>>     try:
             >>>         res = client.iam.token.inspect()
             >>>     except CogniteAPIError as e:
             >>>         assert 400 == e.code
             >>>         assert "Something went wrong" == e.message
     """
-    cognite_client_mock = CogniteClientMock()
-    CogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock  # type: ignore[method-assign]
+    cognite_client_mock = AsyncCogniteClientMock()
+    AsyncCogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock  # type: ignore[method-assign]
     yield cognite_client_mock
-    CogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)  # type: ignore[method-assign]
+    AsyncCogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)  # type: ignore[method-assign]

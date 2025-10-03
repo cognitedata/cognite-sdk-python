@@ -1,8 +1,9 @@
 import platform
+from collections.abc import Iterator
 
 import dotenv
 import pytest
-import responses
+from _pytest.monkeypatch import MonkeyPatch
 
 from cognite.client import global_config
 
@@ -12,17 +13,9 @@ global_config.disable_pypi_version_check = True
 
 
 @pytest.fixture
-def rsps():
-    with responses.RequestsMock() as rsps:
-        yield rsps
-
-
-@pytest.fixture
-def disable_gzip():
-    old = global_config.disable_gzip
-    global_config.disable_gzip = True
+def disable_gzip(monkeypatch: MonkeyPatch) -> Iterator[None]:
+    monkeypatch.setattr(global_config, "disable_gzip", True)
     yield
-    global_config.disable_gzip = old
 
 
 @pytest.fixture(scope="session")
@@ -31,13 +24,13 @@ def os_and_py_version() -> str:
     return f"{platform.system()}-{platform.python_version()}"
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--test-deps-only-core", action="store_true", default=False, help="Test only core deps are installed"
     )
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     if config.getoption("--test-deps-only-core"):
         return None
     skip_core = pytest.mark.skip(reason="need --test-deps-only-core option to run")

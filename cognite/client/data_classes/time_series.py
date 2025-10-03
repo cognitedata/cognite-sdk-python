@@ -33,7 +33,7 @@ from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes import Asset, Datapoint
 
 
@@ -44,12 +44,10 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         external_id (str | None): The externally supplied ID for the time series.
         instance_id (NodeId | None): The Instance ID for the time series. (Only applicable for time series created in DMS)
         name (str | None): The display short name of the time series.
-        is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str | None): The physical unit of the time series.
         unit_external_id (str | None): The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
         asset_id (int | None): Asset ID of equipment linked to this time series.
-        is_step (bool | None): Whether the time series is a step series or not.
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
@@ -61,12 +59,10 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
         name: str | None = None,
-        is_string: bool | None = None,
         metadata: dict[str, str] | None = None,
         unit: str | None = None,
         unit_external_id: str | None = None,
         asset_id: int | None = None,
-        is_step: bool | None = None,
         description: str | None = None,
         security_categories: Sequence[int] | None = None,
         data_set_id: int | None = None,
@@ -75,12 +71,10 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         self.external_id = external_id
         self.instance_id = instance_id
         self.name = name
-        self.is_string = is_string
         self.metadata = metadata
         self.unit = unit
         self.unit_external_id = unit_external_id
         self.asset_id = asset_id
-        self.is_step = is_step
         self.description = description
         self.security_categories = security_categories
         self.data_set_id = data_set_id
@@ -102,7 +96,7 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         return output
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.instance_id, dict):
             instance.instance_id = NodeId.load(instance.instance_id)
@@ -115,69 +109,86 @@ class TimeSeries(TimeSeriesCore):
     of TimesSeries, which is used when retrieving from CDF.
 
     Args:
-        id (int | None): A server-generated ID for the object.
+        id (int): A server-generated ID for the object.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        is_step (bool): Whether the time series is a step series or not.
+        is_string (bool): Whether the time series is string valued or not.
         external_id (str | None): The externally supplied ID for the time series.
         instance_id (NodeId | None): The Instance ID for the time series. (Only applicable for time series created in DMS)
         name (str | None): The display short name of the time series.
-        is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str | None): The physical unit of the time series.
         unit_external_id (str | None): The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
         asset_id (int | None): Asset ID of equipment linked to this time series.
-        is_step (bool | None): Whether the time series is a step series or not.
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         legacy_name (str | None): This field is not used by the API and will be removed October 2024.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        external_id: str | None = None,
-        instance_id: NodeId | None = None,
-        name: str | None = None,
-        is_string: bool | None = None,
-        metadata: dict[str, str] | None = None,
-        unit: str | None = None,
-        unit_external_id: str | None = None,
-        asset_id: int | None = None,
-        is_step: bool | None = None,
-        description: str | None = None,
-        security_categories: Sequence[int] | None = None,
-        data_set_id: int | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        legacy_name: str | None = None,
-        cognite_client: CogniteClient | None = None,
+        id: int,
+        created_time: int,
+        last_updated_time: int,
+        is_step: bool,
+        is_string: bool,
+        external_id: str | None,
+        instance_id: NodeId | None,
+        name: str | None,
+        metadata: dict[str, str] | None,
+        unit: str | None,
+        unit_external_id: str | None,
+        asset_id: int | None,
+        description: str | None,
+        security_categories: Sequence[int] | None,
+        data_set_id: int | None,
+        legacy_name: str | None,
+        cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
             instance_id=instance_id,
             name=name,
-            is_string=is_string,
             metadata=metadata,
             unit=unit,
             unit_external_id=unit_external_id,
             asset_id=asset_id,
-            is_step=is_step,
             description=description,
             security_categories=security_categories,
             data_set_id=data_set_id,
             legacy_name=legacy_name,
         )
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self.id: int = id
+        self.created_time: int = created_time
+        self.last_updated_time: int = last_updated_time
+        self.is_string = is_string
+        self.is_step = is_step
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            is_step=resource["isStep"],
+            is_string=resource["isString"],
+            external_id=resource.get("externalId"),
+            instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
+            name=resource.get("name"),
+            metadata=resource.get("metadata"),
+            unit=resource.get("unit"),
+            unit_external_id=resource.get("unitExternalId"),
+            asset_id=resource.get("assetId"),
+            description=resource.get("description"),
+            security_categories=resource.get("securityCategories"),
+            data_set_id=resource.get("dataSetId"),
+            legacy_name=resource.get("legacyName"),
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> TimeSeriesWrite:
         """Returns a TimeSeriesWrite object with the same properties as this TimeSeries."""
@@ -197,7 +208,7 @@ class TimeSeries(TimeSeriesCore):
             legacy_name=self.legacy_name,
         )
 
-    def count(self) -> int:
+    async def count(self) -> int:
         """Returns the number of datapoints in this time series.
 
         This result may not be completely accurate, as it is based on aggregates which may be occasionally out of date.
@@ -215,12 +226,12 @@ class TimeSeries(TimeSeriesCore):
             raise RuntimeError("String time series does not support count aggregate.")
 
         identifier = Identifier.load(self.id, self.external_id, self.instance_id).as_dict()
-        dps = self._cognite_client.time_series.data.retrieve(
+        dps = await self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, aggregates="count", granularity="100d"
         )
         return sum(dps.count)
 
-    def latest(self, before: int | str | datetime | None = None) -> Datapoint | None:
+    async def latest(self, before: int | str | datetime | None = None) -> Datapoint | None:
         """Returns the latest datapoint in this time series. If empty, returns None.
 
         Args:
@@ -229,18 +240,18 @@ class TimeSeries(TimeSeriesCore):
             Datapoint | None: A datapoint object containing the value and timestamp of the latest datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id, self.instance_id).as_dict()
-        if dps := self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before):
+        if dps := await self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before):
             return dps[0]
         return None
 
-    def first(self) -> Datapoint | None:
+    async def first(self) -> Datapoint | None:
         """Returns the first datapoint in this time series. If empty, returns None.
 
         Returns:
             Datapoint | None: A datapoint object containing the value and timestamp of the first datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id, self.instance_id).as_dict()
-        dps = self._cognite_client.time_series.data.retrieve(
+        dps = await self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, limit=1
         )
         if dps:
@@ -278,6 +289,56 @@ class TimeSeriesWrite(TimeSeriesCore):
         data_set_id (int | None): The dataSet ID for the item.
         legacy_name (str | None): This field is not used by the API and will be removed October 2024.
     """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+        name: str | None = None,
+        is_string: bool | None = None,
+        metadata: dict[str, str] | None = None,
+        unit: str | None = None,
+        unit_external_id: str | None = None,
+        asset_id: int | None = None,
+        is_step: bool | None = None,
+        description: str | None = None,
+        security_categories: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        legacy_name: str | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            instance_id=instance_id,
+            name=name,
+            metadata=metadata,
+            unit=unit,
+            unit_external_id=unit_external_id,
+            asset_id=asset_id,
+            description=description,
+            security_categories=security_categories,
+            data_set_id=data_set_id,
+            legacy_name=legacy_name,
+        )
+        self.is_string = is_string
+        self.is_step = is_step
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            external_id=resource.get("externalId"),
+            instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
+            name=resource.get("name"),
+            is_string=resource.get("isString"),
+            metadata=resource.get("metadata"),
+            unit=resource.get("unit"),
+            unit_external_id=resource.get("unitExternalId"),
+            asset_id=resource.get("assetId"),
+            is_step=resource.get("isStep"),
+            description=resource.get("description"),
+            security_categories=resource.get("securityCategories"),
+            data_set_id=resource.get("dataSetId"),
+            legacy_name=resource.get("legacyName"),
+        )
 
     def as_write(self) -> TimeSeriesWrite:
         """Returns this TimeSeriesWrite object."""

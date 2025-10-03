@@ -2,14 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from typing_extensions import Self
 
 from cognite.client.data_classes.data_modeling import NodeId
-
-if TYPE_CHECKING:
-    pass
 
 
 class AnswerLanguage(Enum):

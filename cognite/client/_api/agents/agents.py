@@ -11,14 +11,14 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class AgentsAPI(APIClient):
     _RESOURCE_PATH = "/ai/agents"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warnings = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Agents")
         self._api_subversion = "beta"
@@ -26,12 +26,12 @@ class AgentsAPI(APIClient):
         self._DELETE_LIMIT = 1
 
     @overload
-    def upsert(self, agents: AgentUpsert) -> Agent: ...
+    async def upsert(self, agents: AgentUpsert) -> Agent: ...
 
     @overload
-    def upsert(self, agents: Sequence[AgentUpsert]) -> AgentList: ...
+    async def upsert(self, agents: Sequence[AgentUpsert]) -> AgentList: ...
 
-    def upsert(self, agents: AgentUpsert | Sequence[AgentUpsert]) -> Agent | AgentList:
+    async def upsert(self, agents: AgentUpsert | Sequence[AgentUpsert]) -> Agent | AgentList:
         """`Create or update (upsert) one or more agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/main_ai_agents_post/>`_
 
         Args:
@@ -152,7 +152,7 @@ class AgentsAPI(APIClient):
 
         """
         self._warnings.warn()
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=AgentList,
             resource_cls=Agent,
             items=agents,
@@ -160,12 +160,12 @@ class AgentsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Agent | None: ...
+    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Agent | None: ...
 
     @overload
-    def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> AgentList: ...
+    async def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> AgentList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Agent | AgentList | None:
         """`Retrieve one or more agents by external ID. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/get_agents_by_ids_ai_agents_byids_post/>`_
@@ -181,8 +181,9 @@ class AgentsAPI(APIClient):
 
             Retrieve an agent by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.agents.retrieve(external_ids="my_agent")
 
             Retrieve multiple agents:
@@ -191,14 +192,14 @@ class AgentsAPI(APIClient):
         """
         self._warnings.warn()
         identifiers = IdentifierSequence.load(external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=AgentList,
             resource_cls=Agent,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
+    async def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_delete_ai_agents_delete_post/>`_
 
         Args:
@@ -209,19 +210,20 @@ class AgentsAPI(APIClient):
 
             Delete an agent by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.agents.delete(external_ids="my_agent")
 
         """
         self._warnings.warn()
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
-    def list(self) -> AgentList:  # The API does not yet support limit or pagination
+    async def list(self) -> AgentList:  # The API does not yet support limit or pagination
         """`List agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_list_ai_agents_get/>`_
 
         Returns:
@@ -231,16 +233,17 @@ class AgentsAPI(APIClient):
 
             List all agents:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> agent_list = client.agents.list()
 
         """
         self._warnings.warn()
-        res = self._get(url_path=self._RESOURCE_PATH)
+        res = await self._get(url_path=self._RESOURCE_PATH)
         return AgentList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def chat(
+    async def chat(
         self,
         agent_external_id: str,
         messages: Message | Sequence[Message],
@@ -293,11 +296,9 @@ class AgentsAPI(APIClient):
         """
         self._warnings.warn()
 
-        # Convert single message to list
         if isinstance(messages, Message):
             messages = [messages]
 
-        # Build request body
         body = {
             "agentExternalId": agent_external_id,
             "messages": MessageList(messages).dump(camel_case=True),
@@ -306,10 +307,5 @@ class AgentsAPI(APIClient):
         if cursor is not None:
             body["cursor"] = cursor
 
-        # Make the API call
-        response = self._post(
-            url_path=self._RESOURCE_PATH + "/chat",
-            json=body,
-        )
-
+        response = await self._post(url_path=self._RESOURCE_PATH + "/chat", json=body)
         return AgentChatResponse._load(response.json(), cognite_client=self._cognite_client)

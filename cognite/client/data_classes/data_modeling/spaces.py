@@ -14,7 +14,7 @@ from cognite.client.data_classes.data_modeling._validation import validate_data_
 from cognite.client.data_classes.data_modeling.core import WritableDataModelingResource
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class SpaceCore(WritableDataModelingResource["SpaceApply"], ABC):
@@ -49,7 +49,7 @@ class SpaceApply(SpaceCore):
         super().__init__(space, description, name)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             space=resource["space"],
             description=resource.get("description"),
@@ -98,7 +98,7 @@ class Space(SpaceCore):
         return self.as_apply()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             space=resource["space"],
             is_global=resource["isGlobal"],
