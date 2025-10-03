@@ -1,15 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.units import (
     UnitSystem,
     UnitSystemList,
 )
-
-if TYPE_CHECKING:
-    pass
 
 
 class UnitSystemAPI(APIClient):

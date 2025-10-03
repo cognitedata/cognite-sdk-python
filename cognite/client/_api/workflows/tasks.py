@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.workflows import WorkflowTaskExecution
-
-if TYPE_CHECKING:
-    pass
 
 
 class WorkflowTaskAPI(APIClient):
