@@ -83,6 +83,46 @@ EXAMPLE_FUNCTION = {
     "runtimeVersion": "Python 3.11.11",
     "lastCalled": 1585925306822,
 }
+
+# Example function for creation scenarios - newly created functions haven't been called yet
+EXAMPLE_FUNCTION_CREATED = {
+    "id": FUNCTION_ID,
+    "name": "myfunction",
+    "externalId": f"func-no-{FUNCTION_ID}",
+    "description": "my fabulous function",
+    "owner": "ola.normann@cognite.com",
+    "status": "Ready",
+    "fileId": 1234,
+    "functionPath": "handler.py",
+    "createdTime": 1585662507939,
+    "secrets": {"key1": "***", "key2": "***"},
+    "envVars": {"env1": "foo", "env2": "bar"},
+    "cpu": 0.25,
+    "memory": 1,
+    "runtime": "py311",
+    "runtimeVersion": "Python 3.11.11",
+    # lastCalled field is omitted when None (not included in API response)
+}
+
+# Example function that has never been called
+EXAMPLE_FUNCTION_NEVER_CALLED = {
+    "id": FUNCTION_ID + 1,
+    "name": "myfunction-never-called",
+    "externalId": f"func-no-{FUNCTION_ID + 1}",
+    "description": "function that has never been called",
+    "owner": "ola.normann@cognite.com",
+    "status": "Ready",
+    "fileId": 1235,
+    "functionPath": "handler.py",
+    "createdTime": 1585662507939,
+    "secrets": {"key1": "***", "key2": "***"},
+    "envVars": {"env1": "foo", "env2": "bar"},
+    "cpu": 0.25,
+    "memory": 1,
+    "runtime": "py311",
+    "runtimeVersion": "Python 3.11.11",
+    # lastCalled field is omitted when None (not included in API response)
+}
 CALL_RUNNING = {
     "id": CALL_ID,
     "startTime": 1585925306822,
@@ -196,7 +236,8 @@ def mock_functions_create_response(rsps, cognite_client):
     rsps.add(rsps.PUT, "https://upload.here", status=201)
     rsps.add(rsps.POST, files_byids_url, status=201, json={"items": [files_response_body]})
     functions_url = full_url(cognite_client, "/functions")
-    rsps.add(rsps.POST, functions_url, status=201, json={"items": [EXAMPLE_FUNCTION]})
+    # Use EXAMPLE_FUNCTION_CREATED for creation scenarios - newly created functions haven't been called yet
+    rsps.add(rsps.POST, functions_url, status=201, json={"items": [EXAMPLE_FUNCTION_CREATED]})
 
     yield rsps
 
@@ -652,6 +693,46 @@ class TestFunctionsAPI:
         res = cognite_client.functions.status()
         assert isinstance(res, FunctionsStatus)
         assert mock_functions_status_response.calls[1].response.json() == res.dump(camel_case=True)
+
+    def test_last_called_field_on_created_function(self):
+        """Test that newly created functions have last_called as None"""
+        # Test using the EXAMPLE_FUNCTION_CREATED mock data directly
+        func = Function._load(EXAMPLE_FUNCTION_CREATED)
+
+        assert isinstance(func, Function)
+        assert func.last_called is None  # Newly created function hasn't been called yet
+
+    def test_last_called_field_serialization(self):
+        """Test that last_called field properly serializes to lastCalled in camelCase"""
+        # Test with a timestamp value
+        func_with_timestamp = Function(id=123, name="test-func", last_called=1585925306822)
+        dumped = func_with_timestamp.dump(camel_case=True)
+        assert dumped["lastCalled"] == 1585925306822
+
+        # Test with None value - None values are typically not included in serialization
+        func_with_none = Function(id=124, name="test-func-none", last_called=None)
+        dumped_none = func_with_none.dump(camel_case=True)
+        # None values are usually omitted from serialization, so key shouldn't exist
+        assert "lastCalled" not in dumped_none
+
+    def test_last_called_field_deserialization(self):
+        """Test that lastCalled field properly deserializes from API response"""
+        # Test loading function with lastCalled timestamp
+        api_response_called = EXAMPLE_FUNCTION.copy()
+        func_called = Function._load(api_response_called)
+        assert func_called.last_called == 1585925306822
+
+        # Test loading function with lastCalled field omitted (API doesn't return None values)
+        api_response_never_called = EXAMPLE_FUNCTION_NEVER_CALLED.copy()
+        func_never_called = Function._load(api_response_never_called)
+        assert func_never_called.last_called is None  # Should default to None when field is missing
+
+    def test_last_called_field_in_retrieve_response(self, mock_functions_retrieve_response, cognite_client):
+        """Test that retrieved functions properly include last_called field"""
+        res = cognite_client.functions.retrieve(id=FUNCTION_ID)
+
+        assert isinstance(res, Function)
+        assert res.last_called == 1585925306822  # Should match EXAMPLE_FUNCTION
 
 
 class TestRequirementsParser:
