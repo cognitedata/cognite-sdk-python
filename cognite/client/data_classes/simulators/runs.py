@@ -158,10 +158,10 @@ class SimulationRunWrite(SimulationRunCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRunWrite:
-        inputs = resource.get("inputs", None)
-        routine_revision_external_id = resource.get("routineRevisionExternalId", None)
-        model_revision_external_id = resource.get("modelRevisionExternalId", None)
-        routine_external_id = resource.get("routineExternalId", None)
+        inputs = resource.get("inputs")
+        routine_revision_external_id = resource.get("routineRevisionExternalId")
+        model_revision_external_id = resource.get("modelRevisionExternalId")
+        routine_external_id = resource.get("routineExternalId")
 
         return cls(
             run_type=resource.get("runType"),
