@@ -3,7 +3,8 @@ from urllib.parse import unquote_plus
 
 import pytest
 
-from cognite.client._api.three_d import (
+from cognite.client.data_classes import (
+    BoundingBox3D,
     ThreeDAssetMapping,
     ThreeDAssetMappingList,
     ThreeDModel,
@@ -14,7 +15,6 @@ from cognite.client._api.three_d import (
     ThreeDModelUpdate,
     ThreeDNodeList,
 )
-from cognite.client.data_classes import BoundingBox3D
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
