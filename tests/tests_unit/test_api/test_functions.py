@@ -1323,13 +1323,13 @@ class TestSkipValidationFunctionality:
     """Test skip_validation parameter functionality"""
 
     def test_validate_function_handle_with_skip_validation_true(self):
-        """Test that _validate_function_handle skips argument validation when skip_validation=True"""
-        # Create a function def with invalid arguments
-        func_def = ast.FunctionDef(
+        """Test that we don't call _validate_function_handle when skip_validation=True"""
+        # This test shows the validation function itself still works for valid cases
+        valid_func_def = ast.FunctionDef(
             name="handle",
             args=ast.arguments(
                 posonlyargs=[],
-                args=[ast.arg(arg="invalid_arg1", annotation=None), ast.arg(arg="invalid_arg2", annotation=None)],
+                args=[ast.arg(arg="data", annotation=None)],
                 vararg=None,
                 kwonlyargs=[],
                 kw_defaults=[],
@@ -1341,11 +1341,11 @@ class TestSkipValidationFunctionality:
             returns=None,
         )
 
-        # Should not raise any exception when skip_validation=True
-        _validate_function_handle(func_def, skip_validation=True)
+        # Should not raise exception for valid function
+        _validate_function_handle(valid_func_def)
 
     def test_validate_function_handle_with_skip_validation_false(self):
-        """Test that _validate_function_handle validates arguments when skip_validation=False"""
+        """Test that _validate_function_handle validates arguments when called directly"""
         # Create a function def with invalid arguments
         func_def = ast.FunctionDef(
             name="handle",
@@ -1363,23 +1363,20 @@ class TestSkipValidationFunctionality:
             returns=None,
         )
 
-        # Should raise TypeError when skip_validation=False (default)
+        # Should raise TypeError when called directly (which happens when skip_validation=False)
         with pytest.raises(TypeError, match=r"Arguments .* must be a subset of"):
-            _validate_function_handle(func_def, skip_validation=False)
+            _validate_function_handle(func_def)
 
     def test_validate_function_handle_name_node_with_skip_validation(self):
-        """Test that callable handle objects work with skip_validation parameter"""
+        """Test that callable handle objects work correctly"""
 
         # Create a mock callable that would normally fail validation but has correct name
         def handle(wrong_arg1, wrong_arg2):
             pass
 
-        # Should not raise exception when skip_validation=True
-        _validate_function_handle(handle, skip_validation=True)
-
-        # Should raise exception when skip_validation=False
+        # Should raise exception when called directly (validation function always validates)
         with pytest.raises(TypeError, match=r"Arguments .* must be a subset of"):
-            _validate_function_handle(handle, skip_validation=False)
+            _validate_function_handle(handle)
 
     def test_validate_function_folder_with_skip_validation(self):
         """Test that validate_function_folder passes skip_validation parameter correctly"""
@@ -1456,3 +1453,33 @@ class TestSkipValidationFunctionality:
         # Test validate_function_folder directly
         with pytest.raises(TypeError, match="must contain a function named 'handle'"):
             validate_function_folder(folder, "handler.py", skip_folder_validation=True, skip_validation=False)
+
+    def test_create_function_with_wrong_name_callable_and_skip_validation_true(
+        self, mock_functions_create_response, cognite_client
+    ):
+        """Test that callables with wrong names work when skip_validation=True"""
+
+        def wrong_name_function(data, client, secrets):
+            """This function has the wrong name but should work with skip_validation=True"""
+            return {"result": "success"}
+
+        # Should NOT raise exception when skip_validation=True, even with wrong function name
+        res = cognite_client.functions.create(
+            name="typed_function_wrong_name", function_handle=wrong_name_function, skip_validation=True
+        )
+
+        assert isinstance(res, Function)
+        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
+
+    def test_create_function_with_wrong_name_callable_and_skip_validation_false(self, cognite_client):
+        """Test that callables with wrong names fail when skip_validation=False"""
+
+        def wrong_name_function(data, client, secrets):
+            """This function has the wrong name and should fail with skip_validation=False"""
+            return {"result": "success"}
+
+        # Should raise TypeError when skip_validation=False (default) because of wrong name
+        with pytest.raises(TypeError, match="Function is named 'wrong_name_function' but must be named 'handle'"):
+            cognite_client.functions.create(
+                name="typed_function_wrong_name", function_handle=wrong_name_function, skip_validation=False
+            )

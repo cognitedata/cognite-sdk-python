@@ -331,7 +331,8 @@ class FunctionsAPI(APIClient):
             validate_function_folder(folder, function_path, skip_folder_validation, skip_validation)
             file_id = self._zip_and_upload_folder(folder, name, external_id, data_set_id)
         elif function_handle:
-            _validate_function_handle(function_handle, skip_validation)
+            if not skip_validation:
+                _validate_function_handle(function_handle)
             file_id = self._zip_and_upload_handle(function_handle, name, external_id, data_set_id)
         assert_type(cpu, "cpu", [float], allow_none=True)
         assert_type(memory, "memory", [float], allow_none=True)
@@ -762,7 +763,8 @@ def validate_function_folder(
         raise FileNotFoundError(f"No file found at '{file_path}'.")
 
     if node := get_handle_function_node(file_path):
-        _validate_function_handle(node, skip_validation)
+        if not skip_validation:
+            _validate_function_handle(node)
     elif not skip_validation:
         # Only raise error if skip_validation=False, allow missing handle when validation is skipped
         raise TypeError(f"{function_path} must contain a function named 'handle'.")
@@ -779,21 +781,18 @@ def validate_function_folder(
 
 def _validate_function_handle(
     handle_obj: Callable[..., object] | ast.FunctionDef,
-    skip_validation: bool = False,
 ) -> None:
-    match handle_obj:
-        case ast.FunctionDef():
-            name = handle_obj.name
-            accepts_args = {arg.arg for arg in handle_obj.args.args}
-        case _:
-            name = handle_obj.__name__
-            accepts_args = set(signature(handle_obj).parameters)
+    if isinstance(handle_obj, ast.FunctionDef):
+        name = handle_obj.name
+        accepts_args = {arg.arg for arg in handle_obj.args.args}
+    else:
+        name = handle_obj.__name__
+        accepts_args = set(signature(handle_obj).parameters)
 
     if name != "handle":
         raise TypeError(f"Function is named '{name}' but must be named 'handle'.")
 
-    # Skip argument validation if skip_validation is True
-    if not skip_validation and not accepts_args <= ALLOWED_HANDLE_ARGS:
+    if not accepts_args <= ALLOWED_HANDLE_ARGS:
         raise TypeError(f"Arguments {accepts_args} to the function must be a subset of {ALLOWED_HANDLE_ARGS}.")
 
 
