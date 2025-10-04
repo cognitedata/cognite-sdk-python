@@ -223,7 +223,7 @@ class FunctionsAPI(APIClient):
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             skip_folder_validation (bool): When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
-            skip_validation (bool): Pass True to skip argument validation of the handle function. This should be used if the handler does its own validation at runtime (e.g., frameworks like Cognite Typed Functions). When enabled, only checks that the function/callable is named 'handle', but skips validation of function arguments. Defaults to False.
+            skip_validation (bool): Pass True to skip all validation of the handle function (name and arguments). This should be used if the handler does its own validation at runtime (e.g., frameworks like Cognite Typed Functions). When enabled, no validation is performed - the function can have any name and any arguments. Defaults to False.
             data_set_id (int | None): Data set to upload the function code to. Note: Does not affect the function itself.
 
         Returns:
@@ -264,9 +264,10 @@ class FunctionsAPI(APIClient):
             Create function with validation skipped (for handlers that do their own validation):
 
                 >>> # For use with frameworks like Cognite Typed Functions
+                >>> # Function can have any name and arguments when skip_validation=True
                 >>> function = client.functions.create(
                 ...     name="myfunction",
-                ...     function_handle=typed_handle,
+                ...     function_handle=my_custom_handler,  # Any name, any args
                 ...     skip_validation=True)
 
             .. note:
