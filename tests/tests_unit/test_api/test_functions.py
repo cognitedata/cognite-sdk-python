@@ -1,3 +1,4 @@
+import ast
 import io
 import json
 import operator as op
@@ -16,6 +17,7 @@ from cognite.client._api.functions import (
     _extract_requirements_from_file,
     _get_fn_docstring_requirements,
     _validate_and_parse_requirements,
+    _validate_function_handle,
     validate_function_folder,
 )
 from cognite.client.credentials import OAuthClientCredentials, Token
@@ -405,7 +407,6 @@ class TestFunctionsAPI:
         [
             (".", "handler.py", None),
             ("function_code", "./handler.py", None),
-            ("function_with_handle_assignment", "handler.py", None),
             ("bad_function_code", "handler.py", FileNotFoundError),
             ("bad_function_code2", "handler.py", TypeError),
         ],
@@ -413,10 +414,10 @@ class TestFunctionsAPI:
     def test_validate_folder(self, function_folder, function_path, exception):
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         if exception is None:
-            validate_function_folder(folder, function_path, skip_folder_validation=True)
+            validate_function_folder(folder, function_path, skip_folder_validation=True, skip_validation=False)
         else:
             with pytest.raises(exception):
-                validate_function_folder(folder, function_path, skip_folder_validation=True)
+                validate_function_folder(folder, function_path, skip_folder_validation=True, skip_validation=False)
 
     @pytest.mark.parametrize(
         "function_folder, function_path, exception",
@@ -430,10 +431,10 @@ class TestFunctionsAPI:
     def test_imports_in_validate_folder(self, function_folder, function_path, exception):
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         if exception is None:
-            validate_function_folder(folder, function_path, skip_folder_validation=False)
+            validate_function_folder(folder, function_path, skip_folder_validation=False, skip_validation=False)
         else:
             with pytest.raises(exception):
-                validate_function_folder(folder, function_path, skip_folder_validation=False)
+                validate_function_folder(folder, function_path, skip_folder_validation=False, skip_validation=False)
 
     @pytest.mark.parametrize(
         "function_folder, function_name, exception",
@@ -1316,3 +1317,142 @@ def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid,
     folder = Path(__file__).parent / "function_test_resources" / "good_absolute_import"
     file_id = fns_api_with_mock_client._zip_and_upload_folder(folder, name="name", external_id=xid)
     assert file_id == 123
+
+
+class TestSkipValidationFunctionality:
+    """Test skip_validation parameter functionality"""
+
+    def test_validate_function_handle_with_skip_validation_true(self):
+        """Test that _validate_function_handle skips argument validation when skip_validation=True"""
+        # Create a function def with invalid arguments
+        func_def = ast.FunctionDef(
+            name="handle",
+            args=ast.arguments(
+                posonlyargs=[],
+                args=[ast.arg(arg="invalid_arg1", annotation=None), ast.arg(arg="invalid_arg2", annotation=None)],
+                vararg=None,
+                kwonlyargs=[],
+                kw_defaults=[],
+                kwarg=None,
+                defaults=[],
+            ),
+            body=[],
+            decorator_list=[],
+            returns=None,
+        )
+
+        # Should not raise any exception when skip_validation=True
+        _validate_function_handle(func_def, skip_validation=True)
+
+    def test_validate_function_handle_with_skip_validation_false(self):
+        """Test that _validate_function_handle validates arguments when skip_validation=False"""
+        # Create a function def with invalid arguments
+        func_def = ast.FunctionDef(
+            name="handle",
+            args=ast.arguments(
+                posonlyargs=[],
+                args=[ast.arg(arg="invalid_arg1", annotation=None), ast.arg(arg="invalid_arg2", annotation=None)],
+                vararg=None,
+                kwonlyargs=[],
+                kw_defaults=[],
+                kwarg=None,
+                defaults=[],
+            ),
+            body=[],
+            decorator_list=[],
+            returns=None,
+        )
+
+        # Should raise TypeError when skip_validation=False (default)
+        with pytest.raises(TypeError, match=r"Arguments .* must be a subset of"):
+            _validate_function_handle(func_def, skip_validation=False)
+
+    def test_validate_function_handle_name_node_with_skip_validation(self):
+        """Test that callable handle objects work with skip_validation parameter"""
+
+        # Create a mock callable that would normally fail validation but has correct name
+        def handle(wrong_arg1, wrong_arg2):
+            pass
+
+        # Should not raise exception when skip_validation=True
+        _validate_function_handle(handle, skip_validation=True)
+
+        # Should raise exception when skip_validation=False
+        with pytest.raises(TypeError, match=r"Arguments .* must be a subset of"):
+            _validate_function_handle(handle, skip_validation=False)
+
+    def test_validate_function_folder_with_skip_validation(self):
+        """Test that validate_function_folder passes skip_validation parameter correctly"""
+        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_code")
+
+        # Should not raise exception when skip_validation=True
+        validate_function_folder(folder, "handler.py", skip_folder_validation=True, skip_validation=True)
+
+        # Should also not raise exception when skip_validation=False for normal function def
+        validate_function_folder(folder, "handler.py", skip_folder_validation=True, skip_validation=False)
+
+    def test_create_function_with_skip_validation(self, mock_functions_create_response, cognite_client):
+        """Test that create method accepts skip_validation parameter"""
+        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_code")
+
+        # Should not raise exception
+        res = cognite_client.functions.create(
+            name="myfunction", folder=folder, function_path="handler.py", skip_validation=True
+        )
+
+        assert isinstance(res, Function)
+        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
+
+    def test_create_function_with_invalid_handle_and_skip_validation_true(
+        self, mock_functions_create_response, cognite_client
+    ):
+        """Test Functions v2 / Cognite Typed Functions use case: invalid handle args with skip_validation=True"""
+
+        # Create a handle function that would normally fail validation (invalid args)
+        def handle(custom_arg1, custom_arg2, invalid_arg):
+            """This handle has invalid arguments that don't match ALLOWED_HANDLE_ARGS"""
+            return {"result": "success"}
+
+        # Should NOT raise exception when skip_validation=True
+        res = cognite_client.functions.create(name="typed_function", function_handle=handle, skip_validation=True)
+
+        assert isinstance(res, Function)
+        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
+
+    def test_create_function_with_invalid_handle_and_skip_validation_false(
+        self, mock_functions_create_response, cognite_client
+    ):
+        """Test that invalid handle args fail validation when skip_validation=False"""
+
+        # Create a handle function that would fail validation (invalid args)
+        def handle(custom_arg1, custom_arg2, invalid_arg):
+            """This handle has invalid arguments that don't match ALLOWED_HANDLE_ARGS"""
+            return {"result": "success"}
+
+        # Should raise TypeError when skip_validation=False (default)
+        with pytest.raises(TypeError, match=r"Arguments .* must be a subset of"):
+            cognite_client.functions.create(name="typed_function", function_handle=handle, skip_validation=False)
+
+    def test_create_function_with_handle_assignment_and_skip_validation(
+        self, mock_functions_create_response, cognite_client
+    ):
+        """Test Functions v2 folder-based deployment with handle assignment and skip_validation=True"""
+        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_with_handle_assignment")
+
+        # This should work with skip_validation=True even though get_handle_function_node returns None
+        res = cognite_client.functions.create(
+            name="typed_function_folder", folder=folder, function_path="handler.py", skip_validation=True
+        )
+
+        assert isinstance(res, Function)
+        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
+
+    def test_create_function_with_handle_assignment_fails_without_skip_validation(
+        self, mock_functions_create_response, cognite_client
+    ):
+        """Test that handle assignment fails validation when skip_validation=False"""
+        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_with_handle_assignment")
+
+        # Test validate_function_folder directly
+        with pytest.raises(TypeError, match="must contain a function named 'handle'"):
+            validate_function_folder(folder, "handler.py", skip_folder_validation=True, skip_validation=False)
