@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from pytest_httpx import HTTPXMock
 
-from cognite.client.beta import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     AggregateResult,
     EndTimeFilter,
