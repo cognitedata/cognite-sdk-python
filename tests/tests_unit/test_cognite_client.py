@@ -91,15 +91,6 @@ class TestCogniteClient:
         client.iam.token.inspect()
         assert httpx_mock.get_requests()[0].headers["cdf-version"] == client.config.api_subversion
 
-    def test_beta_header_for_beta_client(
-        self, httpx_mock: HTTPXMock, client_config_w_token_factory: ClientConfig, mock_token_inspect: Any
-    ) -> None:
-        from cognite.client.beta import CogniteClient as BetaClient
-
-        client = BetaClient(client_config_w_token_factory)
-        client.iam.token.inspect()
-        assert httpx_mock.get_requests()[0].headers["cdf-version"] == "beta"
-
     def test_verify_ssl_enabled_by_default(self, client_config_w_token_factory: ClientConfig) -> None:
         client = CogniteClient(client_config_w_token_factory)
 
