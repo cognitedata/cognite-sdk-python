@@ -13,7 +13,7 @@ from unittest import TestCase, mock
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-from cognite.client.beta import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     AssetHierarchy,
     AssetList,
