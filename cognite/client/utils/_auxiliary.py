@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import math
-import warnings
 from abc import ABC
 from collections.abc import Hashable, Iterable, Iterator, Sequence
 from inspect import isabstract
@@ -90,34 +89,6 @@ def basic_obj_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
     if camel_case:
         return convert_all_keys_to_camel_case(vars(obj))
     return convert_all_keys_to_snake_case(vars(obj))
-
-
-def handle_renamed_argument(
-    new_arg: T,
-    new_arg_name: str,
-    old_arg_name: str,
-    fn_name: str,
-    kw_dct: dict[str, Any],
-    required: bool = True,
-) -> T:
-    old_arg = kw_dct.pop(old_arg_name, None)
-    if kw_dct:
-        raise TypeError(f"Got unexpected keyword argument(s): {list(kw_dct)}")
-
-    if old_arg is None:
-        if new_arg is None and required:
-            raise TypeError(f"{fn_name}() missing 1 required positional argument: {new_arg_name!r}")
-        return new_arg
-
-    warnings.warn(
-        f"Argument {old_arg_name!r} have been changed to {new_arg_name!r}, but the old is still supported until "
-        "the next major version. Consider updating your code.",
-        UserWarning,
-        stacklevel=2,
-    )
-    if new_arg is not None:
-        raise TypeError(f"Pass either {new_arg_name!r} or {old_arg_name!r} (deprecated), not both")
-    return old_arg
 
 
 @overload
