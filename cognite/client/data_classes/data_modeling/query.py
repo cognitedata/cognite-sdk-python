@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from abc import ABC, abstractmethod
 from collections import UserDict
 from collections.abc import Mapping, Sequence
@@ -157,14 +156,6 @@ class Query(CogniteObject):
         if self.cursors:
             output["cursors"] = dict(self.cursors.items())
         return output
-
-    @classmethod
-    def load_yaml(cls, data: str) -> Query:
-        warnings.warn(
-            "Query.load_yaml is deprecated and will be removed after Oct 2024, please use Query.load",
-            UserWarning,
-        )
-        return cls.load(data)
 
     def _validate_for_query(self) -> None:
         """Ensures that the Query object is valid for use in the query endpoint (not sync)."""
