@@ -50,7 +50,6 @@ from cognite.client.data_classes.datapoints import (
 )
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
-    DataPointSubscriptionCreate,
     DatapointSubscriptionList,
     DataPointSubscriptionUpdate,
     DataPointSubscriptionWrite,
@@ -337,7 +336,6 @@ __all__ = [
     "CoordinateReferenceSystemWrite",
     "CoordinateReferenceSystemWriteList",
     "CreatedSession",
-    "DataPointSubscriptionCreate",
     "DataPointSubscriptionUpdate",
     "DataPointSubscriptionWrite",
     "DataSet",
