@@ -1139,7 +1139,7 @@ class ExperimentsAcl(Capability):
 
 
 @dataclass
-class TemplateGroupsAcl(Capability):
+class TemplateGroupsAcl(LegacyCapability):
     _capability_name = "templateGroupsAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
