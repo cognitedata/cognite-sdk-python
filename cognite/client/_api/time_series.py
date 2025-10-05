@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
@@ -15,7 +14,7 @@ from cognite.client.data_classes import (
     TimeSeriesUpdate,
     filters,
 )
-from cognite.client.data_classes.aggregations import AggregationFilter, CountAggregate, UniqueResultList
+from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.data_classes.time_series import (
@@ -702,63 +701,6 @@ class TimeSeriesAPI(APIClient):
             search={"name": name, "description": description, "query": query},
             filter=filter or {},
             limit=limit,
-        )
-
-    async def filter(
-        self,
-        filter: Filter | dict,
-        sort: TimeSeriesProperty | SortSpec | list[SortSpec] | None = None,
-        limit: int | None = DEFAULT_LIMIT_READ,
-    ) -> TimeSeriesList:
-        """`Advanced filter time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
-
-        Advanced filter lets you create complex filtering expressions that combine simple operations,
-        such as equals, prefix, exists, etc., using boolean operators and, or, and not.
-        It applies to basic fields as well as metadata.
-
-        Args:
-            filter (Filter | dict): Filter to apply.
-            sort (TimeSeriesProperty | SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            TimeSeriesList: List of time series that match the filter criteria.
-
-        Examples:
-
-            Find all numeric time series and return them sorted by external id:
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.filters import Equals
-                >>> client = CogniteClient()
-                >>> # async_client = AsyncCogniteClient()  # another option
-                >>> is_numeric = Equals("is_string", False)
-                >>> res = client.time_series.filter(filter=is_numeric, sort="external_id")
-
-            Note that you can check the API documentation above to see which properties you can filter on
-            with which filters.
-
-            To make it easier to avoid spelling mistakes and easier to look up available properties
-            for filtering and sorting, you can also use the `TimeSeriesProperty` and `SortableTimeSeriesProperty` enums.
-
-                >>> from cognite.client.data_classes.filters import Equals
-                >>> from cognite.client.data_classes.time_series import TimeSeriesProperty, SortableTimeSeriesProperty
-                >>> is_numeric = Equals(TimeSeriesProperty.is_string, False)
-                >>> res = client.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
-        """
-        warnings.warn(
-            f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
-            DeprecationWarning,
-        )
-        self._validate_filter(filter)
-
-        return await self._list(
-            list_cls=TimeSeriesList,
-            resource_cls=TimeSeries,
-            method="POST",
-            limit=limit,
-            advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
-            sort=prepare_filter_sort(sort, TimeSeriesSort),
         )
 
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
