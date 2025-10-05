@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from collections.abc import MutableSequence
 from typing import TYPE_CHECKING, Any
 
@@ -57,26 +56,6 @@ class WorkflowExecutionAPI(APIClient):
                 return None
             raise
         return WorkflowExecutionDetailed._load(response.json())
-
-    async def trigger(
-        self,
-        workflow_external_id: str,
-        version: str,
-        input: dict | None = None,
-        metadata: dict | None = None,
-        client_credentials: ClientCredentials | None = None,
-    ) -> WorkflowExecution:
-        """Trigger a workflow execution.
-
-        .. admonition:: Deprecation Warning
-
-            This method is deprecated, use '.run' instead. It will be completely removed in the next major version.
-        """
-        warnings.warn(
-            "This methods has been deprecated, use '.run' instead. It will completely removed in the next major release.",
-            UserWarning,
-        )
-        return await self.run(workflow_external_id, version, input, metadata, client_credentials)
 
     async def run(
         self,

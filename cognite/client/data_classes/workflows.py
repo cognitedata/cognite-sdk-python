@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Sequence
@@ -1281,13 +1280,6 @@ class WorkflowVersionId:
     def as_tuple(self) -> tuple[str, str | None]:
         return self.workflow_external_id, self.version
 
-    def as_primitive(self) -> tuple[str, str | None]:
-        warnings.warn(
-            "as_primitive() is deprecated, use as_tuple instead. Will be removed in the next major release.",
-            DeprecationWarning,
-        )
-        return self.as_tuple()
-
     @classmethod
     def load(cls, resource: dict) -> Self:
         if "workflowExternalId" in resource:
@@ -1569,9 +1561,6 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
     def as_write(self) -> WorkflowTriggerUpsert:
         """Returns this workflow trigger create instance."""
         return self
-
-
-WorkflowTriggerCreate = WorkflowTriggerUpsert
 
 
 class WorkflowTrigger(WorkflowTriggerCore):
