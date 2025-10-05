@@ -1031,32 +1031,22 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
         self,
         instance_id: InstanceId | tuple[str, str] | None = None,
         external_id: str | None = None,
-        *,
-        id: InstanceId | tuple[str, str] | None = None,
     ) -> T_Instance | None:
         """Get an instance from this list by instance ID.
 
         Args:
             instance_id (InstanceId | tuple[str, str] | None): The instance ID to get. A tuple on the form (space, external_id) is also accepted.
             external_id (str | None): The external ID of the instance to return. Will raise ValueError when ambiguous (in presence of multiple spaces).
-            id (InstanceId | tuple[str, str] | None): (DEPRECATED) Backwards-compatible alias for instance_id. Will be removed in the next major version.
 
         Returns:
             T_Instance | None: The requested instance if present, else None
         """
-        if not exactly_one_is_not_none(instance_id, external_id, id):
+        if not exactly_one_is_not_none(instance_id, external_id):
             raise ValueError(
-                "Pass exactly one of 'instance_id' or 'external_id' ('id' is a deprecated alias for 'instance_id'). "
+                "Pass exactly one of 'instance_id' or 'external_id'. "
                 "Using an external ID requires all instances to be from the same space."
             )
-        if id is not None:
-            instance_id = id
-            warnings.warn(
-                "Calling .get using `id` is deprecated and will be removed in the next major version. "
-                "Use 'instance_id' instead",
-                UserWarning,
-            )
-        elif external_id is not None:
+        if external_id is not None:
             if external_id in self._ambiguous_xids:
                 raise ValueError(
                     f"{external_id=} is ambiguous (multiple spaces are present). Pass 'instance_id' instead."
