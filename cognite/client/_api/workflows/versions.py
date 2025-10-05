@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from collections.abc import AsyncIterator, MutableSequence, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
@@ -180,35 +179,23 @@ class WorkflowVersionAPI(APIClient):
         )
 
     @overload
-    async def retrieve(
-        self,
-        workflow_external_id: WorkflowVersionIdentifier | str,
-        version: str | None = None,
-        *,
-        ignore_unknown_ids: bool = False,
-    ) -> WorkflowVersion | None: ...
+    async def retrieve(self, workflow_external_id: WorkflowVersionIdentifier) -> WorkflowVersion | None: ...
 
     @overload
     async def retrieve(
-        self,
-        workflow_external_id: Sequence[WorkflowVersionIdentifier] | WorkflowIds,
-        version: None = None,
-        *,
-        ignore_unknown_ids: bool = False,
+        self, workflow_external_id: Sequence[WorkflowVersionIdentifier] | WorkflowIds
     ) -> WorkflowVersionList: ...
 
     async def retrieve(
         self,
-        workflow_external_id: WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds | str,
-        version: str | None = None,
+        workflow_external_id: WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds,
         *,
         ignore_unknown_ids: bool = False,
     ) -> WorkflowVersion | WorkflowVersionList | None:
         """`Retrieve a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/GetSpecificVersion>`_
 
         Args:
-            workflow_external_id (WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds | str): External id of the workflow.
-            version (str | None): Version of the workflow.
+            workflow_external_id (WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds): External id of the workflow.
             ignore_unknown_ids (bool): When requesting multiple, whether to ignore external IDs that are not found rather than throwing an exception.
 
         Returns:
@@ -232,26 +219,7 @@ class WorkflowVersionAPI(APIClient):
                 ... )
                 >>> # A sequence of tuples is also accepted:
                 >>> res = client.workflows.versions.retrieve([("my_workflow", "v1"), ("other", "v3.2")])
-
-            DEPRECATED: You can also pass workflow_external_id and version as separate arguments:
-
-                >>> res = client.workflows.versions.retrieve("my_workflow", "v1")
-
         """
-        match workflow_external_id, version:
-            case str(), str():
-                warnings.warn(
-                    "This usage is deprecated, please pass one or more `WorkflowVersionId` instead.'",
-                    DeprecationWarning,
-                )
-                workflow_external_id = WorkflowVersionId(workflow_external_id, version)
-            case str(), None:
-                raise TypeError(
-                    "You must specify which 'version' of the workflow to retrieve. Deprecation Warning: This usage is deprecated, please pass "
-                    "one or more `WorkflowVersionId` instead."
-                )
-            case WorkflowVersionId() | Sequence(), str():
-                warnings.warn("Argument 'version' is ignored when passing one or more 'WorkflowVersionId'", UserWarning)
 
         # We can not use _retrieve_multiple as the backend doesn't support 'ignore_unknown_ids':
         async def get_single(
@@ -272,6 +240,7 @@ class WorkflowVersionAPI(APIClient):
         if any(wf_id.version is None for wf_id in given_wf_ids):
             raise ValueError("Version must be specified for all workflow version IDs.")
 
+        # TODO: Use is_singleton here:
         is_single = isinstance(workflow_external_id, WorkflowVersionId) or (
             isinstance(workflow_external_id, tuple) and len(given_wf_ids) == 1
         )

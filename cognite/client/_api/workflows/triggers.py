@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import warnings
 from typing import TYPE_CHECKING
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.workflows import (
     WorkflowTrigger,
-    WorkflowTriggerCreate,
     WorkflowTriggerList,
     WorkflowTriggerRun,
     WorkflowTriggerRunList,
@@ -99,24 +97,6 @@ class WorkflowTriggerAPI(APIClient):
         )
         return WorkflowTrigger._load(response.json().get("items")[0])
 
-    # TODO: remove method and associated data classes in next major release
-    async def create(
-        self,
-        workflow_trigger: WorkflowTriggerCreate,
-        client_credentials: ClientCredentials | dict | None = None,
-    ) -> WorkflowTrigger:
-        """Create or update a trigger for a workflow.
-
-        .. admonition:: Deprecation Warning
-
-            This method is deprecated, use '.upsert' instead. It will be removed in the next major version.
-        """
-        warnings.warn(
-            "This method is deprecated, use '.upsert' instead. It will be removed in the next major release.",
-            UserWarning,
-        )
-        return await self.upsert(workflow_trigger, client_credentials)
-
     async def delete(self, external_id: str | SequenceNotStr[str]) -> None:
         """`Delete one or more triggers for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
 
@@ -140,19 +120,6 @@ class WorkflowTriggerAPI(APIClient):
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
         )
-
-    async def get_triggers(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
-        """List the workflow triggers.
-
-        .. admonition:: Deprecation Warning
-
-            This method is deprecated, use '.list' instead. It will be removed in the next major version.
-        """
-        warnings.warn(
-            "The 'get_triggers' method is deprecated, use 'list' instead. It will be removed in the next major release.",
-            UserWarning,
-        )
-        return await self.list(limit)
 
     async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
         """`List the workflow triggers. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
@@ -179,21 +146,6 @@ class WorkflowTriggerAPI(APIClient):
             list_cls=WorkflowTriggerList,
             limit=limit,
         )
-
-    async def get_trigger_run_history(
-        self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ
-    ) -> WorkflowTriggerRunList:
-        """List the history of runs for a trigger.
-
-        .. admonition:: Deprecation Warning
-
-            This method is deprecated, use '.list_runs' instead. It will be removed in the next major version.
-        """
-        warnings.warn(
-            "The 'get_trigger_run_history' method is deprecated, use 'list_runs' instead. It will be removed in the next major release.",
-            UserWarning,
-        )
-        return await self.list_runs(external_id, limit)
 
     async def list_runs(self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerRunList:
         """`List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggerHistory>`_
