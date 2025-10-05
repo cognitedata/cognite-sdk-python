@@ -94,7 +94,6 @@ class RelationshipsAPI(APIClient):
         labels: LabelFilter | None = None,
         limit: int | None = None,
         fetch_resources: bool = False,
-        partitions: int | None = None,
     ) -> AsyncIterator[Relationship | RelationshipList]:
         """Iterate over relationships
 
@@ -117,7 +116,6 @@ class RelationshipsAPI(APIClient):
             labels (LabelFilter | None): Return only the resource matching the specified label constraints.
             limit (int | None): No description.
             fetch_resources (bool): No description.
-            partitions (int | None): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
             Relationship | RelationshipList: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
@@ -150,7 +148,6 @@ class RelationshipsAPI(APIClient):
             limit=limit,
             filter=filter,
             chunk_size=chunk_size,
-            partitions=partitions,
             other_params={"fetchResources": fetch_resources},
         ):
             yield item

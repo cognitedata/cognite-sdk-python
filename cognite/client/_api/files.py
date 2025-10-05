@@ -115,7 +115,6 @@ class FilesAPI(APIClient):
         directory_prefix: str | None = None,
         uploaded: bool | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
     ) -> AsyncIterator[FileMetadata | FileMetadataList]:
         """Iterate over files
 
@@ -144,7 +143,6 @@ class FilesAPI(APIClient):
             directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
             uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int | None): Maximum number of files to return. Defaults to return all items.
-            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
 
         Yields:
             FileMetadata | FileMetadataList: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
@@ -180,7 +178,6 @@ class FilesAPI(APIClient):
             chunk_size=chunk_size,
             filter=filter,
             limit=limit,
-            partitions=partitions,
         ):
             yield item
 
