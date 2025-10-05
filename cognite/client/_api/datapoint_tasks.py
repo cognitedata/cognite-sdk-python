@@ -160,7 +160,7 @@ class _FullDatapointsQuery:
         exp_type: type,
     ) -> list[DatapointsQuery]:
         user_queries: SequenceNotStr[int | str | NodeId | DatapointsQuery]
-        if isinstance(identifier, (dict, DatapointsQuery, exp_type)):
+        if isinstance(identifier, (DatapointsQuery, exp_type)):
             # Lazy - we postpone evaluation:
             user_queries = [identifier]
 
@@ -176,13 +176,14 @@ class _FullDatapointsQuery:
             if isinstance(query, exp_type):
                 id_dct = {arg_name: query}
                 query = DatapointsQuery(**self.top_level_defaults, **id_dct)  # type: ignore [misc, arg-type]
-            elif isinstance(query, dict):
-                query = DatapointsQuery.from_dict({**self.top_level_defaults, **query}, id_type=arg_name)
 
             elif isinstance(query, DatapointsQuery):
                 if query.identifier.name() != arg_name:
-                    raise ValueError(f"DatapointsQuery passed by {arg_name} is missing required field {arg_name!r}")
-                query = DatapointsQuery.from_dict({**self.top_level_defaults, **query.dump()}, id_type=arg_name)
+                    raise ValueError(
+                        f"DatapointsQuery passed by {arg_name} is missing required field {arg_name!r}. "
+                        f"Did you mean to pass it by {query.identifier.name()}?"
+                    )
+                query = DatapointsQuery(**self.top_level_defaults | query.dump())
             else:
                 self._raise_on_wrong_ts_identifier_type(query, arg_name, exp_type)
 
@@ -197,7 +198,7 @@ class _FullDatapointsQuery:
     ) -> NoReturn:
         raise TypeError(
             f"Got unsupported type {type(identifier)}, as, or part of argument `{arg_name}`. Expected one of "
-            f"{exp_type}, {DatapointsQuery}, or a (mixed) list of these, but got `{identifier}`."
+            f"{exp_type.__name__}, DatapointsQuery, or a (mixed) list of these, but got `{identifier}`."
         )
 
 
