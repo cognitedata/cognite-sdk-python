@@ -89,7 +89,6 @@ class SequencesAPI(APIClient):
         created_time: dict[str, Any] | None = None,
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> AsyncIterator[Sequence | SequenceList]:
@@ -110,7 +109,6 @@ class SequencesAPI(APIClient):
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Max number of sequences to return. Defaults to return all items.
-            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
@@ -143,7 +141,6 @@ class SequencesAPI(APIClient):
             advanced_filter=advanced_filter,
             limit=limit,
             sort=prep_sort,
-            partitions=partitions,
         ):
             yield item
 
