@@ -5,7 +5,6 @@ import functools
 import heapq
 import itertools
 import math
-import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -27,7 +26,6 @@ from cognite.client.data_classes import (
     AssetHierarchy,
     AssetList,
     AssetUpdate,
-    CountAggregate,
     GeoLocationFilter,
     LabelFilter,
     TimestampRange,
@@ -823,70 +821,6 @@ class AssetsAPI(APIClient):
             update_cls=AssetUpdate,
             input_resource_cls=Asset,
             mode=mode,
-        )
-
-    async def filter(
-        self,
-        filter: Filter | dict,
-        sort: SortSpec | list[SortSpec] | None = None,
-        aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
-        limit: int | None = DEFAULT_LIMIT_READ,
-    ) -> AssetList:
-        """`Advanced filter assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
-
-        Advanced filter lets you create complex filtering expressions that combine simple operations,
-        such as equals, prefix, exists, etc., using boolean operators and, or, and not.
-        It applies to basic fields as well as metadata.
-
-        Args:
-            filter (Filter | dict): Filter to apply.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            AssetList: List of assets that match the filter criteria.
-
-        Examples:
-
-            Find all assets that have a metadata key 'timezone' starting with 'Europe',
-            and sort by external id ascending:
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
-                >>> client = CogniteClient()
-                >>> # async_client = AsyncCogniteClient()  # another option
-                >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
-                >>> res = client.assets.filter(filter=in_timezone, sort=("external_id", "asc"))
-
-            Note that you can check the API documentation above to see which properties you can filter on
-            with which filters.
-
-            To make it easier to avoid spelling mistakes and easier to look up available properties
-            for filtering and sorting, you can also use the `AssetProperty` and `SortableAssetProperty` Enums.
-
-                >>> from cognite.client.data_classes import filters
-                >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
-                >>> in_timezone = filters.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
-                >>> res = client.assets.filter(
-                ...     filter=in_timezone,
-                ...     sort=(SortableAssetProperty.external_id, "asc"))
-
-        """
-        warnings.warn(
-            f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Please use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
-            DeprecationWarning,
-        )
-        self._validate_filter(filter)
-        agg_props = self._process_aggregated_props(aggregated_properties)
-        return await self._list(
-            list_cls=AssetList,
-            resource_cls=Asset,
-            method="POST",
-            limit=limit,
-            advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
-            sort=prepare_filter_sort(sort, AssetSort),
-            other_params=agg_props,
         )
 
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
