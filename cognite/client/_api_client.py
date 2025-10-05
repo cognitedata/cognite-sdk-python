@@ -565,34 +565,25 @@ class APIClient(BasicAsyncAPIClient):
 
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
-    async def _aggregate(
+    async def _aggregate_count(
         self,
-        cls: type[T],
         resource_path: str | None = None,
         filter: CogniteFilter | dict[str, Any] | None = None,
-        aggregate: str | None = None,
-        fields: SequenceNotStr[str] | None = None,
-        keys: SequenceNotStr[str] | None = None,
         headers: dict[str, Any] | None = None,
-    ) -> list[T]:
+    ) -> int:
         assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
-        assert_type(fields, "fields", [list], allow_none=True)
+
         if isinstance(filter, CogniteFilter):
             dumped_filter = filter.dump(camel_case=True)
         elif isinstance(filter, dict):
             dumped_filter = convert_all_keys_to_camel_case(filter)
         else:
             dumped_filter = {}
+
         resource_path = resource_path or self._RESOURCE_PATH
         body: dict[str, Any] = {"filter": dumped_filter}
-        if aggregate is not None:
-            body["aggregate"] = aggregate
-        if fields is not None:
-            body["fields"] = fields
-        if keys is not None:
-            body["keys"] = keys
         res = await self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
-        return [cls._load(agg) for agg in unpack_items(res)]
+        return unpack_items(res)[0]["count"]
 
     @overload
     async def _advanced_aggregate(
