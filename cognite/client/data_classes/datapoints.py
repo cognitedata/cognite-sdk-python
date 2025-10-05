@@ -291,22 +291,6 @@ class DatapointsQuery:
     def valid_from_user_query(cls, query: Self, **settings: Any) -> Self:
         return cls(**ChainMap(query.dump(), settings, cls._API_DEFAULTS))  # type: ignore [arg-type]
 
-    @classmethod
-    # TODO: Remove in next major version (require use of DatapointsQuery directly)
-    def from_dict(cls, dct: dict[str, Any], id_type: Literal["id", "external_id", "instance_id"]) -> Self:
-        if id_type not in dct:
-            if (arg_name_cc := to_camel_case(id_type)) not in dct:
-                raise KeyError(f"Missing required key `{id_type}` in dict: {dct}.")
-            # For backwards compatibility we accept identifiers in camel case:
-            dct[id_type] = (dct := dct.copy()).pop(arg_name_cc)  # copy to avoid side effects for user's input
-
-        if bad_keys := set(dct) - cls._API_DEFAULTS.keys() - {id_type}:
-            raise KeyError(
-                f"Dict provided by argument `{id_type}` included key(s) not understood: {sorted(bad_keys)}. "
-                f"Required key: `{id_type}`. Optional: {list(cls._API_DEFAULTS)}."
-            )
-        return cls(**dct)
-
     @property
     def identifier(self) -> Identifier:
         return self._identifier
