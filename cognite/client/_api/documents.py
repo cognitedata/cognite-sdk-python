@@ -46,7 +46,6 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
     ) -> AsyncIterator[Document | DocumentList]:
         """Iterate over documents
 
@@ -57,7 +56,6 @@ class DocumentsAPI(APIClient):
             filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to return.
             sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal['asc', 'desc']] | None): The property to sort by. The default order is ascending.
             limit (int | None): Maximum number of documents to return. Default to return all items.
-            partitions (int | None): Retrieve documents in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
         Yields:
             Document | DocumentList: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
@@ -71,7 +69,6 @@ class DocumentsAPI(APIClient):
             chunk_size=chunk_size,
             filter=filter.dump() if isinstance(filter, Filter) else filter,
             limit=limit,
-            partitions=partitions,
         ):
             yield item
 
