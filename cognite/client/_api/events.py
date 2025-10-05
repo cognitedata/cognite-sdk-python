@@ -237,30 +237,6 @@ class EventsAPI(APIClient):
             list_cls=EventList, resource_cls=Event, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    async def aggregate(self, filter: EventFilter | dict[str, Any] | None = None) -> list[AggregateResult]:
-        """`Aggregate events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
-
-        Args:
-            filter (EventFilter | dict[str, Any] | None): Filter on events filter with exact match
-
-        Returns:
-            list[AggregateResult]: List of event aggregates
-
-        Examples:
-
-            Aggregate events:
-
-                >>> from cognite.client import CogniteClient, AsyncCogniteClient
-                >>> client = CogniteClient()
-                >>> # async_client = AsyncCogniteClient()  # another option
-                >>> aggregate_type = client.events.aggregate(filter={"type": "failure"})
-        """
-        warnings.warn(
-            "This method is deprecated. Use aggregate_count, aggregate_unique_values, aggregate_cardinality_values, aggregate_cardinality_properties, or aggregate_unique_properties instead.",
-            DeprecationWarning,
-        )
-        return await self._aggregate(filter=filter, cls=AggregateResult)
-
     async def aggregate_unique_values(
         self,
         filter: EventFilter | dict[str, Any] | None = None,
