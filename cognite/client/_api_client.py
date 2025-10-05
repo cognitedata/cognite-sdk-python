@@ -8,6 +8,7 @@ from collections import UserList
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from typing import (
     Any,
+    ClassVar,
     Literal,
     TypeVar,
     cast,
@@ -57,7 +58,7 @@ VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "un
 
 
 class APIClient(BasicAsyncAPIClient):
-    _RESOURCE_PATH: str
+    _RESOURCE_PATH: ClassVar[str]
 
     async def _retrieve(
         self,
