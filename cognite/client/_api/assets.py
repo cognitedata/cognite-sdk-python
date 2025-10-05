@@ -231,29 +231,6 @@ class AssetsAPI(APIClient):
             list_cls=AssetList, resource_cls=Asset, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    async def aggregate(self, filter: AssetFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
-        """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
-
-        Args:
-            filter (AssetFilter | dict[str, Any] | None): Filter on assets with strict matching.
-
-        Returns:
-            list[CountAggregate]: List of asset aggregates
-
-        Examples:
-
-            Aggregate assets:
-
-                >>> from cognite.client import CogniteClient, AsyncCogniteClient
-                >>> client = CogniteClient()
-                >>> # async_client = AsyncCogniteClient()  # another option
-                >>> aggregate_by_prefix = client.assets.aggregate(filter={"external_id_prefix": "prefix"})
-        """
-        warnings.warn(
-            f"This method is deprecated. Use {self.__class__.__name__}.aggregate_count instead.", DeprecationWarning
-        )
-        return await self._aggregate(filter=filter, cls=CountAggregate)
-
     async def aggregate_count(
         self,
         property: AssetPropertyLike | None = None,
