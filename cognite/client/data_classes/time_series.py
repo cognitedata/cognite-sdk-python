@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from abc import ABC
 from collections.abc import Sequence
 from datetime import datetime
@@ -51,7 +50,6 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
-        legacy_name (str | None): This field is not used by the API and will be removed October 2024.
     """
 
     def __init__(
@@ -66,7 +64,6 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         description: str | None = None,
         security_categories: Sequence[int] | None = None,
         data_set_id: int | None = None,
-        legacy_name: str | None = None,
     ) -> None:
         self.external_id = external_id
         self.instance_id = instance_id
@@ -78,13 +75,6 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         self.description = description
         self.security_categories = security_categories
         self.data_set_id = data_set_id
-        if legacy_name is not None:
-            warnings.warn(
-                "The 'legacy_name' is not used and will be ignored. It will be completely removed October 2024.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        self.legacy_name = legacy_name
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the object to a dictionary"""
@@ -124,7 +114,6 @@ class TimeSeries(TimeSeriesCore):
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
-        legacy_name (str | None): This field is not used by the API and will be removed October 2024.
         cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
@@ -145,7 +134,6 @@ class TimeSeries(TimeSeriesCore):
         description: str | None,
         security_categories: Sequence[int] | None,
         data_set_id: int | None,
-        legacy_name: str | None,
         cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
@@ -159,7 +147,6 @@ class TimeSeries(TimeSeriesCore):
             description=description,
             security_categories=security_categories,
             data_set_id=data_set_id,
-            legacy_name=legacy_name,
         )
         self.id: int = id
         self.created_time: int = created_time
@@ -186,7 +173,6 @@ class TimeSeries(TimeSeriesCore):
             description=resource.get("description"),
             security_categories=resource.get("securityCategories"),
             data_set_id=resource.get("dataSetId"),
-            legacy_name=resource.get("legacyName"),
             cognite_client=cognite_client,
         )
 
@@ -205,7 +191,6 @@ class TimeSeries(TimeSeriesCore):
             description=self.description,
             security_categories=self.security_categories,
             data_set_id=self.data_set_id,
-            legacy_name=self.legacy_name,
         )
 
     async def count(self) -> int:
@@ -287,7 +272,6 @@ class TimeSeriesWrite(TimeSeriesCore):
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
-        legacy_name (str | None): This field is not used by the API and will be removed October 2024.
     """
 
     def __init__(
@@ -304,7 +288,6 @@ class TimeSeriesWrite(TimeSeriesCore):
         description: str | None = None,
         security_categories: Sequence[int] | None = None,
         data_set_id: int | None = None,
-        legacy_name: str | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -317,7 +300,6 @@ class TimeSeriesWrite(TimeSeriesCore):
             description=description,
             security_categories=security_categories,
             data_set_id=data_set_id,
-            legacy_name=legacy_name,
         )
         self.is_string = is_string
         self.is_step = is_step
@@ -337,7 +319,6 @@ class TimeSeriesWrite(TimeSeriesCore):
             description=resource.get("description"),
             security_categories=resource.get("securityCategories"),
             data_set_id=resource.get("dataSetId"),
-            legacy_name=resource.get("legacyName"),
         )
 
     def as_write(self) -> TimeSeriesWrite:
