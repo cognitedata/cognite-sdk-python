@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import warnings
 from collections.abc import AsyncIterator, Sequence
 from typing import Any, Literal, TypeAlias, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
-    AggregateResult,
     EndTimeFilter,
     Event,
     EventFilter,
@@ -591,68 +589,6 @@ class EventsAPI(APIClient):
             update_cls=EventUpdate,
             input_resource_cls=Event,
             mode=mode,
-        )
-
-    async def filter(
-        self,
-        filter: Filter | dict,
-        sort: SortSpec | list[SortSpec] | None = None,
-        limit: int | None = DEFAULT_LIMIT_READ,
-    ) -> EventList:
-        """`Advanced filter events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
-
-        Advanced filter lets you create complex filtering expressions that combine simple operations,
-        such as equals, prefix, exists, etc., using boolean operators and, or, and not.
-        It applies to basic fields as well as metadata.
-
-        Args:
-            filter (Filter | dict): Filter to apply.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            EventList: List of events that match the filter criteria.
-
-        Examples:
-
-            Find all events that has external id with prefix "workorder" and the word 'failure' in the description,
-            and sort by start time descending:
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
-                >>> client = CogniteClient()
-                >>> is_workorder = filters.Prefix("external_id", "workorder")
-                >>> has_failure = filters.Search("description", "failure")
-                >>> res = client.events.filter(
-                ...     filter=filters.And(is_workorder, has_failure), sort=("start_time", "desc"))
-
-            Note that you can check the API documentation above to see which properties you can filter on
-            with which filters.
-
-            To make it easier to avoid spelling mistakes and easier to look up available properties
-            for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` enums.
-
-                >>> from cognite.client.data_classes import filters
-                >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
-                >>> is_workorder = filters.Prefix(EventProperty.external_id, "workorder")
-                >>> has_failure = filters.Search(EventProperty.description, "failure")
-                >>> res = client.events.filter(
-                ...     filter=filters.And(is_workorder, has_failure),
-                ...     sort=(SortableEventProperty.start_time, "desc"))
-        """
-        warnings.warn(
-            f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Please use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
-            DeprecationWarning,
-        )
-        self._validate_filter(filter)
-
-        return await self._list(
-            list_cls=EventList,
-            resource_cls=Event,
-            method="POST",
-            limit=limit,
-            advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
-            sort=prepare_filter_sort(sort, EventSort),
         )
 
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
