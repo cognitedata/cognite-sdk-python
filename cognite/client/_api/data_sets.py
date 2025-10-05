@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
-    CountAggregate,
     DataSet,
     DataSetFilter,
     DataSetList,
@@ -183,26 +182,27 @@ class DataSetsAPI(APIClient):
             list_cls=DataSetList, resource_cls=DataSet, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    async def aggregate(self, filter: DataSetFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
+    async def aggregate_count(self, filter: DataSetFilter | dict[str, Any] | None = None) -> int:
         """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
 
         Args:
             filter (DataSetFilter | dict[str, Any] | None): Filter on data set filter with exact match
 
         Returns:
-            list[CountAggregate]: List of data set aggregates
+            int: Count of data sets matching the filter.
 
         Examples:
 
-            Aggregate data_sets:
+            Get the number of write-protected data sets:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> aggregate_protected = client.data_sets.aggregate(filter={"write_protected": True})
+                >>> aggregate_protected = client.data_sets.aggregate_count(
+                ...     filter={"write_protected": True}
+                ... )
         """
-
-        return await self._aggregate(filter=filter, cls=CountAggregate)
+        return await self._aggregate_count(filter=filter)
 
     @overload
     async def update(
