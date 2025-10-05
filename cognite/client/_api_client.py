@@ -184,7 +184,6 @@ class APIClient(BasicAsyncAPIClient):
         filter: dict[str, Any] | None = None,
         sort: SequenceNotStr | None = None,
         other_params: dict[str, Any] | None = None,
-        partitions: int | None = None,
         headers: dict[str, Any] | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
@@ -206,7 +205,6 @@ class APIClient(BasicAsyncAPIClient):
         filter: dict[str, Any] | None = None,
         sort: SequenceNotStr | None = None,
         other_params: dict[str, Any] | None = None,
-        partitions: int | None = None,
         headers: dict[str, Any] | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
@@ -226,18 +224,12 @@ class APIClient(BasicAsyncAPIClient):
         filter: dict[str, Any] | None = None,
         sort: SequenceNotStr[str | dict[str, Any]] | None = None,
         other_params: dict[str, Any] | None = None,
-        partitions: int | None = None,
         headers: dict[str, Any] | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
         semaphore: asyncio.Semaphore | None = None,
     ) -> AsyncIterator[T_CogniteResourceList | T_CogniteResource]:
-        if partitions:
-            warnings.warn("passing `partitions` to a generator method is not supported, so it's being ignored")
-            # set chunk_size to None in order to not break the existing API.
-            # TODO: Remove this and support for partitions (in combo with generator) in the next major version
-            chunk_size = None
         limit, url_path, params = self._prepare_params_for_list_generator(
             limit, method, filter, url_path, resource_path, sort, other_params, advanced_filter
         )
@@ -280,15 +272,12 @@ class APIClient(BasicAsyncAPIClient):
         filter: dict[str, Any] | None = None,
         sort: SequenceNotStr[str | dict[str, Any]] | None = None,
         other_params: dict[str, Any] | None = None,
-        partitions: int | None = None,
         headers: dict[str, Any] | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
         semaphore: asyncio.Semaphore | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
-        if partitions:
-            raise ValueError("When fetching additional data (besides items), using partitions is not supported")
         if not chunk_size:
             raise ValueError(
                 f"When fetching additional data (besides items), {chunk_size=} must match the "

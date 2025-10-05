@@ -79,7 +79,7 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
-        partitions: int | None = None,
+        partitions: int | None = None,  # Fun fact: No other API allow partitions on __call__
     ) -> AsyncIterator[Row | RowList]:
         """Iterate over rows.
 
