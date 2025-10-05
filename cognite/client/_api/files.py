@@ -13,7 +13,6 @@ from urllib.parse import urljoin, urlparse
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
-    CountAggregate,
     FileMetadata,
     FileMetadataFilter,
     FileMetadataList,
@@ -239,26 +238,25 @@ class FilesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    async def aggregate(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
+    async def aggregate_count(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> int:
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
             filter (FileMetadataFilter | dict[str, Any] | None): Filter on file metadata filter with exact match
 
         Returns:
-            list[CountAggregate]: List of count aggregates
+            int: Count of files matching the filter.
 
         Examples:
 
-            List files metadata and filter on external id prefix:
+            Get the count of files that have been uploaded:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> aggregate_uploaded = client.files.aggregate(filter={"uploaded": True})
         """
-
-        return await self._aggregate(filter=filter, cls=CountAggregate)
+        return await self._aggregate_count(filter=filter)
 
     async def delete(
         self,
