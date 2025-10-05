@@ -176,10 +176,6 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
         return self
 
 
-# TODO: Remove this in next major release
-DataPointSubscriptionCreate = DataPointSubscriptionWrite
-
-
 class DataPointSubscriptionUpdate(CogniteUpdate):
     """Changes applied to datapoint subscription
 
