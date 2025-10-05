@@ -26,22 +26,6 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
 
 
-class CountAggregate(CogniteObject):
-    """
-    [DEPRECATED] This represents the result of a count aggregation.
-
-    Args:
-        count (int): The number of items matching the aggregation.
-    """
-
-    def __init__(self, count: int) -> None:
-        self.count = count
-
-    @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> CountAggregate:
-        return cls(count=resource["count"])
-
-
 @dataclass
 class Aggregation(CogniteObject, ABC):
     _aggregation_name: ClassVar[str]
