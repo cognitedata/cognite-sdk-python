@@ -263,29 +263,6 @@ class TimeSeriesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    async def aggregate(self, filter: TimeSeriesFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
-        """`Aggregate time series <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
-
-        Args:
-            filter (TimeSeriesFilter | dict[str, Any] | None): Filter on time series filter with exact match
-
-        Returns:
-            list[CountAggregate]: List of sequence aggregates
-
-        Examples:
-
-            List time series:
-
-                >>> from cognite.client import CogniteClient, AsyncCogniteClient
-                >>> client = CogniteClient()
-                >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.time_series.aggregate(filter={"unit": "kpa"})
-        """
-        warnings.warn(
-            "This method will be deprecated in the next major release. Use aggregate_count instead.", DeprecationWarning
-        )
-        return await self._aggregate(filter=filter, cls=CountAggregate)
-
     async def aggregate_count(
         self,
         advanced_filter: Filter | dict[str, Any] | None = None,
