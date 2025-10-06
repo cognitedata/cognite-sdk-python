@@ -29,7 +29,8 @@ from cognite.client.data_classes.transformations.jobs import TransformationJob, 
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
 from cognite.client.exceptions import CogniteAPIError, PyodideJsException
-from cognite.client.utils._text import convert_all_keys_to_camel_case
+from cognite.client.utils._async_helpers import run_sync
+from cognite.client.utils._text import convert_all_keys_to_camel_case, copy_doc_from_async
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -385,17 +386,38 @@ class Transformation(TransformationCore):
     ) -> None:
         await super()._process_credentials(self._cognite_client, sessions_cache=sessions_cache, keep_none=keep_none)
 
-    async def run(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
+    async def run_async(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
+        """Run this transformation.
+        Args:
+            wait (bool): Whether to wait for the transformation to finish. Defaults to True.
+            timeout (float | None): How long to wait for the transformation to finish, in seconds. If None, wait indefinitely. Only used if `wait` is True. Defaults to None.
+        Returns:
+            TransformationJob: The started transformation job.
+        """
         return await self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
 
-    async def cancel(self) -> None:
+    @copy_doc_from_async(run_async)
+    def run(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
+        return run_sync(self.run_async(wait=wait, timeout=timeout))
+
+    async def cancel_async(self) -> None:
+        """Cancel this transformation."""
         if self.id is None:
             await self._cognite_client.transformations.cancel(transformation_external_id=self.external_id)
         else:
             await self._cognite_client.transformations.cancel(transformation_id=self.id)
 
-    async def jobs(self) -> TransformationJobList:
+    @copy_doc_from_async(cancel_async)
+    def cancel(self) -> None:
+        return run_sync(self.cancel_async())
+
+    async def jobs_async(self) -> TransformationJobList:
+        """List all jobs for this transformation."""
         return await self._cognite_client.transformations.jobs.list(transformation_id=self.id)
+
+    @copy_doc_from_async(jobs_async)
+    def jobs(self) -> TransformationJobList:
+        return run_sync(self.jobs_async())
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Transformation:
