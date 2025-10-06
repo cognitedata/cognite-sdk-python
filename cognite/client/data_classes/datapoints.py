@@ -1223,13 +1223,10 @@ class Datapoints(CogniteResource):
         instance.error, instance.value = [], []
         return instance
 
-    # TODO: remove 'expected_fields' in the next major version:
-    #       the method should not need to be told what to load...
     @classmethod
     def _load(  # type: ignore [override]
         cls,
         dps_object: dict[str, Any],
-        expected_fields: list[str] | None = None,
         cognite_client: AsyncCogniteClient | None = None,
     ) -> Datapoints:
         del cognite_client  # just needed for signature
@@ -1242,9 +1239,8 @@ class Datapoints(CogniteResource):
             unit=dps_object.get("unit"),
             unit_external_id=dps_object.get("unitExternalId"),
         )
-        expected_fields = (expected_fields or ["value"]) + ["timestamp"]
         if len(dps_object["datapoints"]) == 0:
-            for key in expected_fields:
+            for key in ["value", "timestamp"]:
                 snake_key = to_snake_case(key)
                 setattr(instance, snake_key, [])
             return instance
