@@ -300,14 +300,6 @@ class Transformation(TransformationCore):
         self.tags = tags or []
         self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
-        if self.has_source_oidc_credentials or self.has_destination_oidc_credentials:
-            warnings.warn(
-                "The arguments 'has_source_oidc_credentials' and 'has_destination_oidc_credentials' are "
-                "deprecated and will be removed in a future version."
-                "These are now properties returning whether the transformation has source or destination oidc credentials set.",
-                UserWarning,
-            )
-
         if self.schedule:
             self.schedule.id = self.schedule.id or self.id
             self.schedule.external_id = self.schedule.external_id or self.external_id
