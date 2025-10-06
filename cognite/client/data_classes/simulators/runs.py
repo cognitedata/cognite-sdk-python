@@ -17,10 +17,11 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.simulators.logs import SimulatorLog
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._retry import Backoff
-from cognite.client.utils._text import to_snake_case
+from cognite.client.utils._text import copy_doc_from_async, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
@@ -281,7 +282,7 @@ class SimulationRun(SimulationRunCore):
             run_time=self.run_time,
         )
 
-    async def get_logs(self) -> SimulatorLog | None:
+    async def get_logs_async(self) -> SimulatorLog | None:
         """`Retrieve logs for this simulation run. <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
 
         Returns:
@@ -289,7 +290,11 @@ class SimulationRun(SimulationRunCore):
         """
         return await self._cognite_client.simulators.logs.retrieve(ids=self.log_id)
 
-    async def get_data(self) -> SimulationRunDataItem | None:
+    @copy_doc_from_async(get_logs_async)
+    def get_logs(self) -> SimulatorLog | None:
+        return run_sync(self.get_logs_async())
+
+    async def get_data_async(self) -> SimulationRunDataItem | None:
         """`Retrieve data associated with this simulation run. <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
 
         Returns:
@@ -298,12 +303,14 @@ class SimulationRun(SimulationRunCore):
         data = await self._cognite_client.simulators.runs.list_run_data(run_id=self.id)
         if data:
             return data[0]
-
         return None
 
-    async def update(self) -> None:
+    @copy_doc_from_async(get_data_async)
+    def get_data(self) -> SimulationRunDataItem | None:
+        return run_sync(self.get_data_async())
+
+    async def update_async(self) -> None:
         """Update the simulation run object to the latest state. Useful if the run was created with wait=False."""
-        # same logic as Cognite Functions
         latest = await self._cognite_client.simulators.runs.retrieve(ids=self.id)
         if latest is None:
             raise RuntimeError("Unable to update the simulation run object (it was not found)")
@@ -313,7 +320,11 @@ class SimulationRun(SimulationRunCore):
             self.simulation_time = latest.simulation_time
             self.last_updated_time = latest.last_updated_time
 
-    async def wait(self, timeout: float = 60) -> None:
+    @copy_doc_from_async(update_async)
+    def update(self) -> None:
+        return run_sync(self.update_async())
+
+    async def wait_async(self, timeout: float = 60) -> None:
         """Waits for simulation status to become either success or failure.
         This is generally not needed to call directly, as client.simulators.routines.run(...) will wait for the simulation to finish by default.
 
@@ -325,11 +336,15 @@ class SimulationRun(SimulationRunCore):
         poll_backoff = Backoff(max_wait=30, base=10)
 
         while time.time() < end_time:
-            await self.update()
+            await self.update_async()
             if self.status in ["success", "failure"]:
                 return
             sleep_time = min(next(poll_backoff) + 1, end_time - time.time())
             await asyncio.sleep(sleep_time)
+
+    @copy_doc_from_async(wait_async)
+    def wait(self, timeout: float = 60) -> None:
+        return run_sync(self.wait_async(timeout=timeout))
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> SimulationRun:
