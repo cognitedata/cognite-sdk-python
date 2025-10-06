@@ -45,11 +45,12 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.labels import Label, LabelDefinitionWrite, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 from cognite.client.exceptions import CogniteAssetHierarchyError
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._auxiliary import remove_duplicates_keep_order, split_into_chunks
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._graph import find_all_cycles_with_elements
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import DrawTables, convert_dict_to_case, shorten
+from cognite.client.utils._text import DrawTables, convert_dict_to_case, copy_doc_from_async, shorten
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -247,7 +248,7 @@ class Asset(AssetCore):
     def __hash__(self) -> int:
         return hash(self.external_id)
 
-    def parent(self) -> Asset:
+    async def parent_async(self) -> Asset:
         """Returns this asset's parent.
 
         Returns:
@@ -255,9 +256,13 @@ class Asset(AssetCore):
         """
         if self.parent_id is None:
             raise ValueError("parent_id is None, is this a root asset?")
-        return cast(Asset, self._cognite_client.assets.retrieve(id=self.parent_id))
+        return cast(Asset, await self._cognite_client.assets.retrieve(id=self.parent_id))
 
-    async def children(self) -> AssetList:
+    @copy_doc_from_async(parent_async)
+    def parent(self) -> Asset:
+        return run_sync(self.parent_async())
+
+    async def children_async(self) -> AssetList:
         """Returns the children of this asset.
 
         Returns:
@@ -267,7 +272,11 @@ class Asset(AssetCore):
             raise ValueError("Unable to fetch child assets: id is missing")
         return await self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
 
-    async def subtree(self, depth: int | None = None) -> AssetList:
+    @copy_doc_from_async(children_async)
+    def children(self) -> AssetList:
+        return run_sync(self.children_async())
+
+    async def subtree_async(self, depth: int | None = None) -> AssetList:
         """Returns the subtree of this asset up to a specified depth.
 
         Args:
@@ -280,7 +289,11 @@ class Asset(AssetCore):
             raise ValueError("Unable to fetch asset subtree: id is missing")
         return await self._cognite_client.assets.retrieve_subtree(id=self.id, depth=depth)
 
-    async def time_series(self, **kwargs: Any) -> TimeSeriesList:
+    @copy_doc_from_async(subtree_async)
+    def subtree(self, depth: int | None = None) -> AssetList:
+        return run_sync(self.subtree_async(depth=depth))
+
+    async def time_series_async(self, **kwargs: Any) -> TimeSeriesList:
         """Retrieve all time series related to this asset.
 
         Args:
@@ -291,7 +304,11 @@ class Asset(AssetCore):
         asset_ids = self._prepare_asset_ids("time series", kwargs)
         return await self._cognite_client.time_series.list(asset_ids=asset_ids, **kwargs)
 
-    async def sequences(self, **kwargs: Any) -> SequenceList:
+    @copy_doc_from_async(time_series_async)
+    def time_series(self, **kwargs: Any) -> TimeSeriesList:
+        return run_sync(self.time_series_async(**kwargs))
+
+    async def sequences_async(self, **kwargs: Any) -> SequenceList:
         """Retrieve all sequences related to this asset.
 
         Args:
@@ -302,7 +319,11 @@ class Asset(AssetCore):
         asset_ids = self._prepare_asset_ids("sequences", kwargs)
         return await self._cognite_client.sequences.list(asset_ids=asset_ids, **kwargs)
 
-    async def events(self, **kwargs: Any) -> EventList:
+    @copy_doc_from_async(sequences_async)
+    def sequences(self, **kwargs: Any) -> SequenceList:
+        return run_sync(self.sequences_async(**kwargs))
+
+    async def events_async(self, **kwargs: Any) -> EventList:
         """Retrieve all events related to this asset.
 
         Args:
@@ -313,7 +334,11 @@ class Asset(AssetCore):
         asset_ids = self._prepare_asset_ids("events", kwargs)
         return await self._cognite_client.events.list(asset_ids=asset_ids, **kwargs)
 
-    async def files(self, **kwargs: Any) -> FileMetadataList:
+    @copy_doc_from_async(events_async)
+    def events(self, **kwargs: Any) -> EventList:
+        return run_sync(self.events_async(**kwargs))
+
+    async def files_async(self, **kwargs: Any) -> FileMetadataList:
         """Retrieve all files metadata related to this asset.
 
         Args:
@@ -323,6 +348,10 @@ class Asset(AssetCore):
         """
         asset_ids = self._prepare_asset_ids("files", kwargs)
         return await self._cognite_client.files.list(asset_ids=asset_ids, **kwargs)
+
+    @copy_doc_from_async(files_async)
+    def files(self, **kwargs: Any) -> FileMetadataList:
+        return run_sync(self.files_async(**kwargs))
 
     def _prepare_asset_ids(self, resource: str, user_kwargs: dict[str, Any]) -> list[int]:
         if self.id is None:
@@ -550,7 +579,7 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
     def as_write(self) -> AssetWriteList:
         return AssetWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
 
-    async def time_series(self, **kwargs: Any) -> TimeSeriesList:
+    async def time_series_async(self, **kwargs: Any) -> TimeSeriesList:
         """Retrieve all time series related to these assets.
 
         Args:
@@ -562,7 +591,11 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
 
         return await self._retrieve_related_resources(TimeSeriesList, self._cognite_client.time_series, kwargs)
 
-    async def sequences(self, **kwargs: Any) -> SequenceList:
+    @copy_doc_from_async(time_series_async)
+    def time_series(self, **kwargs: Any) -> TimeSeriesList:
+        return run_sync(self.time_series_async(**kwargs))
+
+    async def sequences_async(self, **kwargs: Any) -> SequenceList:
         """Retrieve all sequences related to these assets.
 
         Args:
@@ -574,7 +607,11 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
 
         return await self._retrieve_related_resources(SequenceList, self._cognite_client.sequences, kwargs)
 
-    async def events(self, **kwargs: Any) -> EventList:
+    @copy_doc_from_async(sequences_async)
+    def sequences(self, **kwargs: Any) -> SequenceList:
+        return run_sync(self.sequences_async(**kwargs))
+
+    async def events_async(self, **kwargs: Any) -> EventList:
         """Retrieve all events related to these assets.
 
         Args:
@@ -586,7 +623,11 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
 
         return await self._retrieve_related_resources(EventList, self._cognite_client.events, kwargs, chunk_size=5000)
 
-    async def files(self, **kwargs: Any) -> FileMetadataList:
+    @copy_doc_from_async(events_async)
+    def events(self, **kwargs: Any) -> EventList:
+        return run_sync(self.events_async(**kwargs))
+
+    async def files_async(self, **kwargs: Any) -> FileMetadataList:
         """Retrieve all files metadata related to these assets.
 
         Args:
@@ -597,6 +638,10 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         from cognite.client.data_classes import FileMetadataList
 
         return await self._retrieve_related_resources(FileMetadataList, self._cognite_client.files, kwargs)
+
+    @copy_doc_from_async(files_async)
+    def files(self, **kwargs: Any) -> FileMetadataList:
+        return run_sync(self.files_async(**kwargs))
 
     async def _retrieve_related_resources(
         self,
