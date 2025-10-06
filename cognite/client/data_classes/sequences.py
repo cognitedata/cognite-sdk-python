@@ -28,9 +28,10 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils import _json_extended as _json
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._auxiliary import at_least_one_is_not_none
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import convert_all_keys_to_camel_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, copy_doc_from_async
 
 if TYPE_CHECKING:
     import pandas
@@ -330,7 +331,7 @@ class Sequence(SequenceCore):
             dumped["columns"] = self.columns.dump(camel_case)
         return dumped
 
-    async def rows(self, start: int, end: int | None) -> SequenceRows:
+    async def rows_async(self, start: int, end: int | None) -> SequenceRows:
         """Retrieves rows from this sequence.
 
         Args:
@@ -347,6 +348,10 @@ class Sequence(SequenceCore):
         elif self.id is not None:
             return await self._cognite_client.sequences.data.retrieve(id=self.id, start=start, end=end)
         raise ValueError("Sequence must have either id or external_id set")
+
+    @copy_doc_from_async(rows_async)
+    def rows(self, start: int, end: int | None) -> SequenceRows:
+        return run_sync(self.rows_async(start=start, end=end))
 
     @property
     def column_external_ids(self) -> list[str]:
