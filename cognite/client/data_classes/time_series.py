@@ -27,7 +27,9 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._text import copy_doc_from_async
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -193,7 +195,7 @@ class TimeSeries(TimeSeriesCore):
             data_set_id=self.data_set_id,
         )
 
-    async def count(self) -> int:
+    async def count_async(self) -> int:
         """Returns the number of datapoints in this time series.
 
         This result may not be completely accurate, as it is based on aggregates which may be occasionally out of date.
@@ -216,11 +218,16 @@ class TimeSeries(TimeSeriesCore):
         )
         return sum(dps.count)
 
-    async def latest(self, before: int | str | datetime | None = None) -> Datapoint | None:
+    @copy_doc_from_async(count_async)
+    def count(self) -> int:
+        return run_sync(self.count_async())
+
+    # TODO: Should support bad/unknown dps + status codes?
+    async def latest_async(self, before: int | str | datetime | None = None) -> Datapoint | None:
         """Returns the latest datapoint in this time series. If empty, returns None.
 
         Args:
-            before (int | str | datetime | None): No description.
+            before (int | str | datetime | None): Get latest datapoint before this time.
         Returns:
             Datapoint | None: A datapoint object containing the value and timestamp of the latest datapoint.
         """
@@ -229,7 +236,11 @@ class TimeSeries(TimeSeriesCore):
             return dps[0]
         return None
 
-    async def first(self) -> Datapoint | None:
+    @copy_doc_from_async(latest_async)
+    def latest(self, before: int | str | datetime | None = None) -> Datapoint | None:
+        return run_sync(self.latest_async(before=before))
+
+    async def first_async(self) -> Datapoint | None:
         """Returns the first datapoint in this time series. If empty, returns None.
 
         Returns:
@@ -243,7 +254,11 @@ class TimeSeries(TimeSeriesCore):
             return dps[0]
         return None
 
-    def asset(self) -> Asset:
+    @copy_doc_from_async(first_async)
+    def first(self) -> Datapoint | None:
+        return run_sync(self.first_async())
+
+    async def asset_async(self) -> Asset:
         """Returns the asset this time series belongs to.
 
         Returns:
@@ -253,7 +268,11 @@ class TimeSeries(TimeSeriesCore):
         """
         if self.asset_id is None:
             raise ValueError("asset_id is None")
-        return cast("Asset", self._cognite_client.assets.retrieve(id=self.asset_id))
+        return cast("Asset", await self._cognite_client.assets.retrieve(id=self.asset_id))
+
+    @copy_doc_from_async(asset_async)
+    def asset(self) -> Asset:
+        return run_sync(self.asset_async())
 
 
 class TimeSeriesWrite(TimeSeriesCore):
