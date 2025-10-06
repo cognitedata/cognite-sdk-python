@@ -26,6 +26,8 @@ from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 from cognite.client.exceptions import CogniteFileUploadError
+from cognite.client.utils._async_helpers import run_sync
+from cognite.client.utils._text import copy_doc_from_async
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -558,7 +560,7 @@ class FileMultipartUploadSession:
         self._uploaded_urls = [False for _ in upload_urls]
         self._cognite_client = cognite_client
 
-    async def upload_part(self, part_no: int, content: str | bytes | BinaryIO) -> None:
+    async def upload_part_async(self, part_no: int, content: str | bytes | BinaryIO) -> None:
         """Upload part of a file.
 
         Note:
@@ -575,6 +577,10 @@ class FileMultipartUploadSession:
 
         await self._cognite_client.files._upload_multipart_part(self._upload_urls[part_no], content)
         self._uploaded_urls[part_no] = True
+
+    @copy_doc_from_async(upload_part_async)
+    def upload_part(self, part_no: int, content: str | bytes | BinaryIO) -> None:
+        return run_sync(self.upload_part_async(part_no, content))
 
     async def __aenter__(self) -> FileMultipartUploadSession:
         return self
