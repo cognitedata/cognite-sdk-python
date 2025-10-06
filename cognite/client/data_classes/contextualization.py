@@ -31,9 +31,10 @@ from cognite.client.data_classes.annotation_types.images import (
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList, AnnotationType
 from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
+from cognite.client.exceptions import CogniteAPIError, ModelFailedException
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
-from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case
+from cognite.client.utils._text import convert_all_keys_to_snake_case, copy_doc_from_async, to_camel_case
 
 if TYPE_CHECKING:
     import pandas
@@ -107,7 +108,11 @@ class ContextualizationJob(CogniteResource, ABC):
         self.job_token: str | None = None
 
     @abstractmethod
-    async def update_status(self) -> str:
+    async def update_status_async(self) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def update_status(self) -> str:
         raise NotImplementedError
 
     @abstractmethod
@@ -126,7 +131,7 @@ class ContextualizationJob(CogniteResource, ABC):
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
-            await self.update_status()
+            await self.update_status_async()
             if JobStatus(self.status).is_finished():
                 break
             await asyncio.sleep(max(1, random.uniform(0, interval)))
@@ -224,7 +229,7 @@ class EntityMatchingModel(CogniteResource):
     def __str__(self) -> str:
         return f"{type(self).__name__}(id={self.id}, status={self.status}, error={self.error_message})"
 
-    async def update_status(self) -> str:
+    async def update_status_async(self) -> str:
         """Updates the model status and returns it"""
         data = (await self._cognite_client.entity_matching._get(f"{self._STATUS_PATH}{self.id}")).json()
         self.status = data["status"]
@@ -235,7 +240,11 @@ class EntityMatchingModel(CogniteResource):
         assert self.status is not None
         return self.status
 
-    async def wait_for_completion(self, timeout: int | None = None, interval: int = 10) -> None:
+    @copy_doc_from_async(update_status_async)
+    def update_status(self) -> str:
+        return run_sync(self.update_status_async())
+
+    async def wait_for_completion_async(self, timeout: int | None = None, interval: int = 10) -> None:
         """Waits for model completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
@@ -247,7 +256,7 @@ class EntityMatchingModel(CogniteResource):
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
-            await self.update_status()
+            await self.update_status_async()
             if JobStatus(self.status) not in [JobStatus.QUEUED, JobStatus.RUNNING]:
                 break
             await asyncio.sleep(max(1, random.uniform(0, interval)))
@@ -257,7 +266,11 @@ class EntityMatchingModel(CogniteResource):
             assert self.error_message is not None
             raise ModelFailedException(type(self).__name__, self.id, self.error_message)
 
-    async def predict(
+    @copy_doc_from_async(wait_for_completion_async)
+    def wait_for_completion(self, timeout: int | None = None, interval: int = 10) -> None:
+        return run_sync(self.wait_for_completion_async(timeout=timeout, interval=interval))
+
+    async def predict_async(
         self,
         sources: list[dict] | None = None,
         targets: list[dict] | None = None,
@@ -277,7 +290,7 @@ class EntityMatchingModel(CogniteResource):
 
         Returns:
             EntityMatchingPredictionResult: object which can be used to wait for and retrieve results."""
-        await self.wait_for_completion()
+        await self.wait_for_completion_async()
         json = {
             "id": self.id,
             "sources": self._dump_entities(sources),
@@ -292,7 +305,21 @@ class EntityMatchingModel(CogniteResource):
             cognite_client=self._cognite_client,
         )
 
-    async def refit(self, true_matches: Sequence[dict | tuple[int | str, int | str]]) -> EntityMatchingModel:
+    @copy_doc_from_async(predict_async)
+    def predict(
+        self,
+        sources: list[dict] | None = None,
+        targets: list[dict] | None = None,
+        num_matches: int = 1,
+        score_threshold: float | None = None,
+    ) -> EntityMatchingPredictionResult:
+        return run_sync(
+            self.predict_async(
+                sources=sources, targets=targets, num_matches=num_matches, score_threshold=score_threshold
+            )
+        )
+
+    async def refit_async(self, true_matches: Sequence[dict | tuple[int | str, int | str]]) -> EntityMatchingModel:
         """Re-fits an entity matching model, using the combination of the old and new true matches.
 
         Args:
@@ -300,11 +327,15 @@ class EntityMatchingModel(CogniteResource):
         Returns:
             EntityMatchingModel: new model refitted to true_matches."""
         true_matches = [convert_true_match(true_match) for true_match in true_matches]
-        await self.wait_for_completion()
+        await self.wait_for_completion_async()
         response = await self._cognite_client.entity_matching._post(
             self._RESOURCE_PATH + "/refit", json={"trueMatches": true_matches, "id": self.id}
         )
         return self._load(response.json(), cognite_client=self._cognite_client)
+
+    @copy_doc_from_async(refit_async)
+    def refit(self, true_matches: Sequence[dict | tuple[int | str, int | str]]) -> EntityMatchingModel:
+        return run_sync(self.refit_async(true_matches=true_matches))
 
     @staticmethod
     def _flatten_entity(entity: dict | CogniteResource) -> dict:
@@ -498,7 +529,7 @@ class DiagramConvertResults(ContextualizationJob):
     def _status_path(self) -> str:
         return f"/context/diagram/convert/{self.job_id}"
 
-    async def update_status(self) -> str:
+    async def update_status_async(self) -> str:
         """Updates the model status and returns it"""
         job_token = self.job_token
         headers = {"X-Job-Token": job_token} if job_token else {}
@@ -516,6 +547,10 @@ class DiagramConvertResults(ContextualizationJob):
         self.job_token = job_token
         self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
         return self.status
+
+    @copy_doc_from_async(update_status_async)
+    def update_status(self) -> str:
+        return run_sync(self.update_status_async())
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         data = super().dump(camel_case=camel_case)
@@ -617,7 +652,7 @@ class DiagramDetectResults(ContextualizationJob):
     def _status_path(self) -> str:
         return f"/context/diagram/detect/{self.job_id}"
 
-    async def update_status(self) -> str:
+    async def update_status_async(self) -> str:
         job_token = self.job_token
         headers = {"X-Job-Token": job_token} if job_token else {}
         resource = (await self._cognite_client.diagrams._get(self._status_path(), headers=headers)).json()
@@ -637,6 +672,10 @@ class DiagramDetectResults(ContextualizationJob):
         self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
         return self.status
 
+    @copy_doc_from_async(update_status_async)
+    def update_status(self) -> str:
+        return run_sync(self.update_status_async())
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         data = super().dump(camel_case=camel_case)
         data["items"] = [item.dump(camel_case=camel_case) for item in self.items]
@@ -651,14 +690,22 @@ class DiagramDetectResults(ContextualizationJob):
             raise IndexError(f"Found multiple results for file with (external) id {find_id}, use .items instead")
         return found[0]
 
-    async def errors(self) -> list[str]:
+    async def errors_async(self) -> list[str]:
         """Returns a list of all error messages across files"""
         results = (await self.wait_for_result())["items"]
         return [item["errorMessage"] async for item in results if "errorMessage" in item]
 
-    async def convert(self) -> DiagramConvertResults:
+    @copy_doc_from_async(errors_async)
+    def errors(self) -> list[str]:
+        return run_sync(self.errors_async())
+
+    async def convert_async(self) -> DiagramConvertResults:
         """Convert a P&ID to an interactive SVG where the provided annotations are highlighted"""
         return await self._cognite_client.diagrams.convert(detect_job=self)
+
+    @copy_doc_from_async(convert_async)
+    def convert(self) -> DiagramConvertResults:
+        return run_sync(self.convert_async())
 
 
 # Vision dataclasses
@@ -1077,7 +1124,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             cognite_client=cognite_client,
         )
 
-    async def update_status(self) -> str:
+    async def update_status_async(self) -> str:
         resource = (await self._cognite_client.vision._get(self._status_path())).json()
         self.__init__(
             job_id=resource["jobId"],
@@ -1094,6 +1141,10 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
         self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
         return self.status
 
+    @copy_doc_from_async(update_status_async)
+    def update_status(self) -> str:
+        return run_sync(self.update_status_async())
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         job_dump = super().dump(camel_case=camel_case)
         job_dump["items"] = [item.dump(camel_case=camel_case) for item in self.items]
@@ -1106,10 +1157,14 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             raise IndexError(f"File with id {file_id} not found in results")
         return found[0]
 
-    async def errors(self) -> list[str]:
+    async def errors_async(self) -> list[str]:
         """Returns a list of all error messages across files"""
         results = (await self.wait_for_result())["items"]
         return [item["errorMessage"] async for item in results if "errorMessage" in item]
+
+    @copy_doc_from_async(errors_async)
+    def errors(self) -> list[str]:
+        return run_sync(self.errors_async())
 
     def _predictions_to_annotations(
         self,
@@ -1149,14 +1204,12 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
                                 creating_app_version=creating_app_version or self._cognite_client.version,
                                 creating_user=creating_user,
                             )
-
                             annotations.append(annotation)
                         else:
                             raise TypeError("annotation_type must be str or dict")
-
         return annotations
 
-    async def save_predictions(
+    async def save_predictions_async(
         self,
         creating_user: str,
         creating_app: str | None = None,
@@ -1178,13 +1231,20 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             annotations = self._predictions_to_annotations(
                 creating_user=creating_user, creating_app=creating_app, creating_app_version=creating_app_version
             )
-
             return await self._cognite_client.annotations.suggest(annotations=annotations if annotations else [])
 
-        # TODO: Raise a specific exception here
-        raise CogniteException(
+        raise RuntimeError(
             "Extract job is not completed. If the job is queued or running, wait for completion and try again"
         )
+
+    @copy_doc_from_async(save_predictions_async)
+    def save_predictions(
+        self,
+        creating_user: str,
+        creating_app: str | None = None,
+        creating_app_version: str | None = None,
+    ) -> Annotation | AnnotationList:
+        return run_sync(self.save_predictions_async(creating_user, creating_app, creating_app_version))
 
 
 @final
@@ -1224,7 +1284,7 @@ class EntityMatchingPredictionResult(ContextualizationJob):
     def _status_path(self) -> str:
         return f"/context/entitymatching/jobs/{self.job_id}"
 
-    async def update_status(self) -> str:
+    async def update_status_async(self) -> str:
         """Updates the model status and returns it"""
         job_token = self.job_token
         headers = {"X-Job-Token": job_token} if job_token else {}
@@ -1241,6 +1301,10 @@ class EntityMatchingPredictionResult(ContextualizationJob):
         self.job_token = job_token
         self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
         return self.status
+
+    @copy_doc_from_async(update_status_async)
+    def update_status(self) -> str:
+        return run_sync(self.update_status_async())
 
 
 class ResourceReference(CogniteResource):
