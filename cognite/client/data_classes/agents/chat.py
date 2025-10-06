@@ -250,7 +250,7 @@ class ToolConfirmationCall(ActionCall):
         tool_arguments (dict[str, Any]): The arguments for the tool call.
         tool_description (str): Description of what the tool does.
         tool_type (str): The type of tool (e.g., "runPythonCode", "callRestApi").
-        details (dict[str, Any] | None): Optional additional details about the tool call.
+        details (dict[str, object] | None): Optional additional details about the tool call.
     """
 
     _type: ClassVar[str] = "toolConfirmation"
@@ -260,7 +260,7 @@ class ToolConfirmationCall(ActionCall):
     tool_arguments: dict[str, Any]
     tool_description: str
     tool_type: str
-    details: dict[str, Any] | None = None
+    details: dict[str, object] | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = {
