@@ -97,7 +97,6 @@ def test_POST_endpoint_idempotency_vs_retries(api: str, apis_matching_non_idempo
         "principals",
         "securitycategories",
         "sessions",  # TODO: Review this with the sessions team
-        "templategroups",  # Won't do: Deprecated API. TODO: remove when we remove the templates API
         "workflows",
         "units",
     }
