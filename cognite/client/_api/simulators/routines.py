@@ -303,9 +303,8 @@ class SimulatorRoutinesAPI(APIClient):
             queue=queue,
             log_severity=log_severity,
         )
-
         simulation_run = await self._cognite_client.simulators.runs.create(run_object)
 
         if wait:
-            await simulation_run.wait(timeout)
+            await simulation_run.wait_async(timeout)
         return simulation_run
