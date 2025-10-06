@@ -3,6 +3,8 @@ This file contains integration tests for the logic in the generic API client. Ho
 generic resource, an arbitrary resource is used instead to test the endpoint.
 """
 
+from __future__ import annotations
+
 import random
 from collections.abc import Iterator
 from unittest.mock import patch

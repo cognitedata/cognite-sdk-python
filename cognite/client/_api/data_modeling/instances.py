@@ -261,6 +261,7 @@ class InstancesAPI(APIClient):
             limit=limit,
             filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
             other_params=other_params,
+            headers=headers,
             semaphore=self.__dm_semaphore,
         ):
             yield list_cls._load_raw_api_response([raw], self._cognite_client)

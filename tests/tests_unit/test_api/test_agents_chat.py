@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
+from pytest_httpx import HTTPXMock
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.agents import Message
 from cognite.client.data_classes.agents.chat import (
     AgentChatResponse,
@@ -14,6 +15,7 @@ from cognite.client.data_classes.agents.chat import (
     AgentReasoningItem,
     TextContent,
 )
+from tests.utils import get_url, jsgz_load
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -61,24 +63,32 @@ def chat_response_body() -> dict:
 
 
 class TestAgentChat:
-    def test_chat_simple_message(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
-        # Mock the API response
-        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))  # type: ignore[method-assign]
+    def test_chat_simple_message(
+        self,
+        httpx_mock: HTTPXMock,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        chat_response_body: dict,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.agents, async_client.agents._RESOURCE_PATH + "/chat"),
+            status_code=200,
+            json=chat_response_body,
+        )
 
         # Test with simple string message
         response = cognite_client.agents.chat(
             agent_external_id="my_agent", messages=Message("What can you help me with?")
         )
 
-        # Verify the request
-        cognite_client.agents._post.assert_called_once()
-        call_args = cognite_client.agents._post.call_args
-        assert call_args[1]["url_path"] == "/ai/agents/chat"
-        assert call_args[1]["json"]["agentExternalId"] == "my_agent"
-        assert len(call_args[1]["json"]["messages"]) == 1
-        assert call_args[1]["json"]["messages"][0]["content"]["text"] == "What can you help me with?"
-        assert call_args[1]["json"]["messages"][0]["content"]["type"] == "text"
-        assert call_args[1]["json"]["messages"][0]["role"] == "user"
+        request = httpx_mock.get_requests()[0]
+        payload = jsgz_load(request.content)
+        assert payload == {
+            "agentExternalId": "my_agent",
+            "messages": [{"content": {"text": "What can you help me with?", "type": "text"}, "role": "user"}],
+        }
+        assert request.url.path == "/api/v1/projects/dummy/ai/agents/chat"
 
         # Verify the response
         assert isinstance(response, AgentChatResponse)

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from cognite.client import ClientConfig, CogniteClient, global_config
+from cognite.client import AsyncCogniteClient, ClientConfig, CogniteClient, global_config
 from cognite.client.credentials import Token
 from cognite.client.data_classes import (
     AggregateResultItem,
@@ -24,6 +24,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes import Sequence as CogniteSequence
 from cognite.client.data_classes.agents import Agent, AgentTool
 from cognite.client.data_classes.data_modeling import NodeId
+from tests.utils import get_wrapped_async_client
 
 # Files to exclude test directories or modules
 collect_ignore = ["test_api/function_test_resources"]
@@ -47,6 +48,11 @@ def cognite_client() -> Iterator[CogniteClient]:
         yield CogniteClient(cnf)
 
 
+@pytest.fixture(scope="class")
+def async_client(cognite_client) -> Iterator[AsyncCogniteClient]:
+    yield get_wrapped_async_client(cognite_client)
+
+
 @pytest.fixture(scope="session")
 def cognite_mock_client_placeholder() -> CogniteClient:
     """
@@ -64,6 +70,14 @@ def cognite_mock_client_placeholder() -> CogniteClient:
     # We allow the mock to pass isinstance checks
     client = MagicMock()
     client.__class__ = CogniteClient  # type: ignore[assignment]
+    return client
+
+
+@pytest.fixture(scope="session")
+def cognite_async_mock_client_placeholder() -> AsyncCogniteClient:
+    # See docstring of cognite_mock_client_placeholder
+    client = MagicMock()
+    client.__class__ = AsyncCogniteClient  # type: ignore[assignment]
     return client
 
 

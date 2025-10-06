@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Iterator
 from unittest import mock
 
@@ -153,8 +155,8 @@ class TestTimeSeriesAPI:
         assert {a.id for a in res_flat} == {a.id for a in res_part}
 
     def test_aggregate(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
-        res = cognite_client.time_series.aggregate(filter=TimeSeriesFilter(name="any"))
-        assert res[0].count > 0
+        res = cognite_client.time_series.aggregate_count(filter=TimeSeriesFilter(name="any"))
+        assert res > 0
 
     def test_search(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.time_series.search(

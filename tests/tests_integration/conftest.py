@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import random
 from pathlib import Path
@@ -5,7 +7,7 @@ from pathlib import Path
 import pytest
 from dotenv import load_dotenv
 
-from cognite.client import ClientConfig, CogniteClient
+from cognite.client import AsyncCogniteClient, ClientConfig, CogniteClient
 from cognite.client.credentials import (
     CredentialProvider,
     OAuthClientCertificate,
@@ -15,12 +17,17 @@ from cognite.client.credentials import (
 from cognite.client.data_classes import DataSet, DataSetWrite
 from cognite.client.data_classes.data_modeling import SpaceApply
 from cognite.client.utils import timestamp_to_ms
-from tests.utils import REPO_ROOT
+from tests.utils import REPO_ROOT, get_wrapped_async_client
 
 
 @pytest.fixture(scope="session")
 def cognite_client() -> CogniteClient:
     return make_cognite_client()
+
+
+@pytest.fixture(scope="session")
+def async_client(cognite_client: CogniteClient) -> AsyncCogniteClient:
+    return get_wrapped_async_client(cognite_client)
 
 
 @pytest.fixture(autouse=True, scope="session")

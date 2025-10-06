@@ -15,6 +15,7 @@ from httpx import Response
 from pytest_httpx import HTTPXMock
 
 import cognite.client._api.datapoints as dps_api  # for mocking
+from cognite.client import AsyncCogniteClient
 from cognite.client._api.datapoints import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.data_classes.data_modeling import NodeId
@@ -28,7 +29,7 @@ DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 
 
 @pytest.fixture
-def mock_retrieve_latest(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
+def mock_retrieve_latest(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> Iterator[HTTPXMock]:
     def request_callback(request: Any) -> Response:
         payload = jsgz_load(request.content)
 
@@ -51,17 +52,17 @@ def mock_retrieve_latest(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -
     httpx_mock.add_callback(
         request_callback,
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data/latest",
+        url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         match_headers={"content-type": "application/json"},
     )
     yield httpx_mock
 
 
 @pytest.fixture
-def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data/latest",
+        url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=200,
         json={
             "items": [
@@ -74,10 +75,10 @@ def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, cognite_client: CogniteCli
 
 
 @pytest.fixture
-def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data/latest",
+        url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=200,
         json={
             "items": [
@@ -88,7 +89,7 @@ def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, cognite_client: Cog
     )
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data/latest",
+        url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=500,
         json={"error": {"code": 500, "message": "Internal Server Error"}},
     )
@@ -177,6 +178,7 @@ class TestGetLatest:
         instance_id: NodeId | None,
         pass_as: str,
         err_msg: str,
+        async_client: AsyncCogniteClient,
     ) -> None:
         # Pass directly
         with pytest.raises(ValueError, match=err_msg):
@@ -197,10 +199,10 @@ class TestGetLatest:
 
 
 @pytest.fixture
-def mock_post_datapoints(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_post_datapoints(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data",
+        url=get_url(async_client.time_series.data, "/timeseries/data"),
         status_code=200,
         json={},
         is_reusable=True,
@@ -209,10 +211,10 @@ def mock_post_datapoints(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -
 
 
 @pytest.fixture
-def mock_post_datapoints_400(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_post_datapoints_400(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data",
+        url=get_url(async_client.time_series.data, "/timeseries/data"),
         status_code=400,
         json={"error": {"message": "Ts not found", "missing": [{"externalId": "does_not_exist"}]}},
     )
@@ -323,7 +325,11 @@ class TestInsertDatapoints:
         assert 2 == len(mock_post_datapoints.get_requests())
 
     def test_insert_multiple_ts_single_call__above_dps_limit_below_ts_limit(
-        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock, monkeypatch: MonkeyPatch
+        self,
+        cognite_client: CogniteClient,
+        mock_post_datapoints: HTTPXMock,
+        monkeypatch: MonkeyPatch,
+        async_client: AsyncCogniteClient,
     ) -> None:
         monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 10_000)
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 1002)]
@@ -333,10 +339,12 @@ class TestInsertDatapoints:
 
 
 @pytest.fixture
-def mock_delete_datapoints(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_delete_datapoints(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data/delete",
+        url=get_url(async_client.time_series.data) + "/timeseries/data/delete",
         status_code=200,
         json={},
     )

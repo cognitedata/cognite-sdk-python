@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import math
 import re
 from collections.abc import Iterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -13,11 +15,18 @@ from cognite.client.data_classes.raw import RowCore, RowListCore
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import assert_all_value_types_equal, get_url, jsgz_load
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
 
 @pytest.fixture
-def mock_raw_db_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[list[dict[str, Any]]]:
+def mock_raw_db_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[list[dict[str, Any]]]:
     response_body = {"items": [{"name": "db1", "createdTime": 123}]}
-    url_pattern = re.compile(re.escape(get_url(cognite_client.raw)) + r"/raw/dbs(?:/delete|$|\?.+)")
+    url_pattern = re.compile(re.escape(get_url(async_client.raw)) + r"/raw/dbs(?:/delete|$|\?.+)")
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
@@ -25,9 +34,11 @@ def mock_raw_db_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -
 
 
 @pytest.fixture
-def mock_raw_table_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[list[dict[str, Any]]]:
+def mock_raw_table_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[list[dict[str, Any]]]:
     response_body = {"items": [{"name": "table1", "createdTime": 123}]}
-    url_pattern = re.compile(re.escape(get_url(cognite_client.raw)) + r"/raw/dbs/db1/tables(?:/delete|$|\?.+)")
+    url_pattern = re.compile(re.escape(get_url(async_client.raw)) + r"/raw/dbs/db1/tables(?:/delete|$|\?.+)")
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
@@ -46,10 +57,13 @@ def example_raw_rows() -> list[dict[str, Any]]:
 
 @pytest.fixture
 def mock_raw_row_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, example_raw_rows: list[dict[str, Any]]
+    httpx_mock: HTTPXMock,
+    cognite_client: CogniteClient,
+    example_raw_rows: list[dict[str, Any]],
+    async_client: AsyncCogniteClient,
 ) -> Iterator[list[dict[str, Any]]]:
     response_body = {"items": example_raw_rows}
-    raw_path_prefix = re.escape(get_url(cognite_client.raw)) + "/raw/dbs/db1/tables/table1"
+    raw_path_prefix = re.escape(get_url(async_client.raw)) + "/raw/dbs/db1/tables/table1"
     url_pattern = re.compile(raw_path_prefix + r"/rows(?:/delete|/row1|$|\?.+)")
     cursors_url_pattern = re.compile(raw_path_prefix + "/cursors")
 
@@ -62,11 +76,13 @@ def mock_raw_row_response(
 
 
 @pytest.fixture
-def mock_retrieve_raw_row_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[dict[str, Any]]:
+def mock_retrieve_raw_row_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[dict[str, Any]]:
     response_body = {"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 123}
     httpx_mock.add_response(
         method="GET",
-        url=get_url(cognite_client.raw) + "/raw/dbs/db1/tables/table1/rows/row1",
+        url=get_url(async_client.raw) + "/raw/dbs/db1/tables/table1/rows/row1",
         status_code=200,
         json=response_body,
     )
@@ -75,7 +91,7 @@ def mock_retrieve_raw_row_response(httpx_mock: HTTPXMock, cognite_client: Cognit
 
 @pytest.fixture
 def mock_retrieve_raw_rows_response_two_rows(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[list[dict[str, Any]]]:
     response_body = {
         "items": [
@@ -86,7 +102,7 @@ def mock_retrieve_raw_rows_response_two_rows(
     for _ in range(2):
         httpx_mock.add_response(
             method="GET",
-            url=get_url(cognite_client.raw) + "/raw/dbs/db1/tables/table1/rows?limit=25",
+            url=get_url(async_client.raw) + "/raw/dbs/db1/tables/table1/rows?limit=25",
             status_code=200,
             json=response_body,
         )
@@ -107,11 +123,14 @@ def integer_rows_response() -> dict:
 
 @pytest.fixture
 def mock_retrieve_integer_rows(
-    httpx_mock: HTTPXMock, integer_rows_response: dict[str, Any], cognite_client: CogniteClient
+    httpx_mock: HTTPXMock,
+    integer_rows_response: dict[str, Any],
+    cognite_client: CogniteClient,
+    async_client: AsyncCogniteClient,
 ) -> Iterator[list[dict[str, Any]]]:
     httpx_mock.add_response(
         method="GET",
-        url=get_url(cognite_client.raw) + "/raw/dbs/db1/tables/table1/rows?limit=25",
+        url=get_url(async_client.raw) + "/raw/dbs/db1/tables/table1/rows?limit=25",
         status_code=200,
         json=integer_rows_response,
     )
@@ -120,13 +139,13 @@ def mock_retrieve_integer_rows(
 
 @pytest.fixture
 def mock_retrieve_raw_rows_response_one_row(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[list[dict[str, Any]]]:
     response_body = {"items": [{"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 0}]}
     for _ in range(2):
         httpx_mock.add_response(
             method="GET",
-            url=get_url(cognite_client.raw) + "/raw/dbs/db1/tables/table1/rows?limit=25",
+            url=get_url(async_client.raw) + "/raw/dbs/db1/tables/table1/rows?limit=25",
             status_code=200,
             json=response_body,
         )
@@ -135,12 +154,12 @@ def mock_retrieve_raw_rows_response_one_row(
 
 @pytest.fixture
 def mock_retrieve_raw_rows_response_no_rows(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[list[dict[str, Any]]]:
     for _ in range(2):
         httpx_mock.add_response(
             method="GET",
-            url=get_url(cognite_client.raw) + "/raw/dbs/db1/tables/table1/rows?limit=25",
+            url=get_url(async_client.raw) + "/raw/dbs/db1/tables/table1/rows?limit=25",
             status_code=200,
             json={"items": []},
         )
@@ -194,10 +213,12 @@ class TestRawDatabases:
         assert res is None
         assert [{"name": "db1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_delete_fail(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
+    def test_delete_fail(
+        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
+    ) -> None:
         httpx_mock.add_response(
             method="POST",
-            url=get_url(cognite_client.raw) + "/raw/dbs/delete",
+            url=get_url(async_client.raw) + "/raw/dbs/delete",
             status_code=400,
             json={"error": {"message": "User Error", "code": 400}},
         )
@@ -277,10 +298,12 @@ class TestRawTables:
         assert res is None
         assert [{"name": "table1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_delete_fail(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
+    def test_delete_fail(
+        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
+    ) -> None:
         httpx_mock.add_response(
             method="POST",
-            url=get_url(cognite_client.raw) + "/raw/dbs/db1/tables/delete",
+            url=get_url(async_client.raw) + "/raw/dbs/db1/tables/delete",
             status_code=400,
             json={"error": {"message": "User Error", "code": 400}},
         )
@@ -349,10 +372,12 @@ class TestRawRows:
         assert res is None
         assert example_raw_rows_insert == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_insert_fail(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
+    def test_insert_fail(
+        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
+    ) -> None:
         httpx_mock.add_response(
             method="POST",
-            url=get_url(cognite_client.raw) + "/raw/dbs/db1/tables/table1/rows?ensureParent=false",
+            url=get_url(async_client.raw) + "/raw/dbs/db1/tables/table1/rows?ensureParent=false",
             status_code=400,
             json={},
         )
@@ -411,10 +436,12 @@ class TestRawRows:
         assert res is None
         assert [{"key": "row1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_delete_fail(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
+    def test_delete_fail(
+        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
+    ) -> None:
         httpx_mock.add_response(
             method="POST",
-            url=get_url(cognite_client.raw) + "/raw/dbs/db1/tables/table1/rows/delete",
+            url=get_url(async_client.raw) + "/raw/dbs/db1/tables/table1/rows/delete",
             status_code=400,
             json={"error": {"message": "User Error", "code": 400}},
         )

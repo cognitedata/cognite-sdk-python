@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 import uuid
 from collections.abc import Iterator
@@ -195,8 +197,8 @@ class TestFilesAPI:
         assert 4 == len(res)
 
     def test_aggregate(self, cognite_client: CogniteClient) -> None:
-        res = cognite_client.files.aggregate(filter=FileMetadataFilter(name="big.txt"))
-        assert res[0].count > 0
+        res = cognite_client.files.aggregate_count(filter=FileMetadataFilter(name="big.txt"))
+        assert res > 0
 
     def test_search(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.files.search(name="big.txt", filter=FileMetadataFilter(created_time={"min": 0}))

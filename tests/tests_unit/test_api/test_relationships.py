@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import gzip
 import json
 import re
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -18,9 +20,16 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.relationships import RelationshipType
 from tests.utils import get_url, jsgz_load
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
 
 @pytest.fixture
-def mock_rel_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
+def mock_rel_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> dict[str, Any]:
     response_body = {
         "items": [
             {
@@ -40,7 +49,7 @@ def mock_rel_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> d
         ]
     }
     url_pattern = re.compile(
-        re.escape(get_url(cognite_client.relationships))
+        re.escape(get_url(async_client.relationships))
         + r"/relationships(?:/byids|/update|/delete|/list|/search|$|\?.+)"
     )
     httpx_mock.add_response(
@@ -51,10 +60,10 @@ def mock_rel_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> d
 
 
 @pytest.fixture
-def mock_rel_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_rel_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> HTTPXMock:
     response_body: dict[str, Any] = {"items": []}
     url_pattern = re.compile(
-        re.escape(get_url(cognite_client.relationships))
+        re.escape(get_url(async_client.relationships))
         + r"/relationships(?:/byids|/update|/delete|/list|/search|$|\?.+)"
     )
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)

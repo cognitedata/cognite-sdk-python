@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c3504aab7d44c327c26e61eaa5dcb069
+e02d60ffd03fe36c05041b5bbdfd6458
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, overload
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.data_classes.simulators.filters import SimulationRunsSort
 from cognite.client.data_classes.simulators.runs import (
     SimulationRun,
     SimulationRunDataList,
@@ -52,6 +53,7 @@ class SyncSimulatorRunsAPI:
         model_revision_external_ids: SequenceNotStr[str] | None = None,
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
+        sort: SimulationRunsSort | None = None,
     ) -> Iterator[SimulationRun | SimulationRunList]:
         """
         Iterate over simulation runs
@@ -71,6 +73,7 @@ class SyncSimulatorRunsAPI:
             model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
             created_time (TimestampRange | None): Filter by created time
             simulation_time (TimestampRange | None): Filter by simulation time
+            sort (SimulationRunsSort | None): The criteria to sort by.
 
         Yields:
             SimulationRun | SimulationRunList: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
@@ -89,6 +92,7 @@ class SyncSimulatorRunsAPI:
                 model_revision_external_ids=model_revision_external_ids,
                 created_time=created_time,
                 simulation_time=simulation_time,
+                sort=sort,
             )
         )
 
@@ -105,6 +109,7 @@ class SyncSimulatorRunsAPI:
         model_revision_external_ids: SequenceNotStr[str] | None = None,
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
+        sort: SimulationRunsSort | None = None,
     ) -> SimulationRunList:
         """
         `Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
@@ -123,6 +128,7 @@ class SyncSimulatorRunsAPI:
             model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
             created_time (TimestampRange | None): Filter by created time
             simulation_time (TimestampRange | None): Filter by simulation time
+            sort (SimulationRunsSort | None): The criteria to sort by.
 
         Returns:
             SimulationRunList: List of simulation runs
@@ -164,6 +170,7 @@ class SyncSimulatorRunsAPI:
                 model_revision_external_ids=model_revision_external_ids,
                 created_time=created_time,
                 simulation_time=simulation_time,
+                sort=sort,
             )
         )
 

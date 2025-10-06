@@ -15,11 +15,13 @@ from tests.utils import get_url
 if TYPE_CHECKING:
     from pytest_httpx import HTTPXMock
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
-def mock_config_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
+def mock_config_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> dict[str, Any]:
     response_body = {
         "revision": 5,
         "externalId": "int-123",
@@ -27,7 +29,7 @@ def mock_config_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -
         "createdTime": 1565965333132,
         "config": "config abc 123",
     }
-    url_pattern = re.compile(re.escape(get_url(cognite_client.extraction_pipelines)) + r"/extpipes/config")
+    url_pattern = re.compile(re.escape(get_url(async_client.extraction_pipelines)) + r"/extpipes/config")
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
@@ -35,7 +37,9 @@ def mock_config_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -
 
 
 @pytest.fixture
-def mock_config_response_with_revision(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
+def mock_config_response_with_revision(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> dict[str, Any]:
     response_body = {
         "revision": 4,
         "externalId": "int-123",
@@ -44,7 +48,7 @@ def mock_config_response_with_revision(httpx_mock: HTTPXMock, cognite_client: Co
         "config": "config abc 123 2",
     }
     url_pattern = re.compile(
-        re.escape(get_url(cognite_client.extraction_pipelines)) + r"/extpipes/config\?externalId=int-123&revision=4$"
+        re.escape(get_url(async_client.extraction_pipelines)) + r"/extpipes/config\?externalId=int-123&revision=4$"
     )
 
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
@@ -52,7 +56,9 @@ def mock_config_response_with_revision(httpx_mock: HTTPXMock, cognite_client: Co
 
 
 @pytest.fixture
-def mock_config_list_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
+def mock_config_list_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> dict[str, Any]:
     response_body = {
         "items": [
             {"revision": 3, "externalId": "int-123", "description": "description 3", "createdTime": 1565965333132},
@@ -60,14 +66,16 @@ def mock_config_list_response(httpx_mock: HTTPXMock, cognite_client: CogniteClie
             {"revision": 1, "externalId": "int-123", "description": "description 1", "createdTime": 1565965133132},
         ]
     }
-    url_pattern = re.compile(re.escape(get_url(cognite_client.extraction_pipelines)) + r"/extpipes/config/revisions")
+    url_pattern = re.compile(re.escape(get_url(async_client.extraction_pipelines)) + r"/extpipes/config/revisions")
 
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     return response_body
 
 
 @pytest.fixture
-def mock_revert_config_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
+def mock_revert_config_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> dict[str, Any]:
     response_body = {
         "revision": 6,
         "externalId": "int-123",
@@ -75,7 +83,7 @@ def mock_revert_config_response(httpx_mock: HTTPXMock, cognite_client: CogniteCl
         "createdTime": 1565965333132,
         "config": "config abc 123",
     }
-    url_pattern = re.compile(re.escape(get_url(cognite_client.extraction_pipelines)) + r"/extpipes/config/revert")
+    url_pattern = re.compile(re.escape(get_url(async_client.extraction_pipelines)) + r"/extpipes/config/revert")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     return response_body
 

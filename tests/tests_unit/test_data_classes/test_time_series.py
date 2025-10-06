@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -9,9 +10,16 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import Asset, Datapoint
 from tests.utils import get_or_raise, get_url
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
 
 @pytest.fixture
-def mock_ts_by_ids_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
+def mock_ts_by_ids_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[HTTPXMock]:
     res = {
         "items": [
             {
@@ -31,25 +39,29 @@ def mock_ts_by_ids_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient
         ]
     }
     httpx_mock.add_response(
-        method="POST", url=get_url(cognite_client.time_series) + "/timeseries/byids", status_code=200, json=res
+        method="POST", url=get_url(async_client.time_series) + "/timeseries/byids", status_code=200, json=res
     )
     yield httpx_mock
 
 
 @pytest.fixture
-def mock_asset_by_ids_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
+def mock_asset_by_ids_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[HTTPXMock]:
     res = {"items": [{"id": 1, "externalId": "1", "name": "assetname", "createdTime": 0, "lastUpdatedTime": 0}]}
     httpx_mock.add_response(
-        method="POST", url=get_url(cognite_client.time_series) + "/assets/byids", status_code=200, json=res
+        method="POST", url=get_url(async_client.time_series) + "/assets/byids", status_code=200, json=res
     )
     yield httpx_mock
 
 
 @pytest.fixture
-def mock_count_dps_in_ts(mock_ts_by_ids_response: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
+def mock_count_dps_in_ts(
+    mock_ts_by_ids_response: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[HTTPXMock]:
     mock_ts_by_ids_response.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series) + "/timeseries/data/list",
+        url=get_url(async_client.time_series) + "/timeseries/data/list",
         status_code=200,
         json={
             "items": [
@@ -67,10 +79,12 @@ def mock_count_dps_in_ts(mock_ts_by_ids_response: HTTPXMock, cognite_client: Cog
 
 
 @pytest.fixture
-def mock_get_latest_dp_in_ts(mock_ts_by_ids_response: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
+def mock_get_latest_dp_in_ts(
+    mock_ts_by_ids_response: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[HTTPXMock]:
     mock_ts_by_ids_response.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series) + "/timeseries/data/latest",
+        url=get_url(async_client.time_series) + "/timeseries/data/latest",
         status_code=200,
         json={
             "items": [
@@ -88,10 +102,12 @@ def mock_get_latest_dp_in_ts(mock_ts_by_ids_response: HTTPXMock, cognite_client:
 
 
 @pytest.fixture
-def mock_get_first_dp_in_ts(mock_ts_by_ids_response: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
+def mock_get_first_dp_in_ts(
+    mock_ts_by_ids_response: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[HTTPXMock]:
     mock_ts_by_ids_response.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series) + "/timeseries/data/list",
+        url=get_url(async_client.time_series) + "/timeseries/data/list",
         status_code=200,
         json={
             "items": [

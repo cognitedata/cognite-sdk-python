@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import datetime
 import re
 from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -9,6 +12,11 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import Function, FunctionCallLog, FunctionCallLogEntry
 from cognite.client.utils._time import datetime_to_ms
 from tests.utils import get_url, jsgz_load
+
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
@@ -60,7 +68,9 @@ def function(cognite_mock_client_placeholder: CogniteClient) -> Function:
 
 
 @pytest.fixture
-def mock_function_call_resp(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
+def mock_function_call_resp(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[HTTPXMock]:
     response_body = {
         "items": [
             {
@@ -72,7 +82,7 @@ def mock_function_call_resp(httpx_mock: HTTPXMock, cognite_client: CogniteClient
             }
         ]
     }
-    url_pattern = re.compile(re.escape(get_url(cognite_client.functions)) + "/.+")
+    url_pattern = re.compile(re.escape(get_url(async_client.functions)) + "/.+")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
     yield httpx_mock
 

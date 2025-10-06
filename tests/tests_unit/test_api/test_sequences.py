@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -19,9 +19,16 @@ from cognite.client.data_classes import (
 )
 from tests.utils import get_or_raise, get_url, jsgz_load
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
 
 @pytest.fixture
-def mock_seq_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
+def mock_seq_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> dict[str, Any]:
     response_body = {
         "items": [
             {
@@ -53,7 +60,7 @@ def mock_seq_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> d
         ]
     }
     url_pattern = re.compile(
-        re.escape(get_url(cognite_client.sequences)) + r"/sequences(?:/byids|/list|/update|/delete|/search|$|\?.+)"
+        re.escape(get_url(async_client.sequences)) + r"/sequences(?:/byids|/list|/update|/delete|/search|$|\?.+)"
     )
     httpx_mock.add_response(
         method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True, is_reusable=True
@@ -63,10 +70,12 @@ def mock_seq_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> d
 
 
 @pytest.fixture
-def mock_sequences_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_sequences_empty(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     response_body: dict[str, list] = {"items": []}
     url_pattern = re.compile(
-        re.escape(get_url(cognite_client.sequences)) + r"/sequences(?:/byids|/update|/list|/delete|/search|$|\?.+)"
+        re.escape(get_url(async_client.sequences)) + r"/sequences(?:/byids|/update|/list|/delete|/search|$|\?.+)"
     )
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
@@ -74,10 +83,12 @@ def mock_sequences_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -
 
 
 @pytest.fixture
-def mock_post_sequence_data(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_post_sequence_data(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.sequences) + "/sequences/data",
+        url=get_url(async_client.sequences) + "/sequences/data",
         status_code=200,
         json={},
         is_reusable=True,
@@ -86,7 +97,9 @@ def mock_post_sequence_data(httpx_mock: HTTPXMock, cognite_client: CogniteClient
 
 
 @pytest.fixture
-def mock_get_sequence_data(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
+def mock_get_sequence_data(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> dict[str, Any]:
     payload = {
         "id": 0,
         "externalId": "eid",
@@ -95,7 +108,7 @@ def mock_get_sequence_data(httpx_mock: HTTPXMock, cognite_client: CogniteClient)
     }
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.sequences) + "/sequences/data/list",
+        url=get_url(async_client.sequences) + "/sequences/data/list",
         status_code=200,
         json=payload,
     )
@@ -103,7 +116,9 @@ def mock_get_sequence_data(httpx_mock: HTTPXMock, cognite_client: CogniteClient)
 
 
 @pytest.fixture
-def mock_get_sequence_empty_data(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_get_sequence_empty_data(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     json = {
         "id": 0,
         "externalId": "eid",
@@ -115,7 +130,7 @@ def mock_get_sequence_empty_data(httpx_mock: HTTPXMock, cognite_client: CogniteC
     }
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.sequences) + "/sequences/data/list",
+        url=get_url(async_client.sequences) + "/sequences/data/list",
         status_code=200,
         json=json,
     )
@@ -123,7 +138,9 @@ def mock_get_sequence_empty_data(httpx_mock: HTTPXMock, cognite_client: CogniteC
 
 
 @pytest.fixture
-def mock_get_sequence_data_many_columns(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_get_sequence_data_many_columns(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     json = {
         "id": 0,
         "externalId": "eid",
@@ -135,7 +152,7 @@ def mock_get_sequence_data_many_columns(httpx_mock: HTTPXMock, cognite_client: C
     }
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.sequences) + "/sequences/data/list",
+        url=get_url(async_client.sequences) + "/sequences/data/list",
         status_code=200,
         json=json,
     )
@@ -143,7 +160,9 @@ def mock_get_sequence_data_many_columns(httpx_mock: HTTPXMock, cognite_client: C
 
 
 @pytest.fixture
-def mock_get_sequence_data_two_col(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_get_sequence_data_two_col(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     json = {
         "id": 0,
         "externalId": "eid",
@@ -155,7 +174,7 @@ def mock_get_sequence_data_two_col(httpx_mock: HTTPXMock, cognite_client: Cognit
     }
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.sequences) + "/sequences/data/list",
+        url=get_url(async_client.sequences) + "/sequences/data/list",
         status_code=200,
         json=json,
         is_reusable=True,
@@ -164,7 +183,9 @@ def mock_get_sequence_data_two_col(httpx_mock: HTTPXMock, cognite_client: Cognit
 
 
 @pytest.fixture
-def mock_get_sequence_data_two_col_with_zero(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_get_sequence_data_two_col_with_zero(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     json = {
         "id": 0,
         "externalId": "eid",
@@ -176,7 +197,7 @@ def mock_get_sequence_data_two_col_with_zero(httpx_mock: HTTPXMock, cognite_clie
     }
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.sequences) + "/sequences/data/list",
+        url=get_url(async_client.sequences) + "/sequences/data/list",
         status_code=200,
         json=json,
         is_reusable=True,
@@ -185,7 +206,9 @@ def mock_get_sequence_data_two_col_with_zero(httpx_mock: HTTPXMock, cognite_clie
 
 
 @pytest.fixture
-def mock_get_sequence_data_with_null(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_get_sequence_data_with_null(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     json = {
         "id": 0,
         "externalId": "eid",
@@ -197,7 +220,7 @@ def mock_get_sequence_data_with_null(httpx_mock: HTTPXMock, cognite_client: Cogn
     }
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.sequences) + "/sequences/data/list",
+        url=get_url(async_client.sequences) + "/sequences/data/list",
         status_code=200,
         json=json,
     )
@@ -205,10 +228,12 @@ def mock_get_sequence_data_with_null(httpx_mock: HTTPXMock, cognite_client: Cogn
 
 
 @pytest.fixture
-def mock_delete_sequence_data(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_delete_sequence_data(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.sequences) + "/sequences/data/delete",
+        url=get_url(async_client.sequences) + "/sequences/data/delete",
         status_code=200,
         json={},
     )

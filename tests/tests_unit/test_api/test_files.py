@@ -5,7 +5,7 @@ import re
 from collections.abc import Callable
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import pytest
 from httpx import Request, Response
@@ -26,6 +26,11 @@ from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
 from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_or_raise, get_url, jsgz_load
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
 
 @pytest.fixture
 def mock_geo_location() -> GeoLocation:
@@ -35,7 +40,10 @@ def mock_geo_location() -> GeoLocation:
 
 @pytest.fixture
 def mock_files_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, mock_geo_location: GeoLocation
+    httpx_mock: HTTPXMock,
+    cognite_client: CogniteClient,
+    mock_geo_location: GeoLocation,
+    async_client: AsyncCogniteClient,
 ) -> dict[str, Any]:
     response_body = {
         "items": [
@@ -56,7 +64,7 @@ def mock_files_response(
             }
         ]
     }
-    url_pattern = re.compile(re.escape(get_url(cognite_client.files)) + "/.+")
+    url_pattern = re.compile(re.escape(get_url(async_client.files)) + "/.+")
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
@@ -85,11 +93,11 @@ def example_file(mock_geo_location: GeoLocation) -> dict[str, Any]:
 
 @pytest.fixture
 def mock_file_upload_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, example_file: dict[str, Any]
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, example_file: dict[str, Any], async_client: AsyncCogniteClient
 ) -> Any:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.files) + "/files?overwrite=false",
+        url=get_url(async_client.files) + "/files?overwrite=false",
         status_code=200,
         json=example_file,
         is_reusable=True,
@@ -100,7 +108,10 @@ def mock_file_upload_response(
 
 @pytest.fixture
 def mock_file_upload_response_without_netloc_in_upload_url(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, mock_geo_location: GeoLocation
+    httpx_mock: HTTPXMock,
+    cognite_client: CogniteClient,
+    mock_geo_location: GeoLocation,
+    async_client: AsyncCogniteClient,
 ) -> Any:
     response_body = {
         "externalId": "string",
@@ -119,7 +130,7 @@ def mock_file_upload_response_without_netloc_in_upload_url(
         "uploadUrl": "upload/here/to/some/path",
     }
     httpx_mock.add_response(
-        method="POST", url=get_url(cognite_client.files) + "/files?overwrite=false", status_code=200, json=response_body
+        method="POST", url=get_url(async_client.files) + "/files?overwrite=false", status_code=200, json=response_body
     )
     httpx_mock.add_response(
         method="PUT", url=cognite_client.config.base_url + "/upload/here/to/some/path", status_code=200
@@ -129,7 +140,10 @@ def mock_file_upload_response_without_netloc_in_upload_url(
 
 @pytest.fixture
 def mock_file_create_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, mock_geo_location: GeoLocation
+    httpx_mock: HTTPXMock,
+    cognite_client: CogniteClient,
+    mock_geo_location: GeoLocation,
+    async_client: AsyncCogniteClient,
 ) -> Any:
     response_body = {
         "externalId": "string",
@@ -148,17 +162,19 @@ def mock_file_create_response(
         "uploadUrl": "https://upload.here",
     }
     httpx_mock.add_response(
-        method="POST", url=get_url(cognite_client.files) + "/files?overwrite=false", status_code=200, json=response_body
+        method="POST", url=get_url(async_client.files) + "/files?overwrite=false", status_code=200, json=response_body
     )
     yield response_body
 
 
 @pytest.fixture
-def mock_file_download_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_file_download_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     for _ in range(2):
         httpx_mock.add_response(
             method="POST",
-            url=get_url(cognite_client.files) + "/files/byids",
+            url=get_url(async_client.files) + "/files/byids",
             status_code=200,
             json={
                 "items": [
@@ -188,14 +204,14 @@ def mock_file_download_response(httpx_mock: HTTPXMock, cognite_client: CogniteCl
     httpx_mock.add_callback(
         download_link_callback,
         method="POST",
-        url=get_url(cognite_client.files) + "/files/downloadlink",
+        url=get_url(async_client.files) + "/files/downloadlink",
         match_headers={"content-type": "application/json"},
         is_optional=True,
     )
     httpx_mock.add_callback(
         download_link_callback,
         method="POST",
-        url=get_url(cognite_client.files) + "/files/downloadlink",
+        url=get_url(async_client.files) + "/files/downloadlink",
         match_headers={"content-type": "application/json"},
         is_optional=True,
     )
@@ -210,11 +226,11 @@ def mock_file_download_response(httpx_mock: HTTPXMock, cognite_client: CogniteCl
 
 @pytest.fixture
 def mock_file_download_response_with_folder_structure_same_name(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.files) + "/files/byids",
+        url=get_url(async_client.files) + "/files/byids",
         status_code=200,
         json={
             "items": [
@@ -251,7 +267,7 @@ def mock_file_download_response_with_folder_structure_same_name(
         httpx_mock.add_callback(
             download_link_callback,
             method="POST",
-            url=get_url(cognite_client.files) + "/files/downloadlink",
+            url=get_url(async_client.files) + "/files/downloadlink",
             match_headers={"content-type": "application/json"},
         )
     httpx_mock.add_response(
@@ -262,10 +278,12 @@ def mock_file_download_response_with_folder_structure_same_name(
 
 
 @pytest.fixture
-def mock_file_download_response_one_fails(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_file_download_response_one_fails(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.files) + "/files/byids",
+        url=get_url(async_client.files) + "/files/byids",
         status_code=200,
         json={
             "items": [
@@ -301,7 +319,7 @@ def mock_file_download_response_one_fails(httpx_mock: HTTPXMock, cognite_client:
         httpx_mock.add_callback(
             download_link_callback,
             method="POST",
-            url=get_url(cognite_client.files) + "/files/downloadlink",
+            url=get_url(async_client.files) + "/files/downloadlink",
             match_headers={"content-type": "application/json"},
         )
     httpx_mock.add_response(method="GET", url="https://download.file1.here", status_code=200, text="content1")
@@ -663,10 +681,12 @@ class TestFilesAPI:
                 assert payload["name"] in ["file_for_test_upload_1.txt", "file_for_test_upload_2.txt"]
         assert count == 2
 
-    def test_upload_from_directory_fails(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
+    def test_upload_from_directory_fails(
+        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
+    ) -> None:
         for _ in range(2):
             httpx_mock.add_response(
-                method="POST", url=get_url(cognite_client.files) + "/files?overwrite=false", status_code=400, json={}
+                method="POST", url=get_url(async_client.files) + "/files?overwrite=false", status_code=400, json={}
             )
 
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
@@ -841,12 +861,12 @@ class TestFilesAPI:
 
     @pytest.fixture
     def mock_byids_response__file_with_double_dots(
-        self, httpx_mock: HTTPXMock, cognite_client: CogniteClient
+        self, httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
     ) -> HTTPXMock:
         filename = "../file1"
         httpx_mock.add_response(
             method="POST",
-            url=get_url(cognite_client.files) + "/files/byids",
+            url=get_url(async_client.files) + "/files/byids",
             status_code=200,
             json={
                 "items": [
@@ -977,6 +997,7 @@ class TestFilesAPI:
         api_error: CogniteAPIError,
         expected_error: type[CogniteAPIError],
         expected_error_message: str,
+        async_client: AsyncCogniteClient,
     ) -> None:
         def raise_api_error(*args: Any, **kwargs: Any) -> NoReturn:
             raise api_error
@@ -992,8 +1013,10 @@ class TestFilesAPI:
 
 
 @pytest.fixture
-def mock_files_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
-    url_pattern = re.compile(re.escape(get_url(cognite_client.files)) + "/.+")
+def mock_files_empty(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
+    url_pattern = re.compile(re.escape(get_url(async_client.files)) + "/.+")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []})
     return httpx_mock
 

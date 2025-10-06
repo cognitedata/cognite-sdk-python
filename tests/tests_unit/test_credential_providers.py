@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from types import MappingProxyType
 from typing import ClassVar
 from unittest.mock import MagicMock, Mock, patch
