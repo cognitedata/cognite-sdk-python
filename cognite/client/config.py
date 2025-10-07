@@ -44,7 +44,7 @@ class GlobalConfig:
             raise TypeError(
                 "GlobalConfig is a singleton and cannot be instantiated directly. Use `global_config` instead, "
                 "`from cognite.client import global_config`, then apply the wanted settings, e.g. `global_config.max_workers = 5`. "
-                "Settings are only guaranteed to take effect if applied before instantiating a AsyncCogniteClient."
+                "Settings are only guaranteed to take effect if applied before instantiating an AsyncCogniteClient."
             )
         cls._instance = super().__new__(cls)
         return cls._instance
@@ -73,7 +73,7 @@ class GlobalConfig:
             All settings in the dictionary will be applied unless an invalid key is provided, a ValueError will instead be raised and no settings will be applied.
 
         Warning:
-            This must be done before instantiating a AsyncCogniteClient for the configuration to take effect.
+            This must be done before instantiating an AsyncCogniteClient for the configuration to take effect.
 
         Args:
             settings (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the GlobalConfig class.
