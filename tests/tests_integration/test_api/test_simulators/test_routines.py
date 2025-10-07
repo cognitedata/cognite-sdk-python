@@ -73,6 +73,7 @@ class TestSimulatorRoutinesRunWithRevisions:
         """Test running a simulation using routine and model revision external IDs."""
         routine_revision_external_id = seed_simulator_routine_revisions[0].external_id
         model_revision_external_id = seed_resource_names.simulator_model_revision_external_id
+        simulator_integration_unique_external_id = seed_resource_names.simulator_integration_external_id
 
         # Run simulation using revision external IDs
         run = cognite_client.simulators.routines.run(
