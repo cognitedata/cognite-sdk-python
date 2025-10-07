@@ -11,7 +11,7 @@ from cognite.client.data_classes.hosted_extractors import (
     MappingUpdate,
     MappingWrite,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -19,14 +19,14 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
+@warn_on_all_method_invocations(
+    FeaturePreviewWarning(api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors")
+)
 class MappingsAPI(APIClient):
     _RESOURCE_PATH = "/hostedextractors/mappings"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
-        )
         self._CREATE_LIMIT = 10
         self._LIST_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
@@ -63,8 +63,6 @@ class MappingsAPI(APIClient):
         Returns:
             Iterator[Mapping] | Iterator[MappingList]: yields Mapping one by one if chunk_size is not specified, else MappingList objects.
         """
-        self._warning.warn()
-
         return self._list_generator(
             list_cls=MappingList,
             resource_cls=Mapping,
@@ -114,7 +112,6 @@ class MappingsAPI(APIClient):
                 >>> res = client.hosted_extractors.mappings.retrieve(["myMapping", "myMapping2"], ignore_unknown_ids=True)
 
         """
-        self._warning.warn()
         return self._retrieve_multiple(
             list_cls=MappingList,
             resource_cls=Mapping,
@@ -141,7 +138,6 @@ class MappingsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.hosted_extractors.mappings.delete(["myMapping", "MyMapping2"])
         """
-        self._warning.warn()
         extra_body_fields: dict[str, Any] = {
             "ignoreUnknownIds": ignore_unknown_ids,
             "force": force,
@@ -180,7 +176,6 @@ class MappingsAPI(APIClient):
                 >>> mapping = MappingWrite(external_id="my_mapping", mapping=CustomMapping("some expression"), published=True, input="json")
                 >>> res = client.hosted_extractors.mappings.create(mapping)
         """
-        self._warning.warn()
         return self._create_multiple(
             list_cls=MappingList,
             resource_cls=Mapping,
@@ -216,7 +211,6 @@ class MappingsAPI(APIClient):
                 >>> mapping = MappingUpdate('my_mapping').published.set(False)
                 >>> res = client.hosted_extractors.mappings.update(mapping)
         """
-        self._warning.warn()
         return self._update_multiple(
             items=items,
             list_cls=MappingList,
@@ -255,7 +249,6 @@ class MappingsAPI(APIClient):
                 >>> for mapping_list in client.hosted_extractors.mappings(chunk_size=25):
                 ...     mapping_list # do something with the mappings
         """
-        self._warning.warn()
         return self._list(
             list_cls=MappingList,
             resource_cls=Mapping,

@@ -59,8 +59,10 @@ from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
     EdgeId,
     NodeId,
+    SourceId,
+    SourceIdentifier,
     ViewId,
-    ViewIdentifier,
+    _load_source_id,
 )
 from cognite.client.utils._auxiliary import exactly_one_is_not_none, find_duplicates, flatten_dict
 from cognite.client.utils._identifier import InstanceId
@@ -104,8 +106,8 @@ PropertyIdentifier: TypeAlias = str
 
 
 @dataclass
-class NodeOrEdgeData(CogniteObject):
-    """This represents the data values of a node or edge.
+class SourceData(CogniteObject):
+    """This represents the property data for a given view/container.
 
     Args:
         source (ContainerId | ViewId): The container or view the node or edge property is in
@@ -144,6 +146,11 @@ class NodeOrEdgeData(CogniteObject):
             else:
                 raise TypeError(f"source must be ContainerId, ViewId or a dict, but was {type(self.source)}")
         return output
+
+
+# Keep this for backwards compatibility, since we renamed NodeOrEdgeData to SourceData when we introduced records
+# into the SDK.
+NodeOrEdgeData = SourceData
 
 
 class InstanceCore(DataModelingResource, ABC):
@@ -221,82 +228,93 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
 _T = TypeVar("_T")
 
 
-class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifier, PropertyValue]]):
-    def __init__(self, properties: MutableMapping[ViewId, MutableMapping[PropertyIdentifier, PropertyValue]]) -> None:
+class Properties(MutableMapping[SourceIdentifier, MutableMapping[PropertyIdentifier, PropertyValue]]):
+    def __init__(self, properties: MutableMapping[SourceId, MutableMapping[PropertyIdentifier, PropertyValue]]) -> None:
         self.data = properties
 
     @classmethod
     def load(
         cls, data: MutableMapping[Space, MutableMapping[str, MutableMapping[PropertyIdentifier, PropertyValue]]]
     ) -> Properties:
-        props: MutableMapping[ViewId, MutableMapping[PropertyIdentifier, PropertyValue]] = {}
+        props: MutableMapping[SourceId, MutableMapping[PropertyIdentifier, PropertyValue]] = {}
         for space, view_properties in data.items():
-            for view_id_str, properties in view_properties.items():
-                view_tuple = tuple(view_id_str.split("/", 1))
-                if len(view_tuple) != 2:
-                    warnings.warn(
-                        f"Unknown type of view id: {view_id_str}, expected format <external_id>/<version>. Skipping...",
-                        stacklevel=2,
-                    )
-                    continue
-                view_id = ViewId.load((space, *view_tuple))
-                props[view_id] = properties
+            for source_id_str, properties in view_properties.items():
+                if "/" in source_id_str:
+                    view_tuple = tuple(source_id_str.split("/", 1))
+                    if len(view_tuple) != 2:
+                        warnings.warn(
+                            f"Unknown type of view id: {source_id_str}, expected format <external_id>/<version>. Skipping...",
+                            stacklevel=2,
+                        )
+                        continue
+                    source_id: SourceId = ViewId.load((space, *view_tuple))
+                else:
+                    source_id = ContainerId.load((space, source_id_str))
+                props[source_id] = properties
+
         return cls(props)
 
     def dump(self) -> dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]]:
         props: dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]] = defaultdict(dict)
-        for view_id, properties in self.data.items():
-            view_id_str = f"{view_id.external_id}/{view_id.version}"
-            props[view_id.space][view_id_str] = cast(dict[PropertyIdentifier, PropertyValue], properties)
+        for source_id, properties in self.data.items():
+            if isinstance(source_id, ViewId):
+                source_id_str = f"{source_id.external_id}/{source_id.version}"
+            elif isinstance(source_id, ContainerId):
+                source_id_str = source_id.external_id
+            else:
+                raise ValueError("SourceId must be either a ViewId or a ContainerId")
+            props[source_id.space][source_id_str] = cast(dict[PropertyIdentifier, PropertyValue], properties)
         # Defaultdict is not yaml serializable
         return dict(props)
 
-    def items(self) -> ItemsView[ViewId, MutableMapping[PropertyIdentifier, PropertyValue]]:
+    def items(self) -> ItemsView[SourceId, MutableMapping[PropertyIdentifier, PropertyValue]]:
         return self.data.items()
 
-    def keys(self) -> KeysView[ViewId]:
+    def keys(self) -> KeysView[SourceId]:
         return self.data.keys()
 
     def values(self) -> ValuesView[MutableMapping[PropertyIdentifier, PropertyValue]]:
         return self.data.values()
 
-    def __iter__(self) -> Iterator[ViewId]:
+    def __iter__(self) -> Iterator[SourceId]:
         yield from self.keys()
 
-    def __getitem__(self, view: ViewIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue]:
-        view_id = ViewId.load(view)
-        return self.data.get(view_id, {})
+    def __getitem__(self, item: SourceIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue]:
+        source_id = _load_source_id(item)
+        return self.data.get(source_id, {})
 
     def __contains__(self, item: Any) -> bool:
-        view_id = ViewId.load(item)
-        return view_id in self.data
+        source_id = _load_source_id(item)
+        return source_id in self.data
 
     @overload
-    def get(self, view: ViewIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue] | None: ...
+    def get(self, view: SourceIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue] | None: ...
 
     @overload
     def get(
-        self, view: ViewIdentifier, default: MutableMapping[PropertyIdentifier, PropertyValue] | _T
+        self, view: SourceIdentifier, default: MutableMapping[PropertyIdentifier, PropertyValue] | _T
     ) -> MutableMapping[PropertyIdentifier, PropertyValue] | _T: ...
 
     def get(
         self,
-        view: ViewIdentifier,
+        view: SourceIdentifier,
         default: MutableMapping[PropertyIdentifier, PropertyValue] | None | _T | None = None,
     ) -> MutableMapping[PropertyIdentifier, PropertyValue] | None | _T:
-        view_id = ViewId.load(view)
-        return self.data.get(view_id, default)
+        source_id = _load_source_id(view)
+        return self.data.get(source_id, default)
 
     def __len__(self) -> int:
         return len(self.data)
 
-    def __delitem__(self, view: ViewIdentifier) -> None:
-        view_id = ViewId.load(view)
-        del self.data[view_id]
+    def __delitem__(self, item: SourceIdentifier) -> None:
+        source_id = _load_source_id(item)
+        del self.data[source_id]
 
-    def __setitem__(self, view: ViewIdentifier, properties: MutableMapping[PropertyIdentifier, PropertyValue]) -> None:
-        view_id = ViewId.load(view)
-        self.data[view_id] = properties
+    def __setitem__(
+        self, item: SourceIdentifier, properties: MutableMapping[PropertyIdentifier, PropertyValue]
+    ) -> None:
+        source_id = _load_source_id(item)
+        self.data[source_id] = properties
 
     def _repr_html_(self) -> str:
         pd = local_import("pandas")

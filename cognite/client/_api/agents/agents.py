@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, overload
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
 from cognite.client.data_classes.agents.chat import AgentChatResponse, Message, MessageList
-from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -15,6 +15,9 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 
+@warn_on_all_method_invocations(
+    FeaturePreviewWarning(api_maturity="alpha", sdk_maturity="alpha", feature_name="Agents")
+)
 class AgentsAPI(APIClient):
     _RESOURCE_PATH = "/ai/agents"
 
@@ -151,7 +154,6 @@ class AgentsAPI(APIClient):
 
 
         """
-        self._warnings.warn()
         return self._create_multiple(
             list_cls=AgentList,
             resource_cls=Agent,
@@ -189,7 +191,6 @@ class AgentsAPI(APIClient):
 
                 >>> res = client.agents.retrieve(external_ids=["my_agent_1", "my_agent_2"])
         """
-        self._warnings.warn()
         identifiers = IdentifierSequence.load(external_ids=external_ids)
         return self._retrieve_multiple(
             list_cls=AgentList,
@@ -214,7 +215,6 @@ class AgentsAPI(APIClient):
                 >>> client.agents.delete(external_ids="my_agent")
 
         """
-        self._warnings.warn()
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
@@ -236,7 +236,6 @@ class AgentsAPI(APIClient):
                 >>> agent_list = client.agents.list()
 
         """
-        self._warnings.warn()
         res = self._get(url_path=self._RESOURCE_PATH)
         return AgentList._load(res.json()["items"], cognite_client=self._cognite_client)
 

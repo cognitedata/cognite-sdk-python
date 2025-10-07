@@ -13,7 +13,7 @@ from cognite.client.data_classes.simulators.models import (
     SimulatorModelUpdate,
     SimulatorModelWrite,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -22,15 +22,15 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
+@warn_on_all_method_invocations(
+    FeaturePreviewWarning(api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators")
+)
 class SimulatorModelsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/models"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.revisions = SimulatorModelRevisionsAPI(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
-        )
         self._RETRIEVE_LIMIT = 1
         self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 1
@@ -71,7 +71,6 @@ class SimulatorModelsAPI(APIClient):
 
         """
         model_filter = SimulatorModelsFilter(simulator_external_ids=simulator_external_ids)
-        self._warning.warn()
         return self._list(
             method="POST",
             limit=limit,
@@ -127,8 +126,6 @@ class SimulatorModelsAPI(APIClient):
                 ...     external_ids=["model_external_id", "model_external_id2"]
                 ... )
         """
-        self._warning.warn()
-
         return self._retrieve_multiple(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,

@@ -16,7 +16,7 @@ from cognite.client.data_classes.simulators.models import (
     SimulatorModelRevisionList,
     SimulatorModelRevisionWrite,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -25,14 +25,14 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
+@warn_on_all_method_invocations(
+    FeaturePreviewWarning(api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators")
+)
 class SimulatorModelRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/models/revisions"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
-        )
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 100
 
@@ -83,7 +83,6 @@ class SimulatorModelRevisionsAPI(APIClient):
             created_time=created_time,
             last_updated_time=last_updated_time,
         )
-        self._warning.warn()
         return self._list(
             method="POST",
             limit=limit,
@@ -141,8 +140,6 @@ class SimulatorModelRevisionsAPI(APIClient):
                 ...     external_ids=["revision1", "revision2"]
                 ... )
         """
-        self._warning.warn()
-
         return self._retrieve_multiple(
             list_cls=SimulatorModelRevisionList,
             resource_cls=SimulatorModelRevision,
@@ -295,8 +292,6 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.simulators.models.revisions.retrieve_data("model_revision_1")
         """
-        self._warning.warn()
-
         response = self._post(
             url_path=f"{self._RESOURCE_PATH}/data/list",
             headers={"cdf-version": "alpha"},

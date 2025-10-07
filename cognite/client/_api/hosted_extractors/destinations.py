@@ -11,7 +11,7 @@ from cognite.client.data_classes.hosted_extractors.destinations import (
     DestinationUpdate,
     DestinationWrite,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -19,14 +19,14 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
+@warn_on_all_method_invocations(
+    FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Hosted Extractors")
+)
 class DestinationsAPI(APIClient):
     _RESOURCE_PATH = "/hostedextractors/destinations"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="beta", sdk_maturity="alpha", feature_name="Hosted Extractors"
-        )
         self._CREATE_LIMIT = 10
         self._LIST_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
@@ -63,8 +63,6 @@ class DestinationsAPI(APIClient):
         Returns:
             Iterator[Destination] | Iterator[DestinationList]: yields Destination one by one if chunk_size is not specified, else DestinationList objects.
         """
-        self._warning.warn()
-
         return self._list_generator(
             list_cls=DestinationList,
             resource_cls=Destination,
@@ -114,7 +112,6 @@ class DestinationsAPI(APIClient):
                 >>> res = client.hosted_extractors.destinations.retrieve(["myDestination", "myDestination2"], ignore_unknown_ids=True)
 
         """
-        self._warning.warn()
         return self._retrieve_multiple(
             list_cls=DestinationList,
             resource_cls=Destination,
@@ -141,7 +138,6 @@ class DestinationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.hosted_extractors.destinations.delete(["myDest", "MyDest2"])
         """
-        self._warning.warn()
         extra_body_fields: dict[str, Any] = {}
         if ignore_unknown_ids:
             extra_body_fields["ignoreUnknownIds"] = True
@@ -181,7 +177,6 @@ class DestinationsAPI(APIClient):
                 >>> destination = DestinationWrite(external_id='my_dest', credentials=SessionWrite("my_nonce"), target_data_set_id=123)
                 >>> res = client.hosted_extractors.destinations.create(destination)
         """
-        self._warning.warn()
         return self._create_multiple(
             list_cls=DestinationList,
             resource_cls=Destination,
@@ -228,7 +223,6 @@ class DestinationsAPI(APIClient):
                 >>> destination = DestinationUpdate('my_dest').target_data_set_id.set(123)
                 >>> res = client.hosted_extractors.destinations.update(destination)
         """
-        self._warning.warn()
         return self._update_multiple(
             items=items,
             list_cls=DestinationList,
@@ -268,7 +262,6 @@ class DestinationsAPI(APIClient):
                 >>> for destination_list in client.hosted_extractors.destinations(chunk_size=25):
                 ...     destination_list # do something with the destinationss
         """
-        self._warning.warn()
         return self._list(
             list_cls=DestinationList,
             resource_cls=Destination,
