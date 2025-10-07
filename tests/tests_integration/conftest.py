@@ -20,7 +20,7 @@ from tests.utils import REPO_ROOT
 
 @pytest.fixture(scope="session")
 def cognite_client() -> CogniteClient:
-    return make_cognite_client(beta=False)
+    return make_cognite_client()
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -32,21 +32,6 @@ def session_cleanup(cognite_client: CogniteClient) -> None:
 
     if sessions_to_revoke:
         cognite_client.iam.sessions.revoke(sessions_to_revoke)
-
-
-@pytest.fixture(scope="session")
-def cognite_client_alpha() -> CogniteClient:
-    load_dotenv(REPO_ROOT / "alpha.env")
-    if "COGNITE_ALPHA_PROJECT" not in os.environ:
-        # TODO: If we are in CI, we should fail the test instead of skipping
-        pytest.skip("ALPHA environment variables not set. Skipping ALPHA tests.")
-    return CogniteClient.default_oauth_client_credentials(
-        project=os.environ["COGNITE_ALPHA_PROJECT"],
-        cdf_cluster=os.environ["COGNITE_ALPHA_CLUSTER"],
-        client_id=os.environ["COGNITE_ALPHA_CLIENT_ID"],
-        client_secret=os.environ["COGNITE_ALPHA_CLIENT_SECRET"],
-        tenant_id=os.environ["COGNITE_ALPHA_TENANT_ID"],
-    )
 
 
 @pytest.fixture(scope="session")
@@ -63,12 +48,7 @@ def ts_test_dataset(cognite_client: CogniteClient) -> DataSet:
     return cognite_client.data_sets.create(ds)
 
 
-@pytest.fixture(scope="session")
-def cognite_client_beta() -> CogniteClient:
-    return make_cognite_client(beta=True)
-
-
-def make_cognite_client(beta: bool = False) -> CogniteClient:
+def make_cognite_client() -> CogniteClient:
     login_flow = os.environ["LOGIN_FLOW"].lower()
     if login_flow == "client_credentials":
         credentials: CredentialProvider = OAuthClientCredentials(
@@ -96,16 +76,12 @@ def make_cognite_client(beta: bool = False) -> CogniteClient:
         raise ValueError(
             "Environment variable LOGIN_FLOW must be set to 'client_credentials', 'client_certificate' or 'interactive'"
         )
-
-    beta_configuration: dict = dict(api_subversion="beta") if beta else dict()
-
     return CogniteClient(
         ClientConfig(
             client_name=os.environ["COGNITE_CLIENT_NAME"],
             project=os.environ["COGNITE_PROJECT"],
             base_url=os.environ["COGNITE_BASE_URL"],
             credentials=credentials,
-            **beta_configuration,
         )
     )
 
