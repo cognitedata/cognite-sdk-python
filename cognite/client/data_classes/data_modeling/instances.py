@@ -205,6 +205,8 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         }
         if self.existing_version is not None:
             output["existingVersion" if camel_case else "existing_version"] = self.existing_version
+        # TODO: For subclasses of type "Typed-', sources' is a property, so this ends up doing repeated
+        #       dump() calls which are expensive...
         if self.sources:
             output["sources"] = [source.dump(camel_case) for source in self.sources]
         return output
@@ -836,6 +838,8 @@ class EdgeApply(InstanceApply["EdgeApply"]):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
+        # TODO: For subclasses of type "Typed-', sources' is a property, so this ends up doing repeated
+        #       dump() calls which are expensive...
         if self.sources:
             output["sources"] = [source.dump(camel_case) for source in self.sources]
         if self.type:
@@ -1872,14 +1876,15 @@ class _PropertyValueSerializer:
 
     @staticmethod
     def _serialize_value(value: Any, camel_case: bool) -> PropertyValue:
-        if isinstance(value, NodeId):
-            # We don't want to dump the instance_type field when serializing NodeId in this context
-            return value.dump(camel_case, include_instance_type=False)
-        elif isinstance(value, DirectRelationReference):
-            return value.dump(camel_case)
-        elif isinstance(value, datetime):
-            return value.isoformat(timespec="milliseconds")
-        elif isinstance(value, date):
-            return value.isoformat()
-        else:
-            return value
+        match value:
+            case NodeId():
+                # We don't want to dump the instance_type field when serializing NodeId in this context
+                return value.dump(camel_case, include_instance_type=False)
+            case DirectRelationReference():
+                return value.dump(camel_case)
+            case datetime():
+                return value.isoformat(timespec="milliseconds")
+            case date():
+                return value.isoformat()
+            case _:
+                return value
