@@ -1,23 +1,26 @@
 ---
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.11
+  # We use a local ruff hook so that the ruff version matches the one in dev-dependencies
+  - repo: local
     hooks:
-      - id: ruff
+      - id: ruff-check
+        name: ruff check
+        language: python
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+        entry: ruff check
         args:
           - --fix
           - --exit-non-zero-on-fix
-          - --line-length=120
-          - --ignore=E731,E501,W605,UP038
-            # See https://beta.ruff.rs/docs/rules for an overview of ruff rules
-          - --select=E,W,F,I,T,RUF,TID,UP
-          - --fixable=E,W,F,I,T,RUF,TID,UP
-          - --target-version=py310
-          - --exclude=cognite/client/_proto
+          - --force-exclude
       - id: ruff-format
+        name: ruff format
+        language: python
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+        entry: ruff format
         args:
-          - --line-length=120
-          - --exclude=cognite/client/_proto*
+          - --force-exclude
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -29,12 +32,16 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-      # Eventually we want to run mypy on the whole test code base. But for now we only enable it for data modeling tests.
+      # Eventually we want to run mypy on the whole test code base. But for now we only enable it for data modeling, simulators and datapoints
         entry: |
           poetry run dmypy run -- cognite tests/tests_integration/test_api/test_data_modeling
           tests/tests_unit/test_data_classes/test_data_models
           tests/tests_unit/test_utils/test_time.py
           tests/tests_integration/test_api/test_datapoints.py
+          tests/tests_integration/test_api/test_simulators
+          tests/tests_integration/test_api/test_principals.py
+          tests/tests_unit/test_api/test_simulators
+          tests/tests_unit/test_data_classes/test_simulators.py
         files: ^.*.(py|pyi)$
         language: system
         pass_filenames: false

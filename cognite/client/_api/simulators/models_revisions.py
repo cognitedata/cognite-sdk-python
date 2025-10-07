@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, NoReturn, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.data_classes.simulators.filters import PropertySort, SimulatorModelRevisionsFilter
+from cognite.client.data_classes.simulators.filters import (
+    PropertySort,
+    SimulatorModelRevisionsFilter,
+)
 from cognite.client.data_classes.simulators.models import (
     SimulatorModelRevision,
+    SimulatorModelRevisionDataList,
     SimulatorModelRevisionList,
     SimulatorModelRevisionWrite,
 )
@@ -90,27 +94,20 @@ class SimulatorModelRevisionsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, ids: None = None, external_ids: None = None) -> NoReturn: ...
+    def retrieve(self, *, ids: int) -> SimulatorModelRevision | None: ...
 
     @overload
-    def retrieve(self, ids: int, external_ids: None = None) -> SimulatorModelRevision | None: ...
+    def retrieve(self, *, external_ids: str) -> SimulatorModelRevision | None: ...
 
     @overload
-    def retrieve(
-        self,
-        ids: None,
-        external_ids: str,
-    ) -> SimulatorModelRevision | None: ...
+    def retrieve(self, *, ids: Sequence[int]) -> SimulatorModelRevisionList: ...
 
     @overload
-    def retrieve(
-        self,
-        ids: int | Sequence[int] | None = None,
-        external_ids: str | SequenceNotStr[str] | None = None,
-    ) -> SimulatorModelRevision | SimulatorModelRevisionList | None: ...
+    def retrieve(self, *, external_ids: SequenceNotStr[str]) -> SimulatorModelRevisionList: ...
 
     def retrieve(
         self,
+        *,
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
     ) -> SimulatorModelRevision | SimulatorModelRevisionList | None:
@@ -280,3 +277,29 @@ class SimulatorModelRevisionsAPI(APIClient):
             items=items,
             input_resource_cls=SimulatorModelRevisionWrite,
         )
+
+    def retrieve_data(self, model_revision_external_id: str) -> SimulatorModelRevisionDataList:
+        """`Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/get_simulator_model_revision_data_by_id>`_
+
+        Retrieves a list of simulator model revisions data that match the given criteria.
+
+        Args:
+            model_revision_external_id (str): The external id of the simulator model revision to filter by.
+        Returns:
+            SimulatorModelRevisionDataList: List of simulator model revision data
+
+        Examples:
+            List simulator model revision data:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.revisions.retrieve_data("model_revision_1")
+        """
+        self._warning.warn()
+
+        response = self._post(
+            url_path=f"{self._RESOURCE_PATH}/data/list",
+            headers={"cdf-version": "alpha"},
+            json={"items": [{"modelRevisionExternalId": model_revision_external_id}]},
+        )
+        items = response.json()["items"]
+        return SimulatorModelRevisionDataList._load(items, cognite_client=self._cognite_client)

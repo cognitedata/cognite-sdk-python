@@ -589,7 +589,7 @@ class TestCogniteResourceList:
     def test_extend__fails_with_overlapping_identifiers(self):
         resource_list = MyResourceList([MyResource(id=1), MyResource(id=2)])
         another_resource_list = MyResourceList([MyResource(id=2), MyResource(id=6)])
-        with pytest.raises(ValueError, match="^Unable to extend as this would introduce duplicates$"):
+        with pytest.raises(ValueError, match=r"^Unable to extend as this would introduce duplicates$"):
             resource_list.extend(another_resource_list)
 
     def test_len(self):
