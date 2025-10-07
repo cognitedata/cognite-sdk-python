@@ -901,17 +901,18 @@ class TestFilesAPI:
         cognite_client: CogniteClient,
         mock_file_download_response: HTTPXMock,
         set_request_limit: Callable,
+        tmp_path: Path,
     ) -> None:
         set_request_limit(cognite_client.files, 1)
 
-        with TemporaryDirectory() as directory:
-            res = cognite_client.files.download(directory=directory, id=[1], external_id=["2"])
-            assert res is None
-            bodies = [jsgz_load(req.content) for req in mock_file_download_response.get_requests()[:2]]
-            assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} in bodies
-            assert {"ignoreUnknownIds": False, "items": [{"externalId": "2"}]} in bodies
-            assert os.path.isfile(os.path.join(directory, "file1"))
-            assert os.path.isfile(os.path.join(directory, "file2"))
+        res = cognite_client.files.download(directory=tmp_path, id=[1], external_id=["2"])
+        assert res is None
+
+        bodies = [jsgz_load(req.content) for req in mock_file_download_response.get_requests()[:2]]
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} in bodies
+        assert {"ignoreUnknownIds": False, "items": [{"externalId": "2"}]} in bodies
+        assert (tmp_path / "file1").is_file()
+        assert (tmp_path / "file2").is_file()
 
     def test_files_update_object(self, mock_geo_location: GeoLocation) -> None:
         update = (
