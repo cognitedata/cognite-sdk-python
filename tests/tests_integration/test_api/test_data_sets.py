@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from unittest import mock
 
 import pytest
@@ -6,7 +6,6 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSet, DataSetFilter, DataSetUpdate, DataSetWrite
 from cognite.client.exceptions import CogniteNotFoundError
-from tests.utils import set_request_limit
 
 
 @pytest.fixture(scope="class")
@@ -41,9 +40,9 @@ class TestDataSetsAPI:
             cognite_client.data_sets.retrieve_multiple(ids=[new_dataset.id], external_ids=[invalid_external_id])
         assert error.value.not_found[0]["externalId"] == invalid_external_id
 
-    def test_list(self, cognite_client: CogniteClient, post_spy: None) -> None:
-        with set_request_limit(cognite_client.data_sets, 1):
-            res = cognite_client.data_sets.list(limit=2)
+    def test_list(self, cognite_client: CogniteClient, post_spy: None, set_request_limit: Callable) -> None:
+        set_request_limit(cognite_client.data_sets, 1)
+        res = cognite_client.data_sets.list(limit=2)
 
         assert 2 == len(res)
         assert 2 == cognite_client.data_sets._post.call_count  # type: ignore[attr-defined]
