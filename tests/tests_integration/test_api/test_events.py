@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import datetime
 from unittest import mock
 
@@ -12,7 +12,6 @@ from cognite.client.data_classes.events import EventProperty, EventWrite, Sortab
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils import timestamp_to_ms
 from cognite.client.utils._text import random_string
-from tests.utils import set_request_limit
 
 
 @pytest.fixture
@@ -103,9 +102,9 @@ class TestEventsAPI:
             cognite_client.events.delete(id=created_event.id, ignore_unknown_ids=True)
 
     @pytest.mark.usefixtures("twenty_events")
-    def test_list(self, cognite_client: CogniteClient, post_spy: None) -> None:
-        with set_request_limit(cognite_client.events, 10):
-            res = cognite_client.events.list(limit=20)
+    def test_list(self, cognite_client: CogniteClient, post_spy: None, set_request_limit: Callable) -> None:
+        set_request_limit(cognite_client.events, 10)
+        res = cognite_client.events.list(limit=20)
 
         assert 20 == len(res)
         assert 2 == cognite_client.events._post.call_count  # type: ignore[attr-defined]

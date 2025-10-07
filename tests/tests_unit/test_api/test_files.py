@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+from collections.abc import Callable
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, NoReturn
@@ -23,7 +24,7 @@ from cognite.client.data_classes.files import (
 from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
 from tests.tests_unit.conftest import DefaultResourceGenerator
-from tests.utils import get_or_raise, get_url, jsgz_load, set_request_limit
+from tests.utils import get_or_raise, get_url, jsgz_load
 
 
 @pytest.fixture
@@ -897,17 +898,20 @@ class TestFilesAPI:
         assert res == b"content1"
 
     def test_download_ids_over_limit(
-        self, cognite_client: CogniteClient, mock_file_download_response: HTTPXMock
+        cognite_client: CogniteClient,
+        mock_file_download_response: HTTPXMock,
+        set_request_limit: Callable,
     ) -> None:
-        with set_request_limit(cognite_client.files, 1):
-            with TemporaryDirectory() as directory:
-                res = cognite_client.files.download(directory=directory, id=[1], external_id=["2"])
-                assert res is None
-                bodies = [jsgz_load(req.content) for req in mock_file_download_response.get_requests()[:2]]
-                assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} in bodies
-                assert {"ignoreUnknownIds": False, "items": [{"externalId": "2"}]} in bodies
-                assert os.path.isfile(os.path.join(directory, "file1"))
-                assert os.path.isfile(os.path.join(directory, "file2"))
+        set_request_limit(cognite_client.files, 1)
+
+        with TemporaryDirectory() as directory:
+            res = cognite_client.files.download(directory=directory, id=[1], external_id=["2"])
+            assert res is None
+            bodies = [jsgz_load(req.content) for req in mock_file_download_response.get_requests()[:2]]
+            assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} in bodies
+            assert {"ignoreUnknownIds": False, "items": [{"externalId": "2"}]} in bodies
+            assert os.path.isfile(os.path.join(directory, "file1"))
+            assert os.path.isfile(os.path.join(directory, "file2"))
 
     def test_files_update_object(self, mock_geo_location: GeoLocation) -> None:
         update = (

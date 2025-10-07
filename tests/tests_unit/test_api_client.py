@@ -7,7 +7,7 @@ import re
 import time
 import unittest
 from collections import namedtuple
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Any, ClassVar, Literal, cast
 
 import pytest
@@ -34,7 +34,7 @@ from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._url import validate_url_and_return_retryability
 from tests.tests_unit.conftest import DefaultResourceGenerator
-from tests.utils import get_or_raise, jsgz_load, set_request_limit
+from tests.utils import get_or_raise, jsgz_load
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
 URL_PATH = "/someurl"
@@ -439,7 +439,9 @@ class TestStandardRetrieveMultiple:
         )
         assert res is None
 
-    def test_multiple_ids_not_found(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    def test_multiple_ids_not_found(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
+    ) -> None:
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/byids",
@@ -455,14 +457,14 @@ class TestStandardRetrieveMultiple:
         # Second request may be skipped intentionally depending on which thread runs when:
         # ....assert_all_requests_are_fired = False  # TODO
 
-        with set_request_limit(api_client_with_token, 1):
-            with pytest.raises(CogniteNotFoundError) as e:
-                api_client_with_token._retrieve_multiple(
-                    list_cls=SomeResourceList,
-                    resource_cls=SomeResource,
-                    resource_path=URL_PATH,
-                    identifiers=IdentifierSequence.of(1, 2),
-                )
+        set_request_limit(api_client_with_token, 1)
+        with pytest.raises(CogniteNotFoundError) as e:
+            api_client_with_token._retrieve_multiple(
+                list_cls=SomeResourceList,
+                resource_cls=SomeResource,
+                resource_path=URL_PATH,
+                identifiers=IdentifierSequence.of(1, 2),
+            )
         assert {"id": 1} in e.value.not_found
         assert {"id": 2} in e.value.not_found + e.value.skipped
 
@@ -477,7 +479,9 @@ class TestStandardRetrieveMultiple:
         )
         assert cognite_client == res._cognite_client
 
-    def test_over_limit_concurrent(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    def test_over_limit_concurrent(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
+    ) -> None:
         httpx_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/byids", status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
@@ -485,13 +489,13 @@ class TestStandardRetrieveMultiple:
             method="POST", url=BASE_URL + URL_PATH + "/byids", status_code=200, json={"items": [{"x": 3, "y": 4}]}
         )
 
-        with set_request_limit(api_client_with_token, 1):
-            api_client_with_token._retrieve_multiple(
-                list_cls=SomeResourceList,
-                resource_cls=SomeResource,
-                resource_path=URL_PATH,
-                identifiers=IdentifierSequence.of(1, 2),
-            )
+        set_request_limit(api_client_with_token, 1)
+        api_client_with_token._retrieve_multiple(
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            identifiers=IdentifierSequence.of(1, 2),
+        )
         unittest.TestCase().assertCountEqual(
             [{"items": [{"id": 1}]}, {"items": [{"id": 2}]}],
             [
@@ -916,7 +920,9 @@ class TestStandardCreate:
         assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert SomeResourceList([SomeResource(1, 2)]) == res
 
-    def test_standard_create_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    def test_standard_create_fail(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
+    ) -> None:
         def callback(request: Any) -> Response:
             item = jsgz_load(request.content)["items"][0]
             return Response(status_code=int(item["externalId"]), headers={}, json={})
@@ -928,19 +934,19 @@ class TestStandardCreate:
             match_headers={"content-type": "application/json"},
             is_reusable=True,
         )
-        with set_request_limit(api_client_with_token, 1):
-            with pytest.raises(CogniteAPIError) as e:
-                api_client_with_token._create_multiple(
-                    list_cls=SomeResourceList,
-                    resource_cls=SomeResource,
-                    resource_path=URL_PATH,
-                    items=[
-                        # The external id here is also used as the fake api response status code:
-                        SomeResource(1, external_id="400"),  # i.e, this will raise CogniteAPIError(..., code=400)
-                        SomeResource(external_id="500"),
-                        SomeResource(1, 1, external_id="200"),
-                    ],
-                )
+        set_request_limit(api_client_with_token, 1)
+        with pytest.raises(CogniteAPIError) as e:
+            api_client_with_token._create_multiple(
+                list_cls=SomeResourceList,
+                resource_cls=SomeResource,
+                resource_path=URL_PATH,
+                items=[
+                    # The external id here is also used as the fake api response status code:
+                    SomeResource(1, external_id="400"),  # i.e, this will raise CogniteAPIError(..., code=400)
+                    SomeResource(external_id="500"),
+                    SomeResource(1, 1, external_id="200"),
+                ],
+            )
         assert e.value.code in (400, 500)  # race condition, don't know which failing is -last-
         assert [SomeResource(1, external_id="400")] == e.value.failed
         assert [SomeResource(1, 1, external_id="200")] == e.value.successful
@@ -1053,7 +1059,7 @@ class TestStandardDelete:
         assert e.value.failed == []
 
     def test_standard_delete_multiple_fail_missing_ids(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
         httpx_mock.add_response(
             method="POST",
@@ -1067,23 +1073,25 @@ class TestStandardDelete:
             status_code=400,
             json={"error": {"message": "Missing ids", "missing": [{"id": 3}]}},
         )
-        with set_request_limit(api_client_with_token, 2):
-            with pytest.raises(CogniteNotFoundError) as e:
-                api_client_with_token._delete_multiple(
-                    resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1, 2, 3])
-                )
+        set_request_limit(api_client_with_token, 2)
+        with pytest.raises(CogniteNotFoundError) as e:
+            api_client_with_token._delete_multiple(
+                resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1, 2, 3])
+            )
 
         unittest.TestCase().assertCountEqual([{"id": 1}, {"id": 3}], e.value.not_found)
         assert [1, 2, 3] == sorted(e.value.failed)
 
-    def test_over_limit_concurrent(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    def test_over_limit_concurrent(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
+    ) -> None:
         httpx_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
         httpx_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
 
-        with set_request_limit(api_client_with_token, 2):
-            api_client_with_token._delete_multiple(
-                resource_path=URL_PATH, identifiers=IdentifierSequence.of([1, 2, 3, 4]), wrap_ids=False
-            )
+        set_request_limit(api_client_with_token, 2)
+        api_client_with_token._delete_multiple(
+            resource_path=URL_PATH, identifiers=IdentifierSequence.of([1, 2, 3, 4]), wrap_ids=False
+        )
         unittest.TestCase().assertCountEqual(
             [{"items": [1, 2]}, {"items": [3, 4]}],
             [
@@ -1254,7 +1262,7 @@ class TestStandardUpdate:
 
     @pytest.mark.usefixtures("disable_gzip")  # -> because match_json doesn't work with gzip
     def test_standard_update_fail_missing_and_5xx(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
         # Note 1: We have two tasks being added to an executor, but that doesn't mean we know the
         # execution order. Depending on whether the 400 or 500 hits the first or second task,
@@ -1277,15 +1285,15 @@ class TestStandardUpdate:
         items = [SomeResource(external_id="abc"), SomeResource(id=0)]
         random.shuffle(items)
 
-        with set_request_limit(api_client_with_token, 1):
-            with pytest.raises(CogniteAPIError) as e:
-                api_client_with_token._update_multiple(
-                    update_cls=SomeUpdate,
-                    list_cls=SomeResourceList,
-                    resource_cls=SomeResource,
-                    resource_path=URL_PATH,
-                    items=items,
-                )
+        set_request_limit(api_client_with_token, 1)
+        with pytest.raises(CogniteAPIError) as e:
+            api_client_with_token._update_multiple(
+                update_cls=SomeUpdate,
+                list_cls=SomeResourceList,
+                resource_cls=SomeResource,
+                resource_path=URL_PATH,
+                items=items,
+            )
         assert ["abc"] == e.value.unknown
         assert [0] == e.value.failed
         assert [{"id": 0}] == e.value.missing
@@ -1314,7 +1322,9 @@ class TestStandardUpdate:
             )._cognite_client
         )
 
-    def test_over_limit_concurrent(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    def test_over_limit_concurrent(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
+    ) -> None:
         httpx_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/update", status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
@@ -1322,14 +1332,14 @@ class TestStandardUpdate:
             method="POST", url=BASE_URL + URL_PATH + "/update", status_code=200, json={"items": [{"x": 3, "y": 4}]}
         )
 
-        with set_request_limit(api_client_with_token, 1):
-            api_client_with_token._update_multiple(
-                update_cls=SomeUpdate,
-                list_cls=SomeResourceList,
-                resource_cls=SomeResource,
-                resource_path=URL_PATH,
-                items=[SomeResource(1, 2, id=1), SomeResource(3, 4, id=2)],
-            )
+        set_request_limit(api_client_with_token, 1)
+        api_client_with_token._update_multiple(
+            update_cls=SomeUpdate,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=[SomeResource(1, 2, id=1), SomeResource(3, 4, id=2)],
+        )
         unittest.TestCase().assertCountEqual(
             [{"items": [{"id": 1, "update": {"y": {"set": 2}}}]}, {"items": [{"id": 2, "update": {"y": {"set": 4}}}]}],
             [
