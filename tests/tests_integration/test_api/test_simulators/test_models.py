@@ -12,10 +12,17 @@ from cognite.client.data_classes.simulators import (
     SimulatorModelWrite,
 )
 from cognite.client.data_classes.simulators.filters import PropertySort
-from cognite.client.data_classes.simulators.models import SimulatorModelRevision, SimulatorModelRevisionList
+from cognite.client.data_classes.simulators.models import (
+    SimulatorFlowsheet,
+    SimulatorModelRevision,
+    SimulatorModelRevisionList,
+)
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.conftest import upload_file
-from tests.tests_integration.test_api.test_simulators.seed.data import ResourceNames
+from tests.tests_integration.test_api.test_simulators.seed.data import (
+    SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET,
+    ResourceNames,
+)
 from tests.tests_integration.test_api.test_simulators.utils import update_logs
 
 
@@ -34,6 +41,7 @@ class TestSimulatorModels:
         for model in cognite_client.simulators.models(
             limit=2,
             simulator_external_ids=[seed_resource_names.simulator_external_id],
+            sort=PropertySort(order="asc", property="created_time"),
         ):
             assert model.created_time is not None
             model_ids.append(model.id)
@@ -65,7 +73,10 @@ class TestSimulatorModels:
         )
 
         model_revision_ids = []
-        for revision in cognite_client.simulators.models.revisions(limit=2):
+        for revision in cognite_client.simulators.models.revisions(
+            limit=2,
+            sort=PropertySort(order="desc", property="created_time"),
+        ):
             assert revision.created_time is not None
             model_revision_ids.append(revision.id)
 
@@ -98,13 +109,13 @@ class TestSimulatorModels:
         self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
     ) -> None:
         revisions_asc = cognite_client.simulators.models.revisions.list(
-            sort=PropertySort(order="asc", property="createdTime"),
+            sort=PropertySort(order="asc", property="created_time"),
             model_external_ids=[seed_resource_names.simulator_model_external_id],
             all_versions=True,
         )
 
         revisions_desc = cognite_client.simulators.models.revisions.list(
-            sort=PropertySort(order="desc", property="createdTime"),
+            sort=PropertySort(order="desc", property="created_time"),
             model_external_ids=[seed_resource_names.simulator_model_external_id],
             all_versions=True,
         )
@@ -283,3 +294,40 @@ class TestSimulatorModels:
         assert model_updated.description == "updated description"
         assert model_updated.name == "updated name"
         cognite_client.simulators.models.delete(external_ids=[model_updated.external_id])
+
+    def test_model_revision_retrieve_data(
+        self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
+    ) -> None:
+        revision_data = cognite_client.simulators._post(
+            "/simulators/models/revisions/data/update",
+            headers={"cdf-version": "alpha"},
+            json={
+                "items": [
+                    {
+                        "modelRevisionExternalId": seed_resource_names.simulator_model_revision_external_id,
+                        "update": {"flowsheets": {"set": SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET}},
+                    }
+                ]
+            },
+        )
+
+        assert revision_data.status_code == 200
+
+        model_revisions = cognite_client.simulators.models.revisions.list(
+            model_external_ids=seed_resource_names.simulator_model_external_id
+        )
+
+        model_revision_data_item = model_revisions[0].get_data()
+        assert model_revision_data_item is not None
+
+        model_revision_data_list = cognite_client.simulators.models.revisions.retrieve_data(
+            model_revision_external_id=model_revisions[0].external_id
+        )
+        assert model_revision_data_item == model_revision_data_list[0]
+        assert model_revision_data_item.flowsheets is not None
+        assert (
+            model_revision_data_item.flowsheets[0].dump()
+            == SimulatorFlowsheet._load(
+                SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET[0], cognite_client=cognite_client
+            ).dump()
+        )

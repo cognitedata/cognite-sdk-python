@@ -218,7 +218,7 @@ class AgentChatResponse(CogniteResource):
     """Response from agent chat.
 
     Args:
-        agent_id (str): The ID of the agent.
+        agent_external_id (str): The external ID of the agent.
         messages (AgentMessageList): The response messages from the agent.
         type (str): The response type.
         cursor (str | None): Cursor for conversation continuation.
@@ -226,19 +226,19 @@ class AgentChatResponse(CogniteResource):
 
     def __init__(
         self,
-        agent_id: str,
+        agent_external_id: str,
         messages: AgentMessageList,
         type: str,
         cursor: str | None = None,
     ) -> None:
-        self.agent_id = agent_id
+        self.agent_external_id = agent_external_id
         self.cursor = cursor
         self.messages = messages
         self.type = type
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = {
-            "agentId" if camel_case else "agent_id": self.agent_id,
+            "agentExternalId" if camel_case else "agent_external_id": self.agent_external_id,
             "response": {
                 "cursor": self.cursor,
                 "messages": [msg.dump(camel_case=camel_case) for msg in self.messages] if self.messages else [],
@@ -264,7 +264,7 @@ class AgentChatResponse(CogniteResource):
         messages_list = AgentMessageList(messages)
 
         instance = cls(
-            agent_id=data["agentId"],
+            agent_external_id=data["agentExternalId"],
             cursor=response_data.get("cursor"),
             messages=messages_list,
             type=response_data["type"],

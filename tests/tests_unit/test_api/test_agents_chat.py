@@ -18,7 +18,7 @@ from cognite.client.data_classes.agents.chat import (
 @pytest.fixture
 def chat_response_body() -> dict:
     return {
-        "agentId": "my_agent",
+        "agentExternalId": "my_agent",
         "response": {
             "cursor": "cursor_12345",
             "messages": [
@@ -62,13 +62,15 @@ class TestAgentChat:
         cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
 
         # Test with simple string message
-        response = cognite_client.agents.chat(agent_id="my_agent", messages=Message("What can you help me with?"))
+        response = cognite_client.agents.chat(
+            agent_external_id="my_agent", messages=Message("What can you help me with?")
+        )
 
         # Verify the request
         cognite_client.agents._post.assert_called_once()
         call_args = cognite_client.agents._post.call_args
         assert call_args[1]["url_path"] == "/ai/agents/chat"
-        assert call_args[1]["json"]["agentId"] == "my_agent"
+        assert call_args[1]["json"]["agentExternalId"] == "my_agent"
         assert len(call_args[1]["json"]["messages"]) == 1
         assert call_args[1]["json"]["messages"][0]["content"]["text"] == "What can you help me with?"
         assert call_args[1]["json"]["messages"][0]["content"]["type"] == "text"
@@ -76,7 +78,7 @@ class TestAgentChat:
 
         # Verify the response
         assert isinstance(response, AgentChatResponse)
-        assert response.agent_id == "my_agent"
+        assert response.agent_external_id == "my_agent"
         assert response.cursor == "cursor_12345"
         assert response.type == "result"
         assert len(response.messages) == 1
@@ -109,7 +111,7 @@ class TestAgentChat:
 
         # Test with cursor
         cognite_client.agents.chat(
-            agent_id="my_agent",
+            agent_external_id="my_agent",
             messages=Message("Tell me more"),
             cursor="previous_cursor_123",
         )
@@ -126,7 +128,7 @@ class TestAgentChat:
             Message("I need help with time series data"),
             Message("Specifically about temperature sensors"),
         ]
-        cognite_client.agents.chat(agent_id="my_agent", messages=messages)
+        cognite_client.agents.chat(agent_external_id="my_agent", messages=messages)
 
         # Verify multiple messages were sent
         call_args = cognite_client.agents._post.call_args
@@ -137,7 +139,7 @@ class TestAgentChat:
     def test_chat_response_without_optional_fields(self, cognite_client: CogniteClient) -> None:
         # Minimal response without data or reasoning
         minimal_response = {
-            "agentId": "my_agent",
+            "agentExternalId": "my_agent",
             "response": {
                 "cursor": None,
                 "messages": [
@@ -155,7 +157,7 @@ class TestAgentChat:
 
         cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: minimal_response))
 
-        response = cognite_client.agents.chat(agent_id="my_agent", messages=Message("Hello"))
+        response = cognite_client.agents.chat(agent_external_id="my_agent", messages=Message("Hello"))
 
         assert response.cursor is None
         assert response.messages[0].data is None

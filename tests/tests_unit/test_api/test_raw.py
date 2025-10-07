@@ -440,11 +440,11 @@ def test_raw_row__direct_column_access(raw_cls):
 
     del row["bar"]
     assert row.columns == {}
-    with pytest.raises(KeyError, match="^'wrong-key'$"):
+    with pytest.raises(KeyError, match=r"^'wrong-key'$"):
         del row["wrong-key"]
 
     row.columns = None
-    with pytest.raises(RuntimeError, match="^columns not set on Row instance$"):
+    with pytest.raises(RuntimeError, match=r"^columns not set on Row instance$"):
         del row["wrong-key"]
 
 

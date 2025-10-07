@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cognite-sdk"
-version = "7.84.0"
+version = "7.86.0"
 
 description = "Cognite Python SDK"
 readme = "README.md"
@@ -13,6 +13,17 @@ authors = [
 license = "Apache-2.0"
 
 packages = [{ include="cognite", from="." }]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = ["cognite/client/_proto"]
+
+[tool.ruff.lint]
+# See https://beta.ruff.rs/docs/rules for an overview of ruff rules
+ignore = ["E731", "E501", "W605", "RUF059"]
+select = ["E", "W", "F", "I", "T", "RUF", "TID", "UP"]
+fixable = ["E", "W", "F", "I", "T", "RUF", "TID", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
 # let scripts use print statements
@@ -76,7 +87,9 @@ pytest-icdiff = "*"  # Used for better diffs in pytest
 types-simplejson = "^3.19.0.20240801"
 types-pytz = "^2025.2.0.20250516"
 tenacity = "^9.1.2"
+ruff = "0.13.2"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+

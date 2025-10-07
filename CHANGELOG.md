@@ -13,6 +13,36 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.86.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.85.0...v7.86.0) (2025-10-02)
+
+
+### Features
+
+* **instances/search:** `operator` is now supported (AND/OR) ([#2344](https://github.com/cognitedata/cognite-sdk-python/issues/2344)) ([317439b](https://github.com/cognitedata/cognite-sdk-python/commit/317439b11f8459373137d3ffdff53dd86b155b1e))
+
+
+### Bug Fixes
+
+* **agents:** replace agentId with agentExternalId in chat API ([#2349](https://github.com/cognitedata/cognite-sdk-python/issues/2349)) ([d9bca80](https://github.com/cognitedata/cognite-sdk-python/commit/d9bca8081f17329ce332746b4126bc7699a7978f))
+* **datapoints:** fix rare bug when instance ID time series would repo… ([#2348](https://github.com/cognitedata/cognite-sdk-python/issues/2348)) ([74bb53a](https://github.com/cognitedata/cognite-sdk-python/commit/74bb53a5b37374410bced4a91c65f00c2aac34b1))
+* filters now accept DirectRelationReference as instance identifier ([#2334](https://github.com/cognitedata/cognite-sdk-python/issues/2334)) ([597f7ca](https://github.com/cognitedata/cognite-sdk-python/commit/597f7ca70493498a13dd3363c018d1c7fec3d887))
+* **simulators:** make SimulatorModelRevision.get_data() return single item for consistency ([#2346](https://github.com/cognitedata/cognite-sdk-python/issues/2346)) ([6c3be3d](https://github.com/cognitedata/cognite-sdk-python/commit/6c3be3d4dfcf890a4624d7a3c9df8d01251ba17d))
+
+## [7.85.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.84.0...v7.85.0) (2025-09-25)
+
+
+### Features
+
+* add debug support to DM APIs query/list/sync ([#2329](https://github.com/cognitedata/cognite-sdk-python/issues/2329)) ([d304cef](https://github.com/cognitedata/cognite-sdk-python/commit/d304cef27f0c9c83cd9d06dfdb10f1f2950f2eca))
+* data classes for debug notices ([#2336](https://github.com/cognitedata/cognite-sdk-python/issues/2336)) ([4be6ca0](https://github.com/cognitedata/cognite-sdk-python/commit/4be6ca09bae1468884ecfb70793c6205efd711f2))
+* **simulators:** Add support for model revision data ([#2268](https://github.com/cognitedata/cognite-sdk-python/issues/2268)) ([af56d56](https://github.com/cognitedata/cognite-sdk-python/commit/af56d569e97e442c46506690a125784db803bac4))
+
+
+### Bug Fixes
+
+* auto-load tzdata in pyodide ([#2343](https://github.com/cognitedata/cognite-sdk-python/issues/2343)) ([f0a6ed3](https://github.com/cognitedata/cognite-sdk-python/commit/f0a6ed376f4e96a8eb8e7937ba51340323844b15))
+* do not throw UserWarning from SDK code ([#2341](https://github.com/cognitedata/cognite-sdk-python/issues/2341)) ([2e67d76](https://github.com/cognitedata/cognite-sdk-python/commit/2e67d764092ece70e2ea0e0d1dab15e958f3fc22))
+
 ## [7.84.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.83.1...v7.84.0) (2025-09-18)
 
 

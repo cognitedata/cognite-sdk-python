@@ -326,7 +326,7 @@ class TestAssetHierarchy:
     def test_validate_asset_hierarchy__everything_is_wrong(self):
         hierarchy = AssetHierarchy(basic_issue_assets()).validate(on_error="ignore")
         assert hierarchy.invalid and hierarchy.orphans and hierarchy.unsure_parents and hierarchy.duplicates
-        with pytest.raises(CogniteAssetHierarchyError, match="^Unable to run cycle-check before"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"^Unable to run cycle-check before"):
             hierarchy.cycles
         with pytest.raises(
             CogniteAssetHierarchyError, match=r"Issue\(s\): 3 duplicates, 1 invalid, 1 unsure_parents, 2 orphans$"

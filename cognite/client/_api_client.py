@@ -565,7 +565,7 @@ class APIClient:
             body: dict[str, Any] = {}
             if filter:
                 body["filter"] = filter
-            if advanced_filter:
+            if advanced_filter is not None:
                 if isinstance(advanced_filter, Filter):
                     # TODO: Does our json.dumps now understand Filter?
                     body["advancedFilter"] = advanced_filter.dump(camel_case_property=True)
@@ -697,7 +697,7 @@ class APIClient:
                         "partition": partition,
                         **(other_params or {}),
                     }
-                    if advanced_filter:
+                    if advanced_filter is not None:
                         body["advancedFilter"] = (
                             advanced_filter.dump(camel_case_property=True)
                             if isinstance(advanced_filter, Filter)

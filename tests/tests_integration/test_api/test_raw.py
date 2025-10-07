@@ -150,5 +150,5 @@ class TestRawRowsAPI:
 
         df = pd.DataFrame({"aa": range(4), "bb": "value"}, index=list("abca"))
 
-        with pytest.raises(ValueError, match="^Dataframe index is not unique"):
+        with pytest.raises(ValueError, match=r"^Dataframe index is not unique"):
             cognite_client.raw.rows.insert_dataframe("db", "table", df)

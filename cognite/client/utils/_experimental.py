@@ -10,21 +10,24 @@ class FeaturePreviewWarning(FutureWarning):
         api_maturity: Literal["alpha", "beta", "General Availability"],
         sdk_maturity: Literal["alpha", "beta"],
         feature_name: str,
+        pluralize: bool = False,
     ):
         self.api_version = api_maturity
         self.sdk_version = sdk_maturity
         self.feature_name = feature_name
+        self.pluralize = pluralize
 
     def __str__(self) -> str:
+        verb = "are" if self.pluralize else "is"
         if self.api_version == "alpha" or self.sdk_version == "alpha":
             return (
-                f"{self.feature_name} is in alpha and is subject to breaking changes without prior notice. "
+                f"{self.feature_name} {verb} in alpha and {verb} subject to breaking changes without prior notice. "
                 f"API maturity={self.api_version}, SDK maturity={self.sdk_version}. "
                 "See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/appendix.html for more information."
             )
         else:
             return (
-                f"{self.feature_name} is in beta, breaking changes may occur but will be preceded by a DeprecationWarning. "
+                f"{self.feature_name} {verb} in beta, breaking changes may occur but will be preceded by a DeprecationWarning. "
                 f"API version={self.api_version}, SDK version={self.sdk_version}. "
                 "See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/appendix.html for more information."
             )

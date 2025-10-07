@@ -6,7 +6,7 @@ from itertools import groupby
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
 
-from cognite.client._api.organization import PrincipalsAPI
+from cognite.client._api.org_apis.principals import PrincipalsAPI
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ

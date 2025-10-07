@@ -192,5 +192,5 @@ class TestSingleTSQueryValidator:
 
         full_query = _FullDatapointsQuery(id=id_dct_lst, include_outside_points=False)
         all_queries = full_query.parse_into_queries()
-        with pytest.raises(ValueError, match="'Include outside points' is not supported for aggregates."):
+        with pytest.raises(ValueError, match=r"'Include outside points' is not supported for aggregates\."):
             query_validator(all_queries)
