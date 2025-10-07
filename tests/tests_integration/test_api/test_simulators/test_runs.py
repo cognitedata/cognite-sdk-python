@@ -110,7 +110,6 @@ class TestSimulatorRuns:
         assert data_res is not None
         assert data_res.dump() == data_res2.dump()
 
-    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "simulation_run_item",
         [

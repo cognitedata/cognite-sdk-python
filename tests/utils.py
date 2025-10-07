@@ -487,12 +487,12 @@ class FakeCogniteResourceGenerator:
         elif resource_cls is SimulationRunWrite:
             # SimulationRunWrite requires either routine_external_id alone OR both routine_revision_external_id and model_revision_external_id
             if self._random.choice([True, False]):
-                # Use revision-based parameters
+                # Use routine_external_id only
                 keyword_arguments.pop("routine_revision_external_id", None)
                 keyword_arguments.pop("model_revision_external_id", None)
                 keyword_arguments["routine_external_id"] = self._random_string(50)
             else:
-                # Use routine_external_id only
+                # Use revision-based parameters
                 keyword_arguments.pop("routine_external_id", None)
 
         return resource_cls(*positional_arguments, **keyword_arguments)
