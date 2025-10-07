@@ -138,12 +138,19 @@ class SimulationRunWrite(SimulationRunCore):
             "'routine_revision_external_id' and 'model_revision_external_id' together."
         )
 
-        if routine_external_id is not None:
-            if routine_revision_external_id is not None or model_revision_external_id is not None:
-                raise param_error
-        else:
-            if not (routine_revision_external_id is not None and model_revision_external_id is not None):
-                raise param_error
+        is_routine_mode = (
+            routine_external_id is not None
+            and routine_revision_external_id is None
+            and model_revision_external_id is None
+        )
+        is_revision_mode = (
+            routine_external_id is None
+            and routine_revision_external_id is not None
+            and model_revision_external_id is not None
+        )
+
+        if not (is_routine_mode or is_revision_mode):
+            raise param_error
 
         super().__init__(
             routine_external_id=routine_external_id,
