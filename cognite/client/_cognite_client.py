@@ -54,8 +54,8 @@ class AsyncCogniteClient:
     def __init__(self, config: ClientConfig | None = None) -> None:
         if (client_config := config or global_config.default_client_config) is None:
             raise ValueError(
-                "No ClientConfig has been provided, either pass it directly to AsyncCogniteClient "
-                "or set global_config.default_client_config."
+                "No ClientConfig has been provided, either pass it directly to the client on "
+                "initialization or set global_config.default_client_config."
             )
         else:
             self._config = client_config
@@ -147,7 +147,7 @@ class AsyncCogniteClient:
         client_name: str | None = None,
     ) -> AsyncCogniteClient:
         """
-        Create a AsyncCogniteClient with default configuration.
+        Create an AsyncCogniteClient with default configuration.
 
         The default configuration creates the URLs based on the project and cluster:
 
@@ -160,7 +160,7 @@ class AsyncCogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            AsyncCogniteClient: A AsyncCogniteClient instance with default configurations.
+            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
         return cls(ClientConfig.default(project, cdf_cluster, credentials, client_name=client_name))
 
@@ -175,7 +175,7 @@ class AsyncCogniteClient:
         client_name: str | None = None,
     ) -> AsyncCogniteClient:
         """
-        Create a AsyncCogniteClient with default configuration using a client credentials flow.
+        Create an AsyncCogniteClient with default configuration using a client credentials flow.
 
         The default configuration creates the URLs based on the project and cluster:
 
@@ -192,11 +192,9 @@ class AsyncCogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            AsyncCogniteClient: A AsyncCogniteClient instance with default configurations.
+            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
-
         credentials = OAuthClientCredentials.default_for_azure_ad(tenant_id, client_id, client_secret, cdf_cluster)
-
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod
@@ -209,7 +207,7 @@ class AsyncCogniteClient:
         client_name: str | None = None,
     ) -> AsyncCogniteClient:
         """
-        Create a AsyncCogniteClient with default configuration using the interactive flow.
+        Create an AsyncCogniteClient with default configuration using the interactive flow.
 
         The default configuration creates the URLs based on the tenant_id and cluster:
 
@@ -225,7 +223,7 @@ class AsyncCogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            AsyncCogniteClient: A AsyncCogniteClient instance with default configurations.
+            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
         credentials = OAuthInteractive.default_for_azure_ad(tenant_id, client_id, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
@@ -244,7 +242,7 @@ class AsyncCogniteClient:
 
             Create a cognite client object from a dictionary input:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import AsyncCogniteClient
                 >>> import os
                 >>> config = {
                 ...     "client_name": "abcd",

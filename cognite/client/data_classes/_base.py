@@ -103,7 +103,7 @@ class _WithClientMixin:
             self.__cognite_client = value
         else:
             raise AttributeError(
-                "Can't set the AsyncCogniteClient reference to anything else than a AsyncCogniteClient instance or None"
+                "Can't set the AsyncCogniteClient reference to anything else than an AsyncCogniteClient instance or None"
             )
 
     def _get_cognite_client(self) -> AsyncCogniteClient | None:
