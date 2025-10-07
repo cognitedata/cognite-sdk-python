@@ -3,7 +3,7 @@ import random
 import re
 import time
 import uuid
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
@@ -25,7 +25,7 @@ from cognite.client.data_classes.geospatial import (
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._importing import local_import
-from tests.utils import get_or_raise, set_request_limit
+from tests.utils import get_or_raise
 
 FIXED_SRID = 121111 + random.randint(0, 1_000)
 
@@ -619,12 +619,16 @@ class TestGeospatialAPI:
         assert res[0].external_id == test_feature.external_id
 
     def test_list(
-        self, cognite_client: CogniteClient, test_feature_type: FeatureType, test_feature_list: FeatureList
+        self,
+        cognite_client: CogniteClient,
+        test_feature_type: FeatureType,
+        test_feature_list: FeatureList,
+        set_request_limit: Callable,
     ) -> None:
-        with set_request_limit(cognite_client.geospatial, 2):
-            res = cognite_client.geospatial.list_features(
-                feature_type_external_id=test_feature_type.external_id, properties={"externalId": {}}, limit=4
-            )
+        set_request_limit(cognite_client.geospatial, 2)
+        res = cognite_client.geospatial.list_features(
+            feature_type_external_id=test_feature_type.external_id, properties={"externalId": {}}, limit=4
+        )
 
         assert len(res) == 4
         df = res.to_pandas()
