@@ -132,24 +132,19 @@ class SimulationRunWrite(SimulationRunCore):
         log_severity: str | None = None,
         inputs: list[SimulationInputOverride] | None = None,
     ) -> None:
-        # Validate that either routine_external_id OR (routine_revision_external_id + model_revision_external_id) is provided
-        param_error = ValueError(
-            "Must specify either 'routine_external_id' alone, or both "
-            "'routine_revision_external_id' and 'model_revision_external_id' together."
-        )
-
-        is_routine_mode = (
-            routine_external_id is not None
-            and routine_revision_external_id is None
-            and model_revision_external_id is None
-        )
+        is_routine_mode = routine_external_id and not routine_revision_external_id and not model_revision_external_id
         is_revision_mode = (
-            routine_external_id is None
+            not routine_external_id
             and routine_revision_external_id is not None
             and model_revision_external_id is not None
         )
 
+        # Validate that either routine_external_id OR (routine_revision_external_id + model_revision_external_id) is provided
         if not (is_routine_mode or is_revision_mode):
+            param_error = ValueError(
+                "Must specify either 'routine_external_id' alone, or both "
+                "'routine_revision_external_id' and 'model_revision_external_id' together."
+            )
             raise param_error
 
         super().__init__(

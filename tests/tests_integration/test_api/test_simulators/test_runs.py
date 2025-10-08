@@ -7,7 +7,6 @@ import pytest
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes import TimestampRange
 from cognite.client.data_classes.simulators.filters import SimulationRunsSort
-from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevision
 from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
     SimulationOutput,
