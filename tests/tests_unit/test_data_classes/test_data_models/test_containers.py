@@ -44,6 +44,51 @@ class TestContainerProperty:
         actual = ContainerProperty.load(data).dump(camel_case=True)
         assert data == actual
 
+    @pytest.mark.parametrize("as_apply", [False, True])
+    @pytest.mark.parametrize(
+        "data",
+        [
+            {
+                "type": {"type": "direct", "list": False},
+                "nullable": False,
+                "constraintState": {"nullability": "current"},
+                "immutable": False,
+            },
+            {
+                "type": {"type": "int32", "list": True, "maxListSize": 10},
+                "immutable": False,
+                "nullable": False,
+                "constraintState": {"maxListSize": "pending", "nullability": "current"},
+            },
+            {
+                "type": {"type": "text", "list": True, "collation": "ucs_basic", "maxTextSize": 10, "maxListSize": 20},
+                "immutable": False,
+                "nullable": True,
+                "constraintState": {"maxTextSize": "failed", "maxListSize": "pending"},
+            },
+        ],
+    )
+    def test_load_dump_constraint_state(self, data: dict, as_apply: bool) -> None:
+        cp = ContainerProperty.load(data)
+        assert cp.constraint_state is not None
+        if not cp.nullable:
+            assert cp.constraint_state.nullability == "current"
+        else:
+            assert cp.constraint_state.nullability is None
+        if isinstance(cp.type, data_types.ListablePropertyType) and cp.type.max_list_size:
+            assert cp.constraint_state.max_list_size == "pending"
+        else:
+            assert cp.constraint_state.max_list_size is None
+        if isinstance(cp.type, data_types.Text) and cp.type.max_text_size:
+            assert cp.constraint_state.max_text_size == "failed"
+        else:
+            assert cp.constraint_state.max_text_size is None
+        if as_apply:
+            data.pop("constraintState")
+            assert data == cp.as_apply().dump()
+        else:
+            assert data == cp.dump()
+
     def test_dump_no_longer_camelCases_everything_when_used(self) -> None:
         cp = ContainerProperty(
             data_types.Enum(
@@ -78,6 +123,28 @@ class TestConstraint:
         assert isinstance(obj, UnknownCogniteObject)
         assert obj.dump() == data
 
+    @pytest.mark.parametrize("as_apply", [False, True])
+    @pytest.mark.parametrize(
+        "data",
+        [
+            {
+                "require": {"type": "container", "space": "mySpace", "externalId": "myExternalId"},
+                "constraintType": "requires",
+                "state": "current",
+            },
+            {"properties": ["name", "fullName"], "constraintType": "uniqueness", "state": "failed"},
+        ],
+    )
+    def test_load_dump_state(self, data: dict, as_apply: bool) -> None:
+        constraint = Constraint.load(data)
+        assert constraint.state is not None
+        assert constraint.state == data["state"]
+        if as_apply:
+            data.pop("state")
+            assert data == constraint.as_apply().dump()
+        else:
+            assert data == constraint.dump()
+
 
 class TestIndex:
     @pytest.mark.parametrize(
@@ -102,6 +169,24 @@ class TestIndex:
         actual = Index.load(data).dump(camel_case=True)
         data.pop("this-key-is-new-sooo-new")
         assert data == actual
+
+    @pytest.mark.parametrize("as_apply", [False, True])
+    @pytest.mark.parametrize(
+        "data",
+        [
+            {"properties": ["name", "fullName"], "indexType": "btree", "cursorable": True, "state": "current"},
+            {"properties": ["name", "fullName"], "indexType": "inverted", "state": "pending"},
+        ],
+    )
+    def test_load_dump_state(self, data: dict, as_apply: bool) -> None:
+        index = Index.load(data)
+        assert index.state is not None
+        assert index.state == data["state"]
+        if as_apply:
+            data.pop("state")
+            assert data == index.as_apply().dump()
+        else:
+            assert data == index.dump()
 
     @pytest.mark.parametrize(
         "data", [{"properties": ["name"], "indexType": "btree"}, {"properties": ["name"], "indexType": "inverted"}]
