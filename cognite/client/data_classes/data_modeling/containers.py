@@ -183,7 +183,7 @@ class Container(ContainerCore):
         return ContainerApply(
             space=self.space,
             external_id=self.external_id,
-            properties=self.properties,
+            properties={k: p.as_apply() for k, p in self.properties.items()},
             description=self.description,
             name=self.name,
             used_for=self.used_for,
@@ -237,6 +237,28 @@ class _ContainerFilter(CogniteFilter):
 
 
 @dataclass(frozen=True)
+class PropertyConstraintState(CogniteObject):
+    nullability: Literal["current", "failed", "pending"] | None = None
+    max_list_size: Literal["current", "failed", "pending"] | None = None
+    max_text_size: Literal["current", "failed", "pending"] | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            nullability=resource.get("nullability"),
+            max_list_size=resource.get("maxListSize"),
+            max_text_size=resource.get("maxTextSize"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, str]:
+        output = {}
+        for key in ["nullability", "max_list_size", "max_text_size"]:
+            if (value := getattr(self, key)) is not None:
+                output[to_camel_case(key) if camel_case else key] = value
+        return output
+
+
+@dataclass(frozen=True)
 class ContainerProperty(CogniteObject):
     type: PropertyType
     nullable: bool = True
@@ -245,6 +267,7 @@ class ContainerProperty(CogniteObject):
     default_value: str | int | float | bool | dict | None = None
     description: str | None = None
     immutable: bool = False
+    constraint_state: PropertyConstraintState | None = field(default=None, init=False)
 
     def __post_init__(self) -> None:
         # We allow passing e.g. Int32 instead of Int32():
@@ -259,7 +282,7 @@ class ContainerProperty(CogniteObject):
             type_: PropertyType = DirectRelation.load(resource["type"])
         else:
             type_ = PropertyType.load(resource["type"])
-        return cls(
+        prop = cls(
             type=type_,
             # If nothing is specified, we will pass through null values
             nullable=resource.get("nullable"),  # type: ignore[arg-type]
@@ -269,6 +292,13 @@ class ContainerProperty(CogniteObject):
             description=resource.get("description"),
             immutable=resource.get("immutable", False),
         )
+        if (constraint_state := resource.get("constraintState")) is not None:
+            object.__setattr__(prop, "constraint_state", PropertyConstraintState._load(constraint_state))
+        return prop
+
+    def as_apply(self) -> Self:
+        # dataclasses.replace does not copy fields with init=False
+        return dataclasses.replace(self)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
@@ -278,6 +308,8 @@ class ContainerProperty(CogniteObject):
         for key in ["nullable", "auto_increment", "name", "default_value", "description"]:
             if (value := getattr(self, key)) is not None:
                 output[to_camel_case(key) if camel_case else key] = value
+        if self.constraint_state is not None:
+            output["constraintState" if camel_case else "constraint_state"] = self.constraint_state.dump(camel_case)
         return output
 
 
