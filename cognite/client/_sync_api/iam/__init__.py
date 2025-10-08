@@ -15,6 +15,7 @@ from cognite.client._sync_api.iam.groups import SyncGroupsAPI
 from cognite.client._sync_api.iam.security_categories import SyncSecurityCategoriesAPI
 from cognite.client._sync_api.iam.sessions import SyncSessionsAPI
 from cognite.client._sync_api.iam.token import SyncTokenAPI
+from cognite.client._sync_api.org_apis.principals import SyncPrincipalsAPI
 from cognite.client._sync_api.user_profiles import SyncUserProfilesAPI
 from cognite.client.data_classes.capabilities import (
     Capability,
@@ -34,6 +35,7 @@ class SyncIAMAPI:
         self.security_categories = SyncSecurityCategoriesAPI(async_client)
         self.sessions = SyncSessionsAPI(async_client)
         self.user_profiles = SyncUserProfilesAPI(async_client)
+        self.principals = SyncPrincipalsAPI(async_client)
         self.token = SyncTokenAPI(async_client)
 
     def verify_capabilities(
