@@ -231,9 +231,38 @@ class SimulatorRoutinesAPI(APIClient):
             filter=routines_filter.dump(),
         )
 
+    @overload
     def run(
         self,
+        *,
         routine_external_id: str,
+        inputs: Sequence[SimulationInputOverride] | None = None,
+        run_time: int | None = None,
+        queue: bool | None = None,
+        log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
+        wait: bool = True,
+        timeout: float = 60,
+    ) -> SimulationRun: ...
+
+    @overload
+    def run(
+        self,
+        *,
+        routine_revision_external_id: str,
+        model_revision_external_id: str,
+        inputs: Sequence[SimulationInputOverride] | None = None,
+        run_time: int | None = None,
+        queue: bool | None = None,
+        log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
+        wait: bool = True,
+        timeout: float = 60,
+    ) -> SimulationRun: ...
+
+    def run(
+        self,
+        routine_external_id: str | None = None,
+        routine_revision_external_id: str | None = None,
+        model_revision_external_id: str | None = None,
         inputs: Sequence[SimulationInputOverride] | None = None,
         run_time: int | None = None,
         queue: bool | None = None,
@@ -243,10 +272,17 @@ class SimulatorRoutinesAPI(APIClient):
     ) -> SimulationRun:
         """`Run a simulation <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
 
-        Run a simulation for a given simulator routine.
+        Run a simulation for a given simulator routine. Supports two modes:
+        1. By routine external ID only
+        2. By routine revision external ID + model revision external ID
 
         Args:
-            routine_external_id (str): External id of the simulator routine to run
+            routine_external_id (str | None): External id of the simulator routine to run.
+                Cannot be specified together with routine_revision_external_id and model_revision_external_id.
+            routine_revision_external_id (str | None): External id of the simulator routine revision to run.
+                Must be specified together with model_revision_external_id.
+            model_revision_external_id (str | None): External id of the simulator model revision.
+                Must be specified together with routine_revision_external_id.
             inputs (Sequence[SimulationInputOverride] | None): List of input overrides
             run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
             queue (bool | None): Queue the simulation run when connector is down.
@@ -258,17 +294,25 @@ class SimulatorRoutinesAPI(APIClient):
             SimulationRun: Created simulation run
 
         Examples:
-            Create new simulation run:
+            Create new simulation run using routine external ID:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> run = client.simulators.routines.run(
                 ...     routine_external_id="routine1",
                 ...     log_severity="Debug"
                 ... )
+
+            Create new simulation run using routine and model revision external IDs:
+                >>> run = client.simulators.routines.run(
+                ...     routine_revision_external_id="routine_revision1",
+                ...     model_revision_external_id="model_revision1",
+                ... )
         """
         self._warning.warn()
         run_object = SimulationRunWrite(
             routine_external_id=routine_external_id,
+            routine_revision_external_id=routine_revision_external_id,
+            model_revision_external_id=model_revision_external_id,
             inputs=list(inputs) if inputs is not None else None,
             run_time=run_time,
             queue=queue,
