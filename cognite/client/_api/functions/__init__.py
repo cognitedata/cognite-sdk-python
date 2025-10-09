@@ -696,11 +696,10 @@ def get_handle_function_node(file_content: str) -> ast.FunctionDef | None:
     since Cognite Functions require directly callable entry points.
 
     Args:
-        file_content: The Python source code as a string
+        file_content (str): The Python source code as a string
 
     Returns:
-        The AST node of the last top-level 'handle' function, or None if not found or if
-        the file is not a valid Python file.
+        ast.FunctionDef | None: The AST node of the last top-level 'handle' function, or None if not found or if the file is not a valid Python file.
     """
     try:
         tree = ast.parse(file_content)
