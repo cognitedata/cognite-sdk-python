@@ -396,8 +396,10 @@ async def execute_async_tasks_with_fail_fast(tasks: list[AsyncSDKTask]) -> Tasks
 
 
 async def execute_async_tasks(tasks: list[AsyncSDKTask], fail_fast: bool = False) -> TasksSummary:
-    assert tasks, "no tasks to execute"
-    if fail_fast:
+    if not tasks:
+        return TasksSummary([], successful_tasks=[], unsuccessful_tasks=[], exceptions=[])
+
+    elif fail_fast:
         return await execute_async_tasks_with_fail_fast(tasks)
 
     await asyncio.wait([task.schedule() for task in tasks], return_when=asyncio.ALL_COMPLETED)
