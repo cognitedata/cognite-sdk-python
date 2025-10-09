@@ -5,13 +5,15 @@ from functools import cached_property
 from urllib.parse import urljoin
 
 from cognite.client._api_client import APIClient
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteOrganizationError
+from cognite.client.utils._async_helpers import run_sync
 
 
 class OrgAPIClient(APIClient, ABC):
     _AUTH_URL = "https://auth.cognite.com"
 
-    @cached_property
+    # TODO: Code smell: _base_url_with_base_path calling _organization calling run_sync in an async-first SDK...
+    @property
     def _base_url_with_base_path(self) -> str:
         # The OrganizationAPI uses the auth_url as the base for these endpoints instead of the
         # base_url like the rest of the SDK.
@@ -22,15 +24,9 @@ class OrgAPIClient(APIClient, ABC):
     def _organization(self) -> str:
         # This is an internal endpoint, not part of the public API - and we call it manually to avoid
         # the overridden _base_url_with_base_path property:
-        from cognite.client.utils._concurrency import ConcurrencySettings
-
-        headers = self._configure_headers(additional_headers=None, api_subversion=self._api_subversion)
         full_url = urljoin(self._config.base_url, f"/api/{self._api_version}/projects/{self._config.project}")
-        executor = ConcurrencySettings._get_event_loop_executor()
-        response = executor.run_coro(self._http_client_with_retry("GET", url=full_url, headers=headers))
         try:
-            return response.raise_for_status().json()["organization"]
-        except Exception:
-            raise CogniteAPIError(
-                "Could not look-up organization", response.status_code, response.headers.get("x-request-id")
-            )
+            response = run_sync(self._request("GET", full_url=full_url, include_cdf_headers=True))
+            return response.json()["organization"]
+        except Exception as err:
+            raise CogniteOrganizationError from err
