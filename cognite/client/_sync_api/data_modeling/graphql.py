@@ -7,15 +7,12 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from cognite.client import AsyncCogniteClient
 from cognite.client.data_classes.data_modeling import DataModelIdentifier
 from cognite.client.data_classes.data_modeling.graphql import DMLApplyResult
 from cognite.client.utils._async_helpers import run_sync
-
-if TYPE_CHECKING:
-    pass
 
 
 class SyncDataModelingGraphQLAPI:

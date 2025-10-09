@@ -8,7 +8,6 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -18,9 +17,6 @@ from cognite.client.data_classes import (
     TransformationJobMetricList,
 )
 from cognite.client.utils._async_helpers import run_sync
-
-if TYPE_CHECKING:
-    pass
 
 
 class SyncTransformationJobsAPI:

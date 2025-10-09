@@ -8,7 +8,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.events import SortSpec
@@ -26,9 +26,6 @@ from cognite.client.data_classes.events import EventPropertyLike, EventWrite
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    pass
 
 
 class SyncEventsAPI:

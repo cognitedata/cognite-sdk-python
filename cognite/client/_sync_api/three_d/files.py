@@ -7,13 +7,8 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from cognite.client import AsyncCogniteClient
 from cognite.client.utils._async_helpers import run_sync
-
-if TYPE_CHECKING:
-    pass
 
 
 class Sync3DFilesAPI:

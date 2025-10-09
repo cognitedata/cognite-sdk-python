@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, BinaryIO, Literal, overload
+from typing import Any, BinaryIO, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -29,9 +29,6 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    pass
 
 
 class SyncFilesAPI:

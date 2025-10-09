@@ -8,14 +8,11 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from pathlib import Path
-from typing import IO, TYPE_CHECKING
+from typing import IO
 
 from cognite.client import AsyncCogniteClient
 from cognite.client.data_classes.documents import TemporaryLink
 from cognite.client.utils._async_helpers import run_sync
-
-if TYPE_CHECKING:
-    pass
 
 
 class SyncDocumentPreviewAPI:
