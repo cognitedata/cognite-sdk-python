@@ -986,7 +986,8 @@ class TagDetectionTaskOutput(WorkflowTaskOutput):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> TagDetectionTaskOutput:
-        return cls([TagDetectionJob.load(tagDetectionJob) for tagDetectionJob in data["jobs"]])
+        output = data["output"]
+        return cls([TagDetectionJob.load(tagDetectionJob) for tagDetectionJob in output["jobs"]])
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return {
