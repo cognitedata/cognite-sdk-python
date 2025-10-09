@@ -17,21 +17,18 @@ from contextlib import contextmanager
 from datetime import timedelta, timezone
 from pathlib import Path
 from types import UnionType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, get_args, get_origin, get_type_hints
+from typing import Any, TypeVar, get_args, get_origin, get_type_hints
+from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 import cognite.client.utils._auxiliary
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes import (
     DataPointSubscriptionWrite,
     EndTimeFilter,
     Relationship,
-    SequenceColumn,
-    SequenceColumnList,
-    SequenceData,
-    SequenceRow,
     SequenceRows,
     Transformation,
     filters,
@@ -47,6 +44,7 @@ from cognite.client.data_classes.datapoints import (
     _INT_AGGREGATES,
     _OBJECT_AGGREGATES,
     ALL_SORTED_DP_AGGS,
+    Aggregate,
     Datapoints,
     DatapointsArray,
 )
@@ -63,20 +61,28 @@ from cognite.client.data_classes.workflows import (
     WorkflowTaskOutput,
     WorkflowTaskParameters,
 )
-from cognite.client.testing import CogniteClientMock
-from cognite.client.utils import _json
-from cognite.client.utils._importing import local_import
+from cognite.client.testing import AsyncCogniteClientMock
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._text import random_string, to_snake_case
-
-if TYPE_CHECKING:
-    import pandas
-
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 T_Type = TypeVar("T_Type", bound=type)
 
-UNION_TYPES = {typing.Union, UnionType}
+UNION_TYPES = {typing.Union, UnionType}  # TODO: Can we remove UnionType now that 3.8 is dropped?
+
+
+def get_wrapped_async_client(client: CogniteClient) -> AsyncCogniteClient:
+    # We have a ton of tests for the sync client, but after we changed the main SDK client to async
+    # in major version 8, whenever we do some monkeypatching/patch.object with wraps etc. the
+    # sync client no longer has e.g. _post or similar, so we need a simple way to get the async client
+    # used by the sync client and then do (e.g.) patching on that instead.
+    return client._CogniteClient__async_client  # type: ignore[attr-defined]
+
+
+def get_url(api: APIClient, path: str = "") -> str:
+    """Test helper to get the full URL for a given API + path (mostly to improve readability)"""
+    return api._base_url_with_base_path + path
 
 
 def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Type]:
@@ -93,7 +99,7 @@ def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Typ
     """
     return sorted(
         filter(
-            lambda sub: sub.__module__.startswith("cognite.client"),
+            lambda sub: sub.__module__.startswith("cognite.client"),  # type: ignore[arg-type]
             cognite.client.utils._auxiliary.all_subclasses(base, exclude=exclude),
         ),
         key=str,
@@ -113,7 +119,7 @@ def all_concrete_subclasses(base: T_Type, exclude: set[type] | None = None) -> l
     ]
 
 
-def all_mock_children(mock, parent_name=()):
+def all_mock_children(mock: MagicMock, parent_name: tuple[str, ...] = ()) -> dict[str, MagicMock]:
     """Returns a dictionary with correct dotted names mapping to mocked classes."""
     dct = {".".join((*parent_name, k)): v for k, v in mock._mock_children.items()}
     for name, child in dct.copy().items():
@@ -121,7 +127,7 @@ def all_mock_children(mock, parent_name=()):
     return dct
 
 
-def get_api_class_by_attribute(cls_: object, parent_name=()) -> dict[str, type[APIClient]]:
+def get_api_class_by_attribute(cls_: object, parent_name: tuple[str, ...] = ()) -> dict[str, type[APIClient]]:
     available_apis: dict[str, type[APIClient]] = {}
     for attr, obj in cls_.__dict__.items():
         if attr.startswith("_") or not isinstance(obj, APIClient):
@@ -133,7 +139,7 @@ def get_api_class_by_attribute(cls_: object, parent_name=()) -> dict[str, type[A
 
 
 @contextmanager
-def rng_context(seed: int | str):
+def rng_context(seed: int | float | str) -> typing.Iterator[None]:
     """Temporarily override internal random state for deterministic behaviour without side-effects
 
     Idea stolen from pandas source `class RNGContext`.
@@ -171,7 +177,7 @@ def random_cognite_external_ids(n: int, str_len: int = 50) -> list[str]:
     return [random_string(str_len) for _ in range(n)]
 
 
-def random_granularity(granularities="smhd", lower_lim=1, upper_lim=100000):
+def random_granularity(granularities: str = "smhd", lower_lim: int = 1, upper_lim: int = 100000) -> str:
     gran = random.choice(granularities)
     upper = {"s": 120, "m": 120, "h": 100000, "d": 100000}
     unit = random.choice(range(max(lower_lim, 1), min(upper_lim, upper[gran]) + 1))
@@ -182,7 +188,12 @@ INTEGER_AGGREGATES = set(map(to_snake_case, _INT_AGGREGATES))
 OBJECT_AGGREGATES = set(map(to_snake_case, _OBJECT_AGGREGATES))
 
 
-def random_aggregates(n=None, exclude=None, exclude_integer_aggregates=False, exclude_object_aggregates=False):
+def random_aggregates(
+    n: int | None = None,
+    exclude: set[str] | None = None,
+    exclude_integer_aggregates: bool = False,
+    exclude_object_aggregates: bool = False,
+) -> list[Aggregate]:
     """Return n random aggregates in a list - or random (at least 1) if n is None.
     Accepts a container object of aggregates to `exclude`
     """
@@ -197,7 +208,7 @@ def random_aggregates(n=None, exclude=None, exclude_integer_aggregates=False, ex
     return random.sample(agg_lst, k=n)
 
 
-def random_gamma_dist_integer(inclusive_max, max_tries=100):
+def random_gamma_dist_integer(inclusive_max: int, max_tries: int = 100) -> int:
     # "Smaller integers are more likely"
     for _ in range(max_tries):
         i = 1 + math.floor(random.gammavariate(1, inclusive_max * 0.3))
@@ -207,15 +218,19 @@ def random_gamma_dist_integer(inclusive_max, max_tries=100):
 
 
 @contextmanager
-def set_max_workers(cognite_client, new):
-    old = cognite_client._config.max_workers
-    cognite_client._config.max_workers = new
-    yield
-    cognite_client._config.max_workers = old
+def set_max_workers(cognite_client: CogniteClient, new: int) -> typing.Iterator[None]:
+    from cognite.client import global_config
+
+    old = global_config.max_workers
+    global_config.max_workers = new
+    try:
+        yield
+    finally:
+        global_config.max_workers = old
 
 
 @contextmanager
-def tmp_set_envvar(envvar: str, value: str):
+def tmp_set_envvar(envvar: str, value: str) -> typing.Iterator[None]:
     old = os.getenv(envvar)
     os.environ[envvar] = value
     yield
@@ -225,99 +240,8 @@ def tmp_set_envvar(envvar: str, value: str):
         os.environ[envvar] = old
 
 
-def jsgz_load(s):
+def jsgz_load(s: Any) -> Any:
     return _json.loads(gzip.decompress(s).decode())
-
-
-@contextmanager
-def set_request_limit(client, limit):
-    limits = [
-        "_CREATE_LIMIT",
-        "_LIST_LIMIT",
-        "_RETRIEVE_LIMIT",
-        "_UPDATE_LIMIT",
-        "_DELETE_LIMIT",
-    ]
-
-    tmp = {lim: 0 for lim in limits}
-    for limit_name in limits:
-        if hasattr(client, limit_name):
-            tmp[limit_name] = getattr(client, limit_name)
-            setattr(client, limit_name, limit)
-    yield
-    for limit_name, limit_val in tmp.items():
-        if hasattr(client, limit_name):
-            setattr(client, limit_name, limit_val)
-
-
-def cdf_aggregate(
-    raw_df: pandas.DataFrame,
-    aggregate: Literal["average", "sum", "count"],
-    granularity: str,
-    is_step: bool | None = False,
-    raw_freq: str | None = None,
-) -> pandas.DataFrame:
-    """Aggregates the dataframe as CDF is doing it on the database layer.
-
-    **Motivation**: This is used in testing to verify that the correct aggregation is done with
-    on the client side when aggregating in given time zone.
-
-    Current assumptions:
-        * No step timeseries
-        * Uniform index.
-        * Known frequency of raw data.
-
-    Args:
-        raw_df (pd.DataFrame): Dataframe with the raw datapoints.
-        aggregate (str): Single aggregate to calculate, supported average, sum.
-        granularity (str): The granularity to aggregates at. e.g. '15s', '2h', '10d'.
-        is_step (bool): Whether to use stepwise or continuous interpolation.
-        raw_freq (str): The frequency of the raw data. If it is not given, it is attempted inferred from raw_df.
-    """
-    if is_step:
-        raise NotImplementedError
-
-    pd = cast(Any, local_import("pandas"))
-    granularity_pd = granularity.replace("m", "T")
-    grouping = raw_df.groupby(pd.Grouper(freq=granularity_pd))
-    if aggregate == "sum":
-        return grouping.sum()
-    elif aggregate == "count":
-        return grouping.count().astype("Int64")
-
-    # The average is calculated by the formula '1/(b-a) int_a^b f(t) dt' where f(t) is the continuous function
-    # This is weighted average of the sampled version of f(t)
-    np = cast(Any, local_import("numpy"))
-
-    def integrate_average(values: pandas.DataFrame) -> pandas.Series:
-        inner = (values.iloc[1:].values + values.iloc[:-1].values) / 2.0
-        res = inner.mean() if inner.shape[0] else np.nan
-        return pd.Series(res, index=values.columns)
-
-    freq = raw_freq or raw_df.index.inferred_freq
-    if freq is None:
-        raise ValueError("Failed to infer frequency raw data.")
-    if not freq[0].isdigit():
-        freq = f"1{freq}"
-
-    # When the frequency of the data is 1 hour and above, the end point is excluded.
-    freq = pd.Timedelta(freq)
-    if freq >= pd.Timedelta("1hour"):
-        return grouping.apply(integrate_average)
-
-    def integrate_average_end_points(values: pandas.Series) -> float:
-        dt = values.index[-1] - values.index[0]
-        scale = np.diff(values.index) / 2.0 / dt
-        return (scale * (values.values[1:] + values.values[:-1])).sum()
-
-    step = pd.Timedelta(granularity_pd) // freq
-
-    return (
-        raw_df.rolling(window=pd.Timedelta(granularity_pd), closed="both")
-        .apply(integrate_average_end_points)
-        .shift(-step)
-        .iloc[::step]
-    )
 
 
 T = TypeVar("T")
@@ -345,9 +269,11 @@ T_Object = TypeVar("T_Object")
 class FakeCogniteResourceGenerator:
     _error_msg: typing.ClassVar[str] = "Please extend this function to support generating fake data for this type"
 
-    def __init__(self, seed: int | None = None, cognite_client: CogniteClientMock | CogniteClient | None = None):
+    def __init__(
+        self, seed: int | None = None, async_client: AsyncCogniteClientMock | AsyncCogniteClient | None = None
+    ):
         self._random = random.Random(seed)
-        self._cognite_client = cognite_client or CogniteClientMock()
+        self._async_client = async_client or AsyncCogniteClientMock()
 
     def create_instance(self, resource_cls: type[T_Object], skip_defaulted_args: bool = False) -> T_Object:
         if abc.ABC in resource_cls.__bases__:
@@ -358,7 +284,7 @@ class FakeCogniteResourceGenerator:
 
         signature = inspect.signature(resource_cls.__init__)
         try:
-            type_hint_by_name = get_type_hints(resource_cls.__init__, localns=self._type_checking)
+            type_hint_by_name: Mapping[str, Any] = get_type_hints(resource_cls.__init__, localns=self._type_checking)  # type: ignore[arg-type]
         except TypeError:
             # Python 3.10 Type hints cannot be evaluated with get_type_hints,
             # ref https://stackoverflow.com/questions/66006087/how-to-use-typing-get-type-hints-with-pep585-in-python3-8
@@ -435,23 +361,10 @@ class FakeCogniteResourceGenerator:
             keyword_arguments["columns"] = keyword_arguments["columns"][:1]
             for row in keyword_arguments["rows"]:
                 row.values = row.values[:1]
-        elif resource_cls is SequenceData:
-            if skip_defaulted_args:
-                # At least external_id or id must be set
-                keyword_arguments["external_id"] = "my_sequence"
-                keyword_arguments["rows"] = [SequenceRow(row_number=1, values=[1])]
-                keyword_arguments["columns"] = SequenceColumnList([SequenceColumn("my_column")])
-            else:
-                # All row values must match the number of columns
-                keyword_arguments.pop("rows", None)
-                keyword_arguments["columns"] = keyword_arguments["columns"][:1]
-                keyword_arguments["row_numbers"] = keyword_arguments["row_numbers"][:1]
-                keyword_arguments["values"] = keyword_arguments["values"][:1]
-                keyword_arguments["values"][0] = keyword_arguments["values"][0][:1]
         elif resource_cls is EndTimeFilter:
             # EndTimeFilter requires either is null or (max and/or min)
             keyword_arguments.pop("is_null", None)
-        elif resource_cls is Transformation and not skip_defaulted_args:
+        elif resource_cls is Transformation:
             # schedule and jobs must match external id and id
             keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
             keyword_arguments["schedule"].id = keyword_arguments["id"]
@@ -503,7 +416,7 @@ class FakeCogniteResourceGenerator:
         import numpy as np
 
         if isinstance(type_, typing.ForwardRef):
-            type_ = type_._evaluate(globals(), self._type_checking())
+            type_ = type_._evaluate(globals(), self._type_checking())  # type: ignore[call-arg]
 
         container_type = get_origin(type_)
         is_container = container_type is not None
@@ -564,7 +477,9 @@ class FakeCogniteResourceGenerator:
         elif type_ is dict:
             return {self._random_string(10): self._random_string(10) for _ in range(self._random.randint(1, 3))}
         elif type_ is CogniteClient:
-            return self._cognite_client
+            raise NotImplementedError("Did you mean to use the AsyncCogniteClient?")
+        elif type_ is AsyncCogniteClient:
+            return self._async_client
         elif type_ is ZoneInfo:
             # Special case for ZoneInfo - provide a default timezone
             return ZoneInfo("UTC")
@@ -587,7 +502,7 @@ class FakeCogniteResourceGenerator:
                     implementations.remove(LegacyCapability)
             if type_ is WorkflowTaskOutput:
                 # For Workflow Output has to match the input type
-                selected = FunctionTaskOutput
+                selected: type = FunctionTaskOutput
             elif type_ is WorkflowTaskParameters:
                 selected = FunctionTaskParameters
             else:
@@ -625,12 +540,13 @@ class FakeCogniteResourceGenerator:
         import numpy as np
         import numpy.typing as npt
 
-        from cognite.client import CogniteClient
+        from cognite.client import AsyncCogniteClient, CogniteClient
 
         return {
             "ContainerId": ContainerId,
             "ViewId": ViewId,
             "CogniteClient": CogniteClient,
+            "AsyncCogniteClient": AsyncCogniteClient,
             "NumpyDatetime64NSArray": npt.NDArray[np.datetime64],
             "NumpyUInt32Array": npt.NDArray[np.uint32],
             "NumpyInt64Array": npt.NDArray[np.int64],
@@ -640,7 +556,7 @@ class FakeCogniteResourceGenerator:
 
     @classmethod
     def _get_type_hints_3_10(
-        cls, resource_module_vars: dict[str, Any], signature310: inspect.Signature, local_vars: dict[str, Any]
+        cls, resource_module_vars: dict[str, Any], signature310: inspect.Signature, local_vars: Mapping[str, Any]
     ) -> dict[str, Any]:
         return {
             name: cls._create_type_hint_3_10(parameter.annotation, resource_module_vars, local_vars)
@@ -650,7 +566,7 @@ class FakeCogniteResourceGenerator:
 
     @classmethod
     def _create_type_hint_3_10(
-        cls, annotation: str, resource_module_vars: dict[str, Any], local_vars: dict[str, Any]
+        cls, annotation: str, resource_module_vars: dict[str, Any], local_vars: Mapping[str, Any]
     ) -> Any:
         if annotation.endswith(" | None"):
             annotation = annotation[:-7]
@@ -660,7 +576,7 @@ class FakeCogniteResourceGenerator:
         except TypeError:
             # Python 3.10 Type Hint
             if annotation.startswith("Sequence[") and annotation.endswith("]"):
-                return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]
+                return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]  # type: ignore[misc]
 
 
 def get_or_raise(obj: T | None) -> T:

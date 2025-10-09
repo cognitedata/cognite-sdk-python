@@ -20,25 +20,17 @@ __all__ = ["JSONDecodeError", "convert_nonfinite_float_to_str", "convert_to_floa
 
 
 def _default_json_encoder(obj: Any) -> Any:
-    if isinstance(obj, numbers.Integral):
-        return int(obj)
-    if isinstance(obj, (Decimal, numbers.Real)):
-        return float(obj)
-    from cognite.client.data_classes._base import CogniteObject
+    from cognite.client.data_classes._base import CogniteFilter, CogniteObject, CogniteResourceList
 
-    if isinstance(obj, CogniteObject):
-        return obj.dump(camel_case=True)
-
-    from cognite.client.data_classes._base import CogniteFilter
-
-    if isinstance(obj, CogniteFilter):
-        return obj.dump(camel_case=True)
-
-    from cognite.client.data_classes._base import CogniteResourceList
-
-    if isinstance(obj, CogniteResourceList):
-        return obj.dump(camel_case=True)
-    raise TypeError(f"Object {obj} of type {obj.__class__} can't be serialized by the JSON encoder")
+    match obj:
+        case numbers.Integral():
+            return int(obj)
+        case Decimal() | numbers.Real():
+            return float(obj)
+        case CogniteObject() | CogniteFilter() | CogniteResourceList():
+            return obj.dump(camel_case=True)
+        case _:
+            raise TypeError(f"Object {obj} of type {obj.__class__} can't be serialized by the JSON encoder")
 
 
 def dumps(
@@ -84,4 +76,17 @@ def convert_nonfinite_float_to_str(value: float | str | None) -> float | str | N
         # Depending on numpy and python version, dict lookup may fail for NaN.. thanks IEEE :wink:
         if math.isnan(value):  # type: ignore [arg-type]
             return "NaN"
+        raise
+
+
+def dumps_no_nan_or_inf(obj: Any) -> str:
+    try:
+        return dumps(obj, allow_nan=False)
+    except ValueError as e:
+        # A lot of work to give a more human friendly error message when nans and infs are present:
+        msg = "Out of range float values are not JSON compliant"
+        if msg in str(e):  # exc. might e.g. contain an extra ": nan", depending on build (_json.make_encoder)
+            raise ValueError(f"{msg}. Make sure your data does not contain NaN(s) or +/- Inf!").with_traceback(
+                e.__traceback__
+            ) from None
         raise

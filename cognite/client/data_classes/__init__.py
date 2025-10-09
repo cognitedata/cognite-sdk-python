@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from cognite.client.data_classes._base import Geometry, HasExternalAndInternalId, HasExternalId, HasInternalId, HasName
-from cognite.client.data_classes.aggregations import CountAggregate
 from cognite.client.data_classes.annotations import (
     Annotation,
     AnnotationFilter,
@@ -28,6 +27,7 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingModel,
     EntityMatchingModelList,
     EntityMatchingModelUpdate,
+    EntityMatchingPredictionResult,
     JobStatus,
 )
 from cognite.client.data_classes.data_sets import (
@@ -50,7 +50,6 @@ from cognite.client.data_classes.datapoints import (
 )
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
-    DataPointSubscriptionCreate,
     DatapointSubscriptionList,
     DataPointSubscriptionUpdate,
     DataPointSubscriptionWrite,
@@ -185,7 +184,6 @@ from cognite.client.data_classes.sequences import (
     SequenceColumnUpdate,
     SequenceColumnWrite,
     SequenceColumnWriteList,
-    SequenceData,
     SequenceFilter,
     SequenceList,
     SequenceRow,
@@ -202,19 +200,6 @@ from cognite.client.data_classes.shared import (
     GeoLocationFilter,
     GeometryFilter,
     TimestampRange,
-)
-from cognite.client.data_classes.templates import (
-    ConstantResolver,
-    Source,
-    TemplateGroup,
-    TemplateGroupList,
-    TemplateGroupVersion,
-    TemplateGroupVersionList,
-    TemplateInstance,
-    TemplateInstanceList,
-    TemplateInstanceUpdate,
-    View,
-    ViewResolver,
 )
 from cognite.client.data_classes.three_d import (
     BoundingBox3D,
@@ -306,7 +291,6 @@ from cognite.client.data_classes.workflows import (
     WorkflowTask,
     WorkflowTaskExecution,
     WorkflowTrigger,
-    WorkflowTriggerCreate,
     WorkflowTriggerList,
     WorkflowTriggerRun,
     WorkflowTriggerRunList,
@@ -344,7 +328,6 @@ __all__ = [
     "CDFTaskOutput",
     "CDFTaskParameters",
     "ClientCredentials",
-    "ConstantResolver",
     "ContextualizationJob",
     "ContextualizationJobList",
     "ContextualizationJobType",
@@ -352,9 +335,7 @@ __all__ = [
     "CoordinateReferenceSystemList",
     "CoordinateReferenceSystemWrite",
     "CoordinateReferenceSystemWriteList",
-    "CountAggregate",
     "CreatedSession",
-    "DataPointSubscriptionCreate",
     "DataPointSubscriptionUpdate",
     "DataPointSubscriptionWrite",
     "DataSet",
@@ -386,6 +367,7 @@ __all__ = [
     "EntityMatchingModel",
     "EntityMatchingModelList",
     "EntityMatchingModelUpdate",
+    "EntityMatchingPredictionResult",
     "Event",
     "EventFilter",
     "EventList",
@@ -490,7 +472,6 @@ __all__ = [
     "SequenceColumnUpdate",
     "SequenceColumnWrite",
     "SequenceColumnWriteList",
-    "SequenceData",
     "SequenceFilter",
     "SequenceList",
     "SequenceRow",
@@ -503,7 +484,6 @@ __all__ = [
     "SessionList",
     "SimulationTaskOutput",
     "SimulationTaskParameters",
-    "Source",
     "SourceFile",
     "StatusCode",
     "SubworkflowTaskParameters",
@@ -511,13 +491,6 @@ __all__ = [
     "TableList",
     "TableWrite",
     "TableWriteList",
-    "TemplateGroup",
-    "TemplateGroupList",
-    "TemplateGroupVersion",
-    "TemplateGroupVersionList",
-    "TemplateInstance",
-    "TemplateInstanceList",
-    "TemplateInstanceUpdate",
     "ThreeDAssetMapping",
     "ThreeDAssetMappingList",
     "ThreeDAssetMappingWrite",
@@ -570,8 +543,6 @@ __all__ = [
     "TransformationWriteList",
     "UserProfile",
     "UserProfileList",
-    "View",
-    "ViewResolver",
     "Workflow",
     "WorkflowDefinition",
     "WorkflowDefinitionUpsert",
@@ -582,7 +553,6 @@ __all__ = [
     "WorkflowTask",
     "WorkflowTaskExecution",
     "WorkflowTrigger",
-    "WorkflowTriggerCreate",
     "WorkflowTriggerList",
     "WorkflowTriggerRun",
     "WorkflowTriggerRunList",

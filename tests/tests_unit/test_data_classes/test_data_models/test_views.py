@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from cognite.client.data_classes._base import UnknownCogniteObject
 from cognite.client.data_classes.data_modeling import View, ViewApply, ViewId
 from cognite.client.data_classes.data_modeling.views import MappedProperty, ViewProperty, ViewPropertyApply

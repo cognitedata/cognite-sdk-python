@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import pytest
 
-from cognite.client._cognite_client import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.data_classes.simulators.simulators import Simulator
 
 

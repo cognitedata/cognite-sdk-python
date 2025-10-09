@@ -21,7 +21,7 @@ from cognite.client.data_classes.labels import Label, LabelDefinition
 from cognite.client.utils._identifier import InstanceId
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class DocumentsGeoJsonGeometry(CogniteObject):
@@ -95,7 +95,7 @@ class DocumentsGeoJsonGeometry(CogniteObject):
 
     @classmethod
     def _load(
-        cls, raw_geometry: dict[str, Any], cognite_client: CogniteClient | None = None
+        cls, raw_geometry: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
     ) -> DocumentsGeoJsonGeometry:
         instance = cls(
             type=raw_geometry["type"],
@@ -130,7 +130,7 @@ class SourceFile(CogniteObject):
         dataset_id (int | None): The id if the dataset this file belongs to, if any.
         security_categories (list[int] | None): The security category IDs required to access this file.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value.
-        cognite_client (CogniteClient | None): No description.
+        cognite_client (AsyncCogniteClient | None): No description.
         **_ (Any): No description.
     """
 
@@ -148,7 +148,7 @@ class SourceFile(CogniteObject):
         dataset_id: int | None = None,
         security_categories: list[int] | None = None,
         metadata: dict[str, str] | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
         **_: Any,
     ) -> None:
         self.name = name
@@ -163,10 +163,10 @@ class SourceFile(CogniteObject):
         self.dataset_id = dataset_id
         self.security_categories = security_categories
         self.metadata: dict[str, str] = metadata or {}
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SourceFile:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> SourceFile:
         return cls(
             name=resource["name"],
             hash=resource.get("hash"),
@@ -220,7 +220,7 @@ class Document(CogniteResource):
         asset_ids (list[int] | None): The ids of any assets referred to in the document.
         labels (list[Label | str | LabelDefinition] | None): The labels attached to the document.
         geo_location (DocumentsGeoJsonGeometry | None): The geolocation of the document.
-        cognite_client (CogniteClient | None): No description.
+        cognite_client (AsyncCogniteClient | None): No description.
         **_ (Any): No description.
     """
 
@@ -245,7 +245,7 @@ class Document(CogniteResource):
         asset_ids: list[int] | None = None,
         labels: list[Label | str | LabelDefinition] | None = None,
         geo_location: DocumentsGeoJsonGeometry | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
         **_: Any,
     ) -> None:
         self.id = id
@@ -267,10 +267,10 @@ class Document(CogniteResource):
         self.asset_ids: list[int] = asset_ids or []
         self.labels: list[Label] = Label._load_list(labels) or []
         self.geo_location = geo_location
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Document:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Document:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -333,7 +333,7 @@ class Highlight(CogniteObject):
         }
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(name=resource["name"], content=resource["content"])
 
 
@@ -353,7 +353,7 @@ class DocumentHighlight(CogniteResource):
     document: Document
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> DocumentHighlight:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> DocumentHighlight:
         return cls(
             highlight=Highlight._load(resource["highlight"]),
             document=Document._load(resource["document"]),

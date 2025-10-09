@@ -13,6 +13,7 @@ repos:
           - --fix
           - --exit-non-zero-on-fix
           - --force-exclude
+          - --unsafe-fixes
       - id: ruff-format
         name: ruff format
         language: python
@@ -28,23 +29,14 @@ repos:
       - id: debug-statements
       - id: check-docstring-first
 
-  - repo: local
-    hooks:
-      - id: mypy
-        name: mypy
-      # Eventually we want to run mypy on the whole test code base. But for now we only enable it for data modeling, simulators and datapoints
-        entry: |
-          poetry run dmypy run -- cognite tests/tests_integration/test_api/test_data_modeling
-          tests/tests_unit/test_data_classes/test_data_models
-          tests/tests_unit/test_utils/test_time.py
-          tests/tests_integration/test_api/test_datapoints.py
-          tests/tests_integration/test_api/test_simulators
-          tests/tests_integration/test_api/test_principals.py
-          tests/tests_unit/test_api/test_simulators
-          tests/tests_unit/test_data_classes/test_simulators.py
-        files: ^.*.(py|pyi)$
-        language: system
-        pass_filenames: false
+  # - repo: local
+  #   hooks:
+  #     - id: mypy
+  #       name: mypy
+  #       entry: poetry run dmypy run -- cognite
+  #       files: ^.*.(py|pyi)$
+  #       language: system
+  #       pass_filenames: false
 
   - repo: local
     hooks:

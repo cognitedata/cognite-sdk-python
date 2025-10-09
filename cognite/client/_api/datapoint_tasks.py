@@ -20,6 +20,7 @@ from typing import (
     cast,
     overload,
 )
+from zoneinfo import ZoneInfo
 
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 
@@ -43,12 +44,10 @@ from cognite.client.data_classes.datapoints import (
     MaxOrMinDatapoint,
     MinDatapoint,
     MinDatapointWithStatus,
-    _DatapointsPayloadItem,
 )
 from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_finite, is_unlimited
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._time import (
-    ZoneInfo,
     align_start_and_end_for_granularity,
     convert_timezone_to_str,
     granularity_to_ms,
@@ -161,11 +160,11 @@ class _FullDatapointsQuery:
         exp_type: type,
     ) -> list[DatapointsQuery]:
         user_queries: SequenceNotStr[int | str | NodeId | DatapointsQuery]
-        if isinstance(identifier, (dict, DatapointsQuery, exp_type)):
+        if isinstance(identifier, (DatapointsQuery, exp_type)):
             # Lazy - we postpone evaluation:
             user_queries = [identifier]
 
-        elif isinstance(identifier, SequenceNotStr):
+        elif is_sequence_not_str(identifier):
             # We use Sequence because we require an ordering of elements
             user_queries = identifier
         else:
@@ -177,13 +176,14 @@ class _FullDatapointsQuery:
             if isinstance(query, exp_type):
                 id_dct = {arg_name: query}
                 query = DatapointsQuery(**self.top_level_defaults, **id_dct)  # type: ignore [misc, arg-type]
-            elif isinstance(query, dict):
-                query = DatapointsQuery.from_dict({**self.top_level_defaults, **query}, id_type=arg_name)
 
             elif isinstance(query, DatapointsQuery):
                 if query.identifier.name() != arg_name:
-                    raise ValueError(f"DatapointsQuery passed by {arg_name} is missing required field {arg_name!r}")
-                query = DatapointsQuery.from_dict({**self.top_level_defaults, **query.dump()}, id_type=arg_name)
+                    raise ValueError(
+                        f"DatapointsQuery passed by {arg_name} is missing required field {arg_name!r}. "
+                        f"Did you mean to pass it by {query.identifier.name()}?"
+                    )
+                query = DatapointsQuery(**self.top_level_defaults | query.dump())
             else:
                 self._raise_on_wrong_ts_identifier_type(query, arg_name, exp_type)
 
@@ -596,7 +596,7 @@ class BaseDpsFetchSubtask:
             self.static_kwargs["timeZone"] = query.timezone
 
     @abstractmethod
-    def get_next_payload_item(self) -> _DatapointsPayloadItem: ...
+    def get_next_payload_item(self) -> dict[str, Any]: ...
 
     @abstractmethod
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None: ...
@@ -605,14 +605,14 @@ class BaseDpsFetchSubtask:
 class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
     """Fetches outside points and stores in parent"""
 
-    def get_next_payload_item(self) -> _DatapointsPayloadItem:
-        return _DatapointsPayloadItem(
-            start=self.start,
-            end=self.end,
-            limit=0,  # Not a bug; it just returns the outside points
-            includeOutsidePoints=True,
-            **self.static_kwargs,  # type: ignore [typeddict-item]
-        )
+    def get_next_payload_item(self) -> dict[str, Any]:
+        return {
+            "start": self.start,
+            "end": self.end,
+            "limit": 0,  # Not a bug; it just returns the outside points
+            "includeOutsidePoints": True,
+            **self.static_kwargs,
+        }
 
     def store_partial_result(self, res: DataPointListItem) -> None:
         # `Oneof` field `datapointType` can be either `numericDatapoints` or `stringDatapoints`
@@ -633,15 +633,15 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         self.next_cursor = first_cursor
         self.uses_cursor = self.parent.query.use_cursors
 
-    def get_next_payload_item(self) -> _DatapointsPayloadItem:
+    def get_next_payload_item(self) -> dict[str, Any]:
         remaining = self.parent.get_remaining_limit()
-        return _DatapointsPayloadItem(
-            start=self.next_start,
-            end=self.end,
-            limit=min(self.max_query_limit, remaining),
-            cursor=self.next_cursor,
-            **self.static_kwargs,  # type: ignore [typeddict-item]
-        )
+        return {
+            "start": self.next_start,
+            "end": self.end,
+            "limit": min(self.max_query_limit, remaining),
+            "cursor": self.next_cursor,
+            **self.static_kwargs,
+        }
 
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         if not self.parent.ts_info:

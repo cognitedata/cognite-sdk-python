@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from unittest.mock import MagicMock
+
 import pytest
 
 from cognite.client import ClientConfig, CogniteClient
@@ -8,10 +12,11 @@ from cognite.client.testing import CogniteClientMock, monkeypatch_cognite_client
 from tests.utils import all_mock_children, all_subclasses, get_api_class_by_attribute
 
 
-def test_ensure_all_apis_are_available_on_cognite_mock():
+def test_ensure_all_apis_are_available_on_cognite_mock() -> None:
     mocked_apis = all_mock_children(CogniteClientMock())
     available = {v.__class__ for v in mocked_apis.values()}
     # OrgAPIClient is a base API and should not mocked directly.
+    # TODO: what about all_concrete_subclasses?
     expected = set(all_subclasses(APIClient, exclude={OrgAPIClient}))
     # Any new APIs that have not been added to CogniteClientMock?
     assert not expected.difference(available), f"Missing APIs: {expected.difference(available)}"
@@ -19,8 +24,8 @@ def test_ensure_all_apis_are_available_on_cognite_mock():
     assert not available.difference(expected), f"Removed APIs: {available.difference(expected)}"
 
 
-def test_ensure_all_apis_use_equal_attr_paths_on_cognite_mock():
-    client = CogniteClient(ClientConfig(client_name="a", project="b", credentials="c"))
+def test_ensure_all_apis_use_equal_attr_paths_on_cognite_mock() -> None:
+    client = CogniteClient(ClientConfig(client_name="a", project="b", credentials="c"))  # type: ignore[arg-type]
     available_apis = {(attr, api_cls) for attr, api_cls in get_api_class_by_attribute(client).items()}
     mocked_apis = {(attr, api.__class__) for attr, api in all_mock_children(CogniteClientMock()).items()}
 
@@ -32,7 +37,7 @@ def test_ensure_all_apis_use_equal_attr_paths_on_cognite_mock():
 
 
 @pytest.mark.parametrize("api", list(all_mock_children(CogniteClientMock()).values()))
-def test_ensure_all_apis_are_specced_on_cognite_mock(api):
+def test_ensure_all_apis_are_specced_on_cognite_mock(api: MagicMock) -> None:
     # All APIs raise when trying to access a non-existing attribute:
     with pytest.raises(AttributeError):
         api.does_not_exist
@@ -47,12 +52,14 @@ def test_ensure_all_apis_are_specced_on_cognite_mock(api):
         api.does_not_exist = 42
 
 
-def test_cognite_client_accepts_arguments_during_and_after_mock():
+def test_cognite_client_accepts_arguments_during_and_after_mock() -> None:
     with monkeypatch_cognite_client():
         CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
     CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
 
 
-def test_client_mock_can_access_attributes_not_explicitly_defined_on_children():
-    c_mock = CogniteClientMock()
-    assert c_mock.config.max_workers
+# TODO: Hangs forever on AsyncCogniteClientMock :D
+# @pytest.mark.parametrize("mock_cls", [AsyncCogniteClientMock, CogniteClientMock])
+# def test_client_mock_can_access_attributes_not_explicitly_defined_on_children(mock_cls: type) -> None:
+#     c_mock = mock_cls()
+#     assert c_mock.config.max_workers

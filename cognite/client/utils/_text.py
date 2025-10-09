@@ -3,11 +3,25 @@ from __future__ import annotations
 import random
 import re
 import string
-from collections.abc import Iterator
+from collections.abc import Callable, Coroutine, Iterator
 from functools import lru_cache
-from typing import Any
+from typing import Any, TypeVar
 
 from cognite.client.utils.useful_types import SequenceNotStr
+
+# A TypeVar for the synchronous function being decorated. We can not use _T as return unfortunately
+# (the bound of a TypeVar cannot itself contain another TypeVar):
+_S = TypeVar("_S", bound=Callable[..., Any])
+
+
+def copy_doc_from_async(from_func: Callable[..., Coroutine[Any, Any, Any]]) -> Callable[[_S], _S]:
+    """Decorator factory to copy a docstring from an async function to a sync function"""
+
+    def decorator(to_func: _S) -> _S:
+        to_func.__doc__ = from_func.__doc__
+        return to_func
+
+    return decorator
 
 
 class DrawTables:
@@ -17,7 +31,7 @@ class DrawTables:
     TOPLINE = "\N{BOX DRAWINGS LIGHT DOWN AND HORIZONTAL}"
 
 
-def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + string.digits) -> str:
+def random_string(size: int = 100, sample_from: str = string.ascii_letters + string.digits) -> str:
     return "".join(random.choices(sample_from, k=size))
 
 

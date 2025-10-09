@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from abc import ABC, abstractmethod
 from collections import UserDict
 from collections.abc import Mapping, Sequence
@@ -26,7 +25,7 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
 
@@ -50,7 +49,7 @@ class SourceSelector(CogniteObject):
     def _load(
         cls,
         resource: dict[str, Any] | SourceSelector | ViewIdentifier | View,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> Self:
         if isinstance(resource, cls):
             return resource
@@ -101,7 +100,7 @@ class Select(CogniteObject):
         return output
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             sources=[SourceSelector.load(source) for source in resource.get("sources", [])],
             sort=[InstanceSort.load(s) for s in resource.get("sort", [])],
@@ -158,14 +157,6 @@ class Query(CogniteObject):
             output["cursors"] = dict(self.cursors.items())
         return output
 
-    @classmethod
-    def load_yaml(cls, data: str) -> Query:
-        warnings.warn(
-            "Query.load_yaml is deprecated and will be removed after Oct 2024, please use Query.load",
-            UserWarning,
-        )
-        return cls.load(data)
-
     def _validate_for_query(self) -> None:
         """Ensures that the Query object is valid for use in the query endpoint (not sync)."""
         for name, result_set_expression in self.with_.items():
@@ -179,7 +170,7 @@ class Query(CogniteObject):
             select._validate_for_sync(name)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         parameters = dict(resource["parameters"].items()) if "parameters" in resource else None
         cursors = dict(resource["cursors"].items()) if "cursors" in resource else None
         return cls(
@@ -195,7 +186,7 @@ class Query(CogniteObject):
 
 class ResultSetExpression(CogniteObject, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> ResultSetExpression:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ResultSetExpression:
         if "nodes" in resource:
             return NodeResultSetExpression._load(resource, cognite_client)
         elif "edges" in resource:
@@ -351,7 +342,7 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
         return None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         query_node = resource["nodes"]
         through = query_node.get("through")
         return cls(
@@ -452,7 +443,7 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
         self.post_sort = post_sort
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         query_edge = resource["edges"]
         term_flt = Filter.load(query_edge["terminationFilter"]) if "terminationFilter" in query_edge else None
         return cls(
@@ -605,7 +596,7 @@ class SetOperation(ResultSetExpression, ABC):
         self.limit = limit
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SetOperation:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> SetOperation:
         if "union" in resource:
             return Union._load(resource, cognite_client)
         elif "unionAll" in resource:
@@ -630,7 +621,7 @@ class Union(SetOperation):
         self.union = union
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Union:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Union:
         union = resource["union"]
         except_ = resource.get("except")
         return cls(
@@ -661,7 +652,7 @@ class UnionAll(SetOperation):
         self.union_all = union_all
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnionAll:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> UnionAll:
         union = resource["unionAll"]
         except_ = resource.get("except")
         return cls(
@@ -692,7 +683,7 @@ class Intersection(SetOperation):
         self.intersection = intersection
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Intersection:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Intersection:
         union = resource["intersection"]
         except_ = resource.get("except")
         return cls(

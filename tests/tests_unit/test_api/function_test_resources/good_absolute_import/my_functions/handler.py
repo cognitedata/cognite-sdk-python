@@ -1,5 +1,7 @@
-from shared.util import shared_func
+from __future__ import annotations
+
+from shared.util import shared_func  # type: ignore[import-not-found]
 
 
-def handle():
+def handle() -> int:
     return shared_func()
