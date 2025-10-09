@@ -31,7 +31,7 @@ from cognite.client.data_classes.annotation_types.images import (
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList, AnnotationType
 from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.exceptions import CogniteAPIError, ModelFailedException
+from cognite.client.exceptions import CogniteAPIError, CogniteModelFailedError
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
 from cognite.client.utils._text import convert_all_keys_to_snake_case, copy_doc_from_async, to_camel_case
@@ -127,7 +127,7 @@ class ContextualizationJob(CogniteResource, ABC):
             interval (float): Influence how often to poll status (seconds).
 
         Raises:
-            ModelFailedException: The model fit failed.
+            CogniteModelFailedError: The model fit failed.
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
@@ -137,7 +137,7 @@ class ContextualizationJob(CogniteResource, ABC):
             await asyncio.sleep(max(1, random.uniform(0, interval)))
 
         if JobStatus(self.status) is JobStatus.FAILED:
-            raise ModelFailedException(type(self).__name__, self.job_id, cast(str, self.error_message))
+            raise CogniteModelFailedError(type(self).__name__, self.job_id, cast(str, self.error_message))
 
     async def wait_for_result(self) -> dict[str, Any]:
         """Waits for the job to finish and returns the results."""
@@ -252,7 +252,7 @@ class EntityMatchingModel(CogniteResource):
             interval (int): Influence how often to poll status (seconds).
 
         Raises:
-            ModelFailedException: The model fit failed.
+            CogniteModelFailedError: The model fit failed.
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
@@ -264,7 +264,7 @@ class EntityMatchingModel(CogniteResource):
         if JobStatus(self.status) is JobStatus.FAILED:
             assert self.id is not None
             assert self.error_message is not None
-            raise ModelFailedException(type(self).__name__, self.id, self.error_message)
+            raise CogniteModelFailedError(type(self).__name__, self.id, self.error_message)
 
     @copy_doc_from_async(wait_for_completion_async)
     def wait_for_completion(self, timeout: int | None = None, interval: int = 10) -> None:
