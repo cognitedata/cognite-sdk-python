@@ -17,6 +17,13 @@ class CogniteException(Exception):
     pass
 
 
+class CogniteOrganizationError(CogniteException):
+    """Raised when we cannot determine the organization of the current project."""
+
+    def __str__(self) -> str:
+        return "Could not look-up organization"
+
+
 class CogniteProjectAccessError(CogniteException):
     """Raised when we get a 401 response from the API which means we don't have project access at all."""
 
