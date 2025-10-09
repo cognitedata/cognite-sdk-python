@@ -48,7 +48,12 @@ WorkflowStatus: TypeAlias = Literal["completed", "failed", "running", "terminate
 TagDetectionStatus: TypeAlias = Literal[
     "Queued",
     "Distributing",
+    "Distributed",
+    "Loading Entities",
+    "Loaded Entities",
     "Running",
+    "Detected",
+    "Annotated",
     "Collecting",
     "Completed",
     "Failed",
