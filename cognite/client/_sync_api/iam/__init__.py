@@ -1,6 +1,6 @@
 """
 ===============================================================================
-52768cea2c4f7f501c948101fb36a6b1
+4757d559b846e5066a596fd5502a1c79
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -38,16 +38,12 @@ class SyncIAMAPI:
         self.principals = SyncPrincipalsAPI(async_client)
         self.token = SyncTokenAPI(async_client)
 
-    def verify_capabilities(
-        self, desired_capabilities: ComparableCapability, ignore_allscope_meaning: bool = False
-    ) -> list[Capability]:
+    def verify_capabilities(self, desired_capabilities: ComparableCapability) -> list[Capability]:
         """
         Helper method to compare your current capabilities with a set of desired capabilities and return any missing.
 
         Args:
             desired_capabilities (ComparableCapability): List of desired capabilities to check against existing.
-            ignore_allscope_meaning (bool): Option on how to treat allScopes. When True, this function will return
-                e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. Defaults to False.
 
         Returns:
             list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
@@ -85,8 +81,4 @@ class SyncIAMAPI:
                 >>> from cognite.client.data_classes.capabilities import Capability
                 >>> acls = [Capability.load(cap) for cap in to_check]
         """
-        return run_sync(
-            self.__async_client.iam.verify_capabilities(
-                desired_capabilities=desired_capabilities, ignore_allscope_meaning=ignore_allscope_meaning
-            )
-        )
+        return run_sync(self.__async_client.iam.verify_capabilities(desired_capabilities=desired_capabilities))
