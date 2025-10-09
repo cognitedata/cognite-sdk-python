@@ -29,16 +29,10 @@ class PrincipalsAPI(OrgAPIClient):
                 >>> res = client.iam.principals.me()
         """
         # the /me endpoint is not using the /orgs/{org} base path, so we have to construct the URL manually
-        path = f"{self._RESOURCE_PATH}/me"
-        if self._api_version:
-            path = f"/api/{self._api_version}{path}"
-
+        path = f"/api/{self._api_version}{self._RESOURCE_PATH}/me"
         full_url = urljoin(self._AUTH_URL, path)
-        headers = self._configure_headers(
-            additional_headers=self._config.headers.copy(),
-            api_subversion=self._api_subversion,
-        )
-        response = await self._http_client_with_retry("GET", url=full_url, headers=headers)
+
+        response = await self._get(full_url=full_url)
         return Principal._load(response.json())
 
     @overload

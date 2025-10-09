@@ -216,9 +216,13 @@ class BasicAsyncAPIClient:
         content: str | bytes | Iterable[bytes] | None = None,
         headers: dict[str, Any] | None = None,
         timeout: float | None = None,
+        api_subversion: str | None = None,
+        include_cdf_headers: bool = False,
     ) -> httpx.Response:
         """Make a request to something that is outside Cognite Data Fusion"""
         client = self._select_async_http_client(method in {"GET", "PUT", "HEAD"})
+        if include_cdf_headers:
+            headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         try:
             res = await client(
                 method, full_url, content=content, headers=headers, timeout=timeout or self._config.timeout
