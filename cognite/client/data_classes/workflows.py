@@ -939,14 +939,20 @@ class TagDetectionJob(CogniteObject):
         jobId (int): The identifier of the tag detection job.
         status (TagDetectionStatus): The last observed status of the job.
         filePageRanges (list[TagDetectionJobFilePageRange]): File page ranges that are or were processed by the job.
+        errorMessage (str | None): Describes the job failure reason in case of job failure.
     """
 
     def __init__(
-        self, jobId: int, status: TagDetectionStatus, filePageRanges: list[TagDetectionJobFilePageRange]
+        self,
+        jobId: int,
+        status: TagDetectionStatus,
+        filePageRanges: list[TagDetectionJobFilePageRange],
+        errorMessage: str | None,
     ) -> None:
         self.jobId = jobId
         self.status = status
         self.filePageRanges = filePageRanges
+        self.errorMessage = errorMessage
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -954,7 +960,7 @@ class TagDetectionJob(CogniteObject):
             TagDetectionJobFilePageRange.load(filePageRange) for filePageRange in resource["filePageRanges"]
         ]
 
-        return cls(resource["jobId"], resource["status"], filePageRanges)
+        return cls(resource["jobId"], resource["status"], filePageRanges, resource.get("errorMessage"))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
