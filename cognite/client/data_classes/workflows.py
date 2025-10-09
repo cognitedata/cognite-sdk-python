@@ -972,6 +972,7 @@ class TagDetectionJob(CogniteObject):
             "jobId": self.jobId,
             "status": self.status,
             "filePageRanges": [filePageRange.dump(camel_case) for filePageRange in self.filePageRanges],
+            "errorMessage": self.errorMessage,
         }
 
 
