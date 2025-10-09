@@ -54,7 +54,7 @@ class TestContainerProperty:
             )
         )
         assert ContainerProperty._load(cp.dump()) == cp
-        assert sorted(cp.dump(camel_case=True)["type"]["values"]) == ["Closed_I_think", "Opened or not"]  # type: ignore [index]
+        assert sorted(cp.dump(camel_case=True)["type"]["values"]) == ["Closed_I_think", "Opened or not"]
 
 
 class TestConstraint:

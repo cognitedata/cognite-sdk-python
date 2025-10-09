@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import Self
@@ -269,7 +269,7 @@ class ContainerProperty(CogniteObject):
             immutable=resource.get("immutable", False),
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.type:
             output["type"] = self.type.dump(camel_case)
@@ -283,12 +283,12 @@ class ContainerProperty(CogniteObject):
 @dataclass(frozen=True)
 class Constraint(CogniteObject, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Constraint:
         if resource["constraintType"] == "requires":
-            return cast(Self, RequiresConstraint.load(resource))
+            return RequiresConstraint._load(resource)
         elif resource["constraintType"] == "uniqueness":
-            return cast(Self, UniquenessConstraint.load(resource))
-        return cast(Self, UnknownCogniteObject(resource))
+            return UniquenessConstraint._load(resource)
+        return cast(Constraint, UnknownCogniteObject(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
@@ -303,11 +303,8 @@ class RequiresConstraint(Constraint):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(require=ContainerId.load(resource["require"]))
 
-    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
-        as_dict = asdict(self)
-        output = convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
-        if "require" in output and isinstance(output["require"], dict):
-            output["require"] = self.require.dump(camel_case)
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {"require": self.require.dump(camel_case)}
         key = "constraintType" if camel_case else "constraint_type"
         output[key] = "requires"
         return output
@@ -321,9 +318,8 @@ class UniquenessConstraint(Constraint):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(properties=resource["properties"])
 
-    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
-        as_dict = asdict(self)
-        output = convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {"properties": self.properties}
         key = "constraintType" if camel_case else "constraint_type"
         output[key] = "uniqueness"
         return output
@@ -332,12 +328,12 @@ class UniquenessConstraint(Constraint):
 @dataclass(frozen=True)
 class Index(CogniteObject, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Index:
         if resource["indexType"] == "btree":
-            return cast(Self, BTreeIndex.load(resource))
+            return BTreeIndex._load(resource)
         if resource["indexType"] == "inverted":
-            return cast(Self, InvertedIndex.load(resource))
-        return cast(Self, UnknownCogniteObject(resource))
+            return InvertedIndex._load(resource)
+        return cast(Index, UnknownCogniteObject(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
