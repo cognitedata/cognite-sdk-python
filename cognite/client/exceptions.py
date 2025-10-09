@@ -349,7 +349,7 @@ class CogniteAssetHierarchyError(CogniteException):
             raise AttributeError(f"{type(self).__name__!r} object has no attribute {attr!r}") from None
 
 
-class ModelFailedException(Exception):
+class CogniteModelFailedError(CogniteException):
     def __init__(self, typename: str, id: int, error_message: str) -> None:
         self.typename = typename
         self.id = id
