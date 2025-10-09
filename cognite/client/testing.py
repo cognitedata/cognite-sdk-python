@@ -166,10 +166,10 @@ from cognite.client._sync_api.units import SyncUnitAPI
 from cognite.client._sync_api.user_profiles import SyncUserProfilesAPI
 from cognite.client._sync_api.vision import SyncVisionAPI
 from cognite.client._sync_api.workflows import SyncWorkflowAPI
-from cognite.client._sync_api.workflows.execution import SyncWorkflowExecutionAPI
-from cognite.client._sync_api.workflows.task import SyncWorkflowTaskAPI
-from cognite.client._sync_api.workflows.trigger import SyncWorkflowTriggerAPI
-from cognite.client._sync_api.workflows.version import SyncWorkflowVersionAPI
+from cognite.client._sync_api.workflows.executions import SyncWorkflowExecutionAPI
+from cognite.client._sync_api.workflows.tasks import SyncWorkflowTaskAPI
+from cognite.client._sync_api.workflows.triggers import SyncWorkflowTriggerAPI
+from cognite.client._sync_api.workflows.versions import SyncWorkflowVersionAPI
 from cognite.client._sync_cognite_client import CogniteClient
 
 
