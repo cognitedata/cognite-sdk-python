@@ -8,7 +8,7 @@ import platform
 from collections.abc import AsyncIterator, Iterable, MutableMapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast, overload
 from urllib.parse import urljoin
 
 import httpx
@@ -260,16 +260,28 @@ class BasicAsyncAPIClient:
         except httpx.HTTPStatusError as err:
             await self._handle_status_error(err, stream=True)
 
+    @overload
+    async def _get(self, url_path: None = None, full_url: None = None) -> NoReturn: ...
+
+    @overload
+    async def _get(self, url_path: str, full_url: None = None) -> httpx.Response: ...
+
+    @overload
+    async def _get(self, url_path: None = None, *, full_url: str) -> httpx.Response: ...
+
     async def _get(
         self,
-        url_path: str,
+        url_path: str | None = None,
+        full_url: str | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
         follow_redirects: bool = False,
         api_subversion: str | None = None,
         semaphore: asyncio.Semaphore | None = None,
     ) -> httpx.Response:
-        _, full_url = resolve_url(self, "GET", url_path)
+        if not full_url:
+            assert url_path is not None
+            _, full_url = resolve_url(self, "GET", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         try:
             res = await self._http_client_with_retry(
