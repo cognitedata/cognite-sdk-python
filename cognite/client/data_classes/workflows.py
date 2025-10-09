@@ -554,8 +554,8 @@ class TagDetectionTaskParameters(WorkflowTaskParameters):
     The tag detection task parameters are used to specify a tag detection task.
 
     Args:
-        file_instance_ids (list[NodeId] | str): List of files to detect tags in. Can be a reference.
-        entity_filters (list[TagDetectionTaskEntityFilter]): Entity search specification(s) used to fetch DMS entities to match on.
+        file_instance_ids (list[NodeId] | str): List of files to detect tags in. A minimum of 1 file is expected. Can be a reference.
+        entity_filters (list[TagDetectionTaskEntityFilter]): Entity search specification(s) used to fetch DMS entities to match on. Must contain between 1 and 10 filters.
         min_tokens (int | None): Each detected item must match the detected entity on at least this number of tokens. A token is a substring of consecutive letters or digits.
         partial_match (bool | None): Allow partial (fuzzy) matching of entities in the engineering diagrams. Creates a match only when it is possible to do so unambiguously.
         write_annotations (bool): Whether annotations should be automatically be written for the files
