@@ -680,7 +680,7 @@ class TestPandasIntegration:
         index = pd.to_datetime(timestamps, unit="ms")
         df = pd.DataFrame({"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]}, index=index)
         with pytest.raises(
-            ValueError, match="`instance_id_headers` and `external_id_headers` cannot be used at the same time."
+            ValueError, match=r"`instance_id_headers` and `external_id_headers` cannot be used at the same time\."
         ):
             cognite_client.time_series.data.insert_dataframe(df, instance_id_headers=True)
 
@@ -692,7 +692,9 @@ class TestPandasIntegration:
         df = pd.DataFrame({"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]}, index=index)
         with pytest.raises(
             ValueError,
-            match="Could not find instance IDs in the column header. InstanceId are given as NodeId or tuple. Got <class 'str'>",
+            match=re.escape(
+                "Could not find instance IDs in the column header. InstanceId are given as NodeId or tuple. Got <class 'str'>"
+            ),
         ):
             cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False, instance_id_headers=True)
 

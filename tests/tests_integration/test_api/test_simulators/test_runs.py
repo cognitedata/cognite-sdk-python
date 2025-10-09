@@ -1,11 +1,12 @@
 import asyncio
 import time
+from itertools import pairwise
 
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes import TimestampRange
-from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevision
+from cognite.client.data_classes.simulators.filters import SimulationRunsSort
 from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
     SimulationOutput,
@@ -13,7 +14,7 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationRunWrite,
     SimulationValueUnitName,
 )
-from tests.tests_integration.test_api.test_simulators.seed.data import ResourceNames
+from tests.tests_integration.test_api.test_simulators.seed.data import RESOURCES, ResourceNames
 
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
@@ -111,23 +112,42 @@ class TestSimulatorRuns:
         assert data_res is not None
         assert data_res.dump() == data_res2.dump()
 
+    @pytest.mark.parametrize(
+        "simulation_run_item",
+        [
+            (
+                SimulationRunWrite(
+                    routine_revision_external_id=f"{RESOURCES.simulator_routine_external_id}_v1",
+                    model_revision_external_id=RESOURCES.simulator_model_revision_external_id,
+                )
+            ),
+            (
+                SimulationRunWrite(
+                    routine_external_id=RESOURCES.simulator_routine_external_id,
+                )
+            ),
+        ],
+        ids=[
+            "with_routine_revision_and_model_revision",
+            "with_routine_only",
+        ],
+    )
     def test_create_run(
         self,
         cognite_client: CogniteClient,
-        seed_simulator_routine_revisions: tuple[SimulatorRoutineRevision, SimulatorRoutineRevision],
-        seed_resource_names: ResourceNames,
+        simulation_run_item: SimulationRunWrite,
     ) -> None:
-        routine_external_id = seed_resource_names.simulator_routine_external_id
-        created_runs = cognite_client.simulators.runs.create(
-            [
-                SimulationRunWrite(
-                    run_type="external",
-                    routine_external_id=routine_external_id,
-                )
-            ]
+        created_runs = cognite_client.simulators.runs.create([simulation_run_item])
+        is_run_by_revision = (
+            simulation_run_item.routine_revision_external_id is not None
+            and simulation_run_item.model_revision_external_id is not None
         )
+        if is_run_by_revision:
+            assert created_runs[0].routine_revision_external_id == simulation_run_item.routine_revision_external_id
+            assert created_runs[0].model_revision_external_id == simulation_run_item.model_revision_external_id
+        else:
+            assert created_runs[0].routine_external_id == simulation_run_item.routine_external_id
         assert len(created_runs) == 1
-        assert created_runs[0].routine_external_id == routine_external_id
         assert created_runs[0].id is not None
 
     def test_list_filtering_timestamp_ranges(
@@ -180,6 +200,33 @@ class TestSimulatorRuns:
             limit=5,
         )
         assert len(runs_empty_range) == 0
+
+    def test_list_sort(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
+        routine_external_id = seed_resource_names.simulator_routine_external_id
+
+        # Test list with sort by createdTime
+        runs_asc = cognite_client.simulators.runs.list(
+            routine_external_ids=[routine_external_id],
+            sort=SimulationRunsSort(order="asc", property="created_time"),
+            limit=5,
+        )
+
+        if len(runs_asc) > 1:
+            for prev, curr in pairwise(runs_asc):
+                assert curr.created_time >= prev.created_time
+
+        # Test iterator with sort by createdTime descending
+        runs_iter = list(
+            cognite_client.simulators.runs(
+                routine_external_ids=[routine_external_id],
+                sort=SimulationRunsSort(order="desc", property="created_time"),
+                limit=3,
+            )
+        )
+
+        if len(runs_iter) > 1:
+            for prev, curr in pairwise(runs_iter):
+                assert curr.created_time <= prev.created_time
 
     def test_list_run_data(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id
