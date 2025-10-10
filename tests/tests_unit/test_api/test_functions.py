@@ -326,19 +326,6 @@ def function_handle_as_variable():
 
 
 @pytest.fixture
-def function_handle_as_annotated_variable():
-    """Fixture for handle as annotated variable assignment (callable) with valid arguments."""
-
-    def inner_handle(data, client, secrets):
-        return {"result": "success"}
-
-    # This simulates handle: Callable = some_callable pattern
-    # Set the __name__ to 'handle' to simulate variable assignment
-    inner_handle.__name__ = "handle"
-    return inner_handle
-
-
-@pytest.fixture
 def mock_function_calls_filter_response(rsps, cognite_client):
     response_body = {"items": [CALL_COMPLETED, CALL_SCHEDULED]}
     url = full_url(cognite_client, f"/functions/{FUNCTION_ID}/calls/list")
@@ -552,10 +539,13 @@ class TestFunctionsAPI:
         assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_with_function_handle_as_annotated_variable_accepts(
-        self, mock_functions_create_response, function_handle_as_annotated_variable, cognite_client
+        self, mock_functions_create_response, cognite_client
     ):
         """Test that handle as annotated variable assignment (callable) is accepted."""
-        res = cognite_client.functions.create(name="myfunction", function_handle=function_handle_as_annotated_variable)
+        folder = os.path.join(
+            os.path.dirname(__file__), "function_test_resources", "function_with_annotated_handle_assignment"
+        )
+        res = cognite_client.functions.create(name="myfunction", folder=folder, function_path="handler.py")
 
         assert isinstance(res, Function)
         assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
