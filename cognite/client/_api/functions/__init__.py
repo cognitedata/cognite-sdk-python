@@ -701,19 +701,20 @@ class FunctionsAPI(APIClient):
         return FunctionsStatus.load(res.json())
 
 
-def get_handle_function_node(file_content: str) -> ast.FunctionDef | None:
+def get_handle_function_node(file_content: str) -> ast.FunctionDef | ast.Assign | ast.AnnAssign | None:
     """
-    Extract the last top-level 'handle' function from Python file content.
+    Extract the last top-level 'handle' function or variable assignment.
 
     Returns the last occurrence to handle development workflows where developers
     may keep old versions or add debug functions. Only considers top-level functions
-    since Cognite Functions require directly callable entry points.
+    and assignments since Cognite Functions require directly callable entry points.
 
     Args:
         file_content (str): The Python source code as a string
 
     Returns:
-        ast.FunctionDef | None: The AST node of the last top-level 'handle' function, or None if not found or if the file is not a valid Python file.
+        ast.FunctionDef | ast.Assign | ast.AnnAssign | None: The AST node of the last top-level 'handle' function,
+        assignment, or None if not found or if the file is not a valid Python file.
     """
     try:
         tree = ast.parse(file_content)
@@ -723,7 +724,19 @@ def get_handle_function_node(file_content: str) -> ast.FunctionDef | None:
         (
             node
             for node in reversed(tree.body)  # Only look at top-level nodes
-            if isinstance(node, ast.FunctionDef) and node.name == "handle"
+            if (isinstance(node, ast.FunctionDef) and node.name == "handle")
+            or (
+                isinstance(node, ast.Assign)
+                and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id == "handle"
+            )
+            or (
+                isinstance(node, ast.AnnAssign)
+                and isinstance(node.target, ast.Name)
+                and node.target.id == "handle"
+                and node.value is not None  # Only assignments with values, not just type annotations
+            )
         ),
         None,
     )
@@ -796,14 +809,25 @@ def validate_function_folder(
 
 
 def _validate_function_handle(
-    handle_obj: Callable[..., object] | ast.FunctionDef,
+    handle_obj: Callable[..., object] | ast.FunctionDef | ast.Assign | ast.AnnAssign,
 ) -> None:
-    if isinstance(handle_obj, ast.FunctionDef):
-        name = handle_obj.name
-        accepts_args = {arg.arg for arg in handle_obj.args.args}
-    else:
-        name = handle_obj.__name__
-        accepts_args = set(signature(handle_obj).parameters)
+    match handle_obj:
+        case ast.FunctionDef():
+            # Handle functions like: def handle(data, client, secrets): ...
+            name = handle_obj.name
+            accepts_args = {arg.arg for arg in handle_obj.args.args}
+        case ast.Assign():
+            # Handle assignments like: handle = some_callable
+            target = handle_obj.targets[0]
+            name = target.id
+            accepts_args = set()  # Callable variables are expected to do validation at runtime
+        case ast.AnnAssign():
+            # Handle annotated assignments like: handle: Callable = some_callable
+            name = handle_obj.target.id
+            accepts_args = set()  # Callable variables are expected to do validation at runtime
+        case _:
+            name = handle_obj.__name__
+            accepts_args = set(signature(handle_obj).parameters)
 
     if name != "handle":
         raise TypeError(f"Function is named '{name}' but must be named 'handle'.")
