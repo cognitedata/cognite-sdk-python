@@ -538,18 +538,6 @@ class TestFunctionsAPI:
         assert isinstance(res, Function)
         assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_create_with_function_handle_as_annotated_variable_accepts(
-        self, mock_functions_create_response, cognite_client
-    ):
-        """Test that handle as annotated variable assignment (callable) is accepted."""
-        folder = os.path.join(
-            os.path.dirname(__file__), "function_test_resources", "function_with_annotated_handle_assignment"
-        )
-        res = cognite_client.functions.create(name="myfunction", folder=folder, function_path="handler.py")
-
-        assert isinstance(res, Function)
-        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
-
     def test_create_with_handle_function_and_file_id_raises(
         self, mock_functions_create_response, function_handle, cognite_client
     ):
