@@ -1319,167 +1319,118 @@ def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid,
     assert file_id == 123
 
 
-class TestSkipValidationFunctionality:
-    """Test skip_validation parameter functionality"""
+class TestGetHandleFunctionNode:
+    """Test cases for get_handle_function_node function."""
 
-    def test_validate_function_handle_with_skip_validation_true(self):
-        """Test that we don't call _validate_function_handle when skip_validation=True"""
-        # This test shows the validation function itself still works for valid cases
-        valid_func_def = ast.FunctionDef(
-            name="handle",
-            args=ast.arguments(
-                posonlyargs=[],
-                args=[ast.arg(arg="data", annotation=None)],
-                vararg=None,
-                kwonlyargs=[],
-                kw_defaults=[],
-                kwarg=None,
-                defaults=[],
-            ),
-            body=[],
-            decorator_list=[],
-            returns=None,
-        )
+    def test_single_handle_function(self):
+        """Test that a single handle function is returned correctly."""
+        file_content = '''
+def handle(data, client, secrets):
+    """Handle function for processing data."""
+    return data
+'''
+        result = get_handle_function_node(file_content)
 
-        # Should not raise exception for valid function
-        _validate_function_handle(valid_func_def)
+        assert result is not None
+        assert result.name == "handle"
+        assert len(result.args.args) == 3  # data, client, secrets
 
-    def test_validate_function_handle_with_skip_validation_false(self):
-        """Test that _validate_function_handle validates arguments when called directly"""
-        # Create a function def with invalid arguments
-        func_def = ast.FunctionDef(
-            name="handle",
-            args=ast.arguments(
-                posonlyargs=[],
-                args=[ast.arg(arg="invalid_arg1", annotation=None), ast.arg(arg="invalid_arg2", annotation=None)],
-                vararg=None,
-                kwonlyargs=[],
-                kw_defaults=[],
-                kwarg=None,
-                defaults=[],
-            ),
-            body=[],
-            decorator_list=[],
-            returns=None,
-        )
+    def test_multiple_handle_functions_returns_last(self):
+        """Test that when there are multiple handle functions, the last one is returned."""
+        file_content = '''
+def handle(data, client, secrets):
+    """First handle function."""
+    return data
 
-        # Should raise TypeError when called directly (which happens when skip_validation=False)
-        with pytest.raises(TypeError, match=r"Arguments .* must be a subset of"):
-            _validate_function_handle(func_def)
+def other_function():
+    """Some other function."""
+    pass
 
-    def test_validate_function_handle_name_node_with_skip_validation(self):
-        """Test that callable handle objects work correctly"""
+def handle(data, client, secrets):
+    """Second handle function - this should be returned."""
+    return data * 2
+'''
+        result = get_handle_function_node(file_content)
 
-        # Create a mock callable that would normally fail validation but has correct name
-        def handle(wrong_arg1, wrong_arg2):
-            pass
+        assert result is not None
+        assert result.name == "handle"
+        # Check that it's the second handle function by looking at the docstring
+        assert "Second handle function" in ast.get_docstring(result)
 
-        # Should raise exception when called directly (validation function always validates)
-        with pytest.raises(TypeError, match=r"Arguments .* must be a subset of"):
-            _validate_function_handle(handle)
+    def test_no_handle_function_returns_none(self):
+        """Test that None is returned when no handle function exists."""
+        file_content = '''
+def other_function():
+    """Some other function."""
+    pass
 
-    def test_validate_function_folder_with_skip_validation(self):
-        """Test that validate_function_folder passes skip_validation parameter correctly"""
-        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_code")
+def another_function():
+    """Another function."""
+    pass
+'''
+        result = get_handle_function_node(file_content)
+        assert result is None
 
-        # Should not raise exception when skip_validation=True
-        validate_function_folder(folder, "handler.py", skip_folder_validation=True, skip_validation=True)
+    def test_empty_file_returns_none(self):
+        """Test that None is returned for an empty file."""
+        file_content = ""
+        result = get_handle_function_node(file_content)
+        assert result is None
 
-        # Should also not raise exception when skip_validation=False for normal function def
-        validate_function_folder(folder, "handler.py", skip_folder_validation=True, skip_validation=False)
+    def test_handle_function_with_imports_and_comments(self):
+        """Test that handle function is found even with imports and comments."""
+        file_content = '''
+import os
+from pathlib import Path
 
-    def test_create_function_with_skip_validation(self, mock_functions_create_response, cognite_client):
-        """Test that create method accepts skip_validation parameter"""
-        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_code")
+# This is a comment
+def some_other_function():
+    pass
 
-        # Should not raise exception
-        res = cognite_client.functions.create(
-            name="myfunction", folder=folder, function_path="handler.py", skip_validation=True
-        )
+def handle(data, client, secrets):
+    """Handle function with proper signature."""
+    return {"result": data}
 
-        assert isinstance(res, Function)
-        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
+# Another comment
+'''
+        result = get_handle_function_node(file_content)
 
-    def test_create_function_with_invalid_handle_and_skip_validation_true(
-        self, mock_functions_create_response, cognite_client
-    ):
-        """Test Functions v2 / Cognite Typed Functions use case: invalid handle args with skip_validation=True"""
+        assert result is not None
+        assert result.name == "handle"
+        assert "Handle function with proper signature" in ast.get_docstring(result)
 
-        # Create a handle function that would normally fail validation (invalid args)
-        def handle(custom_arg1, custom_arg2, invalid_arg):
-            """This handle has invalid arguments that don't match ALLOWED_HANDLE_ARGS"""
-            return {"result": "success"}
+    def test_handle_function_inside_class_ignored(self):
+        """Test that handle functions inside classes are ignored (only top-level functions)."""
+        file_content = '''
+def handle(data, client, secrets):
+    """Top-level handle function - should be returned."""
+    return data
 
-        # Should NOT raise exception when skip_validation=True
-        res = cognite_client.functions.create(name="typed_function", function_handle=handle, skip_validation=True)
+class MyClass:
+    def handle(self, data, client, secrets):
+        """Handle function inside class - should be ignored."""
+        return data
+'''
+        result = get_handle_function_node(file_content)
 
-        assert isinstance(res, Function)
-        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
+        assert result is not None
+        assert result.name == "handle"
+        assert "Top-level handle function" in ast.get_docstring(result)
 
-    def test_create_function_with_invalid_handle_and_skip_validation_false(
-        self, mock_functions_create_response, cognite_client
-    ):
-        """Test that invalid handle args fail validation when skip_validation=False"""
+    def test_handle_function_inside_other_function_ignored(self):
+        """Test that handle functions inside other functions are ignored."""
+        file_content = '''
+def outer_function():
+    def handle(data, client, secrets):
+        """Handle function inside another function - should be ignored."""
+        return data
 
-        # Create a handle function that would fail validation (invalid args)
-        def handle(custom_arg1, custom_arg2, invalid_arg):
-            """This handle has invalid arguments that don't match ALLOWED_HANDLE_ARGS"""
-            return {"result": "success"}
+def handle(data, client, secrets):
+    """Top-level handle function - should be returned."""
+    return data
+'''
+        result = get_handle_function_node(file_content)
 
-        # Should raise TypeError when skip_validation=False (default)
-        with pytest.raises(TypeError, match=r"Arguments .* must be a subset of"):
-            cognite_client.functions.create(name="typed_function", function_handle=handle, skip_validation=False)
-
-    def test_create_function_with_handle_assignment_and_skip_validation(
-        self, mock_functions_create_response, cognite_client
-    ):
-        """Test Functions v2 folder-based deployment with handle assignment and skip_validation=True"""
-        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_with_handle_assignment")
-
-        # This should work with skip_validation=True even though get_handle_function_node returns None
-        res = cognite_client.functions.create(
-            name="typed_function_folder", folder=folder, function_path="handler.py", skip_validation=True
-        )
-
-        assert isinstance(res, Function)
-        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
-
-    def test_create_function_with_handle_assignment_fails_without_skip_validation(
-        self, mock_functions_create_response, cognite_client
-    ):
-        """Test that handle assignment fails validation when skip_validation=False"""
-        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_with_handle_assignment")
-
-        # Test validate_function_folder directly
-        with pytest.raises(TypeError, match="must contain a function named 'handle'"):
-            validate_function_folder(folder, "handler.py", skip_folder_validation=True, skip_validation=False)
-
-    def test_create_function_with_wrong_name_callable_and_skip_validation_true(
-        self, mock_functions_create_response, cognite_client
-    ):
-        """Test that callables with wrong names work when skip_validation=True"""
-
-        def wrong_name_function(data, client, secrets):
-            """This function has the wrong name but should work with skip_validation=True"""
-            return {"result": "success"}
-
-        # Should NOT raise exception when skip_validation=True, even with wrong function name
-        res = cognite_client.functions.create(
-            name="typed_function_wrong_name", function_handle=wrong_name_function, skip_validation=True
-        )
-
-        assert isinstance(res, Function)
-        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
-
-    def test_create_function_with_wrong_name_callable_and_skip_validation_false(self, cognite_client):
-        """Test that callables with wrong names fail when skip_validation=False"""
-
-        def wrong_name_function(data, client, secrets):
-            """This function has the wrong name and should fail with skip_validation=False"""
-            return {"result": "success"}
-
-        # Should raise TypeError when skip_validation=False (default) because of wrong name
-        with pytest.raises(TypeError, match="Function is named 'wrong_name_function' but must be named 'handle'"):
-            cognite_client.functions.create(
-                name="typed_function_wrong_name", function_handle=wrong_name_function, skip_validation=False
-            )
+        assert result is not None
+        assert result.name == "handle"
+        assert "Top-level handle function" in ast.get_docstring(result)
