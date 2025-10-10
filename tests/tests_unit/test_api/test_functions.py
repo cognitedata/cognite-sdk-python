@@ -440,10 +440,10 @@ class TestFunctionsAPI:
     def test_validate_folder(self, function_folder, function_path, exception):
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         if exception is None:
-            validate_function_folder(folder, function_path, skip_folder_validation=True, skip_validation=False)
+            validate_function_folder(folder, function_path, skip_folder_validation=True)
         else:
             with pytest.raises(exception):
-                validate_function_folder(folder, function_path, skip_folder_validation=True, skip_validation=False)
+                validate_function_folder(folder, function_path, skip_folder_validation=True)
 
     @pytest.mark.parametrize(
         "function_folder, function_path, exception",
@@ -457,10 +457,10 @@ class TestFunctionsAPI:
     def test_imports_in_validate_folder(self, function_folder, function_path, exception):
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         if exception is None:
-            validate_function_folder(folder, function_path, skip_folder_validation=False, skip_validation=False)
+            validate_function_folder(folder, function_path, skip_folder_validation=False)
         else:
             with pytest.raises(exception):
-                validate_function_folder(folder, function_path, skip_folder_validation=False, skip_validation=False)
+                validate_function_folder(folder, function_path, skip_folder_validation=False)
 
     @pytest.mark.parametrize(
         "function_folder, function_name, exception",

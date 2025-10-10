@@ -185,7 +185,6 @@ class FunctionsAPI(APIClient):
         index_url: str | None = None,
         extra_index_urls: list[str] | None = None,
         skip_folder_validation: bool = False,
-        skip_validation: bool = False,
         data_set_id: int | None = None,
     ) -> Function:
         '''`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
@@ -223,7 +222,6 @@ class FunctionsAPI(APIClient):
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             skip_folder_validation (bool): When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
-            skip_validation (bool): Pass True to skip all validation of the handle function. This should be used if the handler does its own validation at runtime (e.g., frameworks like Cognite Typed Functions). When enabled, both the function name and argument validation are skipped. Defaults to False.
             data_set_id (int | None): Data set to upload the function code to. Note: Does not affect the function itself.
 
         Returns:
@@ -261,15 +259,6 @@ class FunctionsAPI(APIClient):
                 >>>
                 >>> function = client.functions.create(name="myfunction", function_handle=handle)
 
-            Create function with validation skipped (for handlers that do their own validation):
-
-                >>> # For use with frameworks like Cognite Typed Functions
-                >>> # Function can have any name and arguments when skip_validation=True
-                >>> function = client.functions.create(
-                ...     name="myfunction",
-                ...     function_handle=my_custom_handler,  # Any name, any args
-                ...     skip_validation=True)
-
             .. note:
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring.
                 The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
@@ -295,7 +284,6 @@ class FunctionsAPI(APIClient):
                 index_url,
                 extra_index_urls,
                 skip_folder_validation,
-                skip_validation,
                 data_set_id,
             )
 
@@ -322,18 +310,16 @@ class FunctionsAPI(APIClient):
         index_url: str | None = None,
         extra_index_urls: list[str] | None = None,
         skip_folder_validation: bool = False,
-        skip_validation: bool = False,
         data_set_id: int | None = None,
     ) -> FunctionWrite:
         self._assert_exactly_one_of_folder_or_file_id_or_function_handle(folder, file_id, function_handle)
         # This is extra functionality on top of the API to allow deploying functions
         # without having uploaded the code to the files API.
         if folder:
-            validate_function_folder(folder, function_path, skip_folder_validation, skip_validation)
+            validate_function_folder(folder, function_path, skip_folder_validation)
             file_id = self._zip_and_upload_folder(folder, name, external_id, data_set_id)
         elif function_handle:
-            if not skip_validation:
-                _validate_function_handle(function_handle)
+            _validate_function_handle(function_handle)
             file_id = self._zip_and_upload_handle(function_handle, name, external_id, data_set_id)
         assert_type(cpu, "cpu", [float], allow_none=True)
         assert_type(memory, "memory", [float], allow_none=True)
@@ -783,9 +769,7 @@ def _check_imports(root_path: str, module_path: str) -> None:
         raise error
 
 
-def validate_function_folder(
-    root_path: str, function_path: str, skip_folder_validation: bool, skip_validation: bool = False
-) -> None:
+def validate_function_folder(root_path: str, function_path: str, skip_folder_validation: bool) -> None:
     if not function_path.endswith(".py"):
         raise TypeError(f"{function_path} must be a Python file.")
 
