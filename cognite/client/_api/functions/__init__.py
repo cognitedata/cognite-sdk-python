@@ -819,10 +819,14 @@ def _validate_function_handle(
         case ast.Assign():
             # Handle assignments like: handle = some_callable
             target = handle_obj.targets[0]
+            if not isinstance(target, ast.Name):
+                raise TypeError("Assignment target must be a simple name, not a complex expression.")
             name = target.id
             accepts_args = set()  # Callable variables are expected to do validation at runtime
         case ast.AnnAssign():
             # Handle annotated assignments like: handle: Callable = some_callable
+            if not isinstance(handle_obj.target, ast.Name):
+                raise TypeError("Assignment target must be a simple name, not a complex expression.")
             name = handle_obj.target.id
             accepts_args = set()  # Callable variables are expected to do validation at runtime
         case _:

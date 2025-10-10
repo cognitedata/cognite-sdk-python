@@ -17,7 +17,7 @@ from cognite.client._api.functions import (
     _extract_requirements_from_file,
     _get_fn_docstring_requirements,
     _validate_and_parse_requirements,
-    _validate_function_handle,
+    get_handle_function_node,
     validate_function_folder,
 )
 from cognite.client.credentials import OAuthClientCredentials, Token
