@@ -83,6 +83,27 @@ EXAMPLE_FUNCTION = {
     "memory": 1,
     "runtime": "py311",
     "runtimeVersion": "Python 3.11.11",
+    "lastCalled": 1585925306822,
+}
+
+# Example function for creation scenarios - newly created functions haven't been called yet
+EXAMPLE_FUNCTION_CREATED = {
+    "id": FUNCTION_ID,
+    "name": "myfunction",
+    "externalId": f"func-no-{FUNCTION_ID}",
+    "description": "my fabulous function",
+    "owner": "ola.normann@cognite.com",
+    "status": "Ready",
+    "fileId": 1234,
+    "functionPath": "handler.py",
+    "createdTime": 1585662507939,
+    "secrets": {"key1": "***", "key2": "***"},
+    "envVars": {"env1": "foo", "env2": "bar"},
+    "cpu": 0.25,
+    "memory": 1,
+    "runtime": "py311",
+    "runtimeVersion": "Python 3.11.11",
+    # lastCalled field is omitted when None (not included in API response)
 }
 CALL_RUNNING = {
     "id": CALL_ID,
@@ -197,7 +218,8 @@ def mock_functions_create_response(rsps, cognite_client):
     rsps.add(rsps.PUT, "https://upload.here", status=201)
     rsps.add(rsps.POST, files_byids_url, status=201, json={"items": [files_response_body]})
     functions_url = full_url(cognite_client, "/functions")
-    rsps.add(rsps.POST, functions_url, status=201, json={"items": [EXAMPLE_FUNCTION]})
+    # Use EXAMPLE_FUNCTION_CREATED for creation scenarios - newly created functions haven't been called yet
+    rsps.add(rsps.POST, functions_url, status=201, json={"items": [EXAMPLE_FUNCTION_CREATED]})
 
     yield rsps
 
