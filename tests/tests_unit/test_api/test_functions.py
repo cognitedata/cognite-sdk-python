@@ -1,3 +1,4 @@
+import ast
 import io
 import json
 import operator as op
@@ -16,6 +17,7 @@ from cognite.client._api.functions import (
     _extract_requirements_from_file,
     _get_fn_docstring_requirements,
     _validate_and_parse_requirements,
+    get_handle_function_node,
     validate_function_folder,
 )
 from cognite.client.credentials import OAuthClientCredentials, Token
@@ -1315,3 +1317,120 @@ def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid,
     folder = Path(__file__).parent / "function_test_resources" / "good_absolute_import"
     file_id = fns_api_with_mock_client._zip_and_upload_folder(folder, name="name", external_id=xid)
     assert file_id == 123
+
+
+class TestGetHandleFunctionNode:
+    """Test cases for get_handle_function_node function."""
+
+    def test_single_handle_function(self):
+        """Test that a single handle function is returned correctly."""
+        file_content = '''
+def handle(data, client, secrets):
+    """Handle function for processing data."""
+    return data
+'''
+        result = get_handle_function_node(file_content)
+
+        assert result is not None
+        assert result.name == "handle"
+        assert len(result.args.args) == 3  # data, client, secrets
+
+    def test_multiple_handle_functions_returns_last(self):
+        """Test that when there are multiple handle functions, the last one is returned."""
+        file_content = '''
+def handle(data, client, secrets):
+    """First handle function."""
+    return data
+
+def other_function():
+    """Some other function."""
+    pass
+
+def handle(data, client, secrets):
+    """Second handle function - this should be returned."""
+    return data * 2
+'''
+        result = get_handle_function_node(file_content)
+
+        assert result is not None
+        assert result.name == "handle"
+        # Check that it's the second handle function by looking at the docstring
+        assert "Second handle function" in ast.get_docstring(result)
+
+    def test_no_handle_function_returns_none(self):
+        """Test that None is returned when no handle function exists."""
+        file_content = '''
+def other_function():
+    """Some other function."""
+    pass
+
+def another_function():
+    """Another function."""
+    pass
+'''
+        result = get_handle_function_node(file_content)
+        assert result is None
+
+    def test_empty_file_returns_none(self):
+        """Test that None is returned for an empty file."""
+        file_content = ""
+        result = get_handle_function_node(file_content)
+        assert result is None
+
+    def test_handle_function_with_imports_and_comments(self):
+        """Test that handle function is found even with imports and comments."""
+        file_content = '''
+import os
+from pathlib import Path
+
+# This is a comment
+def some_other_function():
+    pass
+
+def handle(data, client, secrets):
+    """Handle function with proper signature."""
+    return {"result": data}
+
+# Another comment
+'''
+        result = get_handle_function_node(file_content)
+
+        assert result is not None
+        assert result.name == "handle"
+        assert "Handle function with proper signature" in ast.get_docstring(result)
+
+    def test_handle_function_inside_class_ignored(self):
+        """Test that handle functions inside classes are ignored (only top-level functions)."""
+        file_content = '''
+def handle(data, client, secrets):
+    """Top-level handle function - should be returned."""
+    return data
+
+class MyClass:
+    def handle(self, data, client, secrets):
+        """Handle function inside class - should be ignored."""
+        return data
+'''
+        result = get_handle_function_node(file_content)
+
+        assert result is not None
+        assert result.name == "handle"
+        assert "Top-level handle function" in ast.get_docstring(result)
+
+    def test_handle_function_inside_other_function_ignored(self):
+        """Test that handle functions inside other functions are ignored."""
+        file_content = '''
+def outer_function():
+    def handle(data, client, secrets):
+        """Handle function inside another function - should be ignored."""
+        return data
+
+def handle(data, client, secrets):
+    """Top-level handle function - should be returned."""
+    return data
+'''
+        result = get_handle_function_node(file_content)
+
+        assert result is not None
+        assert result.name == "handle"
+        assert "Top-level handle function" in ast.get_docstring(result)

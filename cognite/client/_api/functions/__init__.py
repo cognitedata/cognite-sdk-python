@@ -687,12 +687,29 @@ class FunctionsAPI(APIClient):
         return FunctionsStatus.load(res.json())
 
 
-def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:
+def get_handle_function_node(file_content: str) -> ast.FunctionDef | None:
+    """
+    Extract the last top-level 'handle' function from Python file content.
+
+    Returns the last occurrence to handle development workflows where developers
+    may keep old versions or add debug functions. Only considers top-level functions
+    since Cognite Functions require directly callable entry points.
+
+    Args:
+        file_content (str): The Python source code as a string
+
+    Returns:
+        ast.FunctionDef | None: The AST node of the last top-level 'handle' function, or None if not found or if the file is not a valid Python file.
+    """
+    try:
+        tree = ast.parse(file_content)
+    except SyntaxError:
+        return None
     return next(
         (
-            item
-            for item in ast.walk(ast.parse(file_path.read_text()))
-            if isinstance(item, ast.FunctionDef) and item.name == "handle"
+            node
+            for node in reversed(tree.body)  # Only look at top-level nodes
+            if isinstance(node, ast.FunctionDef) and node.name == "handle"
         ),
         None,
     )
@@ -747,7 +764,7 @@ def validate_function_folder(root_path: str, function_path: str, skip_folder_val
     if not file_path.is_file():
         raise FileNotFoundError(f"No file found at '{file_path}'.")
 
-    if node := get_handle_function_node(file_path):
+    if node := get_handle_function_node(file_path.read_text()):
         _validate_function_handle(node)
     else:
         raise TypeError(f"{function_path} must contain a function named 'handle'.")
