@@ -1193,7 +1193,7 @@ class StreamRecordsAcl(Capability):
 
     class Scope:
         All = AllScope
-        Space = SpaceIDScope
+        SpaceID = SpaceIDScope
 
 
 @dataclass
