@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+    from cognite.client.data_classes.agents.chat import AgentSession
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
@@ -191,6 +192,41 @@ class Agent(AgentCore):
         existing = set(instance.dump(camel_case=True).keys())
         instance._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
         return instance
+
+    def start_session(self, cursor: str | None = None) -> AgentSession:
+        """Start a new chat session with this agent.
+
+        This creates a session object that automatically manages cursor state across
+        multiple chat interactions, providing a more convenient interface for
+        multi-turn conversations.
+
+        Args:
+            cursor (str | None): Optional cursor to continue an existing conversation.
+                If None, starts a fresh session.
+
+        Returns:
+            AgentSession: A session object for chatting with this agent.
+
+        Examples:
+
+            Start a session from an agent instance:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.agents import Message
+                >>> client = CogniteClient()
+                >>> agent = client.agents.retrieve("my_agent")
+                >>> session = agent.start_session()
+                >>> response = session.chat(Message("Hello!"))
+                >>> print(response.text)
+        """
+        # Import here to avoid circular imports
+        from cognite.client.data_classes.agents.chat import AgentSession
+        from cognite.client.exceptions import CogniteMissingClientError
+
+        if not hasattr(self, "_cognite_client") or self._cognite_client is None:
+            raise CogniteMissingClientError(self)
+
+        return AgentSession(agent_id=self.external_id, cognite_client=self._cognite_client, cursor=cursor)
 
 
 class AgentUpsertList(CogniteResourceList[AgentUpsert], ExternalIDTransformerMixin):
