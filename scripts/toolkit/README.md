@@ -3,12 +3,12 @@
 ## Overview
 
 This directory contains the configuration for the Groups used by the 
-* Integration Runner service principal.
-* Contributors service principal.
+* Integration Runner service principals.
+* Contributors principal.
 
-In addition, the CI runs on two different CDF projects:
+The CI runs on two different CDF projects:
 
-1. `python-sdk-contributor` this is the CDF Project used by the Contributors service principal
+1. `python-sdk-contributor` this is the CDF Project used by the Contributors
     and all GitHub Actions that have PRs that targets the `master` branch.
 2. `python-sdk-test-prod` this is the CDF Project that is used by the GitHub actions that 
     runs on the `main` branch.
@@ -16,7 +16,7 @@ In addition, the CI runs on two different CDF projects:
 There are two groups defined in this directory, one for reading and one for writing. 
 The configuration is set up such that:
 
-* Contributors service principal has write access to the `python-sdk-contributor` project
+* Contributors has write access to the `python-sdk-contributor` project
   and read access to the `python-sdk-test-prod` project.
 * The integration runner on PRs that targets the `master` branch has write access to the 
   `python-sdk-contributor` project.
