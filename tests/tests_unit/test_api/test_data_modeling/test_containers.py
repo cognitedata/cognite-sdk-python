@@ -16,21 +16,31 @@ EXAMPLE_CONTAINER = {
     "properties": {
         "prop1": {
             "immutable": False,
-            "nullable": True,
+            "nullable": False,
             "autoIncrement": False,
             "defaultValue": "string",
             "description": "string",
             "name": "string",
             "type": {"type": "text", "list": False, "collation": "ucs_basic"},
+            "constraintState": {"nullability": "current"},
         }
     },
     "constraints": {
         "constraint1": {
             "constraintType": "requires",
             "require": {"type": "container", "space": "string", "externalId": "string"},
+            "state": "current",
         }
     },
-    "indexes": {"index1": {"properties": ["prop1"], "indexType": "btree", "cursorable": False, "bySpace": False}},
+    "indexes": {
+        "index1": {
+            "properties": ["prop1"],
+            "indexType": "btree",
+            "cursorable": False,
+            "bySpace": False,
+            "state": "current",
+        }
+    },
     "createdTime": 123,
     "lastUpdatedTime": 123,
     "isGlobal": True,
@@ -75,7 +85,9 @@ class TestContainersApi:
             space=EXAMPLE_CONTAINER["space"],
             external_id=EXAMPLE_CONTAINER["externalId"],
             properties={
-                "prop1": ContainerProperty(type=Text(), default_value="string", description="string", name="string")
+                "prop1": ContainerProperty(
+                    type=Text(), default_value="string", description="string", name="string", nullable=False
+                )
             },
             description="string",
             name="string",

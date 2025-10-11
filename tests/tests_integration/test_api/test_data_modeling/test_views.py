@@ -13,6 +13,7 @@ from cognite.client.data_classes.data_modeling import (
     DataModel,
     DirectRelation,
     DirectRelationReference,
+    MappedProperty,
     MappedPropertyApply,
     PropertyId,
     Space,
@@ -22,6 +23,7 @@ from cognite.client.data_classes.data_modeling import (
     ViewId,
     ViewList,
 )
+from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType
 from cognite.client.data_classes.data_modeling.views import (
     MultiEdgeConnectionApply,
     SingleReverseDirectRelationApply,
@@ -60,6 +62,18 @@ class TestViewsAPI:
         assert expected_ids, "The movie model is missing views"
         assert expected_ids <= set(actual_views.as_ids())
         assert all(v.space == integration_test_space.space for v in actual_views)
+
+        for view in actual_views:
+            for prop in view.properties.values():
+                if not isinstance(prop, MappedProperty):
+                    continue
+                assert prop.constraint_state is not None
+                if not prop.nullable:
+                    assert prop.constraint_state.nullability is not None
+                if isinstance(prop.type, ListablePropertyType) and prop.type.max_list_size is not None:
+                    assert prop.constraint_state.max_list_size is not None
+                if isinstance(prop.type, Text) and prop.type.max_text_size is not None:
+                    assert prop.constraint_state.max_text_size is not None
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         new_view = ViewApply(

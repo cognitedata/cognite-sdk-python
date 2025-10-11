@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import dataclasses
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import Self
@@ -20,7 +21,7 @@ from cognite.client.data_classes.data_modeling.data_types import (
     PropertyType,
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId
-from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_camel_case
+from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -182,12 +183,12 @@ class Container(ContainerCore):
         return ContainerApply(
             space=self.space,
             external_id=self.external_id,
-            properties=self.properties,
+            properties={k: p.as_apply() for k, p in self.properties.items()},
             description=self.description,
             name=self.name,
             used_for=self.used_for,
-            constraints=self.constraints,
-            indexes=self.indexes,
+            constraints={k: c.as_apply() for k, c in self.constraints.items()},
+            indexes={k: i.as_apply() for k, i in self.indexes.items()},
         )
 
     def as_write(self) -> ContainerApply:
@@ -236,6 +237,28 @@ class _ContainerFilter(CogniteFilter):
 
 
 @dataclass(frozen=True)
+class PropertyConstraintState(CogniteObject):
+    nullability: Literal["current", "failed", "pending"] | None = None
+    max_list_size: Literal["current", "failed", "pending"] | None = None
+    max_text_size: Literal["current", "failed", "pending"] | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            nullability=resource.get("nullability"),
+            max_list_size=resource.get("maxListSize"),
+            max_text_size=resource.get("maxTextSize"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, str]:
+        output = {}
+        for key in ["nullability", "max_list_size", "max_text_size"]:
+            if (value := getattr(self, key)) is not None:
+                output[to_camel_case(key) if camel_case else key] = value
+        return output
+
+
+@dataclass(frozen=True)
 class ContainerProperty(CogniteObject):
     type: PropertyType
     nullable: bool = True
@@ -244,6 +267,7 @@ class ContainerProperty(CogniteObject):
     default_value: str | int | float | bool | dict | None = None
     description: str | None = None
     immutable: bool = False
+    constraint_state: PropertyConstraintState | None = field(default=None, init=False)
 
     def __post_init__(self) -> None:
         # We allow passing e.g. Int32 instead of Int32():
@@ -258,7 +282,7 @@ class ContainerProperty(CogniteObject):
             type_: PropertyType = DirectRelation.load(resource["type"])
         else:
             type_ = PropertyType.load(resource["type"])
-        return cls(
+        prop = cls(
             type=type_,
             # If nothing is specified, we will pass through null values
             nullable=resource.get("nullable"),  # type: ignore[arg-type]
@@ -268,8 +292,15 @@ class ContainerProperty(CogniteObject):
             description=resource.get("description"),
             immutable=resource.get("immutable", False),
         )
+        if (constraint_state := resource.get("constraintState")) is not None:
+            object.__setattr__(prop, "constraint_state", PropertyConstraintState._load(constraint_state))
+        return prop
 
-    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
+    def as_apply(self) -> Self:
+        # dataclasses.replace does not copy fields with init=False
+        return dataclasses.replace(self)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.type:
             output["type"] = self.type.dump(camel_case)
@@ -277,21 +308,38 @@ class ContainerProperty(CogniteObject):
         for key in ["nullable", "auto_increment", "name", "default_value", "description"]:
             if (value := getattr(self, key)) is not None:
                 output[to_camel_case(key) if camel_case else key] = value
+        if self.constraint_state is not None:
+            output["constraintState" if camel_case else "constraint_state"] = self.constraint_state.dump(camel_case)
         return output
 
 
 @dataclass(frozen=True)
-class Constraint(CogniteObject, ABC):
+class _WithState(CogniteObject):
+    state: Literal["current", "failed", "pending"] | None = field(default=None, init=False)
+
+    def as_apply(self) -> Self:
+        # dataclasses.replace does not copy fields with init=False
+        return dataclasses.replace(self)
+
+
+@dataclass(frozen=True)
+class Constraint(_WithState, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if resource["constraintType"] == "requires":
-            return cast(Self, RequiresConstraint.load(resource))
-        elif resource["constraintType"] == "uniqueness":
-            return cast(Self, UniquenessConstraint.load(resource))
-        return cast(Self, UnknownCogniteObject(resource))
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Constraint:
+        constraint: Constraint
+        match resource["constraintType"]:
+            case "requires":
+                constraint = RequiresConstraint._load(resource)
+            case "uniqueness":
+                constraint = UniquenessConstraint._load(resource)
+            case _:
+                return cast(Constraint, UnknownCogniteObject(resource))
+        if state := resource.get("state"):
+            object.__setattr__(constraint, "state", state)
+        return constraint
 
     @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
 
@@ -303,11 +351,10 @@ class RequiresConstraint(Constraint):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(require=ContainerId.load(resource["require"]))
 
-    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
-        as_dict = asdict(self)
-        output = convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
-        if "require" in output and isinstance(output["require"], dict):
-            output["require"] = self.require.dump(camel_case)
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {"require": self.require.dump(camel_case)}
+        if self.state is not None:
+            output["state"] = self.state
         key = "constraintType" if camel_case else "constraint_type"
         output[key] = "requires"
         return output
@@ -321,26 +368,33 @@ class UniquenessConstraint(Constraint):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(properties=resource["properties"])
 
-    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
-        as_dict = asdict(self)
-        output = convert_all_keys_to_camel_case_recursive(as_dict) if camel_case else as_dict
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {"properties": self.properties}
+        if self.state is not None:
+            output["state"] = self.state
         key = "constraintType" if camel_case else "constraint_type"
         output[key] = "uniqueness"
         return output
 
 
 @dataclass(frozen=True)
-class Index(CogniteObject, ABC):
+class Index(_WithState, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if resource["indexType"] == "btree":
-            return cast(Self, BTreeIndex.load(resource))
-        if resource["indexType"] == "inverted":
-            return cast(Self, InvertedIndex.load(resource))
-        return cast(Self, UnknownCogniteObject(resource))
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Index:
+        index: Index
+        match resource["indexType"]:
+            case "btree":
+                index = BTreeIndex._load(resource)
+            case "inverted":
+                index = InvertedIndex._load(resource)
+            case _:
+                return cast(Index, UnknownCogniteObject(resource))
+        if state := resource.get("state"):
+            object.__setattr__(index, "state", state)
+        return index
 
     @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
 
@@ -357,8 +411,10 @@ class BTreeIndex(Index):
         dumped: dict[str, Any] = {"properties": self.properties}
         if self.cursorable is not None:
             dumped["cursorable"] = self.cursorable
+        if self.state is not None:
+            dumped["state"] = self.state
         dumped["indexType" if camel_case else "index_type"] = "btree"
-        return convert_all_keys_to_camel_case_recursive(dumped) if camel_case else dumped
+        return dumped
 
 
 @dataclass(frozen=True)
@@ -372,4 +428,6 @@ class InvertedIndex(Index):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {"properties": self.properties}
         dumped["indexType" if camel_case else "index_type"] = "inverted"
-        return convert_all_keys_to_camel_case_recursive(dumped) if camel_case else dumped
+        if self.state is not None:
+            dumped["state"] = self.state
+        return dumped

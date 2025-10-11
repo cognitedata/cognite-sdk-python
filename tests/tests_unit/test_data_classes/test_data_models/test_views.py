@@ -1,5 +1,6 @@
 from cognite.client.data_classes._base import UnknownCogniteObject
 from cognite.client.data_classes.data_modeling import View, ViewApply, ViewId
+from cognite.client.data_classes.data_modeling.containers import PropertyConstraintState
 from cognite.client.data_classes.data_modeling.views import MappedProperty, ViewProperty, ViewPropertyApply
 
 
@@ -38,17 +39,17 @@ class TestViewPropertyDefinition:
             "autoIncrement": False,
             "defaultValue": None,
             "immutable": False,
+            "constraintState": {"nullability": "current"},
         }
         actual = ViewProperty.load(input)
         assert isinstance(actual, MappedProperty)
         assert actual.source == ViewId(space="mySpace", external_id="myExternalId", version="myVersion")
+        assert actual.constraint_state == PropertyConstraintState(nullability="current")
 
         assert actual.dump(camel_case=False) == {
             "auto_increment": False,
             "container": {"external_id": "myExternalId", "space": "mySpace"},
             "container_property_identifier": "name",
-            "default_value": None,
-            "description": None,
             "name": "fullName",
             "nullable": False,
             "immutable": False,
@@ -57,6 +58,7 @@ class TestViewPropertyDefinition:
                 "source": {"external_id": "myExternalId", "space": "mySpace", "version": "myVersion"},
                 "list": False,
             },
+            "constraint_state": {"nullability": "current"},
         }
 
     def test_load_dumped_mapped_property_for_apply(self) -> None:
