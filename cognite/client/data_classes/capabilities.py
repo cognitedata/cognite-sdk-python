@@ -1167,6 +1167,36 @@ class TemplateInstancesAcl(Capability):
 
 
 @dataclass
+class StreamsAcl(Capability):
+    _capability_name = "streamsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Create = "CREATE"
+        Delete = "DELETE"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
+class StreamRecordsAcl(Capability):
+    _capability_name = "streamRecordsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | SpaceIDScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+        Space = SpaceIDScope
+
+
+@dataclass
 class DataModelInstancesAcl(Capability):
     _capability_name = "dataModelInstancesAcl"
     actions: Sequence[Action]
