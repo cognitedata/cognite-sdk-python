@@ -63,6 +63,7 @@ def concat_dps_dataframe_list(
     include_aggregate_name: bool,
     include_granularity_name: bool,
     include_status: bool,
+    include_unit: bool,
 ) -> pd.DataFrame:
     pd = local_import("pandas")
     dfs = [
@@ -71,9 +72,16 @@ def concat_dps_dataframe_list(
             include_aggregate_name=include_aggregate_name,
             include_granularity_name=include_granularity_name,
             include_status=include_status,
+            include_unit=include_unit,
         )
         for dps in dps_lst
     ]
+    if include_unit and any(isinstance(df.columns, pd.MultiIndex) for df in dfs):
+        for df in dfs:
+            if not isinstance(df.columns, pd.MultiIndex):
+                df.columns = pd.MultiIndex.from_arrays(
+                    [df.columns.values, [None] * len(df.columns)], names=[None, "Units"]
+                )
     if not dfs:
         return pd.DataFrame(index=pd.to_datetime([]))
     timezones = set(dps.timezone for dps in dps_lst) - {None}

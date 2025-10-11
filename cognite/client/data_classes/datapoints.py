@@ -972,6 +972,7 @@ class DatapointsArray(CogniteResource):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_status: bool = True,
+        include_unit: bool = False,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArray into a pandas DataFrame.
 
@@ -980,6 +981,7 @@ class DatapointsArray(CogniteResource):
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_status (bool): Include status code and status symbol as separate columns, if available.
+            include_unit (bool): Include units as a second level in the columns. If availible unit external IDs will be used, if not the basic unit property of the time series will be used. If the time series does not have a unit, the columns will not have a second level.
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
@@ -990,20 +992,33 @@ class DatapointsArray(CogniteResource):
             idx = pd.to_datetime(idx, utc=True).tz_convert(convert_tz_for_pandas(tz))
 
         identifier = resolve_ts_identifier_as_df_column_name(self, column_names)
+        data: list[np.typing.NDArray] = [np.array([]) if self.value is None else self.value]
+        units: list[str | None] = [self.unit_external_id if self.unit_external_id is not None else self.unit]
         if self.value is not None:
-            raw_columns: dict[str, npt.NDArray] = {identifier: self.value}
+            columns = [identifier]
             if include_status:
                 if self.status_code is not None:
-                    raw_columns[f"{identifier}|status_code"] = self.status_code
+                    columns.append(f"{identifier}|status_code")
+                    data.append(self.status_code)
+                    units.append(None)
                 if self.status_symbol is not None:
-                    raw_columns[f"{identifier}|status_symbol"] = self.status_symbol
-            return pd.DataFrame(raw_columns, index=idx, copy=False)
+                    columns.append(f"{identifier}|status_symbol")
+                    data.append(self.status_symbol)
+                    units.append(None)
+            if include_unit and any(bool(u and not u.isspace()) for u in units):
+                columns = pd.MultiIndex.from_tuples(list(zip(columns, units)), names=[None, "Units"])
+            return pd.DataFrame(np.stack(data).T, columns=columns, index=idx, copy=False)
 
         (_, *agg_names), (_, *arrays) = self._data_fields()
         aggregate_columns = [
             identifier + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
             for agg in agg_names
         ]
+        if include_unit and any(bool(u and not u.isspace()) for u in units):
+            units_for_aggs = units * len(agg_names)
+            aggregate_columns = pd.MultiIndex.from_tuples(
+                list(zip(aggregate_columns, units_for_aggs, strict=True)), names=[None, "Units"]
+            )
         # We need special handling for object aggregates:
         for i, agg in enumerate(agg_names):
             if agg in ("min_datapoint", "max_datapoint"):
@@ -1205,6 +1220,7 @@ class Datapoints(CogniteResource):
         include_granularity_name: bool = False,
         include_errors: bool = False,
         include_status: bool = True,
+        include_unit: bool = False,
     ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
 
@@ -1214,6 +1230,7 @@ class Datapoints(CogniteResource):
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_errors (bool): For synthetic datapoint queries, include a column with errors.
             include_status (bool): Include status code and status symbol as separate columns, if available.
+            include_unit (bool): Include units as a second level in the columns. If availible unit external IDs will be used, if not the basic unit property of the time series will be used. If the time series does not have a unit, the columns will not have a second level.
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -1229,11 +1246,16 @@ class Datapoints(CogniteResource):
         # Make sure columns (aggregates) always come in alphabetical order (e.g. "average" before "max"):
         field_names, data_lists = [], []
         data_fields = self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors)
+        units: list[str | None] = []
         if not include_errors:  # We do not touch column ordering for synthetic datapoints
             data_fields = sorted(data_fields)
         for attr, data in data_fields:
             if attr == "timestamp":
                 continue
+            if attr == "error":
+                units.append(None)
+            else:
+                units.append(self.unit_external_id if self.unit_external_id is not None else self.unit)
             id_col_name = identifier
             if attr == "value":
                 field_names.append(id_col_name)
@@ -1242,9 +1264,11 @@ class Datapoints(CogniteResource):
                     if self.status_code is not None:
                         field_names.append(f"{identifier}|status_code")
                         data_lists.append(self.status_code)
+                        units.append(None)
                     if self.status_symbol is not None:
                         field_names.append(f"{identifier}|status_symbol")
                         data_lists.append(self.status_symbol)
+                        units.append(None)
                 continue
             if include_aggregate_name:
                 id_col_name += f"|{attr}"
@@ -1268,6 +1292,8 @@ class Datapoints(CogniteResource):
             idx = pd.to_datetime(self.timestamp, unit="ms")
         else:
             idx = pd.to_datetime(self.timestamp, unit="ms", utc=True).tz_convert(convert_tz_for_pandas(tz))
+        if include_unit and any(bool(u and not u.isspace()) for u in units):
+            field_names = pd.MultiIndex.from_tuples(list(zip(field_names, units, strict=True)), names=[None, "Units"])
         (df := pd.DataFrame(dict(enumerate(data_lists)), index=idx)).columns = field_names
         return df
 
@@ -1514,6 +1540,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_status: bool = True,
+        include_unit: bool = False,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
@@ -1522,6 +1549,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_status (bool): Include status code and status symbol as separate columns, if available.
+            include_unit (bool): Include units as a second level in the columns. If availible unit external IDs will be used, if not the basic unit property of the time series will be used. If the time series does not have a unit, the columns will not have a second level.
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
@@ -1532,6 +1560,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
             include_aggregate_name=include_aggregate_name,
             include_granularity_name=include_granularity_name,
             include_status=include_status,
+            include_unit=include_unit,
         )
 
     def dump(self, camel_case: bool = True, convert_timestamps: bool = False) -> list[dict[str, Any]]:
@@ -1608,6 +1637,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_status: bool = True,
+        include_unit: bool = False,
     ) -> pandas.DataFrame:
         """Convert the datapoints list into a pandas DataFrame.
 
@@ -1616,6 +1646,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_status (bool): Include status code and status symbol as separate columns, if available.
+            include_unit (bool): Include units as a second level in the columns. If availible unit external IDs will be used, if not the basic unit property of the time series will be used.
 
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
@@ -1626,4 +1657,5 @@ class DatapointsList(CogniteResourceList[Datapoints]):
             include_aggregate_name=include_aggregate_name,
             include_granularity_name=include_granularity_name,
             include_status=include_status,
+            include_unit=include_unit,
         )
