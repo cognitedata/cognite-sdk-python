@@ -13,6 +13,25 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.87.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.86.0...v7.87.0) (2025-10-11)
+
+
+### Features
+
+* add sort parameter to simulators API list and iteration methods ([#2355](https://github.com/cognitedata/cognite-sdk-python/issues/2355)) ([d21f9e3](https://github.com/cognitedata/cognite-sdk-python/commit/d21f9e3991834ed69bcf52c97f425f441a25acc1))
+* **functions:** [FUN-466] Add `last_called` field to Function dataclass. ([#2356](https://github.com/cognitedata/cognite-sdk-python/issues/2356)) ([3b3a6b5](https://github.com/cognitedata/cognite-sdk-python/commit/3b3a6b50e0fb9de9da09e83a825b42c875887fa6))
+* **simulators:** Add support for running simulations using revisions ([#2339](https://github.com/cognitedata/cognite-sdk-python/issues/2339)) ([dc76513](https://github.com/cognitedata/cognite-sdk-python/commit/dc765130663863cfd01d978869ed1357ef30bb7b))
+
+
+### Bug Fixes
+
+* **functions:** [FUN-594] Fix bug in handler handle validation ([#2363](https://github.com/cognitedata/cognite-sdk-python/issues/2363)) ([d949a9a](https://github.com/cognitedata/cognite-sdk-python/commit/d949a9a999649f13e645bc7985aa98d1e59c1fca))
+
+
+### Documentation
+
+* **simulators:** expose all simulator types in the simulators namespace ([#2362](https://github.com/cognitedata/cognite-sdk-python/issues/2362)) ([b156f5e](https://github.com/cognitedata/cognite-sdk-python/commit/b156f5e401fc12cf483ba627ab92590e6a83f7f5))
+
 ## [7.86.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.85.0...v7.86.0) (2025-10-02)
 
 
