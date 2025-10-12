@@ -47,9 +47,12 @@ def dumps(
     allow_nan: bool = True,
     sort_keys: bool = False,
 ) -> str:
+    # Use compact separators unless indenting (for pretty printing)
+    separators = (",", ":") if indent is None else (",", ": ")
     return json.dumps(
         obj,
         default=_default_json_encoder,
+        separators=separators,
         indent=indent,
         allow_nan=allow_nan,
         sort_keys=sort_keys,

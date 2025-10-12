@@ -325,7 +325,7 @@ class Test3DAssetMappings:
         assert mock_3d_asset_mappings_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
         url = mock_3d_asset_mappings_response.calls[0].request.url
-        assert 'intersectsBoundingBox={"max": [1.0, 1.0, 1.0], "min": [0.0, 0.0, 0.0]}' in unquote_plus(url)
+        assert 'intersectsBoundingBox={"max":[1.0,1.0,1.0],"min":[0.0,0.0,0.0]}' in unquote_plus(url)
 
     def test_create(self, cognite_client, mock_3d_asset_mappings_response):
         res = cognite_client.three_d.asset_mappings.create(
