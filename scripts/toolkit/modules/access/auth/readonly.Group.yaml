@@ -222,6 +222,16 @@ capabilities:
       - READ
       scope:
         all: {}
+  - streamRecordsAcl:
+      actions:
+      - READ
+      scope:
+        all: {}
+  - streamsAcl:
+      actions:
+      - READ
+      scope:
+        all: {}
   - templateGroupsAcl:
       actions:
       - READ

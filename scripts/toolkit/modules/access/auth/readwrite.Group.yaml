@@ -273,6 +273,19 @@ capabilities:
       - DELETE
       scope:
         all: {}
+  - streamRecordsAcl:
+      actions:
+      - READ
+      - WRITE
+      scope:
+        all: {}
+  - streamsAcl:
+      actions:
+      - READ
+      - CREATE
+      - DELETE
+      scope:
+        all: {}
   - templateGroupsAcl:
       actions:
       - WRITE
