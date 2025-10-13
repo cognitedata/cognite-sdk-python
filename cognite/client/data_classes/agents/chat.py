@@ -118,14 +118,14 @@ class ClientToolAction(Action):
     Args:
         name (str): The name of the client tool to call.
         description (str): A description of what the function does. The language model will use this description when selecting the function and interpreting its parameters.
-        parameters (dict[str, Any]): The parameters the function accepts, described as a JSON Schema object.
+        parameters (dict[str, object]): The parameters the function accepts, described as a JSON Schema object.
     """
 
     _type: ClassVar[str] = "clientTool"
     name: str
     description: str
     parameters: dict[
-        str, Any
+        str, object
     ]  # TODO: We do not want the user to have to handle this, instead e.g. set json schema from Pydantic classes, or function signatures, like ClientToolAction.from_function(func: Callable)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -154,11 +154,11 @@ class UnknownAction(Action):
 
     Args:
         type (str): The action type.
-        data (dict[str, Any]): The raw action data.
+        data (dict[str, object]): The raw action data.
     """
 
     type: str
-    data: dict[str, Any] = field(default_factory=dict)
+    data: dict[str, object] = field(default_factory=dict)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = self.data.copy()
@@ -212,13 +212,13 @@ class ClientToolCall(ActionCall):
     Args:
         action_id (str): The unique identifier for this action call.
         name (str): The name of the client tool being called.
-        arguments (dict[str, Any]): The parsed arguments for the tool call.
+        arguments (dict[str, object]): The parsed arguments for the tool call.
     """
 
     _type: ClassVar[str] = "clientTool"
     action_id: str
     name: str
-    arguments: dict[str, Any]  # Always a json string, in line with OpenAI's API pattern
+    arguments: dict[str, object]  # Always a json string, in line with OpenAI's API pattern
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
@@ -249,7 +249,7 @@ class ToolConfirmationCall(ActionCall):
         action_id (str): The unique identifier for this action call.
         content (MessageContent): The confirmation message content.
         tool_name (str): The name of the tool requiring confirmation.
-        tool_arguments (dict[str, Any]): The arguments for the tool call.
+        tool_arguments (dict[str, object]): The arguments for the tool call.
         tool_description (str): Description of what the tool does.
         tool_type (str): The type of tool (e.g., "runPythonCode", "callRestApi").
         details (dict[str, object] | None): Optional additional details about the tool call.
@@ -259,7 +259,7 @@ class ToolConfirmationCall(ActionCall):
     action_id: str
     content: MessageContent
     tool_name: str
-    tool_arguments: dict[str, Any]
+    tool_arguments: dict[str, object]
     tool_description: str
     tool_type: str
     details: dict[str, object] | None = None
@@ -302,12 +302,12 @@ class UnknownActionCall(ActionCall):
     Args:
         action_id (str): The unique identifier for this action call.
         type (str): The action call type.
-        data (dict[str, Any]): The raw action call data.
+        data (dict[str, object]): The raw action call data.
     """
 
     action_id: str
     type: str
-    data: dict[str, Any] = field(default_factory=dict)
+    data: dict[str, object] = field(default_factory=dict)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = self.data.copy()
