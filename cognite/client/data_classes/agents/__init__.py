@@ -40,7 +40,6 @@ from cognite.client.data_classes.agents.chat import (
     ToolConfirmationResult,
     UnknownAction,
     UnknownActionCall,
-    UnknownActionResult,
     UnknownContent,
 )
 
@@ -83,7 +82,6 @@ __all__ = [
     "ToolConfirmationResult",
     "UnknownAction",
     "UnknownActionCall",
-    "UnknownActionResult",
     "UnknownAgentTool",
     "UnknownAgentToolUpsert",
     "UnknownContent",

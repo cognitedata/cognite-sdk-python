@@ -367,29 +367,16 @@ class MessageList(CogniteResourceList[Message]):
 
 
 @dataclass
-class ActionResult(CogniteResource, ABC):
+class ActionResult(CogniteObject, ABC):
     """Base class for action execution results."""
 
     _type: ClassVar[str]
     action_id: str
-    role: Literal["action"] = "action"
-
-    @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionResult:
-        """Dispatch to the correct concrete action result class based on `type`."""
-        action_type = data.get("type", "")
-        action_class = _ACTION_RESULT_CLS_BY_TYPE.get(action_type, UnknownActionResult)
-        return action_class._load_result(data, cognite_client)
+    role: Literal["action"]
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the action result to a dictionary."""
-        ...
-
-    @classmethod
-    @abstractmethod
-    def _load_result(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionResult:
-        """Create a concrete action result instance from raw data."""
         ...
 
 
@@ -431,8 +418,9 @@ class ClientToolResult(ActionResult):
         }
 
     @classmethod
-    def _load_result(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolResult:
-        content = MessageContent._load(data["content"])
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolResult:
+        """Load from dumped data. Only used for testing."""
+        content = MessageContent._load(data["content"], cognite_client)
         return cls(
             action_id=data["actionId"],
             content=content,
@@ -450,7 +438,7 @@ class ToolConfirmationResult(ActionResult):
     """
 
     _type: ClassVar[str] = "toolConfirmation"
-    status: Literal["ALLOW", "DENY"] = field(init=False)
+    status: Literal["ALLOW", "DENY"]
 
     def __init__(self, action_id: str, status: Literal["ALLOW", "DENY"]) -> None:
         self.action_id = action_id
@@ -466,46 +454,12 @@ class ToolConfirmationResult(ActionResult):
         }
 
     @classmethod
-    def _load_result(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ToolConfirmationResult:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ToolConfirmationResult:
+        """Load from dumped data. Only used for testing."""
         return cls(
-            action_id=data["actionId"],
+            action_id=data.get("actionId", data.get("action_id", "")),
             status=data["status"],
         )
-
-
-@dataclass
-class UnknownActionResult(ActionResult):
-    """Unknown action result type for forward compatibility.
-
-    Args:
-        action_id (str): The ID of the action being responded to.
-        type (str): The action result type.
-        data (dict[str, Any]): The raw action result data.
-    """
-
-    type: str = ""
-    data: dict[str, Any] = field(default_factory=dict)
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result = self.data.copy()
-        result["role"] = self.role
-        result["type"] = self.type
-        result["actionId" if camel_case else "action_id"] = self.action_id
-        return result
-
-    @classmethod
-    def _load_result(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownActionResult:
-        action_type = data.get("type", "")
-        action_id = data.get("actionId", "")
-        return cls(action_id=action_id, data=data, type=action_type)
-
-
-# Build the mapping AFTER concrete classes are defined
-_ACTION_RESULT_CLS_BY_TYPE: dict[str, type[ActionResult]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
-    for subclass in ActionResult.__subclasses__()
-    if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
-}
 
 
 @dataclass
