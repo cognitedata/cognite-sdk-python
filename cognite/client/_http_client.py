@@ -5,7 +5,15 @@ import functools
 import logging
 import random
 import time
-from collections.abc import AsyncIterable, AsyncIterator, Callable, Coroutine, Iterable, Mapping, MutableMapping
+from collections.abc import (
+    AsyncIterable,
+    AsyncIterator,
+    Callable,
+    Coroutine,
+    Iterable,
+    Mapping,
+    MutableMapping,
+)
 from contextlib import asynccontextmanager, suppress
 from http.cookiejar import Cookie, CookieJar
 from json import JSONDecodeError
@@ -220,14 +228,13 @@ class AsyncHTTPClientWithRetry:
         timeout: float | None = None,
     ) -> AsyncIterator[httpx.Response]:
         # This method is basically a clone of httpx.AsyncClient.stream() so that we may add our own retry logic.
-        request = self.httpx_async_client.build_request(
-            method=method, url=url, json=json, headers=headers, timeout=timeout
-        )
-        response: httpx.Response | None = None
-
         def coro_factory() -> HTTPResponseCoro:
+            request = self.httpx_async_client.build_request(
+                method=method, url=url, json=json, headers=headers, timeout=timeout
+            )
             return self.httpx_async_client.send(request, stream=True)
 
+        response: httpx.Response | None = None
         try:
             yield (response := await self._with_retry(coro_factory, url=url, headers=headers))
         finally:
