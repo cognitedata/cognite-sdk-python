@@ -11,7 +11,7 @@ from typing import Any, BinaryIO, Literal, overload
 from urllib.parse import urljoin, urlparse
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     FileMetadata,
     FileMetadataFilter,
@@ -401,12 +401,8 @@ class FilesAPI(APIClient):
         Returns:
             FileMetadata: No description.
         """
-        fh: bytes | BufferedReader
         if os.path.isfile(path):
             with open(path, "rb") as fh:
-                if _RUNNING_IN_BROWSER:
-                    # Pyodide doesn't handle file handles correctly, so we need to read everything into memory:
-                    fh = fh.read()
                 file_metadata = await self.upload_content_bytes(fh, external_id=external_id, instance_id=instance_id)
             return file_metadata
         elif os.path.isdir(path):
@@ -534,9 +530,6 @@ class FilesAPI(APIClient):
     ) -> FileMetadata:
         fh: bytes | BufferedReader
         with open(file_path, "rb") as fh:
-            if _RUNNING_IN_BROWSER:
-                # Pyodide doesn't handle file handles correctly, so we need to read everything into memory:
-                fh = fh.read()
             file_metadata = await self.upload_bytes(fh, overwrite=overwrite, **file.dump(camel_case=False))
         return file_metadata
 
