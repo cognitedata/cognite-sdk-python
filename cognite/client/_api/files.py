@@ -1119,35 +1119,33 @@ class FilesAPI(APIClient):
         all_ids: Sequence[int],
         id_to_metadata: dict[int, FileMetadata],
         filepaths: list[Path],
-        headers: dict | None = None,
     ) -> None:
         self._warn_on_duplicate_filenames(filepaths)
         tasks = [
-            AsyncSDKTask(self._process_file_download, directory, {"id": id_}, filepath, headers)
+            AsyncSDKTask(self._process_file_download, directory, identifier={"id": id_}, path=filepath)
             for id_, filepath in zip(all_ids, filepaths)
         ]
         tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: id_to_metadata[task[1]["id"]]
+            task_unwrap_fn=lambda task: id_to_metadata[task["identifier"]["id"]]
         )
 
     async def _get_download_link(self, identifier: dict[str, int | str]) -> str:
-        response = await self._post(url_path="/files/downloadlink", json={"items": [identifier]})
+        response = await self._post(url_path=f"{self._RESOURCE_PATH}/downloadlink", json={"items": [identifier]})
         return unpack_items(response)[0]["downloadUrl"]
 
     async def _process_file_download(
         self,
         directory: Path,
         identifier: dict[str, int | str],
-        file_path: Path,
-        headers: dict | None = None,
+        path: Path,
     ) -> None:
-        file_path_absolute = file_path.resolve()
-        file_is_in_download_directory = directory.resolve() in file_path_absolute.parents
-        if not file_is_in_download_directory:
-            raise RuntimeError(f"Resolved file path '{file_path_absolute}' is not inside download directory")
+        file_path = path.resolve()
+        if not file_path.is_relative_to(directory.resolve()):
+            raise RuntimeError(f"Resolved file path '{file_path}' is not inside download directory")
+
         download_link = await self._get_download_link(identifier)
-        await self._download_file_to_path(download_link, file_path_absolute)
+        await self._download_file_to_path(download_link, file_path)
 
     async def _download_file_to_path(self, download_link: str, path: Path) -> None:
         from cognite.client import global_config
