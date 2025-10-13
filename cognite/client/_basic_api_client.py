@@ -213,13 +213,31 @@ class BasicAsyncAPIClient:
         method: Literal["GET", "PUT", "HEAD"],
         /,
         full_url: str,
-        content: str | bytes | Iterable[bytes] | None = None,
+        content: bytes | AsyncIterator[bytes] | None = None,
         headers: dict[str, Any] | None = None,
         timeout: float | None = None,
-        api_subversion: str | None = None,
         include_cdf_headers: bool = False,
+        api_subversion: str | None = None,
     ) -> httpx.Response:
-        """Make a request to something that is outside Cognite Data Fusion"""
+        """
+        Make a request to something that is outside Cognite Data Fusion, with retry enabled.
+        Requires the caller to handle errors coming from non-2xx response status codes.
+
+        Args:
+            method (Literal['GET', 'PUT', 'HEAD']): HTTP method.
+            full_url (str): Full URL to make the request to.
+            content (bytes | AsyncIterator[bytes] | None): Optional body content to send along with the request.
+            headers (dict[str, Any] | None): Optional headers to include in the request.
+            timeout (float | None): Override the default timeout for this request.
+            include_cdf_headers (bool): Whether to include Cognite Data Fusion headers in the request. Defaults to False.
+            api_subversion (str | None): When include_cdf_headers=True, override the API subversion to use for the request. Has no effect otherwise.
+
+        Returns:
+            httpx.Response: The response from the server.
+
+        Raises:
+            httpx.HTTPStatusError: If the response status code is 4xx or 5xx.
+        """
         client = self._select_async_http_client(method in {"GET", "PUT", "HEAD"})
         if include_cdf_headers:
             headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
@@ -227,11 +245,13 @@ class BasicAsyncAPIClient:
             res = await client(
                 method, full_url, content=content, headers=headers, timeout=timeout or self._config.timeout
             )
-        except httpx.HTTPStatusError as err:
-            await self._handle_status_error(err)
+            self._log_successful_request(res)
+            return res
 
-        self._log_successful_request(res)
-        return res
+        except httpx.HTTPStatusError as err:
+            handler = await FailedRequestHandler.from_status_error(err, stream=False)
+            handler.log_failed_request()
+            raise
 
     @asynccontextmanager
     async def _stream(
