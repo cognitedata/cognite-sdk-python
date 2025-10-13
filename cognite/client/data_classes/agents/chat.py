@@ -124,7 +124,9 @@ class ClientToolAction(Action):
     _type: ClassVar[str] = "clientTool"
     name: str
     description: str
-    parameters: dict[str, Any]
+    parameters: dict[
+        str, Any
+    ]  # TODO: We do not want the user to have to handle this, instead e.g. set json schema from Pydantic classes, or function signatures, like ClientToolAction.from_function(func: Callable)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
