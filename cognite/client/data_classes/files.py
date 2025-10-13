@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from collections.abc import Sequence
+from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal, TypeVar, cast
 
@@ -541,8 +542,16 @@ class FileMetadataList(WriteableCogniteResourceList[FileMetadataWrite, FileMetad
         return FileMetadataWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
 
 
-class FileMultipartUploadSession:
-    """Result of a call to `multipart_upload_session`.
+class FileMultipartUploadSession(
+    AbstractContextManager["FileMultipartUploadSession"],
+    AbstractAsyncContextManager["FileMultipartUploadSession"],
+):
+    """
+    Result of a call to `multipart_upload_session`. Use `upload_part_async` or `upload_part` to
+    upload parts, then upon exiting the context manager, the upload will be marked as completed.
+
+    Note:
+        Can be used both as a regular and async context manager. Use
 
     Args:
         file_metadata (FileMetadata): The created file in CDF.
@@ -559,12 +568,13 @@ class FileMultipartUploadSession:
         self._upload_id = upload_id
         self._uploaded_urls = [False for _ in upload_urls]
         self._cognite_client = cognite_client
+        self._upload_is_finalized = False
 
     async def upload_part_async(self, part_no: int, content: str | bytes | BinaryIO) -> None:
         """Upload part of a file.
 
         Note:
-            If `content` does not somehow expose its length, this method may not work on Azure.
+            If `content` does not somehow expose its length, this method may not work on Azure or AWS.
 
         Args:
             part_no (int): Which part number this is, must be between 0 and `parts` given to `multipart_upload_session`
@@ -582,20 +592,39 @@ class FileMultipartUploadSession:
     def upload_part(self, part_no: int, content: str | bytes | BinaryIO) -> None:
         return run_sync(self.upload_part_async(part_no, content))
 
-    async def __aenter__(self) -> FileMultipartUploadSession:
-        return self
-
-    async def __aexit__(
-        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
-    ) -> bool:
-        if exc_type is not None:
-            return False
-
+    def _check_errors_before_completing(self, exc_type: type[BaseException] | None) -> None:
         if not all(self._uploaded_urls):
             raise CogniteFileUploadError(
                 message="Did not upload all parts of file during multipart upload",
                 code=400,
             )
 
+    async def __aenter__(self) -> Self:
+        if self._upload_is_finalized:
+            raise RuntimeError("Multipart upload has already been finalized")
+        return self
+
+    async def __aexit__(
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
+    ) -> bool | None:
+        if exc_type is not None:
+            return False
+
+        self._check_errors_before_completing(exc_type)
         await self._cognite_client.files._complete_multipart_upload(self)
-        return True
+        self._upload_is_finalized = True
+
+    def __enter__(self) -> Self:
+        if self._upload_is_finalized:
+            raise RuntimeError("Multipart upload has already been finalized")
+        return self
+
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
+    ) -> bool | None:
+        if exc_type is not None:
+            return False
+
+        self._check_errors_before_completing(exc_type)
+        run_sync(self._cognite_client.files._complete_multipart_upload(self))
+        self._upload_is_finalized = True

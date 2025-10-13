@@ -775,7 +775,7 @@ class FilesAPI(APIClient):
         the parts are stored in the correct order by uploading each chunk to the correct upload URL.
 
         This returns a context manager you must enter (using the `with` keyword), then call `upload_part`
-        for each part before exiting.
+        for each part before exiting. It also supports async usage with `async with`, then calling `await upload_part_async`.
 
         Args:
             name (str): Name of the file.
@@ -864,8 +864,8 @@ class FilesAPI(APIClient):
         The file chunks may be uploaded in any order, and in parallel, but the client must ensure that
         the parts are stored in the correct order by uploading each chunk to the correct upload URL.
 
-        This returns a context manager (that also supports async) you must enter (using the `with` keyword, or `async with`), then call `upload_part`
-        for each part before exiting, which will automatically finalize the multipart upload.
+        This returns a context manager you must enter (using the `with` keyword), then call `upload_part`
+        for each part before exiting. It also supports async usage with `async with`, then calling `await upload_part_async`.
 
         Args:
             parts (int): The number of parts to upload, must be between 1 and 250.
