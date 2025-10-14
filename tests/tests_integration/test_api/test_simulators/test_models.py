@@ -6,16 +6,14 @@ from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes import TimestampRange
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators import (
+    PropertySort,
+    SimulatorFlowsheet,
     SimulatorModelDependencyFileId,
+    SimulatorModelRevision,
     SimulatorModelRevisionDependency,
+    SimulatorModelRevisionList,
     SimulatorModelRevisionWrite,
     SimulatorModelWrite,
-)
-from cognite.client.data_classes.simulators.filters import PropertySort
-from cognite.client.data_classes.simulators.models import (
-    SimulatorFlowsheet,
-    SimulatorModelRevision,
-    SimulatorModelRevisionList,
 )
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.conftest import upload_file

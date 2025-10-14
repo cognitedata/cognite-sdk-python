@@ -3,9 +3,12 @@ from itertools import pairwise
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
-from cognite.client.data_classes.simulators.filters import PropertySort
-from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevision
-from cognite.client.data_classes.simulators.routines import SimulatorRoutine, SimulatorRoutineWrite
+from cognite.client.data_classes.simulators import (
+    PropertySort,
+    SimulatorRoutine,
+    SimulatorRoutineRevision,
+    SimulatorRoutineWrite,
+)
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     ResourceNames,
