@@ -706,23 +706,21 @@ def get_handle_function_node(file_content: str) -> ast.FunctionDef | ast.Assign 
         tree = ast.parse(file_content)
     except SyntaxError:
         return None
+
+    def _target_is_handle(target: ast.expr) -> bool:
+        """Check if assignment target is a simple name 'handle'."""
+        return isinstance(target, ast.Name) and target.id == "handle"
+
     return next(
         (
             node
             for node in reversed(tree.body)  # Only look at top-level nodes
+            # def handle(...): ...
             if (isinstance(node, ast.FunctionDef) and node.name == "handle")
-            or (
-                isinstance(node, ast.Assign)
-                and len(node.targets) == 1
-                and isinstance(node.targets[0], ast.Name)
-                and node.targets[0].id == "handle"
-            )
-            or (
-                isinstance(node, ast.AnnAssign)
-                and isinstance(node.target, ast.Name)
-                and node.target.id == "handle"
-                and node.value is not None  # Only assignments with values, not just type annotations
-            )
+            # handle = callable
+            or (isinstance(node, ast.Assign) and len(node.targets) == 1 and _target_is_handle(node.targets[0]))
+            # handle: Callable = callable
+            or (isinstance(node, ast.AnnAssign) and node.value is not None and _target_is_handle(node.target))
         ),
         None,
     )
