@@ -25,6 +25,7 @@ import cognite.client.utils._auxiliary
 from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
+from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes import (
     DataPointSubscriptionWrite,
     EndTimeFilter,
@@ -111,12 +112,24 @@ def all_concrete_subclasses(base: T_Type, exclude: set[type] | None = None) -> l
     ]
 
 
-def all_mock_children(mock: MagicMock, parent_name: tuple[str, ...] = ()) -> dict[str, MagicMock]:
-    """Returns a dictionary with correct dotted names mapping to mocked classes."""
-    dct = {".".join((*parent_name, k)): v for k, v in mock._mock_children.items()}
-    for name, child in dct.copy().items():
-        dct.update(all_mock_children(child, parent_name=(name,)))
-    return dct
+def all_mock_children(mock_obj: MagicMock, parent_path: str = "") -> dict[str, tuple[type[APIClient], MagicMock]]:
+    """Returns a dictionary with correct dotted names mapping to mocked APIClient classes."""
+    api_mocks = {}
+    for attr in dir(mock_obj):
+        if attr.startswith("_"):
+            continue
+
+        api_mock = getattr(mock_obj, attr)
+        spec_class = getattr(api_mock, "_spec_class", None)
+        current_path = f"{parent_path}.{attr}" if parent_path else attr
+
+        if spec_class is not None and issubclass(spec_class, APIClient | SyncAPIClient):
+            api_mocks[current_path] = (spec_class, api_mock)
+            # Recursively check nested APIs:
+            nested_apis = all_mock_children(api_mock, current_path)
+            api_mocks.update(nested_apis)
+
+    return api_mocks
 
 
 def get_api_class_by_attribute(cls_: object, parent_name: tuple[str, ...] = ()) -> dict[str, type[APIClient]]:
