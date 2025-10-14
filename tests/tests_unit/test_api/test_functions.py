@@ -17,6 +17,7 @@ from cognite.client._api.functions import (
     _extract_requirements_from_file,
     _get_fn_docstring_requirements,
     _validate_and_parse_requirements,
+    _validate_function_handle,
     get_handle_function_node,
     validate_function_folder,
 )
@@ -559,6 +560,22 @@ class TestFunctionsAPI:
 
         assert isinstance(res, Function)
         assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
+
+    def test_validate_function_handle_with_complex_assignment_target_raises(self):
+        # Create AST node for: obj.handle = some_callable
+        code = "obj.handle = lambda: None"
+        tree = ast.parse(code)
+        assign_node = tree.body[0]
+        with pytest.raises(TypeError, match="Assignment target must be a simple name"):
+            _validate_function_handle(assign_node)
+
+    def test_validate_function_handle_with_complex_annotated_assignment_target_raises(self):
+        # Create AST node for: obj.handle: Callable = some_callable
+        code = "obj.handle: Callable = lambda: None"
+        tree = ast.parse(code)
+        ann_assign_node = tree.body[0]
+        with pytest.raises(TypeError, match="Assignment target must be a simple name"):
+            _validate_function_handle(ann_assign_node)
 
     def test_create_with_handle_function_and_file_id_raises(
         self, mock_functions_create_response, function_handle, cognite_client
