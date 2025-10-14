@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
-from unittest.mock import MagicMock, create_autospec
+from unittest.mock import MagicMock, create_autospec, patch
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api.agents import AgentsAPI
@@ -587,7 +587,60 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
 
 @contextmanager
-def monkeypatch_cognite_client() -> Iterator[AsyncCogniteClientMock]:
+def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
+    """Context manager for monkeypatching the CogniteClient.
+
+    Will patch all clients and replace them with specced MagicMock objects.
+
+    Yields:
+        CogniteClientMock: The mock with which the CogniteClient has been replaced
+
+    Examples:
+
+        In this example we can run the following code without actually executing the underlying API calls:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import TimeSeriesWrite
+            >>> from cognite.client.testing import monkeypatch_cognite_client
+            >>>
+            >>> with monkeypatch_cognite_client():
+            >>>     client = CogniteClient()
+            >>>     client.time_series.create(TimeSeriesWrite(external_id="blabla"))
+
+        This example shows how to set the return value of a given method:
+
+            >>> from cognite.client.data_classes.iam import TokenInspection
+            >>> from cognite.client.testing import monkeypatch_cognite_client
+            >>>
+            >>> with monkeypatch_cognite_client() as c_mock:
+            >>>     c_mock.iam.token.inspect.return_value = TokenInspection(
+            >>>         subject="subject", projects=[], capabilities=[]
+            >>>     )
+            >>>     # Init. a new client yields the same mocked client:
+            >>>     client = CogniteClient()
+            >>>     res = client.iam.token.inspect()
+            >>>     assert "subject" == res.subject
+
+        Here you can see how to have a given method raise an exception:
+
+            >>> from cognite.client.exceptions import CogniteAPIError
+            >>> from cognite.client.testing import monkeypatch_cognite_client
+            >>>
+            >>> with monkeypatch_cognite_client() as c_mock:
+            >>>     c_mock.iam.token.inspect.side_effect = CogniteAPIError(message="Something went wrong", code=400)
+            >>>     try:
+            >>>         res = c_mock.iam.token.inspect()
+            >>>     except CogniteAPIError as e:
+            >>>         assert 400 == e.code
+            >>>         assert "Something went wrong" == e.message
+    """
+    mock = CogniteClientMock()
+    with patch("cognite.client.CogniteClient", return_value=mock):
+        yield mock
+
+
+@contextmanager
+def monkeypatch_async_cognite_client() -> Iterator[AsyncCogniteClientMock]:
     """Context manager for monkeypatching the AsyncCogniteClient.
 
     Will patch all clients and replace them with specced MagicMock objects.
@@ -597,46 +650,43 @@ def monkeypatch_cognite_client() -> Iterator[AsyncCogniteClientMock]:
 
     Examples:
 
-        In this example we can run the following code without actually executing the underlying API calls::
+        In this example we can run the following code without actually executing the underlying API calls:
 
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import AsyncCogniteClient
             >>> from cognite.client.data_classes import TimeSeriesWrite
-            >>> from cognite.client.testing import monkeypatch_cognite_client
+            >>> from cognite.client.testing import monkeypatch_async_cognite_client
             >>>
-            >>> with monkeypatch_cognite_client():
+            >>> with monkeypatch_async_cognite_client():
             >>>     client = AsyncCogniteClient()
-            >>>     client.time_series.create(TimeSeriesWrite(external_id="blabla"))
+            >>>     await client.time_series.create(TimeSeriesWrite(external_id="blabla"))
 
-        This example shows how to set the return value of a given method::
+        This example shows how to set the return value of a given method:
 
-            >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.iam import TokenInspection
-            >>> from cognite.client.testing import monkeypatch_cognite_client
+            >>> from cognite.client.testing import monkeypatch_async_cognite_client
             >>>
-            >>> with monkeypatch_cognite_client() as c_mock:
+            >>> with monkeypatch_async_cognite_client() as c_mock:
             >>>     c_mock.iam.token.inspect.return_value = TokenInspection(
             >>>         subject="subject", projects=[], capabilities=[]
             >>>     )
+            >>>     # Init. a new client yields the same mocked client:
             >>>     client = AsyncCogniteClient()
-            >>>     res = client.iam.token.inspect()
+            >>>     res = await client.iam.token.inspect()
             >>>     assert "subject" == res.subject
 
-        Here you can see how to have a given method raise an exception::
+        Here you can see how to have a given method raise an exception:
 
-            >>> from cognite.client import CogniteClient
             >>> from cognite.client.exceptions import CogniteAPIError
-            >>> from cognite.client.testing import monkeypatch_cognite_client
+            >>> from cognite.client.testing import monkeypatch_async_cognite_client
             >>>
-            >>> with monkeypatch_cognite_client() as c_mock:
+            >>> with monkeypatch_async_cognite_client() as c_mock:
             >>>     c_mock.iam.token.inspect.side_effect = CogniteAPIError(message="Something went wrong", code=400)
-            >>>     client = AsyncCogniteClient()
             >>>     try:
-            >>>         res = client.iam.token.inspect()
+            >>>         res = await c_mock.iam.token.inspect()
             >>>     except CogniteAPIError as e:
             >>>         assert 400 == e.code
             >>>         assert "Something went wrong" == e.message
     """
-    cognite_client_mock = AsyncCogniteClientMock()
-    AsyncCogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock  # type: ignore[method-assign]
-    yield cognite_client_mock
-    AsyncCogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)  # type: ignore[method-assign]
+    mock = AsyncCogniteClientMock()
+    with patch("cognite.client.AsyncCogniteClient", return_value=mock):
+        yield mock
