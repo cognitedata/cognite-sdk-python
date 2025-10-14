@@ -16,10 +16,6 @@ List time series
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.list
 
-Aggregate time series
-^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate
-
 Aggregate Time Series Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_count
@@ -51,10 +47,6 @@ Create time series
 Delete time series
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.delete
-
-Filter time series
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.filter
 
 Update time series
 ^^^^^^^^^^^^^^^^^^

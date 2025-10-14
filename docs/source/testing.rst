@@ -13,5 +13,5 @@ Use a context manager to monkeypatch CogniteClient
 .. autofunction:: cognite.client.testing.monkeypatch_cognite_client
 
 Use a context manager to monkeypatch AsyncCogniteClient
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: cognite.client.testing.monkeypatch_async_cognite_client
