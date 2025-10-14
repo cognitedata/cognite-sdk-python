@@ -402,13 +402,12 @@ class ClientToolResult(ActionResult):
         content: str | MessageContent,
         data: list[Any] | None = None,
     ) -> None:
-        self.action_id = action_id
+        super().__init__(action_id=action_id, role="action")
         if isinstance(content, str):
             self.content = TextContent(text=content)
         else:
             self.content = content
         self.data = data
-        self.role = "action"
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
@@ -443,9 +442,8 @@ class ToolConfirmationResult(ActionResult):
     status: Literal["ALLOW", "DENY"]
 
     def __init__(self, action_id: str, status: Literal["ALLOW", "DENY"]) -> None:
-        self.action_id = action_id
+        super().__init__(action_id=action_id, role="action")
         self.status = status
-        self.role = "action"
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
