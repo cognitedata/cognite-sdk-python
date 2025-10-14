@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, create_autospec
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api.agents import AgentsAPI
@@ -171,8 +171,23 @@ from cognite.client._sync_api.workflows.triggers import SyncWorkflowTriggerAPI
 from cognite.client._sync_api.workflows.versions import SyncWorkflowVersionAPI
 
 
-# TODO: Async methods should be AsyncMocks, so this needs some improvement:
-class AsyncCogniteClientMock(MagicMock):
+def flip_spec_set_on(*mocked_apis: MagicMock) -> None:
+    for m in mocked_apis:
+        m._spec_set = True
+
+
+class _SpecSetEnforcer(type):
+    """Metaclass that enforces spec_set=True on the top-level object (our client)"""
+
+    # This is called when users do AsyncCogniteClientMock():
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
+        instance = super().__call__(*args, **kwargs)
+        # Now that the instance is fully constructed, we can freeze attribute assignments:
+        flip_spec_set_on(instance)
+        return instance
+
+
+class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
     """Mock for AsyncCogniteClient object
 
     All APIs are replaced with specced MagicMock objects and all async methods with AsyncMocks.
@@ -182,114 +197,192 @@ class AsyncCogniteClientMock(MagicMock):
         super().__init__(spec=AsyncCogniteClient, *args, **kwargs)
         # Developer note:
         # - Please add your mocked APIs in chronological order
-        # - For nested APIs:
-        #   - Add spacing above and below
-        #   - Use `spec=MyAPI` only for "top level"
-        #   - Use `spec_set=MyNestedAPI` for all nested APIs
-        self.ai = MagicMock(spec=AIAPI)
-        self.ai.tools = MagicMock(spec=AIToolsAPI)
-        self.ai.tools.documents = MagicMock(spec_set=AIDocumentsAPI)
+        # - Use create_autospec with instance=True for better type safety and accurate mocking.
+        #     For simple APIs, also pass spec_set=True to block arbitrary assignments.
+        # - Build composite APIs bottom-up (you can compose by passing kwargs to create_autospec
+        #     as long as you don't pass spec_set=True).
+        # - Use flip_spec_set_on afterwards for proper spec enforcement on composite APIs
+        # (- Now repeat for CogniteClientMock)
 
-        self.agents = MagicMock(spec_set=AgentsAPI)
-        self.annotations = MagicMock(spec_set=AnnotationsAPI)
-        self.assets = MagicMock(spec_set=AssetsAPI)
+        ai_tools_documents = create_autospec(AIDocumentsAPI, instance=True, spec_set=True)
+        ai_tools = create_autospec(AIToolsAPI, instance=True, documents=ai_tools_documents)
+        self.ai = create_autospec(AIAPI, instance=True, tools=ai_tools)
+        flip_spec_set_on(self.ai, ai_tools)
 
-        self.data_modeling = MagicMock(spec=DataModelingAPI)
-        self.data_modeling.containers = MagicMock(spec_set=ContainersAPI)
-        self.data_modeling.data_models = MagicMock(spec_set=DataModelsAPI)
-        self.data_modeling.spaces = MagicMock(spec_set=SpacesAPI)
-        self.data_modeling.views = MagicMock(spec_set=ViewsAPI)
-        self.data_modeling.instances = MagicMock(spec_set=InstancesAPI)
-        self.data_modeling.graphql = MagicMock(spec_set=DataModelingGraphQLAPI)
-        self.data_modeling.statistics = MagicMock(spec=StatisticsAPI)
-        self.data_modeling.statistics.spaces = MagicMock(spec_set=SpaceStatisticsAPI)
+        self.agents = create_autospec(AgentsAPI, instance=True, spec_set=True)
+        self.annotations = create_autospec(AnnotationsAPI, instance=True, spec_set=True)
+        self.assets = create_autospec(AssetsAPI, instance=True, spec_set=True)
 
-        self.data_sets = MagicMock(spec_set=DataSetsAPI)
+        dm_space_statistics = create_autospec(SpaceStatisticsAPI, instance=True, spec_set=True)
+        dm_statistics = create_autospec(StatisticsAPI, instance=True, spaces=dm_space_statistics)
+        dm_containers = create_autospec(ContainersAPI, instance=True, spec_set=True)
+        dm_data_models = create_autospec(DataModelsAPI, instance=True, spec_set=True)
+        dm_spaces = create_autospec(SpacesAPI, instance=True, spec_set=True)
+        dm_views = create_autospec(ViewsAPI, instance=True, spec_set=True)
+        dm_instances = create_autospec(InstancesAPI, instance=True, spec_set=True)
+        dm_graphql = create_autospec(DataModelingGraphQLAPI, instance=True, spec_set=True)
+        self.data_modeling = create_autospec(
+            DataModelingAPI,
+            instance=True,
+            containers=dm_containers,
+            data_models=dm_data_models,
+            spaces=dm_spaces,
+            views=dm_views,
+            instances=dm_instances,
+            graphql=dm_graphql,
+            statistics=dm_statistics,
+        )
+        flip_spec_set_on(self.data_modeling, dm_statistics)
 
-        self.diagrams = MagicMock(spec_set=DiagramsAPI)
-        self.documents = MagicMock(spec=DocumentsAPI)
-        self.documents.previews = MagicMock(spec_set=DocumentPreviewAPI)
-        self.entity_matching = MagicMock(spec_set=EntityMatchingAPI)
-        self.events = MagicMock(spec_set=EventsAPI)
+        self.data_sets = create_autospec(DataSetsAPI, instance=True, spec_set=True)
 
-        self.extraction_pipelines = MagicMock(spec=ExtractionPipelinesAPI)
-        self.extraction_pipelines.config = MagicMock(spec_set=ExtractionPipelineConfigsAPI)
-        self.extraction_pipelines.runs = MagicMock(spec_set=ExtractionPipelineRunsAPI)
+        self.diagrams = create_autospec(DiagramsAPI, instance=True, spec_set=True)
+        documents_previews = create_autospec(DocumentPreviewAPI, instance=True, spec_set=True)
+        self.documents = create_autospec(DocumentsAPI, instance=True, previews=documents_previews)
+        self.entity_matching = create_autospec(EntityMatchingAPI, instance=True, spec_set=True)
+        self.events = create_autospec(EventsAPI, instance=True, spec_set=True)
+        flip_spec_set_on(self.documents)
 
-        self.files = MagicMock(spec_set=FilesAPI)
+        extpipes_config = create_autospec(ExtractionPipelineConfigsAPI, instance=True, spec_set=True)
+        extpipes_runs = create_autospec(ExtractionPipelineRunsAPI, instance=True, spec_set=True)
+        self.extraction_pipelines = create_autospec(
+            ExtractionPipelinesAPI, instance=True, config=extpipes_config, runs=extpipes_runs
+        )
+        flip_spec_set_on(self.extraction_pipelines)
 
-        self.functions = MagicMock(spec=FunctionsAPI)
-        self.functions.calls = MagicMock(spec_set=FunctionCallsAPI)
-        self.functions.schedules = MagicMock(spec_set=FunctionSchedulesAPI)
+        self.files = create_autospec(FilesAPI, instance=True, spec_set=True)
 
-        self.geospatial = MagicMock(spec_set=GeospatialAPI)
+        fns_calls = create_autospec(FunctionCallsAPI, instance=True, spec_set=True)
+        fns_schedules = create_autospec(FunctionSchedulesAPI, instance=True, spec_set=True)
+        self.functions = create_autospec(FunctionsAPI, instance=True, calls=fns_calls, schedules=fns_schedules)
+        flip_spec_set_on(self.functions)
 
-        self.iam = MagicMock(spec=IAMAPI)
-        self.iam.groups = MagicMock(spec_set=GroupsAPI)
-        self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
-        self.iam.sessions = MagicMock(spec_set=SessionsAPI)
-        self.iam.principals = MagicMock(spec_set=PrincipalsAPI)
-        self.iam.user_profiles = MagicMock(spec_set=UserProfilesAPI)
-        self.iam.token = MagicMock(spec_set=TokenAPI)
+        self.geospatial = create_autospec(GeospatialAPI, instance=True, spec_set=True)
 
-        self.labels = MagicMock(spec_set=LabelsAPI)
+        iam_groups = create_autospec(GroupsAPI, instance=True, spec_set=True)
+        iam_security_categories = create_autospec(SecurityCategoriesAPI, instance=True, spec_set=True)
+        iam_sessions = create_autospec(SessionsAPI, instance=True, spec_set=True)
+        iam_principals = create_autospec(PrincipalsAPI, instance=True, spec_set=True)
+        iam_user_profiles = create_autospec(UserProfilesAPI, instance=True, spec_set=True)
+        iam_token = create_autospec(TokenAPI, instance=True, spec_set=True)
+        self.iam = create_autospec(
+            IAMAPI,
+            instance=True,
+            groups=iam_groups,
+            security_categories=iam_security_categories,
+            sessions=iam_sessions,
+            principals=iam_principals,
+            user_profiles=iam_user_profiles,
+            token=iam_token,
+        )
+        flip_spec_set_on(self.iam)
 
-        self.raw = MagicMock(spec=RawAPI)
-        self.raw.databases = MagicMock(spec_set=RawDatabasesAPI)
-        self.raw.rows = MagicMock(spec_set=RawRowsAPI)
-        self.raw.tables = MagicMock(spec_set=RawTablesAPI)
+        self.labels = create_autospec(LabelsAPI, instance=True, spec_set=True)
 
-        self.relationships = MagicMock(spec_set=RelationshipsAPI)
+        raw_databases = create_autospec(RawDatabasesAPI, instance=True, spec_set=True)
+        raw_rows = create_autospec(RawRowsAPI, instance=True, spec_set=True)
+        raw_tables = create_autospec(RawTablesAPI, instance=True, spec_set=True)
+        self.raw = create_autospec(RawAPI, instance=True, databases=raw_databases, rows=raw_rows, tables=raw_tables)
+        flip_spec_set_on(self.raw)
 
-        self.simulators = MagicMock(spec=SimulatorsAPI)
-        self.simulators.integrations = MagicMock(spec_set=SimulatorIntegrationsAPI)
-        self.simulators.models = MagicMock(spec=SimulatorModelsAPI)
-        self.simulators.models.revisions = MagicMock(spec_set=SimulatorModelRevisionsAPI)
-        self.simulators.runs = MagicMock(spec_set=SimulatorRunsAPI)
-        self.simulators.routines = MagicMock(spec=SimulatorRoutinesAPI)
-        self.simulators.routines.revisions = MagicMock(spec_set=SimulatorRoutineRevisionsAPI)
-        self.simulators.logs = MagicMock(spec_set=SimulatorLogsAPI)
+        self.relationships = create_autospec(RelationshipsAPI, instance=True, spec_set=True)
 
-        self.sequences = MagicMock(spec=SequencesAPI)
-        self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
+        sim_integrations = create_autospec(SimulatorIntegrationsAPI, instance=True, spec_set=True)
+        sim_models_revisions = create_autospec(SimulatorModelRevisionsAPI, instance=True, spec_set=True)
+        sim_models = create_autospec(SimulatorModelsAPI, instance=True, revisions=sim_models_revisions)
+        sim_runs = create_autospec(SimulatorRunsAPI, instance=True, spec_set=True)
+        sim_routines_revisions = create_autospec(SimulatorRoutineRevisionsAPI, instance=True, spec_set=True)
+        sim_routines = create_autospec(SimulatorRoutinesAPI, instance=True, revisions=sim_routines_revisions)
+        sim_logs = create_autospec(SimulatorLogsAPI, instance=True, spec_set=True)
+        self.simulators = create_autospec(
+            SimulatorsAPI,
+            instance=True,
+            integrations=sim_integrations,
+            models=sim_models,
+            runs=sim_runs,
+            routines=sim_routines,
+            logs=sim_logs,
+        )
+        flip_spec_set_on(self.simulators, sim_models, sim_routines)
 
-        self.hosted_extractors = MagicMock(spec=HostedExtractorsAPI)
-        self.hosted_extractors.sources = MagicMock(spec_set=SourcesAPI)
-        self.hosted_extractors.destinations = MagicMock(spec_set=DestinationsAPI)
-        self.hosted_extractors.jobs = MagicMock(spec_set=JobsAPI)
-        self.hosted_extractors.mappings = MagicMock(spec_set=MappingsAPI)
+        sequences_data = create_autospec(SequencesDataAPI, instance=True, spec_set=True)
+        self.sequences = create_autospec(SequencesAPI, instance=True, data=sequences_data)
+        flip_spec_set_on(self.sequences)
 
-        self.postgres_gateway = MagicMock(spec=PostgresGatewaysAPI)
-        self.postgres_gateway.users = MagicMock(spec_set=PostgresUsersAPI)
-        self.postgres_gateway.tables = MagicMock(spec_set=PostgresTablesAPI)
+        ho_ex_sources = create_autospec(SourcesAPI, instance=True, spec_set=True)
+        ho_ex_destinations = create_autospec(DestinationsAPI, instance=True, spec_set=True)
+        ho_ex_jobs = create_autospec(JobsAPI, instance=True, spec_set=True)
+        ho_ex_mappings = create_autospec(MappingsAPI, instance=True, spec_set=True)
+        self.hosted_extractors = create_autospec(
+            HostedExtractorsAPI,
+            instance=True,
+            sources=ho_ex_sources,
+            destinations=ho_ex_destinations,
+            jobs=ho_ex_jobs,
+            mappings=ho_ex_mappings,
+        )
+        flip_spec_set_on(self.hosted_extractors)
 
-        self.three_d = MagicMock(spec=ThreeDAPI)
-        self.three_d.asset_mappings = MagicMock(spec_set=ThreeDAssetMappingAPI)
-        self.three_d.files = MagicMock(spec_set=ThreeDFilesAPI)
-        self.three_d.models = MagicMock(spec_set=ThreeDModelsAPI)
-        self.three_d.revisions = MagicMock(spec_set=ThreeDRevisionsAPI)
+        pg_gw_users = create_autospec(PostgresUsersAPI, instance=True, spec_set=True)
+        pg_gw_tables = create_autospec(PostgresTablesAPI, instance=True, spec_set=True)
+        self.postgres_gateway = create_autospec(
+            PostgresGatewaysAPI, instance=True, users=pg_gw_users, tables=pg_gw_tables
+        )
+        flip_spec_set_on(self.postgres_gateway)
 
-        self.time_series = MagicMock(spec=TimeSeriesAPI)
-        self.time_series.data = MagicMock(spec=DatapointsAPI)
-        self.time_series.data.synthetic = MagicMock(spec_set=SyntheticDatapointsAPI)
-        self.time_series.subscriptions = MagicMock(spec_set=DatapointsSubscriptionAPI)
+        three_d_asset_mappings = create_autospec(ThreeDAssetMappingAPI, instance=True, spec_set=True)
+        three_d_files = create_autospec(ThreeDFilesAPI, instance=True, spec_set=True)
+        three_d_models = create_autospec(ThreeDModelsAPI, instance=True, spec_set=True)
+        three_d_revisions = create_autospec(ThreeDRevisionsAPI, instance=True, spec_set=True)
+        self.three_d = create_autospec(
+            ThreeDAPI,
+            instance=True,
+            asset_mappings=three_d_asset_mappings,
+            files=three_d_files,
+            models=three_d_models,
+            revisions=three_d_revisions,
+        )
+        flip_spec_set_on(self.three_d)
 
-        self.transformations = MagicMock(spec=TransformationsAPI)
-        self.transformations.jobs = MagicMock(spec_set=TransformationJobsAPI)
-        self.transformations.notifications = MagicMock(spec_set=TransformationNotificationsAPI)
-        self.transformations.schedules = MagicMock(spec_set=TransformationSchedulesAPI)
-        self.transformations.schema = MagicMock(spec_set=TransformationSchemaAPI)
+        ts_synthetic = create_autospec(SyntheticDatapointsAPI, instance=True, spec_set=True)
+        ts_data = create_autospec(DatapointsAPI, instance=True, synthetic=ts_synthetic)
+        ts_subscriptions = create_autospec(DatapointsSubscriptionAPI, instance=True, spec_set=True)
+        self.time_series = create_autospec(TimeSeriesAPI, instance=True, data=ts_data, subscriptions=ts_subscriptions)
+        flip_spec_set_on(self.time_series, ts_data)
 
-        self.vision = MagicMock(spec_set=VisionAPI)
+        tr_jobs = create_autospec(TransformationJobsAPI, instance=True, spec_set=True)
+        tr_notifications = create_autospec(TransformationNotificationsAPI, instance=True, spec_set=True)
+        tr_schedules = create_autospec(TransformationSchedulesAPI, instance=True, spec_set=True)
+        tr_schema = create_autospec(TransformationSchemaAPI, instance=True, spec_set=True)
+        self.transformations = create_autospec(
+            TransformationsAPI,
+            instance=True,
+            jobs=tr_jobs,
+            notifications=tr_notifications,
+            schedules=tr_schedules,
+            schema=tr_schema,
+        )
+        flip_spec_set_on(self.transformations)
 
-        self.workflows = MagicMock(spec=WorkflowAPI)
-        self.workflows.versions = MagicMock(spec_set=WorkflowVersionAPI)
-        self.workflows.executions = MagicMock(spec_set=WorkflowExecutionAPI)
-        self.workflows.tasks = MagicMock(spec_set=WorkflowTaskAPI)
-        self.workflows.triggers = MagicMock(spec_set=WorkflowTriggerAPI)
+        self.vision = create_autospec(VisionAPI, instance=True, spec_set=True)
 
-        self.units = MagicMock(spec=UnitAPI)
-        self.units.systems = MagicMock(spec_set=UnitSystemAPI)
+        wf_versions = create_autospec(WorkflowVersionAPI, instance=True, spec_set=True)
+        wf_executions = create_autospec(WorkflowExecutionAPI, instance=True, spec_set=True)
+        wf_tasks = create_autospec(WorkflowTaskAPI, instance=True, spec_set=True)
+        wf_triggers = create_autospec(WorkflowTriggerAPI, instance=True, spec_set=True)
+        self.workflows = create_autospec(
+            WorkflowAPI,
+            instance=True,
+            versions=wf_versions,
+            executions=wf_executions,
+            tasks=wf_tasks,
+            triggers=wf_triggers,
+        )
+        flip_spec_set_on(self.workflows)
+
+        units_systems = create_autospec(UnitSystemAPI, instance=True, spec_set=True)
+        self.units = create_autospec(UnitAPI, instance=True, systems=units_systems)
+        flip_spec_set_on(self.units)
 
 
 class CogniteClientMock(MagicMock):
