@@ -16,10 +16,6 @@ List assets
 ^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.list
 
-Aggregate assets
-^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate
-
 Aggregate Asset Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_count
@@ -55,10 +51,6 @@ Create asset hierarchy
 Delete assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.delete
-
-Filter assets
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.filter
 
 Update assets
 ^^^^^^^^^^^^^
