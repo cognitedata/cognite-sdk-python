@@ -130,6 +130,7 @@ from cognite.client._sync_api.iam.security_categories import SyncSecurityCategor
 from cognite.client._sync_api.iam.sessions import SyncSessionsAPI
 from cognite.client._sync_api.iam.token import SyncTokenAPI
 from cognite.client._sync_api.labels import SyncLabelsAPI
+from cognite.client._sync_api.org_apis.principals import SyncPrincipalsAPI
 from cognite.client._sync_api.postgres_gateway import SyncPostgresGatewaysAPI
 from cognite.client._sync_api.postgres_gateway.tables import SyncTablesAPI as SyncPostgresTablesAPI
 from cognite.client._sync_api.postgres_gateway.users import SyncUsersAPI as SyncPostgresUsersAPI
@@ -385,7 +386,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         flip_spec_set_on(self.units)
 
 
-class CogniteClientMock(MagicMock):
+class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
     """Mock for CogniteClient object
 
     All APIs are replaced with specced MagicMock objects.
@@ -395,113 +396,194 @@ class CogniteClientMock(MagicMock):
         super().__init__(spec=CogniteClient, *args, **kwargs)
         # Developer note:
         # - Please add your mocked APIs in chronological order
-        # - For nested APIs:
-        #   - Add spacing above and below
-        #   - Use `spec=MyAPI` only for "top level"
-        #   - Use `spec_set=MyNestedAPI` for all nested APIs
-        self.ai = MagicMock(spec=SyncAIAPI)
-        self.ai.tools = MagicMock(spec=SyncAIToolsAPI)
-        self.ai.tools.documents = MagicMock(spec_set=SyncAIDocumentsAPI)
+        # - Use create_autospec with instance=True for better type safety and accurate mocking.
+        #     For simple APIs, also pass spec_set=True to block arbitrary assignments.
+        # - Build composite APIs bottom-up (you can compose by passing kwargs to create_autospec
+        #     as long as you don't pass spec_set=True).
+        # - Use flip_spec_set_on afterwards for proper spec enforcement on composite APIs
+        # (- Now repeat for AsyncCogniteClientMock)
 
-        self.agents = MagicMock(spec_set=SyncAgentsAPI)
-        self.annotations = MagicMock(spec_set=SyncAnnotationsAPI)
-        self.assets = MagicMock(spec_set=SyncAssetsAPI)
+        ai_tools_documents = create_autospec(SyncAIDocumentsAPI, instance=True, spec_set=True)
+        ai_tools = create_autospec(SyncAIToolsAPI, instance=True, documents=ai_tools_documents)
+        self.ai = create_autospec(SyncAIAPI, instance=True, tools=ai_tools)
+        flip_spec_set_on(self.ai, ai_tools)
 
-        self.data_modeling = MagicMock(spec=SyncDataModelingAPI)
-        self.data_modeling.containers = MagicMock(spec_set=SyncContainersAPI)
-        self.data_modeling.data_models = MagicMock(spec_set=SyncDataModelsAPI)
-        self.data_modeling.spaces = MagicMock(spec_set=SyncSpacesAPI)
-        self.data_modeling.views = MagicMock(spec_set=SyncViewsAPI)
-        self.data_modeling.instances = MagicMock(spec_set=SyncInstancesAPI)
-        self.data_modeling.graphql = MagicMock(spec_set=SyncDataModelingGraphQLAPI)
-        self.data_modeling.statistics = MagicMock(spec=SyncStatisticsAPI)
-        self.data_modeling.statistics.spaces = MagicMock(spec_set=SyncSpaceStatisticsAPI)
+        self.agents = create_autospec(SyncAgentsAPI, instance=True, spec_set=True)
+        self.annotations = create_autospec(SyncAnnotationsAPI, instance=True, spec_set=True)
+        self.assets = create_autospec(SyncAssetsAPI, instance=True, spec_set=True)
 
-        self.data_sets = MagicMock(spec_set=SyncDataSetsAPI)
+        dm_space_statistics = create_autospec(SyncSpaceStatisticsAPI, instance=True, spec_set=True)
+        dm_statistics = create_autospec(SyncStatisticsAPI, instance=True, spaces=dm_space_statistics)
+        dm_containers = create_autospec(SyncContainersAPI, instance=True, spec_set=True)
+        dm_data_models = create_autospec(SyncDataModelsAPI, instance=True, spec_set=True)
+        dm_spaces = create_autospec(SyncSpacesAPI, instance=True, spec_set=True)
+        dm_views = create_autospec(SyncViewsAPI, instance=True, spec_set=True)
+        dm_instances = create_autospec(SyncInstancesAPI, instance=True, spec_set=True)
+        dm_graphql = create_autospec(SyncDataModelingGraphQLAPI, instance=True, spec_set=True)
+        self.data_modeling = create_autospec(
+            SyncDataModelingAPI,
+            instance=True,
+            containers=dm_containers,
+            data_models=dm_data_models,
+            spaces=dm_spaces,
+            views=dm_views,
+            instances=dm_instances,
+            graphql=dm_graphql,
+            statistics=dm_statistics,
+        )
+        flip_spec_set_on(self.data_modeling, dm_statistics)
 
-        self.diagrams = MagicMock(spec_set=SyncDiagramsAPI)
-        self.documents = MagicMock(spec=SyncDocumentsAPI)
-        self.documents.previews = MagicMock(spec_set=SyncDocumentPreviewAPI)
-        self.entity_matching = MagicMock(spec_set=SyncEntityMatchingAPI)
-        self.events = MagicMock(spec_set=SyncEventsAPI)
+        self.data_sets = create_autospec(SyncDataSetsAPI, instance=True, spec_set=True)
 
-        self.extraction_pipelines = MagicMock(spec=SyncExtractionPipelinesAPI)
-        self.extraction_pipelines.config = MagicMock(spec_set=SyncExtractionPipelineConfigsAPI)
-        self.extraction_pipelines.runs = MagicMock(spec_set=SyncExtractionPipelineRunsAPI)
+        self.diagrams = create_autospec(SyncDiagramsAPI, instance=True, spec_set=True)
+        documents_previews = create_autospec(SyncDocumentPreviewAPI, instance=True, spec_set=True)
+        self.documents = create_autospec(SyncDocumentsAPI, instance=True, previews=documents_previews)
+        self.entity_matching = create_autospec(SyncEntityMatchingAPI, instance=True, spec_set=True)
+        self.events = create_autospec(SyncEventsAPI, instance=True, spec_set=True)
+        flip_spec_set_on(self.documents)
 
-        self.files = MagicMock(spec_set=SyncFilesAPI)
+        extpipes_config = create_autospec(SyncExtractionPipelineConfigsAPI, instance=True, spec_set=True)
+        extpipes_runs = create_autospec(SyncExtractionPipelineRunsAPI, instance=True, spec_set=True)
+        self.extraction_pipelines = create_autospec(
+            SyncExtractionPipelinesAPI, instance=True, config=extpipes_config, runs=extpipes_runs
+        )
+        flip_spec_set_on(self.extraction_pipelines)
 
-        self.functions = MagicMock(spec=SyncFunctionsAPI)
-        self.functions.calls = MagicMock(spec_set=SyncFunctionCallsAPI)
-        self.functions.schedules = MagicMock(spec_set=SyncFunctionSchedulesAPI)
+        self.files = create_autospec(SyncFilesAPI, instance=True, spec_set=True)
 
-        self.geospatial = MagicMock(spec_set=SyncGeospatialAPI)
+        fns_calls = create_autospec(SyncFunctionCallsAPI, instance=True, spec_set=True)
+        fns_schedules = create_autospec(SyncFunctionSchedulesAPI, instance=True, spec_set=True)
+        self.functions = create_autospec(SyncFunctionsAPI, instance=True, calls=fns_calls, schedules=fns_schedules)
+        flip_spec_set_on(self.functions)
 
-        self.iam = MagicMock(spec=SyncIAMAPI)
-        self.iam.groups = MagicMock(spec_set=SyncGroupsAPI)
-        self.iam.security_categories = MagicMock(spec_set=SyncSecurityCategoriesAPI)
-        self.iam.sessions = MagicMock(spec_set=SyncSessionsAPI)
-        self.iam.user_profiles = MagicMock(spec_set=SyncUserProfilesAPI)
-        self.iam.token = MagicMock(spec_set=SyncTokenAPI)
+        self.geospatial = create_autospec(SyncGeospatialAPI, instance=True, spec_set=True)
 
-        self.labels = MagicMock(spec_set=SyncLabelsAPI)
+        iam_groups = create_autospec(SyncGroupsAPI, instance=True, spec_set=True)
+        iam_security_categories = create_autospec(SyncSecurityCategoriesAPI, instance=True, spec_set=True)
+        iam_sessions = create_autospec(SyncSessionsAPI, instance=True, spec_set=True)
+        iam_principals = create_autospec(SyncPrincipalsAPI, instance=True, spec_set=True)
+        iam_user_profiles = create_autospec(SyncUserProfilesAPI, instance=True, spec_set=True)
+        iam_token = create_autospec(SyncTokenAPI, instance=True, spec_set=True)
+        self.iam = create_autospec(
+            SyncIAMAPI,
+            instance=True,
+            groups=iam_groups,
+            security_categories=iam_security_categories,
+            sessions=iam_sessions,
+            principals=iam_principals,
+            user_profiles=iam_user_profiles,
+            token=iam_token,
+        )
+        flip_spec_set_on(self.iam)
 
-        self.raw = MagicMock(spec=SyncRawAPI)
-        self.raw.databases = MagicMock(spec_set=SyncRawDatabasesAPI)
-        self.raw.rows = MagicMock(spec_set=SyncRawRowsAPI)
-        self.raw.tables = MagicMock(spec_set=SyncRawTablesAPI)
+        self.labels = create_autospec(SyncLabelsAPI, instance=True, spec_set=True)
 
-        self.relationships = MagicMock(spec_set=SyncRelationshipsAPI)
+        raw_databases = create_autospec(SyncRawDatabasesAPI, instance=True, spec_set=True)
+        raw_rows = create_autospec(SyncRawRowsAPI, instance=True, spec_set=True)
+        raw_tables = create_autospec(SyncRawTablesAPI, instance=True, spec_set=True)
+        self.raw = create_autospec(SyncRawAPI, instance=True, databases=raw_databases, rows=raw_rows, tables=raw_tables)
+        flip_spec_set_on(self.raw)
 
-        self.simulators = MagicMock(spec=SyncSimulatorsAPI)
-        self.simulators.integrations = MagicMock(spec_set=SyncSimulatorIntegrationsAPI)
-        self.simulators.models = MagicMock(spec=SyncSimulatorModelsAPI)
-        self.simulators.models.revisions = MagicMock(spec_set=SyncSimulatorModelRevisionsAPI)
-        self.simulators.runs = MagicMock(spec_set=SyncSimulatorRunsAPI)
-        self.simulators.routines = MagicMock(spec=SyncSimulatorRoutinesAPI)
-        self.simulators.routines.revisions = MagicMock(spec_set=SyncSimulatorRoutineRevisionsAPI)
-        self.simulators.logs = MagicMock(spec_set=SyncSimulatorLogsAPI)
+        self.relationships = create_autospec(SyncRelationshipsAPI, instance=True, spec_set=True)
 
-        self.sequences = MagicMock(spec=SyncSequencesAPI)
-        self.sequences.data = MagicMock(spec_set=SyncSequencesDataAPI)
+        sim_integrations = create_autospec(SyncSimulatorIntegrationsAPI, instance=True, spec_set=True)
+        sim_models_revisions = create_autospec(SyncSimulatorModelRevisionsAPI, instance=True, spec_set=True)
+        sim_models = create_autospec(SyncSimulatorModelsAPI, instance=True, revisions=sim_models_revisions)
+        sim_runs = create_autospec(SyncSimulatorRunsAPI, instance=True, spec_set=True)
+        sim_routines_revisions = create_autospec(SyncSimulatorRoutineRevisionsAPI, instance=True, spec_set=True)
+        sim_routines = create_autospec(SyncSimulatorRoutinesAPI, instance=True, revisions=sim_routines_revisions)
+        sim_logs = create_autospec(SyncSimulatorLogsAPI, instance=True, spec_set=True)
+        self.simulators = create_autospec(
+            SyncSimulatorsAPI,
+            instance=True,
+            integrations=sim_integrations,
+            models=sim_models,
+            runs=sim_runs,
+            routines=sim_routines,
+            logs=sim_logs,
+        )
+        flip_spec_set_on(self.simulators, sim_models)
 
-        self.hosted_extractors = MagicMock(spec=SyncHostedExtractorsAPI)
-        self.hosted_extractors.sources = MagicMock(spec_set=SyncSourcesAPI)
-        self.hosted_extractors.destinations = MagicMock(spec_set=SyncDestinationsAPI)
-        self.hosted_extractors.jobs = MagicMock(spec_set=SyncJobsAPI)
-        self.hosted_extractors.mappings = MagicMock(spec_set=SyncMappingsAPI)
+        sequences_data = create_autospec(SyncSequencesDataAPI, instance=True, spec_set=True)
+        self.sequences = create_autospec(SyncSequencesAPI, instance=True, data=sequences_data)
+        flip_spec_set_on(self.sequences)
 
-        self.postgres_gateway = MagicMock(spec=SyncPostgresGatewaysAPI)
-        self.postgres_gateway.users = MagicMock(spec_set=SyncPostgresUsersAPI)
-        self.postgres_gateway.tables = MagicMock(spec_set=SyncPostgresTablesAPI)
+        ho_ex_sources = create_autospec(SyncSourcesAPI, instance=True, spec_set=True)
+        ho_ex_destinations = create_autospec(SyncDestinationsAPI, instance=True, spec_set=True)
+        ho_ex_jobs = create_autospec(SyncJobsAPI, instance=True, spec_set=True)
+        ho_ex_mappings = create_autospec(SyncMappingsAPI, instance=True, spec_set=True)
+        self.hosted_extractors = create_autospec(
+            SyncHostedExtractorsAPI,
+            instance=True,
+            sources=ho_ex_sources,
+            destinations=ho_ex_destinations,
+            jobs=ho_ex_jobs,
+            mappings=ho_ex_mappings,
+        )
+        flip_spec_set_on(self.hosted_extractors)
 
-        self.three_d = MagicMock(spec=Sync3DAPI)
-        self.three_d.asset_mappings = MagicMock(spec_set=Sync3DAssetMappingAPI)
-        self.three_d.files = MagicMock(spec_set=Sync3DFilesAPI)
-        self.three_d.models = MagicMock(spec_set=Sync3DModelsAPI)
-        self.three_d.revisions = MagicMock(spec_set=Sync3DRevisionsAPI)
+        pg_gw_users = create_autospec(SyncPostgresUsersAPI, instance=True, spec_set=True)
+        pg_gw_tables = create_autospec(SyncPostgresTablesAPI, instance=True, spec_set=True)
+        self.postgres_gateway = create_autospec(
+            SyncPostgresGatewaysAPI, instance=True, users=pg_gw_users, tables=pg_gw_tables
+        )
+        flip_spec_set_on(self.postgres_gateway)
 
-        self.time_series = MagicMock(spec=SyncTimeSeriesAPI)
-        self.time_series.data = MagicMock(spec=SyncDatapointsAPI)
-        self.time_series.data.synthetic = MagicMock(spec_set=SyncSyntheticDatapointsAPI)
-        self.time_series.subscriptions = MagicMock(spec_set=SyncDatapointsSubscriptionAPI)
+        three_d_asset_mappings = create_autospec(Sync3DAssetMappingAPI, instance=True, spec_set=True)
+        three_d_files = create_autospec(Sync3DFilesAPI, instance=True, spec_set=True)
+        three_d_models = create_autospec(Sync3DModelsAPI, instance=True, spec_set=True)
+        three_d_revisions = create_autospec(Sync3DRevisionsAPI, instance=True, spec_set=True)
+        self.three_d = create_autospec(
+            Sync3DAPI,
+            instance=True,
+            asset_mappings=three_d_asset_mappings,
+            files=three_d_files,
+            models=three_d_models,
+            revisions=three_d_revisions,
+        )
+        flip_spec_set_on(self.three_d)
 
-        self.transformations = MagicMock(spec=SyncTransformationsAPI)
-        self.transformations.jobs = MagicMock(spec_set=SyncTransformationJobsAPI)
-        self.transformations.notifications = MagicMock(spec_set=SyncTransformationNotificationsAPI)
-        self.transformations.schedules = MagicMock(spec_set=SyncTransformationSchedulesAPI)
-        self.transformations.schema = MagicMock(spec_set=SyncTransformationSchemaAPI)
+        ts_synthetic = create_autospec(SyncSyntheticDatapointsAPI, instance=True, spec_set=True)
+        ts_data = create_autospec(SyncDatapointsAPI, instance=True, synthetic=ts_synthetic)
+        ts_subscriptions = create_autospec(SyncDatapointsSubscriptionAPI, instance=True, spec_set=True)
+        self.time_series = create_autospec(
+            SyncTimeSeriesAPI, instance=True, data=ts_data, subscriptions=ts_subscriptions
+        )
+        flip_spec_set_on(self.time_series, ts_data)
 
-        self.vision = MagicMock(spec_set=SyncVisionAPI)
+        tr_jobs = create_autospec(SyncTransformationJobsAPI, instance=True, spec_set=True)
+        tr_notifications = create_autospec(SyncTransformationNotificationsAPI, instance=True, spec_set=True)
+        tr_schedules = create_autospec(SyncTransformationSchedulesAPI, instance=True, spec_set=True)
+        tr_schema = create_autospec(SyncTransformationSchemaAPI, instance=True, spec_set=True)
+        self.transformations = create_autospec(
+            SyncTransformationsAPI,
+            instance=True,
+            jobs=tr_jobs,
+            notifications=tr_notifications,
+            schedules=tr_schedules,
+            schema=tr_schema,
+        )
+        flip_spec_set_on(self.transformations)
 
-        self.workflows = MagicMock(spec=SyncWorkflowAPI)
-        self.workflows.versions = MagicMock(spec_set=SyncWorkflowVersionAPI)
-        self.workflows.executions = MagicMock(spec_set=SyncWorkflowExecutionAPI)
-        self.workflows.tasks = MagicMock(spec_set=SyncWorkflowTaskAPI)
-        self.workflows.triggers = MagicMock(spec_set=SyncWorkflowTriggerAPI)
+        self.vision = create_autospec(SyncVisionAPI, instance=True, spec_set=True)
 
-        self.units = MagicMock(spec=SyncUnitAPI)
-        self.units.systems = MagicMock(spec_set=SyncUnitSystemAPI)
+        wf_versions = create_autospec(SyncWorkflowVersionAPI, instance=True, spec_set=True)
+        wf_executions = create_autospec(SyncWorkflowExecutionAPI, instance=True, spec_set=True)
+        wf_tasks = create_autospec(SyncWorkflowTaskAPI, instance=True, spec_set=True)
+        wf_triggers = create_autospec(SyncWorkflowTriggerAPI, instance=True, spec_set=True)
+        self.workflows = create_autospec(
+            SyncWorkflowAPI,
+            instance=True,
+            versions=wf_versions,
+            executions=wf_executions,
+            tasks=wf_tasks,
+            triggers=wf_triggers,
+        )
+        flip_spec_set_on(self.workflows)
+
+        units_systems = create_autospec(SyncUnitSystemAPI, instance=True, spec_set=True)
+        self.units = create_autospec(SyncUnitAPI, instance=True, systems=units_systems)
+        flip_spec_set_on(self.units)
 
 
 @contextmanager
