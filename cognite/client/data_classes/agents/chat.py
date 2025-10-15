@@ -99,11 +99,6 @@ class Action(CogniteObject, ABC):
         action_class = _ACTION_CLS_BY_TYPE.get(action_type, UnknownAction)
         return action_class._load_action(data, cognite_client)
 
-    @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dump the action to a dictionary."""
-        ...
-
     @classmethod
     @abstractmethod
     def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Action:
@@ -192,11 +187,6 @@ class ActionCall(CogniteObject, ABC):
         action_type = data.get("type", "")
         action_class = _ACTION_CALL_CLS_BY_TYPE.get(action_type, UnknownActionCall)
         return action_class._load_call(data, cognite_client)
-
-    @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dump the action call to a dictionary."""
-        ...
 
     @classmethod
     @abstractmethod
@@ -375,11 +365,6 @@ class ActionResult(CogniteObject, ABC):
     _type: ClassVar[str]
     _role: ClassVar[Literal["action"]] = "action"
     action_id: str
-
-    @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dump the action result to a dictionary."""
-        ...
 
 
 @dataclass
