@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import pytest
+
 from cognite.client.data_classes._base import UnknownCogniteObject
 from cognite.client.data_classes.data_modeling import View, ViewApply, ViewId
 from cognite.client.data_classes.data_modeling.containers import PropertyConstraintState
@@ -174,7 +178,7 @@ class TestViewPropertyDefinition:
 
     def test_load_view_property_legacy(self) -> None:
         # Before the introduction of the `connectionType` field, the `source` field was used to determine the type of
-        # the property. This test ensures that the old format is still supported.
+        # the property. As of v8, this is now required:
         legacy_view = {
             "type": {"space": "IntegrationTestsImmutable", "externalId": "Person.roles"},
             "source": {"space": "IntegrationTestsImmutable", "externalId": "Role", "version": "2", "type": "view"},
@@ -183,22 +187,12 @@ class TestViewPropertyDefinition:
             "edgeSource": None,
             "direction": "outwards",
         }
-
-        actual = ViewProperty._load(legacy_view)
-
-        assert actual.dump() == {
-            "type": {"space": "IntegrationTestsImmutable", "externalId": "Person.roles"},
-            "source": {"space": "IntegrationTestsImmutable", "externalId": "Role", "version": "2", "type": "view"},
-            "name": "roles",
-            "description": None,
-            "edgeSource": None,
-            "direction": "outwards",
-            "connectionType": "multi_edge_connection",
-        }
+        with pytest.raises(ValueError, match=r"Connection Definition is missing field 'connectionType'"):
+            ViewProperty._load(legacy_view)
 
     def test_load_view_property_apply_legacy(self) -> None:
         # Before the introduction of the `connectionType` field, the `source` field was used to determine the type of
-        # the property. This test ensures that the old format is still supported.
+        # the property. As of v8, this is now required:
         legacy_view = {
             "type": {"space": "IntegrationTestsImmutable", "externalId": "Person.roles"},
             "source": {"space": "IntegrationTestsImmutable", "externalId": "Role", "version": "2", "type": "view"},
@@ -208,15 +202,8 @@ class TestViewPropertyDefinition:
             "direction": "outwards",
         }
 
-        actual = ViewPropertyApply._load(legacy_view)
-
-        assert actual.dump() == {
-            "type": {"space": "IntegrationTestsImmutable", "externalId": "Person.roles"},
-            "source": {"space": "IntegrationTestsImmutable", "externalId": "Role", "version": "2", "type": "view"},
-            "name": "roles",
-            "direction": "outwards",
-            "connectionType": "multi_edge_connection",
-        }
+        with pytest.raises(ValueError, match=r"Connection Definition is missing field 'connectionType'"):
+            ViewPropertyApply._load(legacy_view)
 
     def test_load_unknown_connection_type(self) -> None:
         # Before the introduction of the `connectionType` field, the `source` field was used to determine the type of
