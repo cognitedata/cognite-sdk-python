@@ -175,7 +175,7 @@ class UnknownAction(Action):
 _ACTION_CLS_BY_TYPE: dict[str, type[Action]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in Action.__subclasses__()
-    if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
+    if subclass is not UnknownAction
 }
 
 
