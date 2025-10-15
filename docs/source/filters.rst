@@ -12,6 +12,19 @@ When filtering on Data Modelling, the filter can be used on any property. These 
 or, which is usually more convenient, one can use the ``as_property_ref`` method on the View or ViewID object like:
 ``myView.as_property_ref('property')``.
 
+**Special Node Properties:** Certain properties like ``externalId``, ``space``, ``createdTime``, and ``lastUpdatedTime`` are properties on the node itself (not in a container/view).
+To filter on these, use the syntax ``("node", "property_name")``. For example:
+
+.. code-block:: python
+
+    from cognite.client.data_classes.filters import Prefix, Equals
+
+    # Filter nodes where externalId starts with "SomeCustomer"
+    flt = Prefix(("node", "externalId"), "SomeCustomer")
+    
+    # Filter nodes in a specific space
+    flt = Equals(("node", "space"), "my_space")
+
 All filters inherit from the base class ``Filter`` (``cognite.client.data_classes.filters.Filter``).
 
 Below is an overview of the available filters:
