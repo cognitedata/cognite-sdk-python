@@ -86,7 +86,7 @@ _MESSAGE_CONTENT_CLS_BY_TYPE: dict[str, type[MessageContent]] = {
 }
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Action(CogniteObject, ABC):
     """Base class for all action types that can be provided to an agent."""
 
@@ -106,7 +106,7 @@ class Action(CogniteObject, ABC):
         ...
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ClientToolAction(Action):
     """A client-side tool definition that can be called by the agent.
 
@@ -143,7 +143,7 @@ class ClientToolAction(Action):
         )
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class UnknownAction(Action):
     """Unknown action type for forward compatibility.
 
@@ -170,11 +170,11 @@ class UnknownAction(Action):
 _ACTION_CLS_BY_TYPE: dict[str, type[Action]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in Action.__subclasses__()
-    if subclass is not UnknownAction
+    if subclass is not UnknownAction and hasattr(subclass, "_type")
 }
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ActionCall(CogniteObject, ABC):
     """Base class for action calls requested by the agent."""
 
@@ -195,7 +195,7 @@ class ActionCall(CogniteObject, ABC):
         ...
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ClientToolCall(ActionCall):
     """A client tool call requested by the agent.
 
@@ -231,7 +231,7 @@ class ClientToolCall(ActionCall):
         )
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ToolConfirmationCall(ActionCall):
     """A tool confirmation request from the agent.
 
@@ -285,7 +285,7 @@ class ToolConfirmationCall(ActionCall):
         )
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class UnknownActionCall(ActionCall):
     """Unknown action call type for forward compatibility.
 
@@ -316,7 +316,7 @@ class UnknownActionCall(ActionCall):
 _ACTION_CALL_CLS_BY_TYPE: dict[str, type[ActionCall]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in ActionCall.__subclasses__()
-    if subclass is not UnknownActionCall
+    if subclass is not UnknownActionCall and hasattr(subclass, "_type")
 }
 
 
@@ -358,7 +358,7 @@ class MessageList(CogniteResourceList[Message]):
     _RESOURCE = Message
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ActionResult(CogniteObject, ABC):
     """Base class for action execution results."""
 
@@ -367,7 +367,7 @@ class ActionResult(CogniteObject, ABC):
     action_id: str
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ClientToolResult(ActionResult):
     """Result of executing a client tool, for sending back to the agent.
 
@@ -382,9 +382,9 @@ class ClientToolResult(ActionResult):
     data: list[Any] | None = None
 
     def __init__(self, action_id: str, content: str | MessageContent, data: list[Any] | None = None) -> None:
-        super().__init__(action_id=action_id)
-        self.content = TextContent(text=content) if isinstance(content, str) else content
-        self.data = data
+        object.__setattr__(self, "action_id", action_id)
+        object.__setattr__(self, "content", TextContent(text=content) if isinstance(content, str) else content)
+        object.__setattr__(self, "data", data)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
@@ -406,7 +406,7 @@ class ClientToolResult(ActionResult):
         )
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ToolConfirmationResult(ActionResult):
     """Result of a tool confirmation request.
 
