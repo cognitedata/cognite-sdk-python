@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import re
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -8,6 +10,11 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import ContainerApply, ContainerId, ContainerProperty, Text
 from cognite.client.data_classes.data_modeling.containers import BTreeIndex, RequiresConstraint
 from tests.utils import get_url
+
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
 
 EXAMPLE_CONTAINER = {
     "space": "testspace",
@@ -50,17 +57,21 @@ EXAMPLE_CONTAINER = {
 
 
 @pytest.fixture
-def mock_containers_response(httpx_mock: Any, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_containers_response(
+    httpx_mock: Any, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     response_body = {"items": [EXAMPLE_CONTAINER]}
-    url_pattern = re.compile(re.escape(get_url(cognite_client.data_modeling.containers)) + "/models/containers$")
+    url_pattern = re.compile(re.escape(get_url(async_client.data_modeling.containers)) + "/models/containers$")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
-    url_pattern = re.compile(re.escape(get_url(cognite_client.data_modeling.containers)) + "/models/containers/byids$")
+    url_pattern = re.compile(re.escape(get_url(async_client.data_modeling.containers)) + "/models/containers/byids$")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
     return httpx_mock
 
 
 @pytest.fixture
-def mock_delete_index_response(httpx_mock: Any, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_delete_index_response(
+    httpx_mock: Any, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     response_body = {
         "items": [
             {
@@ -71,7 +82,7 @@ def mock_delete_index_response(httpx_mock: Any, cognite_client: CogniteClient) -
         ]
     }
     url_pattern = re.compile(
-        re.escape(get_url(cognite_client.data_modeling.containers)) + "/models/containers/indexes/delete$"
+        re.escape(get_url(async_client.data_modeling.containers)) + "/models/containers/indexes/delete$"
     )
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
     return httpx_mock
