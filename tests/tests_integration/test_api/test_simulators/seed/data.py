@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # This file contains the data used to seed the test environment for the simulator tests
 from dataclasses import dataclass
 

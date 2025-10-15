@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import random
 import string
+import time
 from collections.abc import Iterator
 from unittest import mock
 
@@ -7,6 +10,7 @@ import numpy as np
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client._cognite_client import AsyncCogniteClient
 from cognite.client.data_classes import (
     Sequence,
     SequenceColumnWrite,
@@ -167,8 +171,8 @@ def new_seq_mixed(cognite_client: CogniteClient) -> Iterator[Sequence]:
 
 
 @pytest.fixture
-def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
-    with mock.patch.object(cognite_client.sequences.data, "_post", wraps=cognite_client.sequences.data._post) as _:
+def post_spy(async_client: AsyncCogniteClient) -> Iterator[None]:
+    with mock.patch.object(async_client.sequences.data, "_post", wraps=async_client.sequences.data._post) as _:
         yield
 
 
@@ -221,58 +225,70 @@ class TestSequencesDataAPI:
 
     def test_insert(self, cognite_client: CogniteClient, new_seq: Sequence) -> None:
         data: dict = {i: ["str"] for i in range(1, 61)}
-        cognite_client.sequences.data.insert(rows=data, column_external_ids=new_seq.column_external_ids, id=new_seq.id)
+        cognite_client.sequences.data.insert(rows=data, columns=new_seq.column_external_ids, id=new_seq.id)
 
     def test_insert_raw(self, cognite_client: CogniteClient, new_seq_long: Sequence) -> None:
         data = [{"rowNumber": i, "values": [2 * i]} for i in range(1, 61)]
-        cognite_client.sequences.data.insert(
-            rows=data, column_external_ids=new_seq_long.column_external_ids, id=new_seq_long.id
-        )
+        cognite_client.sequences.data.insert(rows=data, columns=new_seq_long.column_external_ids, id=new_seq_long.id)
 
     def test_insert_implicit_rows(self, cognite_client: CogniteClient, new_seq_mixed: Sequence) -> None:
         data: dict = {i: [i, "str"] for i in range(1, 10)}
-        cognite_client.sequences.data.insert(data, id=new_seq_mixed.id, column_external_ids=["column0", "column1"])
+        cognite_client.sequences.data.insert(data, id=new_seq_mixed.id, columns=["column0", "column1"])
 
     def test_insert_copy(
         self, cognite_client: CogniteClient, small_sequence: Sequence, new_small_seq: Sequence
     ) -> None:
         data = cognite_client.sequences.data.retrieve(id=small_sequence.id, start=0, end=5)
-        cognite_client.sequences.data.insert(rows=data, id=new_small_seq.id, column_external_ids=None)
+        cognite_client.sequences.data.insert(rows=data, id=new_small_seq.id, columns=None)
 
     def test_delete_multiple(self, cognite_client: CogniteClient, new_seq: Sequence) -> None:
         cognite_client.sequences.data.delete(rows=[1, 2, 42, 3524], id=new_seq.id)
 
-    def test_retrieve_paginate(self, cognite_client: CogniteClient, string200: Sequence, post_spy: None) -> None:
+    def test_retrieve_paginate(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, string200: Sequence, post_spy: None
+    ) -> None:
         data = cognite_client.sequences.data.retrieve(id=string200.id, start=1, end=996)
         assert 200 == len(data.values[0])
         assert 995 == len(data)
-        assert 4 == cognite_client.sequences.data._post.call_count  # type: ignore[attr-defined]
+        assert 4 == async_client.sequences.data._post.call_count  # type: ignore[attr-defined]
 
     def test_retrieve_paginate_max(
-        self, cognite_client: CogniteClient, pretend_timeseries: Sequence, post_spy: None
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        pretend_timeseries: Sequence,
+        post_spy: None,
     ) -> None:
         data = cognite_client.sequences.data.retrieve(id=pretend_timeseries.id, start=0, end=None)
         assert 1 == len(data.values[0])
         assert 54321 == len(data)
-        assert 6 == cognite_client.sequences.data._post.call_count  # type: ignore[attr-defined]
+        assert 6 == async_client.sequences.data._post.call_count  # type: ignore[attr-defined]
 
     def test_retrieve_paginate_limit_small(
-        self, cognite_client: CogniteClient, pretend_timeseries: Sequence, post_spy: None
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        pretend_timeseries: Sequence,
+        post_spy: None,
     ) -> None:
         data = cognite_client.sequences.data.retrieve(id=pretend_timeseries.id, start=0, end=None, limit=23)
         assert 1 == len(data.values[0])
         assert 23 == len(data)
-        assert 1 == cognite_client.sequences.data._post.call_count  # type: ignore[attr-defined]
+        assert 1 == async_client.sequences.data._post.call_count  # type: ignore[attr-defined]
 
     def test_retrieve_paginate_limit_paged(
-        self, cognite_client: CogniteClient, pretend_timeseries: Sequence, post_spy: None
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        pretend_timeseries: Sequence,
+        post_spy: None,
     ) -> None:
         data = cognite_client.sequences.data.retrieve(
             id=pretend_timeseries.id, start=0, end=None, limit=40023
         ).to_pandas()
         assert 1 == data.shape[1]
         assert 40023 == data.shape[0]
-        assert 5 == cognite_client.sequences.data._post.call_count  # type: ignore[attr-defined]
+        assert 5 == async_client.sequences.data._post.call_count  # type: ignore[attr-defined]
 
     def test_retrieve_one_column(self, cognite_client: CogniteClient, named_long_str: Sequence) -> None:
         dps = cognite_client.sequences.data.retrieve(id=named_long_str.id, start=42, end=43, columns=["strcol"])
@@ -292,19 +308,27 @@ class TestSequencesDataAPI:
             dps.get_column("missingcol")
 
     def test_retrieve_paginate_end_coinciding_with_page(
-        self, cognite_client: CogniteClient, string200: Sequence, post_spy: None
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, string200: Sequence, post_spy: None
     ) -> None:
         cognite_client.sequences.data.retrieve(id=string200.id, start=1, end=118)
-        assert 1 == cognite_client.sequences.data._post.call_count  # type: ignore[attr-defined]
+        assert 1 == async_client.sequences.data._post.call_count  # type: ignore[attr-defined]
 
     def test_delete_range(self, cognite_client: CogniteClient, new_seq_long: Sequence) -> None:
         data = [(i, [10 * i]) for i in [1, 2, 3, 5, 8, 13, 21, 34]]
-        cognite_client.sequences.data.insert(
-            column_external_ids=new_seq_long.column_external_ids, rows=data, id=new_seq_long.id
-        )
+        cognite_client.sequences.data.insert(columns=new_seq_long.column_external_ids, rows=data, id=new_seq_long.id)
         cognite_client.sequences.data.delete_range(start=4, end=15, id=new_seq_long.id)
 
-        # potential delay, so can't assert, but tested in notebook
-        # dps = cognite_client.sequences.data.retrieve(start=0, end=None, id=new_seq_long.id)
-        # assert [10, 20, 30, 210, 340] == [d[0] for d in dps.values]
-        # assert [1, 2, 3, 21, 34] == dps.row_numbers
+        def verify_deletion() -> None:
+            dps = cognite_client.sequences.data.retrieve(start=0, end=None, id=new_seq_long.id)
+            assert [10, 20, 30, 210, 340] == [d[0] for d in dps.values]
+            assert [1, 2, 3, 21, 34] == [row.row_number for row in dps.rows]
+
+        # Delete is eventually consistent:
+        for attempt in range(1, 6):
+            time.sleep(3)
+            try:
+                verify_deletion()
+                break
+            except AssertionError:
+                if attempt == 5:
+                    raise
