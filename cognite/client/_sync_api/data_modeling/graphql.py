@@ -22,6 +22,21 @@ class SyncDataModelingGraphQLAPI(SyncAPIClient):
     def __init__(self, async_client: AsyncCogniteClient):
         self.__async_client = async_client
 
+    def _unsafely_wipe_and_regenerate_dml(self, id: DataModelIdentifier) -> str:
+        """
+        Wipe and regenerate the DML for a given data model.
+
+        Note:
+            This removes all comments from the DML.
+
+        Args:
+            id (DataModelIdentifier): The data model to apply DML to.
+
+        Returns:
+            str: The new DML
+        """
+        return run_sync(self.__async_client.data_modeling.graphql._unsafely_wipe_and_regenerate_dml(id=id))
+
     def apply_dml(
         self,
         id: DataModelIdentifier,
