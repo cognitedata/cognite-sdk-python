@@ -390,7 +390,7 @@ def permanent_data_modeling_trigger(
 
     existing_triggers = {trigger.external_id: trigger for trigger in cognite_client.workflows.triggers.list(limit=-1)}
     if trigger.external_id not in existing_triggers:
-        retrieved = cognite_client.workflows.triggers.create(trigger)
+        retrieved = cognite_client.workflows.triggers.upsert(trigger)
     else:
         retrieved = existing_triggers[trigger.external_id]
 
@@ -428,7 +428,6 @@ class TestWorkflows:
         non_existing = cognite_client.workflows.retrieve("integration_test-non_existing_workflow")
         assert non_existing is None
 
-    @pytest.mark.skip("flaky; fix underway")
     def test_list_workflows(self, cognite_client: CogniteClient, persisted_workflow_list: WorkflowList) -> None:
         listed = cognite_client.workflows.list(limit=-1)
         assert len(listed) >= len(persisted_workflow_list)
@@ -528,7 +527,7 @@ class TestWorkflowVersions:
         listed_by_wf_version_id = cognite_client.workflows.versions.list(WorkflowVersionId(wf_xid))
         listed_by_as_ids = cognite_client.workflows.versions.list(workflow_version_list.as_ids())
 
-        ids_tuples = [wid.as_primitive() for wid in workflow_version_list.as_ids()]
+        ids_tuples = [wid.as_tuple() for wid in workflow_version_list.as_ids()]
         listed_by_tuples = cognite_client.workflows.versions.list(ids_tuples)
 
         unittest.TestCase().assertCountEqual(workflow_version_list, listed_by_wf_xid)
@@ -550,9 +549,8 @@ class TestWorkflowVersions:
                 ],
                 ignore_unknown_ids=False,
             )
-        assert (
-            cognite_client.workflows.versions.retrieve(*new_workflow_version_test_scoped.as_id().as_tuple()) is not None
-        )
+        res = cognite_client.workflows.versions.retrieve(new_workflow_version_test_scoped.as_id())
+        assert res is not None
 
     def test_delete_non_existing(
         self, cognite_client: CogniteClient, new_workflow_version_test_scoped: WorkflowVersion
@@ -571,7 +569,8 @@ class TestWorkflowVersions:
         assert retrieved == new_workflow_version
 
     def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:
-        non_existing = cognite_client.workflows.versions.retrieve("integration_test-non_existing_workflow", "1")
+        identifier = ("integration_test-non_existing_workflow", "1")
+        non_existing = cognite_client.workflows.versions.retrieve(identifier)
         assert non_existing is None
 
 
@@ -754,21 +753,17 @@ class TestWorkflowTriggers:
         permanent_scheduled_trigger: WorkflowTrigger,
         permanent_data_modeling_trigger: WorkflowTrigger,
     ) -> None:
-        listed = cognite_client.workflows.triggers.get_triggers(limit=-1)
+        listed = cognite_client.workflows.triggers.list(limit=-1)
         external_ids = set(listed.as_external_ids())
         assert permanent_scheduled_trigger.external_id in external_ids
         assert permanent_data_modeling_trigger.external_id in external_ids
 
-    # TODO: Fix this test
-    @pytest.mark.skip("This test just fails because no trigger history is returned, not sure why")
     def test_trigger_run_history(
         self,
         cognite_client: CogniteClient,
         permanent_scheduled_trigger: WorkflowTrigger,
     ) -> None:
-        history = cognite_client.workflows.triggers.get_trigger_run_history(
-            external_id=permanent_scheduled_trigger.external_id
-        )
+        history = cognite_client.workflows.triggers.list_runs(external_id=permanent_scheduled_trigger.external_id)
         assert len(history) > 0
         assert history[0].external_id == permanent_scheduled_trigger.external_id
         assert history[0].workflow_external_id == permanent_scheduled_trigger.workflow_external_id
@@ -784,6 +779,4 @@ class TestWorkflowTriggers:
 
     def test_trigger_run_history_non_existing(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(CogniteAPIError, match=r"Workflow trigger not found\."):
-            cognite_client.workflows.triggers.get_trigger_run_history(
-                external_id="integration_test-non_existing_trigger"
-            )
+            cognite_client.workflows.triggers.list_runs(external_id="integration_test-non_existing_trigger")

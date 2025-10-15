@@ -242,7 +242,7 @@ class TestDatapointSubscriptions:
             # There is a bug in the API that causes the updated filter not to be returned when calling update.
             cognite_client.time_series.subscriptions.update(new_update)
             retrieved = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)
-            assert retrieved and retrieved.filter
+            assert retrieved and retrieved.filter is not None
             assert retrieved.filter.dump() == new_filter.dump()
 
     def test_iterate_data_subscription_initial_call(
@@ -379,7 +379,10 @@ class TestDatapointSubscriptions:
             added_last_minute += len(batch.subscription_changes.added)
             if not batch.has_next:
                 break
-        assert added_last_minute == 0, "There should be no timeseries added in the last minute"
+        assert added_last_minute == 0, (
+            "There should be no time series added in the last minute. If this is the first time ever "
+            "you run these tests, please wait 1 minute and try again.",
+        )
 
     def test_iterate_data__using_status_codes(
         self, cognite_client: CogniteClient, sub_for_status_codes: DatapointSubscription
