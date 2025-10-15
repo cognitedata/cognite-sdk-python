@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 import json
 
@@ -109,7 +111,7 @@ class TestListAndIterSignatures:
         ],
     )
     def test_list_and_iter_signatures_are_same(self, api: type[APIClient]) -> None:
-        ignore_params = {"chunk_size"}
+        ignore_params = {"chunk_size", "partitions"}
         iter_parameters = {p.name for p in inspect.signature(api.__call__).parameters.values()}
         list_parameters = {p.name for p in inspect.signature(api.list).parameters.values()}  # type: ignore[attr-defined]
         assert ignore_params.issuperset(iter_parameters.symmetric_difference(list_parameters)), signature_error_msg(

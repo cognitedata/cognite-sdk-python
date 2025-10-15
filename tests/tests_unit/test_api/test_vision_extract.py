@@ -17,7 +17,6 @@ from cognite.client.data_classes.contextualization import (
     VisionExtractJob,
     VisionFeature,
 )
-from cognite.client.exceptions import CogniteException
 from tests.utils import jsgz_load
 
 
@@ -160,7 +159,7 @@ class TestVisionExtract:
             "beta_feature",
         ],
     )
-    def test_extract_unit(
+    async def test_extract_unit(
         self,
         mock_post_extract: HTTPXMock,
         mock_get_extract: HTTPXMock,
@@ -190,15 +189,15 @@ class TestVisionExtract:
 
             # Cannot save prediction of an incomplete job
             with pytest.raises(
-                CogniteException,
+                RuntimeError,
                 match=r"Extract job is not completed\. If the job is queued or running, wait for completion and try again",
             ):
                 job.save_predictions(creating_user="sdk-tests")
 
             # Wait for job to complete and check its content
             expected_job_id = 1
-            job.wait_for_completion(interval=0)
-            assert "items" in job.result
+            result = await job.wait_for_result()
+            assert "items" in result
             assert JobStatus.COMPLETED is JobStatus(job.status)
             assert expected_job_id == job.job_id
 

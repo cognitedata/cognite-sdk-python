@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -8,15 +10,22 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import Label, LabelDefinition, LabelDefinitionList, LabelDefinitionWrite
 from tests.utils import get_url, jsgz_load
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
 
 @pytest.fixture
-def mock_labels_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
+def mock_labels_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> dict[str, Any]:
     response_body = {
         "items": [
             {"name": "Pump", "description": "guess", "externalId": "PUMP", "createdTime": 1575892259245, "dataSetId": 1}
         ]
     }
-    url_pattern = re.compile(re.escape(get_url(cognite_client.labels)) + "/.+")
+    url_pattern = re.compile(re.escape(get_url(async_client.labels)) + "/.+")
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)

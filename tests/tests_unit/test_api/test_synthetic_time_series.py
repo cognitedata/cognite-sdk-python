@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import re
 from random import random
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from httpx import Request, Response
@@ -10,13 +12,20 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import Datapoints
 from tests.utils import get_url, jsgz_load
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
 
 def generate_datapoints(start: int, end: int, granularity: int = 1) -> list[dict[str, Any]]:
     return [{"value": random(), "timestamp": i} for i in range(start, end, granularity)]
 
 
 @pytest.fixture
-def mock_get_datapoints(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_get_datapoints(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     def request_callback(request: Request) -> Response:
         payload = jsgz_load(request.content)
 
@@ -41,7 +50,7 @@ def mock_get_datapoints(httpx_mock: HTTPXMock, cognite_client: CogniteClient) ->
     httpx_mock.add_callback(
         request_callback,
         method="POST",
-        url=get_url(cognite_client.time_series.data.synthetic) + "/timeseries/synthetic/query",
+        url=get_url(async_client.time_series.data.synthetic) + "/timeseries/synthetic/query",
         match_headers={"content-type": "application/json"},
         is_reusable=True,
     )
@@ -49,10 +58,12 @@ def mock_get_datapoints(httpx_mock: HTTPXMock, cognite_client: CogniteClient) ->
 
 
 @pytest.fixture
-def mock_get_datapoints_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_get_datapoints_empty(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=re.compile(re.escape(get_url(cognite_client.time_series.data.synthetic)) + "/timeseries/synthetic/.*"),
+        url=re.compile(re.escape(get_url(async_client.time_series.data.synthetic)) + "/timeseries/synthetic/.*"),
         status_code=200,
         json={"items": [{"isString": False, "datapoints": []}]},
     )
@@ -85,10 +96,10 @@ class TestSyntheticQuery:
         assert 1 == len(mock_get_datapoints_empty.get_requests())
 
     @pytest.mark.dsl
-    def test_expression_builder(self, cognite_client: CogniteClient) -> None:
+    def test_expression_builder(self, async_client: AsyncCogniteClient) -> None:
         from sympy import symbols
 
-        build_fn = cognite_client.time_series.data.synthetic._build_expression
+        build_fn = async_client.time_series.data.synthetic._build_expression
         assert ("ts{externalId:'x'}", "a") == build_fn(symbols("a"), {"a": "x"})
         assert (
             "ts{externalId:'x',aggregate:'average',granularity:'1m'}",
@@ -109,12 +120,12 @@ class TestSyntheticQuery:
         ) == build_fn(symbols("a"), {"a": "x"}, target_unit_system="Imperial")
 
     @pytest.mark.dsl
-    def test_expression_builder__overlapping(self, cognite_client: CogniteClient) -> None:
+    def test_expression_builder__overlapping(self, async_client: AsyncCogniteClient) -> None:
         # Before SDK version 7.30.1, variable replacements were done one-by-one, which could mean
         # that a later replacement would affect an earlier one.
         from sympy import symbols
 
-        build_fn = cognite_client.time_series.data.synthetic._build_expression
+        build_fn = async_client.time_series.data.synthetic._build_expression
         x, y = symbols("x y")
         long_expr, short_expr = build_fn(x + y, {x: "test-x-y-z", y: "foo"})
         assert short_expr == "(x+y)"

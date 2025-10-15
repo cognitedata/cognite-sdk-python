@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import gzip
 import json
 import re
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -18,9 +20,16 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.relationships import RelationshipType
 from tests.utils import get_url, jsgz_load
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
 
 @pytest.fixture
-def mock_rel_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
+def mock_rel_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> dict[str, Any]:
     response_body = {
         "items": [
             {
@@ -40,7 +49,7 @@ def mock_rel_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> d
         ]
     }
     url_pattern = re.compile(
-        re.escape(get_url(cognite_client.relationships))
+        re.escape(get_url(async_client.relationships))
         + r"/relationships(?:/byids|/update|/delete|/list|/search|$|\?.+)"
     )
     httpx_mock.add_response(
@@ -51,10 +60,10 @@ def mock_rel_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> d
 
 
 @pytest.fixture
-def mock_rel_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_rel_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> HTTPXMock:
     response_body: dict[str, Any] = {"items": []}
     url_pattern = re.compile(
-        re.escape(get_url(cognite_client.relationships))
+        re.escape(get_url(async_client.relationships))
         + r"/relationships(?:/byids|/update|/delete|/list|/search|$|\?.+)"
     )
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
@@ -284,10 +293,6 @@ class TestRelationships:
         }
         assert expected == jsgz_load(httpx_mock.get_requests()[0].content)["items"][0]["update"]
 
-    def test_iter_single(self, cognite_client: CogniteClient, mock_rel_response: dict[str, Any]) -> None:
-        for rel in cognite_client.relationships:
-            assert mock_rel_response["items"][0] == rel.dump(camel_case=True)
-
     def test_delete_single(
         self, cognite_client: CogniteClient, mock_rel_response: dict[str, Any], httpx_mock: HTTPXMock
     ) -> None:
@@ -394,8 +399,10 @@ class TestRelationships:
         source_external_ids = [str(i) for i in range(2500)]
         target_external_ids = [str(i) for i in range(3500)]
         with pytest.raises(ValueError):
-            cognite_client.relationships(
-                source_external_ids=source_external_ids, target_external_ids=target_external_ids
+            next(
+                cognite_client.relationships(
+                    source_external_ids=source_external_ids, target_external_ids=target_external_ids
+                )
             )
         with pytest.raises(ValueError):
             cognite_client.relationships.list(
@@ -413,7 +420,7 @@ class TestRelationships:
     ) -> None:
         source_external_ids = [str(i) for i in range(2500)]
         with pytest.raises(ValueError):
-            cognite_client.relationships(source_external_ids=source_external_ids)
+            next(cognite_client.relationships(source_external_ids=source_external_ids))
 
         res = cognite_client.relationships.list(source_external_ids=source_external_ids, limit=-1)
         assert 3 == len(httpx_mock.get_requests())
