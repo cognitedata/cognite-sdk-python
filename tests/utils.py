@@ -553,7 +553,7 @@ class FakeCogniteResourceGenerator:
             return self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
         elif var_name == "id" and type_ is int:
             return self._random.choice(range(1, MAX_VALID_INTERNAL_ID + 1))
-        if type_ is str or type_ is Any:
+        if type_ is str or type_ is Any or type_ is object:
             return self._random_string()
         elif type_ is int:
             return self._random.randint(1, 100000)
