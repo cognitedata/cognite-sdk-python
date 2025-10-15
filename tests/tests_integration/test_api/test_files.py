@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 import uuid
 from collections.abc import Iterator
@@ -195,8 +197,8 @@ class TestFilesAPI:
         assert 4 == len(res)
 
     def test_aggregate(self, cognite_client: CogniteClient) -> None:
-        res = cognite_client.files.aggregate(filter=FileMetadataFilter(name="big.txt"))
-        assert res[0].count > 0
+        res = cognite_client.files.aggregate_count(filter=FileMetadataFilter(name="big.txt"))
+        assert res > 0
 
     def test_search(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.files.search(name="big.txt", filter=FileMetadataFilter(created_time={"min": 0}))
@@ -285,13 +287,12 @@ class TestFilesAPI:
         retrieved_content = cognite_client.files.download_bytes(external_id=external_id)
         assert retrieved_content == content.encode("utf-8")
 
-    @pytest.mark.skip("Ticket DOGE-110: This test is flaky and needs to be fixed")
-    def test_upload_multipart(self, cognite_client: CogniteClient) -> None:
+    def test_upload_multipart(self, cognite_client: CogniteClient, os_and_py_version: str) -> None:
         # Min file chunk size is 5MiB
         content_1 = "abcde" * 1_200_000
         content_2 = "fghij"
 
-        external_id = "test_upload_multipart"
+        external_id = f"test_upload_multipart_{os_and_py_version}"
 
         with cognite_client.files.multipart_upload_session(
             name="test_multipart.txt",
@@ -317,11 +318,11 @@ class TestFilesAPI:
 
     def test_upload_content_error_modes(self, cognite_client: CogniteClient, tmp_path: Path) -> None:
         with pytest.raises(IsADirectoryError):
-            cognite_client.files.upload_content(str(tmp_path))
+            cognite_client.files.upload_content(tmp_path)
 
         missing_file = tmp_path / "does_not_exist.txt"
         with pytest.raises(FileNotFoundError):
-            cognite_client.files.upload_content(str(missing_file))
+            cognite_client.files.upload_content(missing_file)
 
     def test_create_retrieve_update_delete_with_instance_id(
         self, cognite_client: CogniteClient, instance_id_test_space: str
@@ -343,7 +344,12 @@ class TestFilesAPI:
             assert created.nodes[0].as_id() == instance_id
 
             f1 = cognite_client.files.upload_content_bytes(b"f1", instance_id=instance_id)
-            time.sleep(0.5)
+            backoff = Backoff()
+            for i in range(10):
+                file = get_or_raise(cognite_client.files.retrieve(instance_id=instance_id))
+                if file.uploaded:
+                    break
+                time.sleep(next(backoff))
             download_links = cognite_client.files.retrieve_download_urls(instance_id=instance_id)
             assert len(download_links.values()) == 1
             assert download_links[get_or_raise(f1.instance_id)].startswith("http")
