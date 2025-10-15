@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import os
 import string
@@ -107,7 +109,6 @@ async def other_running_transformation(
     os.getenv("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
 )
 class TestTransformationJobsAPI:
-    @pytest.mark.asyncio
     async def test_run_without_wait(
         self, cognite_client: CogniteClient, new_running_transformation: tuple[TransformationJob, Transformation]
     ) -> None:
@@ -161,7 +162,6 @@ class TestTransformationJobsAPI:
 
         assert job.status == TransformationJobStatus.RUNNING and timeout <= final - init <= timeout + 1.5
 
-    @pytest.mark.asyncio
     async def test_run_async(self, cognite_client: CogniteClient, new_transformation: Transformation) -> None:
         job = await new_transformation.run_async()
 
@@ -177,7 +177,6 @@ class TestTransformationJobsAPI:
         assert job.error is None
         assert job.ignore_null_fields
 
-    @pytest.mark.asyncio
     @pytest.mark.xfail(reason="sometimes it takes longer to start")
     async def test_run_with_timeout_async(self, longer_transformation: Transformation) -> None:
         init = time.time()
@@ -187,7 +186,6 @@ class TestTransformationJobsAPI:
 
         assert job.status == TransformationJobStatus.RUNNING and timeout <= final - init <= timeout + 1.5
 
-    @pytest.mark.asyncio
     async def test_run_by_external_id_async(
         self, cognite_client: CogniteClient, new_transformation: Transformation
     ) -> None:
@@ -206,7 +204,6 @@ class TestTransformationJobsAPI:
         assert job.ignore_null_fields
 
     @pytest.mark.skip("Ticket DOGE-110: The transformation API is unstable and this test fails frequently.")
-    @pytest.mark.asyncio
     async def test_run_raw_transformation(
         self, cognite_client: CogniteClient, new_raw_transformation: Transformation
     ) -> None:
@@ -223,7 +220,6 @@ class TestTransformationJobsAPI:
         assert job.query == new_raw_transformation.query
         assert job.ignore_null_fields
 
-    @pytest.mark.asyncio
     async def test_cancel_job(self, new_running_transformation: tuple[TransformationJob, Transformation]) -> None:
         (new_job, _) = new_running_transformation
         await asyncio.sleep(0.5)
@@ -231,7 +227,6 @@ class TestTransformationJobsAPI:
         await new_job.wait_async()
         assert new_job.status == TransformationJobStatus.FAILED and new_job.error == "Job cancelled by the user."
 
-    @pytest.mark.asyncio
     async def test_cancel_transformation(
         self, new_running_transformation: tuple[TransformationJob, Transformation]
     ) -> None:
@@ -241,7 +236,6 @@ class TestTransformationJobsAPI:
         await new_job.wait_async()
         assert new_job.status == TransformationJobStatus.FAILED and new_job.error == "Job cancelled by the user."
 
-    @pytest.mark.asyncio
     async def test_list_jobs_by_transformation_id(
         self, new_running_transformation: tuple[TransformationJob, Transformation]
     ) -> None:
@@ -251,7 +245,6 @@ class TestTransformationJobsAPI:
         assert new_job.id in [job.id for job in retrieved_jobs]
         assert all(job.transformation_id == new_transformation.id for job in retrieved_jobs)
 
-    @pytest.mark.asyncio
     async def test_list_jobs(
         self,
         cognite_client: CogniteClient,
@@ -265,14 +258,12 @@ class TestTransformationJobsAPI:
         assert new_job.id in [job.id for job in retrieved_jobs]
         assert other_job.id in [job.id for job in retrieved_jobs]
 
-    @pytest.mark.asyncio
     async def test_metrics(self, new_running_transformation: tuple[TransformationJob, Transformation]) -> None:
         (job, _) = new_running_transformation
         await asyncio.sleep(1.0)
         metrics = job.metrics()
         assert metrics is not None
 
-    @pytest.mark.asyncio
     async def test_retrieve_multiple(
         self,
         cognite_client: CogniteClient,

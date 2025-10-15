@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import time
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import TimestampRange
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators import (
@@ -15,6 +17,7 @@ from cognite.client.data_classes.simulators import (
     SimulatorModelRevisionWrite,
     SimulatorModelWrite,
 )
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.conftest import upload_file
 from tests.tests_integration.test_api.test_simulators.seed.data import (
@@ -134,6 +137,7 @@ class TestSimulatorModels:
     def test_create_model_and_revisions(
         self,
         cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
         seed_model_revision_file: FileMetadata,
         seed_resource_names: ResourceNames,
     ) -> None:
@@ -191,16 +195,18 @@ class TestSimulatorModels:
         assert model_revision_created is not None
         assert model_revision_created.external_id == model_revision_external_id
         assert model_revision_created.log_id is not None
-        update_logs(
-            cognite_client,
-            model_revision_created.log_id,
-            [
-                {
-                    "timestamp": 123456789,
-                    "message": "Testing logs update for simulator model revision",
-                    "severity": "Information",
-                }
-            ],
+        run_sync(
+            update_logs(
+                async_client,
+                model_revision_created.log_id,
+                [
+                    {
+                        "timestamp": 123456789,
+                        "message": "Testing logs update for simulator model revision",
+                        "severity": "Information",
+                    }
+                ],
+            )
         )
         log = cognite_client.simulators.logs.retrieve(ids=model_revision_created.log_id)
         assert log is not None
@@ -294,19 +300,21 @@ class TestSimulatorModels:
         cognite_client.simulators.models.delete(external_ids=[model_updated.external_id])
 
     def test_model_revision_retrieve_data(
-        self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, seed_resource_names: ResourceNames
     ) -> None:
-        revision_data = cognite_client.simulators._post(
-            "/simulators/models/revisions/data/update",
-            headers={"cdf-version": "alpha"},
-            json={
-                "items": [
-                    {
-                        "modelRevisionExternalId": seed_resource_names.simulator_model_revision_external_id,
-                        "update": {"flowsheets": {"set": SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET}},
-                    }
-                ]
-            },
+        revision_data = run_sync(
+            async_client.simulators._post(
+                "/simulators/models/revisions/data/update",
+                headers={"cdf-version": "alpha"},
+                json={
+                    "items": [
+                        {
+                            "modelRevisionExternalId": seed_resource_names.simulator_model_revision_external_id,
+                            "update": {"flowsheets": {"set": SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET}},
+                        }
+                    ]
+                },
+            )
         )
 
         assert revision_data.status_code == 200
