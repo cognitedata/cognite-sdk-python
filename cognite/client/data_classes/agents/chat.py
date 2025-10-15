@@ -594,7 +594,7 @@ class AgentChatResponse(CogniteResource):
         """Get all action calls from all messages."""
         if not self.messages:
             return None
-        return [call for message in self.messages if message.actions for call in message.actions] or None
+        return [call for msgs in self.messages if msgs.actions for call in msgs.actions] or None
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentChatResponse:
