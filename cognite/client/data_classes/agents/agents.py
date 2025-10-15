@@ -31,6 +31,7 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
         description (str | None): The description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
     """
 
     external_id: str
@@ -38,6 +39,7 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
     description: str | None = None
     instructions: str | None = None
     model: str | None = None
+    labels: list[str] | None = None
 
 
 class AgentUpsert(AgentCore):
@@ -50,6 +52,7 @@ class AgentUpsert(AgentCore):
         description (str | None): The human readable description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
         tools (Sequence[AgentToolUpsert] | None): List of tools for the agent.
 
     """
@@ -63,10 +66,16 @@ class AgentUpsert(AgentCore):
         description: str | None = None,
         instructions: str | None = None,
         model: str | None = None,
+        labels: list[str] | None = None,
         tools: Sequence[AgentToolUpsert] | None = None,
     ) -> None:
         super().__init__(
-            external_id=external_id, name=name, description=description, instructions=instructions, model=model
+            external_id=external_id,
+            name=name,
+            description=description,
+            instructions=instructions,
+            model=model,
+            labels=labels,
         )
         self.tools: AgentToolUpsertList | None = AgentToolUpsertList(tools) if tools is not None else None
         # This stores any unknown properties that are not part of the defined fields.
@@ -99,6 +108,7 @@ class AgentUpsert(AgentCore):
             description=resource.get("description"),
             instructions=resource.get("instructions"),
             model=resource.get("model"),
+            labels=resource.get("labels"),
             tools=tools,
         )
         existing = set(instances.dump(camel_case=True).keys())
@@ -116,6 +126,7 @@ class Agent(AgentCore):
         description (str | None): The human readable description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
         tools (Sequence[AgentTool] | None): List of tools for the agent.
         created_time (int | None): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         last_updated_time (int | None): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
@@ -134,13 +145,19 @@ class Agent(AgentCore):
         description: str | None = None,
         instructions: str | None = None,
         model: str | None = None,
+        labels: list[str] | None = None,
         tools: Sequence[AgentTool] | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
         owner_id: str | None = None,
     ) -> None:
         super().__init__(
-            external_id=external_id, name=name, description=description, instructions=instructions, model=model
+            external_id=external_id,
+            name=name,
+            description=description,
+            instructions=instructions,
+            model=model,
+            labels=labels,
         )
         self.tools: AgentToolList | None = AgentToolList(tools) if tools is not None else None
         self.created_time = created_time
@@ -166,6 +183,7 @@ class Agent(AgentCore):
             description=self.description,
             instructions=self.instructions,
             model=self.model,
+            labels=self.labels,
             tools=[tool.as_write() for tool in self.tools] if self.tools else None,
         )
 
@@ -183,6 +201,7 @@ class Agent(AgentCore):
             description=resource.get("description"),
             instructions=resource.get("instructions"),
             model=resource.get("model"),
+            labels=resource.get("labels"),
             tools=tools,
             created_time=resource.get("createdTime"),
             last_updated_time=resource.get("lastUpdatedTime"),

@@ -70,6 +70,7 @@ class AgentsAPI(APIClient):
                 >>> agent = AgentUpsert(
                 ...     external_id="my_agent",
                 ...     name="My Agent",
+                ...     labels=["published"],
                 ...     tools=[find_assets_tool]
                 ... )
                 >>> client.agents.upsert(agents=[agent])
@@ -145,6 +146,7 @@ class AgentsAPI(APIClient):
                 ...     name="My agent",
                 ...     description="An agent with many tools",
                 ...     instructions="You are a helpful assistant that can query knowledge graphs, summarize documents, answer questions about documents, and query time series data points.",
+                ...     labels=["published"],
                 ...     tools=[find_assets_tool, find_files_tool, find_time_series_tool, summarize_tool, ask_doc_tool, ts_tool]
                 ... )
                 >>> client.agents.upsert(agents=[agent])
