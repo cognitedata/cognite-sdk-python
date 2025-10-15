@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8ff3a2a3fc25ed22905564ffee81a017
+6c1c42132e1b371d885eb22ff47f5467
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -237,7 +237,7 @@ class SyncFilesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> aggregate_uploaded = client.files.aggregate(filter={"uploaded": True})
+                >>> aggregate_uploaded = client.files.aggregate_count(filter={"uploaded": True})
         """
         return run_sync(self.__async_client.files.aggregate_count(filter=filter))
 

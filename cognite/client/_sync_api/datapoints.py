@@ -1,6 +1,6 @@
 """
 ===============================================================================
-2b57b61f8d9bf4540ef91bde1ef72d2f
+01c57db0141a936920f9db020c83bc53
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -146,7 +146,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             directly to an insert method. The only assumption below is that the time series have already been created in the target project.
 
                 >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
-                >>> target_client = AsyncCogniteClient()
+                >>> target_client = CogniteClient()
                 >>> ts_to_copy = client.time_series.list(data_set_external_ids="my-use-case")
                 >>> queries = [
                 ...     DatapointsQuery(
