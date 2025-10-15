@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -17,9 +19,16 @@ from cognite.client.data_classes.capabilities import AllScope, GroupsAcl, Projec
 from cognite.client.data_classes.iam import GroupAttributes, ProjectSpec, TokenInspection
 from tests.utils import get_url, jsgz_load
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
 
 @pytest.fixture
-def mock_groups_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
+def mock_groups_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> dict[str, Any]:
     response_body = {
         "items": [
             {
@@ -32,7 +41,7 @@ def mock_groups_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -
             }
         ]
     }
-    url_pattern = re.compile(re.escape(get_url(cognite_client.iam)) + "/groups.*")
+    url_pattern = re.compile(re.escape(get_url(async_client.iam)) + "/groups.*")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     return response_body
@@ -58,11 +67,14 @@ def group_with_attributes() -> dict[str, Any]:
 
 @pytest.fixture
 def mock_groups_with_attributes(
-    group_with_attributes: dict[str, Any], httpx_mock: HTTPXMock, cognite_client: CogniteClient
+    group_with_attributes: dict[str, Any],
+    httpx_mock: HTTPXMock,
+    cognite_client: CogniteClient,
+    async_client: AsyncCogniteClient,
 ) -> HTTPXMock:
     response_body = {"items": [group_with_attributes]}
 
-    url_pattern = re.compile(re.escape(get_url(cognite_client.iam)) + "/groups.*")
+    url_pattern = re.compile(re.escape(get_url(async_client.iam)) + "/groups.*")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     return httpx_mock
@@ -138,16 +150,20 @@ class TestGroups:
         assert res is None
 
     @pytest.mark.usefixtures("mock_groups_response")
-    def test_delete_multiple(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
+    def test_delete_multiple(
+        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
+    ) -> None:
         res = cognite_client.iam.groups.delete([1])
         assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
 
 
 @pytest.fixture
-def mock_security_cats_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
+def mock_security_cats_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> dict[str, Any]:
     response_body = {"items": [{"name": "bla", "id": 1}]}
-    url_pattern = re.compile(re.escape(get_url(cognite_client.iam)) + "/securitycategories.*")
+    url_pattern = re.compile(re.escape(get_url(async_client.iam)) + "/securitycategories.*")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     return response_body
@@ -183,7 +199,11 @@ class TestSecurityCategories:
         assert res is None
 
     def test_delete_multiple(
-        self, cognite_client: CogniteClient, mock_security_cats_response: dict[str, Any], httpx_mock: HTTPXMock
+        self,
+        cognite_client: CogniteClient,
+        mock_security_cats_response: dict[str, Any],
+        httpx_mock: HTTPXMock,
+        async_client: AsyncCogniteClient,
     ) -> None:
         res = cognite_client.iam.security_categories.delete([1])
         assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
@@ -191,7 +211,9 @@ class TestSecurityCategories:
 
 
 @pytest.fixture
-def mock_token_inspect(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_token_inspect(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     response_body = {
         "subject": "someSubject",
         "projects": [{"projectUrlName": "veryGoodUrlName", "groups": [1, 2, 3]}],
@@ -199,7 +221,7 @@ def mock_token_inspect(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> 
             {"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}, "projectScope": {"allProjects": {}}}
         ],
     }
-    url_pattern = re.compile(re.escape(get_url(cognite_client.iam.token)) + "/api/v1/token/inspect")
+    url_pattern = re.compile(re.escape(get_url(async_client.iam.token)) + "/api/v1/token/inspect")
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
     return httpx_mock
 

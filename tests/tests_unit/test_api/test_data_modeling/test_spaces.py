@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -7,12 +10,19 @@ from cognite.client import CogniteClient
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import get_url
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
 
 class TestSpaces:
     @pytest.fixture
-    def mock_spaces_delete_raise_error(self, httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+    def mock_spaces_delete_raise_error(
+        self, httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    ) -> HTTPXMock:
         response_body = {"error": "smth"}
-        url_pattern = re.compile(re.escape(get_url(cognite_client.data_modeling.spaces)) + "/models/spaces/delete")
+        url_pattern = re.compile(re.escape(get_url(async_client.data_modeling.spaces)) + "/models/spaces/delete")
         httpx_mock.add_response(method="POST", url=url_pattern, status_code=400, json=response_body)
         return httpx_mock
 
