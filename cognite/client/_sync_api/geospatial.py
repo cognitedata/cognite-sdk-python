@@ -662,7 +662,7 @@ class SyncGeospatialAPI(SyncAPIClient):
                 ...     # do something with the features
         """
         yield from SyncIterator(
-            self.__async_client.geospatial(
+            self.__async_client.geospatial.stream_features(
                 feature_type_external_id=feature_type_external_id,
                 filter=filter,
                 properties=properties,
