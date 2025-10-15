@@ -422,10 +422,10 @@ def run_ruff(file_paths: list[Path]) -> None:
     # We exit nonzero if ruff fixes anything, so we run with check=False to not raise:
     base = f"poetry run pre-commit run ruff-{{}} --files {shlex.join(map(str, file_paths))}"
     command = shlex.split(base.format("check"))
-    print(shlex.join(command))
+    print("Now running command\n", shlex.join(command))
     subprocess.run(command, check=False, capture_output=True)
     command = shlex.split(base.format("format"))
-    print(shlex.join(command))
+    print("Now running command\n", shlex.join(command))
     subprocess.run(command, check=False, capture_output=True)
 
 
@@ -489,8 +489,13 @@ This file is auto-generated - do not edit manually!
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+import httpx
+from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
+from cognite.client.utils._auxiliary import load_resource_to_dict
 from cognite.client import AsyncCogniteClient
+from cognite.client.utils._async_helpers import run_sync
 {all_api_imports}
 
 if TYPE_CHECKING:
@@ -512,6 +517,181 @@ class CogniteClient:
 
         # Initialize all sync. APIs:
         {nested_apis_init}
+
+    def get(
+        self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
+    ) -> httpx.Response:
+        """Perform a GET request to an arbitrary path in the API."""
+        return run_sync(self.__async_client.get(url, params=params, headers=headers))
+
+    def post(
+        self,
+        url: str,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+    ) -> httpx.Response:
+        """Perform a POST request to an arbitrary path in the API."""
+        return run_sync(self.__async_client.post(url, json=json, params=params, headers=headers))
+
+    def put(
+        self,
+        url: str,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+    ) -> httpx.Response:
+        """Perform a PUT request to an arbitrary path in the API."""
+        return run_sync(self.__async_client.put(url, json=json, params=params, headers=headers))
+
+    @property
+    def version(self) -> str:
+        """Returns the current SDK version.
+
+        Returns:
+            str: The current SDK version
+        """
+        from cognite.client import __version__
+
+        return __version__
+
+    @property
+    def config(self) -> ClientConfig:
+        """Returns a config object containing the configuration for the current client.
+
+        Returns:
+            ClientConfig: The configuration object.
+        """
+        return self.__async_client._config
+
+    @classmethod
+    def default(
+        cls,
+        project: str,
+        cdf_cluster: str,
+        credentials: CredentialProvider,
+        client_name: str | None = None,
+    ) -> CogniteClient:
+        """
+        Create an CogniteClient with default configuration.
+
+        The default configuration creates the URLs based on the project and cluster:
+
+        * Base URL: "https://{{cdf_cluster}}.cognitedata.com/
+
+        Args:
+            project (str): The CDF project.
+            cdf_cluster (str): The CDF cluster where the CDF project is located.
+            credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
+            client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
+
+        Returns:
+            CogniteClient: An CogniteClient instance with default configurations.
+        """
+        from cognite.client import ClientConfig
+
+        return cls(ClientConfig.default(project, cdf_cluster, credentials, client_name=client_name))
+
+    @classmethod
+    def default_oauth_client_credentials(
+        cls,
+        project: str,
+        cdf_cluster: str,
+        tenant_id: str,
+        client_id: str,
+        client_secret: str,
+        client_name: str | None = None,
+    ) -> CogniteClient:
+        """
+        Create an CogniteClient with default configuration using a client credentials flow.
+
+        The default configuration creates the URLs based on the project and cluster:
+
+        * Base URL: "https://{{cdf_cluster}}.cognitedata.com/
+        * Token URL: "https://login.microsoftonline.com/{{tenant_id}}/oauth2/v2.0/token"
+        * Scopes: [f"https://{{cdf_cluster}}.cognitedata.com/.default"]
+
+        Args:
+            project (str): The CDF project.
+            cdf_cluster (str): The CDF cluster where the CDF project is located.
+            tenant_id (str): The Azure tenant ID.
+            client_id (str): The Azure client ID.
+            client_secret (str): The Azure client secret.
+            client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
+
+        Returns:
+            CogniteClient: An CogniteClient instance with default configurations.
+        """
+        credentials = OAuthClientCredentials.default_for_azure_ad(tenant_id, client_id, client_secret, cdf_cluster)
+        return cls.default(project, cdf_cluster, credentials, client_name)
+
+    @classmethod
+    def default_oauth_interactive(
+        cls,
+        project: str,
+        cdf_cluster: str,
+        tenant_id: str,
+        client_id: str,
+        client_name: str | None = None,
+    ) -> CogniteClient:
+        """
+        Create an CogniteClient with default configuration using the interactive flow.
+
+        The default configuration creates the URLs based on the tenant_id and cluster:
+
+        * Base URL: "https://{{cdf_cluster}}.cognitedata.com/
+        * Authority URL: "https://login.microsoftonline.com/{{tenant_id}}"
+        * Scopes: [f"https://{{cdf_cluster}}.cognitedata.com/.default"]
+
+        Args:
+            project (str): The CDF project.
+            cdf_cluster (str): The CDF cluster where the CDF project is located.
+            tenant_id (str): The Azure tenant ID.
+            client_id (str): The Azure client ID.
+            client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
+
+        Returns:
+            CogniteClient: An CogniteClient instance with default configurations.
+        """
+        credentials = OAuthInteractive.default_for_azure_ad(tenant_id, client_id, cdf_cluster)
+        return cls.default(project, cdf_cluster, credentials, client_name)
+
+    @classmethod
+    def load(cls, config: dict[str, Any] | str) -> CogniteClient:
+        """Load a cognite client object from a YAML/JSON string or dict.
+
+        Args:
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the CogniteClient class.
+
+        Returns:
+            CogniteClient: A cognite client object.
+
+        Examples:
+
+            Create a cognite client object from a dictionary input:
+
+                >>> from cognite.client import CogniteClient
+                >>> import os
+                >>> config = {{
+                ...     "client_name": "abcd",
+                ...     "project": "cdf-project",
+                ...     "base_url": "https://api.cognitedata.com/",
+                ...     "credentials": {{
+                ...         "client_credentials": {{
+                ...             "client_id": "abcd",
+                ...             "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
+                ...             "token_url": "https://login.microsoftonline.com/xyz/oauth2/v2.0/token",
+                ...             "scopes": ["https://api.cognitedata.com/.default"],
+                ...         }},
+                ...     }},
+                ... }}
+                >>> client = CogniteClient.load(config)
+        """
+        from cognite.client import ClientConfig
+
+        loaded = load_resource_to_dict(config)
+        return cls(config=ClientConfig.load(loaded))
+
 '''
 
 
@@ -535,7 +715,8 @@ def create_sync_cognite_client(
         all_imports.append(f"from {import_path} import Sync{override_api_name}")
 
     content = COGNITE_CLIENT_TEMPLATE.format(
-        file_hash="TODO", all_api_imports="\n".join(all_imports), nested_apis_init="        ".join(all_apis)
+        all_api_imports="\n".join(all_imports),
+        nested_apis_init="        ".join(all_apis).rstrip(),
     )
     if content != SYNC_CLIENT_PATH.read_text():
         SYNC_CLIENT_PATH.write_text(content)
