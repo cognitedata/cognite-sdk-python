@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -373,8 +373,8 @@ class ActionResult(CogniteObject, ABC):
     """Base class for action execution results."""
 
     _type: ClassVar[str]
+    _role: ClassVar[Literal["action"]] = "action"
     action_id: str
-    role: Literal["action"]
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -393,28 +393,20 @@ class ClientToolResult(ActionResult):
     """
 
     _type: ClassVar[str] = "clientTool"
-    content: MessageContent = field(init=False)
-    data: list[Any] | None = field(init=False, default=None)
+    content: str | MessageContent
+    data: list[Any] | None = None
 
-    def __init__(
-        self,
-        action_id: str,
-        content: str | MessageContent,
-        data: list[Any] | None = None,
-    ) -> None:
-        super().__init__(action_id=action_id, role="action")
-        if isinstance(content, str):
-            self.content = TextContent(text=content)
-        else:
-            self.content = content
-        self.data = data
+    def __post_init__(self) -> None:
+        """Convert string content to TextContent."""
+        if isinstance(self.content, str):
+            self.content = TextContent(text=self.content)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            "role": self.role,
+            "role": self._role,
             "type": self._type,
             "actionId" if camel_case else "action_id": self.action_id,
-            "content": self.content.dump(camel_case=camel_case),
+            "content": cast(MessageContent, self.content).dump(camel_case=camel_case),
             "data": self.data or [],
         }
 
@@ -443,7 +435,7 @@ class ToolConfirmationResult(ActionResult):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            "role": self.role,
+            "role": self._role,
             "type": self._type,
             "actionId" if camel_case else "action_id": self.action_id,
             "status": self.status,
@@ -455,7 +447,6 @@ class ToolConfirmationResult(ActionResult):
         return cls(
             action_id=data.get("actionId", data.get("action_id", "")),
             status=data["status"],
-            role="action",
         )
 
 
