@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from pathlib import Path
 from typing import cast
@@ -202,7 +204,7 @@ class TestPNIDParsingIntegration:
             pattern_mode=True,
         )
 
-        result = detected.result
+        result = detected.get_result()
         detected_by_resource_type = defaultdict(list)
         for annotation in result["items"][0]["annotations"]:
             detected_by_resource_type[annotation["entities"][0]["resourceType"]].append(annotation)
@@ -219,11 +221,11 @@ class TestPNIDParsingIntegration:
         detect_job.wait_for_completion()
         assert isinstance(detect_job, DiagramDetectResults)
         assert {"statusCount", "numFiles", "items", "partialMatch", "minTokens", "searchField"}.issubset(
-            detect_job.result
+            detect_job.get_result()
         )
-        assert {"fileId", "fileInstanceId", "annotations"}.issubset(detect_job.result["items"][0])
+        assert {"fileId", "fileInstanceId", "annotations"}.issubset(detect_job.get_result()["items"][0])
         assert "Completed" == detect_job.status
-        assert [] == detect_job.errors
+        assert [] == detect_job.get_errors()
         assert isinstance(detect_job.items[0], DiagramDetectItem)
         assert detect_job.items[0].file_instance_id == diagram_node.dump(include_instance_type=False)
 
