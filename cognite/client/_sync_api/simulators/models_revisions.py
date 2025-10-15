@@ -1,6 +1,6 @@
 """
 ===============================================================================
-7619ac448bf753adf6658c74b2748fd6
+9391dfeb7797dd05db353b555112b6d1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -17,6 +17,7 @@ from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.simulators.filters import PropertySort
 from cognite.client.data_classes.simulators.models import (
     SimulatorModelRevision,
+    SimulatorModelRevisionDataList,
     SimulatorModelRevisionList,
     SimulatorModelRevisionWrite,
 )
@@ -229,3 +230,27 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
                 >>> res = client.simulators.models.revisions.create(revisions)
         """
         return run_sync(self.__async_client.simulators.models.revisions.create(items=items))
+
+    def retrieve_data(self, model_revision_external_id: str) -> SimulatorModelRevisionDataList:
+        """
+        `Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/get_simulator_model_revision_data_by_id>`_
+
+        Retrieves a list of simulator model revisions data that match the given criteria.
+
+        Args:
+            model_revision_external_id (str): The external id of the simulator model revision to filter by.
+        Returns:
+            SimulatorModelRevisionDataList: List of simulator model revision data
+
+        Examples:
+            List simulator model revision data:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.simulators.models.revisions.retrieve_data("model_revision_1")
+        """
+        return run_sync(
+            self.__async_client.simulators.models.revisions.retrieve_data(
+                model_revision_external_id=model_revision_external_id
+            )
+        )
