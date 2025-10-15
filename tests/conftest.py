@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import platform
 from collections.abc import Callable, Iterator
 
@@ -11,6 +13,13 @@ from cognite.client._api_client import APIClient
 dotenv.load_dotenv()
 
 global_config.disable_pypi_version_check = True
+
+
+@pytest.fixture(scope="session")
+def anyio_backend():
+    # The anyio package by default runs all async tests using all backends like trio and asyncio
+    # but we just want to use asyncio:
+    return "asyncio"
 
 
 _STANDARD_API_LIMIT_NAMES = [
