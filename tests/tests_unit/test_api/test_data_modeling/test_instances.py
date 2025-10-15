@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from pytest_httpx import HTTPXMock
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.aggregations import Count
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.query import SourceSelector
@@ -49,7 +49,9 @@ class TestSourceDef:
 class TestAggregate:
     @pytest.mark.usefixtures("disable_gzip")
     @pytest.mark.parametrize("limit", [None, -1, math.inf])
-    def test_aggregate_maximum(self, limit: int | None, httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> None:
+    def test_aggregate_maximum(
+        self, limit: int | None, httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    ) -> None:
         url = re.compile(r".*/models/instances/aggregate$")
         response = {
             "items": [
@@ -75,13 +77,15 @@ class TestAggregate:
         req = httpx_mock.get_requests()[0]
         body = json.loads(req.content)
         assert "limit" in body
-        assert body["limit"] == cognite_client.data_modeling.instances._AGGREGATE_LIMIT
+        assert body["limit"] == async_client.data_modeling.instances._AGGREGATE_LIMIT
 
 
 class TestSearch:
     @pytest.mark.usefixtures("disable_gzip")
     @pytest.mark.parametrize("limit", [None, -1, math.inf])
-    def test_search_maximum(self, limit: int | None, httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> None:
+    def test_search_maximum(
+        self, limit: int | None, httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    ) -> None:
         url = re.compile(r".*/models/instances/search$")
         response = {
             "items": [
@@ -102,7 +106,7 @@ class TestSearch:
         req = httpx_mock.get_requests()[0]
         body = json.loads(req.content)
         assert "limit" in body
-        assert body["limit"] == cognite_client.data_modeling.instances._SEARCH_LIMIT
+        assert body["limit"] == async_client.data_modeling.instances._SEARCH_LIMIT
 
     def test_search_using_invalid_operator(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError, match="Invalid operator='INVALID'"):

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING
 
 import pytest
+from pytest_httpx import HTTPXMock
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes.agents import Message
 from cognite.client.data_classes.agents.chat import (
     Action,
@@ -16,7 +16,10 @@ from cognite.client.data_classes.agents.chat import (
     TextContent,
     UnknownActionCall,
 )
-from tests.utils import jsgz_load
+from tests.utils import get_url, jsgz_load
+
+if TYPE_CHECKING:
+    from cognite.client import AsyncCogniteClient
 
 
 @pytest.fixture
@@ -69,20 +72,22 @@ def final_response_body() -> dict:
 
 @pytest.fixture
 def mock_action_call_response(
-    rsps: MagicMock, cognite_client: CogniteClient, action_call_response_body: dict
-) -> MagicMock:
+    httpx_mock: HTTPXMock, async_client: AsyncCogniteClient, action_call_response_body: dict
+) -> HTTPXMock:
     """Mock HTTP response for agent chat that returns an action call."""
-    url = cognite_client.agents._get_base_url_with_base_path() + cognite_client.agents._RESOURCE_PATH + "/chat"
-    rsps.add(rsps.POST, url, status=200, json=action_call_response_body)
-    yield rsps
+    url = get_url(async_client.agents, async_client.agents._RESOURCE_PATH + "/chat")
+    httpx_mock.add_response(method="POST", url=url, status_code=200, json=action_call_response_body)
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_final_response(rsps: MagicMock, cognite_client: CogniteClient, final_response_body: dict) -> MagicMock:
+def mock_final_response(
+    httpx_mock: HTTPXMock, async_client: AsyncCogniteClient, final_response_body: dict
+) -> HTTPXMock:
     """Mock HTTP response for final agent response."""
-    url = cognite_client.agents._get_base_url_with_base_path() + cognite_client.agents._RESOURCE_PATH + "/chat"
-    rsps.add(rsps.POST, url, status=200, json=final_response_body)
-    yield rsps
+    url = get_url(async_client.agents, async_client.agents._RESOURCE_PATH + "/chat")
+    httpx_mock.add_response(method="POST", url=url, status_code=200, json=final_response_body)
+    return httpx_mock
 
 
 class TestClientToolAction:
@@ -126,10 +131,10 @@ class TestUnknownActionCall:
 
 
 class TestChatWithActions:
-    def test_chat_with_actions_parameter(
-        self, cognite_client: CogniteClient, mock_action_call_response: MagicMock
+    async def test_chat_with_actions_parameter(
+        self, async_client: AsyncCogniteClient, mock_action_call_response: HTTPXMock
     ) -> None:
-        response = cognite_client.agents.chat(
+        response = await async_client.agents.chat(
             agent_external_id="my_agent",
             messages=Message("What is 42 plus 58?"),
             actions=[
@@ -144,22 +149,22 @@ class TestChatWithActions:
                 )
             ],
         )
-        request_body = jsgz_load(mock_action_call_response.calls[-1].request.body)
+        request_body = jsgz_load(mock_action_call_response.get_requests()[0].content)
         assert request_body["actions"][0]["clientTool"]["name"] == "add"
         assert isinstance(response, AgentChatResponse)
         assert len(response.action_calls) == 1
         assert isinstance(response.action_calls[0], ClientToolCall)
 
-    def test_chat_with_action_result_message(
-        self, cognite_client: CogniteClient, mock_final_response: MagicMock
+    async def test_chat_with_action_result_message(
+        self, async_client: AsyncCogniteClient, mock_final_response: HTTPXMock
     ) -> None:
-        response = cognite_client.agents.chat(
+        response = await async_client.agents.chat(
             agent_external_id="my_agent",
             messages=ClientToolResult(action_id="call_abc123", content="The result is 100"),
             cursor="cursor_12345",
             actions=[ClientToolAction(name="add", description="Add two numbers", parameters={"type": "object"})],
         )
-        request_body = jsgz_load(mock_final_response.calls[-1].request.body)
+        request_body = jsgz_load(mock_final_response.get_requests()[0].content)
         assert request_body["cursor"] == "cursor_12345"
         assert request_body["messages"][0]["actionId"] == "call_abc123"
         assert response.text == "The result is 100."
