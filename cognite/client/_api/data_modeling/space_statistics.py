@@ -11,7 +11,7 @@ from cognite.client.data_classes.data_modeling.statistics import (
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import AsyncCogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
