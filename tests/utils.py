@@ -22,7 +22,7 @@ from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 import cognite.client.utils._auxiliary
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client._sync_api_client import SyncAPIClient
@@ -62,7 +62,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowTaskOutput,
     WorkflowTaskParameters,
 )
-from cognite.client.testing import CogniteClientMock
+from cognite.client.testing import AsyncCogniteClientMock
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._text import random_string, to_snake_case
 
@@ -71,6 +71,14 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 T_Type = TypeVar("T_Type", bound=type)
 
 UNION_TYPES = {typing.Union, UnionType}  # TODO: Can we remove UnionType now that 3.8 is dropped?
+
+
+def get_wrapped_async_client(client: CogniteClient) -> AsyncCogniteClient:
+    # We have a ton of tests for the sync client, but after we changed the main SDK client to async
+    # in major version 8, whenever we do some monkeypatching/patch.object with wraps etc. the
+    # sync client no longer has e.g. _post or similar, so we need a simple way to get the async client
+    # used by the sync client and then do (e.g.) patching on that instead.
+    return client._CogniteClient__async_client  # type: ignore[attr-defined]
 
 
 def get_url(api: APIClient, path: str = "") -> str:
@@ -223,7 +231,7 @@ def random_gamma_dist_integer(inclusive_max: int, max_tries: int = 100) -> int:
 
 
 @contextmanager
-def set_max_workers(cognite_client: CogniteClient, new: int) -> typing.Iterator[None]:
+def set_max_workers(new: int) -> typing.Iterator[None]:
     from cognite.client import global_config
 
     old = global_config.max_workers
@@ -274,9 +282,11 @@ T_Object = TypeVar("T_Object")
 class FakeCogniteResourceGenerator:
     _error_msg: typing.ClassVar[str] = "Please extend this function to support generating fake data for this type"
 
-    def __init__(self, seed: int | None = None, cognite_client: CogniteClientMock | CogniteClient | None = None):
+    def __init__(
+        self, seed: int | None = None, async_client: AsyncCogniteClientMock | AsyncCogniteClient | None = None
+    ):
         self._random = random.Random(seed)
-        self._cognite_client = cognite_client or CogniteClientMock()
+        self._async_client = async_client or AsyncCogniteClientMock()
 
     def create_instance(self, resource_cls: type[T_Object], skip_defaulted_args: bool = False) -> T_Object:
         if abc.ABC in resource_cls.__bases__:
@@ -480,7 +490,9 @@ class FakeCogniteResourceGenerator:
         elif type_ is dict:
             return {self._random_string(10): self._random_string(10) for _ in range(self._random.randint(1, 3))}
         elif type_ is CogniteClient:
-            return self._cognite_client
+            raise NotImplementedError("Did you mean to use the AsyncCogniteClient?")
+        elif type_ is AsyncCogniteClient:
+            return self._async_client
         elif type_ is ZoneInfo:
             # Special case for ZoneInfo - provide a default timezone
             return ZoneInfo("UTC")
@@ -541,12 +553,13 @@ class FakeCogniteResourceGenerator:
         import numpy as np
         import numpy.typing as npt
 
-        from cognite.client import CogniteClient
+        from cognite.client import AsyncCogniteClient, CogniteClient
 
         return {
             "ContainerId": ContainerId,
             "ViewId": ViewId,
             "CogniteClient": CogniteClient,
+            "AsyncCogniteClient": AsyncCogniteClient,
             "NumpyDatetime64NSArray": npt.NDArray[np.datetime64],
             "NumpyUInt32Array": npt.NDArray[np.uint32],
             "NumpyInt64Array": npt.NDArray[np.int64],

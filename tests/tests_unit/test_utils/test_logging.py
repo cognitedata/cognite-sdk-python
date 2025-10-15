@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from cognite.client.utils._logging import (
     _configure_logger_for_debug_mode,
     _disable_debug_logging,
