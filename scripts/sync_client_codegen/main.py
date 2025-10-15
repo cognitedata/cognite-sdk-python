@@ -29,6 +29,7 @@ from cognite.client._api_client import APIClient  # noqa: E402
 from cognite.client.config import ClientConfig, global_config  # noqa: E402
 from cognite.client.credentials import Token  # noqa: E402
 
+FOUR_SPACES = " " * 4
 EIGHT_SPACES = " " * 8
 KNOWN_FILES_SKIP_LIST = {
     Path("cognite/client/_api/datapoint_tasks.py"),
@@ -46,6 +47,20 @@ MAYBE_IMPORTS = (
 )
 ASYNC_API_DIR = Path("cognite/client/_api")
 SYNC_API_DIR = Path("cognite/client/_sync_api")
+
+# Why is dunder call in both "to keep" lists?! Story time:
+# There's more to it than just an isinstance check: 'async def __call__' does not return
+# a coroutine, but an async generator. This in turn means that mypy forces the overloads
+# to NOT be 'async def' but just 'def'. Wait what?! I for sure had to Google it. So we need
+# to treat e.g. __call__ as a special case in order to not lose all that typing goodies...
+SYNC_METHODS_TO_KEEP = {
+    "compare_capabilities",
+    "__call__",
+}
+ASYNC_METHODS_TO_KEEP = {
+    "_unsafely_wipe_and_regenerate_dml",
+    "__call__",
+}
 
 # Template for the generated sync client code:
 # - we rely on other tools to clean up imports
@@ -73,7 +88,7 @@ if TYPE_CHECKING:
 class Sync{class_name}(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         {nested_apis_init}
 
@@ -243,11 +258,13 @@ def inverse_foolish_cls_name_rewrite(class_name: str) -> str:
 
 
 def method_should_be_converted(node: ast.AST) -> bool:
-    # There's more to it than just an isinstance check: 'async def __call__' does not return
-    # a coroutine, but an async generator. This in turn means that mypy forces the overloads
-    # to NOT be 'async def' but just 'def'. Wait what?! I for sure had to Google it. So we need
-    # to treat __call__ as a special case in order to not lose all that typing goodies...
-    return isinstance(node, ast.AsyncFunctionDef) or getattr(node, "name", None) == "__call__"
+    match node:
+        case ast.AsyncFunctionDef(name=n) if not n.startswith("_") or n in ASYNC_METHODS_TO_KEEP:
+            return True
+        case ast.FunctionDef(name=n) if n in SYNC_METHODS_TO_KEEP:
+            return True
+        case _:
+            return False
 
 
 def generate_sync_client_code(
@@ -278,58 +295,71 @@ def generate_sync_client_code(
         methods_by_name.setdefault(method_node.name, []).append(method_node)
 
     for name, method_nodes in methods_by_name.items():
-        if name.startswith("_") and name != "__call__":
-            continue
-
-        # The last definition is the implementation, the rest are overloads
+        # The last definition is the function implementation, the rest are overloads:
         overloads = method_nodes[:-1]
-        implementation = method_nodes[-1]
+        func = method_nodes[-1]
 
         for overload_node in overloads:
-            sync_def = "@overload\n    def {name}({args}) -> {return_type}: ...".format(
+            sync_def = "{indent}@overload\n{indent}def {name}({args}) -> {return_type}: ...".format(
+                indent=FOUR_SPACES,
                 name=name,
                 args=ast.unparse(overload_node.args),
                 return_type=ast.unparse(overload_node.returns).replace("AsyncIterator", "Iterator"),
             )
             generated_methods.append(sync_def)
 
-        docstring = ast.get_docstring(implementation)
+        docstring = ast.get_docstring(func)
 
         # Create the list of arguments to pass to the async call
         call_parts = []
         # 1. Handle positional-only arguments (e.g., func(a, /))
-        call_parts.extend([arg.arg for arg in implementation.args.posonlyargs])
+        call_parts.extend([arg.arg for arg in func.args.posonlyargs])
         # 2. Handle regular arguments (can be pos or keyword)
         # We will pass these by keyword for safety.
-        regular_args = [f"{arg.arg}={arg.arg}" for arg in implementation.args.args if arg.arg != "self"]
+        regular_args = [f"{arg.arg}={arg.arg}" for arg in func.args.args if arg.arg != "self"]
         call_parts.extend(regular_args)
         # 3. Handle variadic positional arguments (*args)
-        if implementation.args.vararg:
-            call_parts.append(f"*{implementation.args.vararg.arg}")
+        if func.args.vararg:
+            call_parts.append(f"*{func.args.vararg.arg}")
         # 4. Handle keyword-only arguments (e.g., func(*, a))
-        kw_only_args = [f"{arg.arg}={arg.arg}" for arg in implementation.args.kwonlyargs]
+        kw_only_args = [f"{arg.arg}={arg.arg}" for arg in func.args.kwonlyargs]
         call_parts.extend(kw_only_args)
         # 5. Handle variadic keyword arguments (**kwargs)
-        if implementation.args.kwarg:
-            call_parts.append(f"**{implementation.args.kwarg.arg}")
+        if func.args.kwarg:
+            call_parts.append(f"**{func.args.kwarg.arg}")
 
         # Check return type for AsyncIterator
-        return_type_str = ast.unparse(implementation.returns)
+        return_type_str = ast.unparse(func.returns)
         is_iterator = "AsyncIterator" in return_type_str
+        is_async_fn = isinstance(func, ast.AsyncFunctionDef)
         sync_return_type = return_type_str.replace("AsyncIterator", "Iterator")
 
-        method_body = ""
+        maybe_name = "" if name == "__call__" else f".{name}"
+        nested_client_call = f"self.__async_client.{dotted_path}{maybe_name}({', '.join(call_parts)})"
         if is_iterator:
-            # Skip name here (__call__):
-            method_body = f"yield from SyncIterator(self.__async_client.{dotted_path}({', '.join(call_parts)}))"
+            # We add type ignore because mypy fail at unions of coroutines... (pyright on the other hand)
+            method_body = f"yield from SyncIterator({nested_client_call})  # type: ignore [misc]"
+        elif is_async_fn:
+            method_body = f"return run_sync({nested_client_call})"
         else:
-            method_body = f"return run_sync(self.__async_client.{dotted_path}.{name}({', '.join(call_parts)}))"
+            method_body = f"return {nested_client_call}"
+
+        # Decorators not typing.overload:
+        decorators = maybe_self = ""
+        if not is_async_fn:
+            for deco in func.decorator_list:
+                if deco.id == "staticmethod":
+                    # Uhm.. what? Well, we delegate to self.__async_client...
+                    maybe_self = "self, "
+                else:
+                    decorators += f"{FOUR_SPACES}@{ast.unparse(deco)}\n"
 
         indented_docstring = ""
         if docstring:
             indented_docstring = f'{EIGHT_SPACES}"""\n{textwrap.indent(docstring, EIGHT_SPACES)}\n{EIGHT_SPACES}"""\n'
-        impl_def = (
-            f"def {name}({ast.unparse(implementation.args)}) -> {sync_return_type}:\n"
+
+        impl_def = decorators + (
+            f"{FOUR_SPACES}def {name}({maybe_self}{ast.unparse(func.args)}) -> {sync_return_type}:\n"
             f"{indented_docstring}{EIGHT_SPACES}{method_body}"
         )
         generated_methods.append(impl_def)
@@ -350,8 +380,7 @@ def generate_sync_client_code(
                 nested_apis_init="\n        ".join(nested_apis),
             )
         )
-        + "    "
-        + "\n\n    ".join(generated_methods)
+        + "\n\n".join(generated_methods)
         + "\n"
     )
 
