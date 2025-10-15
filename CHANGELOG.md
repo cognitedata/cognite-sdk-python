@@ -21,8 +21,8 @@ As of 2025-08-29, changes are grouped as follows
 * add sort parameter to simulators API list and iteration methods ([#2355](https://github.com/cognitedata/cognite-sdk-python/issues/2355)) ([d21f9e3](https://github.com/cognitedata/cognite-sdk-python/commit/d21f9e3991834ed69bcf52c97f425f441a25acc1))
 * **agents:** add support for client-side actions in agent chat ([#2350](https://github.com/cognitedata/cognite-sdk-python/issues/2350)) ([49dfb19](https://github.com/cognitedata/cognite-sdk-python/commit/49dfb19a929c284a10a9d930d84d5860a2fda40c))
 * **capabilities:** Add support for Streams and Records ACLs ([#2366](https://github.com/cognitedata/cognite-sdk-python/issues/2366)) ([6b17c88](https://github.com/cognitedata/cognite-sdk-python/commit/6b17c88bec2e1eb840d6e8e9f9487287f1b32596))
-* **data_modeling:** DM-3146 Support constraint and index state fields ([#2361](https://github.com/cognitedata/cognite-sdk-python/issues/2361)) ([996296d](https://github.com/cognitedata/cognite-sdk-python/commit/996296dd6cd5a7bcc3e4ffad75c4b582e0d9f531))
-* **functions:** [FUN-466] Add `last_called` field to Function dataclass. ([#2356](https://github.com/cognitedata/cognite-sdk-python/issues/2356)) ([3b3a6b5](https://github.com/cognitedata/cognite-sdk-python/commit/3b3a6b50e0fb9de9da09e83a825b42c875887fa6))
+* **data_modeling:** Support constraint and index state fields ([#2361](https://github.com/cognitedata/cognite-sdk-python/issues/2361)) ([996296d](https://github.com/cognitedata/cognite-sdk-python/commit/996296dd6cd5a7bcc3e4ffad75c4b582e0d9f531))
+* **functions:** Add `last_called` field to Function dataclass. ([#2356](https://github.com/cognitedata/cognite-sdk-python/issues/2356)) ([3b3a6b5](https://github.com/cognitedata/cognite-sdk-python/commit/3b3a6b50e0fb9de9da09e83a825b42c875887fa6))
 * **functions:** Relax handle validation ([#2357](https://github.com/cognitedata/cognite-sdk-python/issues/2357)) ([23ebe95](https://github.com/cognitedata/cognite-sdk-python/commit/23ebe9597644008b1ad25f3b1c05a17c6e0f2763))
 * **simulators:** Add support for running simulations using revisions ([#2339](https://github.com/cognitedata/cognite-sdk-python/issues/2339)) ([dc76513](https://github.com/cognitedata/cognite-sdk-python/commit/dc765130663863cfd01d978869ed1357ef30bb7b))
 * use compact encoding for json serialization ([#2368](https://github.com/cognitedata/cognite-sdk-python/issues/2368)) ([9b0d5b5](https://github.com/cognitedata/cognite-sdk-python/commit/9b0d5b5599d08e44d7fb5e6de70d4c7c34d67399))
@@ -30,7 +30,7 @@ As of 2025-08-29, changes are grouped as follows
 
 ### Bug Fixes
 
-* **functions:** [FUN-594] Fix bug in handler handle validation ([#2363](https://github.com/cognitedata/cognite-sdk-python/issues/2363)) ([d949a9a](https://github.com/cognitedata/cognite-sdk-python/commit/d949a9a999649f13e645bc7985aa98d1e59c1fca))
+* **functions:** Fix bug in handler handle validation ([#2363](https://github.com/cognitedata/cognite-sdk-python/issues/2363)) ([d949a9a](https://github.com/cognitedata/cognite-sdk-python/commit/d949a9a999649f13e645bc7985aa98d1e59c1fca))
 
 
 ### Documentation
@@ -73,7 +73,7 @@ As of 2025-08-29, changes are grouped as follows
 
 ### Features
 
-* [CDF-25309] Add service principal API ([#2332](https://github.com/cognitedata/cognite-sdk-python/issues/2332)) ([10f3ea8](https://github.com/cognitedata/cognite-sdk-python/commit/10f3ea8087c569fff49cc13d53e796f15ee73551))
+* Add service principal API ([#2332](https://github.com/cognitedata/cognite-sdk-python/issues/2332)) ([10f3ea8](https://github.com/cognitedata/cognite-sdk-python/commit/10f3ea8087c569fff49cc13d53e796f15ee73551))
 * add helper methods to access simulator quantities and units ([#2305](https://github.com/cognitedata/cognite-sdk-python/issues/2305)) ([0c16785](https://github.com/cognitedata/cognite-sdk-python/commit/0c16785ff2009747bd1d4f500a741d7ab19f1328))
 * add pandas DataFrame conversion methods to SimulatorRoutineRevisionCore ([#2228](https://github.com/cognitedata/cognite-sdk-python/issues/2228)) ([de2f810](https://github.com/cognitedata/cognite-sdk-python/commit/de2f810ca019b22be47b10cfe3402d517f8d01db))
 * **iam:** add support for attributes in groups create, groups list ([#2231](https://github.com/cognitedata/cognite-sdk-python/issues/2231)) ([3c0148e](https://github.com/cognitedata/cognite-sdk-python/commit/3c0148e7047c45f2ed16d5ee58e6ab9a496b26b7))
