@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a4c510989006c674b4ae203ce2c6918d
+22ce5358beca6d957d6ed92d895118ae
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -16,7 +16,7 @@ from cognite.client.data_classes.data_modeling.statistics import ProjectStatisti
 from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import AsyncCogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class SyncStatisticsAPI(SyncAPIClient):
