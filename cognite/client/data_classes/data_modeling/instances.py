@@ -661,7 +661,7 @@ class NodeApply(InstanceApply["NodeApply"]):
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
         super().__init__(space, external_id, "node", existing_version, sources)
-        self.type = DirectRelationReference.load(type) if type else None
+        self.type = DirectRelationReference.load(type) if type else type
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> NodeApply:
@@ -1629,7 +1629,9 @@ class TypedInstance(ABC):
                 elif default is inspect.Parameter.empty:
                     args[key] = None
                 else:
-                    args[key] = cls._deserialize_values(default or None, param)
+                    # When loading and value is missing, we want OMITTED, not None:
+                    value = default if default is OMITTED else (default or None)
+                    args[key] = cls._deserialize_values(value, param)
         return args
 
     @classmethod
@@ -1727,6 +1729,7 @@ class TypedNodeApply(NodeApply, TypedInstance):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+        resource = resource.copy()  # avoid mutating resource (when popping)
         sources = resource.pop("sources", [])
         properties = sources[0].get("properties", {}) if sources else {}
         return cls._load_instance(resource, properties)
