@@ -250,7 +250,7 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> aggregate_uploaded = client.files.aggregate(filter={"uploaded": True})
+                >>> aggregate_uploaded = client.files.aggregate_count(filter={"uploaded": True})
         """
         return await self._aggregate_count(filter=filter)
 

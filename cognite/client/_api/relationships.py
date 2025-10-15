@@ -458,7 +458,7 @@ class RelationshipsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RelationshipWrite
                 >>> client = CogniteClient()
-                >>> existing_relationship = client.relationships.retrieve(id=1)
+                >>> existing_relationship = client.relationships.retrieve(external_id="foo")
                 >>> existing_relationship.description = "New description"
                 >>> new_relationship = RelationshipWrite(
                 ...     external_id="new_relationship",

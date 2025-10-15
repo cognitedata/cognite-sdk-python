@@ -501,7 +501,6 @@ class TransformationsAPI(APIClient):
 
             Start running transformation by id:
 
-                >>>
                 >>> res = client.transformations.run(transformation_id = 1, wait = False)
         """
         IdentifierSequence.load(transformation_id, transformation_external_id).assert_singleton()
@@ -529,14 +528,13 @@ class TransformationsAPI(APIClient):
                 >>> from cognite.client.data_classes import TransformationJobStatus
                 >>> client = CogniteClient()
                 >>>
-                >>> res = client.transformations.run(id = 1, timeout = 60.0)
+                >>> res = client.transformations.run(transformation_id=1, timeout=60.0)
                 >>> if res.status == TransformationJobStatus.RUNNING:
                 >>>     res.cancel()
         """
         IdentifierSequence.load(transformation_id, transformation_external_id).assert_singleton()
 
         body = {"externalId": transformation_external_id, "id": transformation_id}
-
         await self._post(json=body, url_path=self._RESOURCE_PATH + "/cancel")
 
     async def preview(
