@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client._cognite_client import AsyncCogniteClient
 from cognite.client.data_classes import AnnotationWrite
 from cognite.client.data_classes.annotation_types.images import (
     AssetLink,
@@ -359,7 +359,7 @@ class TestVisionExtractItem:
 
 
 class TestVisionExtractJob:
-    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.result", new_callable=PropertyMock)
+    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.get_result", new_callable=AsyncMock)
     @pytest.mark.parametrize(
         "status, result, expected_items",
         [
@@ -382,7 +382,7 @@ class TestVisionExtractJob:
     def test_items_property(
         self, mock_result: MagicMock, status: JobStatus, result: dict | None, expected_items: list[VisionExtractItem]
     ) -> None:
-        cognite_client = MagicMock(spec=CogniteClient)
+        cognite_client = MagicMock(spec=AsyncCogniteClient)
         mock_result.return_value = result
         job: VisionExtractJob = VisionExtractJob(
             job_id=1,
@@ -396,7 +396,7 @@ class TestVisionExtractJob:
         )
         assert job.items == expected_items
 
-    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.result", new_callable=PropertyMock)
+    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.get_result", new_callable=AsyncMock)
     @pytest.mark.parametrize(
         "file_id, expected_items, error_message",
         [
@@ -423,7 +423,7 @@ class TestVisionExtractJob:
         expected_items: list[VisionExtractItem],
         error_message: str | None,
     ) -> None:
-        cognite_client = MagicMock(spec=CogniteClient)
+        cognite_client = MagicMock(spec=AsyncCogniteClient)
         mock_result.return_value = {
             "items": [
                 {
@@ -450,7 +450,7 @@ class TestVisionExtractJob:
         else:
             assert job[file_id] == expected_items[0]
 
-    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.result", new_callable=PropertyMock)
+    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.get_result", new_callable=AsyncMock)
     @pytest.mark.parametrize(
         "result, params, expected_items",
         [
@@ -604,7 +604,7 @@ class TestVisionExtractJob:
         params: dict,
         expected_items: list | None,
     ) -> None:
-        cognite_client = MagicMock(spec=CogniteClient)
+        cognite_client = MagicMock(spec=AsyncCogniteClient)
         cognite_client.version = (params or {}).get("creating_app_version") or "1"
         mock_result.return_value = result
 

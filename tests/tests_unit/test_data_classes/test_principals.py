@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from cognite.client.data_classes.principals import Principal, ServicePrincipal, UnknownPrincipal, UserPrincipal
