@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from cognite.client.utils._url import interpolate_and_url_encode
 
 

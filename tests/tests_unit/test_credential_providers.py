@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import time
 from json import JSONDecodeError
+
 from types import MappingProxyType
 from typing import Any, ClassVar
 from unittest.mock import MagicMock, Mock, patch
