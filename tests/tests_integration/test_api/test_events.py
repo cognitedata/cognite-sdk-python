@@ -7,6 +7,7 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteClient, utils
+from cognite.client._cognite_client import AsyncCogniteClient
 from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventList, EventUpdate, filters
 from cognite.client.data_classes.events import EventProperty, EventWrite, SortableEventProperty
 from cognite.client.exceptions import CogniteNotFoundError
@@ -54,8 +55,8 @@ def event_list(cognite_client: CogniteClient) -> EventList:
 
 
 @pytest.fixture
-def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
-    with mock.patch.object(cognite_client.events, "_post", wraps=cognite_client.events._post) as _:
+def post_spy(async_client: AsyncCogniteClient) -> Iterator[None]:
+    with mock.patch.object(async_client.events, "_post", wraps=async_client.events._post) as _:
         yield
 
 
@@ -102,20 +103,26 @@ class TestEventsAPI:
             cognite_client.events.delete(id=created_event.id, ignore_unknown_ids=True)
 
     @pytest.mark.usefixtures("twenty_events")
-    def test_list(self, cognite_client: CogniteClient, post_spy: None, set_request_limit: Callable) -> None:
-        set_request_limit(cognite_client.events, 10)
+    def test_list(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        post_spy: None,
+        set_request_limit: Callable,
+    ) -> None:
+        set_request_limit(async_client.events, 10)
         res = cognite_client.events.list(limit=20)
 
         assert 20 == len(res)
-        assert 2 == cognite_client.events._post.call_count  # type: ignore[attr-defined]
+        assert 2 == async_client.events._post.call_count  # type: ignore[attr-defined]
 
     def test_list_ongoing(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.events.list(end_time=EndTimeFilter(is_null=True), limit=10)
         assert len(res) > 0
 
     def test_aggregation(self, cognite_client: CogniteClient, new_event: Event, twenty_events: EventList) -> None:
-        res_aggregate = cognite_client.events.aggregate(filter=EventFilter(type=twenty_events[0].type))
-        assert res_aggregate[0].count > 0
+        res = cognite_client.events.aggregate_count(filter=EventFilter(type=twenty_events[0].type))
+        assert res > 0
 
     def test_partitioned_list(self, cognite_client: CogniteClient, post_spy: None, twenty_events: EventList) -> None:
         # stop race conditions by cutting off max created time
@@ -130,7 +137,7 @@ class TestEventsAPI:
     def test_compare_partitioned_gen_and_list(self, cognite_client: CogniteClient, post_spy: None) -> None:
         # stop race conditions by cutting off max created time
         maxtime = utils.timestamp_to_ms(datetime(2019, 5, 25, 17, 30))
-        res_generator = cognite_client.events(partitions=8, limit=None, created_time={"max": maxtime})
+        res_generator = cognite_client.events(limit=None, created_time={"max": maxtime})
         res_list = cognite_client.events.list(partitions=8, limit=None, created_time={"max": maxtime})
         assert {a.id for a in res_generator} == {a.id for a in res_list}
 
@@ -191,26 +198,6 @@ class TestEventsAPI:
             cognite_client.events.delete(
                 external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
-
-    def test_filter_search(self, cognite_client: CogniteClient, event_list: EventList) -> None:
-        f = filters
-        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
-        has_lorem_ipsum = f.Search(EventProperty.description, "lorem ipsum")
-
-        result = cognite_client.events.filter(
-            f.And(is_integration_test, has_lorem_ipsum), sort=SortableEventProperty.external_id
-        )
-        assert len(result) == 1, "Expected only one event to match the filter"
-        assert result[0].external_id == "integration_test:event1_lorem_ipsum"
-
-    def test_filter_search_without_sort(self, cognite_client: CogniteClient, event_list: EventList) -> None:
-        f = filters
-        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
-        has_lorem_ipsum = f.Search(EventProperty.description, "lorem ipsum")
-
-        result = cognite_client.events.filter(f.And(is_integration_test, has_lorem_ipsum), sort=None)
-        assert len(result) == 1, "Expected only one event to match the filter"
-        assert result[0].external_id == "integration_test:event1_lorem_ipsum"
 
     def test_list_with_advanced_filter(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         f = filters

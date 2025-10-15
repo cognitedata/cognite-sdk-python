@@ -5,7 +5,7 @@ from typing import Any, cast
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.data_modeling import (
     ContainerApply,
     ContainerId,
@@ -179,7 +179,11 @@ class TestViewsAPI:
         assert "One or more spaces do not exist" in error.value.message
 
     def test_apply_failed_and_successful_task(
-        self, cognite_client: CogniteClient, integration_test_space: Space, monkeypatch: Any
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        integration_test_space: Space,
+        monkeypatch: Any,
     ) -> None:
         valid_view = ViewApply(
             space=integration_test_space.space,
@@ -211,7 +215,7 @@ class TestViewsAPI:
                 ),
             },
         )
-        monkeypatch.setattr(cognite_client.data_modeling.views, "_CREATE_LIMIT", 1)
+        monkeypatch.setattr(async_client.data_modeling.views, "_CREATE_LIMIT", 1)
 
         try:
             with pytest.raises(CogniteAPIError) as error:
