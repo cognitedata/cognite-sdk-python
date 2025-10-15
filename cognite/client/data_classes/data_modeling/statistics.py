@@ -7,7 +7,7 @@ from cognite.client.data_classes._base import CogniteObject, CogniteResource, Co
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import AsyncCogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 @dataclass

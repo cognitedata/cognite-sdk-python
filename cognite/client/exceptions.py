@@ -9,7 +9,7 @@ from cognite.client.utils._time import timed_cache
 from cognite.client.utils._url import resolve_url
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import AsyncCogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes import AssetHierarchy
 
 
