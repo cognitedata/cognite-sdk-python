@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -31,6 +31,11 @@ from cognite.client.data_classes.capabilities import (
     UnknownScope,
 )
 from tests.utils import get_url
+
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 def all_acls() -> Iterator[dict[str, Any]]:
@@ -382,7 +387,7 @@ class TestCapabilities:
         grp2 = GroupsAcl([GroupsAcl.Action.Delete], scope=CurrentUserScope())
         assert grp1.dump() == grp2.dump()
 
-    def test_create_capability_forget_initializing_scope__not_supported(self) -> None:
+    def test_create_capability_forget_initializing_scope__not_supported(self, async_client: AsyncCogniteClient) -> None:
         with pytest.raises(ValueError, match="DataSetsAcl got an unknown scope"):
             DataSetsAcl(actions=[DataSetsAcl.Action.Read], scope=CurrentUserScope)  # type: ignore[arg-type]
 
@@ -448,7 +453,10 @@ def unknown_acls_items() -> list[dict[str, Any]]:
 
 @pytest.fixture
 def mock_groups_resp(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, unknown_acls_items: list[dict]
+    httpx_mock: HTTPXMock,
+    cognite_client: CogniteClient,
+    unknown_acls_items: list[dict],
+    async_client: AsyncCogniteClient,
 ) -> Iterator[HTTPXMock]:
     response_body = {
         "items": [
@@ -461,21 +469,24 @@ def mock_groups_resp(
             for unknown in unknown_acls_items
         ]
     }
-    url_pattern = get_url(cognite_client.iam.groups) + "/groups?all=false"
+    url_pattern = get_url(async_client.iam.groups) + "/groups?all=false"
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
     yield httpx_mock
 
 
 @pytest.fixture
 def mock_token_inspect_resp(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, unknown_acls_items: list[dict[str, Any]]
+    httpx_mock: HTTPXMock,
+    cognite_client: CogniteClient,
+    unknown_acls_items: list[dict[str, Any]],
+    async_client: AsyncCogniteClient,
 ) -> Iterator[HTTPXMock]:
     response_body = {
         "subject": "a49ba849-c0d7-abcd-dcba-8a1f0366aaaf",
         "projects": [{"projectUrlName": "my-sandbox", "groups": [229705, 863871]}],
         "capabilities": [{"projectScope": {"projects": ["my-sandbox"]}, **unknown} for unknown in unknown_acls_items],
     }
-    url_pattern = get_url(cognite_client.iam.token) + "/api/v1/token/inspect"
+    url_pattern = get_url(async_client.iam.token) + "/api/v1/token/inspect"
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
     yield httpx_mock
 
