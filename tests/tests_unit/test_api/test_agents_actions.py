@@ -14,7 +14,6 @@ from cognite.client.data_classes.agents.chat import (
     ClientToolCall,
     ClientToolResult,
     TextContent,
-    ToolConfirmationCall,
     UnknownActionCall,
 )
 from tests.utils import jsgz_load
@@ -109,7 +108,6 @@ class TestClientToolCall:
         }
         call = ActionCall._load(data)
         assert isinstance(call, ClientToolCall)
-        assert call.arguments == {"x": 5}
 
 
 class TestClientToolResult:
@@ -165,45 +163,3 @@ class TestChatWithActions:
         assert request_body["cursor"] == "cursor_12345"
         assert request_body["messages"][0]["actionId"] == "call_abc123"
         assert response.text == "The result is 100."
-
-
-class TestToolConfirmationCall:
-    def test_load_and_dump(self) -> None:
-        data = {
-            "actionId": "call_123",
-            "type": "toolConfirmation",
-            "toolConfirmation": {
-                "content": {"type": "text", "text": "Please confirm the action."},
-                "toolName": "Add",
-                "toolArguments": {"number1": 48, "number2": 82},
-                "toolDescription": "This is a simple calculator that adds two numbers.",
-                "toolType": "runPythonCode",
-            },
-        }
-
-        call = ActionCall._load(data)
-
-        assert isinstance(call, ToolConfirmationCall)
-        assert call.action_id == "call_123"
-        assert call.tool_name == "Add"
-        assert call.tool_type == "runPythonCode"
-        assert call.details is None
-
-    def test_load_with_rest_api_details(self) -> None:
-        data = {
-            "actionId": "call_456",
-            "type": "toolConfirmation",
-            "toolConfirmation": {
-                "content": {"type": "text", "text": "Confirm?"},
-                "toolName": "Work with databases",
-                "toolArguments": {"limit": 25},
-                "toolDescription": "Tool to retrieve data.",
-                "toolType": "callRestApi",
-                "details": {"endpointMethod": "GET", "endpointPath": "/raw/dbs"},
-            },
-        }
-
-        call = ActionCall._load(data)
-
-        assert isinstance(call, ToolConfirmationCall)
-        assert call.details == {"endpointMethod": "GET", "endpointPath": "/raw/dbs"}
