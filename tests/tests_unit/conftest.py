@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from cognite.client import ClientConfig, CogniteClient, global_config
+from cognite.client import AsyncCogniteClient, ClientConfig, CogniteClient, global_config
 from cognite.client.credentials import Token
 from cognite.client.data_classes import (
     AggregateResultItem,
@@ -24,6 +24,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes import Sequence as CogniteSequence
 from cognite.client.data_classes.agents import Agent, AgentTool
 from cognite.client.data_classes.data_modeling import NodeId
+from tests.utils import get_wrapped_async_client
 
 # Files to exclude test directories or modules
 collect_ignore = ["test_api/function_test_resources"]
@@ -47,6 +48,11 @@ def cognite_client() -> Iterator[CogniteClient]:
         yield CogniteClient(cnf)
 
 
+@pytest.fixture(scope="class")
+def async_client(cognite_client) -> Iterator[AsyncCogniteClient]:
+    yield get_wrapped_async_client(cognite_client)
+
+
 @pytest.fixture(scope="session")
 def cognite_mock_client_placeholder() -> CogniteClient:
     """
@@ -64,6 +70,14 @@ def cognite_mock_client_placeholder() -> CogniteClient:
     # We allow the mock to pass isinstance checks
     client = MagicMock()
     client.__class__ = CogniteClient  # type: ignore[assignment]
+    return client
+
+
+@pytest.fixture(scope="session")
+def cognite_async_mock_client_placeholder() -> AsyncCogniteClient:
+    # See docstring of cognite_mock_client_placeholder
+    client = MagicMock()
+    client.__class__ = AsyncCogniteClient  # type: ignore[assignment]
     return client
 
 
@@ -89,7 +103,7 @@ class DefaultResourceGenerator:
         source_created_time: int | None = None,
         source_modified_time: int | None = None,
         security_categories: Sequence[int] | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> FileMetadata:
         return FileMetadata(
             id=id,
@@ -129,7 +143,7 @@ class DefaultResourceGenerator:
         created_time: int = 123,
         last_updated_time: int = 123,
         metadata: dict[str, str] | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> Event:
         return Event(
             id=id,
@@ -165,7 +179,7 @@ class DefaultResourceGenerator:
         last_updated_time: int = 123,
         labels: list[Label] | None = None,
         aggregates: AggregateResultItem | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> Asset:
         return Asset(
             id=id,
@@ -203,7 +217,7 @@ class DefaultResourceGenerator:
         name: str | None = None,
         created_time: int = 123,
         last_updated_time: int = 123,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> TimeSeries:
         return TimeSeries(
             id=id,
@@ -236,7 +250,7 @@ class DefaultResourceGenerator:
         asset_id: int | None = None,
         metadata: dict[str, str] | None = None,
         columns: Sequence[SequenceColumn] | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> CogniteSequence:
         return CogniteSequence(
             id=id,
@@ -257,7 +271,7 @@ class DefaultResourceGenerator:
         key: str = "default_key",
         columns: dict[str, Any] | None = None,
         last_updated_time: int = 123,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> Row:
         return Row(
             key=key,
@@ -270,7 +284,7 @@ class DefaultResourceGenerator:
     def raw_table(
         name: str = "default_table",
         created_time: int = 123,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> Table:
         return Table(
             name=name,
@@ -285,7 +299,7 @@ class DefaultResourceGenerator:
         data_set_id: int | None = None,
         created_time: int = 123,
         metadata: dict[str, str] | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> ThreeDModel:
         return ThreeDModel(
             id=id,

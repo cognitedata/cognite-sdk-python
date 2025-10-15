@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import doctest
 from collections import defaultdict
 from typing import Any
