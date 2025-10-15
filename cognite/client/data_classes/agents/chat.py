@@ -441,10 +441,6 @@ class ToolConfirmationResult(ActionResult):
     _type: ClassVar[str] = "toolConfirmation"
     status: Literal["ALLOW", "DENY"]
 
-    def __init__(self, action_id: str, status: Literal["ALLOW", "DENY"]) -> None:
-        super().__init__(action_id=action_id, role="action")
-        self.status = status
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "role": self.role,
@@ -455,10 +451,11 @@ class ToolConfirmationResult(ActionResult):
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ToolConfirmationResult:
-        """Load from dumped data. Only used for testing."""
+        """Load from dumped data. Not used to load from API response."""
         return cls(
             action_id=data.get("actionId", data.get("action_id", "")),
             status=data["status"],
+            role="action",
         )
 
 
