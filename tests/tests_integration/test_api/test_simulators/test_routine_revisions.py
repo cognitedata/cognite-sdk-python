@@ -2,13 +2,13 @@ import time
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.data_classes.simulators import PropertySort
-from cognite.client.data_classes.simulators.routine_revisions import (
+from cognite.client.data_classes.simulators import (
+    PropertySort,
+    SimulatorRoutine,
     SimulatorRoutineInputConstant,
     SimulatorRoutineRevision,
     SimulatorRoutineRevisionWrite,
 )
-from cognite.client.data_classes.simulators.routines import SimulatorRoutine
 from cognite.client.utils._time import timestamp_to_ms
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     SIMULATOR_ROUTINE_REVISION,
