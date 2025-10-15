@@ -3,6 +3,8 @@ This file contains integration tests for the logic in the generic API client. Ho
 generic resource, an arbitrary resource is used instead to test the endpoint.
 """
 
+from __future__ import annotations
+
 import random
 from collections.abc import Iterator
 from unittest.mock import patch
@@ -10,7 +12,7 @@ from unittest.mock import patch
 import pytest
 from pytest import MonkeyPatch
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import Asset, AssetWrite, Event, EventFilter, EventList, aggregations, filters
 from cognite.client.data_classes.events import EventProperty, EventWrite
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
@@ -108,7 +110,11 @@ class TestAPIClientUpsert:
             cognite_client.events.delete(external_id=[new_event.external_id, existing.external_id])
 
     def test_upsert_split_into_multiple_tasks(
-        self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch, post_spy_event: None
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        monkeypatch: MonkeyPatch,
+        post_spy_event: None,
     ) -> None:
         new_event = EventWrite(
             external_id="test_upsert_split_into_multiple_tasks:new" + random_string(5),
@@ -130,7 +136,7 @@ class TestAPIClientUpsert:
 
             preexisting_update = Event.load(created_existing.dump(camel_case=True))
             preexisting_update.subtype = "mySubType1"
-            monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
+            monkeypatch.setattr(async_client.events, "_UPDATE_LIMIT", 1)
 
             res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
             assert cognite_client.events._post.call_count >= 2  # type: ignore[attr-defined]
@@ -142,7 +148,9 @@ class TestAPIClientUpsert:
         finally:
             cognite_client.events.delete(external_id=[new_event.external_id, preexisting.external_id])
 
-    def test_upsert_invalid_update(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
+    def test_upsert_invalid_update(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, monkeypatch: MonkeyPatch
+    ) -> None:
         new_event = EventWrite(
             external_id="test_upsert_invalid_update:new" + random_string(5),
             type="test__py__sdk",
@@ -162,7 +170,7 @@ class TestAPIClientUpsert:
             assert created
             preexisting_update = Event.load(created.dump(camel_case=True))
             preexisting_update.type = "invalid_length" * 64
-            monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
+            monkeypatch.setattr(async_client.events, "_UPDATE_LIMIT", 1)
 
             with pytest.raises(CogniteAPIError) as e:
                 cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
@@ -174,7 +182,9 @@ class TestAPIClientUpsert:
         finally:
             cognite_client.events.delete(external_id=[preexisting.external_id])
 
-    def test_upsert_invalid_create(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
+    def test_upsert_invalid_create(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, monkeypatch: MonkeyPatch
+    ) -> None:
         new_event = EventWrite(
             external_id="test_upsert_invalid_create:new" + random_string(5),
             type="test__py__sdk",
@@ -195,7 +205,7 @@ class TestAPIClientUpsert:
             preexisting_update = Event.load(created.dump(camel_case=True))
             preexisting_update.type = "mySubType42"
 
-            monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
+            monkeypatch.setattr(async_client.events, "_UPDATE_LIMIT", 1)
 
             with pytest.raises(CogniteAPIError) as e:
                 cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
@@ -363,7 +373,7 @@ class TestAPIClientRetrieveMultiple:
         assert len(res) == 0
 
     def test_retrieve_multiple__ordering_matches_input(
-        self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, monkeypatch: MonkeyPatch
     ) -> None:
         # Between SDK version 7.0.0 and 7.33.1, ordering of results was broken when >> 1k elements
         # was requested (meaning multiple requests were used):
@@ -375,7 +385,7 @@ class TestAPIClientRetrieveMultiple:
                 limit=num_items, sort="createdTime:asc", external_id_prefix=random_prefix
             ).as_ids()
             random.shuffle(event_ids)
-            # monkeypatch.setattr(cognite_client.events, "_RETRIEVE_LIMIT", 80)
+            monkeypatch.setattr(async_client.events, "_RETRIEVE_LIMIT", 334)  # Force several requests
             res = cognite_client.events.retrieve_multiple(ids=event_ids)
             assert res.as_ids() == event_ids
         finally:

@@ -26,7 +26,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_equal
 from pytest import MonkeyPatch
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import (
     Datapoint,
     Datapoints,
@@ -1013,11 +1013,12 @@ class TestRetrieveRawDatapointsAPI:
         has_before: bool,
         has_after: bool,
         cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
         monkeypatch: MonkeyPatch,
     ) -> None:
         limit = 3
         for dps_limit in range(limit - 1, limit + 2):
-            monkeypatch.setattr(cognite_client.time_series.data, "_DPS_LIMIT_RAW", dps_limit)
+            monkeypatch.setattr(async_client.time_series.data, "_DPS_LIMIT_RAW", dps_limit)
             for ts, endpoint in itertools.product(outside_points_ts, retrieve_endpoints):
                 res = endpoint(id=ts.id, limit=limit, start=start, end=end, include_outside_points=True)
                 index, values = validate_raw_datapoints(ts, res, check_delta=False)
@@ -2579,11 +2580,13 @@ class TestRetrieveLatestDatapointsAPI:
             assert 1 == len(dps)
 
     @pytest.mark.usefixtures("post_spy")
-    def test_retrieve_latest_many(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
+    def test_retrieve_latest_many(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, monkeypatch: MonkeyPatch
+    ) -> None:
         ids = [t.id for t in cognite_client.time_series.list(limit=12) if not t.security_categories]
         assert len(ids) > 10  # more than one page
 
-        monkeypatch.setattr(cognite_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 10)
+        monkeypatch.setattr(async_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 10)
         res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
 
         assert {dps.id for dps in res}.issubset(set(ids))
@@ -2694,12 +2697,13 @@ class TestRetrieveLatestDatapointsAPI:
     def test_ignore_unknown_ids_true_good_status_codes_are_populated(
         self,
         cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
         ts_status_codes: TimeSeriesList,
         test_is_string: bool,
         monkeypatch: MonkeyPatch,
     ) -> None:
         # We test result ordering by ensuring multiple splits of identifiers:
-        monkeypatch.setattr(cognite_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 4)
+        monkeypatch.setattr(async_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 4)
 
         if test_is_string:
             _, mixed_ts, _, bad_ts = ts_status_codes
@@ -2879,22 +2883,32 @@ class TestRetrieveLatestDatapointsAPI:
 
 class TestInsertDatapointsAPI:
     @pytest.mark.usefixtures("post_spy")
-    def test_insert(self, cognite_client: CogniteClient, new_ts: TimeSeries, monkeypatch: MonkeyPatch) -> None:
+    def test_insert(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        new_ts: TimeSeries,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
         datapoints = [(datetime(year=2018, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
-        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 30)
-        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
+        monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 30)
+        monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
         cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
         assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
     @pytest.mark.usefixtures("post_spy")
     def test_insert_before_epoch(
-        self, cognite_client: CogniteClient, new_ts: TimeSeries, monkeypatch: MonkeyPatch
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        new_ts: TimeSeries,
+        monkeypatch: MonkeyPatch,
     ) -> None:
         datapoints = [
             (datetime(year=1950, month=1, day=1, hour=1, minute=i, tzinfo=timezone.utc), i) for i in range(60)
         ]
-        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 30)
-        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
+        monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 30)
+        monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
         cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
         assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
@@ -2920,7 +2934,11 @@ class TestInsertDatapointsAPI:
             cognite_client.time_series.data.insert(data, id=new_ts.id)
 
     def test_insert_not_found_ts(
-        self, cognite_client: CogniteClient, new_ts: TimeSeries, monkeypatch: MonkeyPatch
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        new_ts: TimeSeries,
+        monkeypatch: MonkeyPatch,
     ) -> None:
         # From 7.35.0 to 7.37.1, 'CogniteNotFoundError.[failed, successful]' was not reported correctly:
         xid = random_cognite_external_ids(1)[0]
@@ -2929,7 +2947,7 @@ class TestInsertDatapointsAPI:
             {"external_id": xid, "datapoints": [(123456789, 6666666)]},
         ]
         # Let's make sure these two go in separate requests:
-        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 1)
+        monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 1)
         with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{") as err:
             cognite_client.time_series.data.insert_multiple(dps)
 
@@ -2940,14 +2958,19 @@ class TestInsertDatapointsAPI:
 
     @pytest.mark.usefixtures("post_spy")
     def test_insert_pandas_dataframe(
-        self, cognite_client: CogniteClient, new_ts: TimeSeries, post_spy: None, monkeypatch: MonkeyPatch
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        new_ts: TimeSeries,
+        post_spy: None,
+        monkeypatch: MonkeyPatch,
     ) -> None:
         df = pd.DataFrame(
             {new_ts.id: np.random.normal(0, 1, 30)},
             index=pd.date_range(start="2018", freq="1D", periods=30),
         )
-        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 20)
-        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 20)
+        monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 20)
+        monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 20)
         cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
         assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 

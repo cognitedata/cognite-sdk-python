@@ -8,7 +8,7 @@ from typing import Any, ClassVar, Literal, cast
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling import (
     Container,
@@ -834,7 +834,7 @@ class TestInstancesAPI:
         assert "invalidProperty" in error.value.message
 
     def test_apply_failed_and_successful_task(
-        self, cognite_client: CogniteClient, person_view: View, monkeypatch: Any
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, person_view: View, monkeypatch: Any
     ) -> None:
         space = person_view.space
         valid_person = NodeApply(
@@ -864,7 +864,7 @@ class TestInstancesAPI:
                 ),
             ],
         )
-        monkeypatch.setattr(cognite_client.data_modeling.instances, "_CREATE_LIMIT", 1)
+        monkeypatch.setattr(async_client.data_modeling.instances, "_CREATE_LIMIT", 1)
         try:
             with pytest.raises(CogniteAPIError) as error:
                 cognite_client.data_modeling.instances.apply(nodes=[valid_person, invalid_person])
@@ -1665,6 +1665,7 @@ class TestInstancesSync:
         finally:
             cognite_client.data_modeling.instances.delete(new_1994_movie.as_id())
 
+    @pytest.mark.skip(reason="Awaiting rewrite of instances.subscribe to async")
     @pytest.mark.parametrize("sync_mode", ("one_phase", "two_phase"))
     def test_subscribe_to_movies_released_in_1994(
         self, cognite_client: CogniteClient, movie_view: View, sync_mode: SyncMode

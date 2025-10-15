@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import time
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.seed.data import SIMULATOR_INTEGRATION, ResourceNames
 
@@ -55,14 +58,16 @@ class TestSimulatorIntegrations:
         assert log.data[0].timestamp > int(time.time() * 1000) - 30000  # updated less than 30 seconds ago
         assert log.data[0].severity == "Debug"
 
-    def test_delete_integrations(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
+    def test_delete_integrations(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, seed_resource_names: ResourceNames
+    ) -> None:
         test_integration = SIMULATOR_INTEGRATION.copy()
         test_integration["heartbeat"] = int(time.time() * 1000)
         test_integration["externalId"] = random_string(50)
         test_integration["dataSetId"] = seed_resource_names.simulator_test_data_set_id
 
         try:
-            cognite_client.simulators._post("/simulators/integrations", json={"items": [test_integration]})
+            run_sync(async_client.simulators._post("/simulators/integrations", json={"items": [test_integration]}))
 
             all_integrations = cognite_client.simulators.integrations.list(limit=None)
             assert all_integrations.get(external_id=test_integration["externalId"]) is not None

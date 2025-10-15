@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import time
 from itertools import pairwise
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import TimestampRange
 from cognite.client.data_classes.simulators import (
     SimulationInput,
@@ -14,12 +16,15 @@ from cognite.client.data_classes.simulators import (
     SimulationRunWrite,
     SimulationValueUnitName,
 )
+from cognite.client.utils._async_helpers import run_sync
 from tests.tests_integration.test_api.test_simulators.seed.data import RESOURCES, ResourceNames
 
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
 class TestSimulatorRuns:
-    def test_list_filtering(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
+    def test_list_filtering(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, seed_resource_names: ResourceNames
+    ) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id
         runs_filtered_by_status = []
         for current_status in ["running", "success", "failure"]:
@@ -32,16 +37,18 @@ class TestSimulatorRuns:
                 ]
             )
 
-            cognite_client.simulators._post(
-                "/simulators/run/callback",
-                json={
-                    "items": [
-                        {
-                            "id": created_runs[0].id,
-                            "status": current_status,
-                        }
-                    ]
-                },
+            run_sync(
+                async_client.simulators._post(
+                    "/simulators/run/callback",
+                    json={
+                        "items": [
+                            {
+                                "id": created_runs[0].id,
+                                "status": current_status,
+                            }
+                        ]
+                    },
+                )
             )
 
             filter_by_status = cognite_client.simulators.runs.list(
@@ -54,15 +61,11 @@ class TestSimulatorRuns:
             filter_by_routine, key=lambda x: x["id"]
         )
 
-    @pytest.mark.asyncio
     async def test_run_with_wait_and_retrieve(
-        self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, seed_resource_names: ResourceNames
     ) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id
-
-        run_task = asyncio.create_task(
-            asyncio.to_thread(lambda: cognite_client.simulators.routines.run(routine_external_id=routine_external_id))
-        )
+        run_task = asyncio.create_task(async_client.simulators.routines.run(routine_external_id=routine_external_id))
 
         run_to_update: SimulationRun | None = None
         start_time = time.time()
@@ -82,7 +85,7 @@ class TestSimulatorRuns:
 
         assert run_to_update is not None
 
-        cognite_client.simulators._post(
+        await async_client.simulators._post(
             "/simulators/run/callback",
             json={
                 "items": [
@@ -151,7 +154,7 @@ class TestSimulatorRuns:
         assert created_runs[0].id is not None
 
     def test_list_filtering_timestamp_ranges(
-        self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, seed_resource_names: ResourceNames
     ) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id
 
@@ -168,17 +171,19 @@ class TestSimulatorRuns:
 
         # Set a specific simulation time for our test run
         test_simulation_time = int(time.time() * 1000) - 5000  # 5 seconds ago
-        cognite_client.simulators._post(
-            "/simulators/run/callback",
-            json={
-                "items": [
-                    {
-                        "id": created_run[0].id,
-                        "status": "success",
-                        "simulationTime": test_simulation_time,
-                    }
-                ]
-            },
+        run_sync(
+            async_client.simulators._post(
+                "/simulators/run/callback",
+                json={
+                    "items": [
+                        {
+                            "id": created_run[0].id,
+                            "status": "success",
+                            "simulationTime": test_simulation_time,
+                        }
+                    ]
+                },
+            )
         )
 
         # Test filtering by created_time and simulation_time - use a narrow range around the created run
@@ -228,7 +233,9 @@ class TestSimulatorRuns:
             for prev, curr in pairwise(runs_iter):
                 assert curr.created_time <= prev.created_time
 
-    def test_list_run_data(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
+    def test_list_run_data(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, seed_resource_names: ResourceNames
+    ) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id
         created_run = cognite_client.simulators.runs.create(
             [
@@ -266,18 +273,20 @@ class TestSimulatorRuns:
             ),
         ]
 
-        cognite_client.simulators._post(
-            "/simulators/run/callback",
-            json={
-                "items": [
-                    {
-                        "id": created_run[0].id,
-                        "status": "success",
-                        "outputs": outputs,
-                        "inputs": inputs,
-                    }
-                ]
-            },
+        run_sync(
+            async_client.simulators._post(
+                "/simulators/run/callback",
+                json={
+                    "items": [
+                        {
+                            "id": created_run[0].id,
+                            "status": "success",
+                            "outputs": outputs,
+                            "inputs": inputs,
+                        }
+                    ]
+                },
+            )
         )
 
         run_data_res = cognite_client.simulators.runs.list_run_data(

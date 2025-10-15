@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Iterator
 from unittest import mock
 
@@ -48,8 +50,8 @@ class TestDataSetsAPI:
         assert 2 == cognite_client.data_sets._post.call_count  # type: ignore[attr-defined]
 
     def test_aggregate(self, cognite_client: CogniteClient) -> None:
-        res = cognite_client.data_sets.aggregate(filter=DataSetFilter(metadata={"1": "1"}))
-        assert res[0].count > 0
+        res = cognite_client.data_sets.aggregate_count(filter=DataSetFilter(metadata={"1": "1"}))
+        assert res > 0
 
     def test_update(self, cognite_client: CogniteClient, new_dataset: DataSet) -> None:
         update_asset = DataSetUpdate(new_dataset.id).metadata.set({"1": "1"}).name.set("newname")

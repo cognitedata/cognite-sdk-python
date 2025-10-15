@@ -1,15 +1,17 @@
+from __future__ import annotations
+
 import random
 import time
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from typing import Any, Literal
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import numpy as np
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import (
     Asset,
     AssetFilter,
@@ -36,7 +38,7 @@ TEST_LABEL = "integration test label, dont delete"
 
 
 @pytest.fixture(scope="module")
-def test_label(cognite_client: CogniteClient) -> LabelDefinition:
+def test_label(cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> LabelDefinition:
     # Labels does not support retrieve:
     label = cognite_client.labels.list(external_id_prefix=TEST_LABEL, limit=None).get(external_id=TEST_LABEL)
     if label is not None:
@@ -57,9 +59,9 @@ def new_asset(cognite_client: CogniteClient, test_label: Label) -> Iterator[Asse
 
 
 @pytest.fixture
-def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
-    with patch.object(cognite_client.assets, "_post", wraps=cognite_client.assets._post) as _:
-        yield
+def post_spy(async_client: AsyncCogniteClient) -> Iterator[AsyncMock]:
+    with patch.object(async_client.assets, "_post", wraps=async_client.assets._post) as post_mock:
+        yield post_mock
 
 
 @pytest.fixture(scope="session")
@@ -164,7 +166,7 @@ def asset_list(cognite_client: CogniteClient) -> AssetList:
 
 
 @pytest.fixture
-def is_integration_test() -> Filter:
+def is_integration_test(async_client: AsyncCogniteClient) -> Filter:
     return flt.Prefix("externalId", "integration_test:")
 
 
@@ -196,7 +198,7 @@ class TestAssetsAPI:
         res = cognite_client.assets.list(limit=20)
 
         assert 20 == len(res)
-        assert 2 == cognite_client.assets._post.call_count  # type: ignore[attr-defined]
+        assert 2 == post_spy.call_count
 
     @pytest.mark.usefixtures("twenty_assets")
     def test_partitioned_list(self, cognite_client: CogniteClient, post_spy: None) -> None:
@@ -211,7 +213,7 @@ class TestAssetsAPI:
     def test_compare_partitioned_gen_and_list(self, cognite_client: CogniteClient, post_spy: None) -> None:
         # stop race conditions by cutting off max created time
         maxtime = int(time.time() - 3600) * 1000
-        res_generator = cognite_client.assets(partitions=8, limit=None, created_time={"max": maxtime})
+        res_generator = cognite_client.assets(limit=None, created_time={"max": maxtime})
         res_list = cognite_client.assets.list(partitions=8, limit=None, created_time={"max": maxtime})
         assert {a.id for a in res_generator} == {a.id for a in res_list}
 
@@ -223,8 +225,8 @@ class TestAssetsAPI:
             assert isinstance(asset.aggregates.child_count, int)
 
     def test_aggregate(self, cognite_client: CogniteClient, twenty_assets: AssetList) -> None:
-        res = cognite_client.assets.aggregate(filter=AssetFilter(name=twenty_assets[0].name))
-        assert res[0].count > 0
+        res = cognite_client.assets.aggregate_count(filter=AssetFilter(name=twenty_assets[0].name))
+        assert res > 0
 
     def test_search(self, cognite_client: CogniteClient, twenty_assets: AssetList) -> None:
         name = twenty_assets[0].name
@@ -698,6 +700,7 @@ class TestAssetsAPICreateHierarchy:
     def test_upsert_and_insert_in_same_request(
         self,
         cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
         upsert_mode: Literal["patch", "replace"],
         monkeypatch: MonkeyPatch,
         post_spy: None,
@@ -708,7 +711,7 @@ class TestAssetsAPICreateHierarchy:
         assert len(created) == 2
         assert 1 == cognite_client.assets._post.call_count  # type: ignore[attr-defined]
         # We now send a request with both assets that needs to be created and updated:
-        monkeypatch.setattr(cognite_client.assets, "_CREATE_LIMIT", 50)  # Monkeypatch inside a monkeypatch, nice
+        monkeypatch.setattr(async_client.assets, "_CREATE_LIMIT", 50)  # Monkeypatch inside a monkeypatch, nice
         with create_hierarchy_with_cleanup(
             cognite_client, assets, upsert=True, upsert_mode=upsert_mode
         ) as patch_created:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Iterator
 from typing import cast
 from unittest import TestCase, mock
@@ -168,8 +170,8 @@ class TestSequencesAPI:
         assert 0 == len(res)
 
     def test_aggregate(self, cognite_client: CogniteClient, twenty_sequences: SequenceList) -> None:
-        res = cognite_client.sequences.aggregate(filter=SequenceFilter(name=twenty_sequences[0].name))
-        assert res[0].count > 0
+        res = cognite_client.sequences.aggregate_count(filter=SequenceFilter(name=twenty_sequences[0].name))
+        assert res > 0
 
     pytest.mark.usefixtures("twenty_sequences")
 

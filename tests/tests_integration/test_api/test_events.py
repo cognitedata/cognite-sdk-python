@@ -114,8 +114,8 @@ class TestEventsAPI:
         assert len(res) > 0
 
     def test_aggregation(self, cognite_client: CogniteClient, new_event: Event, twenty_events: EventList) -> None:
-        res_aggregate = cognite_client.events.aggregate(filter=EventFilter(type=twenty_events[0].type))
-        assert res_aggregate[0].count > 0
+        res = cognite_client.events.aggregate_count(filter=EventFilter(type=twenty_events[0].type))
+        assert res > 0
 
     def test_partitioned_list(self, cognite_client: CogniteClient, post_spy: None, twenty_events: EventList) -> None:
         # stop race conditions by cutting off max created time
