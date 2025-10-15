@@ -326,7 +326,7 @@ class UnknownActionCall(ActionCall):
 _ACTION_CALL_CLS_BY_TYPE: dict[str, type[ActionCall]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in ActionCall.__subclasses__()
-    if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
+    if subclass is not UnknownActionCall
 }
 
 
