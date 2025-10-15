@@ -11,11 +11,13 @@ from cognite.client.data_classes.ai import AnswerContent, AnswerLocation, Answer
 from tests.utils import get_url
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
-def mock_summarize_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_summarize_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     response_body = {
         "items": [
             {
@@ -25,7 +27,7 @@ def mock_summarize_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient
         ]
     }
 
-    url_pattern = re.compile(re.escape(get_url(cognite_client.ai.tools.documents)) + "/.+")
+    url_pattern = re.compile(re.escape(get_url(async_client.ai.tools.documents)) + "/.+")
     # ....assert_all_requests_are_fired = False  # TODO
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
@@ -33,7 +35,9 @@ def mock_summarize_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient
 
 
 @pytest.fixture
-def mock_ask_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_ask_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     response_body = {
         "content": [
             {
@@ -88,7 +92,7 @@ def mock_ask_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> H
         ]
     }
 
-    url_pattern = re.compile(re.escape(get_url(cognite_client.ai.tools.documents)) + "/.+")
+    url_pattern = re.compile(re.escape(get_url(async_client.ai.tools.documents)) + "/.+")
     # ....assert_all_requests_are_fired = False  # TODO
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)

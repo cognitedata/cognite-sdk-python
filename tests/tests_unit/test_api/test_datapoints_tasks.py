@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import math
-import random
 import re
 from collections.abc import Iterable, Sequence
 from datetime import datetime, timezone
-from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -13,7 +11,6 @@ import pytest
 from cognite.client._api.datapoint_tasks import _DpsQueryValidator, _FullDatapointsQuery
 from cognite.client.data_classes import DatapointsQuery
 from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.utils._text import random_string
 from cognite.client.utils.useful_types import SequenceNotStr
 from tests.utils import random_aggregates, random_cognite_ids, random_granularity
 
@@ -54,63 +51,23 @@ class TestSingleTSQueryValidator:
             _FullDatapointsQuery(id=ids, external_id=xids).parse_into_queries()
 
     @pytest.mark.parametrize(
-        "ids, xids, exp_attr_to_fail",
+        "ids, xids, iids, exp_attr_to_fail, exp_wrong_type",
         (
-            ({"iid": 123}, None, "id"),
-            (None, {"extern-id": "foo"}, "external_id"),
-            ([{"iid": 123}], None, "id"),
-            (None, [{"extern-id": "foo"}], "external_id"),
-            ({"iid": 123}, {"extern-id": "foo"}, "id"),
+            ({"id": 123}, None, None, "id", "int"),
+            (None, {"external_id": "foo"}, None, "external_id", "str"),
+            (None, None, {"instance_id": "bar"}, "instance_id", "NodeId"),
         ),
     )
-    def test_missing_identifier_in_dict_raises(
-        self, ids: dict | None, xids: dict | None, exp_attr_to_fail: str
+    def test_passing_dict_for_identifier_raises(
+        self, ids: dict | None, xids: dict | None, iids: dict | None, exp_attr_to_fail: str, exp_wrong_type: str
     ) -> None:
-        err_msg = f"Missing required key `{exp_attr_to_fail}` in dict:"
-
-        with pytest.raises(KeyError, match=re.escape(err_msg)):
-            _FullDatapointsQuery(id=ids, external_id=xids).parse_into_queries()  # type: ignore[arg-type]
-
-    @pytest.mark.parametrize(
-        "ids, xids, exp_wrong_type, exp_attr_to_fail",
-        (
-            ({"id": "123"}, None, str, "id"),
-            ({"id": 42 + 0j}, None, complex, "id"),
-            ({"id": Decimal("123")}, None, Decimal, "id"),
-            (None, {"external_id": 123}, int, "external_id"),
-            (None, {"externalId": ["foo"]}, list, "external_id"),
-            ([{"id": "123"}], None, str, "id"),
-            (None, [{"external_id": 123}], int, "external_id"),
-            (None, [{"externalId": b"foo"}], bytes, "external_id"),
-        ),
-    )
-    def test_identifier_in_dict_has_wrong_type(
-        self, ids: dict | None, xids: dict | None, exp_wrong_type: type, exp_attr_to_fail: str
-    ) -> None:
-        exp_type = "int" if exp_attr_to_fail == "id" else "str"
-        err_msg = f"Invalid {exp_attr_to_fail}, expected {exp_type}, got {exp_wrong_type}"
+        err_msg = (
+            f"Got unsupported type <class 'dict'>, as, or part of argument `{exp_attr_to_fail}`. Expected one "
+            f"of {exp_wrong_type}, DatapointsQuery, or a (mixed) list of these"
+        )
 
         with pytest.raises(TypeError, match=re.escape(err_msg)):
-            _FullDatapointsQuery(id=ids, external_id=xids).parse_into_queries()  # type: ignore[arg-type]
-
-    @pytest.mark.parametrize("identifier_dct", ({"id": 123}, {"external_id": "foo"}, {"externalId": "bar"}))
-    def test_identifier_dicts_has_wrong_keys(self, identifier_dct: dict[str, Any]) -> None:
-        good_keys = random.choices(
-            ["start", "end", "aggregates", "granularity", "include_outside_points", "limit"],
-            k=random.randint(0, 6),
-        )
-        bad_keys = [random_string(20) for _ in range(random.randint(1, 3))]
-        identifier_dct.update(dict.fromkeys(good_keys + bad_keys))
-        if "id" in identifier_dct:
-            identifier = "id"
-            query = _FullDatapointsQuery(id=identifier_dct, external_id=None)  # type: ignore[arg-type]
-        else:
-            identifier = "external_id"
-            query = _FullDatapointsQuery(id=None, external_id=identifier_dct)  # type: ignore[arg-type]
-
-        match = re.escape(f"Dict provided by argument `{identifier}` included key(s) not understood")
-        with pytest.raises(KeyError, match=match):
-            query.parse_into_queries()
+            _FullDatapointsQuery(id=ids, external_id=xids, instance_id=iids).parse_into_queries()  # type: ignore[arg-type]
 
     @pytest.mark.parametrize("limit, exp_limit", [(0, 0), (1, 1), (-1, None), (math.inf, None), (None, None)])
     def test_valid_limits(self, limit: int | None, exp_limit: int | None, query_validator: _DpsQueryValidator) -> None:
