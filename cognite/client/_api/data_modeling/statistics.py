@@ -7,7 +7,7 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.statistics import ProjectStatistics
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import AsyncCogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
