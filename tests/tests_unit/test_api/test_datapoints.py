@@ -15,6 +15,7 @@ from httpx import Response
 from pytest_httpx import HTTPXMock
 
 import cognite.client._api.datapoints as dps_api  # for mocking
+from cognite.client import AsyncCogniteClient
 from cognite.client._api.datapoints import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.data_classes.data_modeling import NodeId
@@ -28,7 +29,7 @@ DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 
 
 @pytest.fixture
-def mock_retrieve_latest(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
+def mock_retrieve_latest(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> Iterator[HTTPXMock]:
     def request_callback(request: Any) -> Response:
         payload = jsgz_load(request.content)
 
@@ -51,17 +52,17 @@ def mock_retrieve_latest(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -
     httpx_mock.add_callback(
         request_callback,
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data/latest",
+        url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         match_headers={"content-type": "application/json"},
     )
     yield httpx_mock
 
 
 @pytest.fixture
-def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data/latest",
+        url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=200,
         json={
             "items": [
@@ -74,10 +75,10 @@ def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, cognite_client: CogniteCli
 
 
 @pytest.fixture
-def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data/latest",
+        url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=200,
         json={
             "items": [
@@ -88,7 +89,7 @@ def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, cognite_client: Cog
     )
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data/latest",
+        url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=500,
         json={"error": {"code": 500, "message": "Internal Server Error"}},
     )
@@ -139,9 +140,13 @@ class TestGetLatest:
             assert 0 == len(res)
 
     def test_retrieve_latest_concurrent_fails(
-        self, cognite_client: CogniteClient, mock_retrieve_latest_with_failure: HTTPXMock, monkeypatch: MonkeyPatch
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        mock_retrieve_latest_with_failure: HTTPXMock,
+        monkeypatch: MonkeyPatch,
     ) -> None:
-        monkeypatch.setattr(cognite_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 2)
+        monkeypatch.setattr(async_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 2)
         with pytest.raises(CogniteAPIError) as e:
             cognite_client.time_series.data.retrieve_latest(id=[1, 2, 3])
         assert e.value.code == 500
@@ -177,6 +182,7 @@ class TestGetLatest:
         instance_id: NodeId | None,
         pass_as: str,
         err_msg: str,
+        async_client: AsyncCogniteClient,
     ) -> None:
         # Pass directly
         with pytest.raises(ValueError, match=err_msg):
@@ -197,10 +203,10 @@ class TestGetLatest:
 
 
 @pytest.fixture
-def mock_post_datapoints(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_post_datapoints(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data",
+        url=get_url(async_client.time_series.data, "/timeseries/data"),
         status_code=200,
         json={},
         is_reusable=True,
@@ -209,10 +215,10 @@ def mock_post_datapoints(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -
 
 
 @pytest.fixture
-def mock_post_datapoints_400(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_post_datapoints_400(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data",
+        url=get_url(async_client.time_series.data, "/timeseries/data"),
         status_code=400,
         json={"error": {"message": "Ts not found", "missing": [{"externalId": "does_not_exist"}]}},
     )
@@ -252,10 +258,14 @@ class TestInsertDatapoints:
             cognite_client.time_series.data.insert(dps, id=1)
 
     def test_insert_datapoints_over_limit(
-        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock, monkeypatch: MonkeyPatch
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        mock_post_datapoints: HTTPXMock,
+        monkeypatch: MonkeyPatch,
     ) -> None:
-        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 5)
-        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 5)
+        monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 5)
+        monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 5)
         dps = [(i * 1e11, i) for i in range(1, 11)]
         res = cognite_client.time_series.data.insert(dps, id=1)
         assert res is None
@@ -314,18 +324,26 @@ class TestInsertDatapoints:
             assert i == dps["id"]
 
     def test_insert_multiple_ts_single_call__below_dps_limit_above_ts_limit(
-        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock, monkeypatch: MonkeyPatch
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        mock_post_datapoints: HTTPXMock,
+        monkeypatch: MonkeyPatch,
     ) -> None:
-        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 100)
+        monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 100)
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
         dps_objects: list[dict] = [{"id": i, "datapoints": dps} for i in range(1, 102)]
         cognite_client.time_series.data.insert_multiple(dps_objects)
         assert 2 == len(mock_post_datapoints.get_requests())
 
     def test_insert_multiple_ts_single_call__above_dps_limit_below_ts_limit(
-        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock, monkeypatch: MonkeyPatch
+        self,
+        cognite_client: CogniteClient,
+        mock_post_datapoints: HTTPXMock,
+        monkeypatch: MonkeyPatch,
+        async_client: AsyncCogniteClient,
     ) -> None:
-        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 10_000)
+        monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 10_000)
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 1002)]
         dps_objects: list[dict] = [{"id": i, "datapoints": dps} for i in range(1, 11)]
         cognite_client.time_series.data.insert_multiple(dps_objects)
@@ -333,10 +351,12 @@ class TestInsertDatapoints:
 
 
 @pytest.fixture
-def mock_delete_datapoints(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
+def mock_delete_datapoints(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=get_url(cognite_client.time_series.data) + "/timeseries/data/delete",
+        url=get_url(async_client.time_series.data) + "/timeseries/data/delete",
         status_code=200,
         json={},
     )
@@ -888,6 +908,7 @@ class TestDatapointsPoster:
     def test_full_insert_flow(
         self,
         cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
         monkeypatch: MonkeyPatch,
         limits: tuple[int, int, int],
         insert_dps: list[dict],
@@ -902,18 +923,19 @@ class TestDatapointsPoster:
         # the content before it is garbage collected:
         calls = []
         dps_client = cognite_client.time_series.data
-        monkeypatch.setattr(
-            dps_api.DatapointsPoster, "_insert_datapoints", lambda self, payload: calls.append(deepcopy(payload))
-        )
+
+        async def override_insert_dps(self, payload: list[dict]) -> None:
+            calls.append(deepcopy(payload))
+
+        monkeypatch.setattr(dps_api.DatapointsPoster, "_insert_datapoints", override_insert_dps)
         dps_limit, ts_limit, last_chunk_size = limits
-        monkeypatch.setattr(dps_client, "_DPS_INSERT_LIMIT", dps_limit)
-        monkeypatch.setattr(dps_client, "_POST_DPS_OBJECTS_LIMIT", ts_limit)
-        # monkeypatch.setattr(dps_client._config, "max_workers", 4)
+        monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", dps_limit)
+        monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", ts_limit)
 
         # Actually run the test:
         dps_client.insert_multiple(insert_dps)
 
-        # We don't know ordering of calls (executed by N threads):
+        # We don't know ordering of calls (executed asynchronously):
         to_check_n_dps = sorted(
             (sum(len(insert_obj["datapoints"]) for insert_obj in call) for call in calls),
             reverse=True,
@@ -923,17 +945,20 @@ class TestDatapointsPoster:
         assert last_chunk_size == to_check_n_dps[-1]
         unittest.TestCase().assertCountEqual(calls, exp_calls)
 
-    def test_split_logic_adheres_to_limits(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
+    def test_split_logic_adheres_to_limits(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, monkeypatch: MonkeyPatch
+    ) -> None:
         calls = []
         dps_client = cognite_client.time_series.data
-        monkeypatch.setattr(
-            dps_api.DatapointsPoster, "_insert_datapoints", lambda self, payload: calls.append(deepcopy(payload))
-        )
+
+        async def override_insert_dps(self, payload: list[dict]) -> None:
+            calls.append(deepcopy(payload))
+
+        monkeypatch.setattr(dps_api.DatapointsPoster, "_insert_datapoints", override_insert_dps)
         dps_limit, ts_limit = randint(200, 2000), randint(2, 20)
         dps_client = cognite_client.time_series.data
-        monkeypatch.setattr(dps_client, "_DPS_INSERT_LIMIT", dps_limit)
-        monkeypatch.setattr(dps_client, "_POST_DPS_OBJECTS_LIMIT", ts_limit)
-        # monkeypatch.setattr(dps_client._config, "max_workers", 4)
+        monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", dps_limit)
+        monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", ts_limit)
 
         insert_dps: list[dict] = [
             {
