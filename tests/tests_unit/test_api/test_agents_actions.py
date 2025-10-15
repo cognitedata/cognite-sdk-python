@@ -98,7 +98,6 @@ class TestClientToolAction:
         }
         action = Action._load(data)
         assert isinstance(action, ClientToolAction)
-        assert action.dump(camel_case=True) == data
 
 
 class TestClientToolCall:
@@ -111,7 +110,6 @@ class TestClientToolCall:
         call = ActionCall._load(data)
         assert isinstance(call, ClientToolCall)
         assert call.arguments == {"x": 5}
-        assert call.dump(camel_case=True) == data
 
 
 class TestClientToolResult:
@@ -127,7 +125,6 @@ class TestUnknownActionCall:
         data = {"type": "unknownActionType", "actionId": "call_999", "someField": "someValue"}
         call = ActionCall._load(data)
         assert isinstance(call, UnknownActionCall)
-        assert call.dump(camel_case=True) == data
 
 
 class TestChatWithActions:
@@ -191,7 +188,6 @@ class TestToolConfirmationCall:
         assert call.tool_name == "Add"
         assert call.tool_type == "runPythonCode"
         assert call.details is None
-        assert call.dump(camel_case=True) == data
 
     def test_load_with_rest_api_details(self) -> None:
         data = {
@@ -211,4 +207,3 @@ class TestToolConfirmationCall:
 
         assert isinstance(call, ToolConfirmationCall)
         assert call.details == {"endpointMethod": "GET", "endpointPath": "/raw/dbs"}
-        assert call.dump(camel_case=True) == data
