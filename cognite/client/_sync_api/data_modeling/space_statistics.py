@@ -1,6 +1,6 @@
 """
 ===============================================================================
-773bd110da46d6c4ebcf2a0513906391
+b8446180971deded041820cbe43cb4ef
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -16,7 +16,7 @@ from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import AsyncCogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class SyncSpaceStatisticsAPI(SyncAPIClient):

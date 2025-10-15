@@ -299,8 +299,8 @@ class SyncEntityMatchingAPI(SyncAPIClient):
 
         Args:
             true_matches (Sequence[dict | tuple[int | str, int | str]]): Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId'). A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
-            id (int | None): ids of the model to use.
-            external_id (str | None): external ids of the model to use.
+            id (int | None): id of the model to use.
+            external_id (str | None): external id of the model to use.
         Returns:
             EntityMatchingModel: new model refitted to true_matches.
 
@@ -311,7 +311,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
             >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
             >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
             >>> true_matches = [(1, 101)]
-            >>> model = client.entity_matching.refit(true_matches = true_matches, description="AssetMatchingJob1", id=1)
+            >>> model = client.entity_matching.refit(true_matches=true_matches, id=1)
         """
         return run_sync(
             self.__async_client.entity_matching.refit(true_matches=true_matches, id=id, external_id=external_id)

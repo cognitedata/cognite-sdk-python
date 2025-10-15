@@ -146,7 +146,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             directly to an insert method. The only assumption below is that the time series have already been created in the target project.
 
                 >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
-                >>> target_client = AsyncCogniteClient()
+                >>> target_client = CogniteClient()
                 >>> ts_to_copy = client.time_series.list(data_set_external_ids="my-use-case")
                 >>> queries = [
                 ...     DatapointsQuery(
