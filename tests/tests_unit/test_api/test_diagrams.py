@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client.data_classes.contextualization import DetectJobBundle, DiagramDetectResults
 
@@ -17,11 +17,12 @@ if TYPE_CHECKING:
 class TestPNIDParsingUnit:
     @patch.object(DiagramsAPI, "_post")
     @patch.object(DiagramsAPI, "_get")
-    def test_run_diagram_detect(
+    async def test_run_diagram_detect(
         self,
         mocked_diagrams_get: MagicMock,
         mocked_diagrams_post: MagicMock,
         cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
         monkeypatch: MonkeyPatch,
     ) -> None:
         entities: list[dict] = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
@@ -58,14 +59,14 @@ class TestPNIDParsingUnit:
             cognite_client.diagrams.detect(file_ids=None, entities=entities, multiple_jobs=True)
 
         # Provoking failing because num_posts > limit
-        monkeypatch.setattr(cognite_client.diagrams, "_DETECT_API_FILE_LIMIT", 1)
+        monkeypatch.setattr(async_client.diagrams, "_DETECT_API_FILE_LIMIT", 1)
         job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
             file_ids=file_ids, entities=entities, multiple_jobs=True
         )
         assert job_bundle
-        successes, failures = job_bundle.result
+        successes, failures = await job_bundle.get_result()
         assert len(successes) == 3
 
-        monkeypatch.setattr(cognite_client.diagrams, "_DETECT_API_STATUS_JOB_LIMIT", 1)
+        monkeypatch.setattr(async_client.diagrams, "_DETECT_API_STATUS_JOB_LIMIT", 1)
         with pytest.raises(ValueError):
             _, _unposted_jobs = cognite_client.diagrams.detect(file_ids=file_ids, entities=entities, multiple_jobs=True)

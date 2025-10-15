@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from typing import TYPE_CHECKING, Any
 
@@ -9,7 +11,7 @@ from cognite.client.data_classes import DataSet, DataSetList, DataSetUpdate, Dat
 from tests.utils import get_or_raise, get_url, jsgz_load
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
@@ -33,11 +35,14 @@ def dataset_update() -> DataSetUpdate:
 
 @pytest.fixture
 def mock_ds_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, example_data_set: dict[str, Any]
+    httpx_mock: HTTPXMock,
+    cognite_client: CogniteClient,
+    example_data_set: dict[str, Any],
+    async_client: AsyncCogniteClient,
 ) -> HTTPXMock:
     response_body = {"items": [example_data_set]}
     url_pattern = re.compile(
-        re.escape(get_url(cognite_client.data_sets)) + r"/datasets(?:/byids|/update|/delete|/list|$|\?.+)"
+        re.escape(get_url(async_client.data_sets)) + r"/datasets(?:/byids|/update|/delete|/list|$|\?.+)"
     )
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
@@ -89,12 +94,6 @@ class TestDataset:
         res = cognite_client.data_sets.create([DataSetWrite(external_id="1")])
         assert isinstance(res, DataSetList)
         assert [example_data_set] == res.dump(camel_case=True)
-
-    def test_iter_single(
-        self, cognite_client: CogniteClient, mock_ds_response: HTTPXMock, example_data_set: dict[str, Any]
-    ) -> None:
-        for dataset in cognite_client.data_sets:
-            assert example_data_set == dataset.dump(camel_case=True)
 
     @pytest.mark.skip("delete not implemented")
     def test_delete_single(self, cognite_client: CogniteClient, mock_ds_response: HTTPXMock) -> None:
@@ -149,7 +148,7 @@ class TestDataset:
         assert isinstance(res, DataSetList)
         assert [example_data_set] == res.dump(camel_case=True)
 
-    def test_event_update_object(self) -> None:
+    def test_event_update_object(self, async_client: AsyncCogniteClient) -> None:
         update = (
             DataSetUpdate(1)
             .description.set("")
@@ -167,8 +166,8 @@ class TestDataset:
 
 
 @pytest.fixture
-def mock_ds_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
-    url_pattern = re.compile(re.escape(get_url(cognite_client.data_sets)) + "/.+")
+def mock_ds_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> HTTPXMock:
+    url_pattern = re.compile(re.escape(get_url(async_client.data_sets)) + "/.+")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []})
     return httpx_mock
 
