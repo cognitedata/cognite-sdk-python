@@ -64,7 +64,9 @@ from cognite.client.data_classes.data_modeling.instances import (
 from cognite.client.data_classes.data_modeling.query import (
     NodeOrEdgeResultSetExpression,
     Query,
+    QueryBase,
     QueryResult,
+    QuerySync,
     SourceSelector,
 )
 from cognite.client.data_classes.data_modeling.sync import SubscriptionContext
@@ -760,7 +762,7 @@ class InstancesAPI(APIClient):
 
     async def subscribe(
         self,
-        query: Query,
+        query: QuerySync,
         callback: Callable[[QueryResult], None | Awaitable[None]],
         poll_delay_seconds: float = 30,
         throttle_seconds: float = 1,
@@ -774,7 +776,7 @@ class InstancesAPI(APIClient):
             see :ref:`this example of syncing instances to a local SQLite database <dm_instances_subscribe_example>`.
 
         Args:
-            query (Query): The query to subscribe to.
+            query (QuerySync): The query to subscribe to.
             callback (Callable[[QueryResult], None | Awaitable[None]]): The callback function to call when the result set changes. Can be a regular or async function.
             poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
             throttle_seconds (float): The time to wait between polls despite data being present.
@@ -789,20 +791,21 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import AsyncCogniteClient
                 >>> from cognite.client.data_classes.data_modeling.query import (
-                ...     Query, QueryResult, NodeResultSetExpression, Select, SourceSelector)
+                ...     QuerySync, QueryResult, NodeResultSetExpressionSync, SelectSync, SourceSelector
+                ... )
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes.filters import Equals
                 >>>
                 >>> client = AsyncCogniteClient()
                 >>> def just_print_the_result(result: QueryResult) -> None:
-                >>>     print(result)
+                ...     print(result)
                 >>>
                 >>> view_id = ViewId("someSpace", "someView", "v1")
                 >>> filter = Equals(view_id.as_property_ref("myAsset"), "Il-Tempo-Gigante")
-                >>> query = Query(
-                >>>     with_={"work_orders": NodeResultSetExpression(filter=filter)},
-                >>>     select={"work_orders": Select([SourceSelector(view_id, ["*"])])}
-                >>> )
+                >>> query = QuerySync(
+                ...     with_={"work_orders": NodeResultSetExpressionSync(filter=filter)},
+                ...     select={"work_orders": SelectSync([SourceSelector(view_id, ["*"])])}
+                ... )
                 >>> subscription_context = await client.data_modeling.instances.subscribe(
                 ...     query, callback=just_print_the_result
                 ... )
@@ -1517,18 +1520,17 @@ class InstancesAPI(APIClient):
                 >>> res = client.data_modeling.instances.query(query, debug=debug_params)
                 >>> print(res.debug)
         """
-        query._validate_for_query()
         return await self._query_or_sync(query, "query", include_typing=include_typing, debug=debug)
 
     async def sync(
-        self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None
+        self, query: QuerySync, include_typing: bool = False, debug: DebugParameters | None = None
     ) -> QueryResult:
         """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
         Args:
-            query (Query): Query.
+            query (QuerySync): Query.
             include_typing (bool): Should we return property type information as part of the result?
             debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
 
@@ -1577,11 +1579,14 @@ class InstancesAPI(APIClient):
                 >>> res = client.data_modeling.instances.sync(query, debug=debug_params)
                 >>> print(res.debug)
         """
-        query._validate_for_sync()
         return await self._query_or_sync(query, "sync", include_typing=include_typing, debug=debug)
 
     async def _query_or_sync(
-        self, query: Query, endpoint: Literal["query", "sync"], include_typing: bool, debug: DebugParameters | None
+        self,
+        query: QueryBase,
+        endpoint: Literal["query", "sync"],
+        include_typing: bool,
+        debug: DebugParameters | None,
     ) -> QueryResult:
         headers: None | dict[str, str] = None
         body = query.dump(camel_case=True)
