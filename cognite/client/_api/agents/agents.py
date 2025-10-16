@@ -314,7 +314,7 @@ class AgentsAPI(APIClient):
                 ...     }
                 ... )
                 >>> response = client.agents.chat(
-                ...     agent_id="my_agent",
+                ...     agent_external_id="my_agent",
                 ...     messages=Message("What is 42 plus 58?"),
                 ...     actions=[add_numbers_action]
                 ... )
@@ -324,7 +324,7 @@ class AgentsAPI(APIClient):
                 ...         result = call.arguments["a"] + call.arguments["b"]
                 ...         # Send result back
                 ...         response = client.agents.chat(
-                ...             agent_id="my_agent",
+                ...             agent_external_id="my_agent",
                 ...             messages=ClientToolResult(
                 ...                 action_id=call.action_id,
                 ...                 content=f"The result is {result}"
