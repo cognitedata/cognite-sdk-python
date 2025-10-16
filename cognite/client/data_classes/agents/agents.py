@@ -123,10 +123,10 @@ class Agent(AgentCore):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): The name of the agent, for use in user interfaces.
-        description (str | None): The human readable description of the agent.
-        instructions (str | None): Instructions for the agent.
-        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
-        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
+        description (str | None): The human readable description of the agent. Always present in API responses.
+        instructions (str | None): Instructions for the agent. Always present in API responses.
+        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
+        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
         tools (Sequence[AgentTool] | None): List of tools for the agent.
         created_time (int | None): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         last_updated_time (int | None): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
@@ -159,6 +159,12 @@ class Agent(AgentCore):
             model=model,
             labels=labels,
         )
+        # These fields are always present in API responses, but optional when creating.
+        # Force the type to be non-optional for read instances.
+        self.description: str = description  # type: ignore[assignment]
+        self.instructions: str = instructions  # type: ignore[assignment]
+        self.model: str = model  # type: ignore[assignment]
+        self.labels: list[str] = labels  # type: ignore[assignment]
         self.tools: AgentToolList | None = AgentToolList(tools) if tools is not None else None
         self.created_time = created_time
         self.last_updated_time = last_updated_time
