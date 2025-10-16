@@ -281,7 +281,7 @@ class AgentsAPI(APIClient):
                 >>> from cognite.client.data_classes.agents import Message
                 >>> client = CogniteClient()
                 >>> response = client.agents.chat(
-                ...     agent_external_id="my_agent",
+                ...     agent_id="my_agent",
                 ...     messages=Message("What can you help me with?")
                 ... )
                 >>> print(response.text)
@@ -289,7 +289,7 @@ class AgentsAPI(APIClient):
             Continue a conversation using the cursor:
 
                 >>> follow_up = client.agents.chat(
-                ...     agent_external_id="my_agent",
+                ...     agent_id="my_agent",
                 ...     messages=Message("Tell me more about that"),
                 ...     cursor=response.cursor
                 ... )
@@ -297,7 +297,7 @@ class AgentsAPI(APIClient):
             Send multiple messages at once:
 
                 >>> response = client.agents.chat(
-                ...     agent_external_id="my_agent",
+                ...     agent_id="my_agent",
                 ...     messages=[
                 ...         Message("Help me find the 1st stage compressor."),
                 ...         Message("Once you have found it, find related time series.")
@@ -320,7 +320,7 @@ class AgentsAPI(APIClient):
                 ...     }
                 ... )
                 >>> response = client.agents.chat(
-                ...     agent_external_id="my_agent",
+                ...     agent_id="my_agent",
                 ...     messages=Message("What is 42 plus 58?"),
                 ...     actions=[add_numbers_action]
                 ... )
@@ -330,7 +330,7 @@ class AgentsAPI(APIClient):
                 ...         result = call.arguments["a"] + call.arguments["b"]
                 ...         # Send result back
                 ...         response = client.agents.chat(
-                ...             agent_external_id="my_agent",
+                ...             agent_id="my_agent",
                 ...             messages=ClientToolResult(
                 ...                 action_id=call.action_id,
                 ...                 content=f"The result is {result}"
