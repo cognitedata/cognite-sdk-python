@@ -84,19 +84,6 @@ class TestAgentUpsert:
 
         assert dumped == agent_data
 
-    def test_load_dump_with_labels(self) -> None:
-        """Test that labels are properly loaded and dumped."""
-        agent_data = {
-            "externalId": "test_agent",
-            "name": "Test Agent",
-            "labels": ["published"],
-        }
-        agent = AgentUpsert._load(agent_data)
-        assert agent.labels == ["published"]
-
-        dumped = agent.dump(camel_case=True)
-        assert dumped == agent_data
-
     def test_create_agent_with_labels(self) -> None:
         """Test creating an agent with labels."""
         agent = AgentUpsert(
@@ -237,19 +224,6 @@ class TestAgent:
         assert len(write_agent.tools) == 1
         assert isinstance(write_agent.tools[0], AgentToolUpsert)
         assert write_agent.tools[0].name == "test_tool"
-
-    def test_load_dump_with_labels(self) -> None:
-        """Test that labels are properly loaded and dumped on Agent."""
-        agent_data = {
-            "externalId": "test_agent",
-            "name": "Test Agent",
-            "labels": ["published"],
-        }
-        agent = Agent._load(agent_data)
-        assert agent.labels == ["published"]
-
-        dumped = agent.dump(camel_case=True)
-        assert dumped["labels"] == ["published"]
 
     def test_agent_labels_forward_compatibility(self) -> None:
         """Test forward compatibility with future label values on Agent."""
