@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import random
+import re
 import time
 import unittest
 from collections import namedtuple
@@ -129,7 +130,7 @@ class TestBasicRequests:
             method(**kwargs)
         assert e.value.code == 500
 
-        with pytest.raises(CogniteAPIError, match="Client error | code: 400 | X-Request-ID:") as e:
+        with pytest.raises(CogniteAPIError, match=re.escape("Client error | code: 400 | X-Request-ID:")) as e:
             method(**kwargs)
         assert e.value.code == 400
         assert e.value.message == "Client error"
@@ -1390,7 +1391,7 @@ class TestHelpers:
 
     @pytest.mark.parametrize(
         "content, expected",
-        [(b'{"foo": 42}', '{"foo": 42}'), (b"foobar", "foobar"), (b"\xed\xbc\xad", "<binary>")],
+        [(b'{"foo": 42}', '{"foo":42}'), (b"foobar", "foobar"), (b"\xed\xbc\xad", "<binary>")],
     )
     def test_get_response_content_safe(self, content, expected):
         res = Response()

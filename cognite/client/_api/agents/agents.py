@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
-from cognite.client.data_classes.agents.chat import AgentChatResponse, Message, MessageList
+from cognite.client.data_classes.agents.chat import (
+    Action,
+    ActionResult,
+    AgentChatResponse,
+    Message,
+)
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -242,9 +247,10 @@ class AgentsAPI(APIClient):
 
     def chat(
         self,
-        agent_id: str,
-        messages: Message | Sequence[Message],
+        agent_external_id: str,
+        messages: Message | ActionResult | Sequence[Message | ActionResult],
         cursor: str | None = None,
+        actions: Sequence[Action] | None = None,
     ) -> AgentChatResponse:
         """`Chat with an agent. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_session_ai_agents_chat_post/>`_
 
@@ -252,10 +258,11 @@ class AgentsAPI(APIClient):
         Users can ensure conversation continuity by including the cursor from the previous response in subsequent requests.
 
         Args:
-            agent_id (str): External ID that uniquely identifies the agent.
-            messages (Message | Sequence[Message]): A list of one or many input messages to the agent.
+            agent_external_id (str): External ID that uniquely identifies the agent.
+            messages (Message | ActionResult | Sequence[Message | ActionResult]): A list of one or many input messages to the agent. Can include regular messages and action results.
             cursor (str | None): The cursor to use for continuation of a conversation. Use this to
                 create multi-turn conversations, as the cursor will keep track of the conversation state.
+            actions (Sequence[Action] | None): A list of client-side actions that can be called by the agent.
 
         Returns:
             AgentChatResponse: The response from the agent.
@@ -268,7 +275,7 @@ class AgentsAPI(APIClient):
                 >>> from cognite.client.data_classes.agents import Message
                 >>> client = CogniteClient()
                 >>> response = client.agents.chat(
-                ...     agent_id="my_agent",
+                ...     agent_external_id="my_agent",
                 ...     messages=Message("What can you help me with?")
                 ... )
                 >>> print(response.text)
@@ -276,7 +283,7 @@ class AgentsAPI(APIClient):
             Continue a conversation using the cursor:
 
                 >>> follow_up = client.agents.chat(
-                ...     agent_id="my_agent",
+                ...     agent_external_id="my_agent",
                 ...     messages=Message("Tell me more about that"),
                 ...     cursor=response.cursor
                 ... )
@@ -284,27 +291,65 @@ class AgentsAPI(APIClient):
             Send multiple messages at once:
 
                 >>> response = client.agents.chat(
-                ...     agent_id="my_agent",
+                ...     agent_external_id="my_agent",
                 ...     messages=[
                 ...         Message("Help me find the 1st stage compressor."),
                 ...         Message("Once you have found it, find related time series.")
                 ...     ]
                 ... )
+
+            Chat with client-side actions:
+
+                >>> from cognite.client.data_classes.agents import ClientToolAction, ClientToolResult
+                >>> add_numbers_action = ClientToolAction(
+                ...     name="add",
+                ...     description="Add two numbers together",
+                ...     parameters={
+                ...         "type": "object",
+                ...         "properties": {
+                ...             "a": {"type": "number", "description": "First number"},
+                ...             "b": {"type": "number", "description": "Second number"},
+                ...         },
+                ...         "required": ["a", "b"]
+                ...     }
+                ... )
+                >>> response = client.agents.chat(
+                ...     agent_id="my_agent",
+                ...     messages=Message("What is 42 plus 58?"),
+                ...     actions=[add_numbers_action]
+                ... )
+                >>> if response.action_calls:
+                ...     for call in response.action_calls:
+                ...         # Execute the action
+                ...         result = call.arguments["a"] + call.arguments["b"]
+                ...         # Send result back
+                ...         response = client.agents.chat(
+                ...             agent_id="my_agent",
+                ...             messages=ClientToolResult(
+                ...                 action_id=call.action_id,
+                ...                 content=f"The result is {result}"
+                ...             ),
+                ...             cursor=response.cursor,
+                ...             actions=[add_numbers_action]
+                ...         )
         """
         self._warnings.warn()
 
         # Convert single message to list
-        if isinstance(messages, Message):
+        if isinstance(messages, Message | ActionResult):
             messages = [messages]
 
         # Build request body
-        body = {
-            "agentId": agent_id,
-            "messages": MessageList(messages).dump(camel_case=True),
+        body: dict[str, Any] = {
+            "agentExternalId": agent_external_id,
+            "messages": [msg.dump(camel_case=True) for msg in messages],
         }
 
         if cursor is not None:
             body["cursor"] = cursor
+
+        if actions is not None:
+            body["actions"] = [action.dump(camel_case=True) for action in actions]
 
         # Make the API call
         response = self._post(

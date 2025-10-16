@@ -123,7 +123,7 @@ class TestPropertyType:
         assert isinstance(prop, ListablePropertyType)
         assert prop.max_list_size == 10
 
-        with pytest.raises(ValueError, match="^is_list must be True if max_list_size is set$"):
+        with pytest.raises(ValueError, match=r"^is_list must be True if max_list_size is set$"):
             PropertyType.load({"type": type_name, "list": False, "maxListSize": 10})
 
     @pytest.mark.parametrize("lst_cls_with_unit", all_concrete_subclasses(PropertyTypeWithUnit))

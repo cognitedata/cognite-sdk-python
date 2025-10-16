@@ -757,7 +757,7 @@ class TestWorkflowTriggers:
         assert detailed.input == permanent_scheduled_trigger.input
 
     def test_trigger_run_history_non_existing(self, cognite_client: CogniteClient) -> None:
-        with pytest.raises(CogniteAPIError, match="Workflow trigger not found."):
+        with pytest.raises(CogniteAPIError, match=r"Workflow trigger not found\."):
             cognite_client.workflows.triggers.get_trigger_run_history(
                 external_id="integration_test-non_existing_trigger"
             )

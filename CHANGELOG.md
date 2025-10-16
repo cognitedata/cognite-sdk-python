@@ -13,6 +13,46 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.87.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.86.0...v7.87.0) (2025-10-15)
+
+
+### Features
+
+* add sort parameter to simulators API list and iteration methods ([#2355](https://github.com/cognitedata/cognite-sdk-python/issues/2355)) ([d21f9e3](https://github.com/cognitedata/cognite-sdk-python/commit/d21f9e3991834ed69bcf52c97f425f441a25acc1))
+* **agents:** add support for client-side actions in agent chat ([#2350](https://github.com/cognitedata/cognite-sdk-python/issues/2350)) ([49dfb19](https://github.com/cognitedata/cognite-sdk-python/commit/49dfb19a929c284a10a9d930d84d5860a2fda40c))
+* **capabilities:** Add support for Streams and Records ACLs ([#2366](https://github.com/cognitedata/cognite-sdk-python/issues/2366)) ([6b17c88](https://github.com/cognitedata/cognite-sdk-python/commit/6b17c88bec2e1eb840d6e8e9f9487287f1b32596))
+* **data_modeling:** Support constraint and index state fields ([#2361](https://github.com/cognitedata/cognite-sdk-python/issues/2361)) ([996296d](https://github.com/cognitedata/cognite-sdk-python/commit/996296dd6cd5a7bcc3e4ffad75c4b582e0d9f531))
+* **functions:** Add `last_called` field to Function dataclass. ([#2356](https://github.com/cognitedata/cognite-sdk-python/issues/2356)) ([3b3a6b5](https://github.com/cognitedata/cognite-sdk-python/commit/3b3a6b50e0fb9de9da09e83a825b42c875887fa6))
+* **functions:** Relax handle validation ([#2357](https://github.com/cognitedata/cognite-sdk-python/issues/2357)) ([23ebe95](https://github.com/cognitedata/cognite-sdk-python/commit/23ebe9597644008b1ad25f3b1c05a17c6e0f2763))
+* **simulators:** Add support for running simulations using revisions ([#2339](https://github.com/cognitedata/cognite-sdk-python/issues/2339)) ([dc76513](https://github.com/cognitedata/cognite-sdk-python/commit/dc765130663863cfd01d978869ed1357ef30bb7b))
+* use compact encoding for json serialization ([#2368](https://github.com/cognitedata/cognite-sdk-python/issues/2368)) ([9b0d5b5](https://github.com/cognitedata/cognite-sdk-python/commit/9b0d5b5599d08e44d7fb5e6de70d4c7c34d67399))
+
+
+### Bug Fixes
+
+* **functions:** Fix bug in handler handle validation ([#2363](https://github.com/cognitedata/cognite-sdk-python/issues/2363)) ([d949a9a](https://github.com/cognitedata/cognite-sdk-python/commit/d949a9a999649f13e645bc7985aa98d1e59c1fca))
+
+
+### Documentation
+
+* add examples for filtering on special node properties (externalId, space) ([#2371](https://github.com/cognitedata/cognite-sdk-python/issues/2371)) ([86b1ecd](https://github.com/cognitedata/cognite-sdk-python/commit/86b1ecd3a4278dabf7436fd7958e025c81aca2f4))
+* **simulators:** expose all simulator types in the simulators namespace ([#2362](https://github.com/cognitedata/cognite-sdk-python/issues/2362)) ([b156f5e](https://github.com/cognitedata/cognite-sdk-python/commit/b156f5e401fc12cf483ba627ab92590e6a83f7f5))
+
+## [7.86.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.85.0...v7.86.0) (2025-10-02)
+
+
+### Features
+
+* **instances/search:** `operator` is now supported (AND/OR) ([#2344](https://github.com/cognitedata/cognite-sdk-python/issues/2344)) ([317439b](https://github.com/cognitedata/cognite-sdk-python/commit/317439b11f8459373137d3ffdff53dd86b155b1e))
+
+
+### Bug Fixes
+
+* **agents:** replace agentId with agentExternalId in chat API ([#2349](https://github.com/cognitedata/cognite-sdk-python/issues/2349)) ([d9bca80](https://github.com/cognitedata/cognite-sdk-python/commit/d9bca8081f17329ce332746b4126bc7699a7978f))
+* **datapoints:** fix rare bug when instance ID time series would repo… ([#2348](https://github.com/cognitedata/cognite-sdk-python/issues/2348)) ([74bb53a](https://github.com/cognitedata/cognite-sdk-python/commit/74bb53a5b37374410bced4a91c65f00c2aac34b1))
+* filters now accept DirectRelationReference as instance identifier ([#2334](https://github.com/cognitedata/cognite-sdk-python/issues/2334)) ([597f7ca](https://github.com/cognitedata/cognite-sdk-python/commit/597f7ca70493498a13dd3363c018d1c7fec3d887))
+* **simulators:** make SimulatorModelRevision.get_data() return single item for consistency ([#2346](https://github.com/cognitedata/cognite-sdk-python/issues/2346)) ([6c3be3d](https://github.com/cognitedata/cognite-sdk-python/commit/6c3be3d4dfcf890a4624d7a3c9df8d01251ba17d))
+
 ## [7.85.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.84.0...v7.85.0) (2025-09-25)
 
 
@@ -33,7 +73,7 @@ As of 2025-08-29, changes are grouped as follows
 
 ### Features
 
-* [CDF-25309] Add service principal API ([#2332](https://github.com/cognitedata/cognite-sdk-python/issues/2332)) ([10f3ea8](https://github.com/cognitedata/cognite-sdk-python/commit/10f3ea8087c569fff49cc13d53e796f15ee73551))
+* Add service principal API ([#2332](https://github.com/cognitedata/cognite-sdk-python/issues/2332)) ([10f3ea8](https://github.com/cognitedata/cognite-sdk-python/commit/10f3ea8087c569fff49cc13d53e796f15ee73551))
 * add helper methods to access simulator quantities and units ([#2305](https://github.com/cognitedata/cognite-sdk-python/issues/2305)) ([0c16785](https://github.com/cognitedata/cognite-sdk-python/commit/0c16785ff2009747bd1d4f500a741d7ab19f1328))
 * add pandas DataFrame conversion methods to SimulatorRoutineRevisionCore ([#2228](https://github.com/cognitedata/cognite-sdk-python/issues/2228)) ([de2f810](https://github.com/cognitedata/cognite-sdk-python/commit/de2f810ca019b22be47b10cfe3402d517f8d01db))
 * **iam:** add support for attributes in groups create, groups list ([#2231](https://github.com/cognitedata/cognite-sdk-python/issues/2231)) ([3c0148e](https://github.com/cognitedata/cognite-sdk-python/commit/3c0148e7047c45f2ed16d5ee58e6ab9a496b26b7))

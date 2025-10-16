@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
-from cognite.client.data_classes.simulators.simulators import Simulator
+from cognite.client.data_classes.simulators import Simulator
 
 
 @pytest.mark.usefixtures("seed_simulator")

@@ -95,7 +95,7 @@ class TestTransformationsAPI:
         transform_without_name = Transformation(external_id=xid, destination=TransformationDestination.assets())
 
         with pytest.raises(
-            ValueError, match="^External ID, name and ignore null fields are required to create a transformation."
+            ValueError, match=r"^External ID, name and ignore null fields are required to create a transformation\."
         ):
             cognite_client.transformations.create(transform_without_name)
 

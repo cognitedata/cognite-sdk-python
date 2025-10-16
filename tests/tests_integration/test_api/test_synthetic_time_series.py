@@ -106,7 +106,7 @@ class TestSyntheticDatapointsAPI:
         # Before SDK version 7.32.8, when a passed TimeSeries missing external_id was passed, None
         # was just cast to string and passed to the API, most likely leading to a "not found" error
         with pytest.raises(
-            ValueError, match="^TimeSeries passed in 'variables' is missing required field 'external_id'"
+            ValueError, match=r"^TimeSeries passed in 'variables' is missing required field 'external_id'"
         ):
             cognite_client.time_series.data.synthetic.query(
                 expressions="A / B",
