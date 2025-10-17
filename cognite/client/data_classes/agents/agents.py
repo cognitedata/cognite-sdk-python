@@ -12,6 +12,7 @@ from cognite.client.data_classes._base import (
     ExternalIDTransformerMixin,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
+    basic_instance_dump,
 )
 from cognite.client.data_classes.agents.agent_tools import (
     AgentTool,
@@ -21,7 +22,6 @@ from cognite.client.data_classes.agents.agent_tools import (
 )
 
 
-@dataclass(frozen=True, slots=True)
 class AgentCore(WriteableCogniteResource["AgentUpsert"]):
     """Core representation of an AI agent.
 
@@ -34,12 +34,21 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
     """
 
-    external_id: str
-    name: str
-    description: str | None
-    instructions: str | None
-    model: str | None
-    labels: list[str] | None
+    def __init__(
+        self,
+        external_id: str,
+        name: str,
+        description: str | None = None,
+        instructions: str | None = None,
+        model: str | None = None,
+        labels: list[str] | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.name = name
+        self.description = description
+        self.instructions = instructions
+        self.model = model
+        self.labels = labels
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,41 +61,41 @@ class AgentUpsert(AgentCore):
         name (str): The name of the agent, for use in user interfaces.
         description (str | None): The human readable description of the agent.
         instructions (str | None): Instructions for the agent.
-        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        model (str | None): Name of the language model to use. For example, "azure/gpt-4.1", "gcp/gemini-2.5-flash" or "aws/claude-4.0-sonnet".
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
         tools (Sequence[AgentToolUpsert] | None): List of tools for the agent.
 
     """
 
+    external_id: str
+    name: str
+    description: str | None = None
+    instructions: str | None = None
+    model: str | None = None
+    labels: list[str] | None = None
     tools: Sequence[AgentToolUpsert] | None = None
     _unknown_properties: dict[str, object] = field(default_factory=dict, repr=False, init=False)
 
-    def __init__(
-        self,
-        external_id: str,
-        name: str,
-        description: str | None = None,
-        instructions: str | None = None,
-        model: str | None = None,
-        labels: list[str] | None = None,
-        tools: Sequence[AgentToolUpsert] | None = None,
-    ) -> None:
-        super().__init__(
-            external_id=external_id,
-            name=name,
-            description=description,
-            instructions=instructions,
-            model=model,
-            labels=labels,
-        )
-        object.__setattr__(self, "tools", AgentToolUpsertList(tools) if tools is not None else None)
-        # This stores any unknown properties that are not part of the defined fields.
-        # This is useful while the API is evolving and new fields are added.
-        object.__setattr__(self, "_unknown_properties", {})
+    def __post_init__(self) -> None:
+        # Transform tools sequence to AgentToolUpsertList
+        if self.tools is not None:
+            object.__setattr__(self, "tools", AgentToolUpsertList(self.tools))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result = super().dump(camel_case=camel_case)
-        if self.tools:
+        result: dict[str, Any] = {}
+        if self.external_id is not None:
+            result["externalId" if camel_case else "external_id"] = self.external_id
+        if self.name is not None:
+            result["name"] = self.name
+        if self.description is not None:
+            result["description"] = self.description
+        if self.instructions is not None:
+            result["instructions"] = self.instructions
+        if self.model is not None:
+            result["model"] = self.model
+        if self.labels is not None:
+            result["labels"] = self.labels
+        if self.tools is not None:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
         if self._unknown_properties:
             result.update(self._unknown_properties)
@@ -138,6 +147,8 @@ class Agent(AgentCore):
         owner_id (str | None): The ID of the user who owns the agent.
     """
 
+    external_id: str
+    name: str
     description: str
     instructions: str
     model: str
@@ -148,45 +159,26 @@ class Agent(AgentCore):
     owner_id: str | None
     _unknown_properties: dict[str, object] = field(default_factory=dict, repr=False, init=False)
 
-    def __init__(
-        self,
-        external_id: str,
-        name: str,
-        description: str,
-        instructions: str,
-        model: str,
-        labels: list[str],
-        tools: AgentToolList,
-        created_time: int,
-        last_updated_time: int,
-        owner_id: str | None,
-    ) -> None:
-        super().__init__(
-            external_id=external_id,
-            name=name,
-            description=description,
-            instructions=instructions,
-            model=model,
-            labels=labels,
-        )
-        object.__setattr__(self, "tools", tools)
-        object.__setattr__(self, "created_time", created_time)
-        object.__setattr__(self, "last_updated_time", last_updated_time)
-        object.__setattr__(self, "owner_id", owner_id)
-        # This stores any unknown properties that are not part of the defined fields.
-        # This is useful while the API is evolving and new fields are added.
-        object.__setattr__(self, "_unknown_properties", {})
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result = super().dump(camel_case=camel_case)
-        if self.tools:
-            result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
+        result: dict[str, Any] = {
+            "externalId" if camel_case else "external_id": self.external_id,
+            "name": self.name,
+            "description": self.description,
+            "instructions": self.instructions,
+            "model": self.model,
+            "labels": self.labels,
+            "tools": [item.dump(camel_case=camel_case) for item in self.tools],
+            "createdTime" if camel_case else "created_time": self.created_time,
+            "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
+        }
+        if self.owner_id is not None:
+            result["ownerId" if camel_case else "owner_id"] = self.owner_id
         if self._unknown_properties:
             result.update(self._unknown_properties)
         return result
 
     def as_write(self) -> AgentUpsert:
-        """Returns this Agent in its writeable format"""
+        """Returns this Agent as writeable instance"""
         return AgentUpsert(
             external_id=self.external_id,
             name=self.name,
@@ -228,12 +220,9 @@ class AgentUpsertList(CogniteResourceList[AgentUpsert], ExternalIDTransformerMix
     _RESOURCE = AgentUpsert
 
 
-class AgentList(
-    WriteableCogniteResourceList[AgentUpsert, Agent],
-    ExternalIDTransformerMixin,
-):
+class AgentList(WriteableCogniteResourceList[AgentUpsert, Agent], ExternalIDTransformerMixin):
     _RESOURCE = Agent
 
     def as_write(self) -> AgentUpsertList:
         """Returns this AgentList as writeable instance"""
-        return AgentUpsertList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
+        return AgentUpsertList([agent.as_write() for agent in self.data], cognite_client=self._get_cognite_client())

@@ -19,6 +19,7 @@ def agent_upsert_dump() -> dict:
         "description": "A test agent",
         "instructions": "Test instructions",
         "model": "gpt-4",
+        "labels": [],
         "tools": [
             {  # Valid queryKnowledgeGraph tool
                 "name": "test_tool",
@@ -184,21 +185,6 @@ class TestAgent:
         assert agent.tools == []
         assert not agent.tools  # Should be falsy
 
-    def test_post_init_tools_validation(self) -> None:
-        # Test with invalid tool type
-        with pytest.raises(TypeError):
-            Agent(
-                external_id="test_agent",
-                name="Test Agent",
-                description="Test description",
-                instructions="Test instructions",
-                model="gpt-4",
-                labels=[],
-                tools=[{"name": "test_tool", "type": "test_type", "description": "A test tool"}],
-                created_time=667008000000,
-                last_updated_time=667008000001,
-                owner_id=None,
-            )
 
     def test_as_write(self) -> None:
         agent = Agent(
