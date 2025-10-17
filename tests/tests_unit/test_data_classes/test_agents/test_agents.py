@@ -108,6 +108,50 @@ class TestAgentUpsert:
         )
         assert agent_upsert is agent_upsert.as_write()
 
+    def test_agent_upsert_immutability(self) -> None:
+        """Test that AgentUpsert is immutable (frozen=True)."""
+        agent = AgentUpsert(
+            external_id="test_agent",
+            name="Test Agent",
+        )
+        with pytest.raises(Exception):  # FrozenInstanceError or AttributeError
+            agent.name = "new name"  # type: ignore[misc]
+
+    def test_agent_upsert_tools_transformation(self) -> None:
+        """Test that tools are transformed to AgentToolUpsertList in __post_init__."""
+        from cognite.client.data_classes.agents.agent_tools import (
+            AgentToolUpsertList,
+            QueryKnowledgeGraphAgentToolUpsert,
+        )
+
+        # Pass a regular list - should be transformed to AgentToolUpsertList
+        tools = [
+            QueryKnowledgeGraphAgentToolUpsert(
+                name="test_tool",
+                description="A test tool",
+                configuration={
+                    "data_models": [
+                        {
+                            "space": "cdf_cdm",
+                            "external_id": "CogniteCore",
+                            "version": "v1",
+                            "view_external_ids": ["CogniteAsset"],
+                        }
+                    ],
+                    "instance_spaces": {"type": "all"},
+                },
+            )
+        ]
+        agent = AgentUpsert(
+            external_id="test_agent",
+            name="Test Agent",
+            tools=tools,
+        )
+        # Verify transformation happened
+        assert isinstance(agent.tools, AgentToolUpsertList)
+        assert len(agent.tools) == 1
+        assert agent.tools[0].name == "test_tool"
+
 
 class TestAgent:
     def test_load_dump(self, agent_dump: dict) -> None:
@@ -233,6 +277,23 @@ class TestAgent:
         # Test that as_write() preserves labels
         write_agent = agent.as_write()
         assert write_agent.labels == ["published", "charts"]
+
+    def test_agent_immutability(self) -> None:
+        """Test that Agent is immutable (frozen=True)."""
+        agent = Agent(
+            external_id="test_agent",
+            name="Test Agent",
+            description="Test description",
+            instructions="Test instructions",
+            model="gpt-4",
+            labels=[],
+            tools=[],
+            created_time=667008000000,
+            last_updated_time=667008000001,
+            owner_id="test-owner-id",
+        )
+        with pytest.raises(Exception):  # FrozenInstanceError or AttributeError
+            agent.name = "new name"  # type: ignore[misc]
 
 
 class TestAgentList:
