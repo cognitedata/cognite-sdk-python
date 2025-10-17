@@ -139,6 +139,7 @@ class TestAgent:
             "tools": [],
             "createdTime": 667008000000,
             "lastUpdatedTime": 667008000001,
+            "ownerId": "test-owner-id",
             "unknownProperty": "unknown_value",
         }
         dumped = Agent._load(agent_data).dump(camel_case=True)
@@ -161,7 +162,7 @@ class TestAgent:
             tools=tools_list,
             created_time=667008000000,
             last_updated_time=667008000001,
-            owner_id=None,
+            owner_id="test-owner-id",
         )
         assert len(agent.tools) == 2
         assert all(isinstance(tool, AgentTool) for tool in agent.tools)
@@ -180,7 +181,7 @@ class TestAgent:
             tools=[],
             created_time=667008000000,
             last_updated_time=667008000001,
-            owner_id=None,
+            owner_id="test-owner-id",
         )
         assert agent.tools == []
         assert not agent.tools  # Should be falsy
@@ -197,7 +198,7 @@ class TestAgent:
             tools=[SummarizeDocumentAgentTool(name="test_tool", description="A test tool")],
             created_time=667008000000,
             last_updated_time=667008000001,
-            owner_id=None,
+            owner_id="test-owner-id",
         )
 
         write_agent = agent.as_write()
@@ -225,7 +226,7 @@ class TestAgent:
             tools=[],
             created_time=667008000000,
             last_updated_time=667008000001,
-            owner_id=None,
+            owner_id="test-owner-id",
         )
         assert agent.labels == ["published", "charts"]
 
@@ -247,7 +248,7 @@ class TestAgentList:
                 tools=[],
                 created_time=667008000000,
                 last_updated_time=667008000001,
-                owner_id=None,
+                owner_id="test-owner-id",
             ),
             Agent(
                 external_id="agent2",
@@ -259,7 +260,7 @@ class TestAgentList:
                 tools=[],
                 created_time=667008000000,
                 last_updated_time=667008000001,
-                owner_id=None,
+                owner_id="test-owner-id",
             ),
         ]
         agent_list = AgentList(agents)

@@ -144,7 +144,7 @@ class Agent(AgentCore):
         tools (AgentToolList): List of tools for the agent.
         created_time (int): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         last_updated_time (int): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
-        owner_id (str | None): The ID of the user who owns the agent.
+        owner_id (str): The ID of the user who owns the agent.
     """
 
     external_id: str
@@ -156,7 +156,7 @@ class Agent(AgentCore):
     tools: AgentToolList
     created_time: int
     last_updated_time: int
-    owner_id: str | None
+    owner_id: str
     _unknown_properties: dict[str, object] = field(default_factory=dict, repr=False, init=False)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -170,9 +170,8 @@ class Agent(AgentCore):
             "tools": [item.dump(camel_case=camel_case) for item in self.tools],
             "createdTime" if camel_case else "created_time": self.created_time,
             "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
+            "ownerId" if camel_case else "owner_id": self.owner_id,
         }
-        if self.owner_id is not None:
-            result["ownerId" if camel_case else "owner_id"] = self.owner_id
         if self._unknown_properties:
             result.update(self._unknown_properties)
         return result
@@ -207,7 +206,7 @@ class Agent(AgentCore):
             tools=tools,
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
-            owner_id=resource.get("ownerId"),
+            owner_id=resource["ownerId"],
         )
         existing = set(instance.dump(camel_case=True).keys())
         object.__setattr__(
