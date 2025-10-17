@@ -235,7 +235,6 @@ class TestAgent:
         assert agent.tools == []
         assert not agent.tools  # Should be falsy
 
-
     def test_as_write(self) -> None:
         agent = Agent(
             external_id="test_agent",

@@ -12,7 +12,6 @@ from cognite.client.data_classes._base import (
     ExternalIDTransformerMixin,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
-    basic_instance_dump,
 )
 from cognite.client.data_classes.agents.agent_tools import (
     AgentTool,
