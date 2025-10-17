@@ -79,8 +79,8 @@ from cognite.client.utils._auxiliary import is_unlimited, load_yaml_or_json, unp
 from cognite.client.utils._concurrency import get_global_data_modeling_semaphore
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
+from cognite.client.utils._retry import Backoff
 from cognite.client.utils._text import random_string
-from cognite.client.utils._time import Backoff
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
