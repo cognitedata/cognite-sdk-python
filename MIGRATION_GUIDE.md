@@ -8,6 +8,9 @@ Changes are grouped as follows:
 - `Changed` for changes that do not fall into any other category
 - `Optional` for new, optional methods/features that you should be aware of - *and could take advantage of*
 
+
+## From v7 to v8
+
 ## From v6 to v7
 ### Functionality
 - `CogniteResource.to_pandas` and `CogniteResourceList.to_pandas` now converts known timestamps to `datetime` by

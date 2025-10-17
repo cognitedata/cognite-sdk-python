@@ -18,7 +18,7 @@ from cognite.client.data_classes._base import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 @dataclass
@@ -26,7 +26,7 @@ class SessionCredentials(CogniteObject):
     nonce: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             nonce=resource["nonce"],
         )
@@ -52,7 +52,7 @@ class UserWrite(_UserCore):
         self.credentials = credentials
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             credentials=SessionCredentials._load(resource["credentials"], cognite_client)
             if "credentials" in resource
@@ -96,7 +96,7 @@ class User(_UserCore):
         self.session_id = session_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             username=resource["username"],
             created_time=resource["createdTime"],
@@ -137,7 +137,7 @@ class UserCreated(User):
         self.password = password
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             host=resource["host"],
             username=resource["username"],
