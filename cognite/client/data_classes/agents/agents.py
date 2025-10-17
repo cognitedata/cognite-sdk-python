@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -21,7 +21,7 @@ from cognite.client.data_classes.agents.agent_tools import (
 )
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class AgentCore(WriteableCogniteResource["AgentUpsert"]):
     """Core representation of an AI agent.
 
@@ -42,7 +42,7 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
     labels: list[str] | None
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class AgentUpsert(AgentCore):
     """Representation of an AI agent.
     This is the write format of an agent.
@@ -59,6 +59,7 @@ class AgentUpsert(AgentCore):
     """
 
     tools: Sequence[AgentToolUpsert] | None = None
+    _unknown_properties: dict[str, object] = field(default_factory=dict, repr=False, init=False)
 
     def __init__(
         self,
@@ -78,10 +79,10 @@ class AgentUpsert(AgentCore):
             model=model,
             labels=labels,
         )
-        self.tools: AgentToolUpsertList | None = AgentToolUpsertList(tools) if tools is not None else None
+        object.__setattr__(self, "tools", AgentToolUpsertList(tools) if tools is not None else None)
         # This stores any unknown properties that are not part of the defined fields.
         # This is useful while the API is evolving and new fields are added.
-        self._unknown_properties: dict[str, object] = {}
+        object.__setattr__(self, "_unknown_properties", {})
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
@@ -113,11 +114,13 @@ class AgentUpsert(AgentCore):
             tools=tools,
         )
         existing = set(instances.dump(camel_case=True).keys())
-        instances._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
+        object.__setattr__(
+            instances, "_unknown_properties", {key: value for key, value in resource.items() if key not in existing}
+        )
         return instances
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Agent(AgentCore):
     """Representation of an AI agent.
     This is the read format of an agent.
@@ -125,10 +128,10 @@ class Agent(AgentCore):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): The name of the agent, for use in user interfaces.
-        description (str): The human readable description of the agent. Always present in API responses.
-        instructions (str): Instructions for the agent. Always present in API responses.
-        model (str): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
-        labels (list[str]): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
+        description (str): The human readable description of the agent.
+        instructions (str): Instructions for the agent.
+        model (str): Name of the language model to use. For example, "azure/gpt-4.1", "gcp/gemini-2.5-flash" or "aws/claude-4.0-sonnet".
+        labels (list[str]): Labels for the agent. For example, ["published"] to mark an agent as published.
         tools (AgentToolList): List of tools for the agent.
         created_time (int): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         last_updated_time (int): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
@@ -143,6 +146,7 @@ class Agent(AgentCore):
     created_time: int
     last_updated_time: int
     owner_id: str | None
+    _unknown_properties: dict[str, object] = field(default_factory=dict, repr=False, init=False)
 
     def __init__(
         self,
@@ -165,13 +169,13 @@ class Agent(AgentCore):
             model=model,
             labels=labels,
         )
-        self.tools = tools
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
-        self.owner_id = owner_id
+        object.__setattr__(self, "tools", tools)
+        object.__setattr__(self, "created_time", created_time)
+        object.__setattr__(self, "last_updated_time", last_updated_time)
+        object.__setattr__(self, "owner_id", owner_id)
         # This stores any unknown properties that are not part of the defined fields.
         # This is useful while the API is evolving and new fields are added.
-        self._unknown_properties: dict[str, object] = {}
+        object.__setattr__(self, "_unknown_properties", {})
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
@@ -214,7 +218,9 @@ class Agent(AgentCore):
             owner_id=resource.get("ownerId"),
         )
         existing = set(instance.dump(camel_case=True).keys())
-        instance._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
+        object.__setattr__(
+            instance, "_unknown_properties", {key: value for key, value in resource.items() if key not in existing}
+        )
         return instance
 
 
@@ -229,5 +235,5 @@ class AgentList(
     _RESOURCE = Agent
 
     def as_write(self) -> AgentUpsertList:
-        """Returns this AgentList as writeableinstance"""
+        """Returns this AgentList as writeable instance"""
         return AgentUpsertList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
