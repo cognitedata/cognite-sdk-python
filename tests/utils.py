@@ -41,7 +41,7 @@ from cognite.client.data_classes.capabilities import Capability, LegacyCapabilit
 from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNode, TypedNodeApply
 from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType
 from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
-from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
+from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query, QuerySync
 from cognite.client.data_classes.datapoint_aggregates import (
     ALL_SORTED_DP_AGGS,
     INT_AGGREGATES,
@@ -335,7 +335,7 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments["time_series_ids"] = ["my_timeseries1", "my_timeseries2"]
             else:
                 keyword_arguments.pop("filter", None)
-        elif issubclass(resource_cls, Query):
+        elif issubclass(resource_cls, Query | QuerySync):
             # The fake generator makes all dicts from 1-3 values, we need to make sure that the query is valid
             # by making sure that the list of equal length, so we make both to length 1.
             with_key, with_value = next(iter(keyword_arguments["with_"].items()))
