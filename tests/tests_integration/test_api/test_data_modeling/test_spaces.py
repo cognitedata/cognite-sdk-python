@@ -68,7 +68,7 @@ class TestSpacesAPI:
         assert retrieved_spaces.as_apply() == spaces.as_apply()
 
     def test_iterate_over_spaces(self, cognite_client: CogniteClient) -> None:
-        for space in cognite_client.data_modeling.spaces:
+        for space in cognite_client.data_modeling.spaces(limit=2):
             assert isinstance(space, Space)
 
     def test_retrieve_non_existing_space(self, cognite_client: CogniteClient) -> None:

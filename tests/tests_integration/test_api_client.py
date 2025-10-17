@@ -22,9 +22,8 @@ from tests.utils import get_or_raise
 
 
 @pytest.fixture
-def post_spy_event(cognite_client: CogniteClient) -> Iterator[None]:
-    dps_api = cognite_client.events
-    with patch.object(dps_api, "_post", wraps=dps_api._post):
+def post_spy_event(async_client: AsyncCogniteClient) -> Iterator[None]:
+    with patch.object(async_client.events, "_post", wraps=async_client.events._post):
         yield
 
 
@@ -109,12 +108,12 @@ class TestAPIClientUpsert:
         finally:
             cognite_client.events.delete(external_id=[new_event.external_id, existing.external_id])
 
+    @pytest.mark.usefixtures("post_spy_event")
     def test_upsert_split_into_multiple_tasks(
         self,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
         monkeypatch: MonkeyPatch,
-        post_spy_event: None,
     ) -> None:
         new_event = EventWrite(
             external_id="test_upsert_split_into_multiple_tasks:new" + random_string(5),
@@ -139,7 +138,7 @@ class TestAPIClientUpsert:
             monkeypatch.setattr(async_client.events, "_UPDATE_LIMIT", 1)
 
             res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
-            assert cognite_client.events._post.call_count >= 2  # type: ignore[attr-defined]
+            assert async_client.events._post.call_count >= 2  # type: ignore[attr-defined]
             assert len(res) == 2
             assert new_event.external_id == res[0].external_id
             assert preexisting.external_id == res[1].external_id

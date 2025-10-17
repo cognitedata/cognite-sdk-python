@@ -135,6 +135,8 @@ class TasksSummary:
                 case CogniteDuplicatedError():
                     duplicated.extend(exc.duplicated)
                     self.duplicated_error = exc
+                case CogniteAPIError():
+                    self.unknown_error = exc
                 case _:
                     self.unknown_error = exc
                     continue
@@ -179,6 +181,7 @@ class TasksSummary:
             duplicated=self.duplicated,
             extra=cause.extra,
             cluster=self.cluster,
+            project=self.project,
             successful=successful,
             failed=failed,
             unknown=unknown,
@@ -208,7 +211,7 @@ class EventLoopThreadExecutor(threading.Thread):
         """
         From the 'nest_asyncio' package: By design asyncio does not allow its event loop to be nested. This presents a
         practical problem: When in an environment where the event loop is already running it's impossible to run
-        tasks andwait for the result.
+        tasks and wait for the result.
         """
         if not self._inside_jupyter:
             return loop
@@ -368,7 +371,7 @@ async def execute_async_tasks_with_fail_fast(tasks: list[AsyncSDKTask]) -> Tasks
         return TasksSummary([task.result() for task in done], successful_tasks=tasks)
 
     # Something failed, and because of fail-fast, we (attempt to) cancel all pending tasks:
-    if pending:
+    if pending:  # while we are waiting on 3.11 and asyncio.TaskGroup...
         for unfinished in pending:
             unfinished.cancel()
 

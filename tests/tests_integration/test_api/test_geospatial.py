@@ -13,6 +13,7 @@ from _pytest.fixtures import FixtureRequest
 from tenacity import Retrying, retry_if_exception, stop_after_attempt, wait_exponential_jitter
 
 from cognite.client import CogniteClient
+from cognite.client._cognite_client import AsyncCogniteClient
 from cognite.client.data_classes import Asset, AssetWrite, FeatureTypeWrite, FeatureWrite
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
@@ -623,11 +624,12 @@ class TestGeospatialAPI:
     def test_list(
         self,
         cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
         test_feature_type: FeatureType,
         test_feature_list: FeatureList,
         set_request_limit: Callable,
     ) -> None:
-        set_request_limit(cognite_client.geospatial, 2)
+        set_request_limit(async_client.geospatial, 2)
         res = cognite_client.geospatial.list_features(
             feature_type_external_id=test_feature_type.external_id, properties={"externalId": {}}, limit=4
         )

@@ -359,7 +359,7 @@ class TestVisionExtractItem:
 
 
 class TestVisionExtractJob:
-    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.wait_for_result", new_callable=AsyncMock)
+    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.get_result", new_callable=AsyncMock)
     @pytest.mark.parametrize(
         "status, result, expected_items",
         [
@@ -396,7 +396,7 @@ class TestVisionExtractJob:
         )
         assert job.items == expected_items
 
-    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.wait_for_result", new_callable=AsyncMock)
+    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.get_result", new_callable=AsyncMock)
     @pytest.mark.parametrize(
         "file_id, expected_items, error_message",
         [
@@ -450,7 +450,7 @@ class TestVisionExtractJob:
         else:
             assert job[file_id] == expected_items[0]
 
-    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.wait_for_result", new_callable=AsyncMock)
+    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.get_result", new_callable=AsyncMock)
     @pytest.mark.parametrize(
         "result, params, expected_items",
         [

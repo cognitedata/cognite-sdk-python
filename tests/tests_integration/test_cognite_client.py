@@ -40,8 +40,8 @@ class TestCogniteClient:
         with pytest.raises(CogniteProjectAccessError, match=to_match):
             cognite_client.assets.list()
 
-    def test_wrong_base_url_resulting_in_301(self, cognite_client_with_wrong_base_url: CogniteClient) -> None:
-        with pytest.raises(CogniteAPIError):
+    def test_wrong_base_url_resulting_in_401(self, cognite_client_with_wrong_base_url: CogniteClient) -> None:
+        with pytest.raises(CogniteProjectAccessError):
             cognite_client_with_wrong_base_url.assets.list(limit=1)
 
     def test_post(self, cognite_client: CogniteClient) -> None:

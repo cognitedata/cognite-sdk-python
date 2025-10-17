@@ -408,7 +408,6 @@ class TestCoreModelv1:
             "instanceType": "node",
             "sources": [exp_prop_dump],
             "space": "python_sdk_core_v1_test_space",
-            "type": None,
         }
         assert write_instance_dumped == exp_dump
 

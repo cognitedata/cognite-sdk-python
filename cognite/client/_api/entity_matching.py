@@ -297,7 +297,7 @@ class EntityMatchingAPI(APIClient):
         model = await self.retrieve(id=id, external_id=external_id)
         # TODO: Change assert to proper error
         assert model
-        return await model.predict(  # could call predict directly but this is friendlier
+        return await model.predict_async(  # could call predict directly but this is friendlier
             sources=EntityMatchingModel._dump_entities(sources),
             targets=EntityMatchingModel._dump_entities(targets),
             num_matches=num_matches,
@@ -335,4 +335,4 @@ class EntityMatchingAPI(APIClient):
         model = await self.retrieve(id=id, external_id=external_id)
         # TODO: Change assert to proper error
         assert model
-        return await model.refit(true_matches=true_matches)
+        return await model.refit_async(true_matches=true_matches)

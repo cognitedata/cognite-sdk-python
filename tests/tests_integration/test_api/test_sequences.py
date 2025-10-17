@@ -7,6 +7,7 @@ from unittest import TestCase, mock
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client._cognite_client import AsyncCogniteClient
 from cognite.client.data_classes import (
     Asset,
     AssetWrite,
@@ -44,14 +45,14 @@ def new_seq(cognite_client: CogniteClient) -> Iterator[Sequence]:
 
 
 @pytest.fixture
-def get_spy(cognite_client: CogniteClient) -> Iterator[None]:
-    with mock.patch.object(cognite_client.sequences, "_get", wraps=cognite_client.sequences._get) as _:
+def get_spy(async_client: AsyncCogniteClient) -> Iterator[None]:
+    with mock.patch.object(async_client.sequences, "_get", wraps=async_client.sequences._get) as _:
         yield
 
 
 @pytest.fixture
-def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
-    with mock.patch.object(cognite_client.sequences, "_post", wraps=cognite_client.sequences._post) as _:
+def post_spy(async_client: AsyncCogniteClient) -> Iterator[None]:
+    with mock.patch.object(async_client.sequences, "_post", wraps=async_client.sequences._post) as _:
         yield
 
 
@@ -150,20 +151,32 @@ class TestSequencesAPI:
         assert failed ^ ignore_unknown_ids  # xor
 
     @pytest.mark.usefixtures("twenty_sequences")
-    def test_call(self, cognite_client: CogniteClient, post_spy: None, set_request_limit: Callable) -> None:
-        set_request_limit(cognite_client.sequences, 10)
+    def test_call(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        post_spy: None,
+        set_request_limit: Callable,
+    ) -> None:
+        set_request_limit(async_client.sequences, 10)
         res = [s for s in cognite_client.sequences(limit=20)]
 
         assert 20 == len(res)
-        assert 2 == cognite_client.sequences._post.call_count  # type: ignore[attr-defined]
+        assert 2 == async_client.sequences._post.call_count  # type: ignore[attr-defined]
 
     @pytest.mark.usefixtures("twenty_sequences")
-    def test_list(self, cognite_client: CogniteClient, post_spy: None, set_request_limit: Callable) -> None:
-        set_request_limit(cognite_client.sequences, 10)
+    def test_list(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        post_spy: None,
+        set_request_limit: Callable,
+    ) -> None:
+        set_request_limit(async_client.sequences, 10)
         res = cognite_client.sequences.list(limit=20)
 
         assert 20 == len(res)
-        assert 2 == cognite_client.sequences._post.call_count  # type: ignore[attr-defined]
+        assert 2 == async_client.sequences._post.call_count  # type: ignore[attr-defined]
 
     def test_list_assetid_nothing(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.sequences.list(asset_ids=[12345678910], limit=20)
@@ -276,17 +289,6 @@ class TestSequencesAPI:
                 external_id=[new_sequence.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
 
-    def test_filter_equals(self, cognite_client: CogniteClient, sequence_list: SequenceList, root_asset: Asset) -> None:
-        f = filters
-        is_integration_test = f.Prefix(SequenceProperty.external_id, "integration_test:")
-        is_asset = f.Equals(SequenceProperty.asset_id, root_asset.id)
-
-        result = cognite_client.sequences.filter(
-            f.And(is_integration_test, is_asset), sort=SortableSequenceProperty.created_time
-        )
-        assert len(result) == 1, "Expected only one sequence in subtree"
-        assert result[0].external_id == sequence_list[0].external_id
-
     def test_list_with_advanced_filter(
         self, cognite_client: CogniteClient, sequence_list: SequenceList, root_asset: Asset
     ) -> None:
@@ -297,17 +299,6 @@ class TestSequencesAPI:
             external_id_prefix="integration_test:", advanced_filter=is_asset, sort=SortableSequenceProperty.created_time
         )
         assert len(result) == 1, "Expected only one sequence in subtree"
-        assert result[0].external_id == sequence_list[0].external_id
-
-    def test_filter_without_sort(
-        self, cognite_client: CogniteClient, sequence_list: SequenceList, root_asset: Asset
-    ) -> None:
-        f = filters
-        is_integration_test = f.Prefix(SequenceProperty.external_id, "integration_test:")
-        is_asset = f.Equals(SequenceProperty.asset_id, root_asset.id)
-
-        result = cognite_client.sequences.filter(f.And(is_integration_test, is_asset), sort=None)
-        assert len(result) == 1
         assert result[0].external_id == sequence_list[0].external_id
 
     def test_aggregate_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:

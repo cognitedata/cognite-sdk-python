@@ -39,6 +39,8 @@ def set_request_limit(monkeypatch: pytest.MonkeyPatch) -> Callable[[APIClient, i
     """
 
     def _setter(client: APIClient, limit: int) -> None:
+        assert isinstance(client, APIClient), "Did you mean to pass e.g. async_client.<some_api>?"
+
         for limit_name in _STANDARD_API_LIMIT_NAMES:
             # We use raising=False to prevents an error if the attribute doesn't exist:
             monkeypatch.setattr(client, limit_name, limit, raising=False)

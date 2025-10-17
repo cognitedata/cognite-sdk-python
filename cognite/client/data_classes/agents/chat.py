@@ -93,7 +93,7 @@ class Action(CogniteObject, ABC):
     _type: ClassVar[str]
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Action:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Action:
         """Dispatch to the correct concrete action class based on `type`."""
         action_type = data.get("type", "")
         action_class = _ACTION_CLS_BY_TYPE.get(action_type, UnknownAction)
@@ -101,7 +101,7 @@ class Action(CogniteObject, ABC):
 
     @classmethod
     @abstractmethod
-    def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Action:
+    def _load_action(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Action:
         """Create a concrete action instance from raw data."""
         ...
 
@@ -134,7 +134,7 @@ class ClientToolAction(Action):
         }
 
     @classmethod
-    def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolAction:
+    def _load_action(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ClientToolAction:
         client_tool = data[cls._type]
         return cls(
             name=client_tool["name"],
@@ -161,7 +161,7 @@ class UnknownAction(Action):
         return result
 
     @classmethod
-    def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownAction:
+    def _load_action(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> UnknownAction:
         action_type = data.get("type", "")
         return cls(data=data, type=action_type)
 
@@ -182,7 +182,7 @@ class ActionCall(CogniteObject, ABC):
     action_id: str
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionCall:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ActionCall:
         """Dispatch to the correct concrete action call class based on `type`."""
         action_type = data.get("type", "")
         action_class = _ACTION_CALL_CLS_BY_TYPE.get(action_type, UnknownActionCall)
@@ -190,7 +190,7 @@ class ActionCall(CogniteObject, ABC):
 
     @classmethod
     @abstractmethod
-    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionCall:
+    def _load_call(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ActionCall:
         """Create a concrete action call instance from raw data."""
         ...
 
@@ -221,7 +221,7 @@ class ClientToolCall(ActionCall):
         }
 
     @classmethod
-    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolCall:
+    def _load_call(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ClientToolCall:
         client_tool = data[cls._type]
         arguments_str = client_tool["arguments"]
         return cls(
@@ -271,7 +271,7 @@ class ToolConfirmationCall(ActionCall):
         return result
 
     @classmethod
-    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ToolConfirmationCall:
+    def _load_call(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ToolConfirmationCall:
         tool_confirmation = data[cls._type]
         content = MessageContent._load(tool_confirmation["content"])
         return cls(
@@ -306,7 +306,7 @@ class UnknownActionCall(ActionCall):
         return result
 
     @classmethod
-    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownActionCall:
+    def _load_call(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> UnknownActionCall:
         action_type = data["type"]
         action_id = data["actionId"]
         return cls(action_id=action_id, data=data, type=action_type)
@@ -396,7 +396,7 @@ class ClientToolResult(ActionResult):
         }
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolResult:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ClientToolResult:
         """Load from dumped data. Only used for testing."""
         content = MessageContent._load(data["content"], cognite_client)
         return cls(
@@ -427,7 +427,7 @@ class ToolConfirmationResult(ActionResult):
         }
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ToolConfirmationResult:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ToolConfirmationResult:
         """Load from dumped data. Not used to load from API response."""
         return cls(
             action_id=data.get("actionId", data.get("action_id", "")),

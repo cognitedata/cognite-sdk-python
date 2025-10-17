@@ -6,6 +6,7 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client._cognite_client import AsyncCogniteClient
 from cognite.client.data_classes import (
     Asset,
     AssetUpdate,
@@ -28,16 +29,22 @@ def new_label(cognite_client: CogniteClient) -> Iterator[LabelDefinition]:
 
 
 @pytest.fixture
-def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
-    with mock.patch.object(cognite_client.labels, "_post", wraps=cognite_client.labels._post) as _:
+def post_spy(async_client: AsyncCogniteClient) -> Iterator[None]:
+    with mock.patch.object(async_client.labels, "_post", wraps=async_client.labels._post) as _:
         yield
 
 
 class TestLabelsAPI:
-    def test_list(self, cognite_client: CogniteClient, new_label: LabelDefinition, post_spy: None) -> None:
+    def test_list(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        new_label: LabelDefinition,
+        post_spy: None,
+    ) -> None:
         res = cognite_client.labels.list(limit=100)
         assert 0 < len(res) <= 100
-        assert 1 == cognite_client.labels._post.call_count  # type: ignore[attr-defined]
+        assert 1 == async_client.labels._post.call_count  # type: ignore[attr-defined]
 
     def test_retrieve_existing_labels(self, cognite_client: CogniteClient, new_label: LabelDefinition) -> None:
         res = cognite_client.labels.retrieve(external_id=new_label.external_id)

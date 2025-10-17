@@ -518,7 +518,7 @@ class TestFunctionsAPI:
         res = cognite_client.functions.create(name="myfunction", function_handle=function_handle_as_variable)
 
         assert isinstance(res, Function)
-        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
+        assert EXAMPLE_FUNCTION_CREATED == res.dump(camel_case=True)
 
     def test_create_with_function_handle_assignment_from_folder(self, mock_functions_create_response, cognite_client):
         """Test that handle as variable assignment works when loading from folder."""
@@ -526,7 +526,7 @@ class TestFunctionsAPI:
         res = cognite_client.functions.create(name="myfunction", folder=folder, function_path="handler.py")
 
         assert isinstance(res, Function)
-        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
+        assert EXAMPLE_FUNCTION_CREATED == res.dump(camel_case=True)
 
     def test_create_with_function_handle_assignment_invalid_args_from_folder_accepts(
         self, mock_functions_create_response, cognite_client
@@ -540,7 +540,7 @@ class TestFunctionsAPI:
         res = cognite_client.functions.create(name="myfunction", folder=folder, function_path="handler.py")
 
         assert isinstance(res, Function)
-        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
+        assert EXAMPLE_FUNCTION_CREATED == res.dump(camel_case=True)
 
     def test_create_with_function_handle_annotated_assignment_from_folder(
         self, mock_functions_create_response, cognite_client
@@ -552,7 +552,7 @@ class TestFunctionsAPI:
         res = cognite_client.functions.create(name="myfunction", folder=folder, function_path="handler.py")
 
         assert isinstance(res, Function)
-        assert mock_functions_create_response.calls[3].response.json()["items"][0] == res.dump(camel_case=True)
+        assert EXAMPLE_FUNCTION_CREATED == res.dump(camel_case=True)
 
     def test_validate_function_handle_with_complex_assignment_target_raises(self):
         # Create AST node for: obj.handle = some_callable

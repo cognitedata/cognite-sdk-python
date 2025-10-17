@@ -363,30 +363,6 @@ class TestAssetsAPI:
                 external_id=[new_asset.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
 
-    def test_filter_on_metadata_key(
-        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
-    ) -> None:
-        in_europe = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
-
-        result = cognite_client.assets.filter(
-            filter=flt.And(is_integration_test, in_europe),
-            sort=("external_id", "asc"),
-            aggregated_properties=["child_count"],
-        )
-        assert len(result) == 1, "Expected only one asset to match the filter"
-        assert result[0].external_id == "integration_test:asset2"
-
-    def test_filter_without_sort(
-        self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
-    ) -> None:
-        in_europe = flt.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
-
-        result = cognite_client.assets.filter(
-            filter=flt.And(is_integration_test, in_europe), aggregated_properties=["child_count"], sort=None
-        )
-        assert len(result) == 1, "Expected only one asset to match the filter"
-        assert result[0].external_id == "integration_test:asset2"
-
     def test_list_with_advanced_filter(
         self, cognite_client: CogniteClient, asset_list: AssetList, is_integration_test: Filter
     ) -> None:
@@ -513,11 +489,11 @@ def create_hierarchy_with_cleanup(
 
 
 @pytest.fixture(scope="class")
-def set_create_lim(cognite_client: CogniteClient) -> Iterator[None]:
-    with set_max_workers(cognite_client, 2), pytest.MonkeyPatch.context() as mp:
-        # We set a low limit to hopefully detect bugs in how resources are split (+threading)
+def set_create_lim(async_client: AsyncCogniteClient) -> Iterator[None]:
+    with set_max_workers(2), pytest.MonkeyPatch.context() as mp:
+        # We set a low limit to hopefully detect bugs in how resources are split
         # without unnecessarily overloading the API with many thousand assets/request:
-        mp.setattr(cognite_client.assets, "_CREATE_LIMIT", 3)
+        mp.setattr(async_client.assets, "_CREATE_LIMIT", 3)
         yield
 
 
@@ -709,7 +685,7 @@ class TestAssetsAPICreateHierarchy:
         # Create only first 2:
         created = cognite_client.assets.create_hierarchy(assets[:2], upsert=False)
         assert len(created) == 2
-        assert 1 == cognite_client.assets._post.call_count  # type: ignore[attr-defined]
+        assert 1 == async_client.assets._post.call_count  # type: ignore[attr-defined]
         # We now send a request with both assets that needs to be created and updated:
         monkeypatch.setattr(async_client.assets, "_CREATE_LIMIT", 50)  # Monkeypatch inside a monkeypatch, nice
         with create_hierarchy_with_cleanup(
@@ -719,6 +695,6 @@ class TestAssetsAPICreateHierarchy:
             assert set(a.external_id for a in assets) == set(patch_created._external_id_to_item)
             # 1+3 because 3 additional calls were made:
             # 1) Try create all (fail), 2) create non-duplicated (success), 3) update duplicated (success)
-            assert 1 + 3 == cognite_client.assets._post.call_count  # type: ignore[attr-defined]
-            resource_paths = [call[0][0] for call in cognite_client.assets._post.call_args_list]  # type: ignore[attr-defined]
+            assert 1 + 3 == async_client.assets._post.call_count  # type: ignore[attr-defined]
+            resource_paths = [call[0][0] for call in async_client.assets._post.call_args_list]  # type: ignore[attr-defined]
             assert resource_paths == ["/assets", "/assets", "/assets", "/assets/update"]

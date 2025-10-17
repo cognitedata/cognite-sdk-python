@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert

@@ -67,13 +67,15 @@ class TestEntityMatchingIntegration:
         assert "Completed" == fitted_model.status
         assert isinstance(job, ContextualizationJob)
         assert "Queued" == job.status
-        assert {"matches", "source"} == set(job.result["items"][0].keys()) - {"matchFrom"}
+        result = job.get_result()
+        assert {"matches", "source"} == set(result["items"][0].keys()) - {"matchFrom"}
         assert "Completed" == job.status
 
         job = fitted_model.predict()
         assert isinstance(job, ContextualizationJob)
         assert "Queued" == job.status
-        assert {"matches", "source"} == set(job.result["items"][0].keys()) - {"matchFrom"}
+        result = job.get_result()
+        assert {"matches", "source"} == set(result["items"][0].keys()) - {"matchFrom"}
         assert "Completed" == job.status
 
         # Retrieve model
@@ -110,7 +112,8 @@ class TestEntityMatchingIntegration:
         assert "Queued" == new_model.status
 
         job = new_model.predict(sources=[{"name": "foo-bar"}], targets=[{"bloop": "foo-42"}])
-        assert {"matches", "source"} == set(job.result["items"][0].keys()) - {"matchFrom"}
+        result = job.get_result()
+        assert {"matches", "source"} == set(result["items"][0].keys()) - {"matchFrom"}
         assert "Completed" == job.status
         cognite_client.entity_matching.delete(id=new_model.id)
 
@@ -141,7 +144,8 @@ class TestEntityMatchingIntegration:
         assert isinstance(model, EntityMatchingModel)
         assert "Queued" == model.status
         job = model.predict()
-        assert {"matches", "source"} == set(job.result["items"][0].keys()) - {"matchFrom"}
+        result = job.get_result()
+        assert {"matches", "source"} == set(result["items"][0].keys()) - {"matchFrom"}
 
         cognite_client.entity_matching.delete(id=model.id)
 

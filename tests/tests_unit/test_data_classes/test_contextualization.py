@@ -89,7 +89,7 @@ class TestJobBundle:
 
             job_bundle = DetectJobBundle(cognite_client=mock_client, job_ids=_job_ids)
             assert job_bundle.job_ids == _job_ids
-            s, f = await job_bundle.wait_for_result()
+            s, f = await job_bundle.get_result()
             assert len(s) == 2
             assert len(f) == 0
             assert s[0]["status"] == "Completed"
@@ -116,7 +116,7 @@ class TestJobBundle:
             )
             mock_client.diagrams._post.side_effect = [requestMock, requestMock_second_round]
             job_bundle = DetectJobBundle(cognite_client=mock_client, job_ids=[1, 2])
-            s, f = await job_bundle.wait_for_result()
+            s, f = await job_bundle.get_result()
             assert len(f) == 0
             assert len(s) == 2
             assert s[0]["status"] == "Completed"
@@ -161,7 +161,7 @@ class TestJobBundle:
             ]
             mock_client.diagrams._post.return_value = requestMock
             a = DetectJobBundle(cognite_client=mock_client, job_ids=[1, 2])
-            s, f = await a.wait_for_result()
+            s, f = await a.get_result()
             assert len(s) == 1
             assert len(f) == 1
             assert s[0]["status"] == "Completed"

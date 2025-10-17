@@ -329,8 +329,14 @@ def parametrized_values_all_unknown_single_multiple_given(
             # Single identifier given as base type (int/str) or as dict
             (1, "ChunkingDpsFetcher", random_cognite_ids(1)[0], None, [None, None]),
             (1, "ChunkingDpsFetcher", None, random_cognite_external_ids(1)[0], [None, None]),
-            (1, "ChunkingDpsFetcher", {"id": random_cognite_ids(1)[0]}, None, [None, None]),
-            (1, "ChunkingDpsFetcher", None, {"external_id": random_cognite_external_ids(1)[0]}, [None, None]),
+            (1, "ChunkingDpsFetcher", DatapointsQuery(id=random_cognite_ids(1)[0]), None, [None, None]),
+            (
+                1,
+                "ChunkingDpsFetcher",
+                None,
+                DatapointsQuery(external_id=random_cognite_external_ids(1)[0]),
+                [None, None],
+            ),
             # Single identifier given as length-1 list:
             (1, "ChunkingDpsFetcher", random_cognite_ids(1), None, DPS_LST_TYPES),
             (1, "ChunkingDpsFetcher", None, random_cognite_external_ids(1), DPS_LST_TYPES),
@@ -339,14 +345,14 @@ def parametrized_values_all_unknown_single_multiple_given(
             (
                 2,
                 "ChunkingDpsFetcher",
-                {"id": random_cognite_ids(1)[0]},
-                {"external_id": random_cognite_external_ids(1)[0]},
+                DatapointsQuery(id=random_cognite_ids(1)[0]),
+                DatapointsQuery(external_id=random_cognite_external_ids(1)[0]),
                 DPS_LST_TYPES,
             ),
             (
                 2,
                 "ChunkingDpsFetcher",
-                {"id": random_cognite_ids(1)[0]},
+                DatapointsQuery(id=random_cognite_ids(1)[0]),
                 random_cognite_external_ids(1)[0],
                 DPS_LST_TYPES,
             ),
@@ -354,25 +360,31 @@ def parametrized_values_all_unknown_single_multiple_given(
                 2,
                 "ChunkingDpsFetcher",
                 random_cognite_ids(1)[0],
-                {"external_id": random_cognite_external_ids(1)[0]},
+                DatapointsQuery(external_id=random_cognite_external_ids(1)[0]),
                 DPS_LST_TYPES,
             ),
             (1, "EagerDpsFetcher", random_cognite_ids(1)[0], random_cognite_external_ids(1)[0], DPS_LST_TYPES),
             (
                 1,
                 "EagerDpsFetcher",
-                {"id": random_cognite_ids(1)[0]},
-                {"external_id": random_cognite_external_ids(1)[0]},
+                DatapointsQuery(id=random_cognite_ids(1)[0]),
+                DatapointsQuery(external_id=random_cognite_external_ids(1)[0]),
                 DPS_LST_TYPES,
             ),
             (
                 1,
                 "EagerDpsFetcher",
                 random_cognite_ids(1)[0],
-                {"external_id": random_cognite_external_ids(1)[0]},
+                DatapointsQuery(external_id=random_cognite_external_ids(1)[0]),
                 DPS_LST_TYPES,
             ),
-            (1, "EagerDpsFetcher", {"id": random_cognite_ids(1)[0]}, random_cognite_external_ids(1)[0], DPS_LST_TYPES),
+            (
+                1,
+                "EagerDpsFetcher",
+                DatapointsQuery(id=random_cognite_ids(1)[0]),
+                random_cognite_external_ids(1)[0],
+                DPS_LST_TYPES,
+            ),
             # Multiple identifiers given by single identifier:
             (4, "ChunkingDpsFetcher", random_cognite_ids(3), None, DPS_LST_TYPES),
             (4, "ChunkingDpsFetcher", None, random_cognite_external_ids(3), DPS_LST_TYPES),
@@ -386,15 +398,15 @@ def parametrized_values_all_unknown_single_multiple_given(
             (
                 5,
                 "ChunkingDpsFetcher",
-                [{"id": id} for id in random_cognite_ids(2)],
-                [{"external_id": xid} for xid in random_cognite_external_ids(2)],
+                [DatapointsQuery(id=id) for id in random_cognite_ids(2)],
+                [DatapointsQuery(external_id=xid) for xid in random_cognite_external_ids(2)],
                 DPS_LST_TYPES,
             ),
             (
                 3,
                 "EagerDpsFetcher",
-                [{"id": id} for id in random_cognite_ids(2)],
-                [{"external_id": xid} for xid in random_cognite_external_ids(2)],
+                [DatapointsQuery(id=id) for id in random_cognite_ids(2)],
+                [DatapointsQuery(external_id=xid) for xid in random_cognite_external_ids(2)],
                 DPS_LST_TYPES,
             ),
         )
@@ -888,7 +900,7 @@ class TestRetrieveRawDatapointsAPI:
         # 100 time series per available worker - in some rare cases - the initial batch of datapoints would
         # not be counted towards the total limit requested.
         ids = [all_test_time_series[105].id] * 100
-        with set_max_workers(cognite_client, 1), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+        with set_max_workers(1), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
             dps_lst = cognite_client.time_series.data.retrieve(id=ids, limit=1001)
         assert all(len(dps) == 1001 for dps in dps_lst)
 
@@ -898,7 +910,7 @@ class TestRetrieveRawDatapointsAPI:
         # From 7.45.0 to 7.48.0, when fetching in "chunking mode" with include_outside_points=True,
         # due to an added is-nextCursor-empty check, the queries would short-circuit after the first batch.
         ts_ids, ts_xids = weekly_dps_ts
-        with set_max_workers(cognite_client, 1):
+        with set_max_workers(1):
             dps_lst = cognite_client.time_series.data.retrieve(
                 id=ts_ids.as_ids(),
                 external_id=ts_xids.as_external_ids(),
@@ -932,7 +944,7 @@ class TestRetrieveRawDatapointsAPI:
         ts_exists1, ts_exists2 = outside_points_ts
         missing_xid = "nope-doesnt-exist " * 3
 
-        with set_max_workers(cognite_client, 6), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+        with set_max_workers(6), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
             with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'") as err:
                 ids: list[int | DatapointsQuery] = [
                     ts_exists1.id,
@@ -1052,13 +1064,15 @@ class TestRetrieveRawDatapointsAPI:
     ) -> None:
         ts_lst = weekly_dps_ts[0] + weekly_dps_ts[1]  # chain numeric & string
         limits = [0, 1, 50, int(1e9), None]  # None ~ 100 dps (max dps returned)
-        with set_max_workers(cognite_client, 5), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+        with set_max_workers(5), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
             # `n_ts` is per identifier (id + xid). At least 3, since 3 x 2 > 5
             for n_ts, endpoint in itertools.product([3, 10, 50], retrieve_endpoints):
                 id_ts_lst, xid_ts_lst = random.sample(ts_lst, k=n_ts), random.sample(ts_lst, k=n_ts)
                 res_lst = endpoint(
-                    external_id=[{"external_id": ts.external_id, "limit": random.choice(limits)} for ts in xid_ts_lst],
-                    id=[{"id": ts.id, "limit": random.choice(limits)} for ts in id_ts_lst],
+                    external_id=[
+                        DatapointsQuery(external_id=ts.external_id, limit=random.choice(limits)) for ts in xid_ts_lst
+                    ],
+                    id=[DatapointsQuery(id=ts.id, limit=random.choice(limits)) for ts in id_ts_lst],
                     start=start,
                     end=end,
                     include_outside_points=True,
@@ -1089,7 +1103,7 @@ class TestRetrieveRawDatapointsAPI:
         weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
     ) -> None:
         # We patch out ChunkingDpsFetcher to make sure we fail if we're not in eager mode:
-        with set_max_workers(cognite_client, 5), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+        with set_max_workers(5), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
             for ts_lst, endpoint, limit in itertools.product(weekly_dps_ts, retrieve_endpoints, [0, 50, None]):
                 ts_lst = random.sample(ts_lst, n_ts)
                 res_lst = endpoint(
@@ -1124,7 +1138,7 @@ class TestRetrieveRawDatapointsAPI:
         weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
     ) -> None:
         # We patch out EagerDpsFetcher to make sure we fail if we're not in chunking mode:
-        with set_max_workers(cognite_client, 2), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+        with set_max_workers(2), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
             for ts_lst, endpoint, limit in itertools.product(weekly_dps_ts, retrieve_endpoints, [0, 50, None]):
                 ts_lst = random.sample(ts_lst, n_ts)
                 res_lst = endpoint(
@@ -1183,7 +1197,7 @@ class TestRetrieveRawDatapointsAPI:
         all_test_time_series: TimeSeriesList,
     ) -> None:
         ts_exists = all_test_time_series[0]
-        with set_max_workers(cognite_client, 9), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with set_max_workers(9), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             identifier = {
                 "id": [ts_exists.id, *random_cognite_ids(n_ts)],
                 "external_id": [ts_exists.external_id, *random_cognite_external_ids(n_ts)],
@@ -1214,7 +1228,7 @@ class TestRetrieveRawDatapointsAPI:
     ) -> None:
         test_data = parametrized_values_all_unknown_single_multiple_given[test_id]
         max_workers, mock_out_eager_or_chunk, ids, external_ids, exp_res_types = test_data
-        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with set_max_workers(max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
                 res = endpoint(
                     id=ids,
@@ -1245,7 +1259,7 @@ class TestRetrieveRawDatapointsAPI:
         cognite_client: CogniteClient,
     ) -> None:
         ts = outside_points_ts[0]
-        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with set_max_workers(max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
                 res: Datapoints | DatapointsArray = endpoint(**{identifier: getattr(ts, identifier)}, start=1, end=9)
                 assert isinstance(res, exp_res_type)
@@ -1270,7 +1284,7 @@ class TestRetrieveRawDatapointsAPI:
         cognite_client: CogniteClient,
     ) -> None:
         ts1, ts2 = outside_points_ts
-        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with set_max_workers(max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
                 res: DatapointsList | DatapointsArrayList = endpoint(
                     id=ts1.id, external_id=[ts2.external_id], start=1, end=9
@@ -1318,9 +1332,9 @@ class TestRetrieveRawDatapointsAPI:
         retrieve_method = getattr(cognite_client.time_series.data, retrieve_method_name)
         res = retrieve_method(
             id=[
-                {"id": ts.id},
-                {"id": ts.id, "target_unit": "temperature:deg_f"},
-                {"id": ts.id, "target_unit": "temperature:k"},
+                ts.id,
+                DatapointsQuery(id=ts.id, target_unit="temperature:deg_f"),
+                DatapointsQuery(id=ts.id, target_unit="temperature:k"),
             ],
             end=3,
         )
@@ -1340,9 +1354,11 @@ class TestRetrieveRawDatapointsAPI:
         dps_arr = cognite_client.time_series.data.retrieve_arrays(id=str_ts.id, limit=3)
         assert dps_arr
         # Test __iter__
-        for dp in dps_arr:
-            assert type(dp.timestamp) is int
-            assert type(dp.value) is str
+        with pytest.raises(
+            NotImplementedError,
+            match="Iterating through a DatapointsArray is very inefficient and support was dropped in major version 8",
+        ):
+            next(iter(dps_arr))
         # Test __getitem__ of non-slices
         dp = dps_arr[0]
         assert type(dp.timestamp) is int
@@ -1367,10 +1383,15 @@ class TestRetrieveRawDatapointsAPI:
             for dps in [dps_res, dps_res[:5]]:
                 assert dps.status_code is not None
                 assert dps.status_symbol is not None
-                for dp, code, symbol in zip(dps, dps.status_code, dps.status_symbol):
-                    assert isinstance(dp, Datapoint)
-                    assert code is not None and code == dp.status_code
-                    assert symbol is not None and symbol == dp.status_symbol
+                if isinstance(dps, Datapoints):
+                    for dp, code, symbol in zip(dps, dps.status_code, dps.status_symbol):
+                        assert isinstance(dp, Datapoint)
+                        assert code is not None and code == dp.status_code
+                        assert symbol is not None and symbol == dp.status_symbol
+                elif isinstance(dps, DatapointsArray):
+                    with pytest.raises(NotImplementedError, match="Iterating through a DatapointsArray"):
+                        for dp, code, symbol in zip(dps, dps.status_code, dps.status_symbol):
+                            pytest.fail("Should be unreachable")
 
                 assert dps.value is not None
                 assert math.isclose(dps.value[0], dps[0].value)  # type: ignore[arg-type]
@@ -1614,7 +1635,7 @@ class TestRetrieveAggregateDatapointsAPI:
         for endpoint in retrieve_endpoints:
             res = endpoint(
                 limit=5,
-                id={"id": ts.id, "granularity": granularity, "aggregates": aggregates},
+                id=DatapointsQuery(id=ts.id, granularity=granularity, aggregates=aggregates),
             )
             snake_aggs = sorted(map(to_snake_case, [aggregates] if isinstance(aggregates, str) else aggregates))
             for col_names in ["id", "external_id"]:
@@ -1681,7 +1702,7 @@ class TestRetrieveAggregateDatapointsAPI:
 
         assert ts.is_step is is_step
 
-        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with set_max_workers(max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             for endpoint in retrieve_endpoints:
                 # Give each "granularity" a random list of aggregates:
                 aggs = [random_aggregates(exclude=exclude) for _ in range(4)]
@@ -1689,12 +1710,12 @@ class TestRetrieveAggregateDatapointsAPI:
                     start=start,
                     end=end,
                     id=[
-                        {"id": ts.id, "granularity": "1d", "aggregates": aggs[0]},
-                        {"id": ts.id, "granularity": "1h", "aggregates": aggs[1]},
+                        DatapointsQuery(id=ts.id, granularity="1d", aggregates=aggs[0]),
+                        DatapointsQuery(id=ts.id, granularity="1h", aggregates=aggs[1]),
                     ],
                     external_id=[
-                        {"external_id": ts.external_id, "granularity": "1m", "aggregates": aggs[2]},
-                        {"external_id": ts.external_id, "granularity": "1s", "aggregates": aggs[3]},
+                        DatapointsQuery(external_id=ts.external_id, granularity="1m", aggregates=aggs[2]),
+                        DatapointsQuery(external_id=ts.external_id, granularity="1s", aggregates=aggs[3]),
                     ],
                 )
                 df = res.to_pandas()
@@ -1745,28 +1766,28 @@ class TestRetrieveAggregateDatapointsAPI:
             f"{random.randint(1, 120)}s",
         )
 
-        with set_max_workers(cognite_client, 8):
+        with set_max_workers(8):
             for endpoint in retrieve_endpoints[:1]:
                 res_lst = endpoint(
                     start=start,
                     end=end,
                     aggregates=aggregates,
                     id=[
-                        {"id": ts.id, "granularity": granularities[0]},
-                        {"id": ts.id, "granularity": granularities[1]},
+                        DatapointsQuery(id=ts.id, granularity=granularities[0]),
+                        DatapointsQuery(id=ts.id, granularity=granularities[1]),
                     ],
                     external_id=[
-                        {"external_id": ts.external_id, "granularity": granularities[2]},
-                        {"external_id": ts.external_id, "granularity": granularities[3]},
+                        DatapointsQuery(external_id=ts.external_id, granularity=granularities[2]),
+                        DatapointsQuery(external_id=ts.external_id, granularity=granularities[3]),
                         # Verify empty with `count` (wont return any datapoints):
-                        {"external_id": ts.external_id, "granularity": granularities[0], "aggregates": ["count"]},
+                        DatapointsQuery(external_id=ts.external_id, granularity=granularities[0], aggregates=["count"]),
                         # Verify empty with `count` and `step_interpolation`: will always return a datapoint (if not before_first_dp),
                         # with count agg missing, so make sure it is correctly "loaded" into the data object as a 0 (zero):
-                        {
-                            "external_id": ts.external_id,
-                            "granularity": granularities[0],
-                            "aggregates": ["count", "step_interpolation"],
-                        },
+                        DatapointsQuery(
+                            external_id=ts.external_id,
+                            granularity=granularities[0],
+                            aggregates=["count", "step_interpolation"],
+                        ),
                     ],
                 )
                 *interp_res_lst, count_dps, count_step_interp_dps = res_lst
@@ -1805,7 +1826,7 @@ class TestRetrieveAggregateDatapointsAPI:
         retrieve_endpoints: list[Callable],
     ) -> None:
         _, string_ts = weekly_dps_ts
-        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with set_max_workers(max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             ts_chunk = random.sample(string_ts, k=n_ts)
             for endpoint in retrieve_endpoints:
                 with pytest.raises(CogniteAPIError) as exc:
@@ -1833,7 +1854,7 @@ class TestRetrieveAggregateDatapointsAPI:
             res = endpoint(
                 start=MIN_TIMESTAMP_MS,
                 end=MAX_TIMESTAMP_MS,
-                id={"id": ts.id, "aggregates": ["count", "sum"]},
+                id=DatapointsQuery(id=ts.id, aggregates=["count", "sum"]),
                 granularity=random_granularity(granularity, lower_lim, upper_lim),
             )
             assert sum(res.count) == 1_000_000
@@ -1870,23 +1891,17 @@ class TestRetrieveAggregateDatapointsAPI:
                 aggregates=random_aggregates(),
                 id=[
                     # These should return different results:
-                    {"id": ts.id, "granularity": first_gran, "start": start, "end": end},
-                    {"id": ts.id, "granularity": second_gran, "start": start, "end": end},
+                    DatapointsQuery(id=ts.id, granularity=first_gran, start=start, end=end),
+                    DatapointsQuery(id=ts.id, granularity=second_gran, start=start, end=end),
                 ],
                 external_id=[
                     # These should return identical results (up to float precision):
-                    {
-                        "external_id": ts.external_id,
-                        "granularity": first_gran,
-                        "start": start_aligned,
-                        "end": end_aligned,
-                    },
-                    {
-                        "external_id": ts.external_id,
-                        "granularity": second_gran,
-                        "start": start_aligned,
-                        "end": end_aligned,
-                    },
+                    DatapointsQuery(
+                        external_id=ts.external_id, granularity=first_gran, start=start_aligned, end=end_aligned
+                    ),
+                    DatapointsQuery(
+                        external_id=ts.external_id, granularity=second_gran, start=start_aligned, end=end_aligned
+                    ),
                 ],
             )
             dps1, dps2, dps3, dps4 = res_lst
@@ -1943,7 +1958,7 @@ class TestRetrieveAggregateDatapointsAPI:
         all_test_time_series: TimeSeriesList,
         cognite_client: CogniteClient,
     ) -> None:
-        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+        with set_max_workers(max_workers), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
             for endpoint in retrieve_endpoints:
                 res = endpoint(
                     id=all_test_time_series[ts_idx].id,
@@ -1969,15 +1984,15 @@ class TestRetrieveAggregateDatapointsAPI:
             (115, "1s", 200, ts_to_ms("2000-01-01"), ts_to_ms("2000-01-01 12:03:20"), False),
             (115, "12h", 5_000, ts_to_ms("1990-01-01"), ts_to_ms("2013-09-09 00:00:00.001"), True),
         )
-        with set_max_workers(cognite_client, 2), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+        with set_max_workers(2), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
             ids = [
-                {
-                    "id": all_test_time_series[idx].id,
-                    "start": start,
-                    "end": end,
-                    "granularity": gran,
-                    "aggregates": random_aggregates(exclude={"step_interpolation"} if exclude else set()),
-                }
+                DatapointsQuery(
+                    id=all_test_time_series[idx].id,
+                    start=start,
+                    end=end,
+                    granularity=gran,
+                    aggregates=random_aggregates(exclude={"step_interpolation"} if exclude else set()),
+                )
                 for idx, gran, _, start, end, exclude in test_setup_data
             ]
             for endpoint in retrieve_endpoints:
@@ -2017,19 +2032,19 @@ class TestRetrieveAggregateDatapointsAPI:
         else:
             ts, _ = one_mill_dps_ts  # data: 1950-2020 ~25k days
             start, end, gran_unit_upper = YEAR_MS[1950], YEAR_MS[2020], 120
-        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with set_max_workers(max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             for endpoint in retrieve_endpoints:
                 limits = random.sample(range(2000), k=n_ts)
                 res_lst = endpoint(
                     start=start,
                     end=end,
                     id=[
-                        {
-                            "id": ts.id,
-                            "limit": lim,
-                            "aggregates": random_aggregates(1, exclude={"interpolation"}),
-                            "granularity": f"{random_gamma_dist_integer(gran_unit_upper)}{random.choice('sm')}",
-                        }
+                        DatapointsQuery(
+                            id=ts.id,
+                            limit=lim,
+                            aggregates=random_aggregates(1, exclude={"interpolation"}),
+                            granularity=f"{random_gamma_dist_integer(gran_unit_upper)}{random.choice('sm')}",
+                        )
                         for lim in limits
                     ],
                 )
@@ -2160,14 +2175,11 @@ class TestRetrieveAggregateDatapointsAPI:
                 [349079144838.96564, 512343998481.7162, 159180999248.7119, 529224146671.5178],
             )
 
-    @pytest.mark.skip(
-        reason="TODO(doctrino): Skipped while awaiting https://github.com/cognitedata/cognite-sdk-python/pull/2102"
-    )
     def test_timezone_agg_query_dst_transitions(
         self, all_retrieve_endpoints: list[Callable], dps_queries_dst_transitions: list[DatapointsQuery]
     ) -> None:
-        expected_values1 = [0.23625579717753353, 0.02829928231631262, -0.0673823850533647, -0.20908049925449418]
-        expected_values2 = [-0.13218082741552517, -0.20824244773820486, 0.02566169899072951, 0.15040625644292185]
+        expected_values1 = [-0.0408386913634, -0.1204416510548, -0.1519269888052, 0.00331827604225]
+        expected_values2 = [-0.0503489023269, 0.190474485259, 0.102249925079, -0.1000846729966]
         expected_index = pd.to_datetime(
             [
                 # to summer
@@ -2289,6 +2301,9 @@ class TestRetrieveAggregateDatapointsAPI:
                     assert isinstance(dps.max_datapoint[0], MaxDatapoint)
                     assert isinstance(dp.min_datapoint, MinDatapoint)
                     assert isinstance(dp.max_datapoint, MaxDatapoint)
+
+                if isinstance(dps, DatapointsArray):
+                    continue  # Doesn't allow iteration
                 for dp in dps:
                     assert dp.min_datapoint is not None and dp.max_datapoint is not None
                     dp_min, dp_max = dp.min_datapoint.value, dp.max_datapoint.value
@@ -2321,13 +2336,15 @@ class TestRetrieveMixedRawAndAgg:
                 external_id=[
                     ts_str.external_id,
                     *[
-                        {"external_id": xid, "ignore_unknown_ids": True}  # Override ignore_unknown_ids default
+                        DatapointsQuery(external_id=xid, ignore_unknown_ids=True)  # Override ignore_unknown_ids default
                         for xid in random_xids
                     ],
                 ],
                 id=[
-                    {"id": ms_bursty_ts.id, "include_outside_points": True, "limit": 20},
-                    {"id": ts_num.id, "granularity": random_granularity("sm"), "aggregates": random_aggregates(2)},
+                    DatapointsQuery(id=ms_bursty_ts.id, include_outside_points=True, limit=20),
+                    DatapointsQuery(
+                        id=ts_num.id, granularity=random_granularity("sm"), aggregates=random_aggregates(2)
+                    ),
                 ],
                 limit=5,
             )
@@ -2351,12 +2368,12 @@ class TestRetrieveMixedRawAndAgg:
                 id=[
                     ms_bursty_ts.id,  # This is the only non-duplicated
                     ts_string.id,
-                    {"id": ts_numeric.id, "granularity": "1d", "aggregates": "average"},
+                    DatapointsQuery(id=ts_numeric.id, granularity="1d", aggregates="average"),
                 ],
                 external_id=[
                     ts_string.external_id,
                     ts_numeric.external_id,
-                    {"external_id": ts_numeric.external_id, "granularity": "1d", "aggregates": "average"},
+                    DatapointsQuery(external_id=ts_numeric.external_id, granularity="1d", aggregates="average"),
                 ],
                 limit=5,
             )
@@ -2376,7 +2393,8 @@ class TestRetrieveMixedRawAndAgg:
 
 
 class TestRetrieveDataFrameAPI:
-    """The `retrieve_dataframe` endpoint uses `retrieve_arrays` under the hood, so lots of tests
+    """
+    The `retrieve_dataframe` endpoint uses `retrieve_arrays` under the hood, so lots of tests
     do not need to be repeated.
     """
 
@@ -2422,7 +2440,7 @@ class TestRetrieveDataFrameAPI:
         one_mill_dps_ts: tuple[TimeSeries, TimeSeries],
     ) -> None:
         ts, _ = one_mill_dps_ts
-        with set_max_workers(cognite_client, 1):
+        with set_max_workers(1):
             res_df = cognite_client.time_series.data.retrieve_dataframe(
                 id=ts.id,
                 start=YEAR_MS[1965],
@@ -2557,8 +2575,8 @@ class TestRetrieveDataFrameAPI:
 
 
 @pytest.fixture
-def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
-    dps_api = cognite_client.time_series.data
+def post_spy(async_client: AsyncCogniteClient) -> Iterator[None]:
+    dps_api = async_client.time_series.data
     with patch.object(dps_api, "_post", wraps=dps_api._post):
         yield
 
@@ -2590,7 +2608,7 @@ class TestRetrieveLatestDatapointsAPI:
         res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
 
         assert {dps.id for dps in res}.issubset(set(ids))
-        assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
+        assert 2 == async_client.time_series.data._post.call_count  # type: ignore[attr-defined]
         for dps in res:
             assert len(dps) <= 1  # could be empty
 
@@ -2726,7 +2744,7 @@ class TestRetrieveLatestDatapointsAPI:
                 ignore_unknown_ids=False,
             )
 
-        assert 4 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
+        assert 4 == async_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
         with pytest.raises(
             RuntimeError,
@@ -2894,7 +2912,7 @@ class TestInsertDatapointsAPI:
         monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 30)
         monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
         cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
-        assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
+        assert 2 == async_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
     @pytest.mark.usefixtures("post_spy")
     def test_insert_before_epoch(
@@ -2910,18 +2928,23 @@ class TestInsertDatapointsAPI:
         monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 30)
         monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
         cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
-        assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
+        assert 2 == async_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
     @pytest.mark.parametrize("endpoint_attr", ("retrieve", "retrieve_arrays"))
     @pytest.mark.usefixtures("post_spy")
     def test_insert_copy(
-        self, cognite_client: CogniteClient, endpoint_attr: str, ms_bursty_ts: TimeSeries, new_ts: TimeSeries
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        endpoint_attr: str,
+        ms_bursty_ts: TimeSeries,
+        new_ts: TimeSeries,
     ) -> None:
         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
         data = endpoint(id=ms_bursty_ts.id, start=0, end="now", limit=100)
         assert 100 == len(data)
         cognite_client.time_series.data.insert(data, id=new_ts.id)
-        assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
+        assert 2 == async_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
     @pytest.mark.parametrize("endpoint_attr", ("retrieve", "retrieve_arrays"))
     def test_insert_copy_fails_at_aggregate(
@@ -2962,7 +2985,6 @@ class TestInsertDatapointsAPI:
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
         new_ts: TimeSeries,
-        post_spy: None,
         monkeypatch: MonkeyPatch,
     ) -> None:
         df = pd.DataFrame(
@@ -2972,7 +2994,7 @@ class TestInsertDatapointsAPI:
         monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 20)
         monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 20)
         cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
-        assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
+        assert 2 == async_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
     def test_delete_range(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
         cognite_client.time_series.data.delete_range(start="2d-ago", end="now", id=new_ts.id)

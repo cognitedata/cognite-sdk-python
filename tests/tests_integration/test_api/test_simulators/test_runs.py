@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import asyncio
 import time
+import unittest
 from itertools import pairwise
 
 import pytest
@@ -29,50 +29,36 @@ class TestSimulatorRuns:
         runs_filtered_by_status = []
         for current_status in ["running", "success", "failure"]:
             created_runs = cognite_client.simulators.runs.create(
-                [
-                    SimulationRunWrite(
-                        run_type="external",
-                        routine_external_id=routine_external_id,
-                    )
-                ]
+                [SimulationRunWrite(run_type="external", routine_external_id=routine_external_id)]
             )
-
             run_sync(
                 async_client.simulators._post(
-                    "/simulators/run/callback",
-                    json={
-                        "items": [
-                            {
-                                "id": created_runs[0].id,
-                                "status": current_status,
-                            }
-                        ]
-                    },
+                    "/simulators/run/callback", json={"items": [{"id": created_runs[0].id, "status": current_status}]}
                 )
             )
-
             filter_by_status = cognite_client.simulators.runs.list(
                 status=current_status, routine_external_ids=[routine_external_id]
             )
             runs_filtered_by_status.append(filter_by_status[0].dump())
         filter_by_routine = cognite_client.simulators.runs.list(routine_external_ids=[routine_external_id]).dump()
         assert filter_by_routine == runs_filtered_by_status
-        assert sorted(runs_filtered_by_status, key=lambda x: x["id"]) == sorted(
-            filter_by_routine, key=lambda x: x["id"]
-        )
+        unittest.TestCase().assertCountEqual(runs_filtered_by_status, filter_by_routine)
 
-    async def test_run_with_wait_and_retrieve(
+    def test_run_with_wait_and_retrieve(
         self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, seed_resource_names: ResourceNames
     ) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id
-        run_task = asyncio.create_task(async_client.simulators.routines.run(routine_external_id=routine_external_id))
+
+        # Start the run, but don't wait for it:
+        created_run = cognite_client.simulators.routines.run(routine_external_id=routine_external_id, wait=False)
+        assert created_run.status != "success"
 
         run_to_update: SimulationRun | None = None
         start_time = time.time()
 
-        # 1. Wait for the run to be created
-        # 2. Emulate it being finished by the simulator
+        # Step 1: Wait for the run to be created
         while run_to_update is None and time.time() - start_time < 30:
+            # Don't use retrieve here, we want to see that it is returned from eventually consistent list:
             runs_to_update = cognite_client.simulators.runs.list(
                 routine_external_ids=[routine_external_id],
                 status="ready",
@@ -81,23 +67,17 @@ class TestSimulatorRuns:
             if len(runs_to_update) == 1:
                 run_to_update = runs_to_update[0]
             else:
-                await asyncio.sleep(1)
+                time.sleep(3)
 
         assert run_to_update is not None
 
-        await async_client.simulators._post(
-            "/simulators/run/callback",
-            json={
-                "items": [
-                    {
-                        "id": run_to_update.id,
-                        "status": "success",
-                    }
-                ]
-            },
+        run_sync(
+            async_client.simulators._post(
+                "/simulators/run/callback", json={"items": [{"id": run_to_update.id, "status": "success"}]}
+            )
         )
-
-        created_run = await run_task
+        created_run.wait(timeout=1)
+        assert created_run.status == "success"
 
         retrieved_run = cognite_client.simulators.runs.retrieve(ids=created_run.id)
         assert retrieved_run is not None

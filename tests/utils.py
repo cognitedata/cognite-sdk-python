@@ -231,7 +231,7 @@ def random_gamma_dist_integer(inclusive_max: int, max_tries: int = 100) -> int:
 
 
 @contextmanager
-def set_max_workers(cognite_client: CogniteClient, new: int) -> typing.Iterator[None]:
+def set_max_workers(new: int) -> typing.Iterator[None]:
     from cognite.client import global_config
 
     old = global_config.max_workers

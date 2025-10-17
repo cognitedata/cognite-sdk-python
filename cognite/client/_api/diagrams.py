@@ -171,7 +171,7 @@ class DiagramsAPI(APIClient):
                 ...         FileReference(id=20, first_page=1, last_page=10),
                 ...         FileReference(external_id="ext_20", first_page=11, last_page=20)
                 ...     ])
-                >>> result = detect_job.result
+                >>> result = detect_job.get_result()
                 >>> print(result)
                 <code>
                 {
@@ -313,12 +313,19 @@ class DiagramsAPI(APIClient):
     async def convert(self, detect_job: DiagramDetectResults) -> DiagramConvertResults:
         """Convert a P&ID to interactive SVGs where the provided annotations are highlighted.
 
+        Note:
+            Will automatically wait for the detect job to complete before starting the conversion.
+
         Args:
             detect_job (DiagramDetectResults): detect job
 
         Returns:
-            DiagramConvertResults: Resulting queued job. Note that .result property of this job will block waiting for results.
+            DiagramConvertResults: Resulting queued job.
+
         Examples:
+
+            Run a detection job, then convert the results:
+
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
@@ -326,7 +333,7 @@ class DiagramsAPI(APIClient):
                 >>> client.diagrams.convert(detect_job=detect_job)
 
         """
-        result = await detect_job.wait_for_result()
+        result = await detect_job.get_result_async()
         if any(item.get("page_range") is not None for item in result["items"]):
             raise NotImplementedError("Can not run convert on a detect job that used the page range feature")
         items = [{"annotations": item.get("annotations"), "fileId": item.get("fileId")} for item in result["items"]]

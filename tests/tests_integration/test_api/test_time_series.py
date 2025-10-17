@@ -6,6 +6,7 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client._cognite_client import AsyncCogniteClient
 from cognite.client.data_classes import (
     DataSet,
     TimeSeries,
@@ -31,8 +32,8 @@ def new_ts(cognite_client: CogniteClient) -> Iterator[TimeSeries]:
 
 
 @pytest.fixture
-def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
-    with mock.patch.object(cognite_client.time_series, "_post", wraps=cognite_client.time_series._post) as _:
+def post_spy(async_client: AsyncCogniteClient) -> Iterator[None]:
+    with mock.patch.object(async_client.time_series, "_post", wraps=async_client.time_series._post) as _:
         yield
 
 
@@ -104,14 +105,22 @@ class TestTimeSeriesAPI:
             retrieved_asset.external_id = listed_asset.external_id
         assert res == retrieved_assets
 
-    def test_list(self, cognite_client: CogniteClient, post_spy: None, set_request_limit: Callable) -> None:
-        set_request_limit(cognite_client.time_series, 10)
+    def test_list(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        post_spy: None,
+        set_request_limit: Callable,
+    ) -> None:
+        set_request_limit(async_client.time_series, 10)
         res = cognite_client.time_series.list(limit=20)
 
         assert 20 == len(res)
-        assert 2 == cognite_client.time_series._post.call_count  # type: ignore[attr-defined]
+        assert 2 == async_client.time_series._post.call_count  # type: ignore[attr-defined]
 
-    def test_list_with_filters(self, cognite_client: CogniteClient, post_spy: None) -> None:
+    def test_list_with_filters(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, post_spy: None
+    ) -> None:
         res = cognite_client.time_series.list(
             is_step=True,
             is_string=False,
@@ -121,7 +130,7 @@ class TestTimeSeriesAPI:
             asset_ids=[1, 2],
         )
         assert 0 == len(res)
-        assert 1 == cognite_client.time_series._post.call_count  # type: ignore[attr-defined]
+        assert 1 == async_client.time_series._post.call_count  # type: ignore[attr-defined]
 
     def test_list_timeseries_with_target_unit(self, cognite_client: CogniteClient) -> None:
         ts1 = TimeSeriesWrite(
@@ -213,16 +222,6 @@ class TestTimeSeriesAPI:
                 external_id=[new_times_series.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
 
-    def test_filter_is_numeric(self, cognite_client: CogniteClient, test_tss: TimeSeriesList) -> None:
-        f = filters
-        is_integration_test = f.Prefix(TimeSeriesProperty.external_id, "PYSDK integration test")
-        is_numeric = f.Equals(TimeSeriesProperty.is_string, False)
-
-        result = cognite_client.time_series.filter(
-            f.And(is_integration_test, is_numeric), sort=TimeSeriesProperty.external_id
-        )
-        assert result, "There should be at least one numeric time series"
-
     def test_list_with_advanced_filter(self, cognite_client: CogniteClient, test_tss: TimeSeriesList) -> None:
         f = filters
         is_numeric = f.Equals(TimeSeriesProperty.is_string, False)
@@ -230,14 +229,6 @@ class TestTimeSeriesAPI:
         result = cognite_client.time_series.list(
             external_id_prefix="PYSDK integration", advanced_filter=is_numeric, sort=TimeSeriesProperty.external_id
         )
-        assert result, "There should be at least one numeric time series"
-
-    def test_filter_without_sort(self, cognite_client: CogniteClient, test_tss: TimeSeriesList) -> None:
-        f = filters
-        is_integration_test = f.Prefix(TimeSeriesProperty.external_id, "PYSDK integration test")
-        is_numeric = f.Equals(TimeSeriesProperty.is_string, False)
-
-        result = cognite_client.time_series.filter(f.And(is_integration_test, is_numeric), sort=None)
         assert result, "There should be at least one numeric time series"
 
     def test_aggregate_count(self, cognite_client: CogniteClient, time_series_list: TimeSeriesList) -> None:

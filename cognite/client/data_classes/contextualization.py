@@ -119,7 +119,7 @@ class ContextualizationJob(CogniteResource, ABC):
     def _status_path(self) -> str:
         raise NotImplementedError
 
-    async def wait_for_completion(self, timeout: float | None = None, interval: float = 10) -> None:
+    async def wait_for_completion_async(self, timeout: float | None = None, interval: float = 10) -> None:
         """Waits for job completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
@@ -139,12 +139,20 @@ class ContextualizationJob(CogniteResource, ABC):
         if JobStatus(self.status) is JobStatus.FAILED:
             raise CogniteModelFailedError(type(self).__name__, self.job_id, cast(str, self.error_message))
 
-    async def wait_for_result(self) -> dict[str, Any]:
-        """Waits for the job to finish and returns the results."""
+    @copy_doc_from_async(wait_for_completion_async)
+    def wait_for_completion(self, timeout: float | None = None, interval: float = 10) -> None:
+        return run_sync(self.wait_for_completion_async(timeout=timeout, interval=interval))
+
+    async def get_result_async(self) -> dict[str, Any]:
+        """Returns results if available, else waits for the job to finish, then returns the results."""
         if not self._result:
-            await self.wait_for_completion()
+            await self.wait_for_completion_async()
         assert self._result is not None
         return self._result
+
+    @copy_doc_from_async(get_result_async)
+    def get_result(self) -> dict[str, Any]:
+        return run_sync(self.get_result_async())
 
     def __str__(self) -> str:
         return f"{type(self).__name__}(id={self.job_id}, status={self.status}, error={self.error_message})"
@@ -690,14 +698,14 @@ class DiagramDetectResults(ContextualizationJob):
             raise IndexError(f"Found multiple results for file with (external) id {find_id}, use .items instead")
         return found[0]
 
-    async def errors_async(self) -> list[str]:
-        """Returns a list of all error messages across files"""
-        results = (await self.wait_for_result())["items"]
-        return [item["errorMessage"] async for item in results if "errorMessage" in item]
+    async def get_errors_async(self) -> list[str]:
+        """Returns a list of all error messages across files. Will wait for results if not available."""
+        results = (await self.get_result_async())["items"]
+        return [item["errorMessage"] for item in results if "errorMessage" in item]
 
-    @copy_doc_from_async(errors_async)
-    def errors(self) -> list[str]:
-        return run_sync(self.errors_async())
+    @copy_doc_from_async(get_errors_async)
+    def get_errors(self) -> list[str]:
+        return run_sync(self.get_errors_async())
 
     async def convert_async(self) -> DiagramConvertResults:
         """Convert a P&ID to an interactive SVG where the provided annotations are highlighted"""
@@ -950,7 +958,7 @@ class DetectJobBundle:
         if self._WAIT_TIME < 10:
             self._WAIT_TIME += 2
 
-    async def wait_for_completion(self, timeout: int | None = None) -> None:
+    async def wait_for_completion_async(self, timeout: int | None = None) -> None:
         """Waits for all jobs to complete, generally not needed to call as it is called by result.
 
         Args:
@@ -979,13 +987,17 @@ class DetectJobBundle:
                 self._WAIT_TIME = 2
                 break
 
+    @copy_doc_from_async(wait_for_completion_async)
+    def wait_for_completion(self, timeout: int | None = None) -> None:
+        return run_sync(self.wait_for_completion_async(timeout=timeout))
+
     async def fetch_results(self) -> list[dict[str, Any]]:
         return [(await self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}")).json() for j in self.job_ids]
 
-    async def wait_for_result(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    async def get_result(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Waits for the job to finish and returns the results."""
         if not self._result:
-            await self.wait_for_completion()
+            await self.wait_for_completion_async()
 
             self._result = await self.fetch_results()
         assert self._result is not None
@@ -1152,19 +1164,20 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
 
     def __getitem__(self, file_id: int) -> VisionExtractItem:
         """Retrieves the results for a file by id"""
+        # TODO: O(N) lookup here:
         found = [item for item in self.items if item.file_id == file_id]
         if not found:
             raise IndexError(f"File with id {file_id} not found in results")
         return found[0]
 
-    async def errors_async(self) -> list[str]:
-        """Returns a list of all error messages across files"""
-        results = (await self.wait_for_result())["items"]
-        return [item["errorMessage"] async for item in results if "errorMessage" in item]
+    async def get_errors_async(self) -> list[str]:
+        """Returns a list of all error messages across files. Will wait for results if not available."""
+        results = (await self.get_result_async())["items"]
+        return [item["errorMessage"] for item in results if "errorMessage" in item]
 
-    @copy_doc_from_async(errors_async)
-    def errors(self) -> list[str]:
-        return run_sync(self.errors_async())
+    @copy_doc_from_async(get_errors_async)
+    def get_errors(self) -> list[str]:
+        return run_sync(self.get_errors_async())
 
     def _predictions_to_annotations(
         self,

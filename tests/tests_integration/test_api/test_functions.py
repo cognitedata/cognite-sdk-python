@@ -127,7 +127,7 @@ class TestFunctionsAPI:
             )
 
     def test_iterate_functions(self, cognite_client: CogniteClient) -> None:
-        for function in cognite_client.functions:
+        for function in cognite_client.functions():
             assert isinstance(function, Function)
             break
         else:
@@ -136,7 +136,7 @@ class TestFunctionsAPI:
     def test_iterate_chunked_functions(self, cognite_client: CogniteClient) -> None:
         for function in cognite_client.functions(chunk_size=2):
             assert isinstance(function, FunctionList)
-            assert len(function) <= 2
+            assert 1 <= len(function) <= 2
             break
         else:
             assert False, "Expected at least one function"

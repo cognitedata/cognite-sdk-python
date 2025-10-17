@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client._cognite_client import AsyncCogniteClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite, TimeSeriesWriteList
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.utils._time import datetime_to_ms
@@ -60,36 +61,48 @@ def test_time_series(cognite_client: CogniteClient) -> dict[int, TimeSeries]:
 
 
 @pytest.fixture
-def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
+def post_spy(async_client: AsyncCogniteClient) -> Iterator[None]:
     with mock.patch.object(
-        cognite_client.time_series.data.synthetic, "_post", wraps=cognite_client.time_series.data.synthetic._post
+        async_client.time_series.data.synthetic, "_post", wraps=async_client.time_series.data.synthetic._post
     ) as _:
         yield
 
 
 class TestSyntheticDatapointsAPI:
     def test_query(
-        self, cognite_client: CogniteClient, test_time_series: dict[int, TimeSeries], post_spy: None
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        test_time_series: dict[int, TimeSeries],
+        post_spy: None,
     ) -> None:
         query = f"ts{{id:{test_time_series[0].id}}} + ts{{id:{test_time_series[1].id}}}"
         dps = cognite_client.time_series.data.synthetic.query(
             expressions=query, start=datetime(2017, 1, 1), end="now", limit=23456
         )
         assert 23456 == len(dps)
-        assert 3 == cognite_client.time_series.data.synthetic._post.call_count  # type: ignore[attr-defined]
+        assert 3 == async_client.time_series.data.synthetic._post.call_count  # type: ignore[attr-defined]
 
     def test_query_with_start_before_epoch(
-        self, cognite_client: CogniteClient, test_time_series: dict[int, TimeSeries], post_spy: None
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        test_time_series: dict[int, TimeSeries],
+        post_spy: None,
     ) -> None:
         query = f"ts{{id:{test_time_series[0].id}}} + ts{{id:{test_time_series[1].id}}}"
         dps = cognite_client.time_series.data.synthetic.query(
             expressions=query, start=datetime(1920, 1, 1, tzinfo=timezone.utc), end="now", limit=23456
         )
         assert 23456 == len(dps)
-        assert 3 == cognite_client.time_series.data.synthetic._post.call_count  # type: ignore[attr-defined]
+        assert 3 == async_client.time_series.data.synthetic._post.call_count  # type: ignore[attr-defined]
 
     def test_query_with_multiple_expressions(
-        self, cognite_client: CogniteClient, test_time_series: dict[int, TimeSeries], post_spy: None
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        test_time_series: dict[int, TimeSeries],
+        post_spy: None,
     ) -> None:
         expressions = [f"ts{{id:{test_time_series[0].id}}}", f"ts{{id:{test_time_series[1].id}}}"]
         dps = cognite_client.time_series.data.synthetic.query(
@@ -97,7 +110,7 @@ class TestSyntheticDatapointsAPI:
         )
         assert 23456 == len(dps[0])
         assert 23456 == len(dps[1])
-        assert 6 == cognite_client.time_series.data.synthetic._post.call_count  # type: ignore[attr-defined]
+        assert 6 == async_client.time_series.data.synthetic._post.call_count  # type: ignore[attr-defined]
 
     def test_query_using_time_series_objs__with_errors(
         self, cognite_client: CogniteClient, test_time_series: dict[int, TimeSeries], post_spy: None

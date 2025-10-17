@@ -263,7 +263,7 @@ class TestRelationshipscognite_client:
         self, cognite_client: CogniteClient, create_multiple_relationships: tuple[list[str], str, list[str]]
     ) -> None:
         _, _, ext_ids = create_multiple_relationships
-        res_generator = cognite_client.relationships(partitions=8, limit=None, source_external_ids=ext_ids)
+        res_generator = cognite_client.relationships(limit=None, source_external_ids=ext_ids)
         res_list = cognite_client.relationships.list(partitions=8, limit=None, source_external_ids=ext_ids)
         assert {a.external_id for a in res_generator} == {a.external_id for a in res_list}
 
