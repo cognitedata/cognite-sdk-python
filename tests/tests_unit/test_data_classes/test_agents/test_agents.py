@@ -4,6 +4,7 @@ import pytest
 
 from cognite.client.data_classes.agents.agent_tools import (
     AgentTool,
+    AgentToolList,
     AgentToolUpsert,
     AskDocumentAgentTool,
     SummarizeDocumentAgentTool,
@@ -59,6 +60,7 @@ class TestAgentUpsert:
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
+        assert agent.tools is not None
         assert len(agent.tools) == 1
         assert isinstance(agent.tools[0], AgentToolUpsert)
         assert agent.tools[0].name == "test_tool"
@@ -121,6 +123,9 @@ class TestAgentUpsert:
         """Test that tools are transformed to AgentToolUpsertList in __post_init__."""
         from cognite.client.data_classes.agents.agent_tools import (
             AgentToolUpsertList,
+            DataModelInfo,
+            InstanceSpaces,
+            QueryKnowledgeGraphAgentToolConfiguration,
             QueryKnowledgeGraphAgentToolUpsert,
         )
 
@@ -129,17 +134,17 @@ class TestAgentUpsert:
             QueryKnowledgeGraphAgentToolUpsert(
                 name="test_tool",
                 description="A test tool",
-                configuration={
-                    "data_models": [
-                        {
-                            "space": "cdf_cdm",
-                            "external_id": "CogniteCore",
-                            "version": "v1",
-                            "view_external_ids": ["CogniteAsset"],
-                        }
+                configuration=QueryKnowledgeGraphAgentToolConfiguration(
+                    data_models=[
+                        DataModelInfo(
+                            space="cdf_cdm",
+                            external_id="CogniteCore",
+                            version="v1",
+                            view_external_ids=["CogniteAsset"],
+                        )
                     ],
-                    "instance_spaces": {"type": "all"},
-                },
+                    instance_spaces=InstanceSpaces(type="all"),
+                ),
             )
         ]
         agent = AgentUpsert(
@@ -203,7 +208,7 @@ class TestAgent:
             instructions="Test instructions",
             model="gpt-4",
             labels=[],
-            tools=tools_list,
+            tools=AgentToolList(tools_list),
             created_time=667008000000,
             last_updated_time=667008000001,
             owner_id="test-owner-id",
@@ -222,7 +227,7 @@ class TestAgent:
             instructions="Test instructions",
             model="gpt-4",
             labels=[],
-            tools=[],
+            tools=AgentToolList([]),
             created_time=667008000000,
             last_updated_time=667008000001,
             owner_id="test-owner-id",
@@ -239,7 +244,7 @@ class TestAgent:
             instructions="Test instructions",
             model="gpt-4",
             labels=["published"],
-            tools=[SummarizeDocumentAgentTool(name="test_tool", description="A test tool")],
+            tools=AgentToolList([SummarizeDocumentAgentTool(name="test_tool", description="A test tool")]),
             created_time=667008000000,
             last_updated_time=667008000001,
             owner_id="test-owner-id",
@@ -254,6 +259,7 @@ class TestAgent:
         assert write_agent.model == agent.model
         assert write_agent.labels == agent.labels
         assert write_agent.labels == ["published"]
+        assert write_agent.tools is not None
         assert len(write_agent.tools) == 1
         assert isinstance(write_agent.tools[0], AgentToolUpsert)
         assert write_agent.tools[0].name == "test_tool"
@@ -267,7 +273,7 @@ class TestAgent:
             instructions="Test instructions",
             model="gpt-4",
             labels=["published", "charts"],
-            tools=[],
+            tools=AgentToolList([]),
             created_time=667008000000,
             last_updated_time=667008000001,
             owner_id="test-owner-id",
@@ -287,7 +293,7 @@ class TestAgent:
             instructions="Test instructions",
             model="gpt-4",
             labels=[],
-            tools=[],
+            tools=AgentToolList([]),
             created_time=667008000000,
             last_updated_time=667008000001,
             owner_id="test-owner-id",
@@ -306,7 +312,7 @@ class TestAgentList:
                 instructions="Test instructions",
                 model="gpt-4",
                 labels=[],
-                tools=[],
+                tools=AgentToolList([]),
                 created_time=667008000000,
                 last_updated_time=667008000001,
                 owner_id="test-owner-id",
@@ -318,7 +324,7 @@ class TestAgentList:
                 instructions="Test instructions",
                 model="gpt-4",
                 labels=[],
-                tools=[],
+                tools=AgentToolList([]),
                 created_time=667008000000,
                 last_updated_time=667008000001,
                 owner_id="test-owner-id",
@@ -334,13 +340,13 @@ class TestAgentList:
         assert write_list[1].external_id == "agent2"
 
 
-def test_load_with_missing_required_fields():
+def test_load_with_missing_required_fields() -> None:
     """Test that loading fails gracefully with missing required fields."""
     with pytest.raises(KeyError):
         AgentTool._load({"type": "askDocument"})  # Missing name and description
 
 
-def test_load_with_invalid_tool_type():
+def test_load_with_invalid_tool_type() -> None:
     """Test handling of completely invalid tool data."""
     with pytest.raises(KeyError):
         AgentTool._load({"name": "test", "description": "test"})  # Missing type
