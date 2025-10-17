@@ -1,6 +1,6 @@
 """
 ===============================================================================
-34d88958931cd28d1e1e6e8d8a3a9a07
+0c2ad8063135aae7d3d1190f8c6c8939
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, overload
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
-from cognite.client.data_classes.agents.chat import AgentChatResponse, Message
+from cognite.client.data_classes.agents.chat import Action, ActionResult, AgentChatResponse, Message
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -73,6 +73,7 @@ class SyncAgentsAPI(SyncAPIClient):
                 >>> agent = AgentUpsert(
                 ...     external_id="my_agent",
                 ...     name="My Agent",
+                ...     labels=["published"],
                 ...     tools=[find_assets_tool]
                 ... )
                 >>> client.agents.upsert(agents=[agent])
@@ -148,6 +149,7 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...     name="My agent",
                 ...     description="An agent with many tools",
                 ...     instructions="You are a helpful assistant that can query knowledge graphs, summarize documents, answer questions about documents, and query time series data points.",
+                ...     labels=["published"],
                 ...     tools=[find_assets_tool, find_files_tool, find_time_series_tool, summarize_tool, ask_doc_tool, ts_tool]
                 ... )
                 >>> client.agents.upsert(agents=[agent])
@@ -230,7 +232,11 @@ class SyncAgentsAPI(SyncAPIClient):
         return run_sync(self.__async_client.agents.list())
 
     def chat(
-        self, agent_external_id: str, messages: Message | Sequence[Message], cursor: str | None = None
+        self,
+        agent_external_id: str,
+        messages: Message | ActionResult | Sequence[Message | ActionResult],
+        cursor: str | None = None,
+        actions: Sequence[Action] | None = None,
     ) -> AgentChatResponse:
         """
         `Chat with an agent. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_session_ai_agents_chat_post/>`_
@@ -240,9 +246,10 @@ class SyncAgentsAPI(SyncAPIClient):
 
         Args:
             agent_external_id (str): External ID that uniquely identifies the agent.
-            messages (Message | Sequence[Message]): A list of one or many input messages to the agent.
+            messages (Message | ActionResult | Sequence[Message | ActionResult]): A list of one or many input messages to the agent. Can include regular messages and action results.
             cursor (str | None): The cursor to use for continuation of a conversation. Use this to
                 create multi-turn conversations, as the cursor will keep track of the conversation state.
+            actions (Sequence[Action] | None): A list of client-side actions that can be called by the agent.
 
         Returns:
             AgentChatResponse: The response from the agent.
@@ -277,7 +284,44 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...         Message("Once you have found it, find related time series.")
                 ...     ]
                 ... )
+
+            Chat with client-side actions:
+
+                >>> from cognite.client.data_classes.agents import ClientToolAction, ClientToolResult
+                >>> add_numbers_action = ClientToolAction(
+                ...     name="add",
+                ...     description="Add two numbers together",
+                ...     parameters={
+                ...         "type": "object",
+                ...         "properties": {
+                ...             "a": {"type": "number", "description": "First number"},
+                ...             "b": {"type": "number", "description": "Second number"},
+                ...         },
+                ...         "required": ["a", "b"]
+                ...     }
+                ... )
+                >>> response = client.agents.chat(
+                ...     agent_external_id="my_agent",
+                ...     messages=Message("What is 42 plus 58?"),
+                ...     actions=[add_numbers_action]
+                ... )
+                >>> if response.action_calls:
+                ...     for call in response.action_calls:
+                ...         # Execute the action
+                ...         result = call.arguments["a"] + call.arguments["b"]
+                ...         # Send result back
+                ...         response = client.agents.chat(
+                ...             agent_external_id="my_agent",
+                ...             messages=ClientToolResult(
+                ...                 action_id=call.action_id,
+                ...                 content=f"The result is {result}"
+                ...             ),
+                ...             cursor=response.cursor,
+                ...             actions=[add_numbers_action]
+                ...         )
         """
         return run_sync(
-            self.__async_client.agents.chat(agent_external_id=agent_external_id, messages=messages, cursor=cursor)
+            self.__async_client.agents.chat(
+                agent_external_id=agent_external_id, messages=messages, cursor=cursor, actions=actions
+            )
         )

@@ -1,13 +1,13 @@
 """
 ===============================================================================
-fb6f2e9118d9621cc4d0309ca9fe8915
+a4fc671ecd34557c3d1db660d0d4284a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Awaitable, Callable, Iterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
@@ -22,6 +22,7 @@ from cognite.client.data_classes.aggregations import (
 )
 from cognite.client.data_classes.data_modeling.ids import EdgeId, NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import (
+    AsyncSubscriptionContext,
     Edge,
     EdgeApply,
     EdgeList,
@@ -40,7 +41,11 @@ from cognite.client.data_classes.data_modeling.instances import (
     T_Node,
     TargetUnit,
 )
-from cognite.client.data_classes.data_modeling.query import Query, QueryResult
+from cognite.client.data_classes.data_modeling.query import (
+    Query,
+    QueryResult,
+    QuerySync,
+)
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -446,6 +451,61 @@ class SyncInstancesAPI(SyncAPIClient):
         return run_sync(
             self.__async_client.data_modeling.instances.inspect(
                 nodes=nodes, edges=edges, involved_views=involved_views, involved_containers=involved_containers
+            )
+        )
+
+    def subscribe(
+        self,
+        query: QuerySync,
+        callback: Callable[[QueryResult], Awaitable[None]],
+        poll_delay_seconds: float = 30,
+        throttle_seconds: float = 1,
+    ) -> AsyncSubscriptionContext:
+        """
+        Subscribe to a query and get updates when the result set changes. This invokes the sync() method in a loop
+        in a background asyncio task.
+
+        We do not support chaining result sets when subscribing to a query.
+
+        Args:
+            query (QuerySync): The query to subscribe to.
+            callback (Callable[[QueryResult], Awaitable[None]]): The async callback function to call when the result set changes.
+            poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
+            throttle_seconds (float): The time to wait between polls despite data being present.
+
+        Returns:
+            AsyncSubscriptionContext: An object that can be used to cancel the subscription.
+
+        Examples:
+
+            Subscribe to a given query and process the results:
+
+                >>> from cognite.client import AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling.query import (
+                >>>     QuerySync, NodeResultSetExpressionSync, SelectSync, SourceSelector
+                >>> )
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> from cognite.client.data_classes.filters import Equals
+                >>>
+                >>> client = AsyncCogniteClient()
+                >>> async def just_print_the_result(result: QueryResult) -> None:
+                >>>     print(f"Received {len(result)} result sets")
+                >>>
+                >>> view_id = ViewId("someSpace", "someView", "v1")
+                >>> filter = Equals(view_id.as_property_ref("myAsset"), "Il-Tempo-Gigante")
+                >>> query = QuerySync(
+                >>>     with_={"work_orders": NodeResultSetExpressionSync(filter=filter)},
+                >>>     select={"work_orders": Select([SourceSelectorSync(view_id, ["*"])])}
+                >>> )
+                >>> subscription_context = await client.data_modeling.instances.subscribe(
+                ...     query, callback=just_print_the_result
+                ... )
+                >>> # Use the returned subscription_context to manage the subscription, e.g. to cancel it:
+                >>> subscription_context.cancel()
+        """
+        return run_sync(
+            self.__async_client.data_modeling.instances.subscribe(
+                query=query, callback=callback, poll_delay_seconds=poll_delay_seconds, throttle_seconds=throttle_seconds
             )
         )
 
@@ -975,14 +1035,14 @@ class SyncInstancesAPI(SyncAPIClient):
             self.__async_client.data_modeling.instances.query(query=query, include_typing=include_typing, debug=debug)
         )
 
-    def sync(self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
+    def sync(self, query: QuerySync, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
         """
         `Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
         Args:
-            query (Query): Query.
+            query (QuerySync): Query.
             include_typing (bool): Should we return property type information as part of the result?
             debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
 

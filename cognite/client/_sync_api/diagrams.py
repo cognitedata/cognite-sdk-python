@@ -1,6 +1,6 @@
 """
 ===============================================================================
-3ed595cbd32999cdffbe958f0ec30a7f
+0abf6d100ed5bb2cc4a7c6be6ecff503
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -125,7 +125,7 @@ class SyncDiagramsAPI(SyncAPIClient):
                 ...         FileReference(id=20, first_page=1, last_page=10),
                 ...         FileReference(external_id="ext_20", first_page=11, last_page=20)
                 ...     ])
-                >>> result = detect_job.result
+                >>> result = detect_job.get_result()
                 >>> print(result)
                 <code>
                 {
@@ -195,12 +195,19 @@ class SyncDiagramsAPI(SyncAPIClient):
         """
         Convert a P&ID to interactive SVGs where the provided annotations are highlighted.
 
+        Note:
+            Will automatically wait for the detect job to complete before starting the conversion.
+
         Args:
             detect_job (DiagramDetectResults): detect job
 
         Returns:
-            DiagramConvertResults: Resulting queued job. Note that .result property of this job will block waiting for results.
+            DiagramConvertResults: Resulting queued job.
+
         Examples:
+
+            Run a detection job, then convert the results:
+
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
