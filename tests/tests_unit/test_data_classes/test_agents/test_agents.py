@@ -50,14 +50,6 @@ def agent_dump(agent_upsert_dump: dict) -> dict:
     }
 
 
-@pytest.fixture
-def agent_minimal_dump() -> dict:
-    return {
-        "externalId": "test_agent",
-        "name": "Test Agent",
-    }
-
-
 class TestAgentUpsert:
     def test_load_dump(self, agent_upsert_dump: dict) -> None:
         agent = AgentUpsert._load(agent_upsert_dump)
@@ -134,23 +126,18 @@ class TestAgent:
         dumped = agent.dump(camel_case=True)
         assert agent_dump == dumped
 
-    def test_load_dump_minimal(self, agent_minimal_dump: dict) -> None:
-        agent = Agent._load(agent_minimal_dump)
-        assert agent.external_id == "test_agent"
-        assert agent.name == "Test Agent"
-        assert agent.description is None
-        assert agent.instructions is None
-        assert agent.model is None
-        assert agent.tools is None
-
-        dumped = agent.dump(camel_case=True)
-        assert agent_minimal_dump == dumped
-
     def test_load_dump_maintain_unknown_properties(self) -> None:
         """Test that unknown properties are maintained in the dump."""
         agent_data = {
             "externalId": "test_agent",
             "name": "Test Agent",
+            "description": "Test description",
+            "instructions": "Test instructions",
+            "model": "gpt-4",
+            "labels": [],
+            "tools": [],
+            "createdTime": 667008000000,
+            "lastUpdatedTime": 667008000001,
             "unknownProperty": "unknown_value",
         }
         dumped = Agent._load(agent_data).dump(camel_case=True)
@@ -158,39 +145,44 @@ class TestAgent:
         assert dumped == agent_data
 
     def test_tools_handling(self) -> None:
-        # Test with no tools
-        agent = Agent(external_id="test_agent", name="Test Agent")
-        assert agent.tools is None
-
-        # Test with an empty list of tools
-        agent = Agent(external_id="test_agent", name="Test Agent", tools=[])
-        assert agent.tools == []
-
         # Test with list of tools
         tools_list = [
             SummarizeDocumentAgentTool(name="test_tool1", description="A test tool"),
             AskDocumentAgentTool(name="test_tool2", description="Another test tool"),
         ]
-        agent = Agent(external_id="test_agent", name="Test Agent", tools=tools_list)
+        agent = Agent(
+            external_id="test_agent",
+            name="Test Agent",
+            description="Test description",
+            instructions="Test instructions",
+            model="gpt-4",
+            labels=[],
+            tools=tools_list,
+            created_time=667008000000,
+            last_updated_time=667008000001,
+            owner_id=None,
+        )
         assert len(agent.tools) == 2
         assert all(isinstance(tool, AgentTool) for tool in agent.tools)
         assert agent.tools[0].name == "test_tool1"
         assert agent.tools[1].name == "test_tool2"
 
-        # Test with empty list of tools
-        agent = Agent(external_id="test_agent", name="Test Agent", tools=[])
-        assert agent.tools == []
-
     def test_agent_with_empty_tools_list(self) -> None:
         """Test agent creation with empty tools list."""
-        agent = Agent(external_id="test", name="test", tools=[])
+        agent = Agent(
+            external_id="test",
+            name="test",
+            description="Test description",
+            instructions="Test instructions",
+            model="gpt-4",
+            labels=[],
+            tools=[],
+            created_time=667008000000,
+            last_updated_time=667008000001,
+            owner_id=None,
+        )
         assert agent.tools == []
         assert not agent.tools  # Should be falsy
-
-    def test_agent_with_none_tools(self) -> None:
-        """Test agent creation with None tools."""
-        agent = Agent(external_id="test", name="test", tools=None)
-        assert agent.tools is None
 
     def test_post_init_tools_validation(self) -> None:
         # Test with invalid tool type
@@ -198,7 +190,14 @@ class TestAgent:
             Agent(
                 external_id="test_agent",
                 name="Test Agent",
+                description="Test description",
+                instructions="Test instructions",
+                model="gpt-4",
+                labels=[],
                 tools=[{"name": "test_tool", "type": "test_type", "description": "A test tool"}],
+                created_time=667008000000,
+                last_updated_time=667008000001,
+                owner_id=None,
             )
 
     def test_as_write(self) -> None:
@@ -210,6 +209,9 @@ class TestAgent:
             model="gpt-4",
             labels=["published"],
             tools=[SummarizeDocumentAgentTool(name="test_tool", description="A test tool")],
+            created_time=667008000000,
+            last_updated_time=667008000001,
+            owner_id=None,
         )
 
         write_agent = agent.as_write()
@@ -230,7 +232,14 @@ class TestAgent:
         agent = Agent(
             external_id="test_agent",
             name="Test Agent",
+            description="Test description",
+            instructions="Test instructions",
+            model="gpt-4",
             labels=["published", "charts"],
+            tools=[],
+            created_time=667008000000,
+            last_updated_time=667008000001,
+            owner_id=None,
         )
         assert agent.labels == ["published", "charts"]
 
@@ -242,8 +251,30 @@ class TestAgent:
 class TestAgentList:
     def test_as_write(self) -> None:
         agents = [
-            Agent(external_id="agent1", name="Agent 1"),
-            Agent(external_id="agent2", name="Agent 2"),
+            Agent(
+                external_id="agent1",
+                name="Agent 1",
+                description="Test description",
+                instructions="Test instructions",
+                model="gpt-4",
+                labels=[],
+                tools=[],
+                created_time=667008000000,
+                last_updated_time=667008000001,
+                owner_id=None,
+            ),
+            Agent(
+                external_id="agent2",
+                name="Agent 2",
+                description="Test description",
+                instructions="Test instructions",
+                model="gpt-4",
+                labels=[],
+                tools=[],
+                created_time=667008000000,
+                last_updated_time=667008000001,
+                owner_id=None,
+            ),
         ]
         agent_list = AgentList(agents)
 
