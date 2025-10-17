@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
 import logging
 from collections.abc import AsyncIterator, Iterable, Sequence
+import random
+import time
+import threading
+from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
     Any,
+    Awaitable,
+    Callable,
     Generic,
     Literal,
     TypeAlias,
@@ -31,6 +38,7 @@ from cognite.client.data_classes.data_modeling.ids import (
     _load_identifier,
 )
 from cognite.client.data_classes.data_modeling.instances import (
+    AsyncSubscriptionContext,
     Edge,
     EdgeApply,
     EdgeApplyResult,
@@ -50,6 +58,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResult,
     NodeApplyResultList,
     NodeList,
+    SubscriptionContext,
     T_Edge,
     T_Node,
     TargetUnit,
@@ -59,6 +68,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.query import (
+    NodeOrEdgeResultSetExpression,
     Query,
     QueryResult,
     SourceSelector,
@@ -69,6 +79,8 @@ from cognite.client.utils._auxiliary import is_unlimited, load_yaml_or_json, unp
 from cognite.client.utils._concurrency import get_global_data_modeling_semaphore
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
+from cognite.client.utils._text import random_string
+from cognite.client.utils._time import Backoff
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -751,103 +763,168 @@ class InstancesAPI(APIClient):
             edges=InstanceInspectResultList._load([edge for edge in items if edge["instanceType"] == "edge"]),
         )
 
-    # TODO: Update for use with async client
-    # def subscribe(
-    #     self,
-    #     query: Query,
-    #     callback: Callable[[QueryResult], None],
-    #     poll_delay_seconds: float = 30,
-    #     throttle_seconds: float = 1,
-    # ) -> SubscriptionContext:
-    #     """Subscribe to a query and get updates when the result set changes. This invokes the sync() method in a loop
-    #     in a background thread.
+    async def subscribe(
+        self,
+        query: Query,
+        callback: Callable[[QueryResult], Awaitable[None]],
+        poll_delay_seconds: float = 30,
+        throttle_seconds: float = 1,
+    ) -> AsyncSubscriptionContext:
+        """Subscribe to a query and get updates when the result set changes. This invokes the sync() method in a loop
+        in a background asyncio task.
 
-    #     We do not support chaining result sets when subscribing to a query.
+        We do not support chaining result sets when subscribing to a query.
 
-    #     Args:
-    #         query (Query): The query to subscribe to.
-    #         callback (Callable[[QueryResult], None]): The callback function to call when the result set changes.
-    #         poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
-    #         throttle_seconds (float): The time to wait between polls despite data being present.
+        Args:
+            query (Query): The query to subscribe to.
+            callback (Callable[[QueryResult], Awaitable[None]]): The async callback function to call when the result set changes.
+            poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
+            throttle_seconds (float): The time to wait between polls despite data being present.
 
-    #     Returns:
-    #         SubscriptionContext: An object that can be used to cancel the subscription.
+        Returns:
+            AsyncSubscriptionContext: An object that can be used to cancel the subscription.
 
-    #     Examples:
+        Examples:
 
-    #         Subscribe to a given query and print the changed data:
+            Subscribe to a given query and process the results:
 
-    #             >>> from cognite.client import CogniteClient
-    #             >>> from cognite.client.data_classes.data_modeling.query import Query, QueryResult, NodeResultSetExpression, Select, SourceSelector
-    #             >>> from cognite.client.data_classes.data_modeling import ViewId
-    #             >>> from cognite.client.data_classes.filters import Range
-    #             >>>
-    #             >>> client = CogniteClient()
-    #             >>> def just_print_the_result(result: QueryResult) -> None:
-    #             ...     print(result)
-    #             ...
-    #             >>> view_id = ViewId("someSpace", "someView", "v1")
-    #             >>> filter = Range(view_id.as_property_ref("createdYear"), lt=2023)
-    #             >>> query = Query(
-    #             ...     with_={"work_orders": NodeResultSetExpression(filter=filter)},
-    #             ...     select={"work_orders": Select([SourceSelector(view_id, ["createdYear"])])}
-    #             ... )
-    #             >>> subscription_context = client.data_modeling.instances.subscribe(query, just_print_the_result)
-    #             >>> subscription_context.cancel()
-    #     """
-    #     for result_set_expression in query.with_.values():
-    #         if (
-    #             isinstance(result_set_expression, NodeOrEdgeResultSetExpression)
-    #             and result_set_expression.from_ is not None
-    #         ):
-    #             raise ValueError("Cannot chain result sets when subscribing to a query")
+                >>> from cognite.client import AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling.query import Query, NodeResultSetExpression, Select, SourceSelector
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> from cognite.client.data_classes.filters import Equals
+                >>>
+                >>> client = AsyncCogniteClient()
+                >>> async def just_print_the_result(result: QueryResult) -> None:
+                >>>     print(f"Received {len(result)} result sets")
+                >>>
+                >>> view_id = ViewId("someSpace", "someView", "v1")
+                >>> filter = Equals(view_id.as_property_ref("myAsset"), "Il-Tempo-Gigante")
+                >>> query = Query(
+                >>>     with_={"work_orders": NodeResultSetExpression(filter=filter)},
+                >>>     select={"work_orders": Select([SourceSelector(view_id, ["*"])])}
+                >>> )
+                >>> subscription_context = await client.data_modeling.instances.subscribe(
+                ...     query, callback=just_print_the_result
+                ... )
+                >>> # Use the returned subscription_context to manage the subscription, e.g. to cancel it:
+                >>> subscription_context.cancel()
+        """
+        for result_set_expression in query.with_.values():
+            if (
+                isinstance(result_set_expression, NodeOrEdgeResultSetExpression)
+                and result_set_expression.from_ is not None
+            ):
+                raise ValueError("Cannot chain result sets when subscribing to a query")
 
-    #     subscription_context = SubscriptionContext()
+        subscription_context = AsyncSubscriptionContext()
 
-    #     def _poll_delay(seconds: float) -> None:
-    #         if not hasattr(_poll_delay, "has_been_invoked"):
-    #             # smear if first invocation
-    #             delay = random.uniform(0, poll_delay_seconds)
-    #             setattr(_poll_delay, "has_been_invoked", True)
-    #         else:
-    #             delay = seconds
-    #         logger.debug(f"Waiting {delay} seconds before polling sync endpoint again...")
-    #         time.sleep(delay)
+        async def _poll_delay(seconds: float) -> None:
+            if not hasattr(_poll_delay, "has_been_invoked"):
+                # smear if first invocation
+                delay = random.uniform(0, poll_delay_seconds)
+                setattr(_poll_delay, "has_been_invoked", True)
+            else:
+                delay = seconds
+            logger.debug(f"Waiting {delay} seconds before polling sync endpoint again...")
+            await asyncio.sleep(delay)
 
-    #     def _do_subscribe() -> None:
-    #         cursors = query.cursors
-    #         error_backoff = Backoff(max_wait=30)
-    #         while not subscription_context._canceled:
-    #             # No need to resync if we encountered an error in the callback last iteration
-    #             if not error_backoff.has_progressed():
-    #                 query.cursors = cursors
-    #                 result = self.sync(query)
-    #                 subscription_context.last_successful_sync = datetime.now(tz=timezone.utc)
+        async def _do_subscribe() -> None:
+            cursors = query.cursors
+            error_backoff = Backoff(max_wait=30)
+            while not subscription_context._canceled:
+                # No need to resync if we encountered an error in the callback last iteration
+                if not error_backoff.has_progressed():
+                    query.cursors = cursors
+                    result = await self.sync(query)
+                    subscription_context.last_successful_sync = datetime.now(tz=timezone.utc)
 
-    #             try:
-    #                 callback(result)
-    #             except Exception:
-    #                 logger.exception("Unhandled exception in sync subscriber callback. Backing off and retrying...")
-    #                 time.sleep(next(error_backoff))
-    #                 continue
+                try:
+                    await callback(result)
+                except Exception:
+                    logger.exception("Unhandled exception in sync subscriber callback. Backing off and retrying...")
+                    await asyncio.sleep(next(error_backoff))
+                    continue
 
-    #             subscription_context.last_successful_callback = datetime.now(tz=timezone.utc)
-    #             # only progress the cursor if the callback executed successfully
-    #             cursors = result.cursors
+                subscription_context.last_successful_callback = datetime.now(tz=timezone.utc)
+                # only progress the cursor if the callback executed successfully
+                cursors = result.cursors
 
-    #             data_is_present = any(len(instances) > 0 for instances in result.data.values())
-    #             if data_is_present:
-    #                 _poll_delay(throttle_seconds)
-    #             else:
-    #                 _poll_delay(poll_delay_seconds)
+                data_is_present = any(len(instances) > 0 for instances in result.data.values())
+                if data_is_present:
+                    await _poll_delay(throttle_seconds)
+                else:
+                    await _poll_delay(poll_delay_seconds)
 
-    #             error_backoff.reset()
+                error_backoff.reset()
 
-    #     thread_name = f"instances-sync-subscriber-{random_string(10)}"
-    #     thread = Thread(target=_do_subscribe, name=thread_name, daemon=True)
-    #     thread.start()
-    #     subscription_context._thread = thread
-    #     return subscription_context
+        # Create an asyncio task, store a ref in the context and return the context:
+        task_name = f"instances-sync-subscriber-{random_string(10)}"
+        subscription_context._task = asyncio.create_task(_do_subscribe(), name=task_name)
+        return subscription_context
+
+    def subscribe_sync(
+        self,
+        query: Query,
+        callback: Callable[[QueryResult], None],
+        poll_delay_seconds: float = 30,
+        throttle_seconds: float = 1,
+    ) -> SubscriptionContext:
+        """Synchronous wrapper for the async subscribe method.
+
+        This method provides backward compatibility for the old callback-based API.
+        It runs the async subscribe method in a background thread and calls the provided
+        callback for each result.
+
+        Args:
+            query (Query): The query to subscribe to.
+            callback (Callable[[QueryResult], None]): The callback function to call when the result set changes.
+            poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
+            throttle_seconds (float): The time to wait between polls despite data being present.
+
+        Returns:
+            SubscriptionContext: An object that can be used to cancel the subscription.
+        """
+        from threading import Thread
+
+        subscription_context = SubscriptionContext()
+
+        def sync_callback(result: QueryResult) -> None:
+            callback(result)
+
+        async def async_callback(result: QueryResult) -> None:
+            sync_callback(result)
+
+        async def _run_subscription() -> None:
+            try:
+                async_subscription = await self.subscribe(query, async_callback, poll_delay_seconds, throttle_seconds)
+                # Wait for the subscription to complete or be cancelled
+                await async_subscription.wait_for_completion()
+            except asyncio.CancelledError:
+                logger.debug("Sync subscription cancelled")
+            except Exception as e:
+                logger.exception("Unhandled exception in sync subscription wrapper")
+                raise
+
+        def _do_subscribe() -> None:
+            """Run the async subscription in a thread with its own event loop."""
+            # Create a new event loop for this thread
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            try:
+                # Run the async subscription
+                loop.run_until_complete(_run_subscription())
+            except Exception as e:
+                logger.exception("Exception in subscription thread")
+            finally:
+                loop.close()
+
+        # Start the subscription in a background thread
+        thread_name = f"instances-sync-subscriber-{random_string(10)}"
+        thread = Thread(target=_do_subscribe, name=thread_name, daemon=True)
+        thread.start()
+        subscription_context._thread = thread
+        return subscription_context
 
     @classmethod
     def _create_other_params(

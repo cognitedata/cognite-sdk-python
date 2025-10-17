@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
 import threading
 import warnings
@@ -1383,6 +1384,35 @@ class SubscriptionContext:
 
     def is_alive(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
+
+
+@dataclass
+class AsyncSubscriptionContext:
+    """Context for managing async subscriptions to data modeling instances.
+
+    This class provides a way to track and manage async subscriptions,
+    including cancellation and status monitoring.
+    """
+
+    last_successful_sync: datetime | None = None
+    last_successful_callback: datetime | None = None
+    _canceled: bool = False
+    _task: asyncio.Task | None = None
+
+    def cancel(self) -> None:
+        """Cancel the subscription."""
+        self._canceled = True
+        if self._task and not self._task.done():
+            self._task.cancel()
+
+    def is_alive(self) -> bool:
+        """Check if the subscription is still active."""
+        return self._task is not None and not self._task.done()
+
+    async def wait_for_completion(self) -> None:
+        """Wait for the subscription task to complete."""
+        if self._task:
+            await self._task
 
 
 @dataclass
