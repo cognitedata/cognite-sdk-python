@@ -687,12 +687,40 @@ class FunctionsAPI(APIClient):
         return FunctionsStatus.load(res.json())
 
 
-def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:
+def get_handle_function_node(file_content: str) -> ast.FunctionDef | ast.Assign | ast.AnnAssign | None:
+    """
+    Extract the last top-level 'handle' function or variable assignment.
+
+    Returns the last occurrence to handle development workflows where developers
+    may keep old versions or add debug functions. Only considers top-level functions
+    and assignments since Cognite Functions require directly callable entry points.
+
+    Args:
+        file_content (str): The Python source code as a string
+
+    Returns:
+        ast.FunctionDef | ast.Assign | ast.AnnAssign | None: The AST node of the last top-level 'handle' function,
+        assignment, or None if not found or if the file is not a valid Python file.
+    """
+    try:
+        tree = ast.parse(file_content)
+    except SyntaxError:
+        return None
+
+    def _target_is_handle(target: ast.expr) -> bool:
+        """Check if assignment target is a simple name 'handle'."""
+        return isinstance(target, ast.Name) and target.id == "handle"
+
     return next(
         (
-            item
-            for item in ast.walk(ast.parse(file_path.read_text()))
-            if isinstance(item, ast.FunctionDef) and item.name == "handle"
+            node
+            for node in reversed(tree.body)  # Only look at top-level nodes
+            # def handle(...): ...
+            if (isinstance(node, ast.FunctionDef) and node.name == "handle")
+            # handle = callable
+            or (isinstance(node, ast.Assign) and len(node.targets) == 1 and _target_is_handle(node.targets[0]))
+            # handle: Callable = callable
+            or (isinstance(node, ast.AnnAssign) and node.value is not None and _target_is_handle(node.target))
         ),
         None,
     )
@@ -747,7 +775,7 @@ def validate_function_folder(root_path: str, function_path: str, skip_folder_val
     if not file_path.is_file():
         raise FileNotFoundError(f"No file found at '{file_path}'.")
 
-    if node := get_handle_function_node(file_path):
+    if node := get_handle_function_node(file_path.read_text()):
         _validate_function_handle(node)
     else:
         raise TypeError(f"{function_path} must contain a function named 'handle'.")
@@ -763,14 +791,29 @@ def validate_function_folder(root_path: str, function_path: str, skip_folder_val
 
 
 def _validate_function_handle(
-    handle_obj: Callable[..., object] | ast.FunctionDef,
+    handle_obj: Callable[..., object] | ast.FunctionDef | ast.Assign | ast.AnnAssign,
 ) -> None:
-    if isinstance(handle_obj, ast.FunctionDef):
-        name = handle_obj.name
-        accepts_args = {arg.arg for arg in handle_obj.args.args}
-    else:
-        name = handle_obj.__name__
-        accepts_args = set(signature(handle_obj).parameters)
+    match handle_obj:
+        case ast.FunctionDef():
+            # Handle functions like: def handle(data, client, secrets): ...
+            name = handle_obj.name
+            accepts_args = {arg.arg for arg in handle_obj.args.args}
+        case ast.Assign():
+            # Handle assignments like: handle = some_callable
+            target = handle_obj.targets[0]
+            if not isinstance(target, ast.Name):
+                raise TypeError("Assignment target must be a simple name, not a complex expression.")
+            name = target.id
+            accepts_args = set()  # Callable variables are expected to do validation at runtime
+        case ast.AnnAssign():
+            # Handle annotated assignments like: handle: Callable = some_callable
+            if not isinstance(handle_obj.target, ast.Name):
+                raise TypeError("Assignment target must be a simple name, not a complex expression.")
+            name = handle_obj.target.id
+            accepts_args = set()  # Callable variables are expected to do validation at runtime
+        case _:
+            name = handle_obj.__name__
+            accepts_args = set(signature(handle_obj).parameters)
 
     if name != "handle":
         raise TypeError(f"Function is named '{name}' but must be named 'handle'.")

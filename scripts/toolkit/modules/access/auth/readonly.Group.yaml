@@ -10,6 +10,12 @@ capabilities:
         - UPDATE
       scope:
         all: {}
+  - agentsAcl:
+        actions:
+        - READ
+        - RUN
+        scope:
+            all: {}
   - analyticsAcl:
       actions:
       - READ
@@ -218,6 +224,16 @@ capabilities:
       scope:
         all: {}
   - simulatorsAcl:
+      actions:
+      - READ
+      scope:
+        all: {}
+  - streamRecordsAcl:
+      actions:
+      - READ
+      scope:
+        all: {}
+  - streamsAcl:
       actions:
       - READ
       scope:

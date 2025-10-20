@@ -131,6 +131,16 @@ def all_acls():
         {"sequencesAcl": {"actions": ["READ"], "scope": {"all": {}}}},
         {"sequencesAcl": {"actions": ["WRITE"], "scope": {"datasetScope": {"ids": ["2332579", "372"]}}}},
         {"sessionsAcl": {"actions": ["LIST", "CREATE", "DELETE"], "scope": {"all": {}}}},
+        {"streamsAcl": {"actions": ["READ"], "scope": {"all": {}}}},
+        {"streamsAcl": {"actions": ["CREATE", "DELETE"], "scope": {"all": {}}}},
+        {"streamRecordsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"streamRecordsAcl": {"actions": ["READ"], "scope": {"spaceIdScope": {"spaceIds": ["my-space"]}}}},
+        {
+            "streamRecordsAcl": {
+                "actions": ["WRITE"],
+                "scope": {"spaceIdScope": {"spaceIds": ["space-1", "space-2", "prod-space"]}},
+            }
+        },
         {"templateGroupsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"templateGroupsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["1", "42"]}}}},
         {"templateInstancesAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["4", "365"]}}}},
@@ -219,6 +229,12 @@ class TestCapabilities:
                         }
                     },
                 },
+            },
+            {
+                "streamRecordsAcl": {
+                    "actions": ["READ", "WRITE"],
+                    "scope": {"spaceIdScope": {"spaceIds": ["analytics-space", "prod-space"]}},
+                }
             },
         ],
     )
