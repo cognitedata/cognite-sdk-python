@@ -14,6 +14,9 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 
+# Constants
+DEFAULT_QKG_VERSION = "v2"
+
 
 @dataclass
 class AgentToolCore(WriteableCogniteResource["AgentToolUpsert"], ABC):
@@ -166,10 +169,13 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     Args:
         data_models (Sequence[DataModelInfo] | None): The data models and views to query.
         instance_spaces (InstanceSpaces | None): The instance spaces to query.
+        version (Literal["v1", "v2"]): The version of the QKG tool to use.
+            Defaults to DEFAULT_QKG_VERSION ("v2").
     """
 
     data_models: Sequence[DataModelInfo] | None = None
     instance_spaces: InstanceSpaces | None = None
+    version: Literal["v1", "v2"] = DEFAULT_QKG_VERSION
 
     @classmethod
     def _load(
@@ -183,9 +189,12 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
         if "instanceSpaces" in resource:
             instance_spaces = InstanceSpaces._load(resource["instanceSpaces"])
 
+        version = resource.get("version", DEFAULT_QKG_VERSION)
+
         return cls(
             data_models=data_models,
             instance_spaces=instance_spaces,
+            version=version,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -196,6 +205,7 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
         if self.instance_spaces:
             key = "instanceSpaces" if camel_case else "instance_spaces"
             result[key] = self.instance_spaces.dump(camel_case=camel_case)
+        result["version"] = self.version
         return result
 
     def as_write(self) -> QueryKnowledgeGraphAgentToolConfiguration:
