@@ -917,23 +917,27 @@ class TagDetectionJobFilePageRange(CogniteObject):
     Args:
         instanceId (NodeId): The identifier of the instance.
         page_range (PageRange): No description.
+        error_message (str | None): Describes why the page range failed to be processed in case of page range processing failure.
     """
 
-    def __init__(self, instanceId: NodeId, page_range: PageRange) -> None:
+    def __init__(self, instanceId: NodeId, page_range: PageRange, error_message: str | None) -> None:
         self.instanceId = instanceId
         self.page_range = page_range
+        self.error_message = error_message
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             NodeId.load(resource["instanceId"]),
             PageRange._load(resource["pageRange"]),
+            resource.get("errorMessage"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "instanceId": self.instanceId.dump(camel_case=camel_case),
             "pageRange": self.page_range.dump(camel_case=camel_case),
+            "errorMessage": self.error_message,
         }
 
 
