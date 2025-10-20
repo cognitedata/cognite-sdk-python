@@ -75,6 +75,7 @@ class TestWorkflowTaskOutput:
                                     {
                                         "instanceId": {"space": "sp", "externalId": "id", "type": "node"},
                                         "pageRange": {"begin": 1, "end": 5},
+                                        "errorMessage": None,
                                     }
                                 ],
                                 "errorMessage": None,
