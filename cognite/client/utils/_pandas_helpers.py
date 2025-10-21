@@ -1,15 +1,24 @@
 from __future__ import annotations
 
+import datetime
+import itertools
 import re
 import warnings
 from collections.abc import Sequence
-from datetime import timezone
+from dataclasses import dataclass
 from inspect import signature
-from itertools import chain
 from numbers import Integral
 from typing import TYPE_CHECKING, Any, Literal
 from zoneinfo import ZoneInfo
 
+from typing_extensions import assert_never
+
+from cognite.client.data_classes.datapoint_aggregates import (
+    _AGGREGATES_WITH_UNIT,
+    _ALL_AGGREGATES,
+    INT_AGGREGATES,
+    OBJECT_AGGREGATES,
+)
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import shorten, to_camel_case
@@ -20,6 +29,14 @@ if TYPE_CHECKING:
 
     from cognite.client.data_classes import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList
     from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
+    from cognite.client.data_classes.data_modeling.ids import NodeId
+    from cognite.client.data_classes.datapoints import (
+        NumpyDatetime64NSArray,
+        NumpyFloat64Array,
+        NumpyInt64Array,
+        NumpyObjArray,
+        NumpyUInt32Array,
+    )
 
 
 NULLABLE_INT_COLS = {
@@ -47,8 +64,8 @@ def pandas_major_version() -> int:
     return int(__version__.split(".")[0])
 
 
-def convert_tz_for_pandas(tz: str | timezone | ZoneInfo | None) -> str | timezone | None:
-    if tz is None or isinstance(tz, (str, timezone)):
+def convert_tz_for_pandas(tz: str | datetime.timezone | ZoneInfo | None) -> str | datetime.timezone | None:
+    if tz is None or isinstance(tz, (str, datetime.timezone)):
         return tz
     if isinstance(tz, ZoneInfo):
         # pandas is not happy about ZoneInfo :shrug:
