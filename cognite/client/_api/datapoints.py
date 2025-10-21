@@ -1459,13 +1459,13 @@ class DatapointsAPI(APIClient):
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
-        include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         uniform_index: bool = False,
+        include_status: bool = False,
+        include_unit: bool = True,
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
-        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe.
 
@@ -1476,9 +1476,9 @@ class DatapointsAPI(APIClient):
             For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
 
         Args:
-            id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
+            id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, DatapointsQuery or (mixed) sequence of these. See examples.
+            external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, DatapointsQuery or (mixed) sequence of these. See examples.
+            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id, DatapointsQuery or (mixed) sequence of these. See examples.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
@@ -1489,13 +1489,13 @@ class DatapointsAPI(APIClient):
             limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, and the object aggregates ``min_datapoint`` and ``max_datapoint``.
             ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
             treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
             uniform_index (bool): If only querying aggregates AND a single granularity is used (that's NOT a calendar granularity like month/quarter/year) AND no limit is used AND no timezone is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
-            include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
-            include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
-            column_names (Literal['id', 'external_id', 'instance_id']): Use either instance IDs, external IDs or IDs as column names. Time series missing instance ID will use external ID if it exists then ID as backup. Default: "instance_id"
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, and the object aggregates ``min_datapoint`` and ``max_datapoint``. Also adds the status info as a separate level in the columns (MultiIndex).
+            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
+            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids, and lastly instance_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
@@ -1541,7 +1541,7 @@ class DatapointsAPI(APIClient):
                 ...     uniform_index=True)
 
             Get a pandas dataframe containing the 'average' aggregate for two time series using a monthly granularity,
-            starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names:
+            starting Jan 1, 1970 all the way up to present, without having the aggregate name in the columns:
 
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id=["foo", "bar"],
@@ -1582,7 +1582,10 @@ class DatapointsAPI(APIClient):
         if not uniform_index:
             result = await fetcher.fetch_all_datapoints_numpy()
             return result.to_pandas(
-                column_names, include_aggregate_name, include_granularity_name, include_status=include_status
+                include_aggregate_name=include_aggregate_name,
+                include_granularity_name=include_granularity_name,
+                include_status=include_status,
+                include_unit=include_unit,
             )
         # Uniform index requires extra validation and processing:
         uses_tz_or_calendar_gran = any(q.use_cursors for q in fetcher.all_queries)
@@ -1596,7 +1599,10 @@ class DatapointsAPI(APIClient):
             )
         result = await fetcher.fetch_all_datapoints_numpy()
         df = result.to_pandas(
-            column_names, include_aggregate_name, include_granularity_name, include_status=include_status
+            include_aggregate_name=include_aggregate_name,
+            include_granularity_name=include_granularity_name,
+            include_status=include_status,
+            include_unit=include_unit,
         )
         start = pd.Timestamp(min(q.start_ms for q in fetcher.agg_queries), unit="ms")
         end = pd.Timestamp(max(q.end_ms for q in fetcher.agg_queries), unit="ms")
