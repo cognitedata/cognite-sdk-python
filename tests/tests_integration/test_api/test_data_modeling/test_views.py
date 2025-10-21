@@ -9,7 +9,7 @@ from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.data_modeling import (
     ContainerApply,
     ContainerId,
-    ContainerProperty,
+    ContainerPropertyApply,
     DataModel,
     DirectRelation,
     DirectRelationReference,
@@ -247,8 +247,8 @@ class TestViewsAPI:
             name="Critic",
             description="This is a test container, and should not persist.",
             properties={
-                "reviews": ContainerProperty(type=Text(is_list=True)),
-                "person": ContainerProperty(
+                "reviews": ContainerPropertyApply(type=Text(is_list=True)),
+                "person": ContainerPropertyApply(
                     type=DirectRelation(
                         container=ContainerId(
                             space=integration_test_space.space,

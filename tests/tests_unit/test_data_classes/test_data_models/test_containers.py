@@ -6,15 +6,23 @@ from cognite.client.data_classes._base import UnknownCogniteObject
 from cognite.client.data_classes.data_modeling import data_types
 from cognite.client.data_classes.data_modeling.containers import (
     Constraint,
+    ConstraintApply,
+    ConstraintCore,
     Container,
     ContainerApply,
+    ContainerCore,
     ContainerProperty,
+    ContainerPropertyApply,
     Index,
+    IndexApply,
+    IndexCore,
+    PropertyConstraintState,
 )
 
 
 class TestContainer:
-    def test_as_property_ref(self) -> None:
+    @pytest.mark.parametrize("container_class", [Container, ContainerApply])
+    def test_as_property_ref(self, container_class: type[ContainerCore]) -> None:
         params = dict(
             space="sp",
             externalId="ex",
@@ -24,26 +32,29 @@ class TestContainer:
             createdTime=12,
             usedFor="node",
         )
-        cont = Container.load(params)
-        cont_apply = ContainerApply.load(params)
-
+        cont = container_class.load(params)
         assert cont.as_property_ref("foo") == ("sp", "ex", "foo")
-        assert cont_apply.as_property_ref("foo") == ("sp", "ex", "foo")
 
 
 class TestContainerProperty:
     @pytest.mark.parametrize(
         "data",
         [
-            {"type": {"type": "direct", "list": False}, "immutable": False},
+            {"type": {"type": "direct", "list": False}, "immutable": False, "autoIncrement": False, "nullable": True},
             # List is not required, but gets set and thus will be dumped
-            {"type": {"type": "int32", "list": False}, "immutable": False},
-            {"type": {"type": "text", "list": False, "collation": "ucs_basic"}, "immutable": False},
-            {"type": {"type": "file", "list": False}, "immutable": False},
+            {"type": {"type": "int32", "list": False}, "immutable": False, "autoIncrement": False, "nullable": True},
+            {
+                "type": {"type": "text", "list": False, "collation": "ucs_basic"},
+                "immutable": False,
+                "autoIncrement": False,
+                "nullable": True,
+            },
+            {"type": {"type": "file", "list": False}, "immutable": False, "autoIncrement": False, "nullable": True},
         ],
     )
-    def test_load_dump__only_required(self, data: dict) -> None:
-        actual = ContainerProperty.load(data).dump(camel_case=True)
+    def test_load_dump__only_required_apply(self, data: dict) -> None:
+        """Test ContainerPropertyApply with minimal data (no constraintState needed)"""
+        actual = ContainerPropertyApply.load(data).dump(camel_case=True)
         assert data == actual
 
     @pytest.mark.parametrize("as_apply", [False, True])
@@ -55,18 +66,21 @@ class TestContainerProperty:
                 "nullable": False,
                 "constraintState": {"nullability": "current"},
                 "immutable": False,
+                "autoIncrement": False,
             },
             {
                 "type": {"type": "int32", "list": True, "maxListSize": 10},
                 "immutable": False,
                 "nullable": False,
                 "constraintState": {"maxListSize": "pending", "nullability": "current"},
+                "autoIncrement": False,
             },
             {
                 "type": {"type": "text", "list": True, "collation": "ucs_basic", "maxTextSize": 10, "maxListSize": 20},
                 "immutable": False,
                 "nullable": True,
                 "constraintState": {"maxTextSize": "failed", "maxListSize": "pending"},
+                "autoIncrement": False,
             },
         ],
     )
@@ -93,20 +107,22 @@ class TestContainerProperty:
 
     def test_dump_no_longer_camelCases_everything_when_used(self) -> None:
         cp = ContainerProperty(
-            data_types.Enum(
+            type=data_types.Enum(
                 {
                     "Closed_I_think": data_types.EnumValue("Valve_is_closed"),
                     "Opened or not": data_types.EnumValue("Valve is opened"),
                 }
-            )
+            ),
+            constraint_state=PropertyConstraintState(),
         )
         assert ContainerProperty._load(cp.dump()) == cp
         assert sorted(cp.dump(camel_case=True)["type"]["values"]) == ["Closed_I_think", "Opened or not"]
 
 
 class TestConstraint:
+    @pytest.mark.parametrize("constraint_class", [Constraint, ConstraintApply])
     @pytest.mark.parametrize(
-        "data",
+        "base_data",
         [
             {
                 "require": {"type": "container", "space": "mySpace", "externalId": "myExternalId"},
@@ -115,12 +131,17 @@ class TestConstraint:
             {"properties": ["name", "fullName"], "constraintType": "uniqueness"},
         ],
     )
-    def test_load_dump(self, data: dict) -> None:
-        actual = Constraint.load(data).dump(camel_case=True)
+    def test_load_dump(self, constraint_class: type[ConstraintCore], base_data: dict) -> None:
+        # Add state field only for read version (Constraint), not write version (ConstraintApply)
+        data = base_data.copy()
+        if constraint_class == Constraint:
+            data["state"] = "current"
+
+        actual = constraint_class.load(data).dump(camel_case=True)
         assert data == actual
 
     def test_load_unknown_type(self) -> None:
-        data = {"someUnknownConstraint": {"wawa": "wiwa"}, "constraintType": "unknown"}
+        data = {"someUnknownConstraint": {"wawa": "wiwa"}, "constraintType": "unknown", "state": "current"}
         obj = Constraint.load(data)
         assert isinstance(obj, UnknownCogniteObject)
         assert obj.dump() == data
@@ -149,26 +170,38 @@ class TestConstraint:
 
 
 class TestIndex:
+    @pytest.mark.parametrize("index_class", [Index, IndexApply])
     @pytest.mark.parametrize(
-        "data",
+        "base_data",
         [
             {"properties": ["name", "fullName"], "indexType": "btree", "cursorable": True},
             {"properties": ["name", "fullName"], "indexType": "inverted"},
         ],
     )
-    def test_load_dump(self, data: dict) -> None:
-        actual = Index.load(data).dump(camel_case=True)
+    def test_load_dump(self, index_class: type[IndexCore], base_data: dict) -> None:
+        # Add state field only for read version (Index), not write version (IndexApply)
+        data = base_data.copy()
+        if index_class == Index:
+            data["state"] = "current"
+
+        actual = index_class.load(data).dump(camel_case=True)
         assert data == actual
 
+    @pytest.mark.parametrize("index_class", [Index, IndexApply])
     @pytest.mark.parametrize(
-        "data",
+        "base_data",
         [
             {"this-key-is-new-sooo-new": 42, "properties": ["name"], "indexType": "btree", "cursorable": True},
             {"this-key-is-new-sooo-new": 42, "properties": ["name"], "indexType": "inverted"},
         ],
     )
-    def test_load_dump__no_fail_on_unseen_key(self, data: dict) -> None:
-        actual = Index.load(data).dump(camel_case=True)
+    def test_load_dump__no_fail_on_unseen_key(self, index_class: type[IndexCore], base_data: dict) -> None:
+        # Add state field only for read version (Index), not write version (IndexApply)
+        data = base_data.copy()
+        if index_class == Index:
+            data["state"] = "current"
+
+        actual = index_class.load(data).dump(camel_case=True)
         data.pop("this-key-is-new-sooo-new")
         assert data == actual
 
@@ -190,23 +223,34 @@ class TestIndex:
         else:
             assert data == index.dump()
 
+    @pytest.mark.parametrize("index_class", [Index, IndexApply])
     @pytest.mark.parametrize(
-        "data", [{"properties": ["name"], "indexType": "btree"}, {"properties": ["name"], "indexType": "inverted"}]
+        "base_data", [{"properties": ["name"], "indexType": "btree"}, {"properties": ["name"], "indexType": "inverted"}]
     )
-    def test_load_dump__only_required(self, data: dict) -> None:
-        actual = Index.load(data).dump(camel_case=True)
+    def test_load_dump__only_required(self, index_class: type[IndexCore], base_data: dict) -> None:
+        # Add state field only for read version (Index), not write version (IndexApply)
+        data = base_data.copy()
+        if index_class == Index:
+            data["state"] = "current"
+
+        # Add cursorable default for btree indexes
+        if base_data["indexType"] == "btree":
+            data["cursorable"] = False
+
+        actual = index_class.load(data).dump(camel_case=True)
         assert data == actual
 
     def test_load_unknown_type(self) -> None:
-        data = {"someUnknownIndexType": {"wawa": "wiwa"}, "indexType": "someUnknownIndexType"}
+        data = {"someUnknownIndexType": {"wawa": "wiwa"}, "indexType": "someUnknownIndexType", "state": "current"}
         obj = Index.load(data)
         assert isinstance(obj, UnknownCogniteObject)
         assert obj.dump() == data
 
 
 class TestConstraints:
+    @pytest.mark.parametrize("constraint_class", [Constraint, ConstraintApply])
     @pytest.mark.parametrize(
-        "data",
+        "base_data",
         [
             {
                 "require": {"type": "container", "space": "mySpace", "externalId": "myExternalId"},
@@ -215,12 +259,18 @@ class TestConstraints:
             {"properties": ["name", "fullName"], "constraintType": "uniqueness"},
         ],
     )
-    def test_load_dump(self, data: dict) -> None:
-        actual = Constraint.load(data).dump(camel_case=True)
+    def test_load_dump(self, constraint_class: type[ConstraintCore], base_data: dict) -> None:
+        # Add state field only for read version (Constraint), not write version (ConstraintApply)
+        data = base_data.copy()
+        if constraint_class == Constraint:
+            data["state"] = "current"
+
+        actual = constraint_class.load(data).dump(camel_case=True)
         assert data == actual
 
+    @pytest.mark.parametrize("constraint_class", [Constraint, ConstraintApply])
     @pytest.mark.parametrize(
-        "data",
+        "base_data",
         [
             {"this-key-is-new-sooo-new": 42, "properties": ["name"], "constraintType": "uniqueness"},
             {
@@ -230,7 +280,36 @@ class TestConstraints:
             },
         ],
     )
-    def test_load_dump__no_fail_on_unseen_key(self, data: dict) -> None:
-        actual = Constraint.load(data).dump(camel_case=True)
+    def test_load_dump__no_fail_on_unseen_key(self, constraint_class: type[ConstraintCore], base_data: dict) -> None:
+        # Add state field only for read version (Constraint), not write version (ConstraintApply)
+        data = base_data.copy()
+        if constraint_class == Constraint:
+            data["state"] = "current"
+
+        actual = constraint_class.load(data).dump(camel_case=True)
         data.pop("this-key-is-new-sooo-new")
         assert data == actual
+
+
+class TestContainerPropertyApply:
+    @pytest.mark.parametrize(
+        "data",
+        [
+            {"type": {"type": "direct", "list": False}, "immutable": False, "autoIncrement": False, "nullable": True},
+            {"type": {"type": "int32", "list": False}, "immutable": False, "autoIncrement": False, "nullable": True},
+            {
+                "type": {"type": "text", "list": False, "collation": "ucs_basic"},
+                "immutable": False,
+                "autoIncrement": False,
+                "nullable": True,
+            },
+            {"type": {"type": "file", "list": False}, "immutable": False, "autoIncrement": False, "nullable": True},
+        ],
+    )
+    def test_load_dump__only_required(self, data: dict) -> None:
+        actual = ContainerPropertyApply.load(data).dump(camel_case=True)
+        assert data == actual
+
+    def test_as_apply(self) -> None:
+        prop = ContainerPropertyApply(data_types.Text())
+        assert prop.as_apply() is prop
