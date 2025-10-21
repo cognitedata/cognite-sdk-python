@@ -13,11 +13,11 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteSort,
     EnumProperty,
-    Geometry,
     IdTransformerMixin,
 )
 from cognite.client.data_classes.aggregations import UniqueResult
 from cognite.client.data_classes.labels import Label, LabelDefinition
+from cognite.client.data_classes.shared import Geometry
 from cognite.client.utils._identifier import InstanceId
 
 if TYPE_CHECKING:
