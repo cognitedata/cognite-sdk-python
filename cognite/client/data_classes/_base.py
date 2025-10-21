@@ -29,11 +29,6 @@ from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import load_resource_to_dict, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence, InstanceId
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._pandas_helpers import (
-    convert_nullable_int_cols,
-    convert_timestamp_columns_to_datetime,
-    notebook_display_with_fallback,
-)
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_time_attrs
 
@@ -233,6 +228,8 @@ class CogniteResource(CogniteObject, _WithClientMixin, ABC):
         return pd.Series(dumped).to_frame(name="value")
 
     def _repr_html_(self) -> str:
+        from cognite.client.utils._pandas_helpers import notebook_display_with_fallback
+
         return notebook_display_with_fallback(self)
 
 
@@ -373,6 +370,11 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
             pandas.DataFrame: The Cognite resource as a dataframe.
         """
         pd = local_import("pandas")
+        from cognite.client.utils._pandas_helpers import (
+            convert_nullable_int_cols,
+            convert_timestamp_columns_to_datetime,
+        )
+
         df = pd.DataFrame(self.dump(camel_case=camel_case))
         df = convert_nullable_int_cols(df)
 
@@ -387,6 +389,8 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return df
 
     def _repr_html_(self) -> str:
+        from cognite.client.utils._pandas_helpers import notebook_display_with_fallback
+
         return notebook_display_with_fallback(self)
 
     @final

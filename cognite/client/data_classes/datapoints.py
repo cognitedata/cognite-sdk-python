@@ -871,51 +871,32 @@ class DatapointsArray(CogniteResource):
 
     def to_pandas(  # type: ignore [override]
         self,
-        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_unit: bool = True,
         include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArray into a pandas DataFrame.
 
         Args:
-            column_names (Literal['id', 'external_id', 'instance_id']): Which field to use for the columns. Defaults to "instance_id", if it exists, then uses "external_id" if available, and "id" as fallback.
-            include_aggregate_name (bool): Include aggregate in the column name
-            include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
-            include_status (bool): Include status code and status symbol as separate columns, if available.
+            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
+            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
+                as a separate level in the columns (MultiIndex).
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
         """
-        pd = local_import("pandas")
-        idx, tz = self.timestamp, self.timezone
-        if tz is not None:
-            idx = pd.to_datetime(idx, utc=True).tz_convert(convert_tz_for_pandas(tz))
+        local_import("pandas")  # throw nice import error early
 
-        identifier = resolve_ts_identifier_as_df_column_name(self, column_names)
-        if self.value is not None:
-            raw_columns: dict[str, npt.NDArray] = {identifier: self.value}
-            if include_status:
-                if self.status_code is not None:
-                    raw_columns[f"{identifier}|status_code"] = self.status_code
-                if self.status_symbol is not None:
-                    raw_columns[f"{identifier}|status_symbol"] = self.status_symbol
-            return pd.DataFrame(raw_columns, index=idx, copy=False)
-
-        (_, *agg_names), (_, *arrays) = self._data_fields()
-        aggregate_columns = [
-            identifier + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
-            for agg in agg_names
-        ]
-        # We need special handling for object aggregates:
-        for i, agg in enumerate(agg_names):
-            if agg in ("min_datapoint", "max_datapoint"):
-                arrays[i] = np.array([dp.dump(camel_case=False) for dp in arrays[i]], dtype=np.object_)
-
-        # Since columns might contain duplicates, we can't instantiate from dict as only the
-        # last key (array/column) would be kept:
-        (df := pd.DataFrame(dict(enumerate(arrays)), index=idx, copy=False)).columns = aggregate_columns
-        return df
+        return convert_dps_to_dataframe(
+            self,
+            include_aggregate_name=include_aggregate_name,
+            include_granularity_name=include_granularity_name,
+            include_status=include_status,
+            include_unit=include_unit,
+        )
 
 
 class Datapoints(CogniteResource):
@@ -930,8 +911,8 @@ class Datapoints(CogniteResource):
         unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
         unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
-        timestamp (Sequence[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (SequenceNotStr[str] | Sequence[float] | None): The raw data values. Can be string or numeric.
+        timestamp (list[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        value (list[str] | list[float] | None): The raw data values. Can be string or numeric.
         average (list[float] | None): The time-weighted average values per aggregate interval.
         max (list[float] | None): The maximum values per aggregate interval.
         max_datapoint (list[MaxDatapoint] | list[MaxDatapointWithStatus] | None): Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
@@ -966,8 +947,8 @@ class Datapoints(CogniteResource):
         unit: str | None = None,
         unit_external_id: str | None = None,
         granularity: str | None = None,
-        timestamp: Sequence[int] | None = None,
-        value: SequenceNotStr[str] | Sequence[float] | None = None,
+        timestamp: list[int] | None = None,
+        value: list[str] | list[float] | None = None,
         average: list[float] | None = None,
         max: list[float] | None = None,
         max_datapoint: list[MaxDatapoint] | list[MaxDatapointWithStatus] | None = None,
@@ -1103,76 +1084,35 @@ class Datapoints(CogniteResource):
 
     def to_pandas(  # type: ignore [override]
         self,
-        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_unit: bool = True,
         include_errors: bool = False,
         include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
-            column_names (Literal['id', 'external_id', 'instance_id']): Which field to use for the columns. Defaults to "instance_id", if it exists, then uses "external_id" if available, and "id" as fallback.
-            include_aggregate_name (bool): Include aggregate in the column name
-            include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
+            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
             include_errors (bool): For synthetic datapoint queries, include a column with errors.
-            include_status (bool): Include status code and status symbol as separate columns, if available.
+            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
+                as a separate level in the columns (MultiIndex).
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = local_import("pandas")
-        if column_names == "externalId":
-            column_names = "external_id"  # Camel case for backwards compatibility
-        identifier = resolve_ts_identifier_as_df_column_name(self, column_names)
+        local_import("pandas")  # throw nice import error early
 
-        if include_errors and self.error is None:
-            raise ValueError("Unable to 'include_errors', only available for data from synthetic datapoint queries")
-
-        # Make sure columns (aggregates) always come in alphabetical order (e.g. "average" before "max"):
-        field_names, data_lists = [], []
-        data_fields = self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors)
-        if not include_errors:  # We do not touch column ordering for synthetic datapoints
-            data_fields = sorted(data_fields)
-        for attr, data in data_fields:
-            if attr == "timestamp":
-                continue
-            id_col_name = identifier
-            if attr == "value":
-                field_names.append(id_col_name)
-                data_lists.append(data)
-                if include_status:
-                    if self.status_code is not None:
-                        field_names.append(f"{identifier}|status_code")
-                        data_lists.append(self.status_code)
-                    if self.status_symbol is not None:
-                        field_names.append(f"{identifier}|status_symbol")
-                        data_lists.append(self.status_symbol)
-                continue
-            if include_aggregate_name:
-                id_col_name += f"|{attr}"
-            if include_granularity_name and self.granularity is not None:
-                id_col_name += f"|{self.granularity}"
-            field_names.append(id_col_name)
-            if attr == "error":
-                data_lists.append(data)
-                continue  # Keep string (object) column non-numeric
-
-            if to_camel_case(attr) in _OBJECT_AGGREGATES:
-                data_lists.append([v.dump(camel_case=False) for v in data])
-                continue
-            data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing agg values
-            if to_camel_case(attr) in _INT_AGGREGATES:
-                data_lists.append(data.astype("int64"))
-            else:
-                data_lists.append(data.astype("float64"))
-
-        if (tz := self.timezone) is None:
-            idx = pd.to_datetime(self.timestamp, unit="ms")
-        else:
-            idx = pd.to_datetime(self.timestamp, unit="ms", utc=True).tz_convert(convert_tz_for_pandas(tz))
-        (df := pd.DataFrame(dict(enumerate(data_lists)), index=idx)).columns = field_names
-        return df
+        return convert_dps_to_dataframe(
+            self,
+            include_aggregate_name=include_aggregate_name,
+            include_granularity_name=include_granularity_name,
+            include_status=include_status,
+            include_unit=include_unit,
+            include_errors=include_errors,
+        )
 
     @classmethod
     def _load_from_synthetic(
@@ -1211,7 +1151,6 @@ class Datapoints(CogniteResource):
                 snake_key = to_snake_case(key)
                 setattr(instance, snake_key, [])
             return instance
-
         data_lists = defaultdict(list)
         for row in dps_object["datapoints"]:
             for attr, value in row.items():
@@ -1353,28 +1292,29 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
 
     def to_pandas(  # type: ignore [override]
         self,
-        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_unit: bool = True,
         include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
         Args:
-            column_names (Literal['id', 'external_id', 'instance_id']): Which field to use for the columns. Defaults to "instance_id", if it exists, then uses "external_id" if available, and "id" as fallback.
-            include_aggregate_name (bool): Include aggregate in the column name
-            include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
-            include_status (bool): Include status code and status symbol as separate columns, if available.
+            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
+            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
+                as a separate level in the columns (MultiIndex).
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
         """
         return concat_dps_dataframe_list(
             self,
-            column_names=column_names,
             include_aggregate_name=include_aggregate_name,
             include_granularity_name=include_granularity_name,
             include_status=include_status,
+            include_unit=include_unit,
         )
 
     def dump(self, camel_case: bool = True, convert_timestamps: bool = False) -> list[dict[str, Any]]:
@@ -1447,26 +1387,27 @@ class DatapointsList(CogniteResourceList[Datapoints]):
 
     def to_pandas(  # type: ignore [override]
         self,
-        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_unit: bool = True,
         include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
-            column_names (Literal['id', 'external_id', 'instance_id']): Which field to use for the columns. Defaults to "instance_id", if it exists, then uses "external_id" if available, and "id" as fallback.
-            include_aggregate_name (bool): Include aggregate in the column name
-            include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
-            include_status (bool): Include status code and status symbol as separate columns, if available.
+            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
+            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
+                as a separate level in the columns (MultiIndex).
 
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
         return concat_dps_dataframe_list(
             self,
-            column_names=column_names,
             include_aggregate_name=include_aggregate_name,
             include_granularity_name=include_granularity_name,
             include_status=include_status,
+            include_unit=include_unit,
         )
