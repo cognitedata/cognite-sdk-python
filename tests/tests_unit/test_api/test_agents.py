@@ -139,6 +139,7 @@ class TestAgentsAPI:
                             )
                         ],
                         instance_spaces=InstanceSpaces(type="all"),
+                        version="v2",
                     ),
                 )
             ],
