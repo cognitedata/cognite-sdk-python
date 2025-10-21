@@ -13,7 +13,7 @@ from cognite.client.data_classes.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling import (
     Container,
     ContainerApply,
-    ContainerProperty,
+    ContainerPropertyApply,
     DataModel,
     DirectRelationReference,
     Edge,
@@ -124,7 +124,7 @@ def unit_view(cognite_client: CogniteClient, integration_test_space: Space) -> V
     container = ContainerApply(
         space=integration_test_space.space,
         external_id="integration_test_unit_container",
-        properties={"pressure": ContainerProperty(type=Float64(unit=UnitReference("pressure:bar")))},
+        properties={"pressure": ContainerPropertyApply(type=Float64(unit=UnitReference("pressure:bar")))},
     )
     view = ViewApply(
         space=integration_test_space.space,
@@ -464,8 +464,8 @@ def container_with_all_the_types(cognite_client: CogniteClient, integration_test
         space=integration_test_space.space,
         external_id="test_container_all_the_types",
         properties={
-            "int_array": ContainerProperty(type=Int64(is_list=True)),
-            "direct_relation_array": ContainerProperty(type=DirectRelation(is_list=True)),
+            "int_array": ContainerPropertyApply(type=Int64(is_list=True)),
+            "direct_relation_array": ContainerPropertyApply(type=DirectRelation(is_list=True)),
         },
         used_for="all",
     )
