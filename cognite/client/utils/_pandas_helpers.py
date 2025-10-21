@@ -77,23 +77,16 @@ def convert_tz_for_pandas(tz: str | datetime.timezone | ZoneInfo | None) -> str 
 
 def concat_dps_dataframe_list(
     dps_lst: DatapointsList | DatapointsArrayList,
-    column_names: Literal["id", "external_id", "instance_id"],
     include_aggregate_name: bool,
     include_granularity_name: bool,
     include_status: bool,
+    include_unit: bool,
 ) -> pd.DataFrame:
-    pd = local_import("pandas")
-    dfs = [
-        dps.to_pandas(
-            column_names=column_names,
-            include_aggregate_name=include_aggregate_name,
-            include_granularity_name=include_granularity_name,
-            include_status=include_status,
-        )
-        for dps in dps_lst
-    ]
-    if not dfs:
+    import pandas as pd
+
+    if not dps_lst.data:
         return pd.DataFrame(index=pd.to_datetime([]))
+
     timezones = set(dps.timezone for dps in dps_lst) - {None}
     # If attempting to join naive & aware, pandas will raise (so we don't need to):
     # TypeError: Cannot join tz-naive with tz-aware DatetimeIndex
@@ -103,7 +96,28 @@ def concat_dps_dataframe_list(
             "final dataframe index (timestamps) will be a union of the UTC converted timestamps.",
             UserWarning,
         )
-    return concat_dataframes_with_nullable_int_cols(dfs)
+    # Since we use a MultiIndex for the dataframe columns, these do not join nicely in pd.concat, so we need
+    # to do that manually ourselves after combining.
+    columns_lst = [_extract_column_info_from_dps_for_dataframe(dps, include_status=include_status) for dps in dps_lst]
+    counter = itertools.count()  # Ensure unique column names initially
+    dfs = [
+        pd.DataFrame(
+            {i: col.as_array() for i, col in zip(counter, columns)},
+            index=_create_timestamp_index(dps.timestamp, dps.timezone),
+            copy=False,  # we pass arrays directly for O(1) conversion
+        )
+        for dps, columns in zip(dps_lst, columns_lst, strict=True)
+    ]
+    # Each df may have completely different timestamp (index) so we let pandas do the heavy lifting:
+    df = concat_dataframes_with_nullable_int_cols(dfs)
+
+    df.columns = _create_multi_index_from_columns(
+        list(itertools.chain.from_iterable(columns_lst)),
+        include_aggregate=include_aggregate_name,
+        include_granularity=include_granularity_name,
+        include_unit=include_unit,
+    )
+    return df
 
 
 def notebook_display_with_fallback(inst: T_CogniteResource | T_CogniteResourceList, **kwargs: Any) -> str:
@@ -136,9 +150,12 @@ def convert_timestamp_columns_to_datetime(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.DataFrame:
-    pd = local_import("pandas")
+    import pandas as pd
+
     int_cols = [
-        i for i, dtype in enumerate(chain.from_iterable(df.dtypes for df in dfs)) if issubclass(dtype.type, Integral)
+        i
+        for i, dtype in enumerate(itertools.chain.from_iterable(df.dtypes for df in dfs))
+        if issubclass(dtype.type, Integral)
     ]
     # TODO: Performance optimization possible: The more unique each df.index is to the rest of the dfs, the
     # slower `pd.concat` scales. A manual "union(df.index for df in dfs)" + column insertion is faster for large
@@ -165,38 +182,234 @@ def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.
     return df
 
 
-def resolve_ts_identifier_as_df_column_name(
-    dps: Datapoints | DatapointsArray, column_names: Literal["id", "external_id", "instance_id"]
-) -> str:
-    # Note: Although pandas columns can support numbers and objects like tuples, we may need to pad with
-    #       e.g. aggregate info, so we always ensure the column names are strings.
-    if column_names not in {"id", "external_id", "instance_id"}:
-        # Don't raise here, the user may have waited a long time for datapoints fetching
-        warnings.warn(
-            "Parameter `column_names` must be either 'instance_id', 'external_id' or 'id'. "
-            "Falling back to instance_id -> external_id -> id (using first one defined).",
-            UserWarning,
-        )
-        column_names = "instance_id"
+def _resolve_ts_identifier_as_df_column_name(dps: Datapoints | DatapointsArray) -> NodeId | str | int:
+    if dps.instance_id:
+        return dps.instance_id
+    elif dps.external_id is not None:  # "" is legal xid
+        return dps.external_id
+    elif dps.id:
+        return dps.id
+    else:
+        raise ValueError(f"{type(dps).__name__} object has no identifier (id, external_id or instance_id)")
 
-    original = column_names
-    if column_names == "instance_id":
-        if dps.instance_id:
-            # Keep column name as short as possible, default repr adds "space=..." and "external_id=..."
-            return "NodeId({}, {})".format(*dps.instance_id.as_tuple())
-        column_names = "external_id"  # Fallback to external_id
 
-    if column_names == "external_id":
-        if dps.external_id is not None:  # "" is legal xid
-            return dps.external_id
-        column_names = "id"  # Fallback to id
-
-    if column_names == "id":
-        if dps.id:
-            return str(dps.id)
-
-    fallbacks = {"instance_id": ["external_id", "id"], "external_id": ["id"], "id": []}
-    raise ValueError(
-        f"Unable to resolve column name for time series using columns_names={original!r}. "
-        f"Neither the attribute or its fallbacks ({fallbacks[original]}) are set on the object."
+def convert_dps_to_dataframe(
+    dps: Datapoints | DatapointsArray,
+    include_aggregate_name: bool,
+    include_granularity_name: bool,
+    include_status: bool,
+    include_unit: bool,
+    include_errors: bool = False,  # old leftover misuse of Datapoints class :(
+):
+    pd = local_import("pandas")
+    columns = _extract_column_info_from_dps_for_dataframe(
+        dps, include_status=include_status, include_errors=include_errors
     )
+    df = pd.DataFrame(
+        # We initially use integer indexing to allow duplicate column names:
+        {i: col.as_array() for i, col in enumerate(columns)},
+        index=_create_timestamp_index(dps.timestamp, dps.timezone),
+        copy=False,  # we pass arrays directly for O(1) conversion
+    )
+    df.columns = _create_multi_index_from_columns(
+        columns,
+        include_aggregate=include_aggregate_name,
+        include_granularity=include_granularity_name,
+        include_unit=include_unit,
+        include_errors=include_errors,
+    )
+    return df
+
+
+@dataclass(frozen=True, slots=True)
+class _DpsColumnInfo:
+    """
+    Used when converting Datapoints/DatapointsArray/DatapointsList/DatapointsArrayList to pandas DataFrame to help
+    avoid the madness of how many columns we should end up with based on status codes/symbols, number of aggregates etc.
+
+    A single Datapoints/DatapointsArray can result in 10+ columns from aggregates, and 1 or 3 columns from raw datapoints,
+    with or without the 2 extra status info columns.
+    """
+
+    column_id: NodeId | str | int
+    data: list[float] | list[str] | list[int] | NumpyUInt32Array | NumpyInt64Array | NumpyFloat64Array | NumpyObjArray
+    is_string: bool | None = None
+    is_array: bool = False
+    aggregate: str | None = None
+    granularity: str | None = None
+    unit_xid: str | None = None
+    status_info: Literal["code", "symbol"] | None = None
+    synth_query_info: str | None = None
+
+    def as_multi_index_tuple(
+        self, include_aggregate: bool, include_granularity: bool, include_unit: bool, include_errors: bool
+    ) -> tuple:
+        return (
+            self.column_id,
+            self.status_info,  # since these split to separate cols, they are already filtered out if not wanted
+            self.aggregate if include_aggregate else None,
+            self.granularity if include_granularity else None,
+            self.unit_xid if include_unit else None,
+            self.synth_query_info if include_errors else None,
+        )
+
+    def as_array(self) -> NumpyObjArray | NumpyFloat64Array | NumpyInt64Array | NumpyUInt32Array:
+        if self.is_array:
+            return self.data  # type: ignore [return-value]
+
+        elif self.aggregate is None:
+            return self._convert_to_array_for_raw_dps()
+        else:
+            return self._convert_to_array_for_agg_dps()
+
+    def _convert_to_array_for_raw_dps(self):
+        import numpy as np
+
+        match self.is_string, self.status_info:
+            case True, None:
+                return np.array(self.data, dtype=np.object_)
+            case False, None:
+                return np.array(self.data, dtype=np.float64)
+            case _, "code":
+                return np.array(self.data, dtype=np.uint32)
+            case _, "symbol":
+                return np.array(self.data, dtype=np.object_)
+            case _:
+                assert_never(f"Invalid combination of is_string={self.is_string} and status_info={self.status_info}")
+
+    def _convert_to_array_for_agg_dps(self):
+        import numpy as np
+
+        from cognite.client.utils._datapoints import ensure_int_numpy
+
+        if self.aggregate in OBJECT_AGGREGATES:
+            return np.array(self.data, dtype=np.object_)
+
+        elif self.aggregate in INT_AGGREGATES:
+            return ensure_int_numpy(np.array(self.data, dtype=np.float64))
+        else:
+            return np.array(self.data, dtype=np.float64)
+
+
+def _extract_raw_column_info(
+    dps: Datapoints | DatapointsArray,
+    identifier: NodeId | str | int,
+    is_array: bool,
+    include_status: bool,
+    include_errors: bool,
+) -> list[_DpsColumnInfo]:
+    assert dps.value is not None
+    columns = [
+        _DpsColumnInfo(
+            identifier,
+            data=dps.value,
+            is_string=dps.is_string,
+            is_array=is_array,
+            unit_xid=dps.unit_external_id or None,
+        )
+    ]
+    if include_status:
+        if dps.status_code is not None:
+            columns.append(_DpsColumnInfo(identifier, data=dps.status_code, is_array=is_array, status_info="code"))
+        if dps.status_symbol is not None:
+            columns.append(_DpsColumnInfo(identifier, data=dps.status_symbol, is_array=is_array, status_info="symbol"))
+
+    if include_errors:
+        columns = _handle_synthetic_dps_with_errors(identifier, dps, columns)  # type: ignore [arg-type]
+    return columns
+
+
+def _handle_synthetic_dps_with_errors(
+    identifier: str, dps: Datapoints, columns: list[_DpsColumnInfo]
+) -> list[_DpsColumnInfo]:
+    # EVERYTHING about this is ugly and hacky, but adding a separate SyntheticDatapoints class is such a waste of time
+    # that we let it slide (literally zero usage of synthetic datapoints API from the SDK - which is understandable):
+    import numpy as np
+
+    from cognite.client.data_classes import Datapoints
+
+    assert isinstance(dps, Datapoints)  # only Datapoints has error field
+    if dps.error is None:
+        raise ValueError("Unable to 'include_errors', only available for data from synthetic datapoint queries")
+
+    errors = np.array([dp or "" for dp in dps.error], dtype=np.object_)
+    columns.append(_DpsColumnInfo(identifier, data=errors, is_array=True, synth_query_info="errors"))
+    # Override the synth. query results with info about what it is:
+    object.__setattr__(columns[0], "synth_query_info", "results")
+    return columns
+
+
+def _extract_aggregate_column_info_from_dps(
+    dps: Datapoints | DatapointsArray, identifier: NodeId | str | int, is_array: bool
+) -> list[_DpsColumnInfo]:
+    aggregates = sorted(_ALL_AGGREGATES.intersection(k for k, v in dps.__dict__.items() if v is not None))
+    return [
+        _DpsColumnInfo(
+            identifier,
+            data=getattr(dps, agg),
+            is_array=is_array,
+            aggregate=agg,
+            granularity=dps.granularity,
+            # We show physical unit if the aggregate somewhat makes sense (e.g. average, but also (..)_variance).
+            # Note the '... or None' is there because the API returns empty string when missing for some reason:
+            unit_xid=dps.unit_external_id or None if agg in _AGGREGATES_WITH_UNIT else None,
+        )
+        for agg in aggregates
+    ]
+
+
+def _extract_column_info_from_dps_for_dataframe(
+    dps: Datapoints | DatapointsArray, include_status: bool, include_errors: bool = False
+) -> list[_DpsColumnInfo]:
+    from cognite.client.data_classes import DatapointsArray
+
+    identifier = _resolve_ts_identifier_as_df_column_name(dps)
+    is_array = isinstance(dps, DatapointsArray)
+    if dps.value is not None:
+        return _extract_raw_column_info(dps, identifier, is_array, include_status, include_errors)
+    return _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
+
+
+def _create_multi_index_from_columns(
+    columns: list[_DpsColumnInfo],
+    include_aggregate: bool,
+    include_granularity: bool,
+    include_unit: bool,
+    include_errors: bool = False,
+) -> pd.MultiIndex:
+    import pandas as pd
+
+    column_ids_df = pd.DataFrame(
+        [
+            col.as_multi_index_tuple(
+                include_aggregate=include_aggregate,
+                include_granularity=include_granularity,
+                include_unit=include_unit,
+                include_errors=include_errors,
+            )
+            for col in columns
+        ],
+        columns=["identifier", "status", "aggregate", "granularity", "unit", "synthetic query"],
+    )
+    # Key operation is to drop all-nan columns, which in the multi-index translates to dropping
+    # the corresponding levels:
+    return pd.MultiIndex.from_frame(column_ids_df.dropna(axis="columns", how="all").fillna(""))
+
+
+def _create_timestamp_index(
+    timestamps: list[int] | NumpyDatetime64NSArray, timezone: str | datetime.timezone | ZoneInfo | None
+) -> pd.DatetimeIndex:
+    import numpy as np
+    import pandas as pd
+
+    match timestamps, timezone:
+        case list(), None:
+            return pd.to_datetime(timestamps, unit="ms")
+        case list(), _:
+            return pd.to_datetime(timestamps, unit="ms", utc=True).tz_convert(convert_tz_for_pandas(timezone))
+        case np.ndarray(), None:
+            return pd.to_datetime(timestamps)
+        case np.ndarray(), _:
+            return pd.to_datetime(timestamps, utc=True).tz_convert(convert_tz_for_pandas(timezone))
+        case _:
+            assert_never("Timestamps must be either list[int] or numpy.ndarray")
