@@ -1232,22 +1232,7 @@ class Datapoints(CogniteResource):
         return instance
 
     def _extend(self, other_dps: Datapoints) -> None:
-        # TODO: Only used by synthetic time series API, consider removing in a refactoring.
-        if self.id is None and self.external_id is None:
-            self.id = other_dps.id
-            self.external_id = other_dps.external_id
-            self.is_string = other_dps.is_string
-            self.is_step = other_dps.is_step
-            self.unit = other_dps.unit
-            self.unit_external_id = other_dps.unit_external_id
-            self.timezone = other_dps.timezone
-
-        for attr, other_value in other_dps._get_non_empty_data_fields(get_empty_lists=True):
-            value = getattr(self, attr)
-            if not value:
-                setattr(self, attr, other_value)
-            else:
-                value.extend(other_value)
+        raise NotImplementedError("Extending Datapoints is not supported.")
 
     def _get_non_empty_data_fields(
         self, get_empty_lists: bool = False, get_error: bool = True
