@@ -41,11 +41,13 @@ from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply,
 from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType
 from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
-from cognite.client.data_classes.datapoints import (
-    _INT_AGGREGATES,
-    _OBJECT_AGGREGATES,
+from cognite.client.data_classes.datapoint_aggregates import (
     ALL_SORTED_DP_AGGS,
+    INT_AGGREGATES,
+    OBJECT_AGGREGATES,
     Aggregate,
+)
+from cognite.client.data_classes.datapoints import (
     Datapoints,
     DatapointsArray,
 )
@@ -64,7 +66,7 @@ from cognite.client.data_classes.workflows import (
 )
 from cognite.client.testing import AsyncCogniteClientMock
 from cognite.client.utils import _json_extended as _json
-from cognite.client.utils._text import random_string, to_snake_case
+from cognite.client.utils._text import random_string
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -197,10 +199,6 @@ def random_granularity(granularities: str = "smhd", lower_lim: int = 1, upper_li
     return f"{unit}{gran}"
 
 
-INTEGER_AGGREGATES = set(map(to_snake_case, _INT_AGGREGATES))
-OBJECT_AGGREGATES = set(map(to_snake_case, _OBJECT_AGGREGATES))
-
-
 def random_aggregates(
     n: int | None = None,
     exclude: set[str] | None = None,
@@ -214,7 +212,7 @@ def random_aggregates(
     if exclude:
         agg_lst = [a for a in agg_lst if a not in exclude]
     if exclude_integer_aggregates:
-        agg_lst = [a for a in agg_lst if a not in INTEGER_AGGREGATES]
+        agg_lst = [a for a in agg_lst if a not in INT_AGGREGATES]
     if exclude_object_aggregates:
         agg_lst = [a for a in agg_lst if a not in OBJECT_AGGREGATES]
     n = n or random.randint(1, len(agg_lst))

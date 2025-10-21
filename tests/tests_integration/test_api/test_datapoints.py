@@ -46,7 +46,7 @@ from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.data_modeling.instances import NodeApplyResult
 from cognite.client.data_classes.data_modeling.spaces import SpaceApply
 from cognite.client.data_classes.datapoints import (
-    _OBJECT_AGGREGATES,
+    _OBJECT_AGGREGATES_CAMEL,
     ALL_SORTED_DP_AGGS,
     ALL_SORTED_NUMERIC_DP_AGGS,
     MaxDatapoint,
@@ -1618,7 +1618,7 @@ class TestRetrieveAggregateDatapointsAPI:
             list(map(to_camel_case, ALL_SORTED_DP_AGGS)),
             list(map(to_snake_case, ALL_SORTED_DP_AGGS)),
             list(map(to_snake_case, ALL_SORTED_NUMERIC_DP_AGGS)),
-            list(_OBJECT_AGGREGATES),
+            list(_OBJECT_AGGREGATES_CAMEL),
             # Give a mix:
             ["continuousVariance", "discrete_variance", "step_interpolation", "totalVariation"],
             ["continuous_variance", "discreteVariance", "stepInterpolation", "total_variation", "min"],
@@ -2279,7 +2279,7 @@ class TestRetrieveAggregateDatapointsAPI:
                 external_id=ts2.external_id,
                 start=MIN_TIMESTAMP_MS,
                 end=MAX_TIMESTAMP_MS,
-                aggregates=list(_OBJECT_AGGREGATES),
+                aggregates=list(_OBJECT_AGGREGATES_CAMEL),
                 granularity="1mo",
                 include_status=include_status,
                 limit=2,
