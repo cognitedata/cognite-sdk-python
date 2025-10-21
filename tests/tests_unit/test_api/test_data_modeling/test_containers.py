@@ -7,8 +7,8 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes.data_modeling import ContainerApply, ContainerId, ContainerProperty, Text
-from cognite.client.data_classes.data_modeling.containers import BTreeIndex, RequiresConstraint
+from cognite.client.data_classes.data_modeling import ContainerApply, ContainerId, ContainerPropertyApply, Text
+from cognite.client.data_classes.data_modeling.containers import BTreeIndexApply, RequiresConstraintApply
 from tests.utils import get_url
 
 if TYPE_CHECKING:
@@ -96,15 +96,15 @@ class TestContainersApi:
             space=cast(str, EXAMPLE_CONTAINER["space"]),
             external_id=cast(str, EXAMPLE_CONTAINER["externalId"]),
             properties={
-                "prop1": ContainerProperty(
+                "prop1": ContainerPropertyApply(
                     type=Text(), default_value="string", description="string", name="string", nullable=False
                 )
             },
             description="string",
             name="string",
             used_for="node",
-            constraints={"constraint1": RequiresConstraint(ContainerId("string", "string"))},
-            indexes={"index1": BTreeIndex(properties=["prop1"])},
+            constraints={"constraint1": RequiresConstraintApply(ContainerId("string", "string"))},
+            indexes={"index1": BTreeIndexApply(properties=["prop1"])},
         )
         created = cognite_client.data_modeling.containers.apply(new_container)
         retrieved = cognite_client.data_modeling.containers.retrieve(new_container.as_id())
