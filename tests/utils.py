@@ -29,12 +29,13 @@ from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes import (
     DataPointSubscriptionWrite,
     EndTimeFilter,
+    Geometry,
     Relationship,
     SequenceRows,
     Transformation,
     filters,
 )
-from cognite.client.data_classes._base import CogniteResourceList, Geometry
+from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import Buckets
 from cognite.client.data_classes.capabilities import Capability, LegacyCapability, UnknownAcl
 from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNode, TypedNodeApply
