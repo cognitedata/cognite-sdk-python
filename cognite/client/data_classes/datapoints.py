@@ -3,15 +3,14 @@ from __future__ import annotations
 import contextlib
 import datetime
 import json
-import typing
 from abc import abstractmethod
 from collections import ChainMap, defaultdict
-from collections.abc import Collection, Iterator, Sequence
+from collections.abc import Collection, Iterator
 from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, overload
+from typing import TYPE_CHECKING, Any, ClassVar, NoReturn, overload
 from zoneinfo import ZoneInfo
 
 from typing_extensions import Self
@@ -19,15 +18,19 @@ from typing_extensions import Self
 from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.data_classes.data_modeling import NodeId
+from cognite.client.data_classes.datapoint_aggregates import (
+    _INT_AGGREGATES_CAMEL,
+    ALL_SORTED_DP_AGGS,
+)
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier, InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
     concat_dps_dataframe_list,
+    convert_dps_to_dataframe,
     convert_tz_for_pandas,
     notebook_display_with_fallback,
-    resolve_ts_identifier_as_df_column_name,
 )
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
@@ -41,7 +44,6 @@ from cognite.client.utils._time import (
     convert_timezone_to_str,
     parse_str_timezone,
 )
-from cognite.client.utils.useful_types import SequenceNotStr
 
 if NUMPY_IS_AVAILABLE:
     import numpy as np
@@ -52,48 +54,13 @@ if TYPE_CHECKING:
 
     from cognite.client import AsyncCogniteClient
     from cognite.client._api.datapoint_tasks import BaseTaskOrchestrator
+    from cognite.client.data_classes.datapoint_aggregates import Aggregate
 
     NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
     NumpyUInt32Array = npt.NDArray[np.uint32]
     NumpyInt64Array = npt.NDArray[np.int64]
     NumpyFloat64Array = npt.NDArray[np.float64]
     NumpyObjArray = npt.NDArray[np.object_]
-
-
-Aggregate = Literal[
-    "average",
-    "continuous_variance",
-    "count",
-    "count_bad",
-    "count_good",
-    "count_uncertain",
-    "discrete_variance",
-    "duration_bad",
-    "duration_good",
-    "duration_uncertain",
-    "interpolation",
-    "max",
-    "max_datapoint",
-    "min",
-    "min_datapoint",
-    "step_interpolation",
-    "sum",
-    "total_variation",
-]
-_OBJECT_AGGREGATES: frozenset[Literal["maxDatapoint", "minDatapoint"]] = frozenset({"maxDatapoint", "minDatapoint"})
-_INT_AGGREGATES = frozenset(
-    {
-        "count",
-        "countBad",
-        "countGood",
-        "countUncertain",
-        "durationBad",
-        "durationGood",
-        "durationUncertain",
-    }
-)
-ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
-ALL_SORTED_NUMERIC_DP_AGGS = [agg for agg in ALL_SORTED_DP_AGGS if agg not in ("min_datapoint", "max_datapoint")]
 
 
 def numpy_dtype_fix(
@@ -731,7 +698,7 @@ class DatapointsArray(CogniteResource):
             for attr, values in datapoints_by_attr.items():
                 if attr == "timestamp":
                     array_by_attr[attr] = np.array(values, dtype="datetime64[ms]").astype("datetime64[ns]")
-                elif attr in _INT_AGGREGATES:
+                elif attr in _INT_AGGREGATES_CAMEL:
                     array_by_attr[attr] = np.array(values, dtype=np.int64)
                 else:
                     try:
