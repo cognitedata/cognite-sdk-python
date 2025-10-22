@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import difflib
 from collections import defaultdict
-from functools import cache
 from itertools import chain
 from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api.unit_system import UnitSystemAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.units import Unit, UnitList
+from cognite.client.utils._async_helpers import async_cache
 from cognite.client.utils._auxiliary import remove_duplicates_keep_order
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient, ClientConfig
 
 
-@cache
+@async_cache
 async def _create_unit_lookups(unit_client: UnitAPI) -> tuple[dict[str, dict[str, Unit]], dict[str, list[Unit]]]:
     units = await unit_client.list()
     alias_by_quantity: defaultdict[str, dict[str, Unit]] = defaultdict(dict)
