@@ -2209,11 +2209,13 @@ class DatapointsAPI(APIClient):
         await self.insert_multiple(dps)
 
     def _select_dps_fetch_strategy(self, queries: list[DatapointsQuery]) -> type[DpsFetchStrategy]:
-        from cognite.client import global_config
+        semaphore = get_global_datapoints_semaphore()
 
-        # Running mode is decided based on how many time series are requested VS. number of workers:
-        if len(queries) <= global_config.max_workers:
-            # Start shooting requests from the hip immediately:
+        # We decide the fetching strategy based on how many time series the user has requested VS the
+        # max concurrency we allow for datapoints requests. When the number of time series is small enough
+        # to fit within the semaphore limit, all time series can have their separate request initially;
+        # (these fetch tasks will dynamically split based on density, in order to make full use of the "pool"):
+        if len(queries) <= semaphore._bound_value:
             return EagerDpsFetcher
         # Fetch a smaller, chunked batch of dps from all time series - which allows us to do some rudimentary
         # guesstimation of dps density - then chunk away:
