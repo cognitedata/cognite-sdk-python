@@ -13,6 +13,18 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.88.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.87.0...v7.88.0) (2025-10-22)
+
+
+### Features
+
+* add labels property to agents SDK ([#2372](https://github.com/cognitedata/cognite-sdk-python/issues/2372)) ([489c703](https://github.com/cognitedata/cognite-sdk-python/commit/489c703aa70530559546d36e8063cbe2d0c0149a))
+
+
+### Documentation
+
+* fix agent_id to agent_external_id in chat() docstring examples ([#2373](https://github.com/cognitedata/cognite-sdk-python/issues/2373)) ([787926e](https://github.com/cognitedata/cognite-sdk-python/commit/787926ed7d939e3ad51c9e83040541dff792ed35))
+
 ## [7.87.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.86.0...v7.87.0) (2025-10-15)
 
 
