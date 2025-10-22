@@ -89,6 +89,10 @@ types-pytz = "^2025.2.0.20250516"
 tenacity = "^9.1.2"
 ruff = "0.13.2"
 
+
+[tool.poetry.group.jupyter.dependencies]
+notebook = "^7.4.7"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
