@@ -2,11 +2,8 @@ from __future__ import annotations
 
 import numbers
 import re
-import threading
 import time
-from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
-from functools import wraps
 from typing import ParamSpec, TypeVar, cast, overload
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -349,28 +346,3 @@ def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int
     # Find a `delta_ms` that's a multiple of granularity in ms (trivial for raw queries).
     delta_ms = granularity_in_ms * round(tot_ms / n_splits / granularity_in_ms)
     return [*(start + delta_ms * i for i in range(n_splits)), end]
-
-
-def timed_cache(ttl: int = 5) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
-    """
-    A thread-safe timed cache decorator for a function (that ignores arguments), accepting a custom
-    time-to-live (ttl) for the cached value (seconds).
-    """
-
-    def decorator(func: Callable[_P, _T]) -> Callable[_P, _T]:
-        lock = threading.Lock()
-        value: _T = None  # type: ignore [assignment]
-        start_time = 0.0
-
-        @wraps(func)
-        def wrapper(*a: _P.args, **kw: _P.kwargs) -> _T:
-            nonlocal value, start_time
-            with lock:
-                if (current_time := time.time()) - start_time < ttl:
-                    return value
-                value, start_time = func(*a, **kw), current_time
-                return value
-
-        return wrapper
-
-    return decorator
