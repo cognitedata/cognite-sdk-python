@@ -125,24 +125,24 @@ class Select(SelectBase):
         )
 
 
+@dataclass
 class QueryBase(CogniteObject, ABC):
     """Abstract base class for normal queries and sync queries"""
 
-    def __init__(
+    with_: Mapping[str, ResultSetExpressionBase]
+    select: Mapping[str, SelectBase]
+    parameters: Mapping[str, PropertyValue] = field(default_factory=dict)
+    cursors: Mapping[str, str | None] = field(default_factory=dict)
+
+    def ___post_init__(
         self,
-        with_: Mapping[str, ResultSetExpressionBase],
-        select: Mapping[str, SelectBase],
-        parameters: Mapping[str, PropertyValue] | None = None,
-        cursors: Mapping[str, str | None] | None = None,
     ) -> None:
-        if not_matching := set(select) - set(with_):
+        if not_matching := set(self.select) - set(self.with_):
             raise ValueError(
                 f"The select keys must match the with keys, the following are not matching: {not_matching}"
             )
-        self.with_ = with_
-        self.select = select
-        self.parameters = parameters
-        self.cursors = cursors or dict.fromkeys(select)
+        if not self.cursors:
+            self.cursors = dict.fromkeys(self.select)
 
     def instance_type_by_result_expression(self) -> dict[str, type[NodeListWithCursor] | type[EdgeListWithCursor]]:
         return {
@@ -167,8 +167,8 @@ class QueryBase(CogniteObject, ABC):
     def _load_base(
         cls, resource: dict[str, Any], result_set_class: type[ResultSetExpressionBase], select_class: type[SelectBase]
     ) -> Self:
-        parameters = dict(resource["parameters"].items()) if "parameters" in resource else None
-        cursors = dict(resource["cursors"].items()) if "cursors" in resource else None
+        parameters = dict(resource["parameters"].items()) if "parameters" in resource else {}
+        cursors = dict(resource["cursors"].items()) if "cursors" in resource else {}
         return cls(
             with_={k: result_set_class._load(v) for k, v in resource["with"].items()},
             select={k: select_class._load(v) for k, v in resource["select"].items()},
@@ -177,6 +177,7 @@ class QueryBase(CogniteObject, ABC):
         )
 
 
+@dataclass
 class Query(QueryBase):
     r"""Query allows you to do advanced queries on the data model.
 
@@ -187,20 +188,15 @@ class Query(QueryBase):
         cursors (Mapping[str, str | None] | None): A dictionary of cursors to use in the query. These allow for pagination.
     """
 
-    def __init__(
-        self,
-        with_: Mapping[str, ResultSetExpression],
-        select: Mapping[str, Select],
-        parameters: Mapping[str, PropertyValue] | None = None,
-        cursors: Mapping[str, str | None] | None = None,
-    ) -> None:
-        super().__init__(with_, select, parameters, cursors)
+    with_: Mapping[str, ResultSetExpression]
+    select: Mapping[str, Select]
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls._load_base(resource, ResultSetExpression, Select)
 
 
+@dataclass
 class QuerySync(QueryBase):
     r"""Sync allows you to do subscribe to changes in instances.
 
@@ -211,20 +207,15 @@ class QuerySync(QueryBase):
         cursors (Mapping[str, str | None] | None): A dictionary of cursors to use in the query. These allow for pagination.
     """
 
-    def __init__(
-        self,
-        with_: Mapping[str, ResultSetExpressionSync],
-        select: Mapping[str, SelectSync],
-        parameters: Mapping[str, PropertyValue] | None = None,
-        cursors: Mapping[str, str | None] | None = None,
-    ) -> None:
-        super().__init__(with_, select, parameters, cursors)
+    with_: Mapping[str, ResultSetExpressionSync]
+    select: Mapping[str, SelectSync]
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls._load_base(resource, ResultSetExpressionSync, SelectSync)
 
 
+@dataclass
 class ResultSetExpressionBase(CogniteObject, ABC):
     @staticmethod
     def _load_sort(resource: dict[str, Any], name: str) -> list[InstanceSort]:
@@ -257,6 +248,7 @@ class ResultSetExpressionBase(CogniteObject, ABC):
                 error()
 
 
+@dataclass
 class ResultSetExpression(ResultSetExpressionBase, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ResultSetExpression:
@@ -270,24 +262,17 @@ class ResultSetExpression(ResultSetExpressionBase, ABC):
             return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
 
 
+@dataclass
 class NodeOrEdgeResultSetExpression(ResultSetExpression, ABC):
-    def __init__(
-        self,
-        from_: str | None,
-        filter: Filter | None,
-        limit: int | None,
-        sort: list[InstanceSort] | None,
-        direction: Literal["outwards", "inwards"] = "outwards",
-        chain_to: Literal["destination", "source"] = "destination",
-    ):
-        self.from_ = from_
-        self.filter = filter
-        self.limit = limit
-        self.sort = sort
-        self.direction = direction
-        self.chain_to = chain_to
+    from_: str | None = None
+    filter: Filter | None = None
+    limit: int | None = None
+    sort: list[InstanceSort] = field(default_factory=list)
+    direction: Literal["outwards", "inwards"] = "outwards"
+    chain_to: Literal["destination", "source"] = "destination"
 
 
+@dataclass
 class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
     """Describes how to query for nodes in the data model.
 
@@ -301,6 +286,9 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
         chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
     """
 
+    through: PropertyId | None = None
+
+    # Overriding __init__ to be more liberal in what we accept for through
     def __init__(
         self,
         from_: str | None = None,
@@ -312,14 +300,9 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
         chain_to: Literal["destination", "source"] = "destination",
     ) -> None:
         super().__init__(
-            from_=from_,
-            filter=filter,
-            limit=limit,
-            sort=sort,
-            direction=direction,
-            chain_to=chain_to,
+            from_=from_, filter=filter, sort=sort or [], limit=limit, direction=direction, chain_to=chain_to
         )
-        self.through: PropertyId | None = self._init_through(through)
+        self.through = self._init_through(through)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
@@ -357,6 +340,7 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
         return output
 
 
+@dataclass
 class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
     """Describes how to query for edges in the data model.
 
@@ -374,33 +358,11 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
         chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
     """
 
-    def __init__(
-        self,
-        from_: str | None = None,
-        max_distance: int | None = None,
-        direction: Literal["outwards", "inwards"] = "outwards",
-        filter: Filter | None = None,
-        node_filter: Filter | None = None,
-        termination_filter: Filter | None = None,
-        limit_each: int | None = None,
-        sort: list[InstanceSort] | None = None,
-        post_sort: list[InstanceSort] | None = None,
-        limit: int | None = None,
-        chain_to: Literal["destination", "source"] = "destination",
-    ) -> None:
-        super().__init__(
-            from_=from_,
-            filter=filter,
-            limit=limit,
-            sort=sort,
-            direction=direction,
-            chain_to=chain_to,
-        )
-        self.max_distance = max_distance
-        self.node_filter = node_filter
-        self.termination_filter = termination_filter
-        self.limit_each = limit_each
-        self.post_sort = post_sort
+    max_distance: int | None = None
+    node_filter: Filter | None = None
+    termination_filter: Filter | None = None
+    limit_each: int | None = None
+    post_sort: list[InstanceSort] = field(default_factory=list)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
@@ -452,26 +414,27 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
 SyncMode = Literal["one_phase", "two_phase", "no_backfill"]
 
 
+@dataclass
 class ResultSetExpressionSync(ResultSetExpressionBase, ABC):
-    def __init__(
-        self,
-        from_: str | None,
-        filter: Filter | None,
-        limit: int | None,
-        direction: Literal["outwards", "inwards"] = "outwards",
-        chain_to: Literal["destination", "source"] = "destination",
-        skip_already_deleted: bool = True,
-        sync_mode: SyncMode | None = None,
-        backfill_sort: list[InstanceSort] | None = None,
-    ):
-        self.from_ = from_
-        self.filter = filter
-        self.limit = limit
-        self.direction = direction
-        self.chain_to = chain_to
-        self.skip_already_deleted = skip_already_deleted
-        self.sync_mode = sync_mode
-        self.backfill_sort = backfill_sort
+    from_: str | None = None
+    filter: Filter | None = None
+    limit: int | None = None
+    direction: Literal["outwards", "inwards"] = "outwards"
+    chain_to: Literal["destination", "source"] = "destination"
+    skip_already_deleted: bool = True
+    sync_mode: SyncMode | None = None
+    backfill_sort: list[InstanceSort] = field(default_factory=list)
+
+    @classmethod
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
+    ) -> ResultSetExpressionSync:
+        if "nodes" in resource:
+            return NodeResultSetExpressionSync._load(resource, cognite_client)
+        elif "edges" in resource:
+            return EdgeResultSetExpressionSync._load(resource, cognite_client)
+        else:
+            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
 
     @staticmethod
     def _load_sync_mode(sync_mode: str | None) -> SyncMode | None:
@@ -499,18 +462,8 @@ class ResultSetExpressionSync(ResultSetExpressionBase, ABC):
             case _:
                 assert_never(sync_mode)
 
-    @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
-    ) -> ResultSetExpressionSync:
-        if "nodes" in resource:
-            return NodeResultSetExpressionSync._load(resource, cognite_client)
-        elif "edges" in resource:
-            return EdgeResultSetExpressionSync._load(resource, cognite_client)
-        else:
-            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
 
-
+@dataclass
 class NodeResultSetExpressionSync(ResultSetExpressionSync):
     """Describes how to query for nodes in the data model.
 
@@ -526,6 +479,9 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
         backfill_sort (list[InstanceSort] | None): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
     """
 
+    through: PropertyId | None = None
+
+    # Overriding __init__ to be more liberal in what we accept for through
     def __init__(
         self,
         from_: str | None = None,
@@ -546,9 +502,9 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
             chain_to=chain_to,
             skip_already_deleted=skip_already_deleted,
             sync_mode=sync_mode,
-            backfill_sort=backfill_sort,
+            backfill_sort=backfill_sort or [],
         )
-        self.through: PropertyId | None = self._init_through(through)
+        self.through = self._init_through(through)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
@@ -594,6 +550,7 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
         return output
 
 
+@dataclass
 class EdgeResultSetExpressionSync(ResultSetExpressionSync):
     """Describes how to query for edges in the data model.
 
@@ -611,33 +568,9 @@ class EdgeResultSetExpressionSync(ResultSetExpressionSync):
         backfill_sort (list[InstanceSort] | None): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
     """
 
-    def __init__(
-        self,
-        from_: str | None = None,
-        max_distance: int | None = None,
-        direction: Literal["outwards", "inwards"] = "outwards",
-        filter: Filter | None = None,
-        node_filter: Filter | None = None,
-        termination_filter: Filter | None = None,
-        limit: int | None = None,
-        chain_to: Literal["destination", "source"] = "destination",
-        skip_already_deleted: bool = True,
-        sync_mode: Literal["one_phase", "two_phase", "no_backfill"] | None = None,
-        backfill_sort: list[InstanceSort] | None = None,
-    ) -> None:
-        super().__init__(
-            from_=from_,
-            filter=filter,
-            limit=limit,
-            direction=direction,
-            chain_to=chain_to,
-            skip_already_deleted=skip_already_deleted,
-            sync_mode=sync_mode,
-            backfill_sort=backfill_sort,
-        )
-        self.max_distance = max_distance
-        self.node_filter = node_filter
-        self.termination_filter = termination_filter
+    max_distance: int | None = None
+    node_filter: Filter | None = None
+    termination_filter: Filter | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
@@ -767,11 +700,8 @@ class QueryResult(UserDict):
         )
 
 
+@dataclass
 class SetOperation(ResultSetExpression, ABC):
-    def __init__(self, except_: SequenceNotStr[str] | None = None, limit: int | None = None) -> None:
-        self.except_ = except_
-        self.limit = limit
-
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> SetOperation:
         if "union" in resource:
@@ -784,12 +714,11 @@ class SetOperation(ResultSetExpression, ABC):
             raise ValueError(f"Unknown set operation {resource}")
 
 
+@dataclass
 class Union(SetOperation):
-    def __init__(
-        self, union: Sequence[str | SetOperation], except_: SequenceNotStr[str] | None = None, limit: int | None = None
-    ) -> None:
-        super().__init__(except_=except_, limit=limit)
-        self.union = union
+    union: Sequence[str | SetOperation]
+    except_: SequenceNotStr[str] | None = None
+    limit: int | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Union:
@@ -812,15 +741,11 @@ class Union(SetOperation):
         return output
 
 
+@dataclass
 class UnionAll(SetOperation):
-    def __init__(
-        self,
-        union_all: Sequence[str | SetOperation],
-        except_: SequenceNotStr[str] | None = None,
-        limit: int | None = None,
-    ) -> None:
-        super().__init__(except_=except_, limit=limit)
-        self.union_all = union_all
+    union_all: Sequence[str | SetOperation]
+    except_: SequenceNotStr[str] | None = None
+    limit: int | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> UnionAll:
@@ -843,15 +768,11 @@ class UnionAll(SetOperation):
         return output
 
 
+@dataclass
 class Intersection(SetOperation):
-    def __init__(
-        self,
-        intersection: Sequence[str | SetOperation],
-        except_: SequenceNotStr[str] | None = None,
-        limit: int | None = None,
-    ) -> None:
-        super().__init__(except_=except_, limit=limit)
-        self.intersection = intersection
+    intersection: Sequence[str | SetOperation]
+    except_: SequenceNotStr[str] | None = None
+    limit: int | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Intersection:
