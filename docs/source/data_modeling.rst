@@ -166,10 +166,10 @@ of instances from a specific space in a SQLite database.
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
     from cognite.client.data_classes.data_modeling import (
-        Query,
         QueryResult,
-        NodeResultSetExpression,
-        Select,
+        QuerySync,
+        NodeResultSetExpressionSync,
+        SelectSync,
         SubscriptionContext,
     )
     from cognite.client.data_classes.filters import Equals
@@ -223,13 +223,13 @@ of instances from a specific space in a SQLite database.
 
         existing_cursor = await asyncio.to_thread(_get_cursor)
 
-        query = Query(
+        query = QuerySync(
             with_={
-                "nodes": NodeResultSetExpression(
+                "nodes": NodeResultSetExpressionSync(
                     filter=Equals(property=["node", "space"], value=space_to_sync)
                 )
             },
-            select={"nodes": Select()},
+            select={"nodes": SelectSync()},
             cursors={"nodes": existing_cursor},
         )
 
