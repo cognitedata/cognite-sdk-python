@@ -168,9 +168,9 @@ Async API (Recommended)
     )
     from cognite.client.data_classes.data_modeling.query import (
         QueryResult,
-        Query,
-        NodeResultSetExpression,
-        Select,
+        QuerySync,
+        NodeResultSetExpressionSync,
+        SelectSync,
     )
     from cognite.client.data_classes.filters import Equals
 
@@ -203,13 +203,13 @@ Async API (Recommended)
             if existing_cursor:
                 print("Found existing cursor, using that")
 
-        query = Query(
+        query = QuerySync(
             with_={
-                "nodes": NodeResultSetExpression(
+                "nodes": NodeResultSetExpressionSync(
                     filter=Equals(property=["node", "space"], value=space_to_sync)
                 )
             },
-            select={"nodes": Select()},
+            select={"nodes": SelectSync()},
             cursors={"nodes": existing_cursor[0] if existing_cursor else None},
         )
 
