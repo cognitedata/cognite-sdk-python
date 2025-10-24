@@ -96,6 +96,9 @@ class Filter(ABC):
         )
         return True
 
+    def __eq__(self, other: Filter) -> bool:
+        return type(self) is type(other) and self.dump() == other.dump()
+
     def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
         """
         Dump the filter to a dictionary.
