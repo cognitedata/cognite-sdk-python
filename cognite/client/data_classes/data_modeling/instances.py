@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import threading
 import warnings
 from abc import ABC, abstractmethod
 from collections import UserDict, defaultdict
@@ -1369,20 +1368,6 @@ class InstancesDeleteResult:
 
     nodes: list[NodeId]
     edges: list[EdgeId]
-
-
-@dataclass
-class SubscriptionContext:
-    last_successful_sync: datetime | None = None
-    last_successful_callback: datetime | None = None
-    _canceled: bool = False
-    _thread: threading.Thread | None = None
-
-    def cancel(self) -> None:
-        self._canceled = True
-
-    def is_alive(self) -> bool:
-        return self._thread is not None and self._thread.is_alive()
 
 
 @dataclass
