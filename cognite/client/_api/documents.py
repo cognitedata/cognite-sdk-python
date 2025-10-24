@@ -8,6 +8,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import filters
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.documents import (
     Document,
     DocumentHighlightList,
@@ -18,6 +19,7 @@ from cognite.client.data_classes.documents import (
     SourceFileProperty,
 )
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient, ClientConfig
@@ -316,7 +318,12 @@ class DocumentsAPI(APIClient):
             limit=limit,
         )
 
-    async def retrieve_content(self, id: int) -> bytes:
+    async def retrieve_content(
+        self,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+    ) -> bytes:
         """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
@@ -327,7 +334,9 @@ class DocumentsAPI(APIClient):
         you can use this endpoint.
 
         Args:
-            id (int): The server-generated ID for the document you want to retrieve the content of.
+            id (int | None): The server-generated ID for the document you want to retrieve the content of.
+            external_id (str | None): External ID of the document.
+            instance_id (NodeId | None): Instance ID of the document.
 
         Returns:
             bytes: The content of the document.
@@ -340,11 +349,30 @@ class DocumentsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.retrieve_content(id=123)
+
+            Retrieve the content of a document with external_id "my_document":
+
+                >>> content = client.documents.retrieve_content(external_id="my_document")
+
+            Retrieve the content of a document with instance_id:
+
+                >>> from cognite.client.data_classes.data_modeling.ids import NodeId
+                >>> instance_id = NodeId(space="my_space", external_id="my_document")
+                >>> content = client.documents.retrieve_content(instance_id=instance_id)
         """
-        response = await self._post(f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json={"id": id})
+        ident = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()[0]
+        response = await self._post(
+            f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json=ident.as_dict()
+        )
         return response.content
 
-    async def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
+    async def retrieve_content_buffer(
+        self,
+        buffer: BinaryIO,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+    ) -> None:
         """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
@@ -355,8 +383,10 @@ class DocumentsAPI(APIClient):
         you can use this endpoint.
 
         Args:
-            id (int): The server-generated ID for the document you want to retrieve the content of.
             buffer (BinaryIO): The document content is streamed directly into the buffer. This is useful for retrieving large documents.
+            id (int | None): The server-generated ID for the document you want to retrieve the content of.
+            external_id (str | None): External ID of the document.
+            instance_id (NodeId | None): Instance ID of the document.
 
         Examples:
 
@@ -367,15 +397,22 @@ class DocumentsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> with Path("my_file.txt").open("wb") as buffer:
-                ...     client.documents.retrieve_content_buffer(id=123, buffer=buffer)
+                ...     client.documents.retrieve_content_buffer(buffer, id=123)
+
+            Retrieve the content of a document with external_id "my_document" into local file "my_text.txt":
+
+                >>> with Path("my_file.txt").open("wb") as buffer:
+                ...     client.documents.retrieve_content_buffer(buffer, external_id="my_document")
         """
         from cognite.client import global_config
 
+        ident = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()[0]
         stream = self._stream(
-            "GET",
-            url_path=f"{self._RESOURCE_PATH}/{id}/content",
+            "POST",
+            url_path=f"{self._RESOURCE_PATH}/content",
             headers={"accept": "text/plain"},
             timeout=self._config.file_transfer_timeout,
+            json=ident.as_dict(),
         )
         async with stream as response:
             async for chunk in response.aiter_bytes(chunk_size=global_config.file_download_chunk_size):
