@@ -422,10 +422,10 @@ class TestDeleteDatapoints:
 
 
 class TestDatapointsObject:
-    def test_len(self, cognite_client: CogniteClient) -> None:
+    def test_len(self) -> None:
         assert 3 == len(Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3]))
 
-    def test_get_non_empty_data_fields(self, cognite_client: CogniteClient) -> None:
+    def test_get_non_empty_data_fields(self) -> None:
         assert sorted([("timestamp", [1, 2, 3]), ("value", [1, 2, 3])]) == sorted(
             Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])._get_non_empty_data_fields()
         )
@@ -442,12 +442,12 @@ class TestDatapointsObject:
         )
         assert [("timestamp", [])] == list(Datapoints(id=1)._get_non_empty_data_fields())
 
-    def test_iter(self, cognite_client: CogniteClient) -> None:
+    def test_iter(self) -> None:
         for dp in Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3]):
             assert dp.timestamp in [1, 2, 3]
             assert dp.value in [1, 2, 3]
 
-    def test_eq(self, cognite_client: CogniteClient) -> None:
+    def test_eq(self) -> None:
         assert Datapoints(1) == Datapoints(1)
         assert Datapoints(1, timestamp=[1, 2, 3], value=[1, 2, 3]) == Datapoints(
             1, timestamp=[1, 2, 3], value=[1, 2, 3]
@@ -458,7 +458,7 @@ class TestDatapointsObject:
             1, timestamp=[1, 2, 3], value=[1, 2, 4]
         )
 
-    def test_get_item(self, cognite_client: CogniteClient) -> None:
+    def test_get_item(self) -> None:
         dps = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])
 
         assert Datapoint(timestamp=1, value=1) == dps[0]
@@ -466,7 +466,7 @@ class TestDatapointsObject:
         assert Datapoint(timestamp=3, value=3) == dps[2]
         assert Datapoints(id=1, timestamp=[1, 2], value=[1, 2]) == dps[:2]
 
-    def test_load(self, cognite_client: CogniteClient) -> None:
+    def test_load(self) -> None:
         res = Datapoints.load(
             {
                 "id": 1,
@@ -485,7 +485,7 @@ class TestDatapointsObject:
         assert res.is_step is False
         assert res.is_string is False
 
-    def test_load_string(self, cognite_client: CogniteClient) -> None:
+    def test_load_string(self) -> None:
         res = Datapoints.load(
             {
                 "id": 1,
@@ -503,151 +503,147 @@ class TestDatapointsObject:
         assert res.is_step is False
         assert res.unit is None
 
-    def test_slice(self, cognite_client: CogniteClient) -> None:
+    def test_slice(self) -> None:
         res = Datapoints(id=1, timestamp=[1, 2, 3])._slice(slice(None, 1))
         assert [1] == res.timestamp
 
-    def test__extend(self, cognite_client: CogniteClient) -> None:  # test _extend, not extend
+    def test__extend(self) -> None:  # test _extend, not extend
         d0 = Datapoints()
         d1 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
-        d2 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
-        d3 = Datapoints(id=1, external_id="1", timestamp=[7, 8, 9, 10], value=[7, 8, 9, 10])
 
-        d0._extend(d1)
-        assert [1, 2, 3] == d0.timestamp
-        assert [1, 2, 3] == d0.value
-        assert 1 == d0.id
-        assert "1" == d0.external_id
-        assert d0.sum is None
-
-        d0._extend(d2)
-        assert [1, 2, 3, 4, 5, 6] == d0.value
-        assert [1, 2, 3, 4, 5, 6] == d0.timestamp
-        assert 1 == d0.id
-        assert "1" == d0.external_id
-        assert d0.sum is None
-
-        d0._extend(d3)
-        assert [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] == d0.timestamp
-        assert [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] == d0.value
-        assert 1 == d0.id
-        assert "1" == d0.external_id
-        assert d0.sum is None
+        with pytest.raises(NotImplementedError, match="Extending Datapoints is not supported"):
+            d0._extend(d1)
 
 
 @pytest.mark.dsl
 class TestPandasIntegration:
-    def test_datapoint(self, cognite_client: CogniteClient) -> None:
+    def test_datapoint(self) -> None:
         import pandas as pd
 
         d = Datapoint(timestamp=0, value=2, max=3)
         expected_df = pd.DataFrame({"value": [2], "max": [3]}, index=[pd.Timestamp(0, unit="ms")])
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(), check_like=True)
 
-    def test_datapoints(self, cognite_client: CogniteClient) -> None:
+    def test_datapoints(self) -> None:
         import pandas as pd
 
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
-            {"1|average": [2, 3, 4.0], "1|step_interpolation": [3, 4, 5.0]},
+            # Since ID is not unique, we use stand-in column names initially, then replace:
+            {"first-col": [2, 3, 4.0], "second-col": [3, 4, 5.0]},
             index=pd.to_datetime(range(1, 4), unit="ms"),
+        )
+        expected_df.columns = pd.MultiIndex.from_tuples(
+            [(1, "average"), (1, "step_interpolation")],
+            names=["identifier", "aggregate"],
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
 
-    def test_datapoints_no_names(self, cognite_client: CogniteClient) -> None:
+    def test_datapoints_no_names(self) -> None:
         import pandas as pd
 
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4])
-        expected_df = pd.DataFrame({"1": [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df.columns = pd.MultiIndex.from_tuples([(1,)], names=["identifier"])
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=False))
-        expected_df = pd.DataFrame({"1|average": [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+
+        expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df.columns = pd.MultiIndex.from_tuples([(1, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=True))
 
-    def test_id_and_external_id_set_gives_external_id_columns(self, cognite_client: CogniteClient) -> None:
+    def test_id_and_external_id_set_gives_external_id_columns(self) -> None:
         import pandas as pd
 
         d = Datapoints(id=0, external_id="abc", timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
-            {"abc|average": [2, 3, 4.0], "abc|step_interpolation": [3, 4, 5.0]},
+            {"abc": [2, 3, 4.0], "also-abc": [3, 4, 5.0]},
             index=pd.to_datetime(range(1, 4), unit="ms"),
+        )
+        expected_df.columns = pd.MultiIndex.from_tuples(
+            [("abc", "average"), ("abc", "step_interpolation")],
+            names=["identifier", "aggregate"],
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
 
-    def test_datapoints_empty(self, cognite_client: CogniteClient) -> None:
-        d = Datapoints(external_id="1", timestamp=[], value=[])
+    def test_datapoints_empty(self) -> None:
+        d = Datapoints(external_id="1", timestamp=[], value=[], is_string=False)
         assert d.to_pandas().empty
 
-    def test_datapoints_list(self, cognite_client: CogniteClient) -> None:
+    def test_datapoints_list(self) -> None:
         import pandas as pd
 
         d1 = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
-        d2 = Datapoints(id=2, timestamp=[1, 2, 3], count=[2, 3, 4], step_interpolation=[3, 4, 5])
-        d3 = Datapoints(id=3, timestamp=[1, 3, 4], value=[1, 3, 4.0])
+        d2 = Datapoints(external_id="foo", timestamp=[1, 2, 3], count=[2, 3, 4], step_interpolation=[3, 4, 5])
+        d3 = Datapoints(id=3, timestamp=[1, 3, 4], value=[1, 3, 4.0], is_string=False)
         dps_list = DatapointsList([d1, d2, d3])
         expected_df = pd.DataFrame(
             {
-                "1|average": [2, 3, 4, None],
-                "1|step_interpolation": [3, 4, 5, None],
-                "2|count": pd.array([2, 3, 4, None], dtype="Int64"),
-                "2|step_interpolation": [3, 4, 5, None],
-                "3": [1, None, 3, 4.0],
+                "col1": [2, 3, 4, None],
+                "col2": [3, 4, 5, None],
+                "col3": pd.array([2, 3, 4, None], dtype="Int64"),
+                "col4": [3, 4, 5, None],
+                "col5": [1, None, 3, 4.0],
             },
             index=pd.to_datetime(range(1, 5), unit="ms"),
         )
+        expected_df.columns = pd.MultiIndex.from_tuples(
+            [(1, "average"), (1, "step_interpolation"), ("foo", "count"), ("foo", "step_interpolation"), (3, "")],
+            names=["identifier", "aggregate"],
+        )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
 
-    def test_datapoints_list_names(self, cognite_client: CogniteClient) -> None:
+    def test_datapoints_list_names(self) -> None:
         import pandas as pd
 
         d1 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4])
         d2 = Datapoints(id=3, timestamp=[1, 3], average=[1, 3])
         dps_list = DatapointsList([d1, d2])
-        expected_df = pd.DataFrame(
-            {"2|max": [2, 3, 4.0], "3|average": [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms")
-        )
+        expected_df = pd.DataFrame({1: [2, 3, 4.0], 2: [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df.columns = pd.MultiIndex.from_tuples([(2, "max"), (3, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
-        expected_df.columns = [c[:1] for c in expected_df.columns]
+        expected_df.columns = pd.MultiIndex.from_tuples([(2,), (3,)], names=["identifier"])
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(include_aggregate_name=False), check_freq=False)
 
-    def test_datapoints_list_names_dup(self, cognite_client: CogniteClient) -> None:
+    def test_datapoints_list_names_dup(self) -> None:
         import pandas as pd
 
         d1 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4])
         d2 = Datapoints(id=2, timestamp=[1, 3], average=[1, 3])
         dps_list = DatapointsList([d1, d2])
         expected_df = pd.DataFrame(
-            {"2|max": [2, 3, 4.0], "2|average": [1, None, 3]},
+            {1: [2, 3, 4.0], 2: [1, None, 3]},
             index=pd.to_datetime(range(1, 4), unit="ms"),
-            columns=["2|max", "2|average"],
         )
+        expected_df.columns = pd.MultiIndex.from_tuples([(2, "max"), (2, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
         dps_list.to_pandas(include_aggregate_name=False)
         assert True  # Duplicated columns names were not allowed prior to v5
 
-    def test_datapoints_list_non_aligned(self, cognite_client: CogniteClient) -> None:
+    def test_datapoints_list_non_aligned(self) -> None:
         import pandas as pd
 
-        d1 = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3.0])
-        d2 = Datapoints(id=2, timestamp=[3, 4, 5], value=[3, 4, 5.0])
+        d1 = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3.0], is_string=False)
+        d2 = Datapoints(id=2, timestamp=[3, 4, 5], value=[3, 4, 5.0], is_string=False)
 
         dps_list = DatapointsList([d1, d2])
 
         expected_df = pd.DataFrame(
-            {"1": [1, 2, 3, None, None], "2": [None, None, 3, 4, 5]},
+            {1: [1, 2, 3, None, None], 2: [None, None, 3, 4, 5]},
             index=pd.to_datetime(range(1, 6), unit="ms"),
         )
+        expected_df.columns = pd.MultiIndex.from_tuples([(1,), (2,)], names=["identifier"])
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
 
-    def test_datapoints_list_empty(self, cognite_client: CogniteClient) -> None:
+    def test_datapoints_list_empty(self) -> None:
         dps_list = DatapointsList([])
         assert dps_list.to_pandas().empty
 
-    def test_insert_dataframe(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
+    def test_insert_dataframe_id_and_xid(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
         import pandas as pd
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
-            {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]},
+            {123: [1, 2, 3, 4], "foo": [5.0, 6.0, 7.0, 8.0]},
             index=pd.to_datetime(timestamps, unit="ms"),
         )
         res = cognite_client.time_series.data.insert_dataframe(df)
@@ -660,33 +656,7 @@ class TestPandasIntegration:
                     "datapoints": [{"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(1, 5))],
                 },
                 {
-                    "id": 456,
-                    "datapoints": [{"timestamp": ts, "value": float(val)} for ts, val in zip(timestamps, range(5, 9))],
-                },
-            ]
-        } == request_body
-
-    def test_insert_dataframe_external_ids(
-        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock
-    ) -> None:
-        import pandas as pd
-
-        timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
-        df = pd.DataFrame(
-            {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]},
-            index=pd.to_datetime(timestamps, unit="ms"),
-        )
-        res = cognite_client.time_series.data.insert_dataframe(df)
-        assert res is None
-        request_body = jsgz_load(mock_post_datapoints.get_requests()[0].content)
-        assert {
-            "items": [
-                {
-                    "externalId": "123",
-                    "datapoints": [{"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(1, 5))],
-                },
-                {
-                    "externalId": "456",
+                    "externalId": "foo",
                     "datapoints": [{"timestamp": ts, "value": float(val)} for ts, val in zip(timestamps, range(5, 9))],
                 },
             ]
@@ -763,25 +733,6 @@ class TestPandasIntegration:
         }
         assert expected_body == request_body
 
-    def test_insert_dataframe_malformed_instance_ids(self, cognite_client: CogniteClient) -> None:
-        import pandas as pd
-
-        timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
-        index = pd.to_datetime(timestamps, unit="ms")
-        df = pd.DataFrame({"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]}, index=index)
-        with pytest.raises(
-            ValueError,
-            match=re.escape(
-                "Could not find instance IDs in the column header. InstanceId are given as NodeId or tuple. Got <class 'str'>"
-            ),
-        ):
-            cognite_client.time_series.data.insert_dataframe(df)
-
-        df = pd.DataFrame({(123,): [1, 2, 3, 4], (456,): [5.0, 6.0, 7.0, 8.0]}, index=index)
-        # TODO: NodeId does not give a correct error message when tuples have the wrong number of elements. This should be fixed in the NodeId class.
-        with pytest.raises(KeyError):
-            cognite_client.time_series.data.insert_dataframe(df)
-
     def test_insert_dataframe_with_nans(self, cognite_client: CogniteClient) -> None:
         import pandas as pd
 
@@ -798,7 +749,7 @@ class TestPandasIntegration:
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
-            {"123": [1, 2, None, 4], "456": [5.0, 6.0, 7.0, 8.0]},
+            {123: [1, 2, None, 4], 456: [5.0, 6.0, 7.0, 8.0]},
             index=pd.to_datetime(timestamps, unit="ms"),
         )
         res = cognite_client.time_series.data.insert_dataframe(df, dropna=True)

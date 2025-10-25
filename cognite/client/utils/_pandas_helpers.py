@@ -275,6 +275,8 @@ class _DpsColumnInfo:
             case _, "symbol":
                 return np.array(self.data, dtype=np.object_)
             case _:
+                # IsString is required in the response, so if we reach here, most likely a user has instatiated
+                # the datapoints object themselves:
                 assert_never(f"Invalid combination of is_string={self.is_string} and status_info={self.status_info}")
 
     def _convert_to_array_for_agg_dps(self):

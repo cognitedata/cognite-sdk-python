@@ -45,10 +45,9 @@ from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeries
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.data_modeling.instances import NodeApplyResult
 from cognite.client.data_classes.data_modeling.spaces import SpaceApply
+from cognite.client.data_classes.datapoint_aggregates import _OBJECT_AGGREGATES_CAMEL, ALL_SORTED_NUMERIC_DP_AGGS
 from cognite.client.data_classes.datapoints import (
-    _OBJECT_AGGREGATES_CAMEL,
     ALL_SORTED_DP_AGGS,
-    ALL_SORTED_NUMERIC_DP_AGGS,
     MaxDatapoint,
     MaxDatapointWithStatus,
     MinDatapoint,

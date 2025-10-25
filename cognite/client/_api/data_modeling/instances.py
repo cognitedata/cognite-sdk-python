@@ -62,7 +62,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.query import (
-    NodeOrEdgeResultSetExpression,
     Query,
     QueryBase,
     QueryResult,
@@ -789,14 +788,14 @@ class InstancesAPI(APIClient):
             Subscribe to a given query and process the results in your own callback function
             (here we just print the result for illustration):
 
-                >>> from cognite.client import AsyncCogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.query import (
                 ...     QuerySync, QueryResult, NodeResultSetExpressionSync, SelectSync, SourceSelector
                 ... )
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes.filters import Equals
                 >>>
-                >>> client = AsyncCogniteClient()
+                >>> client = CogniteClient()
                 >>> def just_print_the_result(result: QueryResult) -> None:
                 ...     print(result)
                 >>>
@@ -806,19 +805,15 @@ class InstancesAPI(APIClient):
                 ...     with_={"work_orders": NodeResultSetExpressionSync(filter=filter)},
                 ...     select={"work_orders": SelectSync([SourceSelector(view_id, ["*"])])}
                 ... )
-                >>> subscription_context = await client.data_modeling.instances.subscribe(
+                >>> subscription_context = client.data_modeling.instances.subscribe(
                 ...     query, callback=just_print_the_result
                 ... )
                 >>> # Use the returned subscription_context to manage the subscription, e.g. to cancel it:
                 >>> subscription_context.cancel()
 
         """
-        for result_set_expression in query.with_.values():
-            if (
-                isinstance(result_set_expression, NodeOrEdgeResultSetExpression)
-                and result_set_expression.from_ is not None
-            ):
-                raise ValueError("Cannot chain result sets when subscribing to a query")
+        if any(result_set_expr.from_ is not None for result_set_expr in query.with_.values()):
+            raise ValueError("Cannot chain result sets when subscribing to a query")
 
         subscription_context = SubscriptionContext()
 
@@ -1539,7 +1534,7 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Find work orders created before 2023 sorted by title:
+            Query all pumps connected to work orders created before 2023, sorted by name:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.instances import InstanceSort
