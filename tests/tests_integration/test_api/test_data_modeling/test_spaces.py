@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.data_modeling import Space, SpaceApply, SpaceList
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
@@ -68,7 +68,7 @@ class TestSpacesAPI:
         assert retrieved_spaces.as_apply() == spaces.as_apply()
 
     def test_iterate_over_spaces(self, cognite_client: CogniteClient) -> None:
-        for space in cognite_client.data_modeling.spaces:
+        for space in cognite_client.data_modeling.spaces(limit=2):
             assert isinstance(space, Space)
 
     def test_retrieve_non_existing_space(self, cognite_client: CogniteClient) -> None:
@@ -90,11 +90,15 @@ class TestSpacesAPI:
         )
 
     def test_apply_failed_and_successful_task(
-        self, cognite_client: CogniteClient, integration_test_space: Space, monkeypatch: Any
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        integration_test_space: Space,
+        monkeypatch: Any,
     ) -> None:
         valid_space = SpaceApply(space="myNewValidSpace")
         invalid_space = SpaceApply(space="myInvalidSpace", name="wayTooLong" * 255)
-        monkeypatch.setattr(cognite_client.data_modeling.spaces, "_CREATE_LIMIT", 1)
+        monkeypatch.setattr(async_client.data_modeling.spaces, "_CREATE_LIMIT", 1)
         try:
             with pytest.raises(CogniteAPIError) as error:
                 cognite_client.data_modeling.spaces.apply([valid_space, invalid_space])

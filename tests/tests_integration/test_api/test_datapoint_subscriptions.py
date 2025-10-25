@@ -4,6 +4,7 @@ import math
 import random
 import time
 import unittest
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -12,7 +13,7 @@ import pandas as pd
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import TimeSeries, filters
+from cognite.client.data_classes import TimeSeries, TimeSeriesWrite, filters
 from cognite.client.data_classes.data_modeling import NodeId, SpaceApply
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.datapoints_subscriptions import (
@@ -27,7 +28,7 @@ from cognite.client.utils._text import random_string
 @contextmanager
 def create_subscription_with_cleanup(
     client: CogniteClient, sub_to_create: DataPointSubscriptionWrite
-) -> DatapointSubscription:
+) -> Iterator[DatapointSubscription]:
     sub = None
     try:
         yield (sub := client.time_series.subscriptions.create(sub_to_create))
@@ -49,7 +50,7 @@ def all_time_series_external_ids(cognite_client: CogniteClient, os_and_py_versio
 
     return cognite_client.time_series.upsert(
         [
-            TimeSeries(external_id=external_id, name=external_id, is_string=False)
+            TimeSeriesWrite(external_id=external_id, name=external_id, is_string=False)
             for external_id in timeseries_external_ids
         ],
         mode="replace",
@@ -83,7 +84,7 @@ def all_times_series_node_ids(
 
 
 @pytest.fixture
-def time_series_external_ids(all_time_series_external_ids):
+def time_series_external_ids(all_time_series_external_ids: list[str]) -> list[str]:
     # Spread the load to avoid API errors like 'a ts can't be part of too many subscriptions':
     ts_xids = all_time_series_external_ids[:]
     return random.sample(ts_xids, k=2)
@@ -112,7 +113,9 @@ def subscription(
 
 
 @pytest.fixture
-def sub_for_status_codes(cognite_client: CogniteClient, time_series_external_ids: list[str]) -> DatapointSubscription:
+def sub_for_status_codes(
+    cognite_client: CogniteClient, time_series_external_ids: list[str]
+) -> Iterator[DatapointSubscription]:
     external_id = f"PYSDKDataPointSubscriptionTestWithStatusCodes-{random_string(5)}"
     new_sub = DataPointSubscriptionWrite(
         external_id=external_id,
@@ -131,7 +134,7 @@ class TestDatapointSubscriptions:
 
     def test_create_retrieve_delete_subscription(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str], time_series_node_ids: list[NodeId]
-    ):
+    ) -> None:
         data_set = cognite_client.data_sets.list(limit=1)[0]
         new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionCreateRetrieveDeleteTest-{random_string(10)}",
@@ -144,10 +147,11 @@ class TestDatapointSubscriptions:
         with create_subscription_with_cleanup(cognite_client, new_subscription) as created:
             retrieved_subscription = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)
 
+            assert retrieved_subscription
             assert created.created_time
             assert created.last_updated_time
-            assert created.time_series_count == len(new_subscription.time_series_ids) + len(
-                new_subscription.instance_ids
+            assert created.time_series_count == len(new_subscription.time_series_ids or []) + len(
+                new_subscription.instance_ids or []
             )
             assert retrieved_subscription.external_id == new_subscription.external_id == created.external_id
             assert retrieved_subscription.name == new_subscription.name == created.name
@@ -160,17 +164,21 @@ class TestDatapointSubscriptions:
             retrieved_time_series_external_ids = [
                 ts.external_id for ts in time_series_in_subscription if ts.external_id
             ]
-            unittest.TestCase().assertCountEqual(new_subscription.time_series_ids, retrieved_time_series_external_ids)
+            unittest.TestCase().assertCountEqual(
+                new_subscription.time_series_ids or [], retrieved_time_series_external_ids
+            )
             retrieved_time_series_instance_ids = [
                 ts.instance_id for ts in time_series_in_subscription if ts.instance_id
             ]
-            unittest.TestCase().assertCountEqual(new_subscription.instance_ids, retrieved_time_series_instance_ids)
+            unittest.TestCase().assertCountEqual(
+                new_subscription.instance_ids or [], retrieved_time_series_instance_ids or []
+            )
 
             cognite_client.time_series.subscriptions.delete(new_subscription.external_id)
             retrieved_deleted = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)
             assert retrieved_deleted is None
 
-    def test_update_subscription(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
+    def test_update_subscription(self, cognite_client: CogniteClient, time_series_external_ids: list[str]) -> None:
         new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionUpdateTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionUpdateTest",
@@ -194,7 +202,9 @@ class TestDatapointSubscriptions:
             assert updated.data_set_id == data_set.id
             assert updated.description == "Updated description"
 
-    def test_update_subscription_write_object(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
+    def test_update_subscription_write_object(
+        self, cognite_client: CogniteClient, time_series_external_ids: list[str]
+    ) -> None:
         new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionUpdateTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionUpdateTest",
@@ -212,7 +222,7 @@ class TestDatapointSubscriptions:
             assert updated.time_series_count == len(time_series_external_ids)
             assert updated.data_set_id == data_set.id
 
-    def test_update_filter_defined_subscription(self, cognite_client: CogniteClient):
+    def test_update_filter_defined_subscription(self, cognite_client: CogniteClient) -> None:
         f = filters
         p = DatapointSubscriptionProperty
         numerical_timeseries = f.And(f.Equals(p.is_string, False))
@@ -232,12 +242,12 @@ class TestDatapointSubscriptions:
             # There is a bug in the API that causes the updated filter not to be returned when calling update.
             cognite_client.time_series.subscriptions.update(new_update)
             retrieved = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)
-
+            assert retrieved and retrieved.filter is not None
             assert retrieved.filter.dump() == new_filter.dump()
 
     def test_iterate_data_subscription_initial_call(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
-    ):
+    ) -> None:
         new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionListDataTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionListDataTest",
@@ -262,7 +272,7 @@ class TestDatapointSubscriptions:
 
     def test_iterate_data_subscription_changed_time_series(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
-    ):
+    ) -> None:
         first_ts, second_ts = time_series_external_ids[:2]
         new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionChangedTimeSeriesTest-{random_string(10)}",
@@ -294,7 +304,7 @@ class TestDatapointSubscriptions:
 
     def test_iterate_data_subscription_datapoints_added(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
-    ):
+    ) -> None:
         new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionChangedTimeSeriesTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionChangedTimeSeriesTest",
@@ -321,7 +331,7 @@ class TestDatapointSubscriptions:
                 assert batch.updates
                 np.testing.assert_allclose(
                     new_values,
-                    [dp.value for dp in batch.updates[0].upserts],
+                    [dp.value for dp in batch.updates[0].upserts],  # type: ignore[arg-type]
                     err_msg="The values of the retrieved data should be the same as the inserted data (to float precision)",
                 )
                 np.testing.assert_equal(
@@ -336,7 +346,7 @@ class TestDatapointSubscriptions:
 
     def test_iterate_data_subscription_jump_to_end(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
-    ):
+    ) -> None:
         new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionJumpToEndTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionJumpToEndTest",
@@ -359,7 +369,7 @@ class TestDatapointSubscriptions:
 
     def test_iterate_data_subscription_start_1m_ago(
         self, cognite_client: CogniteClient, subscription: DatapointSubscription
-    ):
+    ) -> None:
         added_last_minute = 0
         for batch in cognite_client.time_series.subscriptions.iterate_data(
             subscription.external_id,
@@ -369,11 +379,14 @@ class TestDatapointSubscriptions:
             added_last_minute += len(batch.subscription_changes.added)
             if not batch.has_next:
                 break
-        assert added_last_minute == 0, "There should be no timeseries added in the last minute"
+        assert added_last_minute == 0, (
+            "There should be no time series added in the last minute. If this is the first time ever "
+            "you run these tests, please wait 1 minute and try again.",
+        )
 
     def test_iterate_data__using_status_codes(
         self, cognite_client: CogniteClient, sub_for_status_codes: DatapointSubscription
-    ):
+    ) -> None:
         no_bad_iter = cognite_client.time_series.subscriptions.iterate_data(
             sub_for_status_codes.external_id,
             poll_timeout=0,
@@ -388,19 +401,17 @@ class TestDatapointSubscriptions:
             ignore_bad_datapoints=False,
         )
         ts, *_ = cognite_client.time_series.subscriptions.list_member_time_series(sub_for_status_codes.external_id)
-        cognite_client.time_series.data.insert(
-            external_id=ts.external_id,
-            datapoints=[
-                {"timestamp": -99, "value": None, "status": {"symbol": "Bad"}},
-                {"timestamp": -98, "value": math.nan, "status": {"symbol": "Bad"}},
-                {"timestamp": -97, "value": math.inf, "status": {"symbol": "Bad"}},
-                {"timestamp": -96, "value": -math.inf, "status": {"symbol": "Bad"}},
-                {"timestamp": -95, "value": -95, "status": {"symbol": "Uncertain"}},
-                {"timestamp": -94, "value": -94, "status": {"code": 1024}},
-                {"timestamp": -93, "value": -93, "status": {"symbol": "Good"}},
-                {"timestamp": -92, "value": -92},
-            ],
-        )
+        dps: list[dict] = [
+            {"timestamp": -99, "value": None, "status": {"symbol": "Bad"}},
+            {"timestamp": -98, "value": math.nan, "status": {"symbol": "Bad"}},
+            {"timestamp": -97, "value": math.inf, "status": {"symbol": "Bad"}},
+            {"timestamp": -96, "value": -math.inf, "status": {"symbol": "Bad"}},
+            {"timestamp": -95, "value": -95, "status": {"symbol": "Uncertain"}},
+            {"timestamp": -94, "value": -94, "status": {"code": 1024}},
+            {"timestamp": -93, "value": -93, "status": {"symbol": "Good"}},
+            {"timestamp": -92, "value": -92},
+        ]
+        cognite_client.time_series.data.insert(external_id=ts.external_id, datapoints=dps)
         no_bad = next(no_bad_iter).updates
         has_bad = next(has_bad_iter).updates
 
@@ -412,14 +423,17 @@ class TestDatapointSubscriptions:
         assert has_bad[0].upserts.is_string is False
         assert no_bad[0].upserts.timestamp == list(range(-95, -91))
         assert has_bad[0].upserts.timestamp == list(range(-99, -91))
-        assert has_bad[0].upserts.value[0] is None
-        assert all(isinstance(v, float) for v in has_bad[0].upserts.value[1:])
+
+        bad_upsert_value = has_bad[0].upserts.value
+        assert bad_upsert_value is not None
+        assert bad_upsert_value[0] is None
+        assert all(isinstance(v, float) for v in bad_upsert_value[1:])
         assert no_bad[0].upserts.status_symbol == ["Uncertain", "Good", "Good", "Good"]
 
     @pytest.mark.skip(reason="Using a filter (as opposed to specific identifiers) is eventually consistent")
     def test_update_filter_subscription_added_times_series(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
-    ):
+    ) -> None:
         f = filters
         p = DatapointSubscriptionProperty
         numerical_timeseries = f.And(
@@ -446,7 +460,7 @@ class TestDatapointSubscriptions:
 
             assert initial_added_count > 0, "There should be at least one numerical timeseries added"
 
-            new_numerical_timeseries = TimeSeries(
+            new_numerical_timeseries = TimeSeriesWrite(
                 external_id=f"PYSDK DataPoint Subscription Test 42 ({random_string(10)})",
                 name="PYSDK DataPoint Subscription Test 42",
                 is_string=False,

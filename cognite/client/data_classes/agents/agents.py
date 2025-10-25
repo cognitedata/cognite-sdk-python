@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
@@ -95,13 +95,12 @@ class AgentUpsert(AgentCore):
         return self
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentUpsert:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> AgentUpsert:
         tools = (
             [AgentTool._load(item, cognite_client).as_write() for item in resource.get("tools", [])]
             if isinstance(resource.get("tools"), Sequence)
             else None
         )
-
         instances = cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -128,28 +127,23 @@ class Agent(AgentCore):
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
         tools (Sequence[AgentTool] | None): List of tools for the agent.
-        created_time (int | None): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
-        last_updated_time (int | None): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        created_time (int): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        last_updated_time (int): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         owner_id (str | None): The ID of the user who owns the agent.
     """
-
-    tools: Sequence[AgentTool] | None = None
-    created_time: int | None = None
-    last_updated_time: int | None = None
-    owner_id: str | None = None
 
     def __init__(
         self,
         external_id: str,
         name: str,
-        description: str | None = None,
-        instructions: str | None = None,
-        model: str | None = None,
-        labels: list[str] | None = None,
-        tools: Sequence[AgentTool] | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        owner_id: str | None = None,
+        description: str | None,
+        instructions: str | None,
+        model: str | None,
+        labels: list[str] | None,
+        tools: Sequence[AgentTool] | None,
+        created_time: int,
+        last_updated_time: int,
+        owner_id: str | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -159,13 +153,7 @@ class Agent(AgentCore):
             model=model,
             labels=labels,
         )
-        # These fields are always present in API responses, but optional when creating.
-        # Force the type to be non-optional for read instances.
-        self.description: str = description  # type: ignore[assignment]
-        self.instructions: str = instructions  # type: ignore[assignment]
-        self.model: str = model  # type: ignore[assignment]
-        self.labels: list[str] = labels  # type: ignore[assignment]
-        self.tools: AgentToolList | None = AgentToolList(tools) if tools is not None else None
+        self.tools: AgentToolList = AgentToolList(tools if tools is not None else [])
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.owner_id = owner_id
@@ -175,7 +163,7 @@ class Agent(AgentCore):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
-        if self.tools:
+        if self.tools is not None:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
         if self._unknown_properties:
             result.update(self._unknown_properties)
@@ -194,13 +182,7 @@ class Agent(AgentCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Agent:
-        tools = (
-            [AgentTool._load(item) for item in resource.get("tools", [])]
-            if isinstance(resource.get("tools"), Sequence)
-            else None
-        )
-
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Agent:
         instance = cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -208,9 +190,9 @@ class Agent(AgentCore):
             instructions=resource.get("instructions"),
             model=resource.get("model"),
             labels=resource.get("labels"),
-            tools=tools,
-            created_time=resource.get("createdTime"),
-            last_updated_time=resource.get("lastUpdatedTime"),
+            tools=(tools := resource.get("tools")) and [AgentTool._load(item) for item in tools],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
             owner_id=resource.get("ownerId"),
         )
         existing = set(instance.dump(camel_case=True).keys())

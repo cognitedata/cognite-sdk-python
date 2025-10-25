@@ -12,10 +12,6 @@ List events
 ^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.list
 
-Aggregate events
-^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.events.EventsAPI.aggregate
-
 Aggregate Event Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.aggregate_count
@@ -55,10 +51,6 @@ Update events
 Upsert events
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.upsert
-
-Filter events
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.events.EventsAPI.filter
 
 Events Data classes
 ^^^^^^^^^^^^^^^^^^^

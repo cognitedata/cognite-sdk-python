@@ -6,9 +6,10 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast, final
 
-from cognite.client.data_classes._base import EnumProperty, Geometry
+from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
 from cognite.client.data_classes.labels import Label
+from cognite.client.data_classes.shared import Geometry
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr, is_sequence_not_str
@@ -94,6 +95,9 @@ class Filter(ABC):
             stacklevel=2,
         )
         return True
+
+    def __eq__(self, other: Filter) -> bool:
+        return type(self) is type(other) and self.dump() == other.dump()
 
     def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
         """
