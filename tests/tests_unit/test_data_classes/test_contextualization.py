@@ -56,7 +56,7 @@ class TestEntityMatchingPredictionResult:
     )
     async def test_wait_for_completion_running(self, job: EntityMatchingPredictionResult) -> None:
         assert job.status == "Queued"
-        await job.wait_for_completion(timeout=0.01, interval=0.01)
+        await job.wait_for_completion_async(timeout=0.01, interval=0.01)
         assert job.status == "Running"
 
     @patch(
@@ -65,7 +65,7 @@ class TestEntityMatchingPredictionResult:
     )
     async def test_wait_for_completion_completed(self, job: EntityMatchingPredictionResult) -> None:
         assert job.status == "Queued"
-        await job.wait_for_completion()
+        await job.wait_for_completion_async()
         assert job.status == "Completed"
 
 

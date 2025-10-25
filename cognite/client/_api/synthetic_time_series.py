@@ -181,6 +181,7 @@ class SyntheticDatapointsAPI(APIClient):
                 new_dps.external_id = short_expression
                 datapoints = new_dps
             else:
+                datapoints.timestamp.extend(new_dps.timestamp)  # type: ignore[attr-defined]
                 datapoints.value.extend(new_dps.value)  # type: ignore[attr-defined]
                 datapoints.error.extend(new_dps.error)  # type: ignore[attr-defined]
             limit -= (n_fetched := len(data["datapoints"]))

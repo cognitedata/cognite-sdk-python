@@ -130,9 +130,7 @@ class SourceWriteList(CogniteResourceList[SourceWrite], ExternalIDTransformerMix
 class SourceList(WriteableCogniteResourceList[SourceWrite, Source], ExternalIDTransformerMixin):
     _RESOURCE = Source
 
-    def as_write(
-        self,
-    ) -> NoReturn:
+    def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to write")
 
 

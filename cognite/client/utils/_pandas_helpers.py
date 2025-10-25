@@ -275,6 +275,8 @@ class _DpsColumnInfo:
             case _, "symbol":
                 return np.array(self.data, dtype=np.object_)
             case _:
+                # IsString is required in the response, so if we reach here, most likely a user has instatiated
+                # the datapoints object themselves:
                 assert_never(f"Invalid combination of is_string={self.is_string} and status_info={self.status_info}")
 
     def _convert_to_array_for_agg_dps(self):
@@ -393,7 +395,9 @@ def _create_multi_index_from_columns(
     )
     # Key operation is to drop all-nan columns, which in the multi-index translates to dropping
     # the corresponding levels:
-    return pd.MultiIndex.from_frame(column_ids_df.dropna(axis="columns", how="all").fillna(""))
+    non_id_levels = column_ids_df.iloc[:, 1:].dropna(axis="columns", how="all").fillna("")
+    # ...but we always keep the identifier column:
+    return pd.MultiIndex.from_frame(pd.concat((column_ids_df.iloc[:, [0]], non_id_levels), axis=1, copy=False))
 
 
 def _create_timestamp_index(

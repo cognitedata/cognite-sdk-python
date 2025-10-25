@@ -131,6 +131,12 @@ class DpsFetchStrategy(ABC):
                 project=self.dps_client._config.project,
             )
 
+    def _raise_if_unknown_failed(self, unknown_failed: list[BaseException]) -> None:
+        if unknown_failed:
+            # Typically this happens when asking for aggregates for a string time series.
+            # We don't do anything fancy like ExceptionGroup (Python 3.11+), just raise the first:
+            raise unknown_failed[0]
+
     @abstractmethod
     def _fetch_all(self, use_numpy: bool) -> AsyncIterator[BaseTaskOrchestrator]:
         raise NotImplementedError
@@ -259,8 +265,14 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         # Note to future dev: As of 3.13, we can do 'async for future in asyncio.as_completed(...)' and it
         # will return the Tasks - not coroutines. Thus, we can't do this micro-optimization yet and need to
         # use asyncio.wait instead:
+        unknown_failed = []
         done, _ = await asyncio.wait(initial_futures_dct, return_when=asyncio.ALL_COMPLETED)
         for future in done:
+            if future.exception():
+                # We don't immediately reraise here to avoid 'Task exception was never retrieved' (when multiple fail):
+                unknown_failed.append(future.exception())
+                continue
+
             res_lst = future.result()
             new_ts_tasks, chunk_missing = self._create_ts_tasks_and_handle_missing(
                 res_lst, initial_futures_dct.pop(future), initial_query_limits, use_numpy
@@ -268,6 +280,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             missing_to_raise.update(chunk_missing)
             ts_task_lookup.update(new_ts_tasks)
 
+        self._raise_if_unknown_failed(unknown_failed)
         self._raise_if_missing(missing_to_raise)
 
         if ts_tasks_left := self._update_queries_with_new_chunking_limit(ts_task_lookup):
@@ -397,9 +410,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         # we can then queue.
         return sem._value > 0
 
-    def _combine_subtasks_into_new_request(
-        self,
-    ) -> tuple[dict[str, list], list[BaseDpsFetchSubtask]]:
+    def _combine_subtasks_into_new_request(self) -> tuple[dict[str, list], list[BaseDpsFetchSubtask]]:
         next_items: list[dict[str, Any]] = []
         next_subtasks: list[BaseDpsFetchSubtask] = []
         fetch_limits = (self.dps_client._DPS_LIMIT_AGG, self.dps_client._DPS_LIMIT_RAW)
@@ -1511,17 +1522,17 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints:
+            Get a pandas dataframe using a single time series external ID, with data from the last two weeks,
+            but with no more than 100 datapoints:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     id=12345,
+                ...     external_id="foo",
                 ...     start="2w-ago",
                 ...     end="now",
-                ...     limit=100,
-                ...     column_names="id")
+                ...     limit=100)
 
             Get the pandas dataframe with a uniform index (fixed spacing between points) of 1 day, for two time series with
             individually specified aggregates, from 1990 through 2020:

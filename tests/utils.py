@@ -17,7 +17,7 @@ from contextlib import contextmanager
 from datetime import timedelta, timezone
 from pathlib import Path
 from types import UnionType
-from typing import Any, TypeVar, get_args, get_origin, get_type_hints
+from typing import Any, Literal, TypeVar, get_args, get_origin, get_type_hints
 from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
@@ -41,7 +41,7 @@ from cognite.client.data_classes.capabilities import Capability, LegacyCapabilit
 from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNode, TypedNodeApply
 from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType
 from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
-from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
+from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query, QuerySync
 from cognite.client.data_classes.datapoint_aggregates import (
     ALL_SORTED_DP_AGGS,
     INT_AGGREGATES,
@@ -67,6 +67,10 @@ from cognite.client.data_classes.workflows import (
 )
 from cognite.client.testing import AsyncCogniteClientMock
 from cognite.client.utils import _json_extended as _json
+from cognite.client.utils._concurrency import (
+    get_global_datapoints_semaphore,
+    get_global_semaphore,
+)
 from cognite.client.utils._text import random_string
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -230,15 +234,42 @@ def random_gamma_dist_integer(inclusive_max: int, max_tries: int = 100) -> int:
 
 
 @contextmanager
-def set_max_workers(new: int) -> typing.Iterator[None]:
+def override_semaphore(new: int, target: Literal["basic", "datapoints", "data_modeling"]) -> typing.Iterator[None]:
+    # After v8, the main SDK went async and now we have several bounded semaphores instead
+    # of a single max_workers parameter. The max_workers now only affects:
+    # 1) get_global_semaphore()
+    # But we also have:
+    # 2) get_global_datapoints_semaphore()
+    # 3) get_global_data_modeling_semaphore()
     from cognite.client import global_config
 
-    old = global_config.max_workers
+    match target:
+        case "datapoints":
+            semaphore_get_fn = get_global_datapoints_semaphore
+        case "basic":
+            semaphore_get_fn = get_global_semaphore
+        case "data_modeling":
+            # semaphore_get_fn = get_global_data_modeling_semaphore
+            raise NotImplementedError(
+                "data_modeling semaphore override not implemented yet as it uses hard-coded constant, "
+                "not global_config.max_workers"
+            )
+        case _:
+            typing.assert_never(target)
+
+    old_mw = global_config.max_workers
     global_config.max_workers = new
+
+    # The new semaphore should now pick up the changed max_workers value:
+    semaphore_get_fn.cache_clear()
+    sem = semaphore_get_fn()
+    assert new == sem._value == sem._bound_value, "Semaphore didn't update according to overridden max_workers"
+
     try:
         yield
     finally:
-        global_config.max_workers = old
+        global_config.max_workers = old_mw
+        semaphore_get_fn.cache_clear()
 
 
 @contextmanager
@@ -335,7 +366,7 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments["time_series_ids"] = ["my_timeseries1", "my_timeseries2"]
             else:
                 keyword_arguments.pop("filter", None)
-        elif issubclass(resource_cls, Query):
+        elif issubclass(resource_cls, Query | QuerySync):
             # The fake generator makes all dicts from 1-3 values, we need to make sure that the query is valid
             # by making sure that the list of equal length, so we make both to length 1.
             with_key, with_value = next(iter(keyword_arguments["with_"].items()))

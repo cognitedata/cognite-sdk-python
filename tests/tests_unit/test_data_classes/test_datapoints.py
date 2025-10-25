@@ -90,18 +90,17 @@ class TestToPandas:
         dps_cls = dps_lst_cls._RESOURCE
         df = dps_lst_cls(
             [
-                dps_cls(timestamp=ts, value=[2.0], id=123),
-                dps_cls(timestamp=ts, value=[4.0], external_id="foo"),
-                dps_cls(timestamp=ts, value=[6.0], instance_id=NodeId("s", "x")),
+                dps_cls(timestamp=ts, value=[2.0], id=123, is_string=False),
+                dps_cls(timestamp=ts, value=[4.0], external_id="foo", is_string=False),
+                dps_cls(timestamp=ts, value=[6.0], instance_id=NodeId("s", "x"), is_string=False),
             ]
-        ).to_pandas()  # Nothing supplied for column_names
+        ).to_pandas()
 
         exp_df = pd.DataFrame(
-            {
-                "123": 2.0,
-                "foo": 4.0,
-                "NodeId(s, x)": 6.0,
-            },
+            {1: 2.0, 2: 4.0, 3: 6.0},
             index=np.array([1234 * 1_000_000], dtype="datetime64[ns]"),
+        )
+        exp_df.columns = pd.MultiIndex.from_tuples(
+            [(123,), ("foo",), (NodeId(space="s", external_id="x"),)], names=["identifier"]
         )
         pd.testing.assert_frame_equal(df, exp_df)

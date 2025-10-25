@@ -1,6 +1,6 @@
 """
 ===============================================================================
-bb21beeeb7ec0d88e0a4320fead5b347
+4e90edf3d1b225fccc88bcb584f98393
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -935,17 +935,17 @@ class SyncDatapointsAPI(SyncAPIClient):
 
         Examples:
 
-            Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints:
+            Get a pandas dataframe using a single time series external ID, with data from the last two weeks,
+            but with no more than 100 datapoints:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     id=12345,
+                ...     external_id="foo",
                 ...     start="2w-ago",
                 ...     end="now",
-                ...     limit=100,
-                ...     column_names="id")
+                ...     limit=100)
 
             Get the pandas dataframe with a uniform index (fixed spacing between points) of 1 day, for two time series with
             individually specified aggregates, from 1990 through 2020:

@@ -52,7 +52,9 @@ class WorkflowExecutionAPI(APIClient):
         try:
             response = await self._get(url_path=f"{self._RESOURCE_PATH}/{id}")
         except CogniteAPIError as e:
-            if e.code == 400:
+            # TODO: The API returns 404 for "invalid ids not found", but 400 for "valid id, but not found".
+            #       It is valid if it has the correct format (UUID).
+            if e.code in (400, 404):
                 return None
             raise
         return WorkflowExecutionDetailed._load(response.json())

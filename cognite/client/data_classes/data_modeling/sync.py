@@ -22,3 +22,6 @@ class SubscriptionContext:
 
     def is_running(self) -> bool:
         return self._task is not None and not self._task.done()
+
+    def is_alive(self) -> bool:
+        return self.is_running()

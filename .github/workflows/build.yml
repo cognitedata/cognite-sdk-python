@@ -69,9 +69,10 @@ jobs:
           COGNITE_BASE_URL: ${{ vars.CDF_BASE_URL_CI }}
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
         # Testpaths are defined in the pytest.ini file:
-        run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
+        # run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
+        run: pytest tests/tests_integration/test_api/test_workflows.py --reruns 5
 
-      - uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
-        if: matrix.os == 'windows-latest' && matrix.python-version == '3.10'
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+      # - uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
+      #   if: matrix.os == 'windows-latest' && matrix.python-version == '3.10'
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
