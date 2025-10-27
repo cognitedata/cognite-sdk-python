@@ -8,6 +8,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.credentials import OAuthClientCertificate, Token
 from cognite.client.exceptions import CogniteAPIError, CogniteProjectAccessError
+from cognite.client.utils._async_helpers import run_sync
 
 
 @pytest.fixture
@@ -56,9 +57,17 @@ class TestCogniteClient:
         assert e.value.code == 404
 
 
-@pytest.mark.skip(reason="TODO(haakonvt): Fix after httpx upgrade adventure")
 def test_cognite_client_is_picklable(cognite_client: CogniteClient) -> None:
     if isinstance(cognite_client.config.credentials, (Token, OAuthClientCertificate)):
         pytest.skip()
-    roundtrip_client = pickle.loads(pickle.dumps(cognite_client))
+    dumped = pickle.dumps(cognite_client)
+    roundtrip_client = pickle.loads(dumped)
     assert roundtrip_client.iam.token.inspect().projects
+
+
+def test_async_cognite_client_is_picklable(async_client: AsyncCogniteClient) -> None:
+    if isinstance(async_client.config.credentials, (Token, OAuthClientCertificate)):
+        pytest.skip()
+    dumped = pickle.dumps(async_client)
+    roundtrip_client = pickle.loads(dumped)
+    assert run_sync(roundtrip_client.iam.token.inspect()).projects
