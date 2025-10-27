@@ -199,6 +199,18 @@ class BasicAsyncAPIClient:
             refresh_auth_header=self._refresh_auth_header,
         )
 
+    def __getstate__(self):
+        """Prepare object for pickling by removing unpicklable async clients."""
+        state = self.__dict__.copy()
+        state.pop("_http_client")
+        state.pop("_http_client_with_retry")
+        return state
+
+    def __setstate__(self, state):
+        """Restore object after unpickling."""
+        self.__dict__.update(state)
+        self._init_async_http_clients()
+
     def _select_async_http_client(self, is_retryable: bool) -> AsyncHTTPClientWithRetry:
         return self._http_client_with_retry if is_retryable else self._http_client
 
