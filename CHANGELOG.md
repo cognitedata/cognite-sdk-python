@@ -19,6 +19,7 @@ As of 2025-08-29, changes are grouped as follows
 ### Features
 
 * add labels property to agents SDK ([#2372](https://github.com/cognitedata/cognite-sdk-python/issues/2372)) ([489c703](https://github.com/cognitedata/cognite-sdk-python/commit/489c703aa70530559546d36e8063cbe2d0c0149a))
+* add version property to knowledge graph query agent tool configuration ([#2324](https://github.com/cognitedata/cognite-sdk-python/issues/2324)) ([e7095ba](https://github.com/cognitedata/cognite-sdk-python/commit/e7095ba68682fc27351bd826d7938ecf06aa9dcb))
 
 
 ### Documentation
