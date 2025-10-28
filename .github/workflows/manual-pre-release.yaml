@@ -2,7 +2,8 @@ name: Pre-release
 
 on:
   push:
-    branches: [release-v8]
+    branches:
+      'pysdk-release-*'
 
 jobs:
   test_full_build_and_release:
@@ -13,12 +14,14 @@ jobs:
 
       - uses: ./.github/actions/setup
 
+      # Note: if we are to pre-release something other than v8,
+      # we need to also update the regex below:
       - name: Ensure version is a pre-release
         shell: pwsh
         run: |
           $version = poetry version --short
           Write-Host "Detected version: $version"
-          if ($version -match "(?:a|b|rc)\d+$") {
+          if ($version -match "^8\.0\.(?:a|b|rc)\d+$") {
             Write-Host "✅ Version format is valid for a pre-release."
           } else {
             Write-Host "❌ Error: Version '$version' is not a valid pre-release (must contain 'a', 'b', or 'rc' followed by a number)."
