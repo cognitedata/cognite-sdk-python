@@ -614,7 +614,7 @@ class TestFilesAPI:
     ) -> None:
         directory = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         path = os.path.join(directory, "file_for_test_upload_1.txt")
-        res = cognite_client.files.upload(path, name="bla", directory=directory)
+        res = cognite_client.files.upload(Path(path), name="bla", directory=directory)
         del mock_file_upload_response["uploadUrl"]
         assert FileMetadata.load(mock_file_upload_response) == res
         assert "https://upload.here" == str(httpx_mock.get_requests()[1].url)
@@ -625,21 +625,21 @@ class TestFilesAPI:
         self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any]
     ) -> None:
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
-        cognite_client.files.upload(path, external_id="blabla", name="bla", data_set_id=42)
+        cognite_client.files.upload(Path(path), external_id="blabla", name="bla", data_set_id=42)
 
     def test_upload_with_label(self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any]) -> None:
         """
         Uploading a file with a label gave a `ValueError: Could not parse label: {'external_id': 'foo-bar'}` from v7.0.0
         """
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
-        cognite_client.files.upload(path, name="bla", labels=[Label("PUMP")])
+        cognite_client.files.upload(Path(path), name="bla", labels=[Label("PUMP")])
 
     def test_upload_no_name(
         self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
     ) -> None:
         directory = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         path = os.path.join(directory, "file_for_test_upload_1.txt")
-        cognite_client.files.upload(path, directory=directory)
+        cognite_client.files.upload(Path(path), directory=directory)
         assert {"name": "file_for_test_upload_1.txt", "directory": directory} == jsgz_load(
             httpx_mock.get_requests()[0].content
         )
@@ -650,7 +650,7 @@ class TestFilesAPI:
         set_dir = "/Some/custom/directory"
         directory = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         path = os.path.join(directory, "file_for_test_upload_1.txt")
-        cognite_client.files.upload(path, directory=set_dir)
+        cognite_client.files.upload(Path(path), directory=set_dir)
         assert {"name": "file_for_test_upload_1.txt", "directory": set_dir} == jsgz_load(
             httpx_mock.get_requests()[0].content
         )
@@ -659,7 +659,7 @@ class TestFilesAPI:
         self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
     ) -> None:
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
-        res = cognite_client.files.upload(path=path, asset_ids=[1, 2])
+        res = cognite_client.files.upload(path=Path(path), asset_ids=[1, 2])
         del mock_file_upload_response["uploadUrl"]
         assert (
             FileMetadataList(
@@ -687,7 +687,7 @@ class TestFilesAPI:
 
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         with pytest.raises(CogniteAPIError) as e:
-            cognite_client.files.upload(path=path)
+            cognite_client.files.upload(path=Path(path))
 
         assert "file_for_test_upload_1.txt" in e.value.failed
         assert "file_for_test_upload_2.txt" in e.value.failed
@@ -710,7 +710,7 @@ class TestFilesAPI:
             is_reusable=True,
         )
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
-        res = cognite_client.files.upload(path=path, recursive=True, asset_ids=[1, 2])
+        res = cognite_client.files.upload(path=Path(path), recursive=True, asset_ids=[1, 2])
         del example_file["uploadUrl"]
         assert FileMetadataList([FileMetadata.load(example_file) for _ in range(3)]) == res
         assert 6 == len(httpx_mock.get_requests())
@@ -768,7 +768,7 @@ class TestFilesAPI:
 
     def test_upload_path_does_not_exist(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(FileNotFoundError):
-            cognite_client.files.upload(path="/no/such/path")
+            cognite_client.files.upload(path=Path("/no/such/path"))
 
     def test_download(self, cognite_client: CogniteClient, mock_file_download_response: HTTPXMock) -> None:
         with TemporaryDirectory() as tmpdir:  # TODO: Use tmp_path?
@@ -904,7 +904,7 @@ class TestFilesAPI:
     def test_download_file_to_path(self, cognite_client: CogniteClient, mock_file_download_response: HTTPXMock) -> None:
         with TemporaryDirectory() as directory:
             file_path = os.path.join(directory, "my_downloaded_file.txt")
-            res = cognite_client.files.download_to_path(path=file_path, id=1)
+            res = cognite_client.files.download_to_path(path=Path(file_path), id=1)
             assert res is None
             assert os.path.isfile(file_path)
             with open(file_path, "rb") as f:

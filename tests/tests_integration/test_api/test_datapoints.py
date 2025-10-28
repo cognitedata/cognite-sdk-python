@@ -1642,7 +1642,7 @@ class TestRetrieveAggregateDatapointsAPI:
         for endpoint in retrieve_endpoints:
             res = endpoint(
                 limit=5,
-                id=DatapointsQuery(id=ts.id, granularity=granularity, aggregates=aggregates),
+                id=DatapointsQuery(id=ts.id, granularity=granularity, aggregates=aggregates),  # type: ignore[arg-type]
             )
             snake_aggs = sorted(map(to_snake_case, [aggregates] if isinstance(aggregates, str) else aggregates))
             res_df = res.to_pandas(include_aggregate_name=True)

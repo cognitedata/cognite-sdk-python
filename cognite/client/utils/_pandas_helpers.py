@@ -25,6 +25,8 @@ from cognite.client.utils._text import shorten, to_camel_case
 from cognite.client.utils._time import TIME_ATTRIBUTES
 
 if TYPE_CHECKING:
+    import numpy as np
+    import numpy.typing as npt
     import pandas as pd
 
     from cognite.client.data_classes import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList
@@ -200,7 +202,7 @@ def convert_dps_to_dataframe(
     include_status: bool,
     include_unit: bool,
     include_errors: bool = False,  # old leftover misuse of Datapoints class :(
-):
+) -> pd.DataFrame:
     pd = local_import("pandas")
     columns = _extract_column_info_from_dps_for_dataframe(
         dps, include_status=include_status, include_errors=include_errors
@@ -262,7 +264,7 @@ class _DpsColumnInfo:
         else:
             return self._convert_to_array_for_agg_dps()
 
-    def _convert_to_array_for_raw_dps(self):
+    def _convert_to_array_for_raw_dps(self) -> npt.NDArray[np.object_]:
         import numpy as np
 
         match self.is_string, self.status_info:
@@ -279,7 +281,7 @@ class _DpsColumnInfo:
                 # the datapoints object themselves:
                 assert_never(f"Invalid combination of is_string={self.is_string} and status_info={self.status_info}")
 
-    def _convert_to_array_for_agg_dps(self):
+    def _convert_to_array_for_agg_dps(self) -> npt.NDArray[np.object_]:
         import numpy as np
 
         from cognite.client.utils._datapoints import ensure_int_numpy

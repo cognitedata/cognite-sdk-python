@@ -199,14 +199,14 @@ class BasicAsyncAPIClient:
             refresh_auth_header=self._refresh_auth_header,
         )
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict[str, Any]:
         """Prepare object for pickling by removing unpicklable async clients."""
         state = self.__dict__.copy()
         state.pop("_http_client")
         state.pop("_http_client_with_retry")
         return state
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: dict[str, Any]) -> None:
         """Restore object after unpickling."""
         self.__dict__.update(state)
         self._init_async_http_clients()

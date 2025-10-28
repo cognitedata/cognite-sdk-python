@@ -49,7 +49,7 @@ def cognite_client() -> Iterator[CogniteClient]:
 
 
 @pytest.fixture(scope="class")
-def async_client(cognite_client) -> Iterator[AsyncCogniteClient]:
+def async_client(cognite_client: CogniteClient) -> Iterator[AsyncCogniteClient]:
     yield get_wrapped_async_client(cognite_client)
 
 

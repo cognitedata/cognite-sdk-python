@@ -120,7 +120,9 @@ class SyncTablesAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.postgres_gateway.tables.retrieve(
-                username=username, tablename=tablename, ignore_unknown_ids=ignore_unknown_ids
+                username=username,
+                tablename=tablename,
+                ignore_unknown_ids=ignore_unknown_ids,  # type: ignore[arg-type]
             )
         )
 

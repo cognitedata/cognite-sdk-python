@@ -427,7 +427,7 @@ class TestRawRows:
     def test_iter_chunk(
         self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
     ) -> None:
-        for db in cognite_client.raw.rows("db1", "table1", chunk_size=1):
+        for db in cognite_client.raw.rows("db1", "table1", chunk_size=1, partitions=None):
             assert mock_raw_row_response == db.dump(camel_case=True)
 
     def test_delete(
@@ -460,7 +460,7 @@ class TestRawRows:
     def test_iter(
         self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
     ) -> None:
-        res_generator = cognite_client.raw.rows(db_name="db1", table_name="table1")
+        res_generator = cognite_client.raw.rows(db_name="db1", table_name="table1", chunk_size=None, partitions=None)
         row = next(res_generator)
         assert Row(key="row1", columns={"c1": 1, "c2": "2"}, last_updated_time=123) == row
         assert b"columns=" not in httpx_mock.get_requests()[0].url.query
@@ -468,14 +468,18 @@ class TestRawRows:
     def test_iter_cols(
         self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
     ) -> None:
-        res_generator = cognite_client.raw.rows(db_name="db1", table_name="table1", columns=["a", "1"])
+        res_generator = cognite_client.raw.rows(
+            db_name="db1", table_name="table1", columns=["a", "1"], chunk_size=None, partitions=None
+        )
         next(res_generator)
         assert b"columns=a%2C1" in httpx_mock.get_requests()[0].url.query
 
     def test_iter_cols_empty(
         self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
     ) -> None:
-        res_generator = cognite_client.raw.rows(db_name="db1", table_name="table1", columns=[])
+        res_generator = cognite_client.raw.rows(
+            db_name="db1", table_name="table1", columns=[], chunk_size=None, partitions=None
+        )
         next(res_generator)
         assert b"columns=%2C&" in httpx_mock.get_requests()[0].url.query + b"&"
 

@@ -278,7 +278,7 @@ class TestInsertDatapoints:
     @pytest.mark.parametrize("datapoints, id", [([], 1), (Datapoints(id=1), 1)])
     def test_insert_datapoints_no_data(
         self, cognite_client: CogniteClient, datapoints: list | Datapoints, id: int | None
-    ):
+    ) -> None:
         cognite_client.time_series.data.insert(datapoints=datapoints, id=id)
 
     def test_insert_datapoints_in_multiple_time_series(
@@ -423,14 +423,14 @@ class TestDeleteDatapoints:
 
 class TestDatapointsObject:
     def test_len(self) -> None:
-        assert 3 == len(Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3]))
+        assert 3 == len(Datapoints(id=1, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]))
 
     def test_get_non_empty_data_fields(self) -> None:
-        assert sorted([("timestamp", [1, 2, 3]), ("value", [1, 2, 3])]) == sorted(
-            Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])._get_non_empty_data_fields()
+        assert sorted([("timestamp", [1, 2, 3]), ("value", [1.0, 2.0, 3.0])]) == sorted(
+            Datapoints(id=1, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0])._get_non_empty_data_fields()
         )
-        assert sorted([("timestamp", [1, 2, 3]), ("max", [1, 2, 3]), ("sum", [1, 2, 3])]) == sorted(
-            Datapoints(id=1, timestamp=[1, 2, 3], sum=[1, 2, 3], max=[1, 2, 3])._get_non_empty_data_fields()
+        assert sorted([("timestamp", [1, 2, 3]), ("max", [1.0, 2.0, 3.0]), ("sum", [1.0, 2.0, 3.0])]) == sorted(
+            Datapoints(id=1, timestamp=[1, 2, 3], sum=[1.0, 2.0, 3.0], max=[1.0, 2.0, 3.0])._get_non_empty_data_fields()
         )
         assert sorted([("timestamp", [1, 2, 3]), ("max", [1, 2, 3])]) == sorted(
             Datapoints(id=1, timestamp=[1, 2, 3], sum=[], max=[1, 2, 3])._get_non_empty_data_fields()
@@ -443,28 +443,30 @@ class TestDatapointsObject:
         assert [("timestamp", [])] == list(Datapoints(id=1)._get_non_empty_data_fields())
 
     def test_iter(self) -> None:
-        for dp in Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3]):
+        for dp in Datapoints(id=1, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]):
             assert dp.timestamp in [1, 2, 3]
-            assert dp.value in [1, 2, 3]
+            assert dp.value in [1.0, 2.0, 3.0]
 
     def test_eq(self) -> None:
         assert Datapoints(1) == Datapoints(1)
-        assert Datapoints(1, timestamp=[1, 2, 3], value=[1, 2, 3]) == Datapoints(
-            1, timestamp=[1, 2, 3], value=[1, 2, 3]
+        assert Datapoints(1, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]) == Datapoints(
+            1, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]
         )
         assert Datapoints(1) != Datapoints(0)
-        assert Datapoints(1, timestamp=[1, 2, 3], value=[1, 2, 3]) != Datapoints(1, timestamp=[1, 2, 3], max=[1, 2, 3])
-        assert Datapoints(1, timestamp=[1, 2, 3], value=[1, 2, 3]) != Datapoints(
-            1, timestamp=[1, 2, 3], value=[1, 2, 4]
+        assert Datapoints(1, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]) != Datapoints(
+            1, timestamp=[1, 2, 3], max=[1.0, 2.0, 3.0]
+        )
+        assert Datapoints(1, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]) != Datapoints(
+            1, timestamp=[1, 2, 3], value=[1.0, 2.0, 4.0]
         )
 
     def test_get_item(self) -> None:
-        dps = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])
+        dps = Datapoints(id=1, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0])
 
-        assert Datapoint(timestamp=1, value=1) == dps[0]
-        assert Datapoint(timestamp=2, value=2) == dps[1]
-        assert Datapoint(timestamp=3, value=3) == dps[2]
-        assert Datapoints(id=1, timestamp=[1, 2], value=[1, 2]) == dps[:2]
+        assert Datapoint(timestamp=1, value=1.0) == dps[0]
+        assert Datapoint(timestamp=2, value=2.0) == dps[1]
+        assert Datapoint(timestamp=3, value=3.0) == dps[2]
+        assert Datapoints(id=1, timestamp=[1, 2], value=[1.0, 2.0]) == dps[:2]
 
     def test_load(self) -> None:
         res = Datapoints.load(
@@ -509,7 +511,7 @@ class TestDatapointsObject:
 
     def test__extend(self) -> None:  # test _extend, not extend
         d0 = Datapoints()
-        d1 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
+        d1 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0])
 
         with pytest.raises(NotImplementedError, match="Extending Datapoints is not supported"):
             d0._extend(d1)
@@ -904,7 +906,7 @@ class TestDatapointsPoster:
         calls = []
         dps_client = cognite_client.time_series.data
 
-        async def override_insert_dps(self, payload: list[dict]) -> None:
+        async def override_insert_dps(self: Any, payload: list[dict]) -> None:
             calls.append(deepcopy(payload))
 
         monkeypatch.setattr(dps_api.DatapointsPoster, "_insert_datapoints", override_insert_dps)
@@ -931,7 +933,7 @@ class TestDatapointsPoster:
         calls = []
         dps_client = cognite_client.time_series.data
 
-        async def override_insert_dps(self, payload: list[dict]) -> None:
+        async def override_insert_dps(self: Any, payload: list[dict]) -> None:
             calls.append(deepcopy(payload))
 
         monkeypatch.setattr(dps_api.DatapointsPoster, "_insert_datapoints", override_insert_dps)

@@ -1411,3 +1411,21 @@ class DatapointsList(CogniteResourceList[Datapoints]):
             include_status=include_status,
             include_unit=include_unit,
         )
+
+
+__all__ = [
+    "ALL_SORTED_DP_AGGS",
+    "Datapoint",
+    "DatapointList",
+    "DatapointsQuery",
+    "DatapointsQueryResult",
+    "DatapointsQueryResultList",
+    "MaxDatapoint",
+    "MaxDatapointWithStatus",
+    "MinDatapoint",
+    "MinDatapointWithStatus",
+    "NumericDatapoint",
+    "NumericDatapointList",
+    "StringDatapoint",
+    "StringDatapointList",
+]

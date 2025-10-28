@@ -9,7 +9,7 @@ from cognite.client._org_client import OrgAPIClient
 @pytest.fixture(scope="session")
 def org_api(cognite_client_cog_idp: CogniteClient) -> OrgAPIClient:
     client = cognite_client_cog_idp
-    return OrgAPIClient(client.config, client._API_VERSION, client)
+    return OrgAPIClient(client.config, client._API_VERSION, getattr(client, "_CogniteClient__async_client"))
 
 
 class TestOrganizationAPI:
@@ -23,5 +23,7 @@ class TestOrganizationAPI:
             pytest.skip("Organization not supported")
 
     def test_get_request_org_endpoint(self, org_api: OrgAPIClient) -> None:
-        response = org_api._get("/principals")
+        from cognite.client.utils._async_helpers import run_sync
+
+        response = run_sync(org_api._get("/principals"))
         assert response.status_code == 200

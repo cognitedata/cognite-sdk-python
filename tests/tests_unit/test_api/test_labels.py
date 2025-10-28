@@ -50,7 +50,7 @@ class TestLabels:
     def test_call(
         self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx_mock: HTTPXMock
     ) -> None:
-        list(cognite_client.labels(limit=10))
+        list(cognite_client.labels(chunk_size=None, limit=10))
         calls = httpx_mock.get_requests()
         assert 1 == len(calls)
         assert {"limit": 10} == jsgz_load(calls[0].content)
