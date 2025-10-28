@@ -11,6 +11,61 @@ Changes are grouped as follows:
 
 ## From v7 to v8
 
+### Dependency
+- **httpx**: The SDK now uses `httpx` instead of `requests` for HTTP operations. This is a required dependency.
+- **anyio**: Added as a required dependency (used by httpx, replaces pytest-asyncio).
+
+### Functionality
+- **Async Support**: The SDK now provides full async support. The main client is now `AsyncCogniteClient` (previously `CogniteClient`), and a new synchronous `CogniteClient` is available for backward compatibility.
+- **HTTP Client**: All HTTP operations now use `httpx.AsyncClient` instead of `requests`.
+- **DataFrames**: Datapoints DataFrames now use MultiIndex columns for better organization of aggregate data.
+- **File Handling**: FilesAPI now prefers `pathlib.Path` objects over strings (though string support is maintained).
+- **JSON Serialization**: The SDK now uses compact JSON encoding for better performance.
+
+### Removed
+- **Deprecated Aggregate Methods**: Removed deprecated `aggregate` methods from AssetsAPI, EventsAPI, SequencesAPI, and TimeSeriesAPI. Use `aggregate_count` instead.
+- **Deprecated Filter Methods**: Removed deprecated filter methods from various APIs.
+- **Deprecated Data Classes**:
+  - `CountAggregate` class removed
+  - `DataPointSubscriptionCreate` class removed
+  - `SequenceData` class replaced by `SequenceRows` (old class still available for backward compatibility)
+- **Deprecated Methods**:
+  - `DatapointsArray.__iter__` method removed
+  - `CogniteObject.load_yaml` method on Query removed
+  - `DataModelingInstancesList.get` method no longer accepts deprecated `id` argument
+  - All `__iter__` methods removed from API classes
+- **Legacy Attributes**:
+  - `legacy_name` attribute removed from time series data classes
+  - `expected_fields` parameter removed from `Datapoints._load`
+- **Pyodide Handling**: Removed special pyodide handling in FilesAPI upload operations.
+
+### Function Signature
+- **Client Rename**: `CogniteClient` is now `AsyncCogniteClient`. A new synchronous `CogniteClient` is available.
+- **Sequence Data**: `client.sequences.data.retrieve_latest` renamed to `client.sequences.data.retrieve_last_row`.
+- **Data Modeling**: `expand_properties` parameter in `to_pandas` methods now defaults to `True` for data modeling classes.
+- **File Paths**: FilesAPI methods now prefer `pathlib.Path` objects but still accept strings.
+
+### Changed
+- **API Organization**: Many APIs have been split into separate files (Java-style organization):
+  - Functions API split into `functions/` directory
+  - IAM API split into `iam/` directory
+  - Raw API split into `raw/` directory
+  - 3D API split into `three_d/` directory
+  - Workflows API split into `workflows/` directory
+- **Query Classes**: Query and sync classes have been split into separate dataclasses.
+- **Filter Classes**: Filter classes now have magic `__eq__` method for better usability.
+- **Data Classes**: Various data classes have been updated with new attributes and methods.
+- **Exception Handling**: New exception types added (e.g., `CogniteOrganizationError`, `CogniteModelFailedError`).
+
+### Optional
+- **New APIs**: Several new APIs have been added:
+  - Agents API for AI agent functionality
+  - Simulators API for simulation operations
+  - Document Preview API
+  - Space Statistics API
+- **New Data Classes**: Many new data classes added for new features like agents, simulators, and enhanced data modeling.
+- **Enhanced Capabilities**: New ACL capabilities added for Streams, Records, and AppConfig.
+
 ## From v6 to v7
 ### Functionality
 - `CogniteResource.to_pandas` and `CogniteResourceList.to_pandas` now converts known timestamps to `datetime` by
