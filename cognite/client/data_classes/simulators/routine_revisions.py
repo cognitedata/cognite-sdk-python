@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import itertools
+import warnings
 from abc import ABC, abstractmethod
-from collections.abc import MutableMapping
+from collections import UserList
+from collections.abc import MutableMapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
@@ -17,8 +19,13 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.exceptions import CogniteImportError
+from cognite.client.utils._importing import local_import
+from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
+    import pandas
+
     from cognite.client import CogniteClient
 
 
@@ -44,7 +51,7 @@ class SimulationValueUnitInput(CogniteObject):
 
 
 @dataclass
-class SimulatorRoutineInput(CogniteObject):
+class SimulatorRoutineInput(CogniteObject, ABC):
     """
     The input of the simulator routine revision.
 
@@ -68,7 +75,12 @@ class SimulatorRoutineInput(CogniteObject):
         raise NotImplementedError()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(
+        cls, resource: dict[str, Any] | SimulatorRoutineInput, cognite_client: CogniteClient | None = None
+    ) -> Self:
+        if isinstance(resource, SimulatorRoutineInput):
+            return cast(Self, resource)
+
         is_constant = resource.get("value")
         is_timeseries = resource.get("sourceExternalId")
         type_ = "constant" if is_constant else "timeseries" if is_timeseries else None
@@ -188,7 +200,12 @@ class SimulatorRoutineOutput(CogniteObject):
     save_timeseries_external_id: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(
+        cls, resource: dict[str, Any] | SimulatorRoutineOutput, cognite_client: CogniteClient | None = None
+    ) -> Self:
+        if isinstance(resource, SimulatorRoutineOutput):
+            return cast(Self, resource)
+
         return cls(
             name=resource["name"],
             reference_id=resource["referenceId"],
@@ -227,6 +244,7 @@ class SimulatorRoutineSchedule(CogniteObject):
 class SimulatorRoutineDataSampling(CogniteObject):
     """
     The data sampling configuration of the simulator routine revision.
+
     Learn more about data sampling <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling>.
 
     Args:
@@ -252,6 +270,7 @@ class SimulatorRoutineDataSampling(CogniteObject):
 class SimulatorRoutineLogicalCheck(CogniteObject):
     """
     The logical check configuration of the simulator routine revision.
+
     Learn more about logical checks <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling/#data-validation-methods>.
 
     Args:
@@ -279,9 +298,9 @@ class SimulatorRoutineLogicalCheck(CogniteObject):
 @dataclass
 class SimulatorRoutineSteadyStateDetection(CogniteObject):
     """
-    Steady State Detection checks for steady state regions in a given time series.
-    The user specifies the time series and three parameters: min section size, var threshold, and slope threshold.
-    It returns a binary time series, with 1 for timestamps where the steady state criteria is met and 0 otherwise.
+    The steady state detection configuration of the simulator routine revision.
+
+    Learn more about steady state detection <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling/#data-validation-methods>.
 
     Args:
         aggregate (Literal["average", "interpolation", "stepInterpolation"]): The aggregation method to use for the time series.
@@ -312,19 +331,20 @@ class SimulatorRoutineSteadyStateDetection(CogniteObject):
 class SimulatorRoutineConfiguration(CogniteObject):
     """
     The simulator routine configuration defines the configuration of a simulator routine revision.
+
     Learn more about simulator routine configuration <https://docs.cognite.com/cdf/integration/guides/simulators/simulator_routines>.
 
     Args:
-        inputs (list[SimulatorRoutineInput] | None): The inputs of the simulator routine revision. Each element can be either a constant or a timeseries input.
-        outputs (list[SimulatorRoutineOutput] | None): The outputs of the simulator routine revision.
-        logical_check (list[SimulatorRoutineLogicalCheck] | None): Logical check configuration.
-        steady_state_detection (list[SimulatorRoutineSteadyStateDetection] | None): Steady state detection configuration.
+        inputs (SimulatorRoutineInputList | Sequence[SimulatorRoutineInput] | None): The inputs of the simulator routine revision. Each element can be either a constant or a timeseries input.
+        outputs (SimulatorRoutineOutputList | Sequence[SimulatorRoutineOutput] | None): The outputs of the simulator routine revision.
+        logical_check (Sequence[SimulatorRoutineLogicalCheck] | None): Logical check configuration.
+        steady_state_detection (Sequence[SimulatorRoutineSteadyStateDetection] | None): Steady state detection configuration.
         schedule (SimulatorRoutineSchedule | None): Schedule configuration.
         data_sampling (SimulatorRoutineDataSampling | None): Data sampling configuration. Learn more about data sampling <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling>.
     """
 
-    inputs: list[SimulatorRoutineInput] | None
-    outputs: list[SimulatorRoutineOutput] | None
+    inputs: SimulatorRoutineInputList | None
+    outputs: SimulatorRoutineOutputList | None
     logical_check: list[SimulatorRoutineLogicalCheck]
     steady_state_detection: list[SimulatorRoutineSteadyStateDetection]
     schedule: SimulatorRoutineSchedule | None = None
@@ -332,17 +352,23 @@ class SimulatorRoutineConfiguration(CogniteObject):
 
     def __init__(
         self,
-        inputs: list[SimulatorRoutineInput] | None,
-        outputs: list[SimulatorRoutineOutput] | None,
-        logical_check: list[SimulatorRoutineLogicalCheck] | None = None,
-        steady_state_detection: list[SimulatorRoutineSteadyStateDetection] | None = None,
+        inputs: SimulatorRoutineInputList | Sequence[SimulatorRoutineInput] | None,
+        outputs: SimulatorRoutineOutputList | Sequence[SimulatorRoutineOutput] | None,
+        logical_check: Sequence[SimulatorRoutineLogicalCheck] | None = None,
+        steady_state_detection: Sequence[SimulatorRoutineSteadyStateDetection] | None = None,
         schedule: SimulatorRoutineSchedule | None = None,
         data_sampling: SimulatorRoutineDataSampling | None = None,
     ) -> None:
-        self.inputs = inputs
-        self.outputs = outputs
-        self.logical_check = logical_check or []
-        self.steady_state_detection = steady_state_detection or []
+        if inputs is not None and not isinstance(inputs, SimulatorRoutineInputList):
+            self.inputs = SimulatorRoutineInputList(list(inputs))
+        else:
+            self.inputs = inputs
+        if outputs is not None and not isinstance(outputs, SimulatorRoutineOutputList):
+            self.outputs = SimulatorRoutineOutputList(list(outputs))
+        else:
+            self.outputs = outputs
+        self.logical_check = list(logical_check) if logical_check else []
+        self.steady_state_detection = list(steady_state_detection) if steady_state_detection else []
         self.schedule = schedule
         self.data_sampling = data_sampling
 
@@ -352,20 +378,12 @@ class SimulatorRoutineConfiguration(CogniteObject):
         outputs = None
 
         if resource.get("inputs", None) is not None:
-            inputs = []
-            for input in resource["inputs"]:
-                if issubclass(type(input), type(SimulatorRoutineInput)):
-                    inputs.append(input)
-                else:
-                    inputs.append(SimulatorRoutineInput._load(input, cognite_client))
+            inputs_list = [SimulatorRoutineInput._load(input, cognite_client) for input in resource["inputs"]]
+            inputs = SimulatorRoutineInputList(inputs_list)
 
         if resource.get("outputs", None) is not None:
-            outputs = []
-            for output_ in resource["outputs"]:
-                if isinstance(output_, SimulatorRoutineOutput):
-                    outputs.append(output_)
-                else:
-                    outputs.append(SimulatorRoutineOutput._load(output_, cognite_client))
+            outputs_list = [SimulatorRoutineOutput._load(output, cognite_client) for output in resource["outputs"]]
+            outputs = SimulatorRoutineOutputList(outputs_list)
 
         schedule = resource["schedule"] if resource.get("schedule") and resource["schedule"]["enabled"] else None
         data_sampling = (
@@ -376,11 +394,11 @@ class SimulatorRoutineConfiguration(CogniteObject):
             schedule=SimulatorRoutineSchedule.load(schedule, cognite_client) if schedule else None,
             data_sampling=SimulatorRoutineDataSampling._load(data_sampling, cognite_client) if data_sampling else None,
             logical_check=[
-                SimulatorRoutineLogicalCheck._load(check_, cognite_client) for check_ in resource["logicalCheck"]
+                SimulatorRoutineLogicalCheck._load(check, cognite_client) for check in resource["logicalCheck"]
             ],
             steady_state_detection=[
-                SimulatorRoutineSteadyStateDetection._load(detection_, cognite_client)
-                for detection_ in resource["steadyStateDetection"]
+                SimulatorRoutineSteadyStateDetection._load(detection, cognite_client)
+                for detection in resource["steadyStateDetection"]
             ],
             inputs=inputs,
             outputs=outputs,
@@ -418,6 +436,9 @@ class SimulatorRoutineStepArguments(CogniteObject, dict, MutableMapping[str, str
 
     Depending on the step type and simulator, the arguments can be different.
     For "Get" and "Set" step type the reference ID is required.
+
+    Args:
+        data (dict[str, str]): The step arguments.
     """
 
     def __init__(self, data: dict[str, str]) -> None:
@@ -449,7 +470,12 @@ class SimulatorRoutineStep(CogniteObject):
     description: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(
+        cls, resource: dict[str, Any] | SimulatorRoutineStep, cognite_client: CogniteClient | None = None
+    ) -> Self:
+        if isinstance(resource, SimulatorRoutineStep):
+            return cast(Self, resource)
+
         return cls(
             step_type=resource["stepType"],
             arguments=SimulatorRoutineStepArguments._load(resource["arguments"]),
@@ -479,13 +505,15 @@ class SimulatorRoutineStage(CogniteObject):
     description: str | None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(
+        cls, resource: dict[str, Any] | SimulatorRoutineStage, cognite_client: CogniteClient | None = None
+    ) -> Self:
+        if isinstance(resource, SimulatorRoutineStage):
+            return cast(Self, resource)
+
         return cls(
             order=resource["order"],
-            steps=[
-                SimulatorRoutineStep._load(step_, cognite_client) if isinstance(step_, dict) else step_
-                for step_ in resource["steps"]
-            ],
+            steps=[SimulatorRoutineStep._load(step, cognite_client) for step in resource["steps"]],
             description=resource.get("description"),
         )
 
@@ -496,17 +524,22 @@ class SimulatorRoutineStage(CogniteObject):
 
 
 class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRevisionWrite"], ABC):
+    script: SimulatorRoutineStageList | None
+
     def __init__(
         self,
         external_id: str,
         routine_external_id: str,
         configuration: SimulatorRoutineConfiguration | None = None,
-        script: list[SimulatorRoutineStage] | None = None,
+        script: SimulatorRoutineStageList | Sequence[SimulatorRoutineStage] | None = None,
     ) -> None:
         self.external_id = external_id
         self.routine_external_id = routine_external_id
         self.configuration = configuration
-        self.script = script
+        if script is not None and not isinstance(script, SimulatorRoutineStageList):
+            self.script = SimulatorRoutineStageList(list(script))
+        else:
+            self.script = script
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
@@ -525,7 +558,7 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         routine_external_id (str): The external ID of the simulator routine.
         configuration (SimulatorRoutineConfiguration | None): The configuration of the simulator routine revision.
-        script (list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
+        script (SimulatorRoutineStageList | Sequence[SimulatorRoutineStage] | None): The script of the simulator routine revision.
 
     """
 
@@ -536,11 +569,10 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
             if resource.get("configuration")
             else None
         )
-        script = (
-            [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])]
-            if resource.get("script")
-            else None
-        )
+        if script := resource.get("script"):
+            stages = [SimulatorRoutineStage._load(stage, cognite_client) for stage in script]
+            script = SimulatorRoutineStageList(stages)
+
         return cls(
             external_id=resource["externalId"],
             routine_external_id=resource["routineExternalId"],
@@ -578,7 +610,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         data_set_id (int): The ID of the data set associated with the simulator routine revision.
         created_by_user_id (str): The ID of the user who created the simulator routine revision.
         configuration (SimulatorRoutineConfiguration | None): The configuration of the simulator routine revision.
-        script (list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
+        script (SimulatorRoutineStageList | Sequence[SimulatorRoutineStage] | None): The script of the simulator routine revision.
     """
 
     def __init__(
@@ -594,7 +626,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         data_set_id: int,
         created_by_user_id: str,
         configuration: SimulatorRoutineConfiguration | None = None,
-        script: list[SimulatorRoutineStage] | None = None,
+        script: SimulatorRoutineStageList | Sequence[SimulatorRoutineStage] | None = None,
     ) -> None:
         super().__init__(external_id, routine_external_id, configuration, script)
 
@@ -615,11 +647,10 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
             if resource.get("configuration")
             else None
         )
-        script = (
-            [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])]
-            if resource.get("script")
-            else None
-        )
+        if script := resource.get("script"):
+            stages = [SimulatorRoutineStage._load(stage, cognite_client) for stage in script]
+            script = SimulatorRoutineStageList(stages)
+
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -658,6 +689,133 @@ class SimulatorRoutineRevisionList(
         return SimulatorRoutineRevisionWriteList(
             [a.as_write() for a in self.data], cognite_client=self._get_cognite_client()
         )
+
+
+class SimulatorRoutineStageList(UserList[SimulatorRoutineStage]):
+    """List of simulator routine stages with pandas conversion capabilities."""
+
+    def __init__(self, initlist: Sequence[SimulatorRoutineStage] | None = None) -> None:
+        super().__init__(list(initlist) if initlist is not None else [])
+
+    def to_pandas(self) -> pandas.DataFrame:
+        """Convert the list of stages to a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: DataFrame with stage and step information.
+        """
+        pd = local_import("pandas")
+        if not self.data:
+            return pd.DataFrame()
+
+        rows = []
+        index_data = []
+        for stage in self.data:
+            for step in stage.steps:
+                row = {
+                    "stage_description": stage.description,
+                    "step_type": step.step_type,
+                    "step_description": step.description,
+                }
+                for key, value in step.arguments.items():
+                    row[f"arg_{to_snake_case(key)}"] = value
+                rows.append(row)
+                index_data.append((stage.order, step.order))
+
+        df = pd.DataFrame(rows)
+        if not df.empty:
+            df.index = pd.MultiIndex.from_tuples(index_data, names=["stage_order", "step_order"])
+        return df
+
+    def _repr_html_(self) -> str:
+        try:
+            return self.to_pandas()._repr_html_()
+        except CogniteImportError:
+            warnings.warn(
+                "The 'cognite-sdk' depends on 'pandas' for pretty-printing objects like 'Asset' or 'DatapointsList' in "
+                "(Jupyter) notebooks and similar environments. Consider installing it! Using fallback method.",
+                UserWarning,
+            )
+            return str(self)
+
+
+class SimulatorRoutineInputList(UserList[SimulatorRoutineInput]):
+    """List of simulator routine inputs with pandas conversion capabilities."""
+
+    def __init__(self, initlist: Sequence[SimulatorRoutineInput] | None = None) -> None:
+        super().__init__(list(initlist) if initlist is not None else [])
+
+    def to_pandas(self) -> pandas.DataFrame:
+        """Convert the list of inputs to a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: DataFrame with input information.
+        """
+        pd = local_import("pandas")
+        if not self.data:
+            return pd.DataFrame()
+
+        rows = []
+        for item in self.data:
+            row = item.dump(camel_case=False)
+            if (unit_data := row.pop("unit", None)) is not None:
+                row["unit_name"] = unit_data.get("name")
+                row["unit_quantity"] = unit_data.get("quantity")
+            else:
+                row["unit_name"] = None
+                row["unit_quantity"] = None
+            rows.append(row)
+        return pd.DataFrame(rows)
+
+    def _repr_html_(self) -> str:
+        try:
+            return self.to_pandas()._repr_html_()
+        except CogniteImportError:
+            warnings.warn(
+                "The 'cognite-sdk' depends on 'pandas' for pretty-printing objects like 'Asset' or 'DatapointsList' in "
+                "(Jupyter) notebooks and similar environments. Consider installing it! Using fallback method.",
+                UserWarning,
+            )
+            return str(self)
+
+
+class SimulatorRoutineOutputList(UserList[SimulatorRoutineOutput]):
+    """List of simulator routine outputs with pandas conversion capabilities."""
+
+    def __init__(self, initlist: Sequence[SimulatorRoutineOutput] | None = None) -> None:
+        super().__init__(list(initlist) if initlist is not None else [])
+
+    def to_pandas(self) -> pandas.DataFrame:
+        """Convert the list of outputs to a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: DataFrame with output information.
+        """
+        pd = local_import("pandas")
+        if not self.data:
+            return pd.DataFrame()
+
+        rows = []
+        for item in self.data:
+            row = item.dump(camel_case=False)
+            if (unit_data := row.pop("unit", None)) is not None:
+                row["unit_name"] = unit_data.get("name")
+                row["unit_quantity"] = unit_data.get("quantity")
+            else:
+                row["unit_name"] = None
+                row["unit_quantity"] = None
+            rows.append(row)
+        return pd.DataFrame(rows)
+
+    def _repr_html_(self) -> str:
+        try:
+            return self.to_pandas()._repr_html_()
+        except CogniteImportError:
+            warnings.warn(
+                "The 'cognite-sdk' depends on 'pandas' for pretty-printing objects like 'Asset' or 'DatapointsList' in "
+                "(Jupyter) notebooks and similar environments. Consider installing it! Using fallback method.",
+                UserWarning,
+            )
+            return str(self)
 
 
 _INPUT_CLASS_BY_TYPE: dict[str, type[SimulatorRoutineInput]] = {

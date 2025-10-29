@@ -54,6 +54,7 @@ class SimulatorRoutinesAPI(APIClient):
         chunk_size: int,
         model_external_ids: Sequence[str] | None = None,
         simulator_integration_external_ids: Sequence[str] | None = None,
+        sort: PropertySort | None = None,
         limit: int | None = None,
     ) -> Iterator[SimulatorRoutineList]: ...
 
@@ -63,6 +64,7 @@ class SimulatorRoutinesAPI(APIClient):
         chunk_size: None = None,
         model_external_ids: Sequence[str] | None = None,
         simulator_integration_external_ids: Sequence[str] | None = None,
+        sort: PropertySort | None = None,
         limit: int | None = None,
     ) -> Iterator[SimulatorRoutine]: ...
 
@@ -71,6 +73,7 @@ class SimulatorRoutinesAPI(APIClient):
         chunk_size: int | None = None,
         model_external_ids: Sequence[str] | None = None,
         simulator_integration_external_ids: Sequence[str] | None = None,
+        sort: PropertySort | None = None,
         limit: int | None = None,
     ) -> Iterator[SimulatorRoutine] | Iterator[SimulatorRoutineList]:
         """Iterate over simulator routines
@@ -81,6 +84,7 @@ class SimulatorRoutinesAPI(APIClient):
             chunk_size (int | None): Number of simulator routines to return in each chunk. Defaults to yielding one simulator routine a time.
             model_external_ids (Sequence[str] | None): Filter on model external ids.
             simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
+            sort (PropertySort | None): The criteria to sort by.
             limit (int | None): Maximum number of simulator routines to return. Defaults to return all items.
 
         Returns:
@@ -96,6 +100,7 @@ class SimulatorRoutinesAPI(APIClient):
             resource_cls=SimulatorRoutine,
             method="POST",
             filter=routines_filter.dump(),
+            sort=[PropertySort.load(sort).dump()] if sort else None,
             chunk_size=chunk_size,
             limit=limit,
         )
@@ -110,12 +115,14 @@ class SimulatorRoutinesAPI(APIClient):
         self,
         routine: SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite],
     ) -> SimulatorRoutine | SimulatorRoutineList:
-        """`Create simulator routine <https://developer.cognite.com/api#tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
-        You can create an arbitrary number of simulator routines.
+        """`Create simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
+
         Args:
-            routine (SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]): Simulator routines to create.
+            routine (SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]): Simulator routine(s) to create.
+
         Returns:
             SimulatorRoutine | SimulatorRoutineList: Created simulator routine(s)
+
         Examples:
             Create new simulator routines:
                 >>> from cognite.client import CogniteClient
@@ -150,26 +157,24 @@ class SimulatorRoutinesAPI(APIClient):
 
     def delete(
         self,
-        id: int | Sequence[int] | None = None,
+        ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
     ) -> None:
-        """`Delete one or more routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
+        """`Delete simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
 
         Args:
-            id (int | Sequence[int] | None): ids (or sequence of ids) for the routine(s) to delete.
+            ids (int | Sequence[int] | None): ids (or sequence of ids) for the routine(s) to delete.
             external_ids (str | SequenceNotStr[str] | SequenceNotStr[str] | None): external ids (or sequence of external ids) for the routine(s) to delete.
 
         Examples:
-
-            Delete routines by id or external id:
-
+            Delete simulator routines by id or external id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.simulators.routines.delete(id=[1,2,3], external_id="foo")
+                >>> client.simulators.routines.delete(ids=[1,2,3], external_ids="foo")
         """
         self._warning.warn()
         self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=id, external_ids=external_ids),
+            identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             wrap_ids=True,
         )
 
@@ -182,7 +187,7 @@ class SimulatorRoutinesAPI(APIClient):
     ) -> SimulatorRoutineList:
         """`Filter simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_
 
-        Retrieves a list of simulator routines that match the given criteria
+        Retrieves a list of simulator routines that match the given criteria.
 
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
@@ -197,13 +202,16 @@ class SimulatorRoutinesAPI(APIClient):
             List simulator routines:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.routines.list()
+                >>> res = client.simulators.routines.list(limit=10)
 
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> res = client.simulators.routines.list(
                 ...     simulator_integration_external_ids=["integration_ext_id"],
-                ...     sort=PropertySort(order="asc")
+                ...     sort=PropertySort(
+                ...         property="createdTime",
+                ...         order="desc"
+                ...     )
                 ... )
 
         """
@@ -223,8 +231,10 @@ class SimulatorRoutinesAPI(APIClient):
             filter=routines_filter.dump(),
         )
 
+    @overload
     def run(
         self,
+        *,
         routine_external_id: str,
         inputs: Sequence[SimulationInputOverride] | None = None,
         run_time: int | None = None,
@@ -232,27 +242,77 @@ class SimulatorRoutinesAPI(APIClient):
         log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
         wait: bool = True,
         timeout: float = 60,
+    ) -> SimulationRun: ...
+
+    @overload
+    def run(
+        self,
+        *,
+        routine_revision_external_id: str,
+        model_revision_external_id: str,
+        inputs: Sequence[SimulationInputOverride] | None = None,
+        run_time: int | None = None,
+        queue: bool | None = None,
+        log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
+        wait: bool = True,
+        timeout: float = 60,
+    ) -> SimulationRun: ...
+
+    def run(
+        self,
+        routine_external_id: str | None = None,
+        routine_revision_external_id: str | None = None,
+        model_revision_external_id: str | None = None,
+        inputs: Sequence[SimulationInputOverride] | None = None,
+        run_time: int | None = None,
+        queue: bool | None = None,
+        log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
+        wait: bool = True,
+        timeout: float = 60,
     ) -> SimulationRun:
-        """`Run a simulation <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>``
+        """`Run a simulation <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
+
+        Run a simulation for a given simulator routine. Supports two modes:
+        1. By routine external ID only
+        2. By routine revision external ID + model revision external ID
+
         Args:
-            routine_external_id (str): External id of the simulator routine
+            routine_external_id (str | None): External id of the simulator routine to run.
+                Cannot be specified together with routine_revision_external_id and model_revision_external_id.
+            routine_revision_external_id (str | None): External id of the simulator routine revision to run.
+                Must be specified together with model_revision_external_id.
+            model_revision_external_id (str | None): External id of the simulator model revision.
+                Must be specified together with routine_revision_external_id.
             inputs (Sequence[SimulationInputOverride] | None): List of input overrides
             run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
             queue (bool | None): Queue the simulation run when connector is down.
             log_severity (Literal['Debug', 'Information', 'Warning', 'Error'] | None): Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
             wait (bool): Wait until the simulation run is finished. Defaults to True.
             timeout (float): Timeout in seconds for waiting for the simulation run to finish. Defaults to 60 seconds.
+
         Returns:
             SimulationRun: Created simulation run
+
         Examples:
-            Create new simulation run:
+            Create new simulation run using routine external ID:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> run = client.simulators.routines.run(routine_external_id="routine1", log_severity="Debug")
+                >>> run = client.simulators.routines.run(
+                ...     routine_external_id="routine1",
+                ...     log_severity="Debug"
+                ... )
+
+            Create new simulation run using routine and model revision external IDs:
+                >>> run = client.simulators.routines.run(
+                ...     routine_revision_external_id="routine_revision1",
+                ...     model_revision_external_id="model_revision1",
+                ... )
         """
         self._warning.warn()
         run_object = SimulationRunWrite(
             routine_external_id=routine_external_id,
+            routine_revision_external_id=routine_revision_external_id,
+            model_revision_external_id=model_revision_external_id,
             inputs=list(inputs) if inputs is not None else None,
             run_time=run_time,
             queue=queue,

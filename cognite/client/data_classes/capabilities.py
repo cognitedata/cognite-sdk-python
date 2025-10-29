@@ -565,6 +565,21 @@ class UnknownAcl(Capability):
 
 
 @dataclass
+class AgentsAcl(Capability):
+    _capability_name = "agentsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        READ = "READ"
+        WRITE = "WRITE"
+        RUN = "RUN"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
 class AnalyticsAcl(Capability):
     _capability_name = "analyticsAcl"
     actions: Sequence[Action]
@@ -1149,6 +1164,36 @@ class TemplateInstancesAcl(Capability):
     class Scope:
         All = AllScope
         DataSet = DataSetScope
+
+
+@dataclass
+class StreamsAcl(Capability):
+    _capability_name = "streamsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Create = "CREATE"
+        Delete = "DELETE"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
+class StreamRecordsAcl(Capability):
+    _capability_name = "streamRecordsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | SpaceIDScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+        SpaceID = SpaceIDScope
 
 
 @dataclass

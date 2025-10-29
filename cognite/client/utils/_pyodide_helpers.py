@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import warnings
 from collections.abc import Callable, MutableMapping
@@ -14,6 +15,9 @@ if TYPE_CHECKING:
     from requests import Session
 
     from cognite.client._http_client import HTTPClient, HTTPClientConfig
+
+
+logger = logging.getLogger(__name__)
 
 
 def patch_sdk_for_pyodide() -> None:
@@ -56,6 +60,21 @@ def patch_sdk_for_pyodide() -> None:
     if os.getenv("COGNITE_FUSION_NOTEBOOK") is not None:
         global_config.default_client_config = FusionNotebookConfig()
 
+    # - We attempt to load the package 'tzdata' automatically, as pyodide can't read IANA timezone info from
+    #   the OS and thus need this extra package. We need the timezone info because we use zoneinfo.ZoneInfo
+    #   internally for e.g. datapoints and workflows.
+    #   Note: This convenience will only work in chromium-based browsers (as of Sept 2025)
+    try:
+        import micropip  # type: ignore [import-not-found]
+        from pyodide.ffi import run_sync  # type: ignore [import-not-found]
+
+        run_sync(micropip.install("tzdata"))
+    except Exception:
+        logger.debug(
+            "Could not load 'tzdata' package automatically in pyodide. You may need to do this manually:"
+            "import micropip; await micropip.install('tzdata')"
+        )
+
 
 def http_client__init__(
     self: HTTPClient,
@@ -74,6 +93,7 @@ def http_client__init__(
 class EnvVarToken(CredentialProvider):
     """Credential provider that always reads token from an environment variable just-in-time,
     allowing refreshing the value by another entity.
+
     Args:
         key (str): The name of the env.var. to read from. Default: 'COGNITE_TOKEN'
     Raises:

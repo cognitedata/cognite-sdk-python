@@ -10,6 +10,13 @@ capabilities:
         - UPDATE
       scope:
         all: {}
+  - agentsAcl:
+        actions:
+        - WRITE
+        - READ
+        - RUN
+        scope:
+            all: {}
   - analyticsAcl:
       actions:
       - READ
@@ -270,6 +277,19 @@ capabilities:
       - READ
       - MANAGE
       - WRITE
+      - DELETE
+      scope:
+        all: {}
+  - streamRecordsAcl:
+      actions:
+      - READ
+      - WRITE
+      scope:
+        all: {}
+  - streamsAcl:
+      actions:
+      - READ
+      - CREATE
       - DELETE
       scope:
         all: {}

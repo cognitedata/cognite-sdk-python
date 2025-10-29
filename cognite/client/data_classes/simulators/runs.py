@@ -87,20 +87,33 @@ class SimulationRunCore(WriteableCogniteResource["SimulationRunWrite"]):
     def __init__(
         self,
         run_type: str | None,
-        routine_external_id: str,
+        routine_external_id: str | None,
         run_time: int | None = None,
+        routine_revision_external_id: str | None = None,
+        model_revision_external_id: str | None = None,
     ) -> None:
         self.run_type = run_type
         self.run_time = run_time
         self.routine_external_id = routine_external_id
+        self.routine_revision_external_id = routine_revision_external_id
+        self.model_revision_external_id = model_revision_external_id
 
 
 class SimulationRunWrite(SimulationRunCore):
     """
     Request to run a simulator routine asynchronously.
 
+    This class supports two modes of running simulations:
+    1. By routine external ID only
+    2. By routine revision external ID + model revision external ID
+
     Args:
-        routine_external_id (str): External id of the associated simulator routine
+        routine_external_id (str | None): External id of the associated simulator routine.
+            Cannot be specified together with routine_revision_external_id and model_revision_external_id.
+        routine_revision_external_id (str | None): External id of the associated simulator routine revision.
+            Must be specified together with model_revision_external_id.
+        model_revision_external_id (str | None): External id of the associated simulator model revision.
+            Must be specified together with routine_revision_external_id.
         run_type (str | None): The type of the simulation run
         run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
         queue (bool | None): Queue the simulation run when connector is down.
@@ -110,15 +123,34 @@ class SimulationRunWrite(SimulationRunCore):
 
     def __init__(
         self,
-        routine_external_id: str,
+        routine_external_id: str | None = None,
+        routine_revision_external_id: str | None = None,
+        model_revision_external_id: str | None = None,
         run_type: str | None = None,
         run_time: int | None = None,
         queue: bool | None = None,
         log_severity: str | None = None,
         inputs: list[SimulationInputOverride] | None = None,
     ) -> None:
+        is_routine_mode = routine_external_id and not routine_revision_external_id and not model_revision_external_id
+        is_revision_mode = (
+            not routine_external_id
+            and routine_revision_external_id is not None
+            and model_revision_external_id is not None
+        )
+
+        # Validate that either routine_external_id OR (routine_revision_external_id + model_revision_external_id) is provided
+        if not (is_routine_mode or is_revision_mode):
+            param_error = ValueError(
+                "Must specify either 'routine_external_id' alone, or both "
+                "'routine_revision_external_id' and 'model_revision_external_id' together."
+            )
+            raise param_error
+
         super().__init__(
             routine_external_id=routine_external_id,
+            routine_revision_external_id=routine_revision_external_id,
+            model_revision_external_id=model_revision_external_id,
             run_type=run_type,
             run_time=run_time,
         )
@@ -128,20 +160,36 @@ class SimulationRunWrite(SimulationRunCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRunWrite:
-        inputs = resource.get("inputs", None)
+        inputs = resource.get("inputs")
+        routine_revision_external_id = resource.get("routineRevisionExternalId")
+        model_revision_external_id = resource.get("modelRevisionExternalId")
+        routine_external_id = resource.get("routineExternalId")
+
         return cls(
             run_type=resource.get("runType"),
-            routine_external_id=resource["routineExternalId"],
             run_time=resource.get("runTime"),
             queue=resource.get("queue"),
             log_severity=resource.get("logSeverity"),
             inputs=([SimulationInputOverride._load(_input) for _input in inputs] if inputs else None),
+            routine_external_id=routine_external_id,
+            routine_revision_external_id=routine_revision_external_id,
+            model_revision_external_id=model_revision_external_id,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.inputs is not None:
             output["inputs"] = [input_.dump(camel_case=camel_case) for input_ in self.inputs]
+
+        # Remove fields based on the mode we're in
+        if self.routine_external_id is not None:
+            # Routine-only mode: remove revision fields that might be None
+            output.pop("routineRevisionExternalId", None)
+            output.pop("modelRevisionExternalId", None)
+        else:
+            # Revision mode: remove routine_external_id
+            output.pop("routineExternalId", None)
+
         return output
 
     def as_write(self) -> SimulationRunWrite:
@@ -151,6 +199,7 @@ class SimulationRunWrite(SimulationRunCore):
 class SimulationRun(SimulationRunCore):
     """
     Every time a simulation routine executes, a simulation run object is created.
+
     This object ensures that each execution of a routine is documented and traceable.
     Each run has an associated simulation data resource, which stores the inputs and outputs of a
     simulation run, capturing the values set into and read from the simulator model to ensure
@@ -238,7 +287,7 @@ class SimulationRun(SimulationRunCore):
         Returns:
             SimulatorLog | None: Log for the simulation run.
         """
-        return self._cognite_client.simulators.logs.retrieve(id=self.log_id)
+        return self._cognite_client.simulators.logs.retrieve(ids=self.log_id)
 
     def get_data(self) -> SimulationRunDataItem | None:
         """`Retrieve data associated with this simulation run. <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
@@ -310,7 +359,6 @@ class SimulationValueBase(CogniteObject):
     """
     Base class for simulation values. This class is used to define the value and its type.
     The value can be a string, double, array of strings or array of doubles.
-    The maximum length is 1024 for strings and 200 for arrays.
     """
 
     def __init__(
@@ -355,7 +403,6 @@ class SimulationInput(SimulationValueBase):
     """
     This class is used to define the value and its type.
     The value can be a string, double, array of strings or array of doubles.
-    The maximum length is 1024 for strings and 200 for arrays.
     """
 
     def __init__(
@@ -476,7 +523,7 @@ class SimulationRunDataItem(CogniteResource):
         return pd.DataFrame(rows)
 
 
-class SimulatorRunDataList(CogniteResourceList[SimulationRunDataItem], IdTransformerMixin):
+class SimulationRunDataList(CogniteResourceList[SimulationRunDataItem], IdTransformerMixin):
     _RESOURCE = SimulationRunDataItem
 
     def to_pandas(  # type: ignore [override]
@@ -495,7 +542,7 @@ class SimulationRunWriteList(CogniteResourceList[SimulationRunWrite], ExternalID
     _RESOURCE = SimulationRunWrite
 
 
-class SimulatorRunList(WriteableCogniteResourceList[SimulationRunWrite, SimulationRun], IdTransformerMixin):
+class SimulationRunList(WriteableCogniteResourceList[SimulationRunWrite, SimulationRun], IdTransformerMixin):
     _RESOURCE = SimulationRun
 
     def as_write(self) -> SimulationRunWriteList:

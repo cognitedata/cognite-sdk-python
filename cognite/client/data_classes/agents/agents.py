@@ -31,6 +31,7 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
         description (str | None): The description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
     """
 
     external_id: str
@@ -38,6 +39,7 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
     description: str | None = None
     instructions: str | None = None
     model: str | None = None
+    labels: list[str] | None = None
 
 
 class AgentUpsert(AgentCore):
@@ -50,6 +52,7 @@ class AgentUpsert(AgentCore):
         description (str | None): The human readable description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
         tools (Sequence[AgentToolUpsert] | None): List of tools for the agent.
 
     """
@@ -63,17 +66,28 @@ class AgentUpsert(AgentCore):
         description: str | None = None,
         instructions: str | None = None,
         model: str | None = None,
+        labels: list[str] | None = None,
         tools: Sequence[AgentToolUpsert] | None = None,
     ) -> None:
         super().__init__(
-            external_id=external_id, name=name, description=description, instructions=instructions, model=model
+            external_id=external_id,
+            name=name,
+            description=description,
+            instructions=instructions,
+            model=model,
+            labels=labels,
         )
         self.tools: AgentToolUpsertList | None = AgentToolUpsertList(tools) if tools is not None else None
+        # This stores any unknown properties that are not part of the defined fields.
+        # This is useful while the API is evolving and new fields are added.
+        self._unknown_properties: dict[str, object] = {}
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         if self.tools:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
+        if self._unknown_properties:
+            result.update(self._unknown_properties)
         return result
 
     def as_write(self) -> AgentUpsert:
@@ -88,14 +102,18 @@ class AgentUpsert(AgentCore):
             else None
         )
 
-        return cls(
+        instances = cls(
             external_id=resource["externalId"],
             name=resource["name"],
             description=resource.get("description"),
             instructions=resource.get("instructions"),
             model=resource.get("model"),
+            labels=resource.get("labels"),
             tools=tools,
         )
+        existing = set(instances.dump(camel_case=True).keys())
+        instances._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
+        return instances
 
 
 class Agent(AgentCore):
@@ -105,9 +123,10 @@ class Agent(AgentCore):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): The name of the agent, for use in user interfaces.
-        description (str | None): The human readable description of the agent.
-        instructions (str | None): Instructions for the agent.
-        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        description (str | None): The human readable description of the agent. Always present in API responses.
+        instructions (str | None): Instructions for the agent. Always present in API responses.
+        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
+        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
         tools (Sequence[AgentTool] | None): List of tools for the agent.
         created_time (int | None): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         last_updated_time (int | None): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
@@ -126,23 +145,40 @@ class Agent(AgentCore):
         description: str | None = None,
         instructions: str | None = None,
         model: str | None = None,
+        labels: list[str] | None = None,
         tools: Sequence[AgentTool] | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
         owner_id: str | None = None,
     ) -> None:
         super().__init__(
-            external_id=external_id, name=name, description=description, instructions=instructions, model=model
+            external_id=external_id,
+            name=name,
+            description=description,
+            instructions=instructions,
+            model=model,
+            labels=labels,
         )
+        # These fields are always present in API responses, but optional when creating.
+        # Force the type to be non-optional for read instances.
+        self.description: str = description  # type: ignore[assignment]
+        self.instructions: str = instructions  # type: ignore[assignment]
+        self.model: str = model  # type: ignore[assignment]
+        self.labels: list[str] = labels  # type: ignore[assignment]
         self.tools: AgentToolList | None = AgentToolList(tools) if tools is not None else None
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.owner_id = owner_id
+        # This stores any unknown properties that are not part of the defined fields.
+        # This is useful while the API is evolving and new fields are added.
+        self._unknown_properties: dict[str, object] = {}
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         if self.tools:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
+        if self._unknown_properties:
+            result.update(self._unknown_properties)
         return result
 
     def as_write(self) -> AgentUpsert:
@@ -153,6 +189,7 @@ class Agent(AgentCore):
             description=self.description,
             instructions=self.instructions,
             model=self.model,
+            labels=self.labels,
             tools=[tool.as_write() for tool in self.tools] if self.tools else None,
         )
 
@@ -164,17 +201,21 @@ class Agent(AgentCore):
             else None
         )
 
-        return cls(
+        instance = cls(
             external_id=resource["externalId"],
             name=resource["name"],
             description=resource.get("description"),
             instructions=resource.get("instructions"),
             model=resource.get("model"),
+            labels=resource.get("labels"),
             tools=tools,
             created_time=resource.get("createdTime"),
             last_updated_time=resource.get("lastUpdatedTime"),
             owner_id=resource.get("ownerId"),
         )
+        existing = set(instance.dump(camel_case=True).keys())
+        instance._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
+        return instance
 
 
 class AgentUpsertList(CogniteResourceList[AgentUpsert], ExternalIDTransformerMixin):

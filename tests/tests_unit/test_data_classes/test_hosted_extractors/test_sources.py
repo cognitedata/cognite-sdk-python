@@ -123,7 +123,7 @@ def test_auth_loaders_auth_cls(sample_sources):
 
 
 def test_auth_loaders(sample_sources) -> None:
-    resource, expected_auth_cls, expected_auth_write_cls = sample_sources
+    resource, _expected_auth_cls, expected_auth_write_cls = sample_sources
 
     source_write_cls = _SOURCE_WRITE_CLASS_BY_TYPE.get(resource["source"])
     obj: SourceWrite = source_write_cls._load(resource=resource)

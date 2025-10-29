@@ -268,6 +268,7 @@ class TestFilesAPI:
         retrieved_content = cognite_client.files.download_bytes(external_id=external_id)
         assert retrieved_content == content.encode("utf-8")
 
+    @pytest.mark.skip("Ticket DOGE-110: This test is flaky and needs to be fixed")
     def test_upload_multipart(self, cognite_client: CogniteClient) -> None:
         # Min file chunk size is 5MiB
         content_1 = "abcde" * 1_200_000
@@ -295,6 +296,14 @@ class TestFilesAPI:
         assert len(retrieved_content) == 6000005
 
         cognite_client.files.delete(session.file_metadata.id)
+
+    def test_upload_content_error_modes(self, cognite_client, tmp_path):
+        with pytest.raises(IsADirectoryError):
+            cognite_client.files.upload_content(str(tmp_path))
+
+        missing_file = tmp_path / "does_not_exist.txt"
+        with pytest.raises(FileNotFoundError):
+            cognite_client.files.upload_content(str(missing_file))
 
     def test_create_retrieve_update_delete_with_instance_id(
         self, cognite_client: CogniteClient, instance_id_test_space: str

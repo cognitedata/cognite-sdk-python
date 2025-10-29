@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import warnings
 from collections import UserList
 from collections.abc import Callable, Sequence
 from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, as_completed
@@ -36,7 +37,7 @@ class TasksSummary:
         self.not_found_error: Exception | None = None
         self.duplicated_error: Exception | None = None
         self.unknown_error: Exception | None = None
-        self.missing, self.duplicated, self.cluster = self._inspect_exceptions(exceptions)
+        self.missing, self.duplicated, self.cluster, self.project = self._inspect_exceptions(exceptions)
 
     def joined_results(self, unwrap_fn: Callable = no_op) -> list:
         joined_results: list = []
@@ -53,10 +54,7 @@ class TasksSummary:
         return [res.json() for res in self.results]
 
     def raise_compound_exception_if_failed_tasks(
-        self,
-        task_unwrap_fn: Callable = no_op,
-        task_list_element_unwrap_fn: Callable | None = None,
-        str_format_element_fn: Callable = no_op,
+        self, task_unwrap_fn: Callable = no_op, task_list_element_unwrap_fn: Callable | None = None
     ) -> None:
         if not (self.unknown_error or self.not_found_error or self.duplicated_error):
             return None
@@ -72,22 +70,25 @@ class TasksSummary:
             failed = [task_list_element_unwrap_fn(el) for t in self.failed_tasks for el in task_unwrap_fn(t)]
             skipped = [task_list_element_unwrap_fn(el) for t in self.skipped_tasks for el in task_unwrap_fn(t)]
 
-        task_lists = dict(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
         if self.unknown_error:
-            self._raise_basic_api_error(str_format_element_fn, **task_lists)
+            self._raise_basic_api_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
         if self.not_found_error:
-            self._raise_not_found_error(str_format_element_fn, **task_lists)
+            self._raise_not_found_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
         if self.duplicated_error:
-            self._raise_duplicated_error(str_format_element_fn, **task_lists)
+            self._raise_duplicated_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
 
-    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[list, list, str | None]:
-        cluster, missing, duplicated = None, [], []
+    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[Sequence, Sequence, str | None, str | None]:
+        cluster = None
+        project = None
+        missing: list[dict] = []
+        duplicated: list[dict] = []
         for exc in exceptions:
             if not isinstance(exc, CogniteAPIError):
                 self.unknown_error = exc
                 continue
 
             cluster = cluster or exc.cluster
+            project = project or exc.project
             if exc.code in (400, 422) and exc.missing is not None:
                 missing.extend(exc.missing)
                 self.not_found_error = exc
@@ -97,10 +98,12 @@ class TasksSummary:
                 self.duplicated_error = exc
             else:
                 self.unknown_error = exc
-        return missing, duplicated, cluster
+        return missing, duplicated, cluster, project
 
-    def _raise_basic_api_error(self, unwrap_fn: Callable, **task_lists: list) -> NoReturn:
-        if isinstance(self.unknown_error, CogniteAPIError) and (task_lists["failed"] or task_lists["unknown"]):
+    def _raise_basic_api_error(
+        self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
+    ) -> NoReturn:
+        if isinstance(self.unknown_error, CogniteAPIError) and (failed or unknown):
             raise CogniteAPIError(
                 message=self.unknown_error.message,
                 code=self.unknown_error.code,
@@ -108,17 +111,28 @@ class TasksSummary:
                 missing=self.missing,
                 duplicated=self.duplicated,
                 extra=self.unknown_error.extra,
-                unwrap_fn=unwrap_fn,
                 cluster=self.cluster,
-                **task_lists,
+                project=self.project,
+                successful=successful,
+                failed=failed,
+                unknown=unknown,
+                skipped=skipped,
             )
         raise self.unknown_error  # type: ignore [misc]
 
-    def _raise_not_found_error(self, unwrap_fn: Callable, **task_lists: list) -> NoReturn:
-        raise CogniteNotFoundError(self.missing, unwrap_fn=unwrap_fn, **task_lists) from self.not_found_error
+    def _raise_not_found_error(
+        self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
+    ) -> NoReturn:
+        raise CogniteNotFoundError(
+            self.missing, successful=successful, failed=failed, unknown=unknown, skipped=skipped
+        ) from self.not_found_error
 
-    def _raise_duplicated_error(self, unwrap_fn: Callable, **task_lists: list) -> NoReturn:
-        raise CogniteDuplicatedError(self.duplicated, unwrap_fn=unwrap_fn, **task_lists) from self.duplicated_error
+    def _raise_duplicated_error(
+        self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
+    ) -> NoReturn:
+        raise CogniteDuplicatedError(
+            self.duplicated, successful=successful, failed=failed, unknown=unknown, skipped=skipped
+        ) from self.duplicated_error
 
 
 T_Result = TypeVar("T_Result", covariant=True)
@@ -201,6 +215,15 @@ class ConcurrencySettings:
             raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
         try:
             executor = _THREAD_POOL_EXECUTOR_SINGLETON
+            # Users often want to test performance with different 'max_workers' settings. Since we use a singleton for
+            # the thread pool executor, the setting can not be changed after initialization, which again leads to users
+            # not seeing any performance difference -> hence we throw a warning:
+            if max_workers != executor._max_workers:
+                warnings.warn(
+                    f"Unable to change `max_workers` after the first API call has been made."
+                    f"(current: {executor._max_workers}, requested {max_workers})",
+                    RuntimeWarning,
+                )
         except NameError:
             # TPE has not been initialized
             executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
@@ -341,6 +364,6 @@ def execute_tasks(
 
 
 def classify_error(err: Exception) -> Literal["failed", "unknown"]:
-    if isinstance(err, CogniteAPIError) and err.code >= 500:
+    if isinstance(err, CogniteAPIError) and err.code and err.code >= 500:
         return "unknown"
     return "failed"

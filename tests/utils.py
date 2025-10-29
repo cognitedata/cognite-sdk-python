@@ -18,7 +18,9 @@ from datetime import timedelta, timezone
 from pathlib import Path
 from types import UnionType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, get_args, get_origin, get_type_hints
+from zoneinfo import ZoneInfo
 
+import cognite.client.utils._auxiliary
 from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
@@ -39,6 +41,7 @@ from cognite.client.data_classes.aggregations import Buckets
 from cognite.client.data_classes.capabilities import Capability, LegacyCapability, UnknownAcl
 from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNode, TypedNodeApply
 from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType
+from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
 from cognite.client.data_classes.datapoints import (
     _INT_AGGREGATES,
@@ -50,6 +53,7 @@ from cognite.client.data_classes.datapoints import (
 from cognite.client.data_classes.filters import Filter
 from cognite.client.data_classes.hosted_extractors.jobs import BodyLoad, NextUrlLoad, RestConfig
 from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineStepArguments
+from cognite.client.data_classes.simulators.runs import SimulationRunWrite
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationWrite
 from cognite.client.data_classes.transformations.schedules import TransformationScheduleWrite
 from cognite.client.data_classes.transformations.schema import TransformationSchemaUnknownType
@@ -67,6 +71,7 @@ from cognite.client.utils._text import random_string, to_snake_case
 if TYPE_CHECKING:
     import pandas
 
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 T_Type = TypeVar("T_Type", bound=type)
@@ -74,24 +79,32 @@ T_Type = TypeVar("T_Type", bound=type)
 UNION_TYPES = {typing.Union, UnionType}
 
 
-def all_subclasses(base: T_Type) -> list[T_Type]:
+def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Type]:
     """Returns a list (without duplicates) of all subclasses of a given class, sorted on import-path-name.
     Ignores classes not part of the main library, e.g. subclasses part of tests.
+
+    Args:
+        base: The base class to find subclasses of.
+        exclude: A set of classes to exclude from the results.
+
+    Returns:
+        A list of subclasses.
+
     """
     return sorted(
         filter(
             lambda sub: sub.__module__.startswith("cognite.client"),
-            set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c)),
+            cognite.client.utils._auxiliary.all_subclasses(base, exclude=exclude),
         ),
         key=str,
     )
 
 
-def all_concrete_subclasses(base: T_Type) -> list[T_Type]:
+def all_concrete_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Type]:
     return [
         sub
-        for sub in all_subclasses(base)
-        if all(base is not abc.ABC for base in sub.__bases__)
+        for sub in all_subclasses(base, exclude=exclude)
+        if abc.ABC not in sub.__bases__
         and not inspect.isabstract(sub)
         # The FakeCogniteResourceGenerator does not support descriptors, so we exclude the Typed classes
         # as these use the PropertyOptions descriptor.
@@ -337,6 +350,12 @@ class FakeCogniteResourceGenerator:
         self._cognite_client = cognite_client or CogniteClientMock()
 
     def create_instance(self, resource_cls: type[T_Object], skip_defaulted_args: bool = False) -> T_Object:
+        if abc.ABC in resource_cls.__bases__:
+            subclasses = all_concrete_subclasses(resource_cls)
+            if len(subclasses) == 0:
+                raise TypeError(f"Cannot create instance of abstract class {resource_cls.__name__}")
+            resource_cls = self._random.choice(subclasses) if subclasses else resource_cls
+
         signature = inspect.signature(resource_cls.__init__)
         try:
             type_hint_by_name = get_type_hints(resource_cls.__init__, localns=self._type_checking)
@@ -467,6 +486,16 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments.pop("max_list_size", None)
         elif resource_cls is SimulatorRoutineStepArguments:
             keyword_arguments = {"data": {"reference_id": self._random_string(50), "arg2": self._random_string(50)}}
+        elif resource_cls is SimulationRunWrite:
+            # SimulationRunWrite requires either routine_external_id alone OR both routine_revision_external_id and model_revision_external_id
+            if self._random.choice([True, False]):
+                # Use routine_external_id only
+                keyword_arguments.pop("routine_revision_external_id", None)
+                keyword_arguments.pop("model_revision_external_id", None)
+                keyword_arguments["routine_external_id"] = self._random_string(50)
+            else:
+                # Use revision-based parameters
+                keyword_arguments.pop("routine_external_id", None)
 
         return resource_cls(*positional_arguments, **keyword_arguments)
 
@@ -514,13 +543,17 @@ class FakeCogniteResourceGenerator:
         elif container_type is tuple:
             if any(arg is ... for arg in args):
                 return tuple(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
-            raise NotImplementedError(f"Tuple with multiple types is not supported. {self._error_msg}")
+            elif all(arg is str for arg in args):
+                return tuple(self._random_string(self._random.randint(0, 10)) for _ in range(len(args)))
+            raise NotImplementedError(
+                f"Tuple with multiple types is not supported. Add on the above line. {self._error_msg}"
+            )
 
         if var_name == "external_id" and type_ is str:
             return self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
         elif var_name == "id" and type_ is int:
             return self._random.choice(range(1, MAX_VALID_INTERNAL_ID + 1))
-        if type_ is str or type_ is Any:
+        if type_ is str or type_ is Any or type_ is object:
             return self._random_string()
         elif type_ is int:
             return self._random.randint(1, 100000)
@@ -532,6 +565,9 @@ class FakeCogniteResourceGenerator:
             return {self._random_string(10): self._random_string(10) for _ in range(self._random.randint(1, 3))}
         elif type_ is CogniteClient:
             return self._cognite_client
+        elif type_ is ZoneInfo:
+            # Special case for ZoneInfo - provide a default timezone
+            return ZoneInfo("UTC")
         elif inspect.isclass(type_) and any(base is abc.ABC for base in type_.__bases__):
             implementations = all_concrete_subclasses(type_)
             if type_ is Filter:
@@ -592,6 +628,8 @@ class FakeCogniteResourceGenerator:
         from cognite.client import CogniteClient
 
         return {
+            "ContainerId": ContainerId,
+            "ViewId": ViewId,
             "CogniteClient": CogniteClient,
             "NumpyDatetime64NSArray": npt.NDArray[np.datetime64],
             "NumpyUInt32Array": npt.NDArray[np.uint32],

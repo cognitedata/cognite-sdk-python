@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast, final
 
 from cognite.client.data_classes._base import EnumProperty, Geometry
+from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
@@ -16,8 +18,6 @@ if TYPE_CHECKING:
 
 
 PropertyReference: TypeAlias = str | SequenceNotStr[str] | EnumProperty
-
-RawValue: TypeAlias = str | float | bool | Sequence | Mapping[str, Any] | Label | InstanceId
 
 
 @dataclass
@@ -30,6 +30,7 @@ class ParameterValue:
     parameter: str
 
 
+RawValue: TypeAlias = str | float | bool | Sequence | Mapping[str, Any] | Label | InstanceId | DirectRelationReference
 FilterValue: TypeAlias = RawValue | PropertyReferenceValue | ParameterValue
 FilterValueList: TypeAlias = Sequence[RawValue] | PropertyReferenceValue | ParameterValue
 
@@ -81,6 +82,18 @@ def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] 
 
 class Filter(ABC):
     _filter_name: str
+
+    def __bool__(self) -> bool:
+        warnings.warn(
+            "You may be trying to combine two (or more) filters using 'and' or 'or' - this does not work! "
+            "To combine filters, use one of [And, Or] from 'cognite.client.data_classes.filters'. "
+            "You can also use the logical operators directly: 'flt1 & flt2' or 'flt1 | flt2'. "
+            "If you are evaluating the filter in a boolean context, e.g. 'if flt:', please use 'if flt is not None:' "
+            "to silence this warning.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return True
 
     def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
         """
@@ -659,6 +672,12 @@ class Equals(FilterWithPropertyAndValue):
         - Composing the property reference using the ``View.as_property_ref`` method:
 
             >>> flt = Equals(my_view.as_property_ref("some_property"), 42)
+
+        Filter on special node properties like space (these are properties on the node itself, not in a view):
+
+            >>> # Filter nodes in a specific space
+            >>> flt = Equals(("node", "space"), "my_space")
+            >>> # Other special node properties: "externalId", "createdTime", "lastUpdatedTime"
     """
 
     _filter_name = "equals"
@@ -689,6 +708,12 @@ class In(FilterWithPropertyAndValueList):
         - Composing the property reference using the ``View.as_property_ref`` method:
 
             >>> filter = In(my_view.as_property_ref("some_property"), [42, 43])
+
+        Filter on special node properties like externalId (these are properties on the node itself, not in a view):
+
+            >>> # Filter nodes with specific externalIds
+            >>> filter = In(("node", "externalId"), ["sensor_1", "sensor_2", "sensor_3"])
+            >>> # Other special node properties: "space", "createdTime", "lastUpdatedTime"
     """
 
     _filter_name = "in"
@@ -741,6 +766,12 @@ class Prefix(FilterWithPropertyAndValue):
         Filter that can be used to retrieve items where the property is a list of e.g. integers that starts with [1, 2, 3]:
 
             >>> flt = Prefix(my_view.as_property_ref("some_list_property"), [1, 2, 3])
+
+        Filter on special node properties like externalId (these are properties on the node itself, not in a view):
+
+            >>> # Filter nodes where externalId starts with "SomeCustomer"
+            >>> flt = Prefix(("node", "externalId"), "SomeCustomer")
+            >>> # Other special node properties: "space", "createdTime", "lastUpdatedTime"
     """
 
     _filter_name = "prefix"

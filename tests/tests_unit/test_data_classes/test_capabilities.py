@@ -31,6 +31,7 @@ from cognite.client.data_classes.capabilities import (
 
 def all_acls():
     yield from [
+        {"agentsAcl": {"actions": ["READ", "WRITE", "RUN"], "scope": {"all": {}}}},
         {"annotationsAcl": {"actions": ["WRITE", "READ", "SUGGEST", "REVIEW"], "scope": {"all": {}}}},
         {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["372"]}}}},
@@ -130,6 +131,16 @@ def all_acls():
         {"sequencesAcl": {"actions": ["READ"], "scope": {"all": {}}}},
         {"sequencesAcl": {"actions": ["WRITE"], "scope": {"datasetScope": {"ids": ["2332579", "372"]}}}},
         {"sessionsAcl": {"actions": ["LIST", "CREATE", "DELETE"], "scope": {"all": {}}}},
+        {"streamsAcl": {"actions": ["READ"], "scope": {"all": {}}}},
+        {"streamsAcl": {"actions": ["CREATE", "DELETE"], "scope": {"all": {}}}},
+        {"streamRecordsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"streamRecordsAcl": {"actions": ["READ"], "scope": {"spaceIdScope": {"spaceIds": ["my-space"]}}}},
+        {
+            "streamRecordsAcl": {
+                "actions": ["WRITE"],
+                "scope": {"spaceIdScope": {"spaceIds": ["space-1", "space-2", "prod-space"]}},
+            }
+        },
         {"templateGroupsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"templateGroupsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["1", "42"]}}}},
         {"templateInstancesAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["4", "365"]}}}},
@@ -219,6 +230,12 @@ class TestCapabilities:
                     },
                 },
             },
+            {
+                "streamRecordsAcl": {
+                    "actions": ["READ", "WRITE"],
+                    "scope": {"spaceIdScope": {"spaceIds": ["analytics-space", "prod-space"]}},
+                }
+            },
         ],
     )
     def test_load_dump(self, raw: dict[str, Any]) -> None:
@@ -272,7 +289,7 @@ class TestCapabilities:
             Capability.load(unknown_acl, allow_unknown=False)
 
         # when difflib doesnt find any matches, it should be omitted from the err. msg:
-        with pytest.raises(ValueError, match="force loading it as an unknown capability. List of all ACLs"):
+        with pytest.raises(ValueError, match=r"force loading it as an unknown capability\. List of all ACLs"):
             Capability.load(
                 {"does not match anything really": {"actions": ["READ"], "scope": {"all": {}}}},
                 allow_unknown=False,

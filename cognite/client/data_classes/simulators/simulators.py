@@ -33,6 +33,7 @@ class Simulator(CogniteResource):
         name (str): Name of the simulator
         file_extension_types (Sequence[str]): File extension types supported by the simulator
         model_types (Sequence[SimulatorModelType] | None): Model types supported by the simulator
+        model_dependencies (Sequence[SimulatorModelDependency] | None): Model dependencies supported by the simulator
         step_fields (Sequence[SimulatorStep] | None): Step types supported by the simulator when creating routines
         unit_quantities (Sequence[SimulatorQuantity] | None): Quantities and their units supported by the simulator
 
@@ -45,12 +46,14 @@ class Simulator(CogniteResource):
         name: str,
         file_extension_types: Sequence[str],
         model_types: Sequence[SimulatorModelType] | None = None,
+        model_dependencies: Sequence[SimulatorModelDependency] | None = None,
         step_fields: Sequence[SimulatorStep] | None = None,
         unit_quantities: Sequence[SimulatorQuantity] | None = None,
     ) -> None:
         self.external_id = external_id
         self.name = name
         self.file_extension_types = file_extension_types
+        self.model_dependencies = model_dependencies
         self.model_types = model_types
         self.step_fields = step_fields
         self.unit_quantities = unit_quantities
@@ -71,6 +74,9 @@ class Simulator(CogniteResource):
             else None,
             unit_quantities=SimulatorQuantity._load_list(resource["unitQuantities"], cognite_client)
             if "unitQuantities" in resource
+            else None,
+            model_dependencies=SimulatorModelDependency._load_list(resource["modelDependencies"], cognite_client)
+            if "modelDependencies" in resource
             else None,
         )
 
@@ -93,7 +99,46 @@ class Simulator(CogniteResource):
                 item.dump(camel_case=camel_case) for item in self.unit_quantities
             ]
 
+        if isinstance(self.model_dependencies, list) and all(
+            isinstance(item, SimulatorModelDependency) for item in self.model_dependencies
+        ):
+            output["modelDependencies" if camel_case else "model_dependencies"] = [
+                item.dump(camel_case=camel_case) for item in self.model_dependencies
+            ]
+
         return output
+
+    def get_quantities(self) -> list[str]:
+        """Get a list of quantity names available for this simulator.
+
+        Returns:
+            list[str]: List of quantity names from the simulator's unit_quantities.
+        """
+        if not self.unit_quantities:
+            return []
+        return [quantity.name for quantity in self.unit_quantities]
+
+    def get_units(self, quantity: str) -> list[str]:
+        """Get a list of unit names for a specific quantity.
+
+        Args:
+            quantity (str): The name of the quantity to get units for.
+
+        Returns:
+            list[str]: List of unit names for the specified quantity.
+
+        Raises:
+            ValueError: If the specified quantity does not exist for this simulator.
+        """
+        if not self.unit_quantities:
+            raise ValueError(f"Quantity '{quantity}' not found. This simulator has no unit quantities defined.")
+
+        for q in self.unit_quantities:
+            if q.name == quantity:
+                return [unit.name for unit in q.units]
+
+        available_quantities = self.get_quantities()
+        raise ValueError(f"Quantity '{quantity}' not found. Available quantities: {', '.join(available_quantities)}")
 
 
 @dataclass
@@ -136,7 +181,9 @@ class SimulatorModelType(CogniteObject):
 
     @classmethod
     def _load_list(
-        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+        cls,
+        resource: dict[str, Any] | list[dict[str, Any]],
+        cognite_client: CogniteClient | None = None,
     ) -> list[SimulatorModelType]:
         if isinstance(resource, dict):
             return [cls._load(resource, cognite_client)]
@@ -162,7 +209,9 @@ class SimulatorQuantity(CogniteObject):
 
     @classmethod
     def _load_list(
-        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+        cls,
+        resource: dict[str, Any] | list[dict[str, Any]],
+        cognite_client: CogniteClient | None = None,
     ) -> list[SimulatorQuantity]:
         if isinstance(resource, dict):
             return [cls._load(resource, cognite_client)]
@@ -205,6 +254,68 @@ class SimulatorStepField(CogniteObject):
 
 
 @dataclass
+class SimulatorModelDependencyFields(CogniteObject):
+    """
+    Represents the fields supported by the simulator for external dependencies.
+    Args:
+        name (str): The name of the field.
+        label (str): The label of the field.
+        info (str): Additional information about the field.
+    """
+
+    name: str
+    label: str
+    info: str
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            name=resource["name"],
+            label=resource["label"],
+            info=resource["info"],
+        )
+
+
+@dataclass
+class SimulatorModelDependency(CogniteObject):
+    """
+    Defines the simulator model dependency, specifying the supported fields and file extension types compatible with the simulator.
+    Args:
+        file_extension_types (Sequence[str]): A list of file extension types supported by the simulator for external dependencies.
+        fields (Sequence[SimulatorModelDependencyFields]): A list of supported fields.
+    """
+
+    file_extension_types: Sequence[str]
+    fields: Sequence[SimulatorModelDependencyFields]
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            file_extension_types=resource["fileExtensionTypes"],
+            fields=[SimulatorModelDependencyFields._load(field_, cognite_client) for field_ in resource["fields"]],
+        )
+
+    @classmethod
+    def _load_list(
+        cls,
+        resource: dict[str, Any] | list[dict[str, Any]],
+        cognite_client: CogniteClient | None = None,
+    ) -> list[SimulatorModelDependency]:
+        if isinstance(resource, dict):
+            return [cls._load(resource, cognite_client)]
+        elif isinstance(resource, list):
+            return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
+        else:
+            raise TypeError("Expected a dict or a list of dicts.")
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["fields"] = [field_.dump(camel_case=camel_case) for field_ in self.fields]
+
+        return output
+
+
+@dataclass
 class SimulatorStep(CogniteObject):
     step_type: str
     fields: Sequence[SimulatorStepField]
@@ -218,7 +329,9 @@ class SimulatorStep(CogniteObject):
 
     @classmethod
     def _load_list(
-        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+        cls,
+        resource: dict[str, Any] | list[dict[str, Any]],
+        cognite_client: CogniteClient | None = None,
     ) -> list[SimulatorStep]:
         if isinstance(resource, dict):
             return [cls._load(resource, cognite_client)]
@@ -241,10 +354,13 @@ class SimulatorList(CogniteResourceList[Simulator], IdTransformerMixin):
 class SimulatorIntegration(CogniteResource):
     """
     The simulator integration resource represents a simulator connector in Cognite Data Fusion (CDF).
+
     It provides information about the configured connectors for a given simulator, including their status and additional
     details such as dataset, name, license status, connector version, simulator version, and more. This resource is essential
     for monitoring and managing the interactions between CDF and external simulators, ensuring proper data flow and integration.
+
     This is the read/response format of the simulator integration.
+
     Args:
         id (int): Id of the simulator integration.
         external_id (str): External id of the simulator integration

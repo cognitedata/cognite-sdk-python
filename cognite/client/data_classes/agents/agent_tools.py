@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -164,20 +164,20 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     """Configuration for knowledge graph query agent tools.
 
     Args:
-        data_models (Sequence[DataModelInfo] | None): The data models and views to query.
+        data_models (Sequence[DataModelInfo]): The data models and views to query.
         instance_spaces (InstanceSpaces | None): The instance spaces to query.
+        version (str | None): The version of the query generation strategy to use. A higher number does not necessarily mean a better query. Supported values are "v1" and "v2".
     """
 
-    data_models: Sequence[DataModelInfo] | None = None
+    data_models: Sequence[DataModelInfo]
     instance_spaces: InstanceSpaces | None = None
+    version: Literal["v1", "v2"] | str | None = None
 
     @classmethod
     def _load(
         cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
     ) -> QueryKnowledgeGraphAgentToolConfiguration:
-        data_models = None
-        if "dataModels" in resource:
-            data_models = [DataModelInfo._load(dm) for dm in resource["dataModels"]]
+        data_models = [DataModelInfo._load(dm) for dm in resource["dataModels"]]
 
         instance_spaces = None
         if "instanceSpaces" in resource:
@@ -186,16 +186,18 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
         return cls(
             data_models=data_models,
             instance_spaces=instance_spaces,
+            version=resource.get("version"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = {}
-        if self.data_models:
-            key = "dataModels" if camel_case else "data_models"
-            result[key] = [dm.dump(camel_case=camel_case) for dm in self.data_models]
+        key = "dataModels" if camel_case else "data_models"
+        result[key] = [dm.dump(camel_case=camel_case) for dm in self.data_models]
         if self.instance_spaces:
             key = "instanceSpaces" if camel_case else "instance_spaces"
             result[key] = self.instance_spaces.dump(camel_case=camel_case)
+        if self.version:
+            result["version"] = self.version
         return result
 
     def as_write(self) -> QueryKnowledgeGraphAgentToolConfiguration:
@@ -240,6 +242,15 @@ class SummarizeDocumentAgentToolUpsert(AgentToolUpsert):
 
     _type: ClassVar[str] = "summarizeDocument"
 
+    @classmethod
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> SummarizeDocumentAgentToolUpsert:
+        return cls(
+            name=resource["name"],
+            description=resource["description"],
+        )
+
 
 @dataclass
 class AskDocumentAgentTool(AgentTool):
@@ -276,6 +287,13 @@ class AskDocumentAgentToolUpsert(AgentToolUpsert):
     """
 
     _type: ClassVar[str] = "askDocument"
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AskDocumentAgentToolUpsert:
+        return cls(
+            name=resource["name"],
+            description=resource["description"],
+        )
 
 
 @dataclass
@@ -339,6 +357,20 @@ class QueryKnowledgeGraphAgentToolUpsert(AgentToolUpsert):
             result["configuration"] = self.configuration.dump(camel_case=camel_case)
         return result
 
+    @classmethod
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> QueryKnowledgeGraphAgentToolUpsert:
+        configuration = None
+        if resource.get("configuration"):
+            configuration = QueryKnowledgeGraphAgentToolConfiguration._load(resource["configuration"])
+
+        return cls(
+            name=resource["name"],
+            description=resource["description"],
+            configuration=configuration,
+        )
+
 
 @dataclass
 class QueryTimeSeriesDatapointsAgentTool(AgentTool):
@@ -377,6 +409,15 @@ class QueryTimeSeriesDatapointsAgentToolUpsert(AgentToolUpsert):
     """
 
     _type: ClassVar[str] = "queryTimeSeriesDatapoints"
+
+    @classmethod
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> QueryTimeSeriesDatapointsAgentToolUpsert:
+        return cls(
+            name=resource["name"],
+            description=resource["description"],
+        )
 
 
 @dataclass
@@ -425,14 +466,21 @@ class UnknownAgentToolUpsert(AgentToolUpsert):
     type: str
     configuration: dict[str, Any] | None = None
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownAgentToolUpsert:
+        return cls(
+            name=resource["name"],
+            type=resource["type"],
+            description=resource["description"],
+            configuration=resource.get("configuration"),
+        )
+
 
 class AgentToolUpsertList(CogniteResourceList[AgentToolUpsert]):
     _RESOURCE = AgentToolUpsert
 
 
-class AgentToolList(
-    WriteableCogniteResourceList[AgentToolUpsert, AgentTool],
-):
+class AgentToolList(WriteableCogniteResourceList[AgentToolUpsert, AgentTool]):
     _RESOURCE = AgentTool
 
     def as_write(self) -> AgentToolUpsertList:
@@ -442,7 +490,7 @@ class AgentToolList(
 
 # Build the mapping AFTER all classes are defined
 _AGENT_TOOL_CLS_BY_TYPE: dict[str, type[AgentTool]] = {
-    subclass._type: cast(type[AgentTool], subclass)
+    subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in AgentTool.__subclasses__()
     if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
 }

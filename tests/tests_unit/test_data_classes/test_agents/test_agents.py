@@ -73,6 +73,41 @@ class TestAgentUpsert:
         dumped = agent.dump(camel_case=True)
         assert agent_upsert_dump == dumped
 
+    def test_load_dump_maintain_unknown_properties(self) -> None:
+        """Test that unknown properties are maintained in the dump."""
+        agent_data = {
+            "externalId": "test_agent",
+            "name": "Test Agent",
+            "unknownProperty": "unknown_value",
+        }
+        dumped = AgentUpsert._load(agent_data).dump(camel_case=True)
+
+        assert dumped == agent_data
+
+    def test_create_agent_with_labels(self) -> None:
+        """Test creating an agent with labels."""
+        agent = AgentUpsert(
+            external_id="test_agent",
+            name="Test Agent",
+            labels=["published"],
+        )
+        assert agent.labels == ["published"]
+
+        dumped = agent.dump(camel_case=True)
+        assert dumped["labels"] == ["published"]
+
+    def test_labels_forward_compatibility(self) -> None:
+        """Test forward compatibility with future label values."""
+        agent = AgentUpsert(
+            external_id="test_agent",
+            name="Test Agent",
+            labels=["published", "charts"],
+        )
+        assert agent.labels == ["published", "charts"]
+
+        dumped = agent.dump(camel_case=True)
+        assert dumped["labels"] == ["published", "charts"]
+
     def test_as_write(self) -> None:
         agent_upsert = AgentUpsert(
             external_id="test_agent",
@@ -110,6 +145,17 @@ class TestAgent:
 
         dumped = agent.dump(camel_case=True)
         assert agent_minimal_dump == dumped
+
+    def test_load_dump_maintain_unknown_properties(self) -> None:
+        """Test that unknown properties are maintained in the dump."""
+        agent_data = {
+            "externalId": "test_agent",
+            "name": "Test Agent",
+            "unknownProperty": "unknown_value",
+        }
+        dumped = Agent._load(agent_data).dump(camel_case=True)
+
+        assert dumped == agent_data
 
     def test_tools_handling(self) -> None:
         # Test with no tools
@@ -162,6 +208,7 @@ class TestAgent:
             description="A test agent",
             instructions="Test instructions",
             model="gpt-4",
+            labels=["published"],
             tools=[SummarizeDocumentAgentTool(name="test_tool", description="A test tool")],
         )
 
@@ -172,9 +219,24 @@ class TestAgent:
         assert write_agent.description == agent.description
         assert write_agent.instructions == agent.instructions
         assert write_agent.model == agent.model
+        assert write_agent.labels == agent.labels
+        assert write_agent.labels == ["published"]
         assert len(write_agent.tools) == 1
         assert isinstance(write_agent.tools[0], AgentToolUpsert)
         assert write_agent.tools[0].name == "test_tool"
+
+    def test_agent_labels_forward_compatibility(self) -> None:
+        """Test forward compatibility with future label values on Agent."""
+        agent = Agent(
+            external_id="test_agent",
+            name="Test Agent",
+            labels=["published", "charts"],
+        )
+        assert agent.labels == ["published", "charts"]
+
+        # Test that as_write() preserves labels
+        write_agent = agent.as_write()
+        assert write_agent.labels == ["published", "charts"]
 
 
 class TestAgentList:

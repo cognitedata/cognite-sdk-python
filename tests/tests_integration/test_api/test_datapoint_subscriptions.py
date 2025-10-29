@@ -176,6 +176,7 @@ class TestDatapointSubscriptions:
             name="PYSDKDataPointSubscriptionUpdateTest",
             time_series_ids=time_series_external_ids,
             partition_count=1,
+            description="Original description",
         )
         data_set = cognite_client.data_sets.list(limit=1)[0]
         with create_subscription_with_cleanup(cognite_client, new_subscription):
@@ -184,12 +185,14 @@ class TestDatapointSubscriptions:
                 .name.set("New Name")
                 .time_series_ids.remove([time_series_external_ids[0]])
                 .data_set_id.set(data_set.id)
+                .description.set("Updated description")
             )
             updated = cognite_client.time_series.subscriptions.update(update)
 
             assert updated.name == "New Name"
             assert updated.time_series_count == len(time_series_external_ids) - 1
             assert updated.data_set_id == data_set.id
+            assert updated.description == "Updated description"
 
     def test_update_subscription_write_object(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
         new_subscription = DataPointSubscriptionWrite(

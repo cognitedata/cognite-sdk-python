@@ -8,18 +8,200 @@ The changelog for SDK version 0.x.x can be found [here](https://github.com/cogni
 
 For users wanting to upgrade major version, a migration guide can be found [here](MIGRATION_GUIDE.md).
 
-Changes are grouped as follows
-- `Added` for new features.
-- `Changed` for changes in existing functionality.
-- `Deprecated` for soon-to-be removed features.
-- `Improved` for transparent changes, e.g. better performance.
-- `Removed` for now removed features.
-- `Fixed` for any bug fixes.
-- `Security` in case of vulnerabilities.
+As of 2025-08-29, changes are grouped as follows
+- ✨ Features: New features or additions to existing features.
+- 🐛 Bug Fixes: Bug fixes.
+- ⚡ Improvements: Transparent changes, e.g. better performance.
+
+## [7.88.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.87.0...v7.88.0) (2025-10-22)
+
+
+### Features
+
+* add labels property to agents SDK ([#2372](https://github.com/cognitedata/cognite-sdk-python/issues/2372)) ([489c703](https://github.com/cognitedata/cognite-sdk-python/commit/489c703aa70530559546d36e8063cbe2d0c0149a))
+
+
+### Documentation
+
+* fix agent_id to agent_external_id in chat() docstring examples ([#2373](https://github.com/cognitedata/cognite-sdk-python/issues/2373)) ([787926e](https://github.com/cognitedata/cognite-sdk-python/commit/787926ed7d939e3ad51c9e83040541dff792ed35))
+
+## [7.87.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.86.0...v7.87.0) (2025-10-15)
+
+
+### Features
+
+* add sort parameter to simulators API list and iteration methods ([#2355](https://github.com/cognitedata/cognite-sdk-python/issues/2355)) ([d21f9e3](https://github.com/cognitedata/cognite-sdk-python/commit/d21f9e3991834ed69bcf52c97f425f441a25acc1))
+* **agents:** add support for client-side actions in agent chat ([#2350](https://github.com/cognitedata/cognite-sdk-python/issues/2350)) ([49dfb19](https://github.com/cognitedata/cognite-sdk-python/commit/49dfb19a929c284a10a9d930d84d5860a2fda40c))
+* **capabilities:** Add support for Streams and Records ACLs ([#2366](https://github.com/cognitedata/cognite-sdk-python/issues/2366)) ([6b17c88](https://github.com/cognitedata/cognite-sdk-python/commit/6b17c88bec2e1eb840d6e8e9f9487287f1b32596))
+* **data_modeling:** Support constraint and index state fields ([#2361](https://github.com/cognitedata/cognite-sdk-python/issues/2361)) ([996296d](https://github.com/cognitedata/cognite-sdk-python/commit/996296dd6cd5a7bcc3e4ffad75c4b582e0d9f531))
+* **functions:** Add `last_called` field to Function dataclass. ([#2356](https://github.com/cognitedata/cognite-sdk-python/issues/2356)) ([3b3a6b5](https://github.com/cognitedata/cognite-sdk-python/commit/3b3a6b50e0fb9de9da09e83a825b42c875887fa6))
+* **functions:** Relax handle validation ([#2357](https://github.com/cognitedata/cognite-sdk-python/issues/2357)) ([23ebe95](https://github.com/cognitedata/cognite-sdk-python/commit/23ebe9597644008b1ad25f3b1c05a17c6e0f2763))
+* **simulators:** Add support for running simulations using revisions ([#2339](https://github.com/cognitedata/cognite-sdk-python/issues/2339)) ([dc76513](https://github.com/cognitedata/cognite-sdk-python/commit/dc765130663863cfd01d978869ed1357ef30bb7b))
+* use compact encoding for json serialization ([#2368](https://github.com/cognitedata/cognite-sdk-python/issues/2368)) ([9b0d5b5](https://github.com/cognitedata/cognite-sdk-python/commit/9b0d5b5599d08e44d7fb5e6de70d4c7c34d67399))
+
+
+### Bug Fixes
+
+* **functions:** Fix bug in handler handle validation ([#2363](https://github.com/cognitedata/cognite-sdk-python/issues/2363)) ([d949a9a](https://github.com/cognitedata/cognite-sdk-python/commit/d949a9a999649f13e645bc7985aa98d1e59c1fca))
+
+
+### Documentation
+
+* add examples for filtering on special node properties (externalId, space) ([#2371](https://github.com/cognitedata/cognite-sdk-python/issues/2371)) ([86b1ecd](https://github.com/cognitedata/cognite-sdk-python/commit/86b1ecd3a4278dabf7436fd7958e025c81aca2f4))
+* **simulators:** expose all simulator types in the simulators namespace ([#2362](https://github.com/cognitedata/cognite-sdk-python/issues/2362)) ([b156f5e](https://github.com/cognitedata/cognite-sdk-python/commit/b156f5e401fc12cf483ba627ab92590e6a83f7f5))
+
+## [7.86.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.85.0...v7.86.0) (2025-10-02)
+
+
+### Features
+
+* **instances/search:** `operator` is now supported (AND/OR) ([#2344](https://github.com/cognitedata/cognite-sdk-python/issues/2344)) ([317439b](https://github.com/cognitedata/cognite-sdk-python/commit/317439b11f8459373137d3ffdff53dd86b155b1e))
+
+
+### Bug Fixes
+
+* **agents:** replace agentId with agentExternalId in chat API ([#2349](https://github.com/cognitedata/cognite-sdk-python/issues/2349)) ([d9bca80](https://github.com/cognitedata/cognite-sdk-python/commit/d9bca8081f17329ce332746b4126bc7699a7978f))
+* **datapoints:** fix rare bug when instance ID time series would repo… ([#2348](https://github.com/cognitedata/cognite-sdk-python/issues/2348)) ([74bb53a](https://github.com/cognitedata/cognite-sdk-python/commit/74bb53a5b37374410bced4a91c65f00c2aac34b1))
+* filters now accept DirectRelationReference as instance identifier ([#2334](https://github.com/cognitedata/cognite-sdk-python/issues/2334)) ([597f7ca](https://github.com/cognitedata/cognite-sdk-python/commit/597f7ca70493498a13dd3363c018d1c7fec3d887))
+* **simulators:** make SimulatorModelRevision.get_data() return single item for consistency ([#2346](https://github.com/cognitedata/cognite-sdk-python/issues/2346)) ([6c3be3d](https://github.com/cognitedata/cognite-sdk-python/commit/6c3be3d4dfcf890a4624d7a3c9df8d01251ba17d))
+
+## [7.85.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.84.0...v7.85.0) (2025-09-25)
+
+
+### Features
+
+* add debug support to DM APIs query/list/sync ([#2329](https://github.com/cognitedata/cognite-sdk-python/issues/2329)) ([d304cef](https://github.com/cognitedata/cognite-sdk-python/commit/d304cef27f0c9c83cd9d06dfdb10f1f2950f2eca))
+* data classes for debug notices ([#2336](https://github.com/cognitedata/cognite-sdk-python/issues/2336)) ([4be6ca0](https://github.com/cognitedata/cognite-sdk-python/commit/4be6ca09bae1468884ecfb70793c6205efd711f2))
+* **simulators:** Add support for model revision data ([#2268](https://github.com/cognitedata/cognite-sdk-python/issues/2268)) ([af56d56](https://github.com/cognitedata/cognite-sdk-python/commit/af56d569e97e442c46506690a125784db803bac4))
+
+
+### Bug Fixes
+
+* auto-load tzdata in pyodide ([#2343](https://github.com/cognitedata/cognite-sdk-python/issues/2343)) ([f0a6ed3](https://github.com/cognitedata/cognite-sdk-python/commit/f0a6ed376f4e96a8eb8e7937ba51340323844b15))
+* do not throw UserWarning from SDK code ([#2341](https://github.com/cognitedata/cognite-sdk-python/issues/2341)) ([2e67d76](https://github.com/cognitedata/cognite-sdk-python/commit/2e67d764092ece70e2ea0e0d1dab15e958f3fc22))
+
+## [7.84.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.83.1...v7.84.0) (2025-09-18)
+
+
+### Features
+
+* Add service principal API ([#2332](https://github.com/cognitedata/cognite-sdk-python/issues/2332)) ([10f3ea8](https://github.com/cognitedata/cognite-sdk-python/commit/10f3ea8087c569fff49cc13d53e796f15ee73551))
+* add helper methods to access simulator quantities and units ([#2305](https://github.com/cognitedata/cognite-sdk-python/issues/2305)) ([0c16785](https://github.com/cognitedata/cognite-sdk-python/commit/0c16785ff2009747bd1d4f500a741d7ab19f1328))
+* add pandas DataFrame conversion methods to SimulatorRoutineRevisionCore ([#2228](https://github.com/cognitedata/cognite-sdk-python/issues/2228)) ([de2f810](https://github.com/cognitedata/cognite-sdk-python/commit/de2f810ca019b22be47b10cfe3402d517f8d01db))
+* **iam:** add support for attributes in groups create, groups list ([#2231](https://github.com/cognitedata/cognite-sdk-python/issues/2231)) ([3c0148e](https://github.com/cognitedata/cognite-sdk-python/commit/3c0148e7047c45f2ed16d5ee58e6ab9a496b26b7))
+* **simint-alpha:** change mouthfull class names ([#2277](https://github.com/cognitedata/cognite-sdk-python/issues/2277)) ([15bc400](https://github.com/cognitedata/cognite-sdk-python/commit/15bc4001e2c310667092759856360ba7bc9f8ebd))
+* **simulators:** Add created_time and simulation_time filters to simulation runs list method ([#2274](https://github.com/cognitedata/cognite-sdk-python/issues/2274)) ([e54c6eb](https://github.com/cognitedata/cognite-sdk-python/commit/e54c6eb4776e8f3879ef3db4ea1f2ca3e8ff0a8b))
+
+
+### Bug Fixes
+
+* DMS triggers tests: set explicit _with limit when referenced from select ([#2333](https://github.com/cognitedata/cognite-sdk-python/issues/2333)) ([f087e6d](https://github.com/cognitedata/cognite-sdk-python/commit/f087e6d185893388da39c3106e93d4203a5eb071))
+* **documents:** stop paginating at limit ([#2331](https://github.com/cognitedata/cognite-sdk-python/issues/2331)) ([affcd1d](https://github.com/cognitedata/cognite-sdk-python/commit/affcd1d2b9b3edb092435a90c6e7e59718e4d9dc))
+* make filters throw warning when used in a boolean context ([#2330](https://github.com/cognitedata/cognite-sdk-python/issues/2330)) ([66390e6](https://github.com/cognitedata/cognite-sdk-python/commit/66390e6046d7ea4a44791c84d39154de6fb3df72))
+* **simint:** retrieve(..) overloads and enable mypy checks ([#2315](https://github.com/cognitedata/cognite-sdk-python/issues/2315)) ([05b164b](https://github.com/cognitedata/cognite-sdk-python/commit/05b164bcb2c6eff4a070e04b3d3ff1dd0f828630))
+
+
+### Performance Improvements
+
+* **functions:** Use exponential instead of constant backoff for FunctionCall:wait ([#2312](https://github.com/cognitedata/cognite-sdk-python/issues/2312)) ([ce24f0c](https://github.com/cognitedata/cognite-sdk-python/commit/ce24f0cad58387165867f0084f084be06f16a9e6))
+
+## [7.83.1] - 2025-08-30
+### Changed
+- [beta] Agents API updated to beta maturity (SDK implementation remains alpha).
+
+## [7.83.0] - 2025-08-28
+### Added
+- Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.
 
 ## [Unreleased]
+### Added
+- [alpha] Support for `created_time` and `simulation_time` filters in `client.simulators.runs.list()` to filter simulation runs by timestamp ranges.
+- Added `get_quantities()` and `get_units()` methods to the `Simulator` class for easier access to simulator unit quantities and their units.
+
+## [7.82.1] - 2025-08-28
+### Fixed
+- Fix documentation of files.upload_content. It does not support directories. Use more meaningful errors when the path is not a file. 
+
+## [7.82.0] - 2025-08-26
+### Added
+- Added support for specifying `max_text_size` in DMS text properties.
+
+## [7.81.3] - 2025-08-26
+### Added
+- Added missing parameter `nonce` to the `FunctionScheduleWrite` method to allow passing 
+  a custom nonce.
+
+## [7.81.2] - 2025-08-21
+### Changed
+- Attributes `run_time` and `simulation_time` are now automatically converted to timestamp format (when calling `to_pandas(...)`)
+
+## [7.81.1] - 2025-08-20
+### Fixed
+- [alpha] Breaking change: fixed naming inconsistencies in simulators module. Renamed `SimulatorRunList` to `SimulationRunList` and `SimulatorRunDataList` to `SimulationRunDataList`
+
+## [7.81.0] - 2025-08-19
+### Added
+- Support for external dependencies in simulator and simulator model revisions resources.
+
+## [7.80.3] - 2025-08-17
+### Added
+- [alpha] Support for the `/ai/agents` API endpoint for chat.
+
+## [7.80.2] - 2025-08-16
+### Fixed
+- Added missing parameter `description` to `DatapointSubscriptionUpdate` object such that it can be updated
+  in the `client.time_series.subscriptions.update(...)` method.
+
+## [7.80.1] - 2025-08-14
+### Fixed
+- Make CogniteAPIError.response_code non-nullable again, addressing a regression introduced in the previous version.
+
+## [7.80.0] - 2025-08-11
+### Added
+- Emit project name in exceptions to make it easier to gather relevant context.
+
+## [7.79.0] - 2025-08-01
+### Changed
+- [alpha] Breaking change: Filtering consistency in __call__ methods for simulator integrations, model and model revisions.
+
+## [7.78.1] - 2025-08-01
+### Changed
+- Only emit counts for each status (successful, failed, unknown, skipped) in exception __str__ reprs. The actual 
+  underlying objects are still available through the `succesful`, `unknown`, `failed`, and `skipped` attributes.
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
+
+## [7.78.0] - 2025-07-29
+### Added
+- Support for two-phase syncing of instances. See `sync_mode` and `backfill_sort` on the `NodeResultSet` class.
+### Changed
+- Improved error messages when using query-specific fields in sync, and vice versa.
+
+## [7.77.3] - 2025-07-28
+### Added
+- Comprehensive documentation for the simulators API endpoints
+
+### Changed
+- Consistency improvements across the simulators API namespace
+
+## [7.77.2] - 2025-07-25
+### Added
+- Agents now maintains all properties returned from the API when using the `.load(...)` and `.dump(...)` methods. 
+  Similarly, you can load an `AgentUpsert` from a `dict`/`YAML`/`JSON` object using the `AgentUpsert.load(...)` method
+  and all properties will be sent to the API.
+
+## [7.77.1] - 2025-07-23
+### Added
+- Added new `agentsAcl` capability.
+
+## [7.77.0] - 2025-07-17
+### Added
+- Support for the `/models/statistics` API endpoints with methods `client.data_modeling.statistics.project()`,
+  `client.data_modeling.statistics.spaces.list()`, and `client.data_modeling.statistics.spaces.retrieve(...)`.
+
+## [7.76.1] - 2025-07-12
+### Added
+- [alpha] Support for the `/ai/agents` API endpoint for upsert, retrieve, list and delete.
 
 ## [7.76.0] - 2025-06-25
 ### Added

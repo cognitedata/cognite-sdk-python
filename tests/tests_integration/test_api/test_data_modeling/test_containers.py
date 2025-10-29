@@ -18,7 +18,7 @@ from cognite.client.data_classes.data_modeling import (
     Text,
     View,
 )
-from cognite.client.data_classes.data_modeling.data_types import UnitReference
+from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType, UnitReference
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -62,6 +62,19 @@ class TestContainersAPI:
         actual_containers = cognite_client.data_modeling.containers.list(space=integration_test_space.space, limit=-1)
         assert expected_ids <= set(actual_containers.as_ids())
         assert all(c.space == integration_test_space.space for c in actual_containers)
+        for container in actual_containers:
+            for prop in container.properties.values():
+                assert prop.constraint_state is not None
+                if not prop.nullable:
+                    assert prop.constraint_state.nullability is not None
+                if isinstance(prop.type, ListablePropertyType) and prop.type.max_list_size is not None:
+                    assert prop.constraint_state.max_list_size is not None
+                if isinstance(prop.type, Text) and prop.type.max_text_size is not None:
+                    assert prop.constraint_state.max_text_size is not None
+            for constraint in container.constraints.values():
+                assert constraint.state is not None
+            for index in container.indexes.values():
+                assert index.state is not None
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         space = integration_test_space.space
