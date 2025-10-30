@@ -21,7 +21,7 @@ jobs:
         run: |
           $version = poetry version --short
           Write-Host "Detected version: $version"
-          if ($version -match "^8\.0\.(?:a|b|rc)\d+$") {
+          if ($version -match "^8\.0\.0(?:a|b|rc)\d+$") {
             Write-Host "✅ Version format is valid for a pre-release."
           } else {
             Write-Host "❌ Error: Version '$version' is not a valid pre-release (must contain 'a', 'b', or 'rc' followed by a number)."
