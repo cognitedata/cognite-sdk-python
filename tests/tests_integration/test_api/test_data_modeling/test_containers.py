@@ -10,7 +10,7 @@ from cognite.client.data_classes.data_modeling import (
     ContainerApply,
     ContainerId,
     ContainerList,
-    ContainerProperty,
+    ContainerPropertyApply,
     DataModel,
     Float64,
     MappedProperty,
@@ -40,7 +40,7 @@ def unit_pressure_container(cognite_client: CogniteClient, integration_test_spac
     unit_container = ContainerApply(
         space=integration_test_space.space,
         external_id="test_container_with_unit",
-        properties={"pressure": ContainerProperty(type=Float64(unit=UnitReference(external_id="pressure:bar")))},
+        properties={"pressure": ContainerPropertyApply(type=Float64(unit=UnitReference(external_id="pressure:bar")))},
         used_for="node",
     )
 
@@ -108,7 +108,7 @@ class TestContainersAPI:
                 ContainerApply(
                     space="nonExistingSpace",
                     external_id="myContainer",
-                    properties={"name": ContainerProperty(type=Text())},
+                    properties={"name": ContainerPropertyApply(type=Text())},
                     used_for="node",
                 )
             )
