@@ -17,7 +17,7 @@ from cognite.client.utils._text import convert_all_keys_recursive
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 @dataclass(frozen=True)
@@ -140,7 +140,7 @@ class PropertyId(CogniteObject):
     property: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             source=cls.__load_view_or_container_id(resource["source"]),
             property=resource["identifier"],

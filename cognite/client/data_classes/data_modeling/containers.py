@@ -24,7 +24,7 @@ from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class ContainerCore(DataModelingSchemaResource["ContainerApply"], ABC):
@@ -103,7 +103,7 @@ class ContainerApply(ContainerCore):
         self.used_for = used_for
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ContainerApply:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> ContainerApply:
         return ContainerApply(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -160,7 +160,7 @@ class Container(ContainerCore):
         self.created_time = created_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         constraints = (
             {k: Constraint.load(v) for k, v in resource["constraints"].items()} if "constraints" in resource else None
         )
@@ -243,7 +243,7 @@ class PropertyConstraintState(CogniteObject):
     max_text_size: Literal["current", "failed", "pending"] | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             nullability=resource.get("nullability"),
             max_list_size=resource.get("maxListSize"),
@@ -275,7 +275,7 @@ class ContainerProperty(CogniteObject):
             object.__setattr__(self, "type", self.type())
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         if "type" not in resource:
             raise ValueError("Type not specified")
         if resource["type"].get("type") == "direct":
@@ -325,7 +325,7 @@ class _WithState(CogniteObject):
 @dataclass(frozen=True)
 class Constraint(_WithState, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Constraint:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Constraint:
         constraint: Constraint
         match resource["constraintType"]:
             case "requires":
@@ -348,7 +348,7 @@ class RequiresConstraint(Constraint):
     require: ContainerId
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(require=ContainerId.load(resource["require"]))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -365,7 +365,7 @@ class UniquenessConstraint(Constraint):
     properties: list[str]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(properties=resource["properties"])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -380,7 +380,7 @@ class UniquenessConstraint(Constraint):
 @dataclass(frozen=True)
 class Index(_WithState, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Index:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Index:
         index: Index
         match resource["indexType"]:
             case "btree":
@@ -404,7 +404,7 @@ class BTreeIndex(Index):
     cursorable: bool = False
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(properties=resource["properties"], cursorable=resource.get("cursorable"))  # type: ignore[arg-type]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -422,7 +422,7 @@ class InvertedIndex(Index):
     properties: list[str]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(properties=resource["properties"])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

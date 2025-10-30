@@ -13,7 +13,7 @@ from cognite.client.utils._auxiliary import is_positive, rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ class PropertyType(CogniteObject, ABC):
         return unit
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> PropertyType:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> PropertyType:
         match type_ := resource["type"]:
             case "text":
                 return Text(
@@ -264,6 +264,13 @@ class DirectRelation(ListablePropertyType):
 class EnumValue(CogniteObject):
     name: str | None = None
     description: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            name=resource.get("name"),
+            description=resource.get("description"),
+        )
 
 
 @dataclass

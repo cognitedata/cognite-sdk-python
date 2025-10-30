@@ -100,7 +100,7 @@ def count_indent(s):
 class DocstrFormatter:
     def __init__(self, doc, method):
         self.original_doc = doc
-        self.is_generator = inspect.isgeneratorfunction(method)
+        self.is_generator = inspect.isgeneratorfunction(method) or inspect.isasyncgenfunction(method)
         self.RETURN_STRING = "Yields:" if self.is_generator else "Returns:"
 
         self.lines_grouped, self.indentation = self._separate_docstring(doc)
@@ -123,6 +123,14 @@ class DocstrFormatter:
                     "`Iterator[int] | Iterator[str]`, use `Iterator[int | str]`. Please fix manually."
                 )
             return string[9:-1]
+
+        if string.startswith("AsyncIterator["):
+            if string.count("AsyncIterator[") > 1:
+                raise ValueError(
+                    "pydoclint doesn't allow unions between AsyncIterators in 'Yields:' annotation. Example: instead of "
+                    "`AsyncIterator[int] | AsyncIterator[str]`, use `AsyncIterator[int | str]`. Please fix manually."
+                )
+            return string[14:-1]
 
         if not string.startswith("Generator["):
             raise ValueError("All generators must be annotated using 'Generator' or 'Iterator'")
