@@ -134,7 +134,7 @@ class ContainerApply(ContainerCore):
         return self
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Container(ContainerCore):
     """Represent the physical storage of data. This is the read format of the container
 
@@ -153,12 +153,12 @@ class Container(ContainerCore):
     """
 
     properties: Mapping[str, ContainerProperty]
-    constraints: Mapping[str, Constraint] = field(default_factory=dict)
-    indexes: Mapping[str, Index] = field(default_factory=dict)
-    is_global: bool = False
-    last_updated_time: int = 0
-    created_time: int = 0
-    used_for: Literal["node", "edge", "all"] = "all"
+    constraints: Mapping[str, Constraint]
+    indexes: Mapping[str, Index]
+    is_global: bool
+    last_updated_time: int
+    created_time: int
+    used_for: Literal["node", "edge", "all"]
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
@@ -417,7 +417,7 @@ class RequiresConstraintApply(ConstraintApply):
         return output
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class RequiresConstraint(Constraint):
     """Read version of requires constraint with state information."""
 
@@ -552,12 +552,12 @@ class BTreeIndexApply(IndexApply):
         return dumped
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class BTreeIndex(Index):
     """Read version of btree index with state information."""
 
     properties: list[str]
-    cursorable: bool = False
+    cursorable: bool
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
@@ -596,7 +596,7 @@ class InvertedIndexApply(IndexApply):
         return dumped
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class InvertedIndex(Index):
     """Read version of inverted index with state information."""
 
