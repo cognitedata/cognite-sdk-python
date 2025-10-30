@@ -1,0 +1,38 @@
+name: Pre-release
+
+on:
+  push:
+    branches:
+      'pysdk-release-*'
+
+jobs:
+  test_full_build_and_release:
+    runs-on: windows-latest
+    environment: CD
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup
+
+      # Note: if we are to pre-release something other than v8,
+      # we need to also update the regex below:
+      - name: Ensure version is a pre-release
+        shell: pwsh
+        run: |
+          $version = poetry version --short
+          Write-Host "Detected version: $version"
+          if ($version -match "^8\.0\.0(?:a|b|rc)\d+$") {
+            Write-Host "✅ Version format is valid for a pre-release."
+          } else {
+            Write-Host "❌ Error: Version '$version' is not a valid pre-release (patch version must start with 'a', 'b', or 'rc' followed by a number)."
+            exit 1
+          }
+
+      - name: Build package
+        run: poetry build
+
+      - name: Release to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload --skip-existing --disable-progress-bar --verbose dist/*
