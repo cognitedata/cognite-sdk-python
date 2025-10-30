@@ -24,7 +24,7 @@ jobs:
           if ($version -match "^8\.0\.0(?:a|b|rc)\d+$") {
             Write-Host "✅ Version format is valid for a pre-release."
           } else {
-            Write-Host "❌ Error: Version '$version' is not a valid pre-release (must contain 'a', 'b', or 'rc' followed by a number)."
+            Write-Host "❌ Error: Version '$version' is not a valid pre-release (patch version must start with 'a', 'b', or 'rc' followed by a number)."
             exit 1
           }
 
