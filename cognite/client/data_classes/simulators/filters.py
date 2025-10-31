@@ -84,9 +84,11 @@ class SimulatorRoutinesFilter(CogniteFilter):
         self,
         model_external_ids: Sequence[str] | None = None,
         simulator_integration_external_ids: Sequence[str] | None = None,
+        kind: Literal["long"] | None = None,
     ) -> None:
         self.model_external_ids = model_external_ids
         self.simulator_integration_external_ids = simulator_integration_external_ids
+        self.kind = kind
 
 
 class PropertySort(CogniteSort):
@@ -127,6 +129,7 @@ class SimulatorRoutineRevisionsFilter(CogniteFilter):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
+        kind: Literal["long"] | None = None,
         created_time: TimestampRange | None = None,
     ) -> None:
         self.model_external_ids = model_external_ids
@@ -134,4 +137,5 @@ class SimulatorRoutineRevisionsFilter(CogniteFilter):
         self.routine_external_ids = routine_external_ids
         self.simulator_integration_external_ids = simulator_integration_external_ids
         self.simulator_external_ids = simulator_external_ids
+        self.kind = kind
         self.created_time = created_time

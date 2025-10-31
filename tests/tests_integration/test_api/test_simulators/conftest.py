@@ -209,9 +209,7 @@ def seed_simulator_routines(
 
     yield routines
 
-    cognite_client.simulators.routines.delete(
-        external_ids=[simulator_routine_unique_external_id, simulator_routine_unique_external_id + "_1"]
-    )
+    cognite_client.simulators.routines.delete(external_ids=[routine.external_id for routine in routines])
 
 
 def seed_simulator_routine_revision(

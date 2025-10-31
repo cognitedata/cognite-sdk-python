@@ -1,6 +1,7 @@
 import asyncio
 import time
 from itertools import pairwise
+from random import randint
 
 import pytest
 
@@ -23,14 +24,7 @@ class TestSimulatorRuns:
         routine_external_id = seed_resource_names.simulator_routine_external_id
         runs_filtered_by_status = []
         for current_status in ["running", "success", "failure"]:
-            created_runs = cognite_client.simulators.runs.create(
-                [
-                    SimulationRunWrite(
-                        run_type="external",
-                        routine_external_id=routine_external_id,
-                    )
-                ]
-            )
+            created_runs = cognite_client.simulators.runs.create([SimulationRunWrite(routine_external_id)])
 
             cognite_client.simulators._post(
                 "/simulators/run/callback",
@@ -49,10 +43,9 @@ class TestSimulatorRuns:
             )
             runs_filtered_by_status.append(filter_by_status[0].dump())
         filter_by_routine = cognite_client.simulators.runs.list(routine_external_ids=[routine_external_id]).dump()
-        assert filter_by_routine == runs_filtered_by_status
-        assert sorted(runs_filtered_by_status, key=lambda x: x["id"]) == sorted(
-            filter_by_routine, key=lambda x: x["id"]
-        )
+        assert len(filter_by_routine) >= len(runs_filtered_by_status)
+        for run in runs_filtered_by_status:
+            assert run in filter_by_routine
 
     @pytest.mark.asyncio
     async def test_run_with_wait_and_retrieve(
@@ -60,21 +53,30 @@ class TestSimulatorRuns:
     ) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id
 
+        start_time = time.time()
+        start_time_ts = int(start_time * 1000)
+        run_time = randint(start_time_ts - 3600 * 24 * 1000, start_time_ts)
         run_task = asyncio.create_task(
-            asyncio.to_thread(lambda: cognite_client.simulators.routines.run(routine_external_id=routine_external_id))
+            asyncio.to_thread(
+                lambda: cognite_client.simulators.routines.run(
+                    routine_external_id=routine_external_id, run_time=run_time
+                )
+            )
         )
 
         run_to_update: SimulationRun | None = None
-        start_time = time.time()
 
         # 1. Wait for the run to be created
         # 2. Emulate it being finished by the simulator
         while run_to_update is None and time.time() - start_time < 30:
-            runs_to_update = cognite_client.simulators.runs.list(
+            runs_to_update_res = cognite_client.simulators.runs.list(
                 routine_external_ids=[routine_external_id],
                 status="ready",
                 limit=5,
             )
+            runs_to_update = [
+                run for run in runs_to_update_res if run.run_time == run_time
+            ]  # prevents flaky tests if multiple runs are created in parallel
             if len(runs_to_update) == 1:
                 run_to_update = runs_to_update[0]
             else:

@@ -13,7 +13,11 @@ def cleanup_inactive_integrations(cognite_client: CogniteClient, external_id_to_
     try:
         all_integrations = cognite_client.simulators.integrations.list(limit=None)
         integrations_to_delete = [
-            item for item in all_integrations if not item.active and item.external_id != external_id_to_keep
+            item
+            for item in all_integrations
+            if not item.active
+            and item.external_id != external_id_to_keep
+            and item.external_id.startswith(ResourceNames.simulator_integration_external_id)
         ]
         if len(integrations_to_delete) > 0:
             cognite_client.simulators.integrations.delete(ids=[item.id for item in integrations_to_delete])
