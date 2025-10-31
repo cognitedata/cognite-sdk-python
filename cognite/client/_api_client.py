@@ -109,6 +109,7 @@ class APIClient:
         "simulators/models/revisions",
         "simulators/models/routines",
         "simulators/models/routines/revisions",
+        "streams",
         "timeseries",
         "transformations",
         "transformations/schedules",
