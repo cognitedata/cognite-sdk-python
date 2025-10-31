@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.shared import TimestampRange
@@ -12,7 +12,6 @@ from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineRevisionList,
     SimulatorRoutineRevisionWrite,
 )
-from cognite.client.data_classes.simulators.routines import SimulatorRoutineKind
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
@@ -52,7 +51,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
-        kind: SimulatorRoutineKind | None = None,
+        kind: Literal["long"] | None = None,
         created_time: TimestampRange | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
@@ -68,7 +67,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
-        kind: SimulatorRoutineKind | None = None,
+        kind: Literal["long"] | None = None,
         created_time: TimestampRange | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
@@ -83,7 +82,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
-        kind: SimulatorRoutineKind | None = None,
+        kind: Literal["long"] | None = None,
         created_time: TimestampRange | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
@@ -100,7 +99,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             model_external_ids (SequenceNotStr[str] | None): Filter on model external ids.
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter on simulator integration external ids.
             simulator_external_ids (SequenceNotStr[str] | None): Filter on simulator external ids.
-            kind (SimulatorRoutineKind | None): Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
+            kind (Literal['long'] | None): Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
             created_time (TimestampRange | None): Filter on created time.
             all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
@@ -321,7 +320,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
-        kind: SimulatorRoutineKind | None = None,
+        kind: Literal["long"] | None = None,
         created_time: TimestampRange | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
@@ -337,7 +336,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             model_external_ids (SequenceNotStr[str] | None): Filter on model external ids.
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter on simulator integration external ids.
             simulator_external_ids (SequenceNotStr[str] | None): Filter on simulator external ids.
-            kind (SimulatorRoutineKind | None): Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
+            kind (Literal['long'] | None): Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
             created_time (TimestampRange | None): Filter on created time.
             all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
@@ -362,9 +361,8 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 ... )
 
             List simulator routine revisions by kind:
-                >>> from cognite.client.data_classes.simulators.routines import SimulatorRoutineKind
                 >>> res = client.simulators.routines.revisions.list(
-                ...     kind=SimulatorRoutineKind.LONG
+                ...     kind="long"
                 ... )
 
         """

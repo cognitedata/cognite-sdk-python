@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
@@ -16,10 +15,6 @@ from cognite.client.data_classes._base import (
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-
-
-class SimulatorRoutineKind(str, Enum):
-    LONG = "long"
 
 
 class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], ABC):
@@ -38,7 +33,7 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
         simulator_integration_external_id (str): External id of the associated simulator integration
         name (str): The name of the simulator routine
         description (str | None): The description of the simulator routine
-        kind (SimulatorRoutineKind | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
+        kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
 
     def __init__(
@@ -48,7 +43,7 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
         simulator_integration_external_id: str,
         name: str,
         description: str | None = None,
-        kind: SimulatorRoutineKind | None = None,
+        kind: Literal["long"] | None = None,
     ) -> None:
         self.external_id = external_id
         self.model_external_id = model_external_id
@@ -65,7 +60,7 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
             simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
             name=resource["name"],
             description=resource.get("description"),
-            kind=SimulatorRoutineKind(resource["kind"]) if "kind" in resource else None,
+            kind=resource.get("kind"),
         )
 
 
@@ -85,7 +80,7 @@ class SimulatorRoutineWrite(SimulatorRoutineCore):
         simulator_integration_external_id (str): External id of the associated simulator integration
         name (str): The name of the simulator routine
         description (str | None): The description of the simulator routine
-        kind (RoutineKind): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
+        kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
 
     def as_write(self) -> SimulatorRoutineWrite:
@@ -114,7 +109,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
         created_time (int): The time when the simulator routine was created
         last_updated_time (int): The time when the simulator routine was last updated
         description (str | None): The description of the simulator routine
-        kind (SimulatorRoutineKind | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
+        kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
 
     def __init__(
@@ -129,7 +124,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
         created_time: int,
         last_updated_time: int,
         description: str | None = None,
-        kind: SimulatorRoutineKind | None = None,
+        kind: Literal["long"] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -145,7 +140,6 @@ class SimulatorRoutine(SimulatorRoutineCore):
         self.last_updated_time = last_updated_time
         self.simulator_external_id = simulator_external_id
         self.data_set_id = data_set_id
-        self.kind = kind
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -157,7 +151,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
             name=resource["name"],
             data_set_id=resource["dataSetId"],
             description=resource.get("description"),
-            kind=SimulatorRoutineKind(resource["kind"]) if "kind" in resource else None,
+            kind=resource.get("kind"),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             id=resource["id"],

@@ -5,7 +5,6 @@ from typing import Any, Literal, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteSort
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.data_classes.simulators.routines import SimulatorRoutineKind
 from cognite.client.utils._text import to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -85,7 +84,7 @@ class SimulatorRoutinesFilter(CogniteFilter):
         self,
         model_external_ids: Sequence[str] | None = None,
         simulator_integration_external_ids: Sequence[str] | None = None,
-        kind: SimulatorRoutineKind | None = None,
+        kind: Literal["long"] | None = None,
     ) -> None:
         self.model_external_ids = model_external_ids
         self.simulator_integration_external_ids = simulator_integration_external_ids
@@ -130,7 +129,7 @@ class SimulatorRoutineRevisionsFilter(CogniteFilter):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
-        kind: SimulatorRoutineKind | None = None,
+        kind: Literal["long"] | None = None,
         created_time: TimestampRange | None = None,
     ) -> None:
         self.model_external_ids = model_external_ids

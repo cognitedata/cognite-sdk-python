@@ -2,7 +2,7 @@ import pytest
 from responses import RequestsMock
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes.simulators import SimulatorRoutine, SimulatorRoutineKind, SimulatorRoutineWrite
+from cognite.client.data_classes.simulators import SimulatorRoutine, SimulatorRoutineWrite
 from tests.tests_unit.test_api.test_simulators.conftest import add_mocked_request
 from tests.utils import jsgz_load
 
@@ -25,7 +25,7 @@ class TestRoutines:
                     model_external_id="sdk-test-model",
                     simulator_integration_external_id="sdk-test-integration",
                     external_id="sdk-test-routine",
-                    kind=SimulatorRoutineKind.LONG,
+                    kind="long",
                 ),
                 SimulatorRoutine(
                     id=1,
@@ -35,7 +35,7 @@ class TestRoutines:
                     data_set_id=1,
                     model_external_id="sdk-test-model",
                     simulator_integration_external_id="sdk-test-integration",
-                    kind=SimulatorRoutineKind.LONG,
+                    kind="long",
                     created_time=1,
                     last_updated_time=1,
                 ),
@@ -85,7 +85,7 @@ class TestRoutines:
             pytest.param(
                 {
                     "model_external_ids": ["sdk-test-model"],
-                    "kind": SimulatorRoutineKind.LONG,
+                    "kind": "long",
                 },
                 {
                     "externalId": "sdk-test-routine",
@@ -102,7 +102,7 @@ class TestRoutines:
                     data_set_id=1,
                     model_external_id="sdk-test-model",
                     simulator_integration_external_id="sdk-test-integration",
-                    kind=SimulatorRoutineKind.LONG,
+                    kind="long",
                     created_time=1,
                     last_updated_time=1,
                 ),

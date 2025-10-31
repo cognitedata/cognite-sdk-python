@@ -4,11 +4,8 @@ from responses import RequestsMock
 from cognite.client import CogniteClient
 from cognite.client.data_classes.simulators import (
     SimulatorRoutineConfiguration,
-    SimulatorRoutineInputConstant,
-    SimulatorRoutineKind,
     SimulatorRoutineRevision,
     SimulatorRoutineRevisionWrite,
-    SimulatorRoutineStage,
 )
 from tests.tests_unit.test_api.test_simulators.conftest import add_mocked_request
 from tests.utils import jsgz_load
@@ -34,7 +31,7 @@ class TestRoutineRevisions:
             pytest.param(
                 {
                     "routine_external_ids": ["sdk-test-routine"],
-                    "kind": SimulatorRoutineKind.LONG,
+                    "kind": "long",
                 },
                 {
                     "externalId": "sdk-test-routine_v1",
@@ -44,14 +41,7 @@ class TestRoutineRevisions:
                     "configuration": {
                         "logicalCheck": [],
                         "steadyStateDetection": [],
-                        "inputs": [
-                            {
-                                "name": "param1",
-                                "referenceId": "ref1",
-                                "value": 10,
-                                "valueType": "DOUBLE",
-                            }
-                        ],
+                        "inputs": [],
                         "outputs": [],
                     },
                 },
@@ -66,14 +56,10 @@ class TestRoutineRevisions:
                     data_set_id=1,
                     created_by_user_id="1",
                     script=[],
-                    kind=SimulatorRoutineKind.LONG,
+                    kind="long",
                     configuration=SimulatorRoutineConfiguration(
                         logical_check=[],
-                        inputs=[
-                            SimulatorRoutineInputConstant(
-                                name="param1", reference_id="ref1", value=10, value_type="DOUBLE"
-                            )
-                        ],
+                        inputs=[],
                         outputs=[],
                     ),
                     created_time=1,
@@ -132,14 +118,7 @@ class TestRoutineRevisions:
                     "configuration": {
                         "logicalCheck": [],
                         "steadyStateDetection": [],
-                        "inputs": [
-                            {
-                                "name": "param1",
-                                "referenceId": "ref1",
-                                "value": 10,
-                                "valueType": "DOUBLE",
-                            }
-                        ],
+                        "inputs": [],
                         "outputs": [],
                     },
                 },
@@ -154,14 +133,10 @@ class TestRoutineRevisions:
                     data_set_id=1,
                     created_by_user_id="1",
                     script=[],
-                    kind=SimulatorRoutineKind.LONG,
+                    kind="long",
                     configuration=SimulatorRoutineConfiguration(
                         logical_check=[],
-                        inputs=[
-                            SimulatorRoutineInputConstant(
-                                name="param1", reference_id="ref1", value=10, value_type="DOUBLE"
-                            )
-                        ],
+                        inputs=[],
                         outputs=[],
                     ),
                     created_time=1,
@@ -207,14 +182,10 @@ class TestRoutineRevisions:
                 SimulatorRoutineRevisionWrite(
                     external_id="sdk-test-routine_v2",
                     routine_external_id="sdk-test-routine",
-                    script=[SimulatorRoutineStage(description="", order=0, steps=[])],
+                    script=[],
                     configuration=SimulatorRoutineConfiguration(
                         logical_check=[],
-                        inputs=[
-                            SimulatorRoutineInputConstant(
-                                name="param1", reference_id="ref1", value=10, value_type="DOUBLE"
-                            )
-                        ],
+                        inputs=[],
                         outputs=[],
                     ),
                 ),
@@ -232,21 +203,11 @@ class TestRoutineRevisions:
                     version_number=1,
                     data_set_id=1,
                     created_by_user_id="1",
-                    script=[
-                        SimulatorRoutineStage(
-                            description="",
-                            order=0,
-                            steps=[],
-                        )
-                    ],
-                    kind=SimulatorRoutineKind.LONG,
+                    script=[],
+                    kind="long",
                     configuration=SimulatorRoutineConfiguration(
                         logical_check=[],
-                        inputs=[
-                            SimulatorRoutineInputConstant(
-                                name="param1", reference_id="ref1", value=10, value_type="DOUBLE"
-                            )
-                        ],
+                        inputs=[],
                         outputs=[],
                     ),
                     created_time=1,
@@ -256,20 +217,13 @@ class TestRoutineRevisions:
                         {
                             "externalId": "sdk-test-routine_v2",
                             "routineExternalId": "sdk-test-routine",
-                            "script": [{"description": "", "order": 0, "steps": []}],
+                            "script": None,
                             "configuration": {
                                 "logicalCheck": [],
                                 "dataSampling": {"enabled": False},
                                 "schedule": {"enabled": False},
                                 "steadyStateDetection": [],
-                                "inputs": [
-                                    {
-                                        "name": "param1",
-                                        "referenceId": "ref1",
-                                        "value": 10,
-                                        "valueType": "DOUBLE",
-                                    }
-                                ],
+                                "inputs": None,
                                 "outputs": None,
                             },
                         }
