@@ -100,7 +100,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             model_external_ids (SequenceNotStr[str] | None): Filter on model external ids.
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter on simulator integration external ids.
             simulator_external_ids (SequenceNotStr[str] | None): Filter on simulator external ids.
-            kind (SimulatorRoutineKind | None): Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set 'true' in the same query.
+            kind (SimulatorRoutineKind | None): Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
             created_time (TimestampRange | None): Filter on created time.
             all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
@@ -337,7 +337,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             model_external_ids (SequenceNotStr[str] | None): Filter on model external ids.
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter on simulator integration external ids.
             simulator_external_ids (SequenceNotStr[str] | None): Filter on simulator external ids.
-            kind (SimulatorRoutineKind | None): Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set 'true' in the same query.
+            kind (SimulatorRoutineKind | None): Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
             created_time (TimestampRange | None): Filter on created time.
             all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.

@@ -1,6 +1,7 @@
 import json
 import re
-from typing import Callable
+from collections.abc import Callable
+
 from requests import PreparedRequest
 from responses import RequestsMock
 
@@ -15,9 +16,5 @@ def add_mocked_request(rsps: RequestsMock, url: str, request_callback: Callable[
         status, response_item = request_callback(request_payload)
         response_body = {"items": [response_item]}
         return status, {}, json.dumps(response_body)
-    
-    rsps.add_callback(
-        method=rsps.POST,
-        url=url_pattern,
-        callback=request_callback_wrapper
-    )
+
+    rsps.add_callback(method=rsps.POST, url=url_pattern, callback=request_callback_wrapper)

@@ -195,7 +195,7 @@ class SimulatorRoutinesAPI(APIClient):
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             model_external_ids (Sequence[str] | None): Filter on model external ids.
             simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
-            kind (SimulatorRoutineKind | None): Filter on routine kind.
+            kind (SimulatorRoutineKind | None): Filter on routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
             sort (PropertySort | None): The criteria to sort by.
 
         Returns:
