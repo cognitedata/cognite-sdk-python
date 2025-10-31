@@ -19,6 +19,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.simulators.routines import SimulatorRoutineKind
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_snake_case
@@ -611,6 +612,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         created_by_user_id (str): The ID of the user who created the simulator routine revision.
         configuration (SimulatorRoutineConfiguration | None): The configuration of the simulator routine revision.
         script (SimulatorRoutineStageList | Sequence[SimulatorRoutineStage] | None): The script of the simulator routine revision.
+        kind (SimulatorRoutineKind | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
 
     def __init__(
@@ -627,6 +629,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         created_by_user_id: str,
         configuration: SimulatorRoutineConfiguration | None = None,
         script: SimulatorRoutineStageList | Sequence[SimulatorRoutineStage] | None = None,
+        kind: SimulatorRoutineKind | None = None,
     ) -> None:
         super().__init__(external_id, routine_external_id, configuration, script)
 
@@ -636,6 +639,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         self.simulator_integration_external_id = simulator_integration_external_id
         self.model_external_id = model_external_id
         self.data_set_id = data_set_id
+        self.kind = kind
         self.created_by_user_id = created_by_user_id
         self.created_time = created_time
         self.version_number = version_number
@@ -662,6 +666,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
             created_by_user_id=resource["createdByUserId"],
             configuration=configuration,
             script=script,
+            kind=SimulatorRoutineKind(resource["kind"]) if "kind" in resource else None,
             created_time=resource["createdTime"],
             version_number=resource["versionNumber"],
         )

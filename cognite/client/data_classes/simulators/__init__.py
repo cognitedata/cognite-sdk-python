@@ -56,6 +56,7 @@ from cognite.client.data_classes.simulators.routine_revisions import (
 )
 from cognite.client.data_classes.simulators.routines import (
     SimulatorRoutine,
+    SimulatorRoutineKind,
     SimulatorRoutineList,
     SimulatorRoutineWrite,
     SimulatorRoutineWriteList,
@@ -134,6 +135,7 @@ __all__ = [
     "SimulatorRoutineInputConstant",
     "SimulatorRoutineInputList",
     "SimulatorRoutineInputTimeseries",
+    "SimulatorRoutineKind",
     "SimulatorRoutineList",
     "SimulatorRoutineLogicalCheck",
     "SimulatorRoutineOutput",
