@@ -14,9 +14,8 @@ from collections.abc import (
     Mapping,
     MutableMapping,
 )
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 from http.cookiejar import Cookie, CookieJar
-from json import JSONDecodeError
 from typing import Any, Literal, TypeAlias
 
 import httpx
@@ -263,19 +262,12 @@ class AsyncHTTPClientWithRetry:
                     response = await coro_factory()
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
-                    # TODO: Can this be removed now if we check the 'cdf-is-auto-retryable' header?
                     response.json = functools.cache(response.json)  # type: ignore [method-assign]
                 return response.raise_for_status()
 
             except httpx.HTTPStatusError as err:
                 response = err.response
-                if accepts_json:
-                    with suppress(JSONDecodeError, AttributeError, httpx.ResponseNotRead):
-                        # If the response is not JSON or it doesn't conform to the api design guide,
-                        # we assume it's not auto-retryable
-                        # TODO: Can we just check the header now? 'cdf-is-auto-retryable'
-                        is_auto_retryable = response.json().get("error", {}).get("isAutoRetryable", False)
-
+                is_auto_retryable = response.headers.get("cdf-is-auto-retryable", False)
                 if not retry_tracker.should_retry_status_code(response.status_code, is_auto_retryable):
                     raise
 
