@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from cognite.client._cognite_client import AsyncCogniteClient
+from cognite.client import AsyncCogniteClient
 from cognite.client.data_classes import AnnotationWrite
 from cognite.client.data_classes.annotation_types.images import (
     AssetLink,

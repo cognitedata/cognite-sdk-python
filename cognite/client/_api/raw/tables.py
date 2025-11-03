@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
-from typing import Any, cast, overload
+from typing import Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -35,7 +35,7 @@ class RawTablesAPI(APIClient):
             limit (int | None): Maximum number of tables to return. Defaults to return all items.
 
         Yields:
-            raw.Table | raw.TableList: No description.
+            raw.Table | raw.TableList: The tables in the database.
         """
         table_iterator = self._list_generator(
             list_cls=raw.TableList,
@@ -45,8 +45,8 @@ class RawTablesAPI(APIClient):
             method="GET",
             limit=limit,
         )
-        async for res in self._set_db_name_on_tables_generator(table_iterator, db_name):
-            yield res
+        async for item in self._set_db_name_on_tables_generator(table_iterator, db_name):
+            yield item
 
     @overload
     async def create(self, db_name: str, name: str) -> raw.Table: ...
@@ -117,6 +117,12 @@ class RawTablesAPI(APIClient):
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
+    @overload
+    def _set_db_name_on_tables(self, tb: raw.Table, db_name: str) -> raw.Table: ...
+
+    @overload
+    def _set_db_name_on_tables(self, tb: raw.TableList, db_name: str) -> raw.TableList: ...
+
     def _set_db_name_on_tables(self, tb: raw.Table | raw.TableList, db_name: str) -> raw.Table | raw.TableList:
         if isinstance(tb, raw.Table):
             tb._db_name = db_name
@@ -169,4 +175,4 @@ class RawTablesAPI(APIClient):
             method="GET",
             limit=limit,
         )
-        return cast(raw.TableList, self._set_db_name_on_tables(tb, db_name))
+        return self._set_db_name_on_tables(tb, db_name)
