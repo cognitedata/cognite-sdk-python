@@ -165,7 +165,7 @@ def exactly_one_is_not_none(*args: Any) -> bool:
 
 
 def at_least_one_is_not_none(*args: Any) -> bool:
-    return sum(a is not None for a in args) >= 1
+    return any(a is not None for a in args)
 
 
 def at_most_one_is_not_none(*args: Any) -> bool:
