@@ -146,7 +146,7 @@ class TestEvents:
         assert res == 10
 
     def test_call_root(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
-        list(cognite_client.events(asset_subtree_external_ids=["a"], limit=10))
+        list(cognite_client.events(chunk_size=None, asset_subtree_external_ids=["a"], limit=10))
         calls = mock_events_response.get_requests()
         assert 1 == len(calls)
         expected = {"limit": 10, "filter": {"assetSubtreeIds": [{"externalId": "a"}]}}

@@ -33,7 +33,7 @@ class TestAsyncTimedCache:
 
 class TestAsyncIterator:
     def test_sync_iterator(self) -> None:
-        async def async_gen(n) -> AsyncIterator[int]:
+        async def async_gen(n: int) -> AsyncIterator[int]:
             for i in range(n):
                 await asyncio.sleep(0)
                 yield i

@@ -33,7 +33,7 @@ from cognite.client._api.data_modeling import containers, data_models, graphql, 
 from cognite.client._api.hosted_extractors import destinations, jobs, mappings, sources
 from cognite.client._api.postgres_gateway import tables as postgres_gateway_tables
 from cognite.client._api.postgres_gateway import users as postgres_gateway_users
-from cognite.client.testing import CogniteClientMock
+from cognite.client.testing import AsyncCogniteClientMock, CogniteClientMock
 
 # this fixes the issue with 'got MagicMock but expected Nothing in docstrings'
 doctest.OutputChecker.__check_output = doctest.OutputChecker.check_output  # type: ignore[attr-defined]
@@ -67,6 +67,7 @@ def test_credential_providers(mock_confidential_client: MagicMock, mock_public_c
 
 
 @patch("cognite.client.CogniteClient", CogniteClientMock)
+@patch("cognite.client.AsyncCogniteClient", AsyncCogniteClientMock)
 @patch("os.environ", defaultdict(lambda: "value"))
 class TestDocstringExamples:
     def test_time_series(self) -> None:

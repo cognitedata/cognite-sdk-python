@@ -537,7 +537,7 @@ class TestVisionExtractJob:
                             to_snake_case(k): (convert_all_keys_to_snake_case(v) if isinstance(v, dict) else v)
                             for k, v in keypoint_collection_with_object_detection_dict_sample[
                                 "keypointCollection"
-                            ].items()
+                            ].items()  # type: ignore [attr-defined]
                         },
                         annotated_resource_type="file",
                         status="suggested",
@@ -550,7 +550,7 @@ class TestVisionExtractJob:
                         annotation_type="images.ObjectDetection",
                         data={
                             to_snake_case(k): (convert_all_keys_to_snake_case(v) if isinstance(v, dict) else v)
-                            for k, v in keypoint_collection_with_object_detection_dict_sample["objectDetection"].items()
+                            for k, v in keypoint_collection_with_object_detection_dict_sample["objectDetection"].items()  # type: ignore[attr-defined]
                         },
                         annotated_resource_type="file",
                         status="suggested",

@@ -152,6 +152,7 @@ class TestChatWithActions:
         request_body = jsgz_load(mock_action_call_response.get_requests()[0].content)
         assert request_body["actions"][0]["clientTool"]["name"] == "add"
         assert isinstance(response, AgentChatResponse)
+        assert response.action_calls is not None
         assert len(response.action_calls) == 1
         assert isinstance(response.action_calls[0], ClientToolCall)
 
