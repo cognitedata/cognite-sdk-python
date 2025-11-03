@@ -861,13 +861,6 @@ class InstancesAPI(APIClient):
                 >>> subscription_context.cancel()
 
         """
-        for result_set_expression in query.with_.values():
-            if (
-                isinstance(result_set_expression, NodeOrEdgeResultSetExpression)
-                and result_set_expression.from_ is not None
-            ):
-                raise ValueError("Cannot chain result sets when subscribing to a query")
-
         subscription_context = SubscriptionContext()
 
         async def _poll_loop() -> None:
