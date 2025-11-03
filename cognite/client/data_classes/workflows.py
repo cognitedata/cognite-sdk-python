@@ -1389,7 +1389,7 @@ class WorkflowTriggerDataModelingQuery(Query):
     ) -> None:
         super().__init__(with_, select)
         # Parameters and cursors are not supported for workflow trigger queries:
-        self.parameters = None
+        self.parameters = None  # type: ignore [assignment]
         self.cursors = None  # type: ignore [assignment]
 
     @classmethod

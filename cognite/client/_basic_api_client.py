@@ -28,7 +28,7 @@ from cognite.client.utils._text import shorten
 from cognite.client.utils._url import resolve_url
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import AsyncCogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 

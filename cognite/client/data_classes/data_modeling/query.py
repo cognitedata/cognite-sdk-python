@@ -134,9 +134,7 @@ class QueryBase(CogniteObject, ABC):
     parameters: Mapping[str, PropertyValue] = field(default_factory=dict)
     cursors: Mapping[str, str | None] = field(default_factory=dict)
 
-    def __post_init__(
-        self,
-    ) -> None:
+    def __post_init__(self) -> None:
         if not_matching := set(self.select) - set(self.with_):
             raise ValueError(
                 f"The select keys must match the with keys, the following are not matching: {not_matching}"

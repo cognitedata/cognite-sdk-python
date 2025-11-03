@@ -6,8 +6,7 @@ from unittest import TestCase, mock
 
 import pytest
 
-from cognite.client import CogniteClient
-from cognite.client._cognite_client import AsyncCogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import (
     Asset,
     AssetWrite,

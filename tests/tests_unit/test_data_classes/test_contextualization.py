@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from cognite.client._cognite_client import AsyncCogniteClient
+from cognite.client import AsyncCogniteClient
 from cognite.client.data_classes.contextualization import (
     ConnectionFlags,
     DetectJobBundle,
