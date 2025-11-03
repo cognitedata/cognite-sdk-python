@@ -239,7 +239,7 @@ class TestAgent:
 
     def test_agent_labels_forward_compatibility(self) -> None:
         """Test forward compatibility with future label values on Agent."""
-        agent = Agent(
+        agent = DefaultResourceGenerator.agent(
             external_id="test_agent",
             name="Test Agent",
             labels=["published", "charts"],

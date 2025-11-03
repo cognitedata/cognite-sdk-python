@@ -92,13 +92,13 @@ def mock_function_call_resp(
 
 class TestFunction:
     def test_update(self, empty_function: Function, function: Function) -> None:
-        empty_function._cognite_client.functions.retrieve = AsyncMock(return_value=function)
+        empty_function._cognite_client.functions.retrieve = AsyncMock(return_value=function)  # type: ignore[method-assign]
 
         empty_function.update()
         assert function == empty_function
 
     def test_update_on_deleted_function(self, empty_function: Function) -> None:
-        empty_function._cognite_client.functions.retrieve = AsyncMock(return_value=None)
+        empty_function._cognite_client.functions.retrieve = AsyncMock(return_value=None)  # type: ignore[method-assign]
         empty_function.update()
 
 

@@ -90,7 +90,7 @@ class TestCogniteClient:
 
     def test_verify_ssl_enabled_by_default(self, async_client: AsyncCogniteClient) -> None:
         httpx_client = get_global_async_httpx_client()
-        assert ssl.CERT_REQUIRED is httpx_client._transport._pool._ssl_context.verify_mode
+        assert ssl.CERT_REQUIRED is httpx_client._transport._pool._ssl_context.verify_mode  # type: ignore[attr-defined]
 
         # Using iam is just a random choice here, could be any APIClient:
         assert httpx_client is async_client.iam._http_client.httpx_async_client

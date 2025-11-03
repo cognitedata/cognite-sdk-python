@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from datetime import timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -9,7 +10,6 @@ from cognite.client.data_classes import Datapoint, DatapointsArray
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
-from cognite.client.utils._time import ZoneInfo
 
 
 class TestDatapoint:
@@ -63,7 +63,7 @@ class TestDatapoint:
 
 @pytest.mark.dsl
 class TestDatapointsArray:
-    def test_dump_converts_missing_values_to_none(self):
+    def test_dump_converts_missing_values_to_none(self) -> None:
         # Easy to forget that we can have bad data (missing) without any status codes on the object
         import numpy as np
 
@@ -90,18 +90,17 @@ class TestToPandas:
         dps_cls = dps_lst_cls._RESOURCE
         df = dps_lst_cls(
             [
-                dps_cls(timestamp=ts, value=[2.0], id=123),
-                dps_cls(timestamp=ts, value=[4.0], external_id="foo"),
-                dps_cls(timestamp=ts, value=[6.0], instance_id=NodeId("s", "x")),
+                dps_cls(timestamp=ts, value=[2.0], id=123, is_string=False),
+                dps_cls(timestamp=ts, value=[4.0], external_id="foo", is_string=False),
+                dps_cls(timestamp=ts, value=[6.0], instance_id=NodeId("s", "x"), is_string=False),
             ]
-        ).to_pandas()  # Nothing supplied for column_names
+        ).to_pandas()
 
         exp_df = pd.DataFrame(
-            {
-                "123": 2.0,
-                "foo": 4.0,
-                "NodeId(s, x)": 6.0,
-            },
+            {1: 2.0, 2: 4.0, 3: 6.0},
             index=np.array([1234 * 1_000_000], dtype="datetime64[ns]"),
+        )
+        exp_df.columns = pd.MultiIndex.from_tuples(
+            [(123,), ("foo",), (NodeId(space="s", external_id="x"),)], names=["identifier"]
         )
         pd.testing.assert_frame_equal(df, exp_df)

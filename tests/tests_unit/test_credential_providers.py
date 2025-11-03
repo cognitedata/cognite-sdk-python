@@ -109,7 +109,7 @@ class TestOAuthDeviceCode:
             "access_token": "azure_token",
             "expires_in": expires_in,
         }
-        creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
+        creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)  # type: ignore[arg-type]
         creds._refresh_access_token()
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
@@ -143,7 +143,7 @@ class TestOAuthInteractive:
             "access_token": "azure_token",
             "expires_in": expires_in,
         }
-        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS)
+        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS)  # type: ignore[arg-type]
         creds._refresh_access_token()
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
@@ -176,7 +176,7 @@ class TestOauthClientCredentials:
     @pytest.mark.parametrize("expires_in", (1000, "1001"))  # some IDPs return as string
     def test_access_token_generated(self, mock_oauth_client: MagicMock, expires_in: int | str) -> None:
         mock_oauth_client().fetch_token.return_value = {"access_token": "azure_token", "expires_in": expires_in}
-        creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
+        creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)  # type: ignore[arg-type]
         creds._refresh_access_token()
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
@@ -187,7 +187,7 @@ class TestOauthClientCredentials:
             CogniteAuthError,
             match=r"Error generating access token: 'very_invalid'. Description: Invalid client_id parameter value.",
         ):
-            creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
+            creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)  # type: ignore[arg-type]
             creds._refresh_access_token()
 
     @patch("cognite.client.credentials.OAuth2Client")
@@ -196,7 +196,7 @@ class TestOauthClientCredentials:
             {"access_token": "azure_token_expired", "expires_in": -1000},
             {"access_token": "azure_token_refreshed", "expires_in": 1000},
         ]
-        creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
+        creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)  # type: ignore[arg-type]
         assert "Authorization", "Bearer azure_token_expired" == creds.authorization_header()
         assert "Authorization", "Bearer azure_token_refreshed" == creds.authorization_header()
 
@@ -231,7 +231,7 @@ class TestOAuthClientCertificate:
             "access_token": "azure_token",
             "expires_in": 1000,
         }
-        creds = OAuthClientCertificate(**self.DEFAULT_PROVIDER_ARGS)
+        creds = OAuthClientCertificate(**self.DEFAULT_PROVIDER_ARGS)  # type: ignore[arg-type]
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.ConfidentialClientApplication")

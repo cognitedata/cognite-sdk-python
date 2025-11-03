@@ -196,7 +196,7 @@ class TestVisionExtract:
 
             # Wait for job to complete and check its content
             expected_job_id = 1
-            result = await job.get_result()
+            result = await job.get_result_async()
             assert "items" in result
             assert JobStatus.COMPLETED is JobStatus(job.status)
             assert expected_job_id == job.job_id

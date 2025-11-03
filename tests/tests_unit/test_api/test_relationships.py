@@ -401,7 +401,7 @@ class TestRelationships:
         with pytest.raises(ValueError):
             next(
                 cognite_client.relationships(
-                    source_external_ids=source_external_ids, target_external_ids=target_external_ids
+                    chunk_size=None, source_external_ids=source_external_ids, target_external_ids=target_external_ids
                 )
             )
         with pytest.raises(ValueError):
@@ -420,7 +420,7 @@ class TestRelationships:
     ) -> None:
         source_external_ids = [str(i) for i in range(2500)]
         with pytest.raises(ValueError):
-            next(cognite_client.relationships(source_external_ids=source_external_ids))
+            next(cognite_client.relationships(chunk_size=None, source_external_ids=source_external_ids))
 
         res = cognite_client.relationships.list(source_external_ids=source_external_ids, limit=-1)
         assert 3 == len(httpx_mock.get_requests())
