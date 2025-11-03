@@ -4,7 +4,7 @@ import math
 import typing
 import warnings
 from collections.abc import AsyncIterator
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, NoReturn, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
@@ -205,8 +205,19 @@ class SequencesDataAPI(APIClient):
     @overload
     async def retrieve(
         self,
-        *,
+        external_id: None = None,
+        id: None = None,
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> NoReturn: ...
+
+    @overload
+    async def retrieve(
+        self,
         external_id: str,
+        id: None = None,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
@@ -216,8 +227,8 @@ class SequencesDataAPI(APIClient):
     @overload
     async def retrieve(
         self,
-        *,
         external_id: SequenceNotStr[str],
+        id: None = None,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
@@ -227,6 +238,7 @@ class SequencesDataAPI(APIClient):
     @overload
     async def retrieve(
         self,
+        external_id: None = None,
         *,
         id: int,
         start: int = 0,
@@ -238,6 +250,7 @@ class SequencesDataAPI(APIClient):
     @overload
     async def retrieve(
         self,
+        external_id: None = None,
         *,
         id: typing.Sequence[int],
         start: int = 0,
@@ -249,9 +262,8 @@ class SequencesDataAPI(APIClient):
     @overload
     async def retrieve(
         self,
-        *,
-        id: typing.Sequence[int] | int,
         external_id: SequenceNotStr[str] | str,
+        id: typing.Sequence[int] | int,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
@@ -278,7 +290,7 @@ class SequencesDataAPI(APIClient):
             limit (int | None): Maximum number of rows to return per sequence. Pass None to fetch all (possibly limited by 'end').
 
         Returns:
-            SequenceRows | SequenceRowsList: SequenceRows if a single identifier was given, else SequenceDataList
+            SequenceRows | SequenceRowsList: SequenceRows if a single identifier was given, else SequenceRowsList
 
         Examples:
 

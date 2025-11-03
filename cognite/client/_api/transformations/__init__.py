@@ -26,14 +26,6 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
-__all__ = [
-    "TransformationJobsAPI",
-    "TransformationNotificationsAPI",
-    "TransformationSchedulesAPI",
-    "TransformationSchemaAPI",
-    "TransformationsAPI",
-]
-
 
 class TransformationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations"

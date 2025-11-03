@@ -62,7 +62,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.query import (
-    NodeOrEdgeResultSetExpression,
     Query,
     QueryBase,
     QueryResult,
@@ -356,7 +355,7 @@ class InstancesAPI(APIClient):
     async def retrieve_edges(
         self,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
-        edge_cls: type[T_Edge] = Edge,  # type: ignore
+        edge_cls: type[T_Edge] = Edge,  # type: ignore [assignment]
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> EdgeList[T_Edge] | T_Edge | Edge | None:
@@ -1088,8 +1087,7 @@ class InstancesAPI(APIClient):
     async def search(
         self,
         view: ViewId,
-        query: str | None = None,
-        *,
+        query: str | None,
         instance_type: Literal["node"] = "node",
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
@@ -1105,8 +1103,7 @@ class InstancesAPI(APIClient):
     async def search(
         self,
         view: ViewId,
-        query: str | None = None,
-        *,
+        query: str | None,
         instance_type: Literal["edge"],
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
@@ -1122,8 +1119,7 @@ class InstancesAPI(APIClient):
     async def search(
         self,
         view: ViewId,
-        query: str | None = None,
-        *,
+        query: str | None,
         instance_type: type[T_Node],
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
@@ -1139,8 +1135,7 @@ class InstancesAPI(APIClient):
     async def search(
         self,
         view: ViewId,
-        query: str | None = None,
-        *,
+        query: str | None,
         instance_type: type[T_Edge],
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,

@@ -227,6 +227,12 @@ class Table(TableCore):
             return await self._cognite_client.raw.rows.retrieve(db_name=self._db_name, table_name=self.name, key=key)
         return await self._cognite_client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
 
+    @overload
+    def rows(self, key: str, limit: int | None = None) -> Row | None: ...
+
+    @overload
+    def rows(self, key: None = None, limit: int | None = None) -> RowList: ...
+
     @copy_doc_from_async(rows_async)
     def rows(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:
         return run_sync(self.rows_async(key=key, limit=limit))

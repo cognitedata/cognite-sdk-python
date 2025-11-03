@@ -7,7 +7,6 @@ from cognite.client.data_classes.principals import Principal, PrincipalList, Ser
 from cognite.client.exceptions import CogniteAPIError
 
 
-
 @pytest.fixture(scope="session")
 def me(cognite_client_cog_idp: CogniteClient) -> Principal:
     """Fixture to retrieve the principal of the user running the tests."""

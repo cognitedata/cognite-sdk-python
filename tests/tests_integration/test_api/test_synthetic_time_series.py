@@ -9,8 +9,7 @@ from unittest import mock
 import numpy as np
 import pytest
 
-from cognite.client import CogniteClient
-from cognite.client._cognite_client import AsyncCogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite, TimeSeriesWriteList
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.utils._time import datetime_to_ms

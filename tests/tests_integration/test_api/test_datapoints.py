@@ -1415,7 +1415,7 @@ class TestRetrieveRawDatapointsAPI:
                 if isinstance(dps, Datapoints):
                     assert dps.value[3] is None
                 elif isinstance(dps, DatapointsArray):
-                    assert math.isnan(dps.value[3])  # type: ignore[arg-type]
+                    assert math.isnan(dps.value[3])
                     bad_ts = dps.timestamp[3].item() // 1_000_000
                     assert dps.null_timestamps == {bad_ts}
 
@@ -3010,7 +3010,7 @@ class TestInsertDatapointsAPI:
             else:
                 bad_ts = to_check.timestamp[2].item() // 1_000_000
                 assert to_check.null_timestamps
-                assert math.isnan(to_check.value[2]) and to_check.null_timestamps == {bad_ts}  # type: ignore[arg-type]
+                assert math.isnan(to_check.value[2]) and to_check.null_timestamps == {bad_ts}
                 to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()
             assert list(to_check.value[5:]) == actual_value[4:]
             assert list(to_check.timestamp[1:]) == actual_timestamp

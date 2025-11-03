@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Literal
 
 try:
-    from pyodide.ffi import IN_BROWSER as _RUNNING_IN_BROWSER  # type: ignore [import-not-found]
+    from pyodide.ffi import IN_BROWSER  # type: ignore [import-not-found]
 except ModuleNotFoundError:
-    _RUNNING_IN_BROWSER = False
+    IN_BROWSER = False
 
 try:
     import numpy as np  # noqa F401
@@ -32,3 +32,4 @@ DEFAULT_LIMIT_READ = 25
 MAX_VALID_INTERNAL_ID = 9007199254740991
 DATA_MODELING_DEFAULT_LIMIT_READ = 10
 DEFAULT_DATAPOINTS_CHUNK_SIZE = 100_000
+_RUNNING_IN_BROWSER = IN_BROWSER
