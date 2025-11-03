@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from responses import RequestsMock
 
@@ -7,7 +9,6 @@ from cognite.client.data_classes.simulators import (
     SimulatorRoutineRevision,
     SimulatorRoutineRevisionWrite,
 )
-from tests.tests_unit.test_api.test_simulators.conftest import add_mocked_request
 from tests.utils import jsgz_load
 
 TEST_ROUTINE_REV_ITEM_RESPONSE_FIELDS = {
@@ -84,15 +85,18 @@ class TestRoutineRevisions:
         expected_request_body: dict,
     ) -> None:
         # Arrange
-        def request_callback(_: dict) -> tuple[int, dict]:
-            response_item = {
-                **TEST_ROUTINE_REV_ITEM_RESPONSE_FIELDS,
-                **mock_response_fields,
-            }
-            return (200, response_item)
-
-        add_mocked_request(
-            rsps, cognite_client.simulators.routines.revisions._get_base_url_with_base_path(), request_callback
+        rsps.add(
+            "POST",
+            url=re.compile(re.escape(cognite_client.simulators.routines.revisions._get_base_url_with_base_path())),
+            json={
+                "items": [
+                    {
+                        **TEST_ROUTINE_REV_ITEM_RESPONSE_FIELDS,
+                        **mock_response_fields,
+                    }
+                ]
+            },
+            status=200,
         )
 
         # Act
@@ -156,15 +160,18 @@ class TestRoutineRevisions:
         expected_request_body: dict,
     ) -> None:
         # Arrange
-        def request_callback(_: dict) -> tuple[int, dict]:
-            response_item = {
-                **TEST_ROUTINE_REV_ITEM_RESPONSE_FIELDS,
-                **mock_response_fields,
-            }
-            return (200, response_item)
-
-        add_mocked_request(
-            rsps, cognite_client.simulators.routines.revisions._get_base_url_with_base_path(), request_callback
+        rsps.add(
+            "POST",
+            url=re.compile(re.escape(cognite_client.simulators.routines.revisions._get_base_url_with_base_path())),
+            json={
+                "items": [
+                    {
+                        **TEST_ROUTINE_REV_ITEM_RESPONSE_FIELDS,
+                        **mock_response_fields,
+                    }
+                ]
+            },
+            status=200,
         )
 
         # Act
@@ -243,15 +250,18 @@ class TestRoutineRevisions:
         expected_request_body: dict,
     ) -> None:
         # Arrange
-        def request_callback(request_payload: dict) -> tuple[int, dict]:
-            response_item = {
-                **mock_response_fields,
-                **request_payload["items"][0],
-            }
-            return (201, response_item)
-
-        add_mocked_request(
-            rsps, cognite_client.simulators.routines.revisions._get_base_url_with_base_path(), request_callback
+        rsps.add(
+            "POST",
+            url=re.compile(re.escape(cognite_client.simulators.routines.revisions._get_base_url_with_base_path())),
+            json={
+                "items": [
+                    {
+                        **mock_response_fields,
+                        **write_input.dump(),
+                    }
+                ]
+            },
+            status=201,
         )
 
         # Act
