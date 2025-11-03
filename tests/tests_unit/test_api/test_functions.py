@@ -304,10 +304,10 @@ def function_handle_illegal_argument() -> Callable:
 
 
 @pytest.fixture
-def function_handle_as_variable():
+def function_handle_as_variable() -> Any:
     """Fixture for handle as variable assignment (callable) with valid arguments."""
 
-    def inner_handle(data, client, secrets):
+    def inner_handle(data: Any, client: Any, secrets: Any) -> dict[str, str]:
         return {"result": "success"}
 
     # This simulates handle = some_callable pattern
@@ -512,15 +512,17 @@ class TestFunctionsAPI:
             cognite_client.functions.create(name="myfunction", function_handle=function_handle_illegal_argument)
 
     def test_create_with_function_handle_as_variable_accepts(
-        self, mock_functions_create_response, function_handle_as_variable, cognite_client
-    ):
+        self, mock_functions_create_response: Any, function_handle_as_variable: Any, cognite_client: CogniteClient
+    ) -> None:
         """Test that handle as variable assignment (callable) is accepted."""
         res = cognite_client.functions.create(name="myfunction", function_handle=function_handle_as_variable)
 
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION_CREATED == res.dump(camel_case=True)
 
-    def test_create_with_function_handle_assignment_from_folder(self, mock_functions_create_response, cognite_client):
+    def test_create_with_function_handle_assignment_from_folder(
+        self, mock_functions_create_response: Any, cognite_client: CogniteClient
+    ) -> None:
         """Test that handle as variable assignment works when loading from folder."""
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_with_handle_assignment")
         res = cognite_client.functions.create(name="myfunction", folder=folder, function_path="handler.py")
@@ -529,8 +531,8 @@ class TestFunctionsAPI:
         assert EXAMPLE_FUNCTION_CREATED == res.dump(camel_case=True)
 
     def test_create_with_function_handle_assignment_invalid_args_from_folder_accepts(
-        self, mock_functions_create_response, cognite_client
-    ):
+        self, mock_functions_create_response: Any, cognite_client: CogniteClient
+    ) -> None:
         """Test that handle as variable assignment with invalid args is accepted (no arg validation)."""
         # This folder contains a handle assignment where the underlying function has invalid arguments
         # This should NOT raise TypeError because callable variables skip argument validation at create time
@@ -543,8 +545,8 @@ class TestFunctionsAPI:
         assert EXAMPLE_FUNCTION_CREATED == res.dump(camel_case=True)
 
     def test_create_with_function_handle_annotated_assignment_from_folder(
-        self, mock_functions_create_response, cognite_client
-    ):
+        self, mock_functions_create_response: Any, cognite_client: CogniteClient
+    ) -> None:
         """Test that handle as annotated variable assignment works when loading from folder."""
         folder = os.path.join(
             os.path.dirname(__file__), "function_test_resources", "function_with_annotated_handle_assignment"
@@ -554,21 +556,21 @@ class TestFunctionsAPI:
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION_CREATED == res.dump(camel_case=True)
 
-    def test_validate_function_handle_with_complex_assignment_target_raises(self):
+    def test_validate_function_handle_with_complex_assignment_target_raises(self) -> None:
         # Create AST node for: obj.handle = some_callable
         code = "obj.handle = lambda: None"
         tree = ast.parse(code)
         assign_node = tree.body[0]
         with pytest.raises(TypeError, match="Assignment target must be a simple name"):
-            _validate_function_handle(assign_node)
+            _validate_function_handle(assign_node)  # type: ignore[arg-type]
 
-    def test_validate_function_handle_with_complex_annotated_assignment_target_raises(self):
+    def test_validate_function_handle_with_complex_annotated_assignment_target_raises(self) -> None:
         # Create AST node for: obj.handle: Callable = some_callable
         code = "obj.handle: Callable = lambda: None"
         tree = ast.parse(code)
         ann_assign_node = tree.body[0]
         with pytest.raises(TypeError, match="Assignment target must be a simple name"):
-            _validate_function_handle(ann_assign_node)
+            _validate_function_handle(ann_assign_node)  # type: ignore[arg-type]
 
     def test_create_with_handle_function_and_file_id_raises(
         self, mock_functions_create_response: HTTPXMock, function_handle: Any, cognite_client: CogniteClient
@@ -1013,7 +1015,7 @@ class TestFunctionSchedulesAPI:
         self, mock_function_schedules_response: HTTPXMock, cognite_client: CogniteClient, monkeypatch: MonkeyPatch
     ) -> None:
         # @patch seems to conflict with httpx_mock, so we use monkeypatch instead:
-        async def mock_nonce(*args, **kwargs):
+        async def mock_nonce(*args: Any, **kwargs: Any) -> str:
             return "very noncy"
 
         monkeypatch.setattr(
@@ -1314,8 +1316,8 @@ async def test__zip_and_upload_handle__call_signature(
     file_id = await async_client.functions._zip_and_upload_handle(function_handle, name="name", external_id=xid)
     assert file_id == 123
 
-    mock.files.upload_bytes.assert_called_once()  # type: ignore[attr-defined]
-    call = mock.files.upload_bytes.call_args  # type: ignore[attr-defined]
+    mock.files.upload_bytes.assert_called_once()
+    call = mock.files.upload_bytes.call_args
     assert len(call.args) == 1 and type(call.args[0]) is bytes
     assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
@@ -1429,7 +1431,7 @@ async def test__zip_and_upload_folder__zip_file_content(
 class TestGetHandleFunctionNode:
     """Test cases for get_handle_function_node function."""
 
-    def test_single_handle_function(self):
+    def test_single_handle_function(self) -> None:
         """Test that a single handle function is returned correctly."""
         file_content = '''
 def handle(data, client, secrets):
@@ -1439,10 +1441,11 @@ def handle(data, client, secrets):
         result = get_handle_function_node(file_content)
 
         assert result is not None
+        assert isinstance(result, ast.FunctionDef)
         assert result.name == "handle"
         assert len(result.args.args) == 3  # data, client, secrets
 
-    def test_multiple_handle_functions_returns_last(self):
+    def test_multiple_handle_functions_returns_last(self) -> None:
         """Test that when there are multiple handle functions, the last one is returned."""
         file_content = '''
 def handle(data, client, secrets):
@@ -1460,11 +1463,13 @@ def handle(data, client, secrets):
         result = get_handle_function_node(file_content)
 
         assert result is not None
+        assert isinstance(result, ast.FunctionDef)
         assert result.name == "handle"
         # Check that it's the second handle function by looking at the docstring
-        assert "Second handle function" in ast.get_docstring(result)
+        docstring = ast.get_docstring(result)
+        assert docstring is not None and "Second handle function" in docstring
 
-    def test_no_handle_function_returns_none(self):
+    def test_no_handle_function_returns_none(self) -> None:
         """Test that None is returned when no handle function exists."""
         file_content = '''
 def other_function():
@@ -1478,13 +1483,13 @@ def another_function():
         result = get_handle_function_node(file_content)
         assert result is None
 
-    def test_empty_file_returns_none(self):
+    def test_empty_file_returns_none(self) -> None:
         """Test that None is returned for an empty file."""
         file_content = ""
         result = get_handle_function_node(file_content)
         assert result is None
 
-    def test_handle_function_with_imports_and_comments(self):
+    def test_handle_function_with_imports_and_comments(self) -> None:
         """Test that handle function is found even with imports and comments."""
         file_content = '''
 import os
@@ -1503,10 +1508,12 @@ def handle(data, client, secrets):
         result = get_handle_function_node(file_content)
 
         assert result is not None
+        assert isinstance(result, ast.FunctionDef)
         assert result.name == "handle"
-        assert "Handle function with proper signature" in ast.get_docstring(result)
+        docstring = ast.get_docstring(result)
+        assert docstring is not None and "Handle function with proper signature" in docstring
 
-    def test_handle_function_inside_class_ignored(self):
+    def test_handle_function_inside_class_ignored(self) -> None:
         """Test that handle functions inside classes are ignored (only top-level functions)."""
         file_content = '''
 def handle(data, client, secrets):
@@ -1521,10 +1528,12 @@ class MyClass:
         result = get_handle_function_node(file_content)
 
         assert result is not None
+        assert isinstance(result, ast.FunctionDef)
         assert result.name == "handle"
-        assert "Top-level handle function" in ast.get_docstring(result)
+        docstring = ast.get_docstring(result)
+        assert docstring is not None and "Top-level handle function" in docstring
 
-    def test_handle_function_inside_other_function_ignored(self):
+    def test_handle_function_inside_other_function_ignored(self) -> None:
         """Test that handle functions inside other functions are ignored."""
         file_content = '''
 def outer_function():
@@ -1539,5 +1548,7 @@ def handle(data, client, secrets):
         result = get_handle_function_node(file_content)
 
         assert result is not None
+        assert isinstance(result, ast.FunctionDef)
         assert result.name == "handle"
-        assert "Top-level handle function" in ast.get_docstring(result)
+        docstring = ast.get_docstring(result)
+        assert docstring is not None and "Top-level handle function" in docstring

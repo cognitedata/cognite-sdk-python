@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from typing_extensions import Self
 
-from cognite.client import AsyncCogniteClient, ClientConfig, CogniteClient
+from cognite.client import AsyncCogniteClient, ClientConfig
 from cognite.client.credentials import Token
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -76,7 +76,7 @@ class MyResource(CogniteResource):
             cognite_client=cognite_client,
         )
 
-    def use(self) -> CogniteClient:
+    def use(self) -> AsyncCogniteClient:
         return self._cognite_client
 
 
@@ -158,7 +158,7 @@ class MyFilter(CogniteFilter):
 class MyResourceList(CogniteResourceList):
     _RESOURCE = MyResource
 
-    def use(self) -> CogniteClient:
+    def use(self) -> AsyncCogniteClient:
         return self._cognite_client
 
 
@@ -229,7 +229,7 @@ class TestCogniteObject:
         if type(instance) is FunctionSchedule:
             # FunctionSchedule.as_write has to make a call to functions.schedules.get_input_data...
             # (`data` only exist on the FunctionScheduleWrite)
-            cognite_async_mock_client_placeholder.functions.schedules.get_input_data = AsyncMock(return_value=None)
+            cognite_async_mock_client_placeholder.functions.schedules.get_input_data = AsyncMock(return_value=None)  # type: ignore[method-assign]
 
         write_format = instance.as_write()
         assert isinstance(write_format, CogniteResource)
