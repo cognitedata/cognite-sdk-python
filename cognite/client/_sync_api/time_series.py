@@ -1,6 +1,6 @@
 """
 ===============================================================================
-91e6f407c342c348165197e67f08753a
+a7a8f72826a31aef48cf7f32fedef687
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -34,16 +34,60 @@ if TYPE_CHECKING:
 class SyncTimeSeriesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.data = SyncDatapointsAPI(async_client)
         self.subscriptions = SyncDatapointsSubscriptionAPI(async_client)
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[TimeSeries]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        unit: str | None = None,
+        unit_external_id: str | None = None,
+        unit_quantity: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        limit: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+    ) -> Iterator[TimeSeries]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[TimeSeriesList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        unit: str | None = None,
+        unit_external_id: str | None = None,
+        unit_quantity: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        limit: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+    ) -> Iterator[TimeSeriesList]: ...
 
     def __call__(
         self,
@@ -121,7 +165,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 advanced_filter=advanced_filter,
                 sort=sort,
             )
-        )
+        )  # type: ignore [misc]
 
     def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None

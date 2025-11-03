@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c16ec03a20daca0713c052b395d984dc
+f7156bc6a9afa19b20f5aa7b143ca219
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -30,14 +30,50 @@ if TYPE_CHECKING:
 class SyncRelationshipsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Relationship]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        source_external_ids: SequenceNotStr[str] | None = None,
+        source_types: SequenceNotStr[str] | None = None,
+        target_external_ids: SequenceNotStr[str] | None = None,
+        target_types: SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        confidence: dict[str, int] | None = None,
+        last_updated_time: dict[str, int] | None = None,
+        created_time: dict[str, int] | None = None,
+        active_at_time: dict[str, int] | None = None,
+        labels: LabelFilter | None = None,
+        limit: int | None = None,
+        fetch_resources: bool = False,
+    ) -> Iterator[Relationship]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[RelationshipList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        source_external_ids: SequenceNotStr[str] | None = None,
+        source_types: SequenceNotStr[str] | None = None,
+        target_external_ids: SequenceNotStr[str] | None = None,
+        target_types: SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        confidence: dict[str, int] | None = None,
+        last_updated_time: dict[str, int] | None = None,
+        created_time: dict[str, int] | None = None,
+        active_at_time: dict[str, int] | None = None,
+        labels: LabelFilter | None = None,
+        limit: int | None = None,
+        fetch_resources: bool = False,
+    ) -> Iterator[RelationshipList]: ...
 
     def __call__(
         self,
@@ -103,7 +139,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 limit=limit,
                 fetch_resources=fetch_resources,
             )
-        )
+        )  # type: ignore [misc]
 
     def retrieve(self, external_id: str, fetch_resources: bool = False) -> Relationship | None:
         """
@@ -344,7 +380,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.remove("PUMP")
                 >>> res = client.relationships.update(my_update)
         """
-        return run_sync(self.__async_client.relationships.update(item=item, mode=mode))
+        return run_sync(self.__async_client.relationships.update(item=item, mode=mode))  # type: ignore [call-overload]
 
     @overload
     def upsert(

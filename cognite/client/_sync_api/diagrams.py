@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 class SyncDiagramsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
@@ -185,7 +185,7 @@ class SyncDiagramsAPI(SyncAPIClient):
                 pattern_mode=pattern_mode,
                 configuration=configuration,
                 multiple_jobs=multiple_jobs,
-            )
+            )  # type: ignore [call-overload, misc]
         )
 
     def get_detect_jobs(self, job_ids: list[int]) -> list[DiagramDetectResults]:

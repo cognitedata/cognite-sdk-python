@@ -1,6 +1,6 @@
 """
 ===============================================================================
-1f594af9469b8c7776ec026b65f20394
+a02f6a718fc803a8bd69788a4e6ff8a8
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -25,14 +25,30 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class SyncLabelsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[LabelDefinition]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        limit: int | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+    ) -> Iterator[LabelDefinition]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[LabelDefinitionList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        limit: int | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+    ) -> Iterator[LabelDefinitionList]: ...
 
     def __call__(
         self,
@@ -66,7 +82,7 @@ class SyncLabelsAPI(SyncAPIClient):
                 data_set_ids=data_set_ids,
                 data_set_external_ids=data_set_external_ids,
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def retrieve(self, external_id: str, ignore_unknown_ids: Literal[True]) -> LabelDefinition | None: ...
@@ -100,7 +116,10 @@ class SyncLabelsAPI(SyncAPIClient):
                 >>> res = client.labels.retrieve(external_id="my_label", ignore_unknown_ids=True)
         """
         return run_sync(
-            self.__async_client.labels.retrieve(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)
+            self.__async_client.labels.retrieve(
+                external_id=external_id,  # type: ignore [arg-type]
+                ignore_unknown_ids=ignore_unknown_ids,
+            )
         )
 
     def list(

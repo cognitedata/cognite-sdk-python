@@ -1,6 +1,6 @@
 """
 ===============================================================================
-6c1c42132e1b371d885eb22ff47f5467
+8ad69cac824ef3083d6d2d2a9655f081
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -35,14 +35,62 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class SyncFilesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[FileMetadata]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        source_created_time: dict[str, Any] | TimestampRange | None = None,
+        source_modified_time: dict[str, Any] | TimestampRange | None = None,
+        uploaded_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        directory_prefix: str | None = None,
+        uploaded: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[FileMetadata]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[FileMetadataList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        source_created_time: dict[str, Any] | TimestampRange | None = None,
+        source_modified_time: dict[str, Any] | TimestampRange | None = None,
+        uploaded_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        directory_prefix: str | None = None,
+        uploaded: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[FileMetadataList]: ...
 
     def __call__(
         self,
@@ -126,7 +174,7 @@ class SyncFilesAPI(SyncAPIClient):
                 uploaded=uploaded,
                 limit=limit,
             )
-        )
+        )  # type: ignore [misc]
 
     def create(
         self, file_metadata: FileMetadata | FileMetadataWrite, overwrite: bool = False

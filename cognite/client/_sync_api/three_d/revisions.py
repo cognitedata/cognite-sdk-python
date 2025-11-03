@@ -27,7 +27,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class Sync3DRevisionsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
@@ -55,7 +55,10 @@ class Sync3DRevisionsAPI(SyncAPIClient):
         """
         yield from SyncIterator(
             self.__async_client.three_d.revisions(
-                model_id=model_id, chunk_size=chunk_size, published=published, limit=limit
+                model_id=model_id,
+                chunk_size=chunk_size,
+                published=published,
+                limit=limit,  # type: ignore [call-overload]
             )
         )
 

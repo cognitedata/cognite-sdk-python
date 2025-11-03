@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d83244377c50c368e66b22af80198a2c
+e5e09a2e56f832e04d7e469f44a018b6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -24,28 +24,71 @@ if TYPE_CHECKING:
 class SyncRawRowsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, db_name: str, table_name: str, *, chunk_size: None, partitions: None) -> Iterator[Row]: ...
+    def __call__(
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: None = None,
+        partitions: None = None,
+        limit: int | None = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+    ) -> Iterator[Row]: ...
 
     @overload
-    def __call__(self, db_name: str, table_name: str, *, chunk_size: None, partitions: int) -> Iterator[RowList]: ...
+    def __call__(
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: None,
+        partitions: int,
+        limit: int | None = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+    ) -> Iterator[RowList]: ...
 
     @overload
-    def __call__(self, db_name: str, table_name: str, *, chunk_size: int, partitions: None) -> Iterator[RowList]: ...
+    def __call__(
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: int,
+        partitions: None,
+        limit: int | None = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+    ) -> Iterator[RowList]: ...
+
+    @overload
+    def __call__(
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: int,
+        partitions: int,
+        limit: int | None = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+    ) -> Iterator[RowList]: ...
 
     def __call__(
         self,
         db_name: str,
         table_name: str,
         chunk_size: int | None = None,
+        partitions: int | None = None,
         limit: int | None = None,
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
-        partitions: int | None = None,
     ) -> Iterator[Row | RowList]:
         """
         Iterate over rows.
@@ -59,15 +102,12 @@ class SyncRawRowsAPI(SyncAPIClient):
         Args:
             db_name (str): Name of the database
             table_name (str): Name of the table to iterate over rows for
-            chunk_size (int | None): Number of rows to return in each chunk (may be lower). Defaults to yielding one row at a time.
-                Note: When used together with 'partitions' the default is 10000 (matching the API limit) and there's an implicit minimum of 1000 rows.
+            chunk_size (int | None): Number of rows to return in each chunk (may be lower). Defaults to yielding one row at a time. Note: When used together with 'partitions' the default is 10000 (matching the API limit) and there's an implicit minimum of 1000 rows.
+            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to not use concurrency. The setting is capped at ``global_config.max_workers`` and _can_ be used with a finite limit. To prevent unexpected problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
             limit (int | None): Maximum number of rows to return. Can be used with partitions. Defaults to returning all items.
             min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
             max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
-            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to not use concurrency.
-                The setting is capped at ``global_config.max_workers`` and _can_ be used with a finite limit. To prevent unexpected
-                problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Yields:
             Row | RowList: An iterator yielding the requested row or rows.
@@ -77,13 +117,13 @@ class SyncRawRowsAPI(SyncAPIClient):
                 db_name=db_name,
                 table_name=table_name,
                 chunk_size=chunk_size,
+                partitions=partitions,
                 limit=limit,
                 min_last_updated_time=min_last_updated_time,
                 max_last_updated_time=max_last_updated_time,
                 columns=columns,
-                partitions=partitions,
             )
-        )
+        )  # type: ignore [misc]
 
     def insert(
         self,
