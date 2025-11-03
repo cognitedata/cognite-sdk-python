@@ -11,8 +11,6 @@ from numbers import Integral
 from typing import TYPE_CHECKING, Any, Literal
 from zoneinfo import ZoneInfo
 
-from typing_extensions import assert_never
-
 from cognite.client.data_classes.datapoint_aggregates import (
     _AGGREGATES_WITH_UNIT,
     _ALL_AGGREGATES,
@@ -25,6 +23,8 @@ from cognite.client.utils._text import shorten, to_camel_case
 from cognite.client.utils._time import TIME_ATTRIBUTES
 
 if TYPE_CHECKING:
+    import numpy as np
+    import numpy.typing as npt
     import pandas as pd
 
     from cognite.client.data_classes import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList
@@ -200,7 +200,7 @@ def convert_dps_to_dataframe(
     include_status: bool,
     include_unit: bool,
     include_errors: bool = False,  # old leftover misuse of Datapoints class :(
-):
+) -> pd.DataFrame:
     pd = local_import("pandas")
     columns = _extract_column_info_from_dps_for_dataframe(
         dps, include_status=include_status, include_errors=include_errors
@@ -262,7 +262,9 @@ class _DpsColumnInfo:
         else:
             return self._convert_to_array_for_agg_dps()
 
-    def _convert_to_array_for_raw_dps(self):
+    def _convert_to_array_for_raw_dps(
+        self,
+    ) -> npt.NDArray[np.object_] | npt.NDArray[np.float64] | npt.NDArray[np.uint32]:
         import numpy as np
 
         match self.is_string, self.status_info:
@@ -275,9 +277,15 @@ class _DpsColumnInfo:
             case _, "symbol":
                 return np.array(self.data, dtype=np.object_)
             case _:
-                assert_never(f"Invalid combination of is_string={self.is_string} and status_info={self.status_info}")
+                # IsString is required in the response, so if we reach here, most likely a user has instatiated
+                # the datapoints object themselves:
+                raise ValueError(
+                    f"Invalid combination of is_string={self.is_string} and status_info={self.status_info}"
+                )
 
-    def _convert_to_array_for_agg_dps(self):
+    def _convert_to_array_for_agg_dps(
+        self,
+    ) -> npt.NDArray[np.object_] | npt.NDArray[np.float64] | npt.NDArray[np.int64]:
         import numpy as np
 
         from cognite.client.utils._datapoints import ensure_int_numpy
@@ -393,7 +401,9 @@ def _create_multi_index_from_columns(
     )
     # Key operation is to drop all-nan columns, which in the multi-index translates to dropping
     # the corresponding levels:
-    return pd.MultiIndex.from_frame(column_ids_df.dropna(axis="columns", how="all").fillna(""))
+    non_id_levels = column_ids_df.iloc[:, 1:].dropna(axis="columns", how="all").fillna("")
+    # ...but we always keep the identifier column:
+    return pd.MultiIndex.from_frame(pd.concat((column_ids_df.iloc[:, [0]], non_id_levels), axis=1, copy=False))
 
 
 def _create_timestamp_index(
@@ -412,4 +422,4 @@ def _create_timestamp_index(
         case np.ndarray(), _:
             return pd.to_datetime(timestamps, utc=True).tz_convert(convert_tz_for_pandas(timezone))
         case _:
-            assert_never("Timestamps must be either list[int] or numpy.ndarray")
+            raise TypeError("Timestamps must be either list[int] or numpy.ndarray")
