@@ -40,10 +40,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     T_Node,
     TargetUnit,
 )
-from cognite.client.data_classes.data_modeling.query import (
-    Query,
-    QueryResult,
-)
+from cognite.client.data_classes.data_modeling.query import Query, QueryResult, QuerySync
 from cognite.client.data_classes.data_modeling.sync import SubscriptionContext
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
@@ -57,20 +54,64 @@ from cognite.client.data_classes.data_modeling.debug import DebugParameters
 class SyncInstancesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None, instance_type: Literal["node"] = "node") -> Iterator[Node]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        instance_type: Literal["node"] = "node",
+        limit: int | None = None,
+        include_typing: bool = False,
+        sources: Source | Sequence[Source] | None = None,
+        space: str | SequenceNotStr[str] | None = None,
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
+    ) -> Iterator[Node]: ...
 
     @overload
-    def __call__(self, chunk_size: None, instance_type: Literal["edge"]) -> Iterator[Edge]: ...
+    def __call__(
+        self,
+        chunk_size: None,
+        instance_type: Literal["edge"],
+        limit: int | None = None,
+        include_typing: bool = False,
+        sources: Source | Sequence[Source] | None = None,
+        space: str | SequenceNotStr[str] | None = None,
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
+    ) -> Iterator[Edge]: ...
 
     @overload
-    def __call__(self, chunk_size: int, instance_type: Literal["node"] = "node") -> Iterator[NodeList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        instance_type: Literal["node"] = "node",
+        limit: int | None = None,
+        include_typing: bool = False,
+        sources: Source | Sequence[Source] | None = None,
+        space: str | SequenceNotStr[str] | None = None,
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
+    ) -> Iterator[NodeList]: ...
 
     @overload
-    def __call__(self, chunk_size: int, instance_type: Literal["edge"]) -> Iterator[EdgeList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        instance_type: Literal["edge"],
+        limit: int | None = None,
+        include_typing: bool = False,
+        sources: Source | Sequence[Source] | None = None,
+        space: str | SequenceNotStr[str] | None = None,
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
+    ) -> Iterator[EdgeList]: ...
 
     def __call__(
         self,
@@ -114,7 +155,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 filter=filter,
                 debug=debug,
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def retrieve_edges(self, edges: EdgeId | tuple[str, str], *, edge_cls: type[T_Edge]) -> T_Edge | None: ...
@@ -145,7 +186,7 @@ class SyncInstancesAPI(SyncAPIClient):
     def retrieve_edges(
         self,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
-        edge_cls: type[T_Edge] = Edge,
+        edge_cls: type[T_Edge] = Edge,  # type: ignore [assignment]
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> EdgeList[T_Edge] | T_Edge | Edge | None:
@@ -209,7 +250,7 @@ class SyncInstancesAPI(SyncAPIClient):
         return run_sync(
             self.__async_client.data_modeling.instances.retrieve_edges(
                 edges=edges, edge_cls=edge_cls, sources=sources, include_typing=include_typing
-            )
+            )  # type: ignore [call-overload]
         )
 
     @overload
@@ -241,7 +282,7 @@ class SyncInstancesAPI(SyncAPIClient):
     def retrieve_nodes(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
-        node_cls: type[T_Node] = Node,
+        node_cls: type[T_Node] = Node,  # type: ignore [assignment]
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> NodeList[T_Node] | T_Node | Node | None:
@@ -310,7 +351,7 @@ class SyncInstancesAPI(SyncAPIClient):
         return run_sync(
             self.__async_client.data_modeling.instances.retrieve_nodes(
                 nodes=nodes, node_cls=node_cls, sources=sources, include_typing=include_typing
-            )
+            )  # type: ignore [call-overload]
         )
 
     def retrieve(
@@ -455,7 +496,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
     def subscribe(
         self,
-        query: Query,
+        query: QuerySync,
         callback: Callable[[QueryResult], None | Awaitable[None]],
         poll_delay_seconds: float = 30,
         throttle_seconds: float = 1,
@@ -469,7 +510,7 @@ class SyncInstancesAPI(SyncAPIClient):
             see :ref:`this example of syncing instances to a local SQLite database <dm_instances_subscribe_example>`.
 
         Args:
-            query (Query): The query to subscribe to.
+            query (QuerySync): The query to subscribe to.
             callback (Callable[[QueryResult], None | Awaitable[None]]): The callback function to call when the result set changes. Can be a regular or async function.
             poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
             throttle_seconds (float): The time to wait between polls despite data being present.
@@ -482,23 +523,24 @@ class SyncInstancesAPI(SyncAPIClient):
             Subscribe to a given query and process the results in your own callback function
             (here we just print the result for illustration):
 
-                >>> from cognite.client import AsyncCogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.query import (
-                ...     Query, QueryResult, NodeResultSetExpression, Select, SourceSelector)
+                ...     QuerySync, QueryResult, NodeResultSetExpressionSync, SelectSync, SourceSelector
+                ... )
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes.filters import Equals
                 >>>
-                >>> client = AsyncCogniteClient()
+                >>> client = CogniteClient()
                 >>> def just_print_the_result(result: QueryResult) -> None:
-                >>>     print(result)
+                ...     print(result)
                 >>>
                 >>> view_id = ViewId("someSpace", "someView", "v1")
                 >>> filter = Equals(view_id.as_property_ref("myAsset"), "Il-Tempo-Gigante")
-                >>> query = Query(
-                >>>     with_={"work_orders": NodeResultSetExpression(filter=filter)},
-                >>>     select={"work_orders": Select([SourceSelector(view_id, ["*"])])}
-                >>> )
-                >>> subscription_context = await client.data_modeling.instances.subscribe(
+                >>> query = QuerySync(
+                ...     with_={"work_orders": NodeResultSetExpressionSync(filter=filter)},
+                ...     select={"work_orders": SelectSync([SourceSelector(view_id, ["*"])])}
+                ... )
+                >>> subscription_context = client.data_modeling.instances.subscribe(
                 ...     query, callback=just_print_the_result
                 ... )
                 >>> # Use the returned subscription_context to manage the subscription, e.g. to cancel it:
@@ -1037,14 +1079,14 @@ class SyncInstancesAPI(SyncAPIClient):
             self.__async_client.data_modeling.instances.query(query=query, include_typing=include_typing, debug=debug)
         )
 
-    def sync(self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
+    def sync(self, query: QuerySync, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
         """
         `Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
         Args:
-            query (Query): Query.
+            query (QuerySync): Query.
             include_typing (bool): Should we return property type information as part of the result?
             debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
 
@@ -1053,7 +1095,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
         Examples:
 
-            Find work orders created before 2023 sorted by title:
+            Query all pumps connected to work orders created before 2023, sorted by name:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.instances import InstanceSort
@@ -1239,7 +1281,7 @@ class SyncInstancesAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.instances.list(
-                instance_type=instance_type,
+                instance_type=instance_type,  # type: ignore [arg-type]
                 include_typing=include_typing,
                 sources=sources,
                 space=space,
@@ -1247,5 +1289,5 @@ class SyncInstancesAPI(SyncAPIClient):
                 sort=sort,
                 filter=filter,
                 debug=debug,
-            )
+            )  # type: ignore [misc]
         )

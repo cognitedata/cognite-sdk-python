@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9812a01728a87fc7f57b745b3b175322
+8213a2d7af01aedf20789d9a6f7b67ed
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +8,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 import typing
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, NoReturn, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class SyncSequencesDataAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     def insert(
@@ -155,8 +155,19 @@ class SyncSequencesDataAPI(SyncAPIClient):
     @overload
     def retrieve(
         self,
-        *,
+        external_id: None = None,
+        id: None = None,
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> NoReturn: ...
+
+    @overload
+    def retrieve(
+        self,
         external_id: str,
+        id: None = None,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
@@ -166,8 +177,8 @@ class SyncSequencesDataAPI(SyncAPIClient):
     @overload
     def retrieve(
         self,
-        *,
         external_id: SequenceNotStr[str],
+        id: None = None,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
@@ -177,6 +188,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
     @overload
     def retrieve(
         self,
+        external_id: None = None,
         *,
         id: int,
         start: int = 0,
@@ -188,6 +200,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
     @overload
     def retrieve(
         self,
+        external_id: None = None,
         *,
         id: typing.Sequence[int],
         start: int = 0,
@@ -199,9 +212,8 @@ class SyncSequencesDataAPI(SyncAPIClient):
     @overload
     def retrieve(
         self,
-        *,
-        id: typing.Sequence[int] | int,
         external_id: SequenceNotStr[str] | str,
+        id: typing.Sequence[int] | int,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
@@ -229,7 +241,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
             limit (int | None): Maximum number of rows to return per sequence. Pass None to fetch all (possibly limited by 'end').
 
         Returns:
-            SequenceRows | SequenceRowsList: SequenceRows if a single identifier was given, else SequenceDataList
+            SequenceRows | SequenceRowsList: SequenceRows if a single identifier was given, else SequenceRowsList
 
         Examples:
 

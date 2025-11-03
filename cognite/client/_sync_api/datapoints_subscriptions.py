@@ -1,6 +1,6 @@
 """
 ===============================================================================
-78f40e7a27949090a0e6c70356c9f300
+9734b34ae3af0b61b4370e22f956dbe4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,14 +31,14 @@ if TYPE_CHECKING:
 class SyncDatapointsSubscriptionAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[DatapointSubscription]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[DatapointSubscription]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[DatapointSubscriptionList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[DatapointSubscriptionList]: ...
 
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
@@ -53,7 +53,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
         Yields:
             DatapointSubscription | DatapointSubscriptionList: Yields datapoint subscriptions one by one if chunk is not specified, otherwise returns a list of datapoint subscriptions.
         """
-        yield from SyncIterator(self.__async_client.time_series.subscriptions(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.time_series.subscriptions(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:
         """
@@ -291,7 +291,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
                 ignore_bad_datapoints=ignore_bad_datapoints,
                 treat_uncertain_as_bad=treat_uncertain_as_bad,
             )
-        )
+        )  # type: ignore [misc]
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatapointSubscriptionList:
         """

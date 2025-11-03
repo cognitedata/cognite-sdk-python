@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ad14ab3f96c33bdeba7358c9567da303
+06c7193c40e5f76d32f5aec09905a92a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -24,14 +24,14 @@ if TYPE_CHECKING:
 class SyncSpacesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Space]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Space]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SpaceList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[SpaceList]: ...
 
     def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Space | SpaceList]:
         """
@@ -46,7 +46,7 @@ class SyncSpacesAPI(SyncAPIClient):
         Yields:
             Space | SpaceList: yields Space one by one if chunk_size is not specified, else SpaceList objects.
         """
-        yield from SyncIterator(self.__async_client.data_modeling.spaces(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.data_modeling.spaces(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload
     def retrieve(self, spaces: str) -> Space | None: ...

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c58c6fb6020424956202225e2d5994fc
+a5de07c7a97bd83049f8d6bb125f430e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -21,7 +21,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class SyncPrincipalsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     def me(self) -> Principal:
@@ -42,39 +42,39 @@ class SyncPrincipalsAPI(SyncAPIClient):
         return run_sync(self.__async_client.iam.principals.me())
 
     @overload
-    def retrieve(self, id: str) -> Principal | None: ...
+    def retrieve(self, id: str, external_id: None = None, ignore_unknown_ids: bool = False) -> Principal | None: ...
 
     @overload
-    def retrieve(self, *, external_id: str) -> Principal | None: ...
+    def retrieve(self, id: None = None, *, external_id: str, ignore_unknown_ids: bool = False) -> Principal | None: ...
 
     @overload
-    def retrieve(self, id: SequenceNotStr[str], *, ignore_unknown_ids: bool = False) -> PrincipalList: ...
+    def retrieve(
+        self, id: SequenceNotStr[str], external_id: None = None, ignore_unknown_ids: bool = False
+    ) -> PrincipalList: ...
 
     @overload
-    def retrieve(self, *, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> PrincipalList: ...
+    def retrieve(
+        self, id: None = None, *, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> PrincipalList: ...
 
     @overload
-    def retrieve(self, id: None = None, *, ignore_unknown_ids: bool = False) -> PrincipalList: ...
-
-    @overload
-    def retrieve(self, *, external_id: None = None, ignore_unknown_ids: bool = False) -> PrincipalList: ...
+    def retrieve(
+        self, id: None = None, external_id: None = None, ignore_unknown_ids: bool = False
+    ) -> PrincipalList: ...
 
     def retrieve(
         self,
-        id: str | Sequence[str] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        id: str | SequenceNotStr[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> Principal | PrincipalList | None:
         """
         `Retrieve principal by reference in the organization <https://developer.cognite.com/api#tag/Principals/operation/getPrincipalsById>`_
 
         Args:
-            id (str | Sequence[str] | None): The ID(s) of the principal(s) to retrieve.
-            external_id (str | Sequence[str] | None): The external ID(s) of the principal to retrieve.
-            ignore_unknown_ids (bool): This is only relevant when retrieving multiple principals. If set to True,
-                the method will return the principals that were found and ignore the ones that were not found.
-                If set to False, the method will raise a CogniteAPIError if any of the
-                specified principals were not found. Defaults to False.
+            id (str | SequenceNotStr[str] | None): The ID(s) of the principal(s) to retrieve.
+            external_id (str | SequenceNotStr[str] | None): The external ID(s) of the principal to retrieve.
+            ignore_unknown_ids (bool): This is only relevant when retrieving multiple principals. If set to True, the method will return the principals that were found and ignore the ones that were not found. If set to False, the method will raise a CogniteAPIError if any of the specified principals were not found. Defaults to False.
 
         Returns:
             Principal | PrincipalList | None: The principal(s) with the specified ID(s) or external ID(s).
@@ -91,7 +91,9 @@ class SyncPrincipalsAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.iam.principals.retrieve(
-                id=id, external_id=external_id, ignore_unknown_ids=ignore_unknown_ids
+                id=id,  # type: ignore [arg-type]
+                external_id=external_id,  # type: ignore [arg-type]
+                ignore_unknown_ids=ignore_unknown_ids,
             )
         )
 
