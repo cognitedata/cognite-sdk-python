@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a28661302438648ad307b55a1e1a5010
+a0d942f5b1effd1982f1af95105b1ab6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -29,14 +29,38 @@ if TYPE_CHECKING:
 class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SimulatorRoutineRevisionList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
+        all_versions: bool = False,
+        include_all_fields: bool = False,
+        limit: int | None = None,
+        sort: PropertySort | None = None,
+    ) -> Iterator[SimulatorRoutineRevisionList]: ...
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[SimulatorRoutineRevision]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
+        all_versions: bool = False,
+        include_all_fields: bool = False,
+        limit: int | None = None,
+        sort: PropertySort | None = None,
+    ) -> Iterator[SimulatorRoutineRevision]: ...
 
     def __call__(
         self,
@@ -84,7 +108,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
                 limit=limit,
                 sort=sort,
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def retrieve(self, *, ids: int) -> SimulatorRoutineRevision | None: ...
@@ -123,7 +147,11 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
             Get simulator routine revision by external id:
                 >>> res = client.simulators.routines.revisions.retrieve(external_ids="routine_v1")
         """
-        return run_sync(self.__async_client.simulators.routines.revisions.retrieve(ids=ids, external_ids=external_ids))
+        return run_sync(
+            self.__async_client.simulators.routines.revisions.retrieve(  # type: ignore [call-overload]
+                ids=ids, external_ids=external_ids
+            )
+        )
 
     @overload
     def create(self, items: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionList: ...

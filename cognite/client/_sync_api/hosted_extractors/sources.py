@@ -1,6 +1,6 @@
 """
 ===============================================================================
-05d0853992db787473021dbdd653b725
+002adf3943e1cc02bc90f9b5bfe106b6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -24,14 +24,14 @@ if TYPE_CHECKING:
 class SyncSourcesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Source]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Source]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SourceList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[SourceList]: ...
 
     def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Source | SourceList]:
         """
@@ -46,7 +46,7 @@ class SyncSourcesAPI(SyncAPIClient):
         Yields:
             Source | SourceList: yields Source one by one if chunk_size is not specified, else SourceList objects.
         """
-        yield from SyncIterator(self.__async_client.hosted_extractors.sources(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.hosted_extractors.sources(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source: ...

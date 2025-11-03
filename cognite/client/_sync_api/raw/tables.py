@@ -1,6 +1,6 @@
 """
 ===============================================================================
-854dbb194c522a53e14d24961ede0b14
+d12a2c456dd92ebcfbac60d16f5ea51b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -21,7 +21,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class SyncRawTablesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
@@ -44,9 +44,9 @@ class SyncRawTablesAPI(SyncAPIClient):
             limit (int | None): Maximum number of tables to return. Defaults to return all items.
 
         Yields:
-            raw.Table | raw.TableList: No description.
+            raw.Table | raw.TableList: The tables in the database.
         """
-        yield from SyncIterator(self.__async_client.raw.tables(db_name=db_name, chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.raw.tables(db_name=db_name, chunk_size=chunk_size, limit=limit))  # type: ignore [call-overload]
 
     @overload
     def create(self, db_name: str, name: str) -> raw.Table: ...

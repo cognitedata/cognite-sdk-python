@@ -1,6 +1,6 @@
 """
 ===============================================================================
-48dfd1c74433af19a2a33d145cae12bb
+e2890787a3dc6ab3ec8bd3e3046b8808
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +8,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Literal, overload
+from typing import Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -20,23 +20,20 @@ from cognite.client.data_classes.extractionpipelines import ExtractionPipelineWr
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
 
 class SyncExtractionPipelinesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.runs = SyncExtractionPipelineRunsAPI(async_client)
         self.config = SyncExtractionPipelineConfigsAPI(async_client)
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[ExtractionPipeline]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[ExtractionPipeline]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[ExtractionPipelineList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[ExtractionPipelineList]: ...
 
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
@@ -51,7 +48,7 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
         Yields:
             ExtractionPipeline | ExtractionPipelineList: Yields extraction pipelines one by one or in chunks up to the chunk size.
         """
-        yield from SyncIterator(self.__async_client.extraction_pipelines(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.extraction_pipelines(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> ExtractionPipeline | None:
         """
@@ -169,6 +166,7 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> extpipes = [ExtractionPipelineWrite(name="extPipe1",...), ExtractionPipelineWrite(name="extPipe2",...)]
                 >>> res = client.extraction_pipelines.create(extpipes)
         """
@@ -230,8 +228,9 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> update = ExtractionPipelineUpdate(id=1)
                 >>> update.description.set("Another new extpipe")
                 >>> res = client.extraction_pipelines.update(update)
         """
-        return run_sync(self.__async_client.extraction_pipelines.update(item=item, mode=mode))
+        return run_sync(self.__async_client.extraction_pipelines.update(item=item, mode=mode))  # type: ignore [call-overload]

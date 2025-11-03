@@ -1,6 +1,6 @@
 """
 ===============================================================================
-bb21beeeb7ec0d88e0a4320fead5b347
+c273ba0a18e9c76e3aa1b54aec9b4d41
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 class SyncDatapointsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.synthetic = SyncSyntheticDatapointsAPI(async_client)
 
@@ -168,7 +168,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     )
         """
         yield from SyncIterator(
-            self.__async_client.time_series.data(
+            self.__async_client.time_series.data(  # type: ignore [call-overload]
                 queries=queries,
                 chunk_size_datapoints=chunk_size_datapoints,
                 chunk_size_time_series=chunk_size_time_series,
@@ -602,7 +602,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             and 'treat_uncertain_as_bad' (in the presence of uncertain/bad datapoints).
         """
         return run_sync(
-            self.__async_client.time_series.data.retrieve(
+            self.__async_client.time_series.data.retrieve(  # type: ignore [call-overload]
                 id=id,
                 external_id=external_id,
                 instance_id=instance_id,
@@ -844,7 +844,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> series = pd.Series(dps.value, index=dps.timestamp)
         """
         return run_sync(
-            self.__async_client.time_series.data.retrieve_arrays(
+            self.__async_client.time_series.data.retrieve_arrays(  # type: ignore [call-overload, misc]
                 id=id,
                 external_id=external_id,
                 instance_id=instance_id,
@@ -935,17 +935,17 @@ class SyncDatapointsAPI(SyncAPIClient):
 
         Examples:
 
-            Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints:
+            Get a pandas dataframe using a single time series external ID, with data from the last two weeks,
+            but with no more than 100 datapoints:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     id=12345,
+                ...     external_id="foo",
                 ...     start="2w-ago",
                 ...     end="now",
-                ...     limit=100,
-                ...     column_names="id")
+                ...     limit=100)
 
             Get the pandas dataframe with a uniform index (fixed spacing between points) of 1 day, for two time series with
             individually specified aggregates, from 1990 through 2020:

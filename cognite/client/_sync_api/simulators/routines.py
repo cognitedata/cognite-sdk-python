@@ -1,6 +1,6 @@
 """
 ===============================================================================
-3f63301cb49fd587302d590cf0e11794
+bfda197e25e5938c785f48313c00075f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,15 +31,29 @@ if TYPE_CHECKING:
 class SyncSimulatorRoutinesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.revisions = SyncSimulatorRoutineRevisionsAPI(async_client)
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SimulatorRoutineList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
+        sort: PropertySort | None = None,
+        limit: int | None = None,
+    ) -> Iterator[SimulatorRoutineList]: ...
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[SimulatorRoutine]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
+        sort: PropertySort | None = None,
+        limit: int | None = None,
+    ) -> Iterator[SimulatorRoutine]: ...
 
     def __call__(
         self,
@@ -72,7 +86,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 sort=sort,
                 limit=limit,
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def create(self, routine: Sequence[SimulatorRoutineWrite]) -> SimulatorRoutineList: ...
@@ -267,7 +281,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 ... )
         """
         return run_sync(
-            self.__async_client.simulators.routines.run(
+            self.__async_client.simulators.routines.run(  # type: ignore [call-overload, misc]
                 routine_external_id=routine_external_id,
                 routine_revision_external_id=routine_revision_external_id,
                 model_revision_external_id=model_revision_external_id,

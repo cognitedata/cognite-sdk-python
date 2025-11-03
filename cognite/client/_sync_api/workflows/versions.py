@@ -1,6 +1,6 @@
 """
 ===============================================================================
-fc7deade2d4c65533947f757d573caca
+18f05a20017347f9404c717b1967a4d9
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -30,14 +30,24 @@ if TYPE_CHECKING:
 class SyncWorkflowVersionAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[WorkflowVersion]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
+        limit: int | None = None,
+    ) -> Iterator[WorkflowVersion]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[WorkflowVersionList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
+        limit: int | None = None,
+    ) -> Iterator[WorkflowVersionList]: ...
 
     def __call__(
         self,
@@ -60,7 +70,7 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
             self.__async_client.workflows.versions(
                 chunk_size=chunk_size, workflow_version_ids=workflow_version_ids, limit=limit
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def upsert(self, version: WorkflowVersionUpsert) -> WorkflowVersion: ...
@@ -110,7 +120,9 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
                 ... )
                 >>> res = client.workflows.versions.upsert(new_version)
         """
-        return run_sync(self.__async_client.workflows.versions.upsert(version=version, mode=mode))
+        return run_sync(
+            self.__async_client.workflows.versions.upsert(version=version, mode=mode)  # type: ignore [call-overload]
+        )
 
     def delete(
         self,
@@ -189,7 +201,7 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
                 >>> res = client.workflows.versions.retrieve([("my_workflow", "v1"), ("other", "v3.2")])
         """
         return run_sync(
-            self.__async_client.workflows.versions.retrieve(
+            self.__async_client.workflows.versions.retrieve(  # type: ignore [call-overload]
                 workflow_external_id=workflow_external_id, ignore_unknown_ids=ignore_unknown_ids
             )
         )

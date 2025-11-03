@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class SyncGroupsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     def list(self, all: bool = False) -> GroupList:

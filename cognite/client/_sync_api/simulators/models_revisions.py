@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9391dfeb7797dd05db353b555112b6d1
+14c67285faad25a6c281c149a9957a39
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     def list(
@@ -136,13 +136,35 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
                 ...     external_ids=["revision1", "revision2"]
                 ... )
         """
-        return run_sync(self.__async_client.simulators.models.revisions.retrieve(ids=ids, external_ids=external_ids))
+        return run_sync(
+            self.__async_client.simulators.models.revisions.retrieve(  # type: ignore [call-overload]
+                ids=ids, external_ids=external_ids
+            )
+        )
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SimulatorModelRevisionList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        sort: PropertySort | None = None,
+        model_external_ids: str | SequenceNotStr[str] | None = None,
+        all_versions: bool | None = None,
+        created_time: TimestampRange | None = None,
+        last_updated_time: TimestampRange | None = None,
+        limit: int | None = None,
+    ) -> Iterator[SimulatorModelRevisionList]: ...
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[SimulatorModelRevision]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        sort: PropertySort | None = None,
+        model_external_ids: str | SequenceNotStr[str] | None = None,
+        all_versions: bool | None = None,
+        created_time: TimestampRange | None = None,
+        last_updated_time: TimestampRange | None = None,
+        limit: int | None = None,
+    ) -> Iterator[SimulatorModelRevision]: ...
 
     def __call__(
         self,
@@ -181,7 +203,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
                 last_updated_time=last_updated_time,
                 limit=limit,
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def create(self, items: SimulatorModelRevisionWrite) -> SimulatorModelRevision: ...

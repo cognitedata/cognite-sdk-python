@@ -1,6 +1,6 @@
 """
 ===============================================================================
-6ca49a702912a31decfb46b9c6b61e22
+c97713e5931c9cacbe0926bbbc72ebf1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,14 +31,14 @@ if TYPE_CHECKING:
 class SyncJobsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Job]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Job]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[JobList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[JobList]: ...
 
     def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Job | JobList]:
         """
@@ -53,7 +53,7 @@ class SyncJobsAPI(SyncAPIClient):
         Yields:
             Job | JobList: yields Job one by one if chunk_size is not specified, else JobList objects.
         """
-        yield from SyncIterator(self.__async_client.hosted_extractors.jobs(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.hosted_extractors.jobs(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Job | None: ...

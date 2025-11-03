@@ -1,6 +1,6 @@
 """
 ===============================================================================
-06bccd4498118fae6c78fda684de0367
+afc2371ca320504840f1ea23749ad340
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -21,14 +21,14 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class SyncRawDatabasesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Database]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Database]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[DatabaseList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[DatabaseList]: ...
 
     def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Database | DatabaseList]:
         """
@@ -43,7 +43,7 @@ class SyncRawDatabasesAPI(SyncAPIClient):
         Yields:
             Database | DatabaseList: No description.
         """
-        yield from SyncIterator(self.__async_client.raw.databases(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.raw.databases(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload
     def create(self, name: str) -> Database: ...

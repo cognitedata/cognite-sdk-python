@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f9f881cace1e6f653087b987c4df3c92
+7a974edffeb45e797a86974a7be0a9fd
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -40,16 +40,38 @@ if TYPE_CHECKING:
 class SyncFunctionsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.calls = SyncFunctionCallsAPI(async_client)
         self.schedules = SyncFunctionSchedulesAPI(async_client)
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Function]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        owner: str | None = None,
+        file_id: int | None = None,
+        status: FunctionStatus | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
+        metadata: dict[str, str] | None = None,
+        limit: int | None = None,
+    ) -> Iterator[Function]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[FunctionList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        owner: str | None = None,
+        file_id: int | None = None,
+        status: FunctionStatus | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
+        metadata: dict[str, str] | None = None,
+        limit: int | None = None,
+    ) -> Iterator[FunctionList]: ...
 
     def __call__(
         self,
@@ -92,7 +114,7 @@ class SyncFunctionsAPI(SyncAPIClient):
                 metadata=metadata,
                 limit=limit,
             )
-        )
+        )  # type: ignore [misc]
 
     def create(
         self,

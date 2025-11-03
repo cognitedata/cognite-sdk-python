@@ -19,7 +19,7 @@ from cognite.client.utils._async_helpers import run_sync
 class SyncDocumentPreviewAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     def download_page_as_png_bytes(self, id: int, page_number: int = 1) -> bytes:

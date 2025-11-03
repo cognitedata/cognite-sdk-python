@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a09b74dddecf74bb06f572649b34a8bc
+0bcb347430e304e93341a4f9c5fe285d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -34,15 +34,27 @@ if TYPE_CHECKING:
 class SyncDocumentsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.previews = SyncDocumentPreviewAPI(async_client)
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[DocumentList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        filter: Filter | dict[str, Any] | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
+        limit: int | None = None,
+    ) -> Iterator[DocumentList]: ...
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Document]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
+        limit: int | None = None,
+    ) -> Iterator[Document]: ...
 
     def __call__(
         self,
@@ -67,7 +79,7 @@ class SyncDocumentsAPI(SyncAPIClient):
         """
         yield from SyncIterator(
             self.__async_client.documents(chunk_size=chunk_size, filter=filter, sort=sort, limit=limit)
-        )
+        )  # type: ignore [misc]
 
     def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
         """
@@ -407,7 +419,7 @@ class SyncDocumentsAPI(SyncAPIClient):
                 ...     filter=filters.And(is_plain_text, last_week))
         """
         return run_sync(
-            self.__async_client.documents.search(
+            self.__async_client.documents.search(  # type: ignore [call-overload]
                 query=query, highlight=highlight, filter=filter, sort=sort, limit=limit
             )
         )

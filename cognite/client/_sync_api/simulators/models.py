@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ca070d285539cd38d07de5a0322d3737
+e80f07500a5af7917099bb7920466a93
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 class SyncSimulatorModelsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.revisions = SyncSimulatorModelRevisionsAPI(async_client)
 
@@ -126,13 +126,29 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
                 ...     external_ids=["model_external_id", "model_external_id2"]
                 ... )
         """
-        return run_sync(self.__async_client.simulators.models.retrieve(ids=ids, external_ids=external_ids))
+        return run_sync(
+            self.__async_client.simulators.models.retrieve(  # type: ignore [call-overload]
+                ids=ids, external_ids=external_ids
+            )
+        )
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[SimulatorModel]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        sort: PropertySort | None = None,
+        limit: int | None = None,
+    ) -> Iterator[SimulatorModel]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SimulatorModelList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        sort: PropertySort | None = None,
+        limit: int | None = None,
+    ) -> Iterator[SimulatorModelList]: ...
 
     def __call__(
         self,
@@ -159,7 +175,7 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
             self.__async_client.simulators.models(
                 chunk_size=chunk_size, simulator_external_ids=simulator_external_ids, sort=sort, limit=limit
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def create(self, items: SimulatorModelWrite) -> SimulatorModel: ...
