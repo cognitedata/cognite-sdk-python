@@ -1,6 +1,6 @@
 """
 ===============================================================================
-60c7e539a4068a90816b0ff964f3d4ab
+0026f6b158dc7071435a050073fd1cc4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -30,7 +30,7 @@ from cognite.client.data_classes import ClientCredentials
 class SyncWorkflowExecutionAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:

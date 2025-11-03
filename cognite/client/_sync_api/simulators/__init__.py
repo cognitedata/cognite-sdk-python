@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a7c293e0cee8a18b88bd0f3649a337a3
+eb1fc55c443dd7db6176dfbb5d63ebe4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 class SyncSimulatorsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.integrations = SyncSimulatorIntegrationsAPI(async_client)
         self.models = SyncSimulatorModelsAPI(async_client)
@@ -37,10 +37,10 @@ class SyncSimulatorsAPI(SyncAPIClient):
         self.logs = SyncSimulatorLogsAPI(async_client)
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Simulator]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Simulator]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SimulatorList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[SimulatorList]: ...
 
     def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Simulator | SimulatorList]:
         """
@@ -55,7 +55,7 @@ class SyncSimulatorsAPI(SyncAPIClient):
         Yields:
             Simulator | SimulatorList: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
         """
-        yield from SyncIterator(self.__async_client.simulators(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.simulators(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SimulatorList:
         """

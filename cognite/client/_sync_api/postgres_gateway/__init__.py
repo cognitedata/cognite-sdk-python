@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class SyncPostgresGatewaysAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.users = SyncUsersAPI(async_client)
         self.tables = SyncTablesAPI(async_client)

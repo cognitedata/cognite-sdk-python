@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8a906daccdda7758e212ecd40d2ec2c4
+663f277da9fcdf91e14171e7323033c6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 class SyncTransformationsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.jobs = SyncTransformationJobsAPI(async_client)
         self.schedules = SyncTransformationSchedulesAPI(async_client)
@@ -43,10 +43,42 @@ class SyncTransformationsAPI(SyncAPIClient):
         self.notifications = SyncTransformationNotificationsAPI(async_client)
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Transformation]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        include_public: bool = True,
+        name_regex: str | None = None,
+        query_regex: str | None = None,
+        destination_type: str | None = None,
+        conflict_mode: str | None = None,
+        cdf_project_name: str | None = None,
+        has_blocked_error: bool | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: int | list[int] | None = None,
+        data_set_external_ids: str | list[str] | None = None,
+        tags: TagsFilter | None = None,
+        limit: int | None = None,
+    ) -> Iterator[Transformation]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[TransformationList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        include_public: bool = True,
+        name_regex: str | None = None,
+        query_regex: str | None = None,
+        destination_type: str | None = None,
+        conflict_mode: str | None = None,
+        cdf_project_name: str | None = None,
+        has_blocked_error: bool | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: int | list[int] | None = None,
+        data_set_external_ids: str | list[str] | None = None,
+        tags: TagsFilter | None = None,
+        limit: int | None = None,
+    ) -> Iterator[TransformationList]: ...
 
     def __call__(
         self,
@@ -104,7 +136,7 @@ class SyncTransformationsAPI(SyncAPIClient):
                 tags=tags,
                 limit=limit,
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def create(self, transformation: Transformation | TransformationWrite) -> Transformation: ...

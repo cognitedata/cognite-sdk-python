@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e069532ec367104abca73d4fad0704ab
+2eeafaf74ac7aa45106adf1f3e6ad610
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -26,14 +26,32 @@ from cognite.client.utils._async_helpers import SyncIterator, run_sync
 class SyncFunctionSchedulesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[FunctionSchedule]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        cron_expression: str | None = None,
+        limit: int | None = None,
+    ) -> Iterator[FunctionSchedule]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[FunctionSchedulesList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        cron_expression: str | None = None,
+        limit: int | None = None,
+    ) -> Iterator[FunctionSchedulesList]: ...
 
     def __call__(
         self,
@@ -70,7 +88,7 @@ class SyncFunctionSchedulesAPI(SyncAPIClient):
                 cron_expression=cron_expression,
                 limit=limit,
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def retrieve(self, id: int, ignore_unknown_ids: bool = False) -> FunctionSchedule | None: ...

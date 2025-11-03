@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 class SyncIAMAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.groups = SyncGroupsAPI(async_client)
         self.security_categories = SyncSecurityCategoriesAPI(async_client)
