@@ -6,13 +6,13 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from unittest import mock
+from zoneinfo import ZoneInfo
 
 import pytest
 
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
-    ZoneInfo,
     convert_and_isoformat_time_attrs,
     convert_data_modeling_timestamp,
     datetime_to_ms,

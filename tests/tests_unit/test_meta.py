@@ -117,3 +117,12 @@ def test_POST_endpoint_idempotency_vs_retries(api: str, apis_matching_non_idempo
             "You'll need to either remove it from the whitelist or from "
             "NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN."
         )
+
+
+def test_constants_are_importable() -> None:
+    # Extractor utils using extractor_extensions/v1.py has a legit use case for needing the OMITTED singleton.
+    # Thus this test is here to ensure we don't accidentally move it or break it.
+    # Do not change this test without doing new major version release!!
+    from cognite.client._constants import OMITTED, Omitted
+
+    assert isinstance(OMITTED, Omitted)
