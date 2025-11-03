@@ -25,7 +25,7 @@ from cognite.client.utils._text import copy_doc_from_async
 from cognite.client.utils._time import ms_to_datetime
 
 if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
+    from cognite.client import AsyncCogniteClient, CogniteClient
 
 RunTime: TypeAlias = Literal["py310", "py311", "py312"]
 FunctionStatus: TypeAlias = Literal["Queued", "Deploying", "Ready", "Failed"]
@@ -61,7 +61,8 @@ class FunctionHandle(Protocol):
     async def __call__(
         self,
         *,
-        client: AsyncCogniteClient | None = None,
+        # TODO(haakonvt): change to CogniteClient | AsyncCogniteClient when/if functions start supporting it
+        client: CogniteClient | None = None,
         data: dict[str, object] | None = None,
         secrets: dict[str, str] | None = None,
         function_call_info: dict[str, object] | None = None,
@@ -69,7 +70,7 @@ class FunctionHandle(Protocol):
         """Function handle protocol.
 
         Args:
-            client (AsyncCogniteClient | None): Cognite client.
+            client (CogniteClient | None): Cognite client.
             data (dict[str, object] | None): Input data to the function.
             secrets (dict[str, str] | None): Secrets passed to the function.
             function_call_info (dict[str, object] | None): Function call information.

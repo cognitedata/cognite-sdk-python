@@ -613,6 +613,7 @@ class FileMultipartUploadSession(
         self._check_errors_before_completing(exc_type)
         await self._cognite_client.files._complete_multipart_upload(self)
         self._upload_is_finalized = True
+        return None
 
     def __enter__(self) -> Self:
         if self._upload_is_finalized:
@@ -621,9 +622,9 @@ class FileMultipartUploadSession(
 
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
-    ) -> bool | None:
+    ) -> None:
         if exc_type is not None:
-            return False
+            return
 
         self._check_errors_before_completing(exc_type)
         run_sync(self._cognite_client.files._complete_multipart_upload(self))

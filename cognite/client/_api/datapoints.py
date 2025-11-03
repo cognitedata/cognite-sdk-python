@@ -410,10 +410,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         # we can then queue.
         return sem._value > 0
 
-    def _combine_subtasks_into_new_request(
-        self,
-    ) -> tuple[dict[str, list], list[BaseDpsFetchSubtask]]:
-        next_items = []
+    def _combine_subtasks_into_new_request(self) -> tuple[dict[str, list], list[BaseDpsFetchSubtask]]:
+        next_items: list[dict[str, Any]] = []
         next_subtasks: list[BaseDpsFetchSubtask] = []
         fetch_limits = (self.dps_client._DPS_LIMIT_AGG, self.dps_client._DPS_LIMIT_RAW)
 
@@ -1526,17 +1524,17 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints:
+            Get a pandas dataframe using a single time series external ID, with data from the last two weeks,
+            but with no more than 100 datapoints:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     id=12345,
+                ...     external_id="foo",
                 ...     start="2w-ago",
                 ...     end="now",
-                ...     limit=100,
-                ...     column_names="id")
+                ...     limit=100)
 
             Get the pandas dataframe with a uniform index (fixed spacing between points) of 1 day, for two time series with
             individually specified aggregates, from 1990 through 2020:
@@ -2223,7 +2221,7 @@ class DatapointsAPI(APIClient):
                         f"Column identifiers must be either 'int' (ID), 'str' (external ID), or 'NodeId' "
                         f"(or 2-tuple (space, ext. ID)) (instance ID), not {type(column_id)}"
                     )
-        await self.insert_multiple(dps)
+        await self.insert_multiple(dps)  # type: ignore[arg-type]
 
     def _select_dps_fetch_strategy(self, queries: list[DatapointsQuery]) -> type[DpsFetchStrategy]:
         semaphore = get_global_datapoints_semaphore()
@@ -2232,7 +2230,7 @@ class DatapointsAPI(APIClient):
         # max concurrency we allow for datapoints requests. When the number of time series is small enough
         # to fit within the semaphore limit, all time series can have their separate request initially;
         # (these fetch tasks will dynamically split based on density, in order to make full use of the "pool"):
-        if len(queries) <= semaphore._bound_value:
+        if len(queries) <= semaphore._bound_value:  # type: ignore[attr-defined]
             return EagerDpsFetcher
         # Fetch a smaller, chunked batch of dps from all time series - which allows us to do some rudimentary
         # guesstimation of dps density - then chunk away:
