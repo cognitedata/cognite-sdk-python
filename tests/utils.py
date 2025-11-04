@@ -90,6 +90,8 @@ def get_wrapped_async_client(client: CogniteClient) -> AsyncCogniteClient:
 
 def get_url(api: APIClient, path: str = "") -> str:
     """Test helper to get the full URL for a given API + path (mostly to improve readability)"""
+    if path:
+        assert path.startswith("/"), "Path must start with /"
     return api._base_url_with_base_path + path
 
 
