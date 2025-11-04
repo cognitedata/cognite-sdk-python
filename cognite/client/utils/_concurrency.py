@@ -1,23 +1,33 @@
 from __future__ import annotations
 
 import asyncio
-import functools
 import threading
 import warnings
 from collections import UserList
-from collections.abc import Callable, Coroutine, Sequence
-from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, as_completed
+from collections.abc import Callable, Coroutine
+from functools import cache
 from typing import (
     Any,
-    Literal,
     NoReturn,
-    Protocol,
     TypeVar,
+    cast,
 )
 
 from cognite.client._constants import _RUNNING_IN_BROWSER
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import no_op
+
+
+@cache
+def get_global_semaphore() -> asyncio.BoundedSemaphore:
+    from cognite.client import global_config
+
+    return asyncio.BoundedSemaphore(global_config.max_workers)
+
+
+@cache
+def get_global_data_modeling_semaphore() -> asyncio.BoundedSemaphore:
+    return asyncio.BoundedSemaphore(2)
 
 
 class TasksSummary:
