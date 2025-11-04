@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import random
 import time
 import warnings
 from abc import ABC, abstractmethod
@@ -105,42 +107,42 @@ class ContextualizationJob(CogniteResource, ABC):
         self.job_token: str | None = None
 
     @abstractmethod
-    def update_status(self) -> str:
+    async def update_status(self) -> str:
         raise NotImplementedError
 
     @abstractmethod
     def _status_path(self) -> str:
         raise NotImplementedError
 
-    def wait_for_completion(self, timeout: float | None = None, interval: float = 1) -> None:
+    async def wait_for_completion(self, timeout: float | None = None, interval: float = 10) -> None:
         """Waits for job completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
             timeout (float | None): Time out after this many seconds. (None means wait indefinitely)
-            interval (float): Poll status every this many seconds.
+            interval (float): Influence how often to poll status (seconds).
 
         Raises:
             ModelFailedException: The model fit failed.
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
-            self.update_status()
+            await self.update_status()
             if JobStatus(self.status).is_finished():
                 break
-            time.sleep(interval)
-        if JobStatus(self.status) is JobStatus.FAILED:
-            raise ModelFailedException(self.__class__.__name__, self.job_id, cast(str, self.error_message))
+            await asyncio.sleep(max(1, random.uniform(0, interval)))
 
-    @property
-    def result(self) -> dict[str, Any]:
+        if JobStatus(self.status) is JobStatus.FAILED:
+            raise ModelFailedException(type(self).__name__, self.job_id, cast(str, self.error_message))
+
+    async def wait_for_result(self) -> dict[str, Any]:
         """Waits for the job to finish and returns the results."""
         if not self._result:
-            self.wait_for_completion()
+            await self.wait_for_completion()
         assert self._result is not None
         return self._result
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.job_id}, status={self.status}, error={self.error_message})"
+        return f"{type(self).__name__}(id={self.job_id}, status={self.status}, error={self.error_message})"
 
     @classmethod
     def _load_with_job_token(
@@ -220,11 +222,11 @@ class EntityMatchingModel(CogniteResource):
         )
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id}, status={self.status}, error={self.error_message})"
+        return f"{type(self).__name__}(id={self.id}, status={self.status}, error={self.error_message})"
 
-    def update_status(self) -> str:
+    async def update_status(self) -> str:
         """Updates the model status and returns it"""
-        data = self._cognite_client.entity_matching._get(f"{self._STATUS_PATH}{self.id}").json()
+        data = (await self._cognite_client.entity_matching._get(f"{self._STATUS_PATH}{self.id}")).json()
         self.status = data["status"]
         self.status_time = data.get("statusTime")
         self.start_time = data.get("startTime")
@@ -233,35 +235,39 @@ class EntityMatchingModel(CogniteResource):
         assert self.status is not None
         return self.status
 
-    def wait_for_completion(self, timeout: int | None = None, interval: int = 1) -> None:
+    async def wait_for_completion(self, timeout: int | None = None, interval: int = 10) -> None:
         """Waits for model completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
             timeout (int | None): Time out after this many seconds. (None means wait indefinitely)
-            interval (int): Poll status every this many seconds.
+            interval (int): Influence how often to poll status (seconds).
 
         Raises:
             ModelFailedException: The model fit failed.
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
-            self.update_status()
+            await self.update_status()
             if JobStatus(self.status) not in [JobStatus.QUEUED, JobStatus.RUNNING]:
                 break
-            time.sleep(interval)
+            await asyncio.sleep(max(1, random.uniform(0, interval)))
+
         if JobStatus(self.status) is JobStatus.FAILED:
             assert self.id is not None
             assert self.error_message is not None
-            raise ModelFailedException(self.__class__.__name__, self.id, self.error_message)
+            raise ModelFailedException(type(self).__name__, self.id, self.error_message)
 
-    def predict(
+    async def predict(
         self,
         sources: list[dict] | None = None,
         targets: list[dict] | None = None,
         num_matches: int = 1,
         score_threshold: float | None = None,
     ) -> EntityMatchingPredictionResult:
-        """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
+        """Predict entity matching.
+
+        Note:
+            Blocks and waits for the model to be ready if it has been recently created.
 
         Args:
             sources (list[dict] | None): entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
@@ -271,7 +277,7 @@ class EntityMatchingModel(CogniteResource):
 
         Returns:
             EntityMatchingPredictionResult: object which can be used to wait for and retrieve results."""
-        self.wait_for_completion()
+        await self.wait_for_completion()
         json = {
             "id": self.id,
             "sources": self._dump_entities(sources),
@@ -279,14 +285,14 @@ class EntityMatchingModel(CogniteResource):
             "numMatches": num_matches,
             "scoreThreshold": score_threshold,
         }
-        response = self._cognite_client.entity_matching._post(f"{self._RESOURCE_PATH}/predict", json=json)
+        response = await self._cognite_client.entity_matching._post(f"{self._RESOURCE_PATH}/predict", json=json)
         return EntityMatchingPredictionResult._load_with_job_token(
             data=response.json(),
             headers=response.headers,
             cognite_client=self._cognite_client,
         )
 
-    def refit(self, true_matches: Sequence[dict | tuple[int | str, int | str]]) -> EntityMatchingModel:
+    async def refit(self, true_matches: Sequence[dict | tuple[int | str, int | str]]) -> EntityMatchingModel:
         """Re-fits an entity matching model, using the combination of the old and new true matches.
 
         Args:
@@ -294,8 +300,8 @@ class EntityMatchingModel(CogniteResource):
         Returns:
             EntityMatchingModel: new model refitted to true_matches."""
         true_matches = [convert_true_match(true_match) for true_match in true_matches]
-        self.wait_for_completion()
-        response = self._cognite_client.entity_matching._post(
+        await self.wait_for_completion()
+        response = await self._cognite_client.entity_matching._post(
             self._RESOURCE_PATH + "/refit", json={"trueMatches": true_matches, "id": self.id}
         )
         return self._load(response.json(), cognite_client=self._cognite_client)
@@ -492,11 +498,11 @@ class DiagramConvertResults(ContextualizationJob):
     def _status_path(self) -> str:
         return f"/context/diagram/convert/{self.job_id}"
 
-    def update_status(self) -> str:
+    async def update_status(self) -> str:
         """Updates the model status and returns it"""
         job_token = self.job_token
         headers = {"X-Job-Token": job_token} if job_token else {}
-        resource = self._cognite_client.diagrams._get(self._status_path(), headers=headers).json()
+        resource = (await self._cognite_client.diagrams._get(self._status_path(), headers=headers)).json()
         self.__init__(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -611,10 +617,10 @@ class DiagramDetectResults(ContextualizationJob):
     def _status_path(self) -> str:
         return f"/context/diagram/detect/{self.job_id}"
 
-    def update_status(self) -> str:
+    async def update_status(self) -> str:
         job_token = self.job_token
         headers = {"X-Job-Token": job_token} if job_token else {}
-        resource = self._cognite_client.diagrams._get(self._status_path(), headers=headers).json()
+        resource = (await self._cognite_client.diagrams._get(self._status_path(), headers=headers)).json()
         self.__init__(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -645,14 +651,14 @@ class DiagramDetectResults(ContextualizationJob):
             raise IndexError(f"Found multiple results for file with (external) id {find_id}, use .items instead")
         return found[0]
 
-    @property
-    def errors(self) -> list[str]:
+    async def errors(self) -> list[str]:
         """Returns a list of all error messages across files"""
-        return [item["errorMessage"] for item in self.result["items"] if "errorMessage" in item]
+        results = (await self.wait_for_result())["items"]
+        return [item["errorMessage"] async for item in results if "errorMessage" in item]
 
-    def convert(self) -> DiagramConvertResults:
+    async def convert(self) -> DiagramConvertResults:
         """Convert a P&ID to an interactive SVG where the provided annotations are highlighted"""
-        return self._cognite_client.diagrams.convert(detect_job=self)
+        return await self._cognite_client.diagrams.convert(detect_job=self)
 
 
 # Vision dataclasses
@@ -897,7 +903,7 @@ class DetectJobBundle:
         if self._WAIT_TIME < 10:
             self._WAIT_TIME += 2
 
-    def wait_for_completion(self, timeout: int | None = None) -> None:
+    async def wait_for_completion(self, timeout: int | None = None) -> None:
         """Waits for all jobs to complete, generally not needed to call as it is called by result.
 
         Args:
@@ -907,7 +913,9 @@ class DetectJobBundle:
         self._remaining_job_ids = self.job_ids
         while timeout is None or time.time() < start + timeout:
             try:
-                res = self._cognite_client.diagrams._post(self._STATUS_PATH, json={"items": self._remaining_job_ids})
+                res = await self._cognite_client.diagrams._post(
+                    self._STATUS_PATH, json={"items": self._remaining_job_ids}
+                )
             except CogniteAPIError:
                 self._back_off()
                 continue
@@ -924,16 +932,15 @@ class DetectJobBundle:
                 self._WAIT_TIME = 2
                 break
 
-    def fetch_results(self) -> list[dict[str, Any]]:
-        return [self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids]
+    async def fetch_results(self) -> list[dict[str, Any]]:
+        return [(await self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}")).json() for j in self.job_ids]
 
-    @property
-    def result(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    async def wait_for_result(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Waits for the job to finish and returns the results."""
         if not self._result:
-            self.wait_for_completion()
+            await self.wait_for_completion()
 
-            self._result = self.fetch_results()
+            self._result = await self.fetch_results()
         assert self._result is not None
         # Sort into succeeded and failed
         failed: list[dict[str, Any]] = []
@@ -1070,8 +1077,8 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             cognite_client=cognite_client,
         )
 
-    def update_status(self) -> str:
-        resource = self._cognite_client.vision._get(self._status_path()).json()
+    async def update_status(self) -> str:
+        resource = (await self._cognite_client.vision._get(self._status_path())).json()
         self.__init__(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -1099,10 +1106,10 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             raise IndexError(f"File with id {file_id} not found in results")
         return found[0]
 
-    @property
-    def errors(self) -> list[str]:
+    async def errors(self) -> list[str]:
         """Returns a list of all error messages across files"""
-        return [item["errorMessage"] for item in self.result["items"] if "errorMessage" in item]
+        results = (await self.wait_for_result())["items"]
+        return [item["errorMessage"] async for item in results if "errorMessage" in item]
 
     def _predictions_to_annotations(
         self,
@@ -1149,7 +1156,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
 
         return annotations
 
-    def save_predictions(
+    async def save_predictions(
         self,
         creating_user: str,
         creating_app: str | None = None,
@@ -1172,8 +1179,9 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
                 creating_user=creating_user, creating_app=creating_app, creating_app_version=creating_app_version
             )
 
-            return self._cognite_client.annotations.suggest(annotations=annotations if annotations else [])
+            return await self._cognite_client.annotations.suggest(annotations=annotations if annotations else [])
 
+        # TODO: Raise a specific exception here
         raise CogniteException(
             "Extract job is not completed. If the job is queued or running, wait for completion and try again"
         )
@@ -1216,11 +1224,11 @@ class EntityMatchingPredictionResult(ContextualizationJob):
     def _status_path(self) -> str:
         return f"/context/entitymatching/jobs/{self.job_id}"
 
-    def update_status(self) -> str:
+    async def update_status(self) -> str:
         """Updates the model status and returns it"""
         job_token = self.job_token
         headers = {"X-Job-Token": job_token} if job_token else {}
-        resource = self._cognite_client.entity_matching._get(self._status_path(), headers=headers).json()
+        resource = (await self._cognite_client.entity_matching._get(self._status_path(), headers=headers)).json()
         self.__init__(
             job_id=resource["jobId"],
             status=resource["status"],
