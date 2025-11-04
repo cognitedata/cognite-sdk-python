@@ -701,7 +701,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         token_url (str): OAuth token url
         client_id (str): Your application's client id.
         client_secret (str): Your application's client secret
-        scopes (list[str]): A list of scopes.
+        scopes (list[str] | None): A list of scopes.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
         **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
@@ -724,7 +724,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         token_url: str,
         client_id: str,
         client_secret: str,
-        scopes: list[str],
+        scopes: list[str] | None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
         **token_custom_args: Any,
     ) -> None:
@@ -776,7 +776,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         return self.__client_secret
 
     @property
-    def scopes(self) -> list[str]:
+    def scopes(self) -> list[str] | None:
         return self.__scopes
 
     @property
