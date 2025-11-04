@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.89.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.88.0...v7.89.0) (2025-11-04)
+
+
+### Features
+
+* **simint-alpha:** add kind=long routines support ([#2388](https://github.com/cognitedata/cognite-sdk-python/issues/2388)) ([e9e2c9e](https://github.com/cognitedata/cognite-sdk-python/commit/e9e2c9ee7965aed71b1b8db4f609ab3cb17a7e22))
+
 ## [7.88.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.87.0...v7.88.0) (2025-10-22)
 
 
