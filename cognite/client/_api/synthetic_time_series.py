@@ -10,7 +10,7 @@ from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, 
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.time_series import TimeSeriesCore
 from cognite.client.utils._auxiliary import is_unlimited
-from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._time import timestamp_to_ms
@@ -48,7 +48,7 @@ class SyntheticDatapointsAPI(APIClient):
         self._DPS_LIMIT_SYNTH = 10_000
 
     @overload
-    def query(
+    async def query(
         self,
         expressions: SequenceNotStr[str] | SequenceNotStr[sympy.Basic],
         start: int | str | datetime,
@@ -62,7 +62,7 @@ class SyntheticDatapointsAPI(APIClient):
     ) -> DatapointsList: ...
 
     @overload
-    def query(
+    async def query(
         self,
         expressions: str | sympy.Basic,
         start: int | str | datetime,
@@ -75,7 +75,7 @@ class SyntheticDatapointsAPI(APIClient):
         target_unit_system: str | None = None,
     ) -> Datapoints: ...
 
-    def query(
+    async def query(
         self,
         expressions: str | sympy.Basic | Sequence[str] | Sequence[sympy.Basic],
         start: int | str | datetime,
@@ -160,20 +160,21 @@ class SyntheticDatapointsAPI(APIClient):
             query = {"expression": expression, "start": timestamp_to_ms(start), "end": timestamp_to_ms(end)}
             # NOTE / TODO: We misuse the 'external_id' field for the entire 'expression string':
             query_datapoints = Datapoints(external_id=short_expression, value=[], error=[])
-            tasks.append((query, query_datapoints, limit))
+            tasks.append(AsyncSDKTask(self._fetch_datapoints, query, query_datapoints, limit))
 
-        datapoints_summary = execute_tasks(self._fetch_datapoints, tasks)
+        datapoints_summary = await execute_async_tasks(tasks)
         datapoints_summary.raise_compound_exception_if_failed_tasks()
         return (
+            # TODO: Using .results here may need to be changed to .joined_results()
             DatapointsList(datapoints_summary.results, cognite_client=self._cognite_client)
             if not single_expr
             else datapoints_summary.results[0]
         )
 
-    def _fetch_datapoints(self, query: dict[str, Any], datapoints: Datapoints, limit: int) -> Datapoints:
+    async def _fetch_datapoints(self, query: dict[str, Any], datapoints: Datapoints, limit: int) -> Datapoints:
         while True:
             query["limit"] = min(limit, self._DPS_LIMIT_SYNTH)
-            resp = self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
+            resp = await self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
             data = resp.json()["items"][0]
             datapoints._extend(Datapoints._load_from_synthetic(data))
             limit -= (n_fetched := len(data["datapoints"]))
