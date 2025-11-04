@@ -14,7 +14,7 @@ from typing import (
     overload,
 )
 
-from cognite.client._basic_api_client import BasicAPIClient
+from cognite.client._basic_api_client import BasicAsyncAPIClient
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
@@ -56,10 +56,10 @@ T = TypeVar("T", bound=CogniteObject)
 VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"}
 
 
-class APIClient(BasicAPIClient):
+class APIClient(BasicAsyncAPIClient):
     _RESOURCE_PATH: str
 
-    def _retrieve(
+    async def _retrieve(
         self,
         identifier: IdentifierCore,
         cls: type[T_CogniteResource],
@@ -69,7 +69,7 @@ class APIClient(BasicAPIClient):
     ) -> T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
-            res = self._get(
+            res = await self._get(
                 url_path=interpolate_and_url_encode(resource_path + "/{}", str(identifier.as_primitive())),
                 params=params,
                 headers=headers,
@@ -81,7 +81,7 @@ class APIClient(BasicAPIClient):
         return None
 
     @overload
-    def _retrieve_multiple(
+    async def _retrieve_multiple(
         self,
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
@@ -97,7 +97,7 @@ class APIClient(BasicAPIClient):
     ) -> T_CogniteResource | None: ...
 
     @overload
-    def _retrieve_multiple(
+    async def _retrieve_multiple(
         self,
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
@@ -112,7 +112,7 @@ class APIClient(BasicAPIClient):
         semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList: ...
 
-    def _retrieve_multiple(
+    async def _retrieve_multiple(
         self,
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
@@ -249,12 +249,15 @@ class APIClient(BasicAPIClient):
                 params["cursor"] = next_cursor
 
             if method == "GET":
-                res = self._get(url_path=url_path, params=params, headers=headers)
+                res = await self._get(url_path=url_path, params=params, headers=headers, semaphore=semaphore)
             else:
-                res = self._post(url_path=url_path, json=params, headers=headers, api_subversion=api_subversion)
+                res = await self._post(
+                    url_path=url_path, json=params, headers=headers, api_subversion=api_subversion, semaphore=semaphore
+                )
 
             response = res.json()
-            yield from self._process_into_chunks(response, chunk_size, resource_cls, list_cls, unprocessed_items)
+            for chunk in self._process_into_chunks(response, chunk_size, resource_cls, list_cls, unprocessed_items):
+                yield chunk
 
             next_cursor = response.get("nextCursor")
             total_retrieved += len(response["items"])
@@ -263,7 +266,7 @@ class APIClient(BasicAPIClient):
                     yield list_cls._load(unprocessed_items, cognite_client=self._cognite_client)
                 break
 
-    def _list_generator_raw_responses(
+    async def _list_generator_raw_responses(
         self,
         method: Literal["GET", "POST"],
         settings_forcing_raw_response_loading: list[str],
@@ -305,9 +308,11 @@ class APIClient(BasicAPIClient):
 
             params.update(limit=current_limit, cursor=next_cursor)
             if method == "GET":
-                res = self._get(url_path=url_path, params=params, headers=headers)
+                res = await self._get(url_path=url_path, params=params, headers=headers, semaphore=semaphore)
             else:
-                res = self._post(url_path=url_path, json=params, headers=headers, api_subversion=api_subversion)
+                res = await self._post(
+                    url_path=url_path, json=params, headers=headers, api_subversion=api_subversion, semaphore=semaphore
+                )
 
             yield (response := res.json())
             next_cursor = response.get("nextCursor")
@@ -375,7 +380,7 @@ class APIClient(BasicAPIClient):
                 for chunk in chunks:
                     yield list_cls._load(chunk, cognite_client=self._cognite_client)
 
-    def _list(
+    async def _list(
         self,
         method: Literal["POST", "GET"],
         list_cls: type[T_CogniteResourceList],
@@ -408,7 +413,7 @@ class APIClient(BasicAPIClient):
                     f"supported (yet): {settings_forcing_raw_response_loading}"
                 )
             assert initial_cursor is api_subversion is None
-            return self._list_partitioned(
+            return await self._list_partitioned(
                 partitions=partitions,
                 method=method,
                 list_cls=list_cls,
@@ -440,17 +445,14 @@ class APIClient(BasicAPIClient):
                 **fetch_kwargs,  # type: ignore [arg-type]
             )
             return list_cls._load_raw_api_response(
-                list(raw_response_fetcher),
+                [r async for r in raw_response_fetcher],
                 cognite_client=self._cognite_client,
             )
         # TODO: List generator loads each chunk into 'list_cls', so kind of weird for us to chain
         #       elements, then do it again. Perhaps a modified version of 'raw responses' should be used:
-        resource_fetcher = cast(
-            Iterator[T_CogniteResourceList],
-            self._list_generator(method, list_cls, resource_cls, **fetch_kwargs),  # type: ignore [arg-type]
-        )
+        resource_lists = [rl async for rl in self._list_generator(method, list_cls, resource_cls, **fetch_kwargs)]
         return list_cls(
-            list(itertools.chain.from_iterable(resource_fetcher)),
+            list(itertools.chain.from_iterable(resource_lists)),
             cognite_client=self._cognite_client,
         )
 
@@ -526,7 +528,7 @@ class APIClient(BasicAPIClient):
 
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
-    def _aggregate(
+    async def _aggregate(
         self,
         cls: type[T],
         resource_path: str | None = None,
@@ -552,11 +554,11 @@ class APIClient(BasicAPIClient):
             body["fields"] = fields
         if keys is not None:
             body["keys"] = keys
-        res = self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
-        return [cls._load(agg) for agg in res.json()["items"]]
+        res = await self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
+        return [cls._load(agg) for agg in unpack_items(res)]
 
     @overload
-    def _advanced_aggregate(
+    async def _advanced_aggregate(
         self,
         aggregate: Literal["count", "cardinalityValues", "cardinalityProperties"],
         properties: EnumProperty
@@ -574,7 +576,7 @@ class APIClient(BasicAPIClient):
     ) -> int: ...
 
     @overload
-    def _advanced_aggregate(
+    async def _advanced_aggregate(
         self,
         aggregate: Literal["uniqueValues", "uniqueProperties"],
         properties: EnumProperty
@@ -591,7 +593,7 @@ class APIClient(BasicAPIClient):
         api_subversion: str | None = None,
     ) -> UniqueResultList: ...
 
-    def _advanced_aggregate(
+    async def _advanced_aggregate(
         self,
         aggregate: Literal["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"],
         properties: EnumProperty
@@ -663,8 +665,8 @@ class APIClient(BasicAPIClient):
         if limit is not None:
             body["limit"] = limit
 
-        res = self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body, api_subversion=api_subversion)
-        json_items = res.json()["items"]
+        res = await self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body, api_subversion=api_subversion)
+        json_items = unpack_items(res)
         if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
             return json_items[0]["count"]
         elif aggregate in {"uniqueValues", "uniqueProperties"}:
@@ -673,7 +675,7 @@ class APIClient(BasicAPIClient):
             raise ValueError(f"Unknown aggregate: {aggregate}")
 
     @overload
-    def _create_multiple(
+    async def _create_multiple(
         self,
         items: Sequence[WriteableCogniteResource] | Sequence[dict[str, Any]],
         list_cls: type[T_CogniteResourceList],
@@ -689,7 +691,7 @@ class APIClient(BasicAPIClient):
     ) -> T_CogniteResourceList: ...
 
     @overload
-    def _create_multiple(
+    async def _create_multiple(
         self,
         items: WriteableCogniteResource | dict[str, Any],
         list_cls: type[T_CogniteResourceList],
@@ -704,7 +706,7 @@ class APIClient(BasicAPIClient):
         semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_WritableCogniteResource: ...
 
-    def _create_multiple(
+    async def _create_multiple(
         self,
         items: Sequence[WriteableCogniteResource]
         | Sequence[dict[str, Any]]
@@ -764,7 +766,7 @@ class APIClient(BasicAPIClient):
             return resource_cls._load(created_resources[0], cognite_client=self._cognite_client)
         return list_cls._load(created_resources, cognite_client=self._cognite_client)
 
-    def _delete_multiple(
+    async def _delete_multiple(
         self,
         identifiers: IdentifierSequenceCore,
         wrap_ids: bool,
@@ -777,6 +779,7 @@ class APIClient(BasicAPIClient):
         semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> list | None:
         resource_path = (resource_path or self._RESOURCE_PATH) + delete_endpoint
+        extra_body_fields = extra_body_fields or {}
         tasks = [
             AsyncSDKTask(
                 self._post,
@@ -795,11 +798,10 @@ class APIClient(BasicAPIClient):
         )
         if returns_items:
             return summary.joined_results(unpack_items)
-        else:
-            return None
+        return None
 
     @overload
-    def _update_multiple(
+    async def _update_multiple(
         self,
         items: CogniteResource | CogniteUpdate | WriteableCogniteResource,
         list_cls: type[T_CogniteResourceList],
@@ -814,7 +816,7 @@ class APIClient(BasicAPIClient):
     ) -> T_CogniteResource: ...
 
     @overload
-    def _update_multiple(
+    async def _update_multiple(
         self,
         items: Sequence[CogniteResource | CogniteUpdate | WriteableCogniteResource],
         list_cls: type[T_CogniteResourceList],
@@ -828,7 +830,7 @@ class APIClient(BasicAPIClient):
         cdf_item_by_id: Mapping[Any, T_CogniteResource] | None = None,
     ) -> T_CogniteResourceList: ...
 
-    def _update_multiple(
+    async def _update_multiple(
         self,
         items: Sequence[CogniteResource | CogniteUpdate | WriteableCogniteResource]
         | CogniteResource
@@ -890,7 +892,7 @@ class APIClient(BasicAPIClient):
             return resource_cls._load(updated_items[0], cognite_client=self._cognite_client)
         return list_cls._load(updated_items, cognite_client=self._cognite_client)
 
-    def _upsert_multiple(
+    async def _upsert_multiple(
         self,
         items: WriteableCogniteResource | Sequence[WriteableCogniteResource],
         list_cls: type[T_CogniteResourceList],
@@ -906,7 +908,7 @@ class APIClient(BasicAPIClient):
         is_single = isinstance(items, WriteableCogniteResource)
         items = cast(Sequence[T_WritableCogniteResource], [items] if is_single else items)
         try:
-            result = self._update_multiple(
+            result = await self._update_multiple(
                 items,
                 list_cls,
                 resource_cls,
@@ -924,11 +926,7 @@ class APIClient(BasicAPIClient):
             except KeyError:
                 # There is a not found internal id, which means we cannot identify it.
                 raise not_found_error
-            to_create = [
-                items_by_external_id[external_id]
-                for external_id in not_found_error.failed
-                if external_id in missing_external_ids
-            ]
+            to_create = [items_by_external_id[xid] for xid in not_found_error.failed if xid in missing_external_ids]
 
             # Updates can have either external id or id. If they have an id, they must exist in CDF.
             to_update = [
@@ -941,7 +939,7 @@ class APIClient(BasicAPIClient):
             updated: T_CogniteResourceList | None = None
             try:
                 if to_create:
-                    created = self._create_multiple(
+                    created = await self._create_multiple(
                         to_create,
                         list_cls=list_cls,
                         resource_cls=resource_cls,
@@ -949,7 +947,7 @@ class APIClient(BasicAPIClient):
                         api_subversion=api_subversion,
                     )
                 if to_update:
-                    updated = self._update_multiple(
+                    updated = await self._update_multiple(
                         to_update,
                         list_cls=list_cls,
                         resource_cls=resource_cls,
@@ -984,7 +982,7 @@ class APIClient(BasicAPIClient):
             successful_resources: T_CogniteResourceList | None = None
             if not_found_error.successful:
                 identifiers = IdentifierSequence.of(*not_found_error.successful)
-                successful_resources = self._retrieve_multiple(
+                successful_resources = await self._retrieve_multiple(
                     list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers, api_subversion=api_subversion
                 )
                 if isinstance(successful_resources, resource_cls):
@@ -1002,12 +1000,11 @@ class APIClient(BasicAPIClient):
                 )
                 for item in items
             ]
-
         if is_single:
             return result[0]
         return result
 
-    def _search(
+    async def _search(
         self,
         list_cls: type[T_CogniteResourceList],
         search: dict,
@@ -1025,14 +1022,14 @@ class APIClient(BasicAPIClient):
         elif isinstance(filter, dict):
             filter = convert_all_keys_to_camel_case(filter)
         resource_path = resource_path or self._RESOURCE_PATH
-        res = self._post(
+        res = await self._post(
             url_path=resource_path + "/search",
             json={"search": search, "filter": filter, "limit": limit},
             params=params,
             headers=headers,
             api_subversion=api_subversion,
         )
-        return list_cls._load(res.json()["items"], cognite_client=self._cognite_client)
+        return list_cls._load(unpack_items(res), cognite_client=self._cognite_client)
 
     @staticmethod
     def _prepare_item_chunks(
