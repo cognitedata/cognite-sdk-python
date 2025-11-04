@@ -148,7 +148,7 @@ class TestThreeDFilesAPI:
     @pytest.mark.skip(reason="missing a 3d model to test revision against")
     def test_retrieve(self, cognite_client: CogniteClient, test_revision: tuple[ThreeDModelRevision, int]) -> None:
         revision, model_id = test_revision
-        project = cognite_client._config.project
+        project = cognite_client.config.project
         url = f"/api/v1/projects/{project}/3d/reveal/models/{model_id}/revisions/{revision.id}"
         response = cognite_client.get(url=url)
         threedFileId = response.json()["sceneThreedFiles"][0]["fileId"]

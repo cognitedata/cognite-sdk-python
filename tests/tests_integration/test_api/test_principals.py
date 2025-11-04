@@ -7,6 +7,7 @@ from cognite.client.data_classes.principals import Principal, PrincipalList, Ser
 from cognite.client.exceptions import CogniteAPIError
 
 
+
 @pytest.fixture(scope="session")
 def me(cognite_client_cog_idp: CogniteClient) -> Principal:
     """Fixture to retrieve the principal of the user running the tests."""
@@ -28,8 +29,9 @@ def service_account(cognite_client_cog_idp: CogniteClient) -> ServicePrincipal:
     client = cognite_client_cog_idp
     service_account = client.iam.principals.list(types="service_account", limit=1)
     assert len(service_account) == 1, "Expected exactly one service account principal to be returned."
-    assert isinstance(service_account[0], ServicePrincipal), "Expected service account to be returned."
-    return service_account[0]
+    serv_acc = service_account[0]
+    assert isinstance(serv_acc, ServicePrincipal), "Expected service account to be returned."
+    return serv_acc
 
 
 class TestPrincipalsAPI:
