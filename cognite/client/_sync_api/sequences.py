@@ -1,6 +1,6 @@
 """
 ===============================================================================
-1413f275800a9fcd1815c2b7301ba7bc
+ba6c011e38536e052b57079d06c7758a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -257,6 +257,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.sequences.aggregate_cardinality_values(SequenceProperty.metadata_key("efficiency"))
 
             Count the number of timezones (metadata key) for sequences with the word "critical" in the description
@@ -303,6 +304,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
         """
         return run_sync(
@@ -337,6 +339,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.sequences.aggregate_unique_values(SequenceProperty.metadata_key("timezone"))
                 >>> print(result.unique)
 
@@ -392,6 +395,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.sequences.aggregate_unique_properties(SequenceProperty.metadata)
         """
         return run_sync(
@@ -425,6 +429,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> column_def = [
                 ...     SequenceColumnWrite(value_type="STRING", external_id="user", description="some description"),
                 ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount")
@@ -595,6 +600,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_sequence = client.sequences.retrieve(id=1)
                 >>> existing_sequence.description = "New description"
                 >>> new_sequence = SequenceWrite(

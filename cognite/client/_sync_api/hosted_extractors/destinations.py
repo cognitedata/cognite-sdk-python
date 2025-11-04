@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9c06117384092385ede68410503bc7b2
+57e02fb82f3f1931cd4a078a89d90829
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -53,7 +53,7 @@ class SyncDestinationsAPI(SyncAPIClient):
         Yields:
             Destination | DestinationList: yields Destination one by one if chunk_size is not specified, else DestinationList objects.
         """
-        yield from SyncIterator(self.__async_client.hosted_extractors.destinations(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
+        yield from SyncIterator(self.__async_client.hosted_extractors.destinations(chunk_size=chunk_size, limit=limit))
 
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Destination: ...
@@ -141,6 +141,7 @@ class SyncDestinationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import DestinationWrite, SessionWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> destination = DestinationWrite(external_id='my_dest', credentials=SessionWrite("my_nonce"), target_data_set_id=123)
                 >>> res = client.hosted_extractors.destinations.create(destination)
         """
@@ -182,6 +183,7 @@ class SyncDestinationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import DestinationUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> destination = DestinationUpdate('my_dest').target_data_set_id.set(123)
                 >>> res = client.hosted_extractors.destinations.update(destination)
         """

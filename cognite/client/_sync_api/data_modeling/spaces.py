@@ -1,6 +1,6 @@
 """
 ===============================================================================
-06c7193c40e5f76d32f5aec09905a92a
+b2d492bca0d25d9e565f7f7828155380
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -151,6 +151,7 @@ class SyncSpacesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import SpaceApply
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> spaces = [SpaceApply(space="mySpace", description="My first space", name="My Space"),
                 ... SpaceApply(space="myOtherSpace", description="My second space", name="My Other Space")]
                 >>> res = client.data_modeling.spaces.apply(spaces)

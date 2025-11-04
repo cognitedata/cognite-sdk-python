@@ -1,6 +1,6 @@
 """
 ===============================================================================
-7f0398db4522da948046b7d45c0017ad
+fea2e0196dbe6a2804d937ee40ff61e9
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -76,6 +76,7 @@ class SyncSecurityCategoriesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SecurityCategoryWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_category = SecurityCategoryWrite(name="My Category")
                 >>> res = client.iam.security_categories.create(my_category)
         """
