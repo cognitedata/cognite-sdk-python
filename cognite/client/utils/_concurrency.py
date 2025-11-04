@@ -70,23 +70,34 @@ class AsyncSDKTask:
 class TasksSummary:
     def __init__(
         self,
-        successful_tasks: list,
-        unknown_tasks: list,
-        failed_tasks: list,
-        skipped_tasks: list,
-        results: list,
-        exceptions: list,
+        results: list[Any],
+        successful_tasks: list[AsyncSDKTask],
+        unsuccessful_tasks: list[AsyncSDKTask] | None = None,
+        skipped_tasks: list[AsyncSDKTask] | None = None,
+        exceptions: list[BaseException] | None = None,
     ) -> None:
-        self.successful_tasks = successful_tasks
-        self.unknown_tasks = unknown_tasks
-        self.failed_tasks = failed_tasks
-        self.skipped_tasks = skipped_tasks
         self.results = results
+        self.successful_tasks = successful_tasks
+        self.unknown_tasks, self.failed_tasks = self._categorize_failed_vs_unknown(unsuccessful_tasks or [])
+        self.skipped_tasks = skipped_tasks or []
 
         self.not_found_error: CogniteNotFoundError | None = None
         self.duplicated_error: CogniteDuplicatedError | None = None
-        self.unknown_error: Exception | None = None
-        self.missing, self.duplicated, self.cluster, self.project = self._inspect_exceptions(exceptions)
+        self.unknown_error: BaseException | None = None
+        self.missing, self.duplicated, self.cluster, self.project = self._inspect_exceptions(exceptions or [])
+
+    @staticmethod
+    def _categorize_failed_vs_unknown(
+        unsuccessful_tasks: list[AsyncSDKTask],
+    ) -> tuple[list[AsyncSDKTask], list[AsyncSDKTask]]:
+        from cognite.client._basic_api_client import FailedRequestHandler
+
+        unknown_and_failed: tuple[list[AsyncSDKTask], list[AsyncSDKTask]] = [], []
+        for task in unsuccessful_tasks:
+            err = cast(BaseException, task.exception())  # Task is unsuccessful exactly because this is set
+            is_failed = FailedRequestHandler.classify_error(err) == "failed"
+            unknown_and_failed[is_failed].append(task)
+        return unknown_and_failed
 
     def joined_results(self, unwrap_fn: Callable = no_op) -> list:
         joined_results: list = []
@@ -141,7 +152,7 @@ class TasksSummary:
                 skipped=skipped,
             )
 
-    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[list, list, str | None, str | None]:
+    def _inspect_exceptions(self, exceptions: list[BaseException]) -> tuple[list, list, str | None, str | None]:
         cluster = None
         project = None
         missing: list[dict] = []
@@ -154,6 +165,8 @@ class TasksSummary:
                 case CogniteDuplicatedError():
                     duplicated.extend(exc.duplicated)
                     self.duplicated_error = exc
+                case CogniteAPIError():
+                    self.unknown_error = exc
                 case _:
                     self.unknown_error = exc
                     continue
@@ -198,6 +211,7 @@ class TasksSummary:
             duplicated=self.duplicated,
             extra=cause.extra,
             cluster=self.cluster,
+            project=self.project,
             successful=successful,
             failed=failed,
             unknown=unknown,
