@@ -93,6 +93,7 @@ def make_cognite_client() -> CogniteClient:
     )
 
 
+# TODO(doctrino): These tests should run in CI, but are now skipped because of missing COG IDP client credentials
 @pytest.fixture(scope="session")
 def cognite_client_cog_idp() -> CogniteClient:
     """Some endpoints require a CDF authenticated client, for example, the principal endpoints:
@@ -114,7 +115,7 @@ def cognite_client_cog_idp() -> CogniteClient:
                 token_url="https://auth.cognite.com/oauth2/token",
                 client_id=os.environ["CDF_CLIENT_ID"],
                 client_secret=os.environ["CDF_CLIENT_SECRET"],
-                scopes=None,  # type: ignore[arg-type]
+                scopes=None,
             ),
         )
     )

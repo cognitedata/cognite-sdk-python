@@ -65,6 +65,7 @@ def new_transformation(
         pytest.skip("Only run in CI environment")
     # TODO: Data Integration team, add:
     pytest.skip("Need valid credentials for: 'source_oidc_credentials' and 'destination_oidc_credentials'...")
+    assert creds.scopes is not None
     transform = TransformationWrite(
         name="any",
         query="select 1",
