@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
@@ -36,7 +36,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 100
 
-    def list(
+    async def list(
         self,
         limit: int = DEFAULT_LIMIT_READ,
         sort: PropertySort | None = None,
@@ -56,6 +56,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             all_versions (bool | None): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
             created_time (TimestampRange | None): Filter by created time.
             last_updated_time (TimestampRange | None): Filter by last updated time.
+
         Returns:
             SimulatorModelRevisionList: List of simulator model revisions
 
@@ -84,7 +85,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             last_updated_time=last_updated_time,
         )
         self._warning.warn()
-        return self._list(
+        return await self._list(
             method="POST",
             limit=limit,
             resource_cls=SimulatorModelRevision,
@@ -94,18 +95,18 @@ class SimulatorModelRevisionsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, *, ids: int) -> SimulatorModelRevision | None: ...
+    async def retrieve(self, *, ids: int) -> SimulatorModelRevision | None: ...
 
     @overload
-    def retrieve(self, *, external_ids: str) -> SimulatorModelRevision | None: ...
+    async def retrieve(self, *, external_ids: str) -> SimulatorModelRevision | None: ...
 
     @overload
-    def retrieve(self, *, ids: Sequence[int]) -> SimulatorModelRevisionList: ...
+    async def retrieve(self, *, ids: Sequence[int]) -> SimulatorModelRevisionList: ...
 
     @overload
-    def retrieve(self, *, external_ids: SequenceNotStr[str]) -> SimulatorModelRevisionList: ...
+    async def retrieve(self, *, external_ids: SequenceNotStr[str]) -> SimulatorModelRevisionList: ...
 
-    def retrieve(
+    async def retrieve(
         self,
         *,
         ids: int | Sequence[int] | None = None,
@@ -143,7 +144,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         """
         self._warning.warn()
 
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=SimulatorModelRevisionList,
             resource_cls=SimulatorModelRevision,
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
@@ -159,7 +160,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorModelRevisionList]: ...
+    ) -> AsyncIterator[SimulatorModelRevisionList]: ...
 
     @overload
     def __call__(
@@ -171,9 +172,9 @@ class SimulatorModelRevisionsAPI(APIClient):
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorModelRevision]: ...
+    ) -> AsyncIterator[SimulatorModelRevision]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         sort: PropertySort | None = None,
@@ -182,7 +183,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorModelRevision] | Iterator[SimulatorModelRevisionList]:
+    ) -> AsyncIterator[SimulatorModelRevision | SimulatorModelRevisionList]:
         """Iterate over simulator simulator model revisions
 
         Fetches simulator model revisions as they are iterated over, so you keep a limited number of simulator model revisions in memory.
@@ -196,8 +197,8 @@ class SimulatorModelRevisionsAPI(APIClient):
             last_updated_time (TimestampRange | None): Filter by last updated time.
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
-        Returns:
-            Iterator[SimulatorModelRevision] | Iterator[SimulatorModelRevisionList]: yields SimulatorModelRevision one by one if chunk is not specified, else SimulatorModelRevisionList objects.
+        Yields:
+            SimulatorModelRevision | SimulatorModelRevisionList: yields SimulatorModelRevision one by one if chunk is not specified, else SimulatorModelRevisionList objects.
         """
         model_revisions_filter = SimulatorModelRevisionsFilter(
             model_external_ids=model_external_ids,
@@ -205,7 +206,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             created_time=created_time,
             last_updated_time=last_updated_time,
         )
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=SimulatorModelRevisionList,
             resource_cls=SimulatorModelRevision,
             method="POST",
@@ -213,15 +214,16 @@ class SimulatorModelRevisionsAPI(APIClient):
             sort=[PropertySort.load(sort).dump()] if sort else None,
             chunk_size=chunk_size,
             limit=limit,
-        )
+        ):
+            yield item
 
     @overload
-    def create(self, items: SimulatorModelRevisionWrite) -> SimulatorModelRevision: ...
+    async def create(self, items: SimulatorModelRevisionWrite) -> SimulatorModelRevision: ...
 
     @overload
-    def create(self, items: Sequence[SimulatorModelRevisionWrite]) -> SimulatorModelRevisionList: ...
+    async def create(self, items: Sequence[SimulatorModelRevisionWrite]) -> SimulatorModelRevisionList: ...
 
-    def create(
+    async def create(
         self, items: SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]
     ) -> SimulatorModelRevision | SimulatorModelRevisionList:
         """`Create simulator model revisions <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
@@ -262,14 +264,14 @@ class SimulatorModelRevisionsAPI(APIClient):
         """
         assert_type(items, "simulator_model_revision", [SimulatorModelRevisionWrite, Sequence])
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SimulatorModelRevisionList,
             resource_cls=SimulatorModelRevision,
             items=items,
             input_resource_cls=SimulatorModelRevisionWrite,
         )
 
-    def retrieve_data(self, model_revision_external_id: str) -> SimulatorModelRevisionDataList:
+    async def retrieve_data(self, model_revision_external_id: str) -> SimulatorModelRevisionDataList:
         """`Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/get_simulator_model_revision_data_by_id>`_
 
         Retrieves a list of simulator model revisions data that match the given criteria.
@@ -287,7 +289,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         """
         self._warning.warn()
 
-        response = self._post(
+        response = await self._post(
             url_path=f"{self._RESOURCE_PATH}/data/list",
             headers={"cdf-version": "alpha"},
             json={"items": [{"modelRevisionExternalId": model_revision_external_id}]},
