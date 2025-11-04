@@ -5,7 +5,7 @@ import random
 import threading
 import time
 from collections import defaultdict, deque
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -17,9 +17,10 @@ from cognite.client.utils._auxiliary import (
     is_finite,
     is_unlimited,
     split_into_chunks,
+    unpack_items,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._url import interpolate_and_url_encode
@@ -44,7 +45,7 @@ class RawRowsAPI(APIClient):
         self._LIST_LIMIT = 10000
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         db_name: str,
         table_name: str,
@@ -54,10 +55,10 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         partitions: int | None = None,
-    ) -> Iterator[Row]: ...
+    ) -> AsyncIterator[Row]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         db_name: str,
         table_name: str,
@@ -67,9 +68,9 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         partitions: int | None = None,
-    ) -> Iterator[RowList]: ...
+    ) -> AsyncIterator[RowList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         db_name: str,
         table_name: str,
@@ -79,7 +80,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         partitions: int | None = None,
-    ) -> Iterator[Row] | Iterator[RowList]:
+    ) -> AsyncIterator[Row] | AsyncIterator[RowList]:
         """Iterate over rows.
 
         Fetches rows as they are iterated over, so you keep a limited number of rows in memory.
@@ -98,7 +99,7 @@ class RawRowsAPI(APIClient):
                 problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
-            Iterator[Row] | Iterator[RowList]: An iterator yielding the requested row or rows.
+            AsyncIterator[Row] | AsyncIterator[RowList]: An iterator yielding the requested row or rows.
 
         Note:
             When iterating using partitions > 1, the memory usage is bounded at 2 x partitions x chunk_size. This is implemented
@@ -186,7 +187,8 @@ class RawRowsAPI(APIClient):
 
         quit_early = threading.Event()
         results: deque[RowList] = deque()  # fifo, not that ordering matters anyway...
-        pool = ConcurrencySettings.get_thread_pool_executor_or_raise()
+        # TODO: Fix:
+        # pool = ConcurrencySettings.get_thread_pool_executor_or_raise()
         futures = [pool.submit(exhaust, task) for task in read_iterators]
 
         if finite_limit:
@@ -222,7 +224,7 @@ class RawRowsAPI(APIClient):
             if all(f.done() for f in futures) and not results:
                 return
 
-    def insert(
+    async def insert(
         self,
         db_name: str,
         table_name: str,
@@ -256,20 +258,22 @@ class RawRowsAPI(APIClient):
                 ... }
                 >>> client.raw.rows.insert("db1", "table1", rows)
         """
+        url_path = interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name)
         tasks = [
-            {
-                "url_path": interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
-                "json": {"items": chunk},
-                "params": {"ensureParent": ensure_parent},
-            }
+            AsyncSDKTask(
+                self._post,
+                url_path=url_path,
+                json={"items": chunk},
+                params={"ensureParent": ensure_parent},
+            )
             for chunk in self._process_row_input(row)
         ]
-        summary = execute_tasks(self._post, tasks)
+        summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda row: row.get("key")
         )
 
-    def insert_dataframe(
+    async def insert_dataframe(
         self,
         db_name: str,
         table_name: str,
@@ -308,7 +312,7 @@ class RawRowsAPI(APIClient):
             raise ValueError(f"Dataframe columns are not unique: {sorted(find_duplicates(dataframe.columns))}")
 
         rows = self._df_to_rows_skip_nans(dataframe) if dropna else dataframe.to_dict(orient="index")
-        self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
+        await self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
     @staticmethod
     def _df_to_rows_skip_nans(df: pd.DataFrame) -> dict[str, dict[str, Any]]:
@@ -348,7 +352,7 @@ class RawRowsAPI(APIClient):
             rows.append(row.dump(camel_case=True))
         return split_into_chunks(rows, self._CREATE_LIMIT)
 
-    def delete(self, db_name: str, table_name: str, key: str | SequenceNotStr[str]) -> None:
+    async def delete(self, db_name: str, table_name: str, key: str | SequenceNotStr[str]) -> None:
         """`Delete rows from a table. <https://developer.cognite.com/api#tag/Raw/operation/deleteRows>`_
 
         Args:
@@ -368,20 +372,19 @@ class RawRowsAPI(APIClient):
         assert_type(key, "key", [str, Sequence])
         if isinstance(key, str):
             key = [key]
-        to_delete = [{"key": k} for k in key]
+
+        url_path = interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name) + "/delete"
         tasks = [
-            {
-                "url_path": interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name) + "/delete",
-                "json": {"items": chunk},
-            }
-            for chunk in split_into_chunks(to_delete, self._DELETE_LIMIT)
+            AsyncSDKTask(self._post, url_path=url_path, json={"items": [{"key": k} for k in chunk]})
+            for chunk in split_into_chunks(key, self._DELETE_LIMIT)
         ]
-        summary = execute_tasks(self._post, tasks)
+        summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["key"]
+            task_unwrap_fn=lambda task: unpack_items_in_payload(task.kwargs),
+            task_list_element_unwrap_fn=lambda el: el["key"],
         )
 
-    def retrieve(self, db_name: str, table_name: str, key: str) -> Row | None:
+    async def retrieve(self, db_name: str, table_name: str, key: str) -> Row | None:
         """`Retrieve a single row by key. <https://developer.cognite.com/api#tag/Raw/operation/getRow>`_
 
         Args:
@@ -406,7 +409,7 @@ class RawRowsAPI(APIClient):
                 >>> val2 = row.get("col2")
 
         """
-        return self._retrieve(
+        return await self._retrieve(
             cls=Row,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             identifier=Identifier(key),
@@ -422,7 +425,7 @@ class RawRowsAPI(APIClient):
         else:
             return ",".join(str(x) for x in columns)
 
-    def retrieve_dataframe(
+    async def retrieve_dataframe(
         self,
         db_name: str,
         table_name: str,
@@ -464,7 +467,9 @@ class RawRowsAPI(APIClient):
                 >>> df = client.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
         """
         pd = local_import("pandas")
-        rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit, partitions)
+        rows = await self.list(
+            db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit, partitions
+        )
         if last_updated_time_in_index:
             idx = pd.MultiIndex.from_tuples(
                 [(r.key, pd.Timestamp(r.last_updated_time, unit="ms")) for r in rows],
@@ -475,7 +480,7 @@ class RawRowsAPI(APIClient):
         cols = [r.columns for r in rows]
         return pd.DataFrame(cols, index=idx, dtype=object if not infer_dtypes else None)
 
-    def _get_parallel_cursors(
+    async def _get_parallel_cursors(
         self,
         db_name: str,
         table_name: str,
@@ -483,7 +488,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None,
         n_cursors: int,
     ) -> list[str]:
-        return self._get(
+        response = await self._get(
             url_path=interpolate_and_url_encode("/raw/dbs/{}/tables/{}/cursors", db_name, table_name),
             params=drop_none_values(
                 {
@@ -492,9 +497,10 @@ class RawRowsAPI(APIClient):
                     "numberOfCursors": n_cursors,
                 }
             ),
-        ).json()["items"]
+        )
+        return unpack_items(response)
 
-    def list(
+    async def list(
         self,
         db_name: str,
         table_name: str,
@@ -560,6 +566,7 @@ class RawRowsAPI(APIClient):
             chunk_size = 10_000
         elif partitions is None:
             if is_unlimited(limit):
+                # TODO: Change this?
                 # Before 'partitions' was introduced, existing logic was that 'limit=None' meant 'partitions=max_workers'.
                 from cognite.client import global_config
 
@@ -567,17 +574,21 @@ class RawRowsAPI(APIClient):
             else:
                 chunk_size = limit  # We fetch serially, but don't want rows one-by-one
 
-        rows_iterator = self(
-            db_name=db_name,
-            table_name=table_name,
-            chunk_size=chunk_size,
-            limit=limit,
-            min_last_updated_time=min_last_updated_time,
-            max_last_updated_time=max_last_updated_time,
-            columns=columns,
-            partitions=partitions,
+        # Mypy does not understand that at least one of chunk_size or partitions is an integer here:
+        rows_iterator = cast(
+            AsyncIterator[RowList],
+            self(
+                db_name,
+                table_name,
+                chunk_size=chunk_size,
+                partitions=partitions,
+                limit=limit,
+                min_last_updated_time=min_last_updated_time,
+                max_last_updated_time=max_last_updated_time,
+                columns=columns,
+            ),
         )
         return RowList(
-            [row for row_list in cast(Iterator[RowList], rows_iterator) for row in row_list],
+            [row async for row_list in rows_iterator for row in row_list],
             cognite_client=self._cognite_client,
         )
