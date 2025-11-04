@@ -10,7 +10,7 @@ from cognite.client.data_classes.units import (
 class UnitSystemAPI(APIClient):
     _RESOURCE_PATH = "/units/systems"
 
-    def list(self) -> UnitSystemList:
+    async def list(self) -> UnitSystemList:
         """`List all supported unit systems <https://developer.cognite.com/api#tag/Unit-Systems/operation/listUnitSystems>`_
 
         Returns:
@@ -25,4 +25,4 @@ class UnitSystemAPI(APIClient):
                 >>> res = client.units.systems.list()
 
         """
-        return self._list(method="GET", list_cls=UnitSystemList, resource_cls=UnitSystem)
+        return await self._list(method="GET", list_cls=UnitSystemList, resource_cls=UnitSystem)
