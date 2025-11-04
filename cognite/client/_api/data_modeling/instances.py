@@ -265,14 +265,14 @@ class InstancesAPI(APIClient):
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources, debug=debug
         )
-
-        if instance_type == "node":
-            resource_cls: type = Node
-            list_cls: type = NodeList
-        elif instance_type == "edge":
-            resource_cls, list_cls = Edge, EdgeList
-        else:
-            raise ValueError(f"Invalid instance type: {instance_type}")
+        match instance_type:
+            case "node":
+                resource_cls: type[Node | Edge] = Node
+                list_cls: type[NodeList | EdgeList] = NodeList
+            case "edge":
+                resource_cls, list_cls = Edge, EdgeList
+            case _:
+                raise ValueError(f"Invalid instance type: {instance_type}")
 
         headers: None | dict[str, str] = None
         settings_forcing_raw_response_loading = []
