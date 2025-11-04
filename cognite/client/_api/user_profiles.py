@@ -12,17 +12,17 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class UserProfilesAPI(APIClient):
     _RESOURCE_PATH = "/profiles"
 
-    def enable(self) -> UserProfilesConfiguration:
+    async def enable(self) -> UserProfilesConfiguration:
         """Enable user profiles for the project"""
-        res = self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": True}}}})
+        res = await self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": True}}}})
         return UserProfilesConfiguration._load(res.json()["userProfilesConfiguration"])
 
-    def disable(self) -> UserProfilesConfiguration:
+    async def disable(self) -> UserProfilesConfiguration:
         """Disable user profiles for the project"""
-        res = self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": False}}}})
+        res = await self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": False}}}})
         return UserProfilesConfiguration._load(res.json()["userProfilesConfiguration"])
 
-    def me(self) -> UserProfile:
+    async def me(self) -> UserProfile:
         """`Retrieve your own user profile <https://developer.cognite.com/api#tag/User-profiles/operation/getRequesterUserProfile>`_
 
         Retrieves the user profile of the principal issuing the request, i.e. the principal *this* AsyncCogniteClient was instantiated with.
@@ -41,15 +41,15 @@ class UserProfilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.iam.user_profiles.me()
         """
-        return UserProfile._load(self._get(self._RESOURCE_PATH + "/me").json())
+        return UserProfile._load((await self._get(self._RESOURCE_PATH + "/me")).json())
 
     @overload
-    def retrieve(self, user_identifier: str) -> UserProfile | None: ...
+    async def retrieve(self, user_identifier: str) -> UserProfile | None: ...
 
     @overload
-    def retrieve(self, user_identifier: SequenceNotStr[str]) -> UserProfileList: ...
+    async def retrieve(self, user_identifier: SequenceNotStr[str]) -> UserProfileList: ...
 
-    def retrieve(self, user_identifier: str | SequenceNotStr[str]) -> UserProfile | UserProfileList | None:
+    async def retrieve(self, user_identifier: str | SequenceNotStr[str]) -> UserProfile | UserProfileList | None:
         """`Retrieve user profiles by user identifier. <https://developer.cognite.com/api#tag/User-profiles/operation/getUserProfilesByIds>`_
 
         Retrieves one or more user profiles indexed by the user identifier in the same CDF project.
@@ -76,13 +76,13 @@ class UserProfilesAPI(APIClient):
                 >>> res = client.iam.user_profiles.retrieve(["bar", "baz"])
         """
         identifiers = UserIdentifierSequence.load(user_identifier)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=UserProfileList,
             resource_cls=UserProfile,
             identifiers=identifiers,
         )
 
-    def search(self, name: str, limit: int = DEFAULT_LIMIT_READ) -> UserProfileList:
+    async def search(self, name: str, limit: int = DEFAULT_LIMIT_READ) -> UserProfileList:
         """`Search for user profiles <https://developer.cognite.com/api#tag/User-profiles/operation/userProfilesSearch>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, as the result set ordering and match criteria threshold may change over time.
 
@@ -101,14 +101,14 @@ class UserProfilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.iam.user_profiles.search(name="Alex")
         """
-        return self._search(
+        return await self._search(
             list_cls=UserProfileList,
             search={"name": name},
             filter={},
             limit=limit,
         )
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> UserProfileList:
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> UserProfileList:
         """`List user profiles <https://developer.cognite.com/api#tag/User-profiles/operation/listUserProfiles>`_
 
         List all user profiles in the current CDF project. The results are ordered alphabetically by name.
@@ -127,7 +127,7 @@ class UserProfilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.iam.user_profiles.list(limit=None)
         """
-        return self._list(
+        return await self._list(
             "GET",
             list_cls=UserProfileList,
             resource_cls=UserProfile,
