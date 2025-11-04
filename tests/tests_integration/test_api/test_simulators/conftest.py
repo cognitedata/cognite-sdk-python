@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from cognite.client._cognite_client import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators import (
