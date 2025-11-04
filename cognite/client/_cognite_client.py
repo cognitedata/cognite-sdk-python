@@ -40,9 +40,10 @@ if TYPE_CHECKING:
 
 
 class AsyncCogniteClient:
-    """Main entrypoint into Cognite Python SDK.
+    """Main entrypoint into the Cognite Python SDK.
 
-    All services are made available through this object. See examples below.
+    All Cognite Data Fusion APIs are accessible through this asynchronous client.
+    For the synchronous client, see :class:`~cognite.client._cognite_client.CogniteClient`.
 
     Args:
         config (ClientConfig | None): The configuration for this client.
@@ -91,13 +92,13 @@ class AsyncCogniteClient:
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 
-    def get(
+    async def get(
         self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
     ) -> httpx.Response:
         """Perform a GET request to an arbitrary path in the API."""
-        return self._api_client._get(url, params=params, headers=headers)
+        return await self._api_client._get(url, params=params, headers=headers)
 
-    def post(
+    async def post(
         self,
         url: str,
         json: dict[str, Any] | None = None,
@@ -105,9 +106,9 @@ class AsyncCogniteClient:
         headers: dict[str, Any] | None = None,
     ) -> httpx.Response:
         """Perform a POST request to an arbitrary path in the API."""
-        return self._api_client._post(url, json=json, params=params, headers=headers)
+        return await self._api_client._post(url, json=json, params=params, headers=headers)
 
-    def put(
+    async def put(
         self,
         url: str,
         json: dict[str, Any] | None = None,
@@ -115,7 +116,7 @@ class AsyncCogniteClient:
         headers: dict[str, Any] | None = None,
     ) -> httpx.Response:
         """Perform a PUT request to an arbitrary path in the API."""
-        return self._api_client._put(url, json=json, params=params, headers=headers)
+        return await self._api_client._put(url, json=json, params=params, headers=headers)
 
     @property
     def version(self) -> str:
