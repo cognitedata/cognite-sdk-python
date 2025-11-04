@@ -45,10 +45,12 @@ from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeries
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.data_modeling.instances import NodeApplyResult
 from cognite.client.data_classes.data_modeling.spaces import SpaceApply
-from cognite.client.data_classes.datapoints import (
+from cognite.client.data_classes.datapoint_aggregates import (
     _OBJECT_AGGREGATES_CAMEL,
     ALL_SORTED_DP_AGGS,
     ALL_SORTED_NUMERIC_DP_AGGS,
+)
+from cognite.client.data_classes.datapoints import (
     MaxDatapoint,
     MaxDatapointWithStatus,
     MinDatapoint,
@@ -60,7 +62,6 @@ from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
     UNIT_IN_MS,
-    ZoneInfo,
     align_start_and_end_for_granularity,
     granularity_to_ms,
     ms_to_datetime,
@@ -69,13 +70,13 @@ from cognite.client.utils._time import (
 from cognite.client.utils.useful_types import SequenceNotStr
 from tests.utils import (
     get_or_raise,
+    override_semaphore,
     random_aggregates,
     random_cognite_external_ids,
     random_cognite_ids,
     random_gamma_dist_integer,
     random_granularity,
     rng_context,
-    set_max_workers,
 )
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
@@ -900,7 +901,7 @@ class TestRetrieveRawDatapointsAPI:
         # 100 time series per available worker - in some rare cases - the initial batch of datapoints would
         # not be counted towards the total limit requested.
         ids = [all_test_time_series[105].id] * 100
-        with set_max_workers(1), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+        with override_semaphore(1, target="datapoints"), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
             dps_lst = cognite_client.time_series.data.retrieve(id=ids, limit=1001)
         assert all(len(dps) == 1001 for dps in dps_lst)
 
@@ -910,7 +911,7 @@ class TestRetrieveRawDatapointsAPI:
         # From 7.45.0 to 7.48.0, when fetching in "chunking mode" with include_outside_points=True,
         # due to an added is-nextCursor-empty check, the queries would short-circuit after the first batch.
         ts_ids, ts_xids = weekly_dps_ts
-        with set_max_workers(1):
+        with override_semaphore(1, target="datapoints"):
             dps_lst = cognite_client.time_series.data.retrieve(
                 id=ts_ids.as_ids(),
                 external_id=ts_xids.as_external_ids(),
@@ -944,7 +945,7 @@ class TestRetrieveRawDatapointsAPI:
         ts_exists1, ts_exists2 = outside_points_ts
         missing_xid = "nope-doesnt-exist " * 3
 
-        with set_max_workers(6), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+        with override_semaphore(6, target="datapoints"), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
             with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'") as err:
                 ids: list[int | DatapointsQuery] = [
                     ts_exists1.id,
@@ -1064,7 +1065,7 @@ class TestRetrieveRawDatapointsAPI:
     ) -> None:
         ts_lst = weekly_dps_ts[0] + weekly_dps_ts[1]  # chain numeric & string
         limits = [0, 1, 50, int(1e9), None]  # None ~ 100 dps (max dps returned)
-        with set_max_workers(5), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+        with override_semaphore(5, target="datapoints"), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
             # `n_ts` is per identifier (id + xid). At least 3, since 3 x 2 > 5
             for n_ts, endpoint in itertools.product([3, 10, 50], retrieve_endpoints):
                 id_ts_lst, xid_ts_lst = random.sample(ts_lst, k=n_ts), random.sample(ts_lst, k=n_ts)
@@ -1103,7 +1104,7 @@ class TestRetrieveRawDatapointsAPI:
         weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
     ) -> None:
         # We patch out ChunkingDpsFetcher to make sure we fail if we're not in eager mode:
-        with set_max_workers(5), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+        with override_semaphore(5, target="datapoints"), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
             for ts_lst, endpoint, limit in itertools.product(weekly_dps_ts, retrieve_endpoints, [0, 50, None]):
                 ts_lst = random.sample(ts_lst, n_ts)
                 res_lst = endpoint(
@@ -1138,7 +1139,7 @@ class TestRetrieveRawDatapointsAPI:
         weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
     ) -> None:
         # We patch out EagerDpsFetcher to make sure we fail if we're not in chunking mode:
-        with set_max_workers(2), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+        with override_semaphore(2, target="datapoints"), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
             for ts_lst, endpoint, limit in itertools.product(weekly_dps_ts, retrieve_endpoints, [0, 50, None]):
                 ts_lst = random.sample(ts_lst, n_ts)
                 res_lst = endpoint(
@@ -1197,7 +1198,7 @@ class TestRetrieveRawDatapointsAPI:
         all_test_time_series: TimeSeriesList,
     ) -> None:
         ts_exists = all_test_time_series[0]
-        with set_max_workers(9), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with override_semaphore(9, target="datapoints"), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             identifier = {
                 "id": [ts_exists.id, *random_cognite_ids(n_ts)],
                 "external_id": [ts_exists.external_id, *random_cognite_external_ids(n_ts)],
@@ -1222,13 +1223,15 @@ class TestRetrieveRawDatapointsAPI:
     def test_retrieve__all_unknown_single_multiple_given(
         self,
         test_id: int,
-        cognite_client: CogniteClient,
         retrieve_endpoints: list[Callable],
         parametrized_values_all_unknown_single_multiple_given: tuple[tuple, ...],
     ) -> None:
         test_data = parametrized_values_all_unknown_single_multiple_given[test_id]
         max_workers, mock_out_eager_or_chunk, ids, external_ids, exp_res_types = test_data
-        with set_max_workers(max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with (
+            override_semaphore(max_workers, target="datapoints"),
+            patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
+        ):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
                 res = endpoint(
                     id=ids,
@@ -1259,7 +1262,10 @@ class TestRetrieveRawDatapointsAPI:
         cognite_client: CogniteClient,
     ) -> None:
         ts = outside_points_ts[0]
-        with set_max_workers(max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with (
+            override_semaphore(max_workers, target="datapoints"),
+            patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
+        ):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
                 res: Datapoints | DatapointsArray = endpoint(**{identifier: getattr(ts, identifier)}, start=1, end=9)
                 assert isinstance(res, exp_res_type)
@@ -1284,7 +1290,10 @@ class TestRetrieveRawDatapointsAPI:
         cognite_client: CogniteClient,
     ) -> None:
         ts1, ts2 = outside_points_ts
-        with set_max_workers(max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with (
+            override_semaphore(max_workers, target="datapoints"),
+            patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
+        ):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
                 res: DatapointsList | DatapointsArrayList = endpoint(
                     id=ts1.id, external_id=[ts2.external_id], start=1, end=9
@@ -1702,7 +1711,10 @@ class TestRetrieveAggregateDatapointsAPI:
 
         assert ts.is_step is is_step
 
-        with set_max_workers(max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with (
+            override_semaphore(max_workers, target="datapoints"),
+            patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
+        ):
             for endpoint in retrieve_endpoints:
                 # Give each "granularity" a random list of aggregates:
                 aggs = [random_aggregates(exclude=exclude) for _ in range(4)]
@@ -1766,7 +1778,7 @@ class TestRetrieveAggregateDatapointsAPI:
             f"{random.randint(1, 120)}s",
         )
 
-        with set_max_workers(8):
+        with override_semaphore(8, target="datapoints"):
             for endpoint in retrieve_endpoints[:1]:
                 res_lst = endpoint(
                     start=start,
@@ -1822,11 +1834,13 @@ class TestRetrieveAggregateDatapointsAPI:
         n_ts: int,
         mock_out_eager_or_chunk: str,
         weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
-        cognite_client: CogniteClient,
         retrieve_endpoints: list[Callable],
     ) -> None:
         _, string_ts = weekly_dps_ts
-        with set_max_workers(max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with (
+            override_semaphore(max_workers, target="datapoints"),
+            patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
+        ):
             ts_chunk = random.sample(string_ts, k=n_ts)
             for endpoint in retrieve_endpoints:
                 with pytest.raises(CogniteAPIError) as exc:
@@ -1956,9 +1970,8 @@ class TestRetrieveAggregateDatapointsAPI:
         exclude_aggregate: set[str],
         retrieve_endpoints: list[Callable],
         all_test_time_series: TimeSeriesList,
-        cognite_client: CogniteClient,
     ) -> None:
-        with set_max_workers(max_workers), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+        with override_semaphore(max_workers, target="datapoints"), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
             for endpoint in retrieve_endpoints:
                 res = endpoint(
                     id=all_test_time_series[ts_idx].id,
@@ -1984,7 +1997,7 @@ class TestRetrieveAggregateDatapointsAPI:
             (115, "1s", 200, ts_to_ms("2000-01-01"), ts_to_ms("2000-01-01 12:03:20"), False),
             (115, "12h", 5_000, ts_to_ms("1990-01-01"), ts_to_ms("2013-09-09 00:00:00.001"), True),
         )
-        with set_max_workers(2), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+        with override_semaphore(2, target="datapoints"), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
             ids = [
                 DatapointsQuery(
                     id=all_test_time_series[idx].id,
@@ -2032,7 +2045,10 @@ class TestRetrieveAggregateDatapointsAPI:
         else:
             ts, _ = one_mill_dps_ts  # data: 1950-2020 ~25k days
             start, end, gran_unit_upper = YEAR_MS[1950], YEAR_MS[2020], 120
-        with set_max_workers(max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+        with (
+            override_semaphore(max_workers, target="datapoints"),
+            patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
+        ):
             for endpoint in retrieve_endpoints:
                 limits = random.sample(range(2000), k=n_ts)
                 res_lst = endpoint(
@@ -2440,7 +2456,7 @@ class TestRetrieveDataFrameAPI:
         one_mill_dps_ts: tuple[TimeSeries, TimeSeries],
     ) -> None:
         ts, _ = one_mill_dps_ts
-        with set_max_workers(1):
+        with override_semaphore(1, target="datapoints"):
             res_df = cognite_client.time_series.data.retrieve_dataframe(
                 id=ts.id,
                 start=YEAR_MS[1965],
