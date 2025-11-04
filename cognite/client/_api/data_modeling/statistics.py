@@ -20,7 +20,7 @@ class StatisticsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.spaces = SpaceStatisticsAPI(config, api_version, cognite_client)
 
-    def project(self) -> ProjectStatistics:
+    async def project(self) -> ProjectStatistics:
         """`Retrieve project-wide usage data and limits <https://developer.cognite.com/api#tag/Statistics/operation/getStatistics>`_
 
         Returns the usage data and limits for a project's data modelling usage, including data model schemas and graph instances
@@ -39,6 +39,6 @@ class StatisticsAPI(APIClient):
                 >>> data_model_count = stats.data_models.count
                 >>> available_count = stats.data_models.limit - data_model_count
         """
-        response = self._get(self._RESOURCE_PATH)
+        response = await self._get(self._RESOURCE_PATH)
 
         return ProjectStatistics._load(response.json(), self._cognite_client)
