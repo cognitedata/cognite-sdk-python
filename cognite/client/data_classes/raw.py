@@ -201,12 +201,12 @@ class Table(TableCore):
         return TableWrite(name=self.name)
 
     @overload
-    def rows(self, key: str, limit: int | None = None) -> Row | None: ...
+    async def rows(self, key: str, limit: int | None = None) -> Row | None: ...
 
     @overload
-    def rows(self, key: None = None, limit: int | None = None) -> RowList: ...
+    async def rows(self, key: None = None, limit: int | None = None) -> RowList: ...
 
-    def rows(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:
+    async def rows(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:
         """Get the rows in this table.
 
         Args:
@@ -222,8 +222,8 @@ class Table(TableCore):
             raise ValueError("Table 'name' is missing")
 
         if key is not None:
-            return self._cognite_client.raw.rows.retrieve(db_name=self._db_name, table_name=self.name, key=key)
-        return self._cognite_client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
+            return await self._cognite_client.raw.rows.retrieve(db_name=self._db_name, table_name=self.name, key=key)
+        return await self._cognite_client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
 
 
 class TableWrite(TableCore):
@@ -298,7 +298,7 @@ class Database(DatabaseCore):
             raise ValueError("name is required to create a Database")
         return DatabaseWrite(name=self.name)
 
-    def tables(self, limit: int | None = None) -> TableList:
+    async def tables(self, limit: int | None = None) -> TableList:
         """Get the tables in this database.
 
         Args:
@@ -309,7 +309,7 @@ class Database(DatabaseCore):
         """
         if self.name is None:
             raise ValueError("Unable to list tables, 'name' is not set on instance")
-        return self._cognite_client.raw.tables.list(db_name=self.name, limit=limit)
+        return await self._cognite_client.raw.tables.list(db_name=self.name, limit=limit)
 
 
 class DatabaseWrite(DatabaseCore):
