@@ -17,8 +17,9 @@ from collections import UserList
 from collections.abc import Callable, Iterator, Sequence, Sized
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timedelta, timezone
-from typing import Any, Literal, cast
+from typing import Any, cast
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -1414,7 +1415,7 @@ class TestRetrieveRawDatapointsAPI:
                 if isinstance(dps, Datapoints):
                     assert dps.value[3] is None
                 elif isinstance(dps, DatapointsArray):
-                    assert math.isnan(dps.value[3])
+                    assert math.isnan(dps.value[3])  # type: ignore[arg-type]
                     bad_ts = dps.timestamp[3].item() // 1_000_000
                     assert dps.null_timestamps == {bad_ts}
 
@@ -1644,16 +1645,17 @@ class TestRetrieveAggregateDatapointsAPI:
         for endpoint in retrieve_endpoints:
             res = endpoint(
                 limit=5,
-                id=DatapointsQuery(id=ts.id, granularity=granularity, aggregates=aggregates),
+                id=DatapointsQuery(id=ts.id, granularity=granularity, aggregates=aggregates),  # type: ignore[arg-type]
             )
             snake_aggs = sorted(map(to_snake_case, [aggregates] if isinstance(aggregates, str) else aggregates))
-            for col_names in ["id", "external_id"]:
-                res_df = res.to_pandas(column_names=col_names, include_aggregate_name=True)
-                assert all(res_df.columns == [f"{getattr(ts, col_names)}|{agg}" for agg in snake_aggs])
-                dfs.append(res_df)
+            res_df = res.to_pandas(include_aggregate_name=True)
+            exp_cols = pd.MultiIndex.from_tuples(
+                [(ts.external_id, agg) for agg in snake_aggs], names=["identifier", "aggregate"]
+            )
+            pd.testing.assert_index_equal(res_df.columns, exp_cols)
+            dfs.append(res_df)
         # Also make sure `Datapoints.to_pandas()` and `DatapointsArray.to_pandas()` give identical results:
-        pd.testing.assert_frame_equal(dfs[0], dfs[2])
-        pd.testing.assert_frame_equal(dfs[1], dfs[3])
+        pd.testing.assert_frame_equal(dfs[0], dfs[1])
 
     def test_aggregates_bad_string(
         self, fixed_freq_dps_ts: tuple[TimeSeriesList, TimeSeriesList], retrieve_endpoints: list[Callable]
@@ -2034,7 +2036,6 @@ class TestRetrieveAggregateDatapointsAPI:
         n_ts: int,
         mock_out_eager_or_chunk: str,
         use_bursty: bool,
-        cognite_client: CogniteClient,
         ms_bursty_ts: TimeSeries,
         one_mill_dps_ts: tuple[TimeSeries, TimeSeries],
         retrieve_endpoints: list[Callable],
@@ -2080,18 +2081,17 @@ class TestRetrieveAggregateDatapointsAPI:
                 aggregates=["average", "count", "interpolation"],
             )
             # Each dp is more than 1h apart, leading to all-nans for interp. agg only:
-            df = res.to_pandas(include_aggregate_name=True, column_names="external_id")
-            assert df[f"{xid}|interpolation"].isna().all()  # SDK bug v<5, would be all None
-            assert df[f"{xid}|average"].notna().all()
-            assert df[f"{xid}|count"].dtype == np.int64
-            assert df[f"{xid}|interpolation"].dtype == np.float64
+            df = res.to_pandas(include_aggregate_name=True)
+            assert df[xid, "interpolation"].isna().all()  # SDK bug v<5, would be all None
+            assert df[xid, "average"].notna().all()
+            assert df[xid, "count"].dtype == np.int64
+            assert df[xid, "interpolation"].dtype == np.float64
 
     @pytest.mark.parametrize("kwargs", (dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")))
     def test_retrieve_methods_in_target_unit(
         self,
         all_retrieve_endpoints: list[Callable],
         kwargs: dict,
-        cognite_client: CogniteClient,
         timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
         ts = timeseries_degree_c_minus40_0_100
@@ -2466,7 +2466,7 @@ class TestRetrieveDataFrameAPI:
                 uniform_index=uniform,
             )
             assert len(set(np.diff(res_df.index))) == exp_n_ts_delta
-            assert res_df[f"{ts.external_id}|step_interpolation"].isna().sum() == exp_n_nans_step_interp
+            assert res_df[ts.external_id, "step_interpolation"].isna().sum() == exp_n_nans_step_interp
             assert (res_df.count().values == [28994, 29215]).all()
 
     @pytest.mark.parametrize("limit", (0, 1, 2))
@@ -2520,63 +2520,6 @@ class TestRetrieveDataFrameAPI:
                     DatapointsQuery(id=one_mill_dps_ts[0].id, granularity=gran, aggregates=agg, limit=lim)
                     for gran, agg, lim in zip(granularity_lst, aggregates_lst, limits)
                 ],
-            )
-
-    @pytest.mark.parametrize(
-        "include_aggregate_name, column_names",
-        (
-            (True, "id"),
-            (True, "external_id"),
-            (False, "id"),
-            (False, "external_id"),
-        ),
-    )
-    def test_include_aggregate_name_and_column_names_true_false(
-        self,
-        include_aggregate_name: bool,
-        column_names: Literal["id", "external_id"],
-        cognite_client: CogniteClient,
-        one_mill_dps_ts: tuple[TimeSeries, TimeSeries],
-    ) -> None:
-        ts = one_mill_dps_ts[0]
-        random.shuffle(aggs := ALL_SORTED_DP_AGGS[:])
-
-        res_df = cognite_client.time_series.data.retrieve_dataframe(
-            id=ts.id,
-            limit=5,
-            granularity=random_granularity(),
-            aggregates=aggs,
-            include_aggregate_name=include_aggregate_name,
-            column_names=column_names,
-        )
-        for col, agg in zip(res_df.columns, ALL_SORTED_DP_AGGS):
-            name = str(getattr(ts, column_names))
-            if include_aggregate_name:
-                name += f"|{agg}"
-            assert col == name
-
-    def test_include_aggregate_name_fails(
-        self, cognite_client: CogniteClient, one_mill_dps_ts: tuple[TimeSeries, TimeSeries]
-    ) -> None:
-        with pytest.raises(TypeError, match="can't multiply sequence by non-int of type 'NoneType"):
-            cognite_client.time_series.data.retrieve_dataframe(
-                id=one_mill_dps_ts[0].id,
-                limit=5,
-                granularity="1d",
-                aggregates="min",
-                include_aggregate_name=None,  # type: ignore[arg-type]
-            )
-
-    def test_include_granularity_name_fails(
-        self, cognite_client: CogniteClient, one_mill_dps_ts: tuple[TimeSeries, TimeSeries]
-    ) -> None:
-        with pytest.raises(TypeError, match="can't multiply sequence by non-int of type 'NoneType"):
-            cognite_client.time_series.data.retrieve_dataframe(
-                id=one_mill_dps_ts[0].id,
-                limit=5,
-                granularity="1d",
-                aggregates="min",
-                include_granularity_name=None,  # type: ignore[arg-type]
             )
 
 
@@ -3067,7 +3010,7 @@ class TestInsertDatapointsAPI:
             else:
                 bad_ts = to_check.timestamp[2].item() // 1_000_000
                 assert to_check.null_timestamps
-                assert math.isnan(to_check.value[2]) and to_check.null_timestamps == {bad_ts}
+                assert math.isnan(to_check.value[2]) and to_check.null_timestamps == {bad_ts}  # type: ignore[arg-type]
                 to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()
             assert list(to_check.value[5:]) == actual_value[4:]
             assert list(to_check.timestamp[1:]) == actual_timestamp
