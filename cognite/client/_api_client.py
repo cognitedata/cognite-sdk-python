@@ -359,6 +359,26 @@ class APIClient(BasicAsyncAPIClient):
             return limit, url_path, body
         raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
 
+    @overload
+    def _process_into_chunks(
+        self,
+        response: dict[str, Any],
+        chunk_size: None,
+        resource_cls: type[T_CogniteResource],
+        list_cls: type[T_CogniteResourceList],
+        unprocessed_items: list[dict[str, Any]],
+    ) -> Iterator[T_CogniteResource]: ...
+
+    @overload
+    def _process_into_chunks(
+        self,
+        response: dict[str, Any],
+        chunk_size: int,
+        resource_cls: type[T_CogniteResource],
+        list_cls: type[T_CogniteResourceList],
+        unprocessed_items: list[dict[str, Any]],
+    ) -> Iterator[T_CogniteResourceList]: ...
+
     def _process_into_chunks(
         self,
         response: dict[str, Any],
@@ -366,8 +386,8 @@ class APIClient(BasicAsyncAPIClient):
         resource_cls: type[T_CogniteResource],
         list_cls: type[T_CogniteResourceList],
         unprocessed_items: list[dict[str, Any]],
-    ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
-        if not chunk_size:
+    ) -> Iterator[T_CogniteResourceList | T_CogniteResource]:
+        if chunk_size is None:
             for item in response["items"]:
                 yield resource_cls._load(item, cognite_client=self._cognite_client)
         else:
