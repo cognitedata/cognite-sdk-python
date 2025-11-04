@@ -239,6 +239,28 @@ class EventLoopThreadExecutor(threading.Thread):
         return asyncio.run_coroutine_threadsafe(coro, self._event_loop).result(timeout)
 
 
+class _PyodideEventLoopExecutor:
+    def __init__(self, loop: asyncio.AbstractEventLoop | None = None) -> None:
+        import pyodide  # type: ignore [import-not-found]
+
+        if loop is not None:
+            raise RuntimeError("Overriding the event loop is not possible in the browser")
+
+        elif not pyodide.ffi.can_run_sync():
+            warnings.warn(
+                RuntimeWarning(
+                    "Browser most likely not supported, please use a Chromium-based browser like Chrome or Microsoft "
+                    "Edge. Reason: WebAssembly stack switching is not supported in this JavaScript runtime. "
+                    "Note: You can always use the AsyncCogniteClient, but it requires the use of 'await', e.g.: "
+                    "`dps = await client.time_series.data.retrieve(...)`"
+                )
+            )
+        self.run_coro = pyodide.ffi.run_sync
+
+    def start(self) -> None:
+        pass
+
+
 # We need this in order to support a synchronous Cognite client.
 _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON: EventLoopThreadExecutor
 
@@ -253,8 +275,10 @@ class ConcurrencySettings:
             # First time we need to initialize:
             from cognite.client import global_config
 
-            executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = EventLoopThreadExecutor(
-                global_config.event_loop
-            )
+            ex_cls = EventLoopThreadExecutor
+            if _RUNNING_IN_BROWSER:
+                ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
+
+            executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls(global_config.event_loop)
             executor.start()
             return executor
