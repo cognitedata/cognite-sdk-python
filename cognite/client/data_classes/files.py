@@ -540,7 +540,7 @@ class FileMetadataList(WriteableCogniteResourceList[FileMetadataWrite, FileMetad
 
 
 class FileMultipartUploadSession:
-    """Result of a call to `multipart_upload_session`
+    """Result of a call to `multipart_upload_session`.
 
     Args:
         file_metadata (FileMetadata): The created file in CDF.
@@ -556,40 +556,40 @@ class FileMultipartUploadSession:
         self._upload_urls = upload_urls
         self._upload_id = upload_id
         self._uploaded_urls = [False for _ in upload_urls]
-        self._in_context = False
         self._cognite_client = cognite_client
 
-    def upload_part(self, part_no: int, content: str | bytes | BinaryIO) -> None:
+    async def upload_part(self, part_no: int, content: str | bytes | BinaryIO) -> None:
         """Upload part of a file.
-        Note that if `content` does not somehow expose its length, this method may not work
-        on Azure. See `requests.utils.super_len`.
+
+        Note:
+            If `content` does not somehow expose its length, this method may not work on Azure.
 
         Args:
             part_no (int): Which part number this is, must be between 0 and `parts` given to `multipart_upload_session`
             content (str | bytes | BinaryIO): The content to upload.
         """
         if part_no < 0 or part_no > len(self._uploaded_urls):
-            raise ValueError(f"Index out of range: {part_no}, must be between 0 and {len(self._uploaded_urls)}")
+            raise IndexError(f"Index out of range: {part_no}, must be between 0 and {len(self._uploaded_urls)}")
         if self._uploaded_urls[part_no]:
-            raise CogniteFileUploadError(message="Attempted to upload an already uploaded part", code=400)
-        self._cognite_client.files._upload_multipart_part(self._upload_urls[part_no], content)
+            raise RuntimeError("Attempted to upload an already uploaded part")
+
+        await self._cognite_client.files._upload_multipart_part(self._upload_urls[part_no], content)
         self._uploaded_urls[part_no] = True
 
-    def __enter__(self) -> FileMultipartUploadSession:
-        self.in_context = True
+    async def __aenter__(self) -> FileMultipartUploadSession:
         return self
 
-    def __exit__(
+    async def __aexit__(
         self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
     ) -> bool:
-        self.in_context = False
-        # If we failed, do not call complete
         if exc_type is not None:
             return False
 
         if not all(self._uploaded_urls):
-            raise CogniteFileUploadError(message="Did not upload all parts of file during multipart upload", code=400)
+            raise CogniteFileUploadError(
+                message="Did not upload all parts of file during multipart upload",
+                code=400,
+            )
 
-        self._cognite_client.files._complete_multipart_upload(self)
-
+        await self._cognite_client.files._complete_multipart_upload(self)
         return True
