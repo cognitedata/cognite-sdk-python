@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a7a8f72826a31aef48cf7f32fedef687
+4a8379fd5b7f5b1363b5fd73559bf8fa
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -294,6 +294,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> unit_count = client.time_series.aggregate_cardinality_values(TimeSeriesProperty.unit)
 
         Count the number of timezones (metadata key) for time series with the word "critical" in the description
@@ -339,6 +340,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> key_count = client.time_series.aggregate_cardinality_properties(TimeSeriesProperty.metadata)
         """
         return run_sync(
@@ -373,6 +375,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.metadata_key("timezone"))
                 >>> print(result.unique)
 
@@ -428,6 +431,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.metadata)
         """
         return run_sync(
@@ -461,6 +465,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeriesWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> ts = client.time_series.create(TimeSeriesWrite(name="my_ts", data_set_id=123, external_id="foo"))
         """
         return run_sync(self.__async_client.time_series.create(time_series=time_series))
@@ -591,6 +596,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeriesWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_time_series = client.time_series.retrieve(id=1)
                 >>> existing_time_series.description = "New description"
                 >>> new_time_series = TimeSeriesWrite(external_id="new_timeSeries", description="New timeSeries")

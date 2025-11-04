@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f7156bc6a9afa19b20f5aa7b143ca219
+f82a3b2489020d25a0500d7f44f8e26d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -302,6 +302,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RelationshipWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> flowrel1 = RelationshipWrite(
                 ...     external_id="flow_1",
                 ...     source_external_id="source_ext_id",
@@ -418,6 +419,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RelationshipWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_relationship = client.relationships.retrieve(external_id="foo")
                 >>> existing_relationship.description = "New description"
                 >>> new_relationship = RelationshipWrite(

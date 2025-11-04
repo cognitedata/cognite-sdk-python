@@ -1,6 +1,6 @@
 """
 ===============================================================================
-4a5a9086fc597dc122d7af09302774fd
+789d58776aa258529e2d0c9453d9e029
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -73,6 +73,7 @@ class SyncTablesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes.postgres_gateway import ViewTableWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> table = ViewTableWrite(tablename="myCustom", options=ViewId(space="mySpace", external_id="myExternalId", version="v1"))
                 >>> res = client.postgres_gateway.tables.create("myUserName",table)
         """

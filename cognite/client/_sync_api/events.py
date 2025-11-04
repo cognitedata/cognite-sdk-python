@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ba9843d233bbe8ff47f98d6364dc2486
+c8983ce9237658434ca566f8ba93a136
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -251,6 +251,7 @@ class SyncEventsAPI(SyncAPIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> result = client.events.aggregate_unique_values(property=EventProperty.type)
             >>> print(result.unique)
 
@@ -346,6 +347,7 @@ class SyncEventsAPI(SyncAPIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> type_count = client.events.aggregate_cardinality_values(EventProperty.type)
 
         Count the number of types of events linked to asset 123 in your CDF project:
@@ -387,6 +389,7 @@ class SyncEventsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.events import EventProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> type_count = client.events.aggregate_cardinality_properties(EventProperty.metadata)
         """
         return run_sync(
@@ -422,6 +425,7 @@ class SyncEventsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.events import EventProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.events.aggregate_unique_properties(EventProperty.metadata)
                 >>> print(result.unique)
         """
@@ -454,6 +458,7 @@ class SyncEventsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> events = [EventWrite(start_time=0, end_time=1), EventWrite(start_time=2, end_time=3)]
                 >>> res = client.events.create(events)
         """
@@ -593,6 +598,7 @@ class SyncEventsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_event = client.events.retrieve(id=1)
                 >>> existing_event.description = "New description"
                 >>> new_event = EventWrite(external_id="new_event", description="New event")

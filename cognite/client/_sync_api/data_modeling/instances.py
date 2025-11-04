@@ -242,6 +242,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 ...        return ViewId("sp_model_space", "flow", "1")
                 ...
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.instances.retrieve_edges(
                 ...     EdgeId("mySpace", "theFlow"), edge_cls=Flow
                 ... )
@@ -343,6 +344,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 ...        return ViewId("myModelSpace", "Person", "1")
                 ...
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.instances.retrieve_nodes(
                 ...     NodeId("myDataSpace", "myPerson"), node_cls=Person
                 ... )
@@ -474,6 +476,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId, InvolvedViews
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.instances.inspect(
                 ...     nodes=NodeId("my-space", "foo1"),
                 ...     edges=EdgeId("my-space", "bar2"),
@@ -583,6 +586,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> node = NodeApply("mySpace", "myNodeId")
                 >>> res = client.data_modeling.instances.apply(node)
 
@@ -784,6 +788,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.instances.search(
                 ...     ViewId("mySpace", "PersonView", "v1"),
                 ...     query="Arnold",
@@ -903,6 +908,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId, aggregations as aggs
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> avg_run_time = aggs.Avg("runTimeMinutes")
                 >>> view_id = ViewId("mySpace", "PumpView", "v1")
                 >>> res = client.data_modeling.instances.aggregate(view_id, avg_run_time, group_by="releaseYear")
@@ -986,6 +992,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import aggregations as aggs, ViewId
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> birth_by_decade = aggs.Histogram("birthYear", interval=10.0)
                 >>> view_id = ViewId("mySpace", "PersonView", "v1")
                 >>> res = client.data_modeling.instances.histogram(view_id, birth_by_decade)
@@ -1028,6 +1035,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> work_order_id = ViewId("mySpace", "WorkOrderView", "v1")
                 >>> pump_id = ViewId("mySpace", "PumpView", "v1")
                 >>> query = Query(
@@ -1103,6 +1111,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> work_order_id = ViewId("mySpace", "WorkOrderView", "v1")
                 >>> pump_id = ViewId("mySpace", "PumpView", "v1")
                 >>> query = Query(

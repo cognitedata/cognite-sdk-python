@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a203aa5aa507d054ef0e0f79dbc611e4
+21c47330969eedc273a7c18877879b7e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -251,6 +251,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators.runs import SimulationRunWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> run = [
                 ...     SimulationRunWrite(
                 ...         routine_external_id="routine1",

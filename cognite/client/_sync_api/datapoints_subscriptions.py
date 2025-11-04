@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9734b34ae3af0b61b4370e22f956dbe4
+6e10e7034ddf2252bb88d682c2617b49
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -74,6 +74,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> sub = DataPointSubscriptionWrite(
                 ...     external_id="my_subscription",
                 ...     name="My subscription",
@@ -174,6 +175,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> members = client.time_series.subscriptions.list_member_time_series("my_subscription")
                 >>> timeseries_external_ids = members.as_external_ids()
         """
@@ -206,6 +208,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> update = DataPointSubscriptionUpdate("my_subscription").name.set("My New Name")
                 >>> updated = client.time_series.subscriptions.update(update)
 
@@ -291,7 +294,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
                 ignore_bad_datapoints=ignore_bad_datapoints,
                 treat_uncertain_as_bad=treat_uncertain_as_bad,
             )
-        )  # type: ignore [misc]
+        )
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatapointSubscriptionList:
         """

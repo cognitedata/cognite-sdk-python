@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e43e3fc7136649c43ca32fe9b3668ca1
+905a644fdc4c48c8fff8c1b110881492
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -111,6 +111,7 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationNotification
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> notifications = [TransformationNotification(transformation_id = 1, destination="my@email.com"), TransformationNotification(transformation_external_id="transformation2", destination="other@email.com"))]
                 >>> res = client.transformations.notifications.create(notifications)
         """
