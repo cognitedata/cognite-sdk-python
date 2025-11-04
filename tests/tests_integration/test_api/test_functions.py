@@ -32,7 +32,7 @@ def a_function(cognite_client: CogniteClient) -> Function:
         name=name,
         external_id=external_id,
         description=description,
-        function_handle=handle,
+        function_handle=handle,  # type: ignore [arg-type]
     )
     return function
 
@@ -56,7 +56,9 @@ def dummy_function(cognite_client: CogniteClient) -> Function:
         return data
 
     created = cognite_client.functions.create(
-        name=name, function_handle=handle, description="print inputs & call info, return inputs"
+        name=name,
+        function_handle=handle,  # type: ignore [arg-type]
+        description="print inputs & call info, return inputs",
     )
     schedules = [
         FunctionScheduleWrite(
@@ -228,7 +230,7 @@ class TestFunctionSchedulesAPI:
 
         created_fn = cognite_client.functions.create(
             name="test_function_for_schedule_with_nonce",
-            function_handle=handle,
+            function_handle=handle,  # type: ignore [arg-type]
             description="print inputs & call info, return inputs",
         )
         schedule = FunctionScheduleWrite(
