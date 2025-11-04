@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import functools
 import logging
 import random
@@ -193,6 +194,7 @@ class HTTPClientWithRetry:
         headers: MutableMapping[str, str] | None = None,
         follow_redirects: bool = False,
         timeout: float | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> httpx.Response:
         fn: Coroutine[Any, Any, httpx.Response] = self.httpx_async_client.request(
             method,
@@ -236,6 +238,7 @@ class HTTPClientWithRetry:
         *,
         url: str,
         headers: MutableMapping[str, str] | None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> httpx.Response:
         is_auto_retryable = False
         retry_tracker = RetryTracker(self.config)
