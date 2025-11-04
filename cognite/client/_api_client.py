@@ -170,7 +170,48 @@ class APIClient(BasicAPIClient):
                 return None
         return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
 
+    @overload
     def _list_generator(
+        self,
+        method: Literal["GET", "POST"],
+        list_cls: type[T_CogniteResourceList],
+        resource_cls: type[T_CogniteResource],
+        resource_path: str | None = None,
+        url_path: str | None = None,
+        limit: int | None = None,
+        chunk_size: None = None,
+        filter: dict[str, Any] | None = None,
+        sort: SequenceNotStr | None = None,
+        other_params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        initial_cursor: str | None = None,
+        advanced_filter: dict | Filter | None = None,
+        api_subversion: str | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
+    ) -> AsyncIterator[T_CogniteResource]: ...
+
+    @overload
+    def _list_generator(
+        self,
+        method: Literal["GET", "POST"],
+        list_cls: type[T_CogniteResourceList],
+        resource_cls: type[T_CogniteResource],
+        resource_path: str | None = None,
+        url_path: str | None = None,
+        limit: int | None = None,
+        *,
+        chunk_size: int,
+        filter: dict[str, Any] | None = None,
+        sort: SequenceNotStr | None = None,
+        other_params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        initial_cursor: str | None = None,
+        advanced_filter: dict | Filter | None = None,
+        api_subversion: str | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
+    ) -> AsyncIterator[T_CogniteResourceList]: ...
+
+    async def _list_generator(
         self,
         method: Literal["GET", "POST"],
         list_cls: type[T_CogniteResourceList],
