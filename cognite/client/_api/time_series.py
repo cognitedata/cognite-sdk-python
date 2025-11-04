@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
 from cognite.client._api.datapoints import DatapointsAPI
@@ -72,10 +72,10 @@ class TimeSeriesAPI(APIClient):
         created_time: dict[str, Any] | None = None,
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[TimeSeries]: ...
+    ) -> AsyncIterator[TimeSeries]: ...
+
     @overload
     def __call__(
         self,
@@ -97,11 +97,11 @@ class TimeSeriesAPI(APIClient):
         created_time: dict[str, Any] | None = None,
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[TimeSeriesList]: ...
-    def __call__(
+    ) -> AsyncIterator[TimeSeriesList]: ...
+
+    async def __call__(
         self,
         chunk_size: int | None = None,
         name: str | None = None,
@@ -124,7 +124,7 @@ class TimeSeriesAPI(APIClient):
         partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[TimeSeries] | Iterator[TimeSeriesList]:
+    ) -> AsyncIterator[TimeSeries | TimeSeriesList]:
         """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
@@ -152,8 +152,8 @@ class TimeSeriesAPI(APIClient):
             advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
-        Returns:
-            Iterator[TimeSeries] | Iterator[TimeSeriesList]: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
+        Yields:
+            TimeSeries | TimeSeriesList: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -178,7 +178,7 @@ class TimeSeriesAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, TimeSeriesSort)
         self._validate_filter(advanced_filter)
 
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             method="POST",
@@ -188,9 +188,10 @@ class TimeSeriesAPI(APIClient):
             limit=limit,
             partitions=partitions,
             sort=prep_sort,
-        )
+        ):
+            yield item
 
-    def retrieve(
+    async def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> TimeSeries | None:
         """`Retrieve a single time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
@@ -216,13 +217,13 @@ class TimeSeriesAPI(APIClient):
                 >>> res = client.time_series.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             identifiers=identifiers,
         )
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
@@ -253,14 +254,14 @@ class TimeSeriesAPI(APIClient):
                 >>> res = client.time_series.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def aggregate(self, filter: TimeSeriesFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
+    async def aggregate(self, filter: TimeSeriesFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
         """`Aggregate time series <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
@@ -280,9 +281,9 @@ class TimeSeriesAPI(APIClient):
         warnings.warn(
             "This method will be deprecated in the next major release. Use aggregate_count instead.", DeprecationWarning
         )
-        return self._aggregate(filter=filter, cls=CountAggregate)
+        return await self._aggregate(filter=filter, cls=CountAggregate)
 
-    def aggregate_count(
+    async def aggregate_count(
         self,
         advanced_filter: Filter | dict[str, Any] | None = None,
         filter: TimeSeriesFilter | dict[str, Any] | None = None,
@@ -313,13 +314,13 @@ class TimeSeriesAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "count",
             filter=filter,
             advanced_filter=advanced_filter,
         )
 
-    def aggregate_cardinality_values(
+    async def aggregate_cardinality_values(
         self,
         property: TimeSeriesProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -359,7 +360,7 @@ class TimeSeriesAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityValues",
             properties=property,
             filter=filter,
@@ -367,7 +368,7 @@ class TimeSeriesAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_cardinality_properties(
+    async def aggregate_cardinality_properties(
         self,
         path: TimeSeriesProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -394,7 +395,7 @@ class TimeSeriesAPI(APIClient):
                 >>> key_count = client.time_series.aggregate_cardinality_properties(TimeSeriesProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityProperties",
             path=path,
             filter=filter,
@@ -402,7 +403,7 @@ class TimeSeriesAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_unique_values(
+    async def aggregate_unique_values(
         self,
         property: TimeSeriesProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -451,7 +452,7 @@ class TimeSeriesAPI(APIClient):
                 >>> print(result.unique)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueValues",
             properties=property,
             filter=filter,
@@ -459,7 +460,7 @@ class TimeSeriesAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_unique_properties(
+    async def aggregate_unique_properties(
         self,
         path: TimeSeriesProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -487,7 +488,7 @@ class TimeSeriesAPI(APIClient):
                 >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueProperties",
             path=path,
             filter=filter,
@@ -496,12 +497,12 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def create(self, time_series: Sequence[TimeSeries] | Sequence[TimeSeriesWrite]) -> TimeSeriesList: ...
+    async def create(self, time_series: Sequence[TimeSeries] | Sequence[TimeSeriesWrite]) -> TimeSeriesList: ...
 
     @overload
-    def create(self, time_series: TimeSeries | TimeSeriesWrite) -> TimeSeries: ...
+    async def create(self, time_series: TimeSeries | TimeSeriesWrite) -> TimeSeries: ...
 
-    def create(
+    async def create(
         self, time_series: TimeSeries | TimeSeriesWrite | Sequence[TimeSeries] | Sequence[TimeSeriesWrite]
     ) -> TimeSeries | TimeSeriesList:
         """`Create one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/postTimeSeries>`_
@@ -521,14 +522,14 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> ts = client.time_series.create(TimeSeriesWrite(name="my_ts", data_set_id=123, external_id="foo"))
         """
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             items=time_series,
             input_resource_cls=TimeSeriesWrite,
         )
 
-    def delete(
+    async def delete(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -549,27 +550,27 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.time_series.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
     @overload
-    def update(
+    async def update(
         self,
         item: Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TimeSeriesList: ...
 
     @overload
-    def update(
+    async def update(
         self,
         item: TimeSeries | TimeSeriesWrite | TimeSeriesUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TimeSeries: ...
 
-    def update(
+    async def update(
         self,
         item: TimeSeries
         | TimeSeriesWrite
@@ -614,7 +615,7 @@ class TimeSeriesAPI(APIClient):
                 ... )
                 >>> client.time_series.update(my_update)
         """
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             update_cls=TimeSeriesUpdate,
@@ -623,14 +624,16 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def upsert(
+    async def upsert(
         self, item: Sequence[TimeSeries | TimeSeriesWrite], mode: Literal["patch", "replace"] = "patch"
     ) -> TimeSeriesList: ...
 
     @overload
-    def upsert(self, item: TimeSeries | TimeSeriesWrite, mode: Literal["patch", "replace"] = "patch") -> TimeSeries: ...
+    async def upsert(
+        self, item: TimeSeries | TimeSeriesWrite, mode: Literal["patch", "replace"] = "patch"
+    ) -> TimeSeries: ...
 
-    def upsert(
+    async def upsert(
         self,
         item: TimeSeries | TimeSeriesWrite | Sequence[TimeSeries | TimeSeriesWrite],
         mode: Literal["patch", "replace"] = "patch",
@@ -661,7 +664,7 @@ class TimeSeriesAPI(APIClient):
                 >>> res = client.time_series.upsert([existing_time_series, new_time_series], mode="replace")
         """
 
-        return self._upsert_multiple(
+        return await self._upsert_multiple(
             item,
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
@@ -670,7 +673,7 @@ class TimeSeriesAPI(APIClient):
             mode=mode,
         )
 
-    def search(
+    async def search(
         self,
         name: str | None = None,
         description: str | None = None,
@@ -704,14 +707,14 @@ class TimeSeriesAPI(APIClient):
                 >>> res = client.time_series.search(filter={"asset_ids":[123]})
         """
 
-        return self._search(
+        return await self._search(
             list_cls=TimeSeriesList,
             search={"name": name, "description": description, "query": query},
             filter=filter or {},
             limit=limit,
         )
 
-    def filter(
+    async def filter(
         self,
         filter: Filter | dict,
         sort: TimeSeriesProperty | SortSpec | list[SortSpec] | None = None,
@@ -758,7 +761,7 @@ class TimeSeriesAPI(APIClient):
         )
         self._validate_filter(filter)
 
-        return self._list(
+        return await self._list(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             method="POST",
@@ -770,7 +773,7 @@ class TimeSeriesAPI(APIClient):
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         unit: str | None = None,
@@ -896,7 +899,7 @@ class TimeSeriesAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, TimeSeriesSort)
         self._validate_filter(advanced_filter)
 
-        return self._list(
+        return await self._list(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             method="POST",
