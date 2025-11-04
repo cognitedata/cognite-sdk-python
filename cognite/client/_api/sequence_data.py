@@ -86,18 +86,21 @@ class SequencesDataAPI(APIClient):
                 >>> client.sequences.data.insert(rows=data, id=1,columns=None)
         """
         columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
-        if isinstance(rows, SequenceRows):
-            columns = rows.column_external_ids
-            rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
 
-        if isinstance(rows, dict):
-            all_rows: typing.Sequence = [{"rowNumber": k, "values": v} for k, v in rows.items()]
-        elif isinstance(rows, typing.Sequence) and len(rows) > 0 and isinstance(rows[0], dict):
-            all_rows = rows
-        elif isinstance(rows, typing.Sequence) and (len(rows) == 0 or isinstance(rows[0], tuple)):
-            all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
-        else:
-            raise TypeError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
+        match rows:
+            case SequenceRows():
+                columns = rows.column_external_ids
+                all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+            case []:
+                all_rows = []
+            case dict():
+                all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+            case [dict(), *_]:  # Assume homogeneous
+                all_rows = list(rows)  # type: ignore [arg-type]
+            case [(_, _), *_]:  # more assume homogeneous
+                all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
+            case _:
+                raise TypeError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
 
         base_obj = Identifier.of_either(id, external_id).as_dict()
         base_obj.update(self._wrap_columns(columns))
