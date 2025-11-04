@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, cast
@@ -280,30 +281,30 @@ class SimulationRun(SimulationRunCore):
             run_time=self.run_time,
         )
 
-    def get_logs(self) -> SimulatorLog | None:
+    async def get_logs(self) -> SimulatorLog | None:
         """`Retrieve logs for this simulation run. <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
 
         Returns:
             SimulatorLog | None: Log for the simulation run.
         """
-        return self._cognite_client.simulators.logs.retrieve(ids=self.log_id)
+        return await self._cognite_client.simulators.logs.retrieve(ids=self.log_id)
 
-    def get_data(self) -> SimulationRunDataItem | None:
+    async def get_data(self) -> SimulationRunDataItem | None:
         """`Retrieve data associated with this simulation run. <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
 
         Returns:
             SimulationRunDataItem | None: Data for the simulation run.
         """
-        data = self._cognite_client.simulators.runs.list_run_data(run_id=self.id)
+        data = await self._cognite_client.simulators.runs.list_run_data(run_id=self.id)
         if data:
             return data[0]
 
         return None
 
-    def update(self) -> None:
+    async def update(self) -> None:
         """Update the simulation run object to the latest state. Useful if the run was created with wait=False."""
         # same logic as Cognite Functions
-        latest = self._cognite_client.simulators.runs.retrieve(ids=self.id)
+        latest = await self._cognite_client.simulators.runs.retrieve(ids=self.id)
         if latest is None:
             raise RuntimeError("Unable to update the simulation run object (it was not found)")
         else:
@@ -312,7 +313,7 @@ class SimulationRun(SimulationRunCore):
             self.simulation_time = latest.simulation_time
             self.last_updated_time = latest.last_updated_time
 
-    def wait(self, timeout: float = 60) -> None:
+    async def wait(self, timeout: float = 60) -> None:
         """Waits for simulation status to become either success or failure.
         This is generally not needed to call directly, as client.simulators.routines.run(...) will wait for the simulation to finish by default.
 
@@ -324,11 +325,11 @@ class SimulationRun(SimulationRunCore):
         poll_backoff = Backoff(max_wait=30, base=10)
 
         while time.time() < end_time:
-            self.update()
+            await self.update()
             if self.status in ["success", "failure"]:
                 return
             sleep_time = min(next(poll_backoff) + 1, end_time - time.time())
-            time.sleep(sleep_time)
+            await asyncio.sleep(sleep_time)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> SimulationRun:
