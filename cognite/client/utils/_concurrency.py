@@ -30,6 +30,43 @@ def get_global_data_modeling_semaphore() -> asyncio.BoundedSemaphore:
     return asyncio.BoundedSemaphore(2)
 
 
+class AsyncSDKTask:
+    """
+    This class stores info about a task that should be run asynchronously (like what function to call,
+    and with what arguments). This is quite useful when we later need to map e.g. which input arguments
+    (typically, which identifiers) resulted in some failed API request.
+    """
+
+    def __init__(self, fn: Callable[..., Coroutine], /, *args: Any, **kwargs: Any) -> None:
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        self._async_task: asyncio.Task | None = None
+
+    def schedule(self) -> asyncio.Task:
+        """Schedule the task for execution. Can only be called once."""
+        if self._async_task is not None:
+            raise RuntimeError("Task has already been scheduled")
+
+        self._async_task = asyncio.create_task(self.fn(*self.args, **self.kwargs))
+        return self._async_task
+
+    @property
+    def async_task(self) -> asyncio.Task:
+        if self._async_task is None:
+            raise RuntimeError("Task has not been scheduled yet")
+        return self._async_task
+
+    def exception(self) -> BaseException | None:
+        return self.async_task.exception()
+
+    def result(self) -> Any:
+        return self.async_task.result()
+
+    def cancelled(self) -> bool:
+        return self.async_task.cancelled()
+
+
 class TasksSummary:
     def __init__(
         self,
