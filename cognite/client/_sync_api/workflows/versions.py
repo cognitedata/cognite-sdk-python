@@ -1,6 +1,6 @@
 """
 ===============================================================================
-18f05a20017347f9404c717b1967a4d9
+dbe63d3ec197cad0f0b43c1fd4836524
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -103,6 +103,7 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
                 ...     WorkflowTask, FunctionTaskParameters,
                 ... )
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> function_task = WorkflowTask(
                 ...     external_id="my_workflow-task1",
                 ...     parameters=FunctionTaskParameters(
@@ -189,6 +190,7 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionId
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.versions.retrieve(WorkflowVersionId("my_workflow", "v1"))
 
             Retrieve multiple workflow versions and ignore unknown:

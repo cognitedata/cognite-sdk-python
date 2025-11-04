@@ -1,6 +1,6 @@
 """
 ===============================================================================
-897f98e859a21ebeb6ae1334e2ab90bd
+9fa206381eda1a29ffb0797a17457fdd
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -294,6 +294,7 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.assets import AssetProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> label_count = client.assets.aggregate_cardinality_values(AssetProperty.labels)
 
             Count the number of timezones (metadata key) for assets with the word "critical" in the description in your CDF project:
@@ -337,6 +338,7 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.assets import AssetProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> key_count = client.assets.aggregate_cardinality_properties(AssetProperty.metadata)
         """
         return run_sync(
@@ -374,6 +376,7 @@ class SyncAssetsAPI(SyncAPIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> result = client.assets.aggregate_unique_values(AssetProperty.metadata_key("timezone"))
             >>> print(result.unique)
 
@@ -434,6 +437,7 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.assets import AssetProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.assets.aggregate_unique_properties(AssetProperty.metadata)
         """
         return run_sync(
@@ -468,6 +472,7 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> assets = [AssetWrite(name="asset1"), AssetWrite(name="asset2")]
                 >>> res = client.assets.create(assets)
 
@@ -539,6 +544,7 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> assets = [
                 ...     AssetWrite(external_id="root", name="root"),
                 ...     AssetWrite(external_id="child1", parent_external_id="root", name="child1"),
@@ -673,6 +679,7 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res1 = client.assets.update(my_update)
                 >>> # Remove an already set field like so
@@ -739,6 +746,7 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_asset = client.assets.retrieve(id=1)
                 >>> existing_asset.description = "New description"
                 >>> new_asset = AssetWrite(external_id="new_asset", name="my asset", description="New asset")

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0abf6d100ed5bb2cc4a7c6be6ecff503
+f6f7ffe998d45d3d1b965468ba5bbe24
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -112,6 +112,7 @@ class SyncDiagramsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.contextualization import FileReference
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> detect_job = client.diagrams.detect(
                 ...     entities=[
                 ...         {"userDefinedField": "21PT1017","ignoredField": "AA11"},

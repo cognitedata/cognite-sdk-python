@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0020d656dae46bdfbca9af482e9870f0
+546c83035081b646ac3ec0dd49457ec3
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -153,6 +153,7 @@ class Sync3DModelsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ThreeDModelWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_model = ThreeDModelWrite(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
                 >>> my_other_model = ThreeDModelWrite(name="My Other Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
                 >>> res = client.three_d.models.create([my_model, my_other_model])

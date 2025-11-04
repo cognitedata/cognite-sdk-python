@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e5e09a2e56f832e04d7e469f44a018b6
+9cbf5a741c269572a7ad9796090764bd
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -148,6 +148,7 @@ class SyncRawRowsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RowWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> rows = [RowWrite(key="r1", columns={"col1": "val1", "col2": "val1"}),
                 ...         RowWrite(key="r2", columns={"col1": "val2", "col2": "val2"})]
                 >>> client.raw.rows.insert("db1", "table1", rows)
@@ -189,6 +190,7 @@ class SyncRawRowsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>>
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = pd.DataFrame(
                 ...     {"col-a": [1, 3, None], "col-b": [2, -1, 9]},
                 ...     index=["r1", "r2", "r3"])

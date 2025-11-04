@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e80f07500a5af7917099bb7920466a93
+0510f1db0b7bcc6ff934fe05fbb806d8
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -198,6 +198,7 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators import SimulatorModelWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> models = [
                 ...     SimulatorModelWrite(
                 ...         name="model1", simulator_external_id="sim1", type="SteadyState",

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0bcb347430e304e93341a4f9c5fe285d
+7106050633056c97a21c6cc380191bca
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -15,6 +15,7 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api.document_preview import SyncDocumentPreviewAPI
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.documents import (
     Document,
     DocumentHighlightList,
@@ -146,6 +147,7 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.documents.aggregate_cardinality_values(DocumentProperty.type)
 
             Count the number of authors of plain/text documents in your CDF project:
@@ -231,6 +233,7 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.documents.aggregate_unique_values(DocumentProperty.mime_type)
                 >>> unique_types = result.unique
 
@@ -285,6 +288,7 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import SourceFileProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.documents.aggregate_unique_values(SourceFileProperty.metadata)
         """
         return run_sync(
@@ -293,7 +297,9 @@ class SyncDocumentsAPI(SyncAPIClient):
             )
         )
 
-    def retrieve_content(self, id: int) -> bytes:
+    def retrieve_content(
+        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+    ) -> bytes:
         """
         `Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
@@ -305,7 +311,9 @@ class SyncDocumentsAPI(SyncAPIClient):
         you can use this endpoint.
 
         Args:
-            id (int): The server-generated ID for the document you want to retrieve the content of.
+            id (int | None): The server-generated ID for the document you want to retrieve the content of.
+            external_id (str | None): External ID of the document.
+            instance_id (NodeId | None): Instance ID of the document.
 
         Returns:
             bytes: The content of the document.
@@ -318,10 +326,24 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.retrieve_content(id=123)
-        """
-        return run_sync(self.__async_client.documents.retrieve_content(id=id))
 
-    def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
+            Retrieve the content of a document with external_id "my_document":
+
+                >>> content = client.documents.retrieve_content(external_id="my_document")
+
+            Retrieve the content of a document with instance_id:
+
+                >>> from cognite.client.data_classes.data_modeling.ids import NodeId
+                >>> instance_id = NodeId(space="my_space", external_id="my_document")
+                >>> content = client.documents.retrieve_content(instance_id=instance_id)
+        """
+        return run_sync(
+            self.__async_client.documents.retrieve_content(id=id, external_id=external_id, instance_id=instance_id)
+        )
+
+    def retrieve_content_buffer(
+        self, buffer: BinaryIO, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+    ) -> None:
         """
         `Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
@@ -333,8 +355,10 @@ class SyncDocumentsAPI(SyncAPIClient):
         you can use this endpoint.
 
         Args:
-            id (int): The server-generated ID for the document you want to retrieve the content of.
             buffer (BinaryIO): The document content is streamed directly into the buffer. This is useful for retrieving large documents.
+            id (int | None): The server-generated ID for the document you want to retrieve the content of.
+            external_id (str | None): External ID of the document.
+            instance_id (NodeId | None): Instance ID of the document.
 
         Examples:
 
@@ -343,10 +367,20 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from pathlib import Path
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> with Path("my_file.txt").open("wb") as buffer:
-                ...     client.documents.retrieve_content_buffer(id=123, buffer=buffer)
+                ...     client.documents.retrieve_content_buffer(buffer, id=123)
+
+            Retrieve the content of a document with external_id "my_document" into local file "my_text.txt":
+
+                >>> with Path("my_file.txt").open("wb") as buffer:
+                ...     client.documents.retrieve_content_buffer(buffer, external_id="my_document")
         """
-        return run_sync(self.__async_client.documents.retrieve_content_buffer(id=id, buffer=buffer))
+        return run_sync(
+            self.__async_client.documents.retrieve_content_buffer(
+                buffer=buffer, id=id, external_id=external_id, instance_id=instance_id
+            )
+        )
 
     @overload
     def search(
@@ -401,6 +435,7 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
                 >>> documents = client.documents.search("pump 123", filter=is_pdf)
 
@@ -453,6 +488,7 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
                 >>> pdf_documents = client.documents.list(filter=is_pdf)
 

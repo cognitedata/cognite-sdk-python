@@ -1,6 +1,6 @@
 """
 ===============================================================================
-b8ff022cf0d133f112ba18d5ee2688d4
+3f643634e376e43ff956e24881ee0f34
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -115,6 +115,7 @@ class SyncDataSetsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataSetWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> data_sets = [DataSetWrite(name="1st level"), DataSetWrite(name="2nd level")]
                 >>> res = client.data_sets.create(data_sets)
         """

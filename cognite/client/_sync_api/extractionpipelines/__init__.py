@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e2890787a3dc6ab3ec8bd3e3046b8808
+bb4b6d7e66d3d1b7df9e755ec6a964ad
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +8,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import Literal, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -19,6 +19,9 @@ from cognite.client.data_classes import ExtractionPipeline, ExtractionPipelineLi
 from cognite.client.data_classes.extractionpipelines import ExtractionPipelineWrite
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
+
+if TYPE_CHECKING:
+    from cognite.client import AsyncCogniteClient
 
 
 class SyncExtractionPipelinesAPI(SyncAPIClient):

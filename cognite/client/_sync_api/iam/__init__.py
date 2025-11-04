@@ -1,6 +1,6 @@
 """
 ===============================================================================
-4757d559b846e5066a596fd5502a1c79
+dee7369c5fe919ffd146a7c16845acea
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from cognite.client import AsyncCogniteClient
 from cognite.client._api.iam import ComparableCapability
 from cognite.client._sync_api.iam.groups import SyncGroupsAPI
 from cognite.client._sync_api.iam.security_categories import SyncSecurityCategoriesAPI
@@ -18,9 +17,7 @@ from cognite.client._sync_api.iam.token import SyncTokenAPI
 from cognite.client._sync_api.org_apis.principals import SyncPrincipalsAPI
 from cognite.client._sync_api.user_profiles import SyncUserProfilesAPI
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes.capabilities import (
-    Capability,
-)
+from cognite.client.data_classes.capabilities import Capability
 from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
@@ -74,6 +71,7 @@ class SyncIAMAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_groups = client.iam.groups.list(all=False)
                 >>> to_check = [
                 ...     AssetsAcl(
@@ -127,6 +125,7 @@ class SyncIAMAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> to_check = [
                 ...     AssetsAcl(
                 ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],

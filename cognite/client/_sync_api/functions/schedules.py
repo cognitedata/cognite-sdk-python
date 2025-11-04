@@ -1,6 +1,6 @@
 """
 ===============================================================================
-2eeafaf74ac7aa45106adf1f3e6ad610
+e1759a3c63d0e2572244078ef6d332da
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -217,6 +217,7 @@ class SyncFunctionSchedulesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> schedule = client.functions.schedules.create(
                 ...     name="My schedule",
                 ...     function_id=123,

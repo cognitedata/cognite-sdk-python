@@ -1,6 +1,6 @@
 """
 ===============================================================================
-6f66d1f456b805976e70894bba676c29
+5037375549a8bfc6b7404b90764e73ca
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -119,6 +119,7 @@ class Sync3DAssetMappingAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import ThreeDAssetMappingWrite
                 >>> my_mapping = ThreeDAssetMappingWrite(node_id=1, asset_id=1)
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.asset_mappings.create(model_id=1, revision_id=1, asset_mapping=my_mapping)
         """
         return run_sync(

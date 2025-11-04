@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c97713e5931c9cacbe0926bbbc72ebf1
+f542ffd1d02db6ccc5d458d6e28d107c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -136,6 +136,7 @@ class SyncJobsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> job_write = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
                 >>> job = client.hosted_extractors.jobs.create(job_write)
         """
@@ -177,6 +178,7 @@ class SyncJobsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> job = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
                 >>> updated_job = client.hosted_extractors.jobs.update(job)
         """

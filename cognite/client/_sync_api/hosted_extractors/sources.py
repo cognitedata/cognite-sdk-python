@@ -1,6 +1,6 @@
 """
 ===============================================================================
-002adf3943e1cc02bc90f9b5bfe106b6
+8dedeab93e14ad6efe0b97625676174f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -132,6 +132,7 @@ class SyncSourcesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> source = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
                 >>> res = client.hosted_extractors.sources.create(source)
         """
@@ -173,6 +174,7 @@ class SyncSourcesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> source = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
                 >>> res = client.hosted_extractors.sources.update(source)
         """

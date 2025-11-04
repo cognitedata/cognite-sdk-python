@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c9ad6444c7e9b577c7eadb5b29053fc1
+05267f897d3dc5db4deb65fd98f2f2ae
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -153,6 +153,7 @@ class SyncAnnotationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AnnotationReverseLookupFilter
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> flt = AnnotationReverseLookupFilter(annotated_resource_type="file")
                 >>> res = client.annotations.reverse_lookup(flt, limit=100)
         """
@@ -179,6 +180,7 @@ class SyncAnnotationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AnnotationFilter
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> flt = AnnotationFilter(annotated_resource_type="file", annotated_resource_ids=[{"id": 123}])
                 >>> res = client.annotations.list(flt, limit=None)
         """

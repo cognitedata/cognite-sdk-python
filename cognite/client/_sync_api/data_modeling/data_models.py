@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c4692a5230018a16c1090d437d36ff14
+71b623a4539f9d79757ebfd3b25edf46
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -238,6 +238,7 @@ class SyncDataModelsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import DataModelApply, ViewId
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> data_models = [
                 ...     DataModelApply(space="mySpace",external_id="myDataModel",version="v1",views=[ViewId("mySpace","myView","v1")]),
                 ...     DataModelApply(space="mySpace",external_id="myOtherDataModel",version="v1",views=[ViewId("mySpace","myView","v1")])]

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-663f277da9fcdf91e14171e7323033c6
+ef2f95af001bce1458ee5634c9a1e068
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -167,6 +167,7 @@ class SyncTransformationsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import TransformationWrite, TransformationDestination
                 >>> from cognite.client.data_classes.transformations.common import ViewInfo, EdgeType, DataModelInfo
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> transformations = [
                 >>>     TransformationWrite(
                 >>>         external_id="transformation1",

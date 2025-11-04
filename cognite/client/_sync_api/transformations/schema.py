@@ -1,6 +1,6 @@
 """
 ===============================================================================
-63827e363f4f15859ad49b1b4bae34e0
+831938d78c499d094223f8b4531026b2
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -42,6 +42,7 @@ class SyncTransformationSchemaAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationDestination
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> columns = client.transformations.schema.retrieve(destination = TransformationDestination.assets())
         """
         return run_sync(

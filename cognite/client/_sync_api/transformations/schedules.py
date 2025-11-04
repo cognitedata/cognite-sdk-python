@@ -1,6 +1,6 @@
 """
 ===============================================================================
-27569e19ffd1c836ddbe8b968ab02c0c
+8105beb1c4bc1286877edd4efeedd9ab
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -93,6 +93,7 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationScheduleWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> schedules = [TransformationScheduleWrite(id = 1, interval = "0 * * * *"), TransformationScheduleWrite(external_id="transformation2", interval = "5 * * * *"))]
                 >>> res = client.transformations.schedules.create(schedules)
         """

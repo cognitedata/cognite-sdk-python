@@ -1,6 +1,6 @@
 """
 ===============================================================================
-14c67285faad25a6c281c149a9957a39
+30324f2b6b5b189b9b7295150dea0197
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -228,6 +228,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionWrite, SimulatorModelDependencyFileId, SimulatorModelRevisionDependency
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> revisions = [
                 ...     SimulatorModelRevisionWrite(
                 ...         external_id="revision1",

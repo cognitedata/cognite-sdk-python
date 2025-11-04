@@ -1,6 +1,6 @@
 """
 ===============================================================================
-eec1036be63503688431e68362e0db80
+b06eb8802f228411d231d93bf66b321f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -229,6 +229,7 @@ class SyncContainersAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.data_modeling import (
                 ...     ContainerApply, ContainerProperty, Text, Float64)
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> container = ContainerApply(
                 ...     space="mySpace",
                 ...     external_id="myContainer",

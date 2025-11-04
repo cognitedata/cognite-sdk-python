@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8213a2d7af01aedf20789d9a6f7b67ed
+aba5e77f64d4560ca306431aa52ccfd5
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -51,6 +51,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> seq = client.sequences.create(
                 ...     SequenceWrite(
                 ...         columns=[
@@ -102,6 +103,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> import pandas as pd
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = pd.DataFrame({'col_a': [1, 2, 3], 'col_b': [4, 5, 6]}, index=[1, 2, 3])
                 >>> client.sequences.data.insert_dataframe(df, id=123)
         """

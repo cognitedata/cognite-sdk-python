@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0f70b1ace170267926e71650e6ba2e55
+682cc895226cf66f89083037d763db10
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -46,7 +46,7 @@ class SyncMappingsAPI(SyncAPIClient):
         Yields:
             Mapping | MappingList: yields Mapping one by one if chunk_size is not specified, else MappingList objects.
         """
-        yield from SyncIterator(self.__async_client.hosted_extractors.mappings(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
+        yield from SyncIterator(self.__async_client.hosted_extractors.mappings(chunk_size=chunk_size, limit=limit))
 
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Mapping: ...
@@ -134,6 +134,7 @@ class SyncMappingsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import MappingWrite, CustomMapping
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping = MappingWrite(external_id="my_mapping", mapping=CustomMapping("some expression"), published=True, input="json")
                 >>> res = client.hosted_extractors.mappings.create(mapping)
         """
@@ -164,6 +165,7 @@ class SyncMappingsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import MappingUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping = MappingUpdate('my_mapping').published.set(False)
                 >>> res = client.hosted_extractors.mappings.update(mapping)
         """

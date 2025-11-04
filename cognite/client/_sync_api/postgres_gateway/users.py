@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8866a9d7e7d00770aae6be42546f5983
+f0a2f88100629f77edb6ad5e99425c61
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -82,6 +82,7 @@ class SyncUsersAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.postgres_gateway import UserWrite, SessionCredentials
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> session = client.iam.sessions.create(
                 ...     ClientCredentials(os.environ["IDP_CLIENT_ID"], os.environ["IDP_CLIENT_SECRET"]),
                 ...     session_type="CLIENT_CREDENTIALS"
@@ -118,6 +119,7 @@ class SyncUsersAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.postgres_gateway import UserUpdate, SessionCredentials
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> session = client.iam.sessions.create(
                 ...     ClientCredentials(os.environ["IDP_CLIENT_ID"], os.environ["IDP_CLIENT_SECRET"]),
                 ...     session_type="CLIENT_CREDENTIALS"
