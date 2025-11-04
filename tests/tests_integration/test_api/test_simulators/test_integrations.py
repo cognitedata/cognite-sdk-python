@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from cognite.client._cognite_client import CogniteClient
+from cognite.client import CogniteClient
 from tests.tests_integration.test_api.test_simulators.seed.data import ResourceNames
 
 

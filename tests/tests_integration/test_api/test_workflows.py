@@ -753,12 +753,13 @@ class TestWorkflowTriggers:
         assert permanent_scheduled_trigger.external_id in external_ids
         assert permanent_data_modeling_trigger.external_id in external_ids
 
+    # TODO: Improve test reliability; the API works in mysterious ways...
+    @pytest.mark.skip("This test is temp. disabled, flaky, awaiting a more robust long-term solution.")
     def test_trigger_run_history(
         self,
         cognite_client: CogniteClient,
         permanent_scheduled_trigger: WorkflowTrigger,
     ) -> None:
-        # TODO: Improve test reliability; the API works in mysterious ways...
         for attempt in [1, 2, 3]:
             history = cognite_client.workflows.triggers.list_runs(external_id=permanent_scheduled_trigger.external_id)
             if len(history) > 0:
