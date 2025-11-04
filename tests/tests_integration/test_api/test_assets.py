@@ -32,7 +32,7 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
 from cognite.client.utils._time import timestamp_to_ms
-from tests.utils import rng_context, set_max_workers
+from tests.utils import override_semaphore, rng_context
 
 TEST_LABEL = "integration test label, dont delete"
 
@@ -490,7 +490,7 @@ def create_hierarchy_with_cleanup(
 
 @pytest.fixture(scope="class")
 def set_create_lim(async_client: AsyncCogniteClient) -> Iterator[None]:
-    with set_max_workers(2), pytest.MonkeyPatch.context() as mp:
+    with override_semaphore(2, target="basic"), pytest.MonkeyPatch.context() as mp:
         # We set a low limit to hopefully detect bugs in how resources are split
         # without unnecessarily overloading the API with many thousand assets/request:
         mp.setattr(async_client.assets, "_CREATE_LIMIT", 3)
