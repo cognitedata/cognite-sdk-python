@@ -140,6 +140,7 @@ class SimulatorRoutinesAPI(APIClient):
                 ...         external_id="routine_ext_id_2",
                 ...         simulator_integration_external_id="integration_ext_id_2",
                 ...         model_external_id="model_ext_id_2",
+                ...         kind="long",
                 ...     )
                 ... ]
                 >>> res = client.simulators.routines.create(routines)
@@ -183,6 +184,7 @@ class SimulatorRoutinesAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
         model_external_ids: Sequence[str] | None = None,
         simulator_integration_external_ids: Sequence[str] | None = None,
+        kind: Literal["long"] | None = None,
         sort: PropertySort | None = None,
     ) -> SimulatorRoutineList:
         """`Filter simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_
@@ -193,6 +195,7 @@ class SimulatorRoutinesAPI(APIClient):
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             model_external_ids (Sequence[str] | None): Filter on model external ids.
             simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
+            kind (Literal['long'] | None): Filter on routine kind.
             sort (PropertySort | None): The criteria to sort by.
 
         Returns:
@@ -214,11 +217,17 @@ class SimulatorRoutinesAPI(APIClient):
                 ...     )
                 ... )
 
+            Filter on routine kind:
+                >>> res = client.simulators.routines.list(
+                ...     kind="long"
+                ... )
+
         """
         self._warning.warn()
         routines_filter = SimulatorRoutinesFilter(
             model_external_ids=model_external_ids,
             simulator_integration_external_ids=simulator_integration_external_ids,
+            kind=kind,
         )
         self._warning.warn()
         return self._list(
