@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f35a15982cf08e1dfcccc3a7bdcd4ac5
+48fbc59a82746fe76a6788a84599cf0c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -53,6 +53,7 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.workflows import WorkflowTriggerUpsert, WorkflowScheduledTriggerRule
                 >>> from zoneinfo import ZoneInfo
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.triggers.upsert(
                 ...     WorkflowTriggerUpsert(
                 ...         external_id="my_trigger",

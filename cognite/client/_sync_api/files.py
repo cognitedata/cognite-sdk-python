@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8ad69cac824ef3083d6d2d2a9655f081
+704e6bd8fc93957c4b7ddae068278f1f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -196,6 +196,7 @@ class SyncFilesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> file_metadata = FileMetadataWrite(name="MyFile")
                 >>> res = client.files.create(file_metadata)
         """
@@ -670,7 +671,7 @@ class SyncFilesAPI(SyncAPIClient):
         the parts are stored in the correct order by uploading each chunk to the correct upload URL.
 
         This returns a context manager you must enter (using the `with` keyword), then call `upload_part`
-        for each part before exiting.
+        for each part before exiting. It also supports async usage with `async with`, then calling `await upload_part_async`.
 
         Args:
             name (str): Name of the file.
@@ -735,8 +736,8 @@ class SyncFilesAPI(SyncAPIClient):
         The file chunks may be uploaded in any order, and in parallel, but the client must ensure that
         the parts are stored in the correct order by uploading each chunk to the correct upload URL.
 
-        This returns a context manager (that also supports async) you must enter (using the `with` keyword, or `async with`), then call `upload_part`
-        for each part before exiting, which will automatically finalize the multipart upload.
+        This returns a context manager you must enter (using the `with` keyword), then call `upload_part`
+        for each part before exiting. It also supports async usage with `async with`, then calling `await upload_part_async`.
 
         Args:
             parts (int): The number of parts to upload, must be between 1 and 250.

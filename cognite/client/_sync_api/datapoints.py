@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c273ba0a18e9c76e3aa1b54aec9b4d41
+691d7691dbeb8caae16c35dca1266165
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -116,6 +116,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DatapointsQuery
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> query = DatapointsQuery(external_id="foo", start="2w-ago")
                 >>> for chunk in client.time_series.data(query, chunk_size_datapoints=25_000):
                 ...     pass  # do something with the datapoints chunk
@@ -602,7 +603,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             and 'treat_uncertain_as_bad' (in the presence of uncertain/bad datapoints).
         """
         return run_sync(
-            self.__async_client.time_series.data.retrieve(  # type: ignore [call-overload]
+            self.__async_client.time_series.data.retrieve(
                 id=id,
                 external_id=external_id,
                 instance_id=instance_id,
@@ -807,6 +808,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> dps = client.time_series.data.retrieve_arrays(
                 ...     id=42,
                 ...     start=datetime(2020, 1, 1, tzinfo=timezone.utc),
@@ -1334,6 +1336,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import StatusCode
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> datapoints = [
                 ...     (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
                 ...     (datetime(2018,1,2, tzinfo=timezone.utc), 2000, StatusCode.Good),
@@ -1424,6 +1427,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import StatusCode
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> to_insert = [
                 ...     {"id": 1, "datapoints": [
                 ...         (datetime(2018,1,1, tzinfo=timezone.utc), 1000),

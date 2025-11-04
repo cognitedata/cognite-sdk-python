@@ -1,6 +1,6 @@
 """
 ===============================================================================
-00c7d18437b23bfb21edcdfc8f127bf4
+2f2683c1e337ead8ed467e1d4287b5d9
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -210,6 +210,7 @@ class SyncViewsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewApply, MappedPropertyApply, ContainerId
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> views = [
                 ...     ViewApply(
                 ...         space="mySpace",

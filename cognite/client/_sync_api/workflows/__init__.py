@@ -1,6 +1,6 @@
 """
 ===============================================================================
-714872b51cf353075c3122b18b9a61a4
+bd4e442835f712dad08ceadefacb70b9
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -82,6 +82,7 @@ class SyncWorkflowAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowUpsert
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> wf = WorkflowUpsert(external_id="my_workflow", description="my workflow description")
                 >>> res = client.workflows.upsert(wf)
 

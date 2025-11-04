@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a02f6a718fc803a8bd69788a4e6ff8a8
+17c922c3441289701d4f371a55ab4b49
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -200,6 +200,7 @@ class SyncLabelsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import LabelDefinitionWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> labels = [LabelDefinitionWrite(external_id="ROTATING_EQUIPMENT", name="Rotating equipment"), LabelDefinitionWrite(external_id="PUMP", name="pump")]
                 >>> res = client.labels.create(labels)
         """
