@@ -24,8 +24,6 @@ from tests.tests_unit.conftest import DefaultResourceGenerator
 
 @pytest.mark.dsl
 class TestRepr:
-    import numpy as np
-
     # TODO: We should auto-create these tests for all subclasses impl. _repr_html_:
     @pytest.mark.parametrize("cls", (Asset, Sequence, FileMetadata, Row, Table, ThreeDModel))
     def test_repr_html(self, cls: type[CogniteResource]) -> None:
@@ -45,13 +43,20 @@ class TestRepr:
         (
             Datapoint(timestamp=0, value=0),
             Datapoints(id=1),
-            DatapointsArray(id=1, timestamp=np.array([], dtype="datetime64[ns]")),
             Datapoints(instance_id=NodeId("space", "xid")),
-            DatapointsArray(instance_id=NodeId("space", "xid"), timestamp=np.array([], dtype="datetime64[ns]")),
         ),
     )
     def test_repr_html_dps_classes(self, inst: CogniteResource) -> None:
         assert len(inst._repr_html_()) > 0
+
+    def test_repr_html_dps_classes_with_numpy(self) -> None:
+        import numpy as np
+
+        arr1 = DatapointsArray(id=1, timestamp=np.array([], dtype="datetime64[ns]"))
+        assert len(arr1._repr_html_()) > 0
+
+        arr2 = DatapointsArray(instance_id=NodeId("space", "xid"), timestamp=np.array([], dtype="datetime64[ns]"))
+        assert len(arr2._repr_html_()) > 0
 
     @pytest.mark.parametrize(
         "lst",
