@@ -282,3 +282,64 @@ class ConcurrencySettings:
             executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls(global_config.event_loop)
             executor.start()
             return executor
+
+
+async def execute_async_tasks_with_fail_fast(tasks: list[AsyncSDKTask]) -> TasksSummary:
+    # If no future raises an exception then this is equivalent to asyncio.ALL_COMPLETED:
+    done, pending = await asyncio.wait(
+        [task.schedule() for task in tasks],
+        return_when=asyncio.FIRST_EXCEPTION,
+    )
+    if all(task.exception() is None for task in done):
+        return TasksSummary([task.result() for task in done], successful_tasks=tasks)
+
+    # Something failed, and because of fail-fast, we (attempt to) cancel all pending tasks:
+    if pending:  # while we are waiting on 3.11 and asyncio.TaskGroup...
+        for unfinished in pending:
+            unfinished.cancel()
+
+        # Wait for all cancellations to be processed:
+        await asyncio.gather(*pending, return_exceptions=True)
+
+    result, successful, unsuccessful, skipped, exceptions = [], [], [], [], []
+    for task in tasks:
+        if task.cancelled():
+            skipped.append(task)
+        elif err := task.exception():
+            exceptions.append(err)
+            unsuccessful.append(task)
+        else:
+            result.append(task.result())
+            successful.append(task)
+
+    return TasksSummary(
+        result,
+        successful_tasks=successful,
+        unsuccessful_tasks=unsuccessful,
+        skipped_tasks=skipped,
+        exceptions=exceptions,
+    )
+
+
+async def execute_async_tasks(tasks: list[AsyncSDKTask], fail_fast: bool = False) -> TasksSummary:
+    assert tasks, "no tasks to execute"
+    if fail_fast:
+        return await execute_async_tasks_with_fail_fast(tasks)
+
+    await asyncio.wait([task.schedule() for task in tasks], return_when=asyncio.ALL_COMPLETED)
+
+    results, successful, unsuccessful, exceptions = [], [], [], []
+    for task in tasks:
+        if err := task.exception():
+            exceptions.append(err)
+            unsuccessful.append(task)
+        else:
+            results.append(task.result())
+            successful.append(task)
+
+    return TasksSummary(
+        results,
+        successful_tasks=successful,
+        unsuccessful_tasks=unsuccessful,
+        exceptions=exceptions,
+    )
