@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
@@ -13,6 +14,9 @@ from cognite.client.data_classes.agents.chat import (
     AgentReasoningItem,
     TextContent,
 )
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @pytest.fixture

@@ -492,7 +492,7 @@ class TestFilesAPI:
         mock_files_response: dict[str, Any],
         httpx_mock: HTTPXMock,
     ) -> None:
-        with pytest.raises(ValueError, match="Exactly one of 'id', 'external_id' or 'instance_id' must be provided."):
+        with pytest.raises(ValueError, match=r"Exactly one of 'id', 'external_id' or 'instance_id' must be provided."):
             FileMetadataUpdate(instance_id=NodeId("foo", "bar"), **extra_identifiers)
 
     def test_update_labels_single(

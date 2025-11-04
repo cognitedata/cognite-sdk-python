@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import TYPE_CHECKING
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -8,6 +9,9 @@ from pytest_httpx import HTTPXMock
 from cognite.client import CogniteClient
 from cognite.client.data_classes.ai import AnswerContent, AnswerLocation, AnswerReference, Summary
 from tests.utils import get_url
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @pytest.fixture

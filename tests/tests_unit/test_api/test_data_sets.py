@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -7,6 +7,9 @@ from pytest_httpx import HTTPXMock
 from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSet, DataSetList, DataSetUpdate, DataSetWrite, TimestampRange
 from tests.utils import get_or_raise, get_url, jsgz_load
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @pytest.fixture

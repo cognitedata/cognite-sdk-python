@@ -68,6 +68,7 @@ from cognite.client.utils._time import (
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 from tests.utils import (
+    get_or_raise,
     random_aggregates,
     random_cognite_external_ids,
     random_cognite_ids,
