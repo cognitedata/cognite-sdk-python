@@ -540,14 +540,16 @@ class DebugNoticeList(CogniteResourceList[DebugNotice]):
 
 @cache
 def _create_debug_notice_subclass_map() -> dict[tuple[str, str], type[DebugNotice]]:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
+    additional_refs = {"CogniteClient": CogniteClient, "AsyncCogniteClient": AsyncCogniteClient}
 
     lookup = {}
     subclasses: set[type[DebugNotice]] = all_concrete_subclasses(DebugNotice, exclude={UnknownDebugNotice})
     for sub_cls in subclasses:
         # When we do 'get_type_hints', we evaluate forward refs., and we reference InstanceSort in a file
         # that only imports CogniteClient while TYPE_CHECKING, so it is not available at runtime which we need:
-        annots = get_type_hints(sub_cls, globalns=globals() | {"CogniteClient": CogniteClient})
+        annots = get_type_hints(sub_cls, globalns=globals() | additional_refs)
         code = get_args(annots["code"])[0]
         category = get_args(annots["category"])[0]
         lookup[code, category] = sub_cls
