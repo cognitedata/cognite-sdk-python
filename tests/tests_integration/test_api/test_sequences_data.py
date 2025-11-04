@@ -217,6 +217,26 @@ class TestSequencesDataAPI:
         assert df.shape[1] == 2
         assert np.diff(df.index).all()
 
+    def test_delete_range(self, cognite_client: CogniteClient, new_seq_long: Sequence) -> None:
+        data = [(i, [10 * i]) for i in [1, 2, 3, 5, 8, 13, 21, 34]]
+        cognite_client.sequences.data.insert(columns=new_seq_long.column_external_ids, rows=data, id=new_seq_long.id)
+        cognite_client.sequences.data.delete_range(start=4, end=15, id=new_seq_long.id)
+
+        def verify_deletion() -> None:
+            dps = cognite_client.sequences.data.retrieve(start=0, end=None, id=new_seq_long.id)
+            assert [10, 20, 30, 210, 340] == [d[0] for d in dps.values]
+            assert [1, 2, 3, 21, 34] == [row.row_number for row in dps.rows]
+
+        # Delete is eventually consistent... so we retry a few times:
+        for attempt in range(1, 6):
+            time.sleep(3 * attempt)  # max 1 min wait in total
+            try:
+                verify_deletion()
+                break
+            except AssertionError:
+                if attempt == 5:
+                    raise
+
     def test_insert_dataframe(
         self, cognite_client: CogniteClient, small_sequence: Sequence, new_small_seq: Sequence
     ) -> None:
@@ -312,23 +332,3 @@ class TestSequencesDataAPI:
     ) -> None:
         cognite_client.sequences.data.retrieve(id=string200.id, start=1, end=118)
         assert 1 == async_client.sequences.data._post.call_count  # type: ignore[attr-defined]
-
-    def test_delete_range(self, cognite_client: CogniteClient, new_seq_long: Sequence) -> None:
-        data = [(i, [10 * i]) for i in [1, 2, 3, 5, 8, 13, 21, 34]]
-        cognite_client.sequences.data.insert(columns=new_seq_long.column_external_ids, rows=data, id=new_seq_long.id)
-        cognite_client.sequences.data.delete_range(start=4, end=15, id=new_seq_long.id)
-
-        def verify_deletion() -> None:
-            dps = cognite_client.sequences.data.retrieve(start=0, end=None, id=new_seq_long.id)
-            assert [10, 20, 30, 210, 340] == [d[0] for d in dps.values]
-            assert [1, 2, 3, 21, 34] == [row.row_number for row in dps.rows]
-
-        # Delete is eventually consistent:
-        for attempt in range(1, 6):
-            time.sleep(3)
-            try:
-                verify_deletion()
-                break
-            except AssertionError:
-                if attempt == 5:
-                    raise
