@@ -454,7 +454,46 @@ class APIClient(BasicAPIClient):
             cognite_client=self._cognite_client,
         )
 
-    def _list_partitioned(
+    async def _get_partition(
+        self,
+        method: Literal["POST", "GET"],
+        partition: int,
+        other_params: dict[str, Any],
+        advanced_filter: dict | None,
+        url_path: str,
+        headers: dict[str, Any] | None,
+        filter: dict[str, Any],
+        semaphore: asyncio.BoundedSemaphore | None,
+    ) -> list[dict[str, Any]]:
+        next_cursor = None
+        retrieved_items = []
+        while True:
+            if method == "POST":
+                body = {
+                    "filter": filter,
+                    "limit": self._LIST_LIMIT,
+                    "cursor": next_cursor,
+                    "partition": partition,
+                } | other_params
+                if advanced_filter is not None:
+                    body["advancedFilter"] = advanced_filter
+                res = await self._post(url_path=url_path + "/list", json=body, headers=headers, semaphore=semaphore)
+
+            elif method == "GET":
+                params = (
+                    filter | {"limit": self._LIST_LIMIT, "cursor": next_cursor, "partition": partition} | other_params
+                )
+                res = await self._get(url_path=url_path, params=params, headers=headers)
+            else:
+                raise ValueError(f"Unsupported method: {method}")
+
+            retrieved_items.extend(unpack_items(res))
+            next_cursor = res.json().get("nextCursor")
+            if next_cursor is None:
+                break
+        return retrieved_items
+
+    async def _list_partitioned(
         self,
         partitions: int,
         method: Literal["POST", "GET"],
@@ -466,46 +505,23 @@ class APIClient(BasicAPIClient):
         advanced_filter: dict | Filter | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList:
-        def get_partition(partition: int) -> list[dict[str, Any]]:
-            next_cursor = None
-            retrieved_items = []
-            while True:
-                if method == "POST":
-                    body = {
-                        "filter": filter or {},
-                        "limit": self._LIST_LIMIT,
-                        "cursor": next_cursor,
-                        "partition": partition,
-                        **(other_params or {}),
-                    }
-                    if advanced_filter is not None:
-                        body["advancedFilter"] = (
-                            advanced_filter.dump(camel_case_property=True)
-                            if isinstance(advanced_filter, Filter)
-                            else advanced_filter
-                        )
-                    res = self._post(
-                        url_path=(resource_path or self._RESOURCE_PATH) + "/list", json=body, headers=headers
-                    )
-                elif method == "GET":
-                    params = {
-                        **(filter or {}),
-                        "limit": self._LIST_LIMIT,
-                        "cursor": next_cursor,
-                        "partition": partition,
-                        **(other_params or {}),
-                    }
-                    res = self._get(url_path=(resource_path or self._RESOURCE_PATH), params=params, headers=headers)
-                else:
-                    raise ValueError(f"Unsupported method: {method}")
-                retrieved_items.extend(res.json()["items"])
-                next_cursor = res.json().get("nextCursor")
-                if next_cursor is None:
-                    break
-            return retrieved_items
-
-        tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
-        tasks_summary = execute_tasks(get_partition, tasks, fail_fast=True)
+        if isinstance(advanced_filter, Filter):
+            advanced_filter = advanced_filter.dump(camel_case_property=True)
+        tasks = [
+            AsyncSDKTask(
+                self._get_partition,
+                method,
+                partition=f"{i}/{partitions}",
+                other_params=other_params or {},
+                advanced_filter=advanced_filter,
+                url_path=resource_path or self._RESOURCE_PATH,
+                headers=headers,
+                filter=filter or {},
+                semaphore=semaphore,
+            )
+            for i in range(1, partitions + 1)
+        ]
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
 
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
