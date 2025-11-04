@@ -305,15 +305,10 @@ def workflow_execution_list_test_scoped(
     return _new_workflow_execution_list(cognite_client, new_workflow_version_test_scoped)
 
 
-# We cannot use a never trigger expression as the API check for it:
-# Invalid cron expression: the provided schedule [0 0 31 2 *] will never fire.
-ALMOST_NEVER_TRIGGER_CRON_EXPRESSION = "0 0 29 2 *"
-
-
 @pytest.fixture(scope="session")
-def permanent_workflow_for_triggers(cognite_client: CogniteClient) -> WorkflowVersion:
+def permanent_workflow_for_triggers(cognite_client: CogniteClient, os_and_py_version: str) -> WorkflowVersion:
     workflow = WorkflowUpsert(
-        external_id="integration_test-workflow_for_triggers",
+        external_id="integ_test_wf_trigger" + os_and_py_version,
     )
     cognite_client.workflows.upsert(workflow)
     version = WorkflowVersionUpsert(
@@ -326,6 +321,7 @@ def permanent_workflow_for_triggers(cognite_client: CogniteClient) -> WorkflowVe
                     parameters=CDFTaskParameters(
                         resource_path="/timeseries",
                         method="GET",
+                        query_parameters={"limit": "1"},
                     ),
                 ),
             ],
@@ -351,9 +347,8 @@ def permanent_scheduled_trigger(
     cognite_client: CogniteClient, permanent_workflow_for_triggers: WorkflowVersion
 ) -> WorkflowTrigger:
     version = permanent_workflow_for_triggers
-    ever_minute_expression = "* * * * *"
-
-    on_the_minute = _create_scheduled_trigger(version, ever_minute_expression)
+    every_15min = "*/15 * * * *"
+    on_the_minute = _create_scheduled_trigger(version, every_15min)
 
     existing_triggers = {trigger.external_id: trigger for trigger in cognite_client.workflows.triggers.list(limit=-1)}
     if on_the_minute.external_id not in existing_triggers:
@@ -763,8 +758,19 @@ class TestWorkflowTriggers:
         cognite_client: CogniteClient,
         permanent_scheduled_trigger: WorkflowTrigger,
     ) -> None:
-        history = cognite_client.workflows.triggers.list_runs(external_id=permanent_scheduled_trigger.external_id)
-        assert len(history) > 0
+        # TODO: Improve test reliability; the API works in mysterious ways...
+        for attempt in [1, 2, 3]:
+            history = cognite_client.workflows.triggers.list_runs(external_id=permanent_scheduled_trigger.external_id)
+            if len(history) > 0:
+                break
+            else:
+                time.sleep(15)
+        else:
+            assert len(history) > 0, (
+                "No trigger runs found after 3 attempts. If you are running tests for the first time against your project "
+                "it may take quite some time before the scheduled trigger runs for the first time. Grab some coffee!"
+            )
+
         assert history[0].external_id == permanent_scheduled_trigger.external_id
         assert history[0].workflow_external_id == permanent_scheduled_trigger.workflow_external_id
         assert history[0].workflow_version == permanent_scheduled_trigger.workflow_version
