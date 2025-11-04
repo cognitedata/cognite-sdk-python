@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import functools
+import asyncio
 import itertools
 import logging
 import warnings
 from collections import UserList
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from typing import (
     Any,
     Literal,
@@ -36,7 +36,7 @@ from cognite.client.utils._auxiliary import (
     unpack_items,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import TaskExecutor, execute_tasks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import (
     Identifier,
     IdentifierCore,
@@ -91,9 +91,9 @@ class APIClient(BasicAPIClient):
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResource | None: ...
 
     @overload
@@ -107,9 +107,9 @@ class APIClient(BasicAPIClient):
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList: ...
 
     def _retrieve_multiple(
@@ -122,32 +122,26 @@ class APIClient(BasicAPIClient):
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
 
         ignore_unknown_obj = {} if ignore_unknown_ids is None else {"ignoreUnknownIds": ignore_unknown_ids}
-        tasks: list[dict[str, str | dict[str, Any] | None]] = [
-            {
-                "url_path": resource_path + "/byids",
-                "json": {
-                    "items": id_chunk.as_dicts(),
-                    **ignore_unknown_obj,
-                    **(other_params or {}),
-                },
-                "headers": headers,
-                "params": params,
-            }
+        tasks = [
+            AsyncSDKTask(
+                self._post,
+                url_path=resource_path + "/byids",
+                json={"items": id_chunk.as_dicts()} | ignore_unknown_obj | (other_params or {}),
+                headers=headers,
+                params=params,
+                api_subversion=api_subversion,
+                semaphore=semaphore,
+            )
             for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
-        tasks_summary = execute_tasks(
-            functools.partial(self._post, api_subversion=api_subversion),
-            tasks,
-            fail_fast=True,
-            executor=executor,
-        )
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         try:
             tasks_summary.raise_compound_exception_if_failed_tasks(
                 task_unwrap_fn=unpack_items_in_payload,
@@ -193,7 +187,8 @@ class APIClient(BasicAPIClient):
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
-    ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
+        semaphore: asyncio.BoundedSemaphore | None = None,
+    ) -> AsyncIterator[T_CogniteResourceList | T_CogniteResource]:
         if partitions:
             warnings.warn("passing `partitions` to a generator method is not supported, so it's being ignored")
             # set chunk_size to None in order to not break the existing API.
@@ -243,7 +238,8 @@ class APIClient(BasicAPIClient):
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
-    ) -> Iterator[dict[str, Any]]:
+        semaphore: asyncio.BoundedSemaphore | None = None,
+    ) -> AsyncIterator[dict[str, Any]]:
         if partitions:
             raise ValueError("When fetching additional data (besides items), using partitions is not supported")
         if not chunk_size:
@@ -355,6 +351,7 @@ class APIClient(BasicAPIClient):
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList:
         verify_limit(limit)
         if partitions:
@@ -379,6 +376,7 @@ class APIClient(BasicAPIClient):
                 advanced_filter=advanced_filter,
                 other_params=other_params,
                 headers=headers,
+                semaphore=semaphore,
             )
         fetch_kwargs = dict(
             resource_path=resource_path or self._RESOURCE_PATH,
@@ -392,6 +390,7 @@ class APIClient(BasicAPIClient):
             initial_cursor=initial_cursor,
             advanced_filter=advanced_filter,
             api_subversion=api_subversion,
+            semaphore=semaphore,
         )
         if settings_forcing_raw_response_loading:
             raw_response_fetcher = self._list_generator_raw_responses(
@@ -424,6 +423,7 @@ class APIClient(BasicAPIClient):
         other_params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
         advanced_filter: dict | Filter | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList:
         def get_partition(partition: int) -> list[dict[str, Any]]:
             next_cursor = None
@@ -627,8 +627,8 @@ class APIClient(BasicAPIClient):
         extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList: ...
 
     @overload
@@ -643,8 +643,8 @@ class APIClient(BasicAPIClient):
         extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_WritableCogniteResource: ...
 
     def _create_multiple(
@@ -661,8 +661,8 @@ class APIClient(BasicAPIClient):
         extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList | T_WritableCogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         input_resource_cls = input_resource_cls or resource_cls
@@ -676,23 +676,30 @@ class APIClient(BasicAPIClient):
         items = [item.as_write() if isinstance(item, WriteableCogniteResource) else item for item in items]
 
         tasks = [
-            (resource_path, task_items, params, headers)
+            AsyncSDKTask(
+                self._post,
+                resource_path,
+                task_items,
+                params,
+                headers,
+                api_subversion=api_subversion,
+                semaphore=semaphore,
+            )
             for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
         ]
-        summary = execute_tasks(
-            functools.partial(self._post, api_subversion=api_subversion),
-            tasks,
-            executor=executor,
-        )
+        summary = await execute_async_tasks(tasks)
 
-        def unwrap_element(el: T) -> CogniteResource | T:
+        def task_unwrap_fn(task: AsyncSDKTask) -> Any:
+            return task[1]["items"]
+
+        def task_list_element_unwrap_fn(el: T) -> CogniteResource | T:
             if isinstance(el, dict):
                 return input_resource_cls._load(el, cognite_client=self._cognite_client)
-            else:
-                return el
+            return el
 
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task[1]["items"], task_list_element_unwrap_fn=unwrap_element
+            task_unwrap_fn=task_unwrap_fn,
+            task_list_element_unwrap_fn=task_list_element_unwrap_fn,
         )
         created_resources = summary.joined_results(unpack_items)
 
@@ -709,23 +716,22 @@ class APIClient(BasicAPIClient):
         headers: dict[str, Any] | None = None,
         extra_body_fields: dict[str, Any] | None = None,
         returns_items: bool = False,
-        executor: TaskExecutor | None = None,
         delete_endpoint: str = "/delete",
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> list | None:
         resource_path = (resource_path or self._RESOURCE_PATH) + delete_endpoint
         tasks = [
-            {
-                "url_path": resource_path,
-                "json": {
-                    "items": chunk.as_dicts() if wrap_ids else chunk.as_primitives(),
-                    **(extra_body_fields or {}),
-                },
-                "params": params,
-                "headers": headers,
-            }
+            AsyncSDKTask(
+                self._post,
+                url_path=resource_path,
+                json={"items": chunk.as_dicts() if wrap_ids else chunk.as_primitives()} | extra_body_fields,
+                params=params,
+                headers=headers,
+                semaphore=semaphore,
+            )
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
-        summary = execute_tasks(self._post, tasks, executor=executor)
+        summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=identifiers.unwrap_identifier,
@@ -806,14 +812,20 @@ class APIClient(BasicAPIClient):
         patch_object_chunks = split_into_chunks(patch_objects, self._UPDATE_LIMIT)
 
         tasks = [
-            {"url_path": resource_path + "/update", "json": {"items": chunk}, "params": params, "headers": headers}
+            AsyncSDKTask(
+                self._post,
+                url_path=resource_path + "/update",
+                json={"items": chunk},
+                params=params,
+                headers=headers,
+                api_subversion=api_subversion,
+            )
             for chunk in patch_object_chunks
         ]
-
-        tasks_summary = execute_tasks(functools.partial(self._post, api_subversion=api_subversion), tasks)
+        tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload,
-            task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
+            task_list_element_unwrap_fn=IdentifierSequenceCore.unwrap_identifier,
         )
         updated_items = tasks_summary.joined_results(unpack_items)
 
