@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal, overload
 
 from cognite.client._api.document_preview import DocumentPreviewAPI
@@ -41,27 +41,25 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
-    ) -> Iterator[DocumentList]: ...
+    ) -> AsyncIterator[DocumentList]: ...
 
     @overload
     def __call__(
         self,
-        chunk_size: Literal[None] = None,
+        chunk_size: None = None,
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
-    ) -> Iterator[Document]: ...
+    ) -> AsyncIterator[Document]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[Document] | Iterator[DocumentList]:
+    ) -> AsyncIterator[Document | DocumentList]:
         """Iterate over documents
 
         Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
@@ -73,11 +71,11 @@ class DocumentsAPI(APIClient):
             limit (int | None): Maximum number of documents to return. Default to return all items.
             partitions (int | None): Retrieve documents in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
-        Returns:
-            Iterator[Document] | Iterator[DocumentList]: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
+        Yields:
+            Document | DocumentList: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
         """
         self._validate_filter(filter)
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=DocumentList,
             resource_cls=Document,
             sort=[DocumentSort.load(sort).dump()] if sort else None,
@@ -86,9 +84,10 @@ class DocumentsAPI(APIClient):
             filter=filter.dump() if isinstance(filter, Filter) else filter,
             limit=limit,
             partitions=partitions,
-        )
+        ):
+            yield item
 
-    def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
+    async def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
         """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
@@ -124,11 +123,11 @@ class DocumentsAPI(APIClient):
                 ... )
         """
         self._validate_filter(filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "count", filter=filter.dump() if isinstance(filter, Filter) else filter, query=query
         )
 
-    def aggregate_cardinality_values(
+    async def aggregate_cardinality_values(
         self,
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
@@ -172,7 +171,7 @@ class DocumentsAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityValues",
             properties=property,
             query=query,
@@ -180,7 +179,7 @@ class DocumentsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_cardinality_properties(
+    async def aggregate_cardinality_properties(
         self,
         path: SourceFileProperty | list[str] = SourceFileProperty.metadata,
         query: str | None = None,
@@ -208,7 +207,7 @@ class DocumentsAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityProperties",
             path=path,
             query=query,
@@ -216,7 +215,7 @@ class DocumentsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_unique_values(
+    async def aggregate_unique_values(
         self,
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
@@ -264,7 +263,7 @@ class DocumentsAPI(APIClient):
                 >>> unique_mime_types = result.unique
         """
         self._validate_filter(filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueValues",
             properties=property,
             query=query,
@@ -273,7 +272,7 @@ class DocumentsAPI(APIClient):
             limit=limit,
         )
 
-    def aggregate_unique_properties(
+    async def aggregate_unique_properties(
         self,
         path: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
@@ -304,7 +303,7 @@ class DocumentsAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueProperties",
             # There is a bug/inconsistency in the API where the path parameter is called properties for documents.
             # This has been reported to the API team, and will be fixed in the future.
@@ -315,7 +314,7 @@ class DocumentsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve_content(self, id: int) -> bytes:
+    async def retrieve_content(self, id: int) -> bytes:
         """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
@@ -339,7 +338,8 @@ class DocumentsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> content = client.documents.retrieve_content(id=123)
         """
-        return self._post(f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json={"id": id}).content
+        response = await self._post(f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json={"id": id})
+        return response.content
 
     async def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
         """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
@@ -378,7 +378,7 @@ class DocumentsAPI(APIClient):
                 buffer.write(chunk)
 
     @overload
-    def search(
+    async def search(
         self,
         query: str,
         highlight: Literal[False] = False,
@@ -388,7 +388,7 @@ class DocumentsAPI(APIClient):
     ) -> DocumentList: ...
 
     @overload
-    def search(
+    async def search(
         self,
         query: str,
         highlight: Literal[True],
@@ -397,7 +397,7 @@ class DocumentsAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentHighlightList: ...
 
-    def search(
+    async def search(
         self,
         query: str,
         highlight: bool = False,
@@ -457,7 +457,7 @@ class DocumentsAPI(APIClient):
         if highlight:
             body["highlight"] = highlight
 
-        response = self._post(f"{self._RESOURCE_PATH}/search", json=body)
+        response = await self._post(f"{self._RESOURCE_PATH}/search", json=body)
         json_content = response.json()
         results = json_content["items"]
 
@@ -468,7 +468,7 @@ class DocumentsAPI(APIClient):
             )
         return DocumentList._load((item["item"] for item in results), cognite_client=self._cognite_client)
 
-    def list(
+    async def list(
         self,
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
@@ -520,7 +520,7 @@ class DocumentsAPI(APIClient):
 
         """
         self._validate_filter(filter)
-        return self._list(
+        return await self._list(
             list_cls=DocumentList,
             resource_cls=Document,
             method="POST",
