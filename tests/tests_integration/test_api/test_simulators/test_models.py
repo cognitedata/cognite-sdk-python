@@ -334,6 +334,7 @@ class TestSimulatorModels:
         assert (
             model_revision_data_item.flowsheets[0].dump()
             == SimulatorFlowsheet._load(
-                SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET[0], cognite_client=cognite_client
+                SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET[0],
+                cognite_client=cognite_client,  # type: ignore[arg-type]
             ).dump()
         )

@@ -12,7 +12,7 @@ from cognite.client.exceptions import CogniteNotFoundError
 
 
 @pytest.fixture(scope="class")
-def new_dataset(cognite_client: CogniteClient, os_and_py_version) -> Iterator[DataSet]:
+def new_dataset(cognite_client: CogniteClient, os_and_py_version: str) -> Iterator[DataSet]:
     xid = "pysdk-test-dataset-" + os_and_py_version
     dataset = cognite_client.data_sets.retrieve(external_id=xid)
     if dataset:

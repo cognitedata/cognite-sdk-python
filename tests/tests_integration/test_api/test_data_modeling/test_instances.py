@@ -1579,7 +1579,6 @@ class TestInstancesSync:
         finally:
             cognite_client.data_modeling.instances.delete(new_1994_movie.as_id())
 
-    @pytest.mark.skip(reason="Awaiting rewrite of instances.subscribe to async")
     @pytest.mark.parametrize("sync_mode", ("one_phase", "two_phase"))
     def test_subscribe_to_movies_released_in_1994(
         self, cognite_client: CogniteClient, movie_view: View, sync_mode: SyncMode

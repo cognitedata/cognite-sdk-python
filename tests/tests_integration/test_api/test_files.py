@@ -346,8 +346,8 @@ class TestFilesAPI:
             f1 = cognite_client.files.upload_content_bytes(b"f1", instance_id=instance_id)
             backoff = Backoff()
             for i in range(10):
-                file = get_or_raise(cognite_client.files.retrieve(instance_id=instance_id))
-                if file.uploaded:
+                file_metadata = get_or_raise(cognite_client.files.retrieve(instance_id=instance_id))
+                if file_metadata.uploaded:
                     break
                 time.sleep(next(backoff))
             download_links = cognite_client.files.retrieve_download_urls(instance_id=instance_id)

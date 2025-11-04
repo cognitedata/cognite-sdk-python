@@ -118,3 +118,8 @@ def cognite_client_cog_idp() -> CogniteClient:
             ),
         )
     )
+
+
+@pytest.fixture(scope="session")
+def async_client_cog_idp(cognite_client_cog_idp: CogniteClient) -> AsyncCogniteClient:
+    return get_wrapped_async_client(cognite_client_cog_idp)

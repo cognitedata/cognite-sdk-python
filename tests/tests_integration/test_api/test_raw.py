@@ -124,6 +124,7 @@ class TestRawRowsAPI:
         rows = {"r1": {"c1": "v1", "c2": "v1"}, "r2": {"c1": "v2", "c2": "v2"}}
         cognite_client.raw.rows.insert(db.name, table.name, rows)
         assert 2 == len(table.rows())
+
         cognite_client.raw.rows.delete(db.name, table.name, ["r1", "r2"])
         assert 0 == len(table.rows())
 

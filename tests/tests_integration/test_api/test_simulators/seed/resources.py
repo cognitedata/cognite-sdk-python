@@ -184,7 +184,7 @@ def ensure_workflow_simint_routine(cognite_client: CogniteClient) -> str:
 
     if file is None:
         uploaded_file = cognite_client.files.upload(
-            path=str(SEED_DIR / "empty_model.json"),
+            path=SEED_DIR / "empty_model.json",
             external_id="integration_tests_workflow_model_file",
             name="seed_mode.json",
             data_set_id=data_set.id,
