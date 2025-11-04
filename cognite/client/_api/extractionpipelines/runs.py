@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal, cast, overload
+from typing import Any, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -19,10 +19,6 @@ from cognite.client.data_classes.extractionpipelines import (
 from cognite.client.utils import timestamp_to_ms
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    pass
-
 
 RunStatus = Literal["success", "failure", "seen"]
 

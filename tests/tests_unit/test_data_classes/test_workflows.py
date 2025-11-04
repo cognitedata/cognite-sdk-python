@@ -29,7 +29,7 @@ class TestWorkFlowDefinitions:
         task = WorkflowTask(external_id="foo", parameters=TransformationTaskParameters(external_id="something"))
         WorkflowDefinition(tasks=[task], description="desc", hash_="very-random")
 
-        with pytest.raises(TypeError, match="unexpected keyword argument 'hash_'$"):
+        with pytest.raises(TypeError, match=r"unexpected keyword argument 'hash_'$"):
             WorkflowDefinitionUpsert(tasks=[task], description="desc", hash_="very-random")  # type: ignore[call-arg]
 
 

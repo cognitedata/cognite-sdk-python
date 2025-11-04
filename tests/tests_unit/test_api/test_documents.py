@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
 import re
+from collections.abc import Iterator
 from typing import Any
 
 import pytest
@@ -136,8 +136,12 @@ def mock_documents_search_response(httpx_mock: HTTPXMock, cognite_client: Cognit
     url_pattern = re.compile(re.escape(get_url(cognite_client.documents)) + "/.+")
 
     # Add responses for the search endpoint
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body_with_cursor, is_optional=True)
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body_with_cursor, is_optional=True)
+    httpx_mock.add_response(
+        method="POST", url=url_pattern, status_code=200, json=response_body_with_cursor, is_optional=True
+    )
+    httpx_mock.add_response(
+        method="POST", url=url_pattern, status_code=200, json=response_body_with_cursor, is_optional=True
+    )
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
 
     yield httpx_mock
@@ -145,9 +149,7 @@ def mock_documents_search_response(httpx_mock: HTTPXMock, cognite_client: Cognit
 
 class TestDocumentsAPI:
     @pytest.mark.usefixtures("mock_documents_list_response")
-    def test_list(
-        self, cognite_client: CogniteClient, example_documents: list[dict[str, Any]]
-    ) -> None:
+    def test_list(self, cognite_client: CogniteClient, example_documents: list[dict[str, Any]]) -> None:
         documents = cognite_client.documents.list()
         assert len(documents) == 2
         file_with_instance_id, file_wo_instance_id = documents
