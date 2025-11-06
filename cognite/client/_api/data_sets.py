@@ -61,7 +61,7 @@ class DataSetsAPI(APIClient):
         external_id_prefix: str | None = None,
         write_protected: bool | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[DataSet | DataSetList]:
+    ) -> AsyncIterator[DataSet] | AsyncIterator[DataSetList]:
         """Iterate over data sets
 
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
@@ -77,7 +77,7 @@ class DataSetsAPI(APIClient):
 
         Yields:
             DataSet | DataSetList: yields DataSet one by one if chunk is not specified, else DataSetList objects.
-        """
+        """  # noqa: DOC404
         filter = DataSetFilter(
             metadata=metadata,
             created_time=created_time,

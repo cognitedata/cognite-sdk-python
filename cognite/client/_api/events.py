@@ -107,7 +107,7 @@ class EventsAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
         limit: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
-    ) -> AsyncIterator[Event | EventList]:
+    ) -> AsyncIterator[Event] | AsyncIterator[EventList]:
         """Iterate over events
 
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
@@ -136,7 +136,7 @@ class EventsAPI(APIClient):
 
         Yields:
             Event | EventList: yields Event one by one if chunk_size is not specified, else EventList objects.
-        """
+        """  # noqa: DOC404
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 

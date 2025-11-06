@@ -94,7 +94,7 @@ class RelationshipsAPI(APIClient):
         labels: LabelFilter | None = None,
         limit: int | None = None,
         fetch_resources: bool = False,
-    ) -> AsyncIterator[Relationship | RelationshipList]:
+    ) -> AsyncIterator[Relationship] | AsyncIterator[RelationshipList]:
         """Iterate over relationships
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
@@ -119,7 +119,7 @@ class RelationshipsAPI(APIClient):
 
         Yields:
             Relationship | RelationshipList: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
-        """
+        """  # noqa: DOC404
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
         filter = RelationshipFilter(
             source_external_ids=source_external_ids,

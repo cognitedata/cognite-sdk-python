@@ -50,7 +50,7 @@ class LabelsAPI(APIClient):
         limit: int | None = None,
         data_set_ids: int | Sequence[int] | None = None,
         data_set_external_ids: str | SequenceNotStr[str] | None = None,
-    ) -> AsyncIterator[LabelDefinition | LabelDefinitionList]:
+    ) -> AsyncIterator[LabelDefinition] | AsyncIterator[LabelDefinitionList]:
         """Iterate over Labels
 
         Args:
@@ -63,7 +63,7 @@ class LabelsAPI(APIClient):
 
         Yields:
             LabelDefinition | LabelDefinitionList: yields Labels one by one or in chunks.
-        """
+        """  # noqa: DOC404
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         flt = LabelDefinitionFilter(
