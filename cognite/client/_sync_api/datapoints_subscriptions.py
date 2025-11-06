@@ -1,6 +1,6 @@
 """
 ===============================================================================
-6e10e7034ddf2252bb88d682c2617b49
+105454dc75c60a2e46c03d859c2abce5
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -42,7 +42,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
 
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[DatapointSubscription | DatapointSubscriptionList]:
+    ) -> Iterator[DatapointSubscription] | Iterator[DatapointSubscriptionList]:
         """
         Iterate over all datapoint subscriptions.
 
@@ -52,7 +52,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
 
         Yields:
             DatapointSubscription | DatapointSubscriptionList: Yields datapoint subscriptions one by one if chunk is not specified, otherwise returns a list of datapoint subscriptions.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.time_series.subscriptions(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:

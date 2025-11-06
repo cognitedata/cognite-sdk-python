@@ -1,6 +1,6 @@
 """
 ===============================================================================
-17c922c3441289701d4f371a55ab4b49
+005b968817547c1aa85158a1cefc7d9d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -58,7 +58,7 @@ class SyncLabelsAPI(SyncAPIClient):
         limit: int | None = None,
         data_set_ids: int | Sequence[int] | None = None,
         data_set_external_ids: str | SequenceNotStr[str] | None = None,
-    ) -> Iterator[LabelDefinition | LabelDefinitionList]:
+    ) -> Iterator[LabelDefinition] | Iterator[LabelDefinitionList]:
         """
         Iterate over Labels
 
@@ -72,7 +72,7 @@ class SyncLabelsAPI(SyncAPIClient):
 
         Yields:
             LabelDefinition | LabelDefinitionList: yields Labels one by one or in chunks.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.labels(
                 chunk_size=chunk_size,

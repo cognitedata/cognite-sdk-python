@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9fa206381eda1a29ffb0797a17457fdd
+c5412f24c277b39a4b6f96f8b05b87b1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -112,7 +112,7 @@ class SyncAssetsAPI(SyncAPIClient):
         limit: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[Asset | AssetList]:
+    ) -> Iterator[Asset] | Iterator[AssetList]:
         """
         Iterate over assets
 
@@ -142,7 +142,7 @@ class SyncAssetsAPI(SyncAPIClient):
 
         Yields:
             Asset | AssetList: yields Asset one by one if chunk_size is not specified, else AssetList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.assets(
                 chunk_size=chunk_size,

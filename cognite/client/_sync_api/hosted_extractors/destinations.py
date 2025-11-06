@@ -1,6 +1,6 @@
 """
 ===============================================================================
-57e02fb82f3f1931cd4a078a89d90829
+e357a5685b77fbbefe2a7f72f8929ba0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -40,7 +40,7 @@ class SyncDestinationsAPI(SyncAPIClient):
 
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[Destination | DestinationList]:
+    ) -> Iterator[Destination] | Iterator[DestinationList]:
         """
         Iterate over destinations
 
@@ -52,7 +52,7 @@ class SyncDestinationsAPI(SyncAPIClient):
 
         Yields:
             Destination | DestinationList: yields Destination one by one if chunk_size is not specified, else DestinationList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.hosted_extractors.destinations(chunk_size=chunk_size, limit=limit))
 
     @overload

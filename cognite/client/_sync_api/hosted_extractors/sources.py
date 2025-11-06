@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8dedeab93e14ad6efe0b97625676174f
+2d35b7bf30842fb0d4d5423ee14f3110
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -33,7 +33,9 @@ class SyncSourcesAPI(SyncAPIClient):
     @overload
     def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[SourceList]: ...
 
-    def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Source | SourceList]:
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[Source] | Iterator[SourceList]:
         """
         Iterate over sources
 
@@ -45,7 +47,7 @@ class SyncSourcesAPI(SyncAPIClient):
 
         Yields:
             Source | SourceList: yields Source one by one if chunk_size is not specified, else SourceList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.hosted_extractors.sources(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-4a8379fd5b7f5b1363b5fd73559bf8fa
+244b8f18467f4c17297f8ccf14dc127e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -111,7 +111,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         limit: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[TimeSeries | TimeSeriesList]:
+    ) -> Iterator[TimeSeries] | Iterator[TimeSeriesList]:
         """
         Iterate over time series
 
@@ -141,7 +141,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
 
         Yields:
             TimeSeries | TimeSeriesList: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.time_series(
                 chunk_size=chunk_size,

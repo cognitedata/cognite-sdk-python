@@ -1,6 +1,6 @@
 """
 ===============================================================================
-eb1fc55c443dd7db6176dfbb5d63ebe4
+3956adaf54aea2b5291a5c6ceea13e2d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -42,7 +42,9 @@ class SyncSimulatorsAPI(SyncAPIClient):
     @overload
     def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[SimulatorList]: ...
 
-    def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Simulator | SimulatorList]:
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[Simulator] | Iterator[SimulatorList]:
         """
         Iterate over simulators
 
@@ -54,7 +56,7 @@ class SyncSimulatorsAPI(SyncAPIClient):
 
         Yields:
             Simulator | SimulatorList: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.simulators(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SimulatorList:

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0510f1db0b7bcc6ff934fe05fbb806d8
+86ee1f4bac46e6594633a1ea5591447e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -156,7 +156,7 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         sort: PropertySort | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorModel | SimulatorModelList]:
+    ) -> Iterator[SimulatorModel] | Iterator[SimulatorModelList]:
         """
         Iterate over simulator simulator models
 
@@ -170,7 +170,7 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
 
         Yields:
             SimulatorModel | SimulatorModelList: yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.simulators.models(
                 chunk_size=chunk_size, simulator_external_ids=simulator_external_ids, sort=sort, limit=limit

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f82a3b2489020d25a0500d7f44f8e26d
+bea0f707811457684995b5b47d75edaa
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -93,7 +93,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
         labels: LabelFilter | None = None,
         limit: int | None = None,
         fetch_resources: bool = False,
-    ) -> Iterator[Relationship | RelationshipList]:
+    ) -> Iterator[Relationship] | Iterator[RelationshipList]:
         """
         Iterate over relationships
 
@@ -119,7 +119,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
 
         Yields:
             Relationship | RelationshipList: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.relationships(
                 chunk_size=chunk_size,

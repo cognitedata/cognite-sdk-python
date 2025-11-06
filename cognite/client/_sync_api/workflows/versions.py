@@ -1,6 +1,6 @@
 """
 ===============================================================================
-dbe63d3ec197cad0f0b43c1fd4836524
+63b1bba0853ae92d9df239dc9b9cb1d7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -54,7 +54,7 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
         chunk_size: int | None = None,
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int | None = None,
-    ) -> Iterator[WorkflowVersion | WorkflowVersionList]:
+    ) -> Iterator[WorkflowVersion] | Iterator[WorkflowVersionList]:
         """
         Iterate over workflow versions
 
@@ -65,7 +65,7 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
 
         Yields:
             WorkflowVersion | WorkflowVersionList: Yields WorkflowVersion one by one if chunk_size is None, otherwise yields WorkflowVersionList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.workflows.versions(
                 chunk_size=chunk_size, workflow_version_ids=workflow_version_ids, limit=limit

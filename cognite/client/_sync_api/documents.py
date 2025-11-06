@@ -1,6 +1,6 @@
 """
 ===============================================================================
-7106050633056c97a21c6cc380191bca
+c57d6d287efc9ea87933118ca9212440
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -63,7 +63,7 @@ class SyncDocumentsAPI(SyncAPIClient):
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
-    ) -> Iterator[Document | DocumentList]:
+    ) -> Iterator[Document] | Iterator[DocumentList]:
         """
         Iterate over documents
 
@@ -77,7 +77,7 @@ class SyncDocumentsAPI(SyncAPIClient):
 
         Yields:
             Document | DocumentList: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.documents(chunk_size=chunk_size, filter=filter, sort=sort, limit=limit)
         )  # type: ignore [misc]

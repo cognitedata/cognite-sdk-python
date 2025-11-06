@@ -1,6 +1,6 @@
 """
 ===============================================================================
-afc2371ca320504840f1ea23749ad340
+261ac401f8e3e6edb7ea4e3e124d2eaf
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -30,7 +30,9 @@ class SyncRawDatabasesAPI(SyncAPIClient):
     @overload
     def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[DatabaseList]: ...
 
-    def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Database | DatabaseList]:
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[Database] | Iterator[DatabaseList]:
         """
         Iterate over databases
 
@@ -42,7 +44,7 @@ class SyncRawDatabasesAPI(SyncAPIClient):
 
         Yields:
             Database | DatabaseList: No description.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.raw.databases(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload
