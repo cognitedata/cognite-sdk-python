@@ -43,7 +43,7 @@ class TransformationSchedulesAPI(APIClient):
 
     async def __call__(
         self, chunk_size: int | None = None, include_public: bool = True, limit: int | None = None
-    ) -> AsyncIterator[TransformationSchedule | TransformationScheduleList]:
+    ) -> AsyncIterator[TransformationSchedule] | AsyncIterator[TransformationScheduleList]:
         """Iterate over transformation schedules
 
         Args:
@@ -53,8 +53,7 @@ class TransformationSchedulesAPI(APIClient):
 
         Yields:
             TransformationSchedule | TransformationScheduleList: Yields schedules one by one if chunk_size is None, otherwise yields lists of schedules.
-
-        """
+        """  # noqa: DOC404
         async for item in self._list_generator(
             method="GET",
             chunk_size=chunk_size,

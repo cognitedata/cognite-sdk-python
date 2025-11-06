@@ -91,7 +91,7 @@ class TransformationsAPI(APIClient):
         data_set_external_ids: str | list[str] | None = None,
         tags: TagsFilter | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[Transformation | TransformationList]:
+    ) -> AsyncIterator[Transformation] | AsyncIterator[TransformationList]:
         """Iterate over transformations
 
         Args:
@@ -112,7 +112,7 @@ class TransformationsAPI(APIClient):
 
         Yields:
             Transformation | TransformationList: Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
-        """
+        """  # noqa: DOC404
         ds_ids = IdentifierSequence.load(data_set_ids, data_set_external_ids, id_name="data_set").as_dicts()
 
         filter_ = TransformationFilter(

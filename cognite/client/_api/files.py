@@ -114,7 +114,7 @@ class FilesAPI(APIClient):
         directory_prefix: str | None = None,
         uploaded: bool | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[FileMetadata | FileMetadataList]:
+    ) -> AsyncIterator[FileMetadata] | AsyncIterator[FileMetadataList]:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
@@ -145,7 +145,7 @@ class FilesAPI(APIClient):
 
         Yields:
             FileMetadata | FileMetadataList: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
-        """
+        """  # noqa: DOC404
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 

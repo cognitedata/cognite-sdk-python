@@ -60,7 +60,7 @@ class FunctionSchedulesAPI(APIClient):
         created_time: dict[str, int] | TimestampRange | None = None,
         cron_expression: str | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[FunctionSchedule | FunctionSchedulesList]:
+    ) -> AsyncIterator[FunctionSchedule] | AsyncIterator[FunctionSchedulesList]:
         """Iterate over function schedules
 
         Args:
@@ -74,8 +74,7 @@ class FunctionSchedulesAPI(APIClient):
 
         Yields:
             FunctionSchedule | FunctionSchedulesList: Function schedules.
-
-        """
+        """  # noqa: DOC404
         _ensure_at_most_one_id_given(function_id, function_external_id)
 
         schedules = await self.list(

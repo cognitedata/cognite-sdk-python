@@ -41,7 +41,7 @@ class DestinationsAPI(APIClient):
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> AsyncIterator[Destination | DestinationList]:
+    ) -> AsyncIterator[Destination] | AsyncIterator[DestinationList]:
         """Iterate over destinations
 
         Fetches Destination as they are iterated over, so you keep a limited number of destinations in memory.
@@ -52,7 +52,7 @@ class DestinationsAPI(APIClient):
 
         Yields:
             Destination | DestinationList: yields Destination one by one if chunk_size is not specified, else DestinationList objects.
-        """
+        """  # noqa: DOC404
         self._warning.warn()
 
         async for item in self._list_generator(

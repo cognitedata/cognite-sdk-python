@@ -23,7 +23,7 @@ class RawDatabasesAPI(APIClient):
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> AsyncIterator[Database | DatabaseList]:
+    ) -> AsyncIterator[Database] | AsyncIterator[DatabaseList]:
         """Iterate over databases
 
         Fetches dbs as they are iterated over, so you keep a limited number of dbs in memory.
@@ -34,7 +34,7 @@ class RawDatabasesAPI(APIClient):
 
         Yields:
             Database | DatabaseList: No description.
-        """
+        """  # noqa: DOC404
         async for item in self._list_generator(
             list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
         ):
