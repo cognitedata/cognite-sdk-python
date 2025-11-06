@@ -1,6 +1,6 @@
 """
 ===============================================================================
-2f2683c1e337ead8ed467e1d4287b5d9
+452bc305ae1895b3c56f32e17a06aa69
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -57,7 +57,7 @@ class SyncViewsAPI(SyncAPIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[View | ViewList]:
+    ) -> Iterator[View] | Iterator[ViewList]:
         """
         Iterate over views
 
@@ -73,7 +73,7 @@ class SyncViewsAPI(SyncAPIClient):
 
         Yields:
             View | ViewList: yields View one by one if chunk_size is not specified, else ViewList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.data_modeling.views(
                 chunk_size=chunk_size,

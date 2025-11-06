@@ -1,6 +1,6 @@
 """
 ===============================================================================
-704e6bd8fc93957c4b7ddae068278f1f
+28fe744f5074d9cd142f0077a6f66c7b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -116,7 +116,7 @@ class SyncFilesAPI(SyncAPIClient):
         directory_prefix: str | None = None,
         uploaded: bool | None = None,
         limit: int | None = None,
-    ) -> Iterator[FileMetadata | FileMetadataList]:
+    ) -> Iterator[FileMetadata] | Iterator[FileMetadataList]:
         """
         Iterate over files
 
@@ -148,7 +148,7 @@ class SyncFilesAPI(SyncAPIClient):
 
         Yields:
             FileMetadata | FileMetadataList: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.files(
                 chunk_size=chunk_size,

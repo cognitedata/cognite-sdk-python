@@ -1,6 +1,6 @@
 """
 ===============================================================================
-682cc895226cf66f89083037d763db10
+d93326405938df60470510da7470796c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -33,7 +33,9 @@ class SyncMappingsAPI(SyncAPIClient):
     @overload
     def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[Mapping]: ...
 
-    def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Mapping | MappingList]:
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[Mapping] | Iterator[MappingList]:
         """
         Iterate over mappings
 
@@ -45,7 +47,7 @@ class SyncMappingsAPI(SyncAPIClient):
 
         Yields:
             Mapping | MappingList: yields Mapping one by one if chunk_size is not specified, else MappingList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.hosted_extractors.mappings(chunk_size=chunk_size, limit=limit))
 
     @overload
