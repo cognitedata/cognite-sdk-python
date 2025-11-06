@@ -1,6 +1,6 @@
 """
 ===============================================================================
-3f643634e376e43ff956e24881ee0f34
+310cad50f9c91bbd89f81c41a70f8c3c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -60,7 +60,7 @@ class SyncDataSetsAPI(SyncAPIClient):
         external_id_prefix: str | None = None,
         write_protected: bool | None = None,
         limit: int | None = None,
-    ) -> Iterator[DataSet | DataSetList]:
+    ) -> Iterator[DataSet] | Iterator[DataSetList]:
         """
         Iterate over data sets
 
@@ -77,7 +77,7 @@ class SyncDataSetsAPI(SyncAPIClient):
 
         Yields:
             DataSet | DataSetList: yields DataSet one by one if chunk is not specified, else DataSetList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.data_sets(
                 chunk_size=chunk_size,

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f0a2f88100629f77edb6ad5e99425c61
+8e339ffece20e9f0685104f8b625f982
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -40,7 +40,7 @@ class SyncUsersAPI(SyncAPIClient):
     @overload
     def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[UserList]: ...
 
-    def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[User | UserList]:
+    def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[User] | Iterator[UserList]:
         """
         Iterate over users
 
@@ -52,7 +52,7 @@ class SyncUsersAPI(SyncAPIClient):
 
         Yields:
             User | UserList: yields User one by one if chunk_size is not specified, else UserList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.postgres_gateway.users(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload

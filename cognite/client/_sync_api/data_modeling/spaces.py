@@ -1,6 +1,6 @@
 """
 ===============================================================================
-b2d492bca0d25d9e565f7f7828155380
+7987a420577b0616995be35641dc2168
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -33,7 +33,9 @@ class SyncSpacesAPI(SyncAPIClient):
     @overload
     def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[SpaceList]: ...
 
-    def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Space | SpaceList]:
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[Space] | Iterator[SpaceList]:
         """
         Iterate over spaces
 
@@ -45,7 +47,7 @@ class SyncSpacesAPI(SyncAPIClient):
 
         Yields:
             Space | SpaceList: yields Space one by one if chunk_size is not specified, else SpaceList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.data_modeling.spaces(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload

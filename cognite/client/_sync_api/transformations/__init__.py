@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ef2f95af001bce1458ee5634c9a1e068
+611534b2ebb91c8bde08d80b7325aeb6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -96,7 +96,7 @@ class SyncTransformationsAPI(SyncAPIClient):
         data_set_external_ids: str | list[str] | None = None,
         tags: TagsFilter | None = None,
         limit: int | None = None,
-    ) -> Iterator[Transformation | TransformationList]:
+    ) -> Iterator[Transformation] | Iterator[TransformationList]:
         """
         Iterate over transformations
 
@@ -118,7 +118,7 @@ class SyncTransformationsAPI(SyncAPIClient):
 
         Yields:
             Transformation | TransformationList: Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.transformations(
                 chunk_size=chunk_size,

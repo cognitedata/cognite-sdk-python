@@ -1,6 +1,6 @@
 """
 ===============================================================================
-bb4b6d7e66d3d1b7df9e755ec6a964ad
+b744d4b33b393daa44929d66f3de741f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -40,7 +40,7 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
 
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[ExtractionPipeline | ExtractionPipelineList]:
+    ) -> Iterator[ExtractionPipeline] | Iterator[ExtractionPipelineList]:
         """
         Iterate over extraction pipelines
 
@@ -50,7 +50,7 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
 
         Yields:
             ExtractionPipeline | ExtractionPipelineList: Yields extraction pipelines one by one or in chunks up to the chunk size.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.extraction_pipelines(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> ExtractionPipeline | None:

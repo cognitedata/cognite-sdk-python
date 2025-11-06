@@ -1,6 +1,6 @@
 """
 ===============================================================================
-bd4e442835f712dad08ceadefacb70b9
+bde0cc51c6e3fa1cb825f978b1b9df70
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -41,7 +41,9 @@ class SyncWorkflowAPI(SyncAPIClient):
     @overload
     def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[WorkflowList]: ...
 
-    def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Workflow | WorkflowList]:
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[Workflow] | Iterator[WorkflowList]:
         """
         Iterate over workflows
 
@@ -51,7 +53,7 @@ class SyncWorkflowAPI(SyncAPIClient):
 
         Yields:
             Workflow | WorkflowList: Yields Workflow one by one if chunk_size is None, otherwise yields WorkflowList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.workflows(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload

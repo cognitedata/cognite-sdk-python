@@ -1,6 +1,6 @@
 """
 ===============================================================================
-71b623a4539f9d79757ebfd3b25edf46
+f24d8042b4045b4ee4de61cde37e2f4d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -62,7 +62,7 @@ class SyncDataModelsAPI(SyncAPIClient):
         inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[DataModel | DataModelList]:
+    ) -> Iterator[DataModel] | Iterator[DataModelList]:
         """
         Iterate over data model
 
@@ -78,7 +78,7 @@ class SyncDataModelsAPI(SyncAPIClient):
 
         Yields:
             DataModel | DataModelList: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.data_modeling.data_models(
                 chunk_size=chunk_size,
