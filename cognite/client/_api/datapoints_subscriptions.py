@@ -38,7 +38,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> AsyncIterator[DatapointSubscription | DatapointSubscriptionList]:
+    ) -> AsyncIterator[DatapointSubscription] | AsyncIterator[DatapointSubscriptionList]:
         """Iterate over all datapoint subscriptions.
 
         Args:
@@ -47,7 +47,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
         Yields:
             DatapointSubscription | DatapointSubscriptionList: Yields datapoint subscriptions one by one if chunk is not specified, otherwise returns a list of datapoint subscriptions.
-        """
+        """  # noqa: DOC404
         async for item in self._list_generator(
             method="GET",
             limit=limit,

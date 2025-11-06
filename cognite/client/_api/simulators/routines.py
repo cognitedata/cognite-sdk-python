@@ -65,7 +65,7 @@ class SimulatorRoutinesAPI(APIClient):
         simulator_integration_external_ids: Sequence[str] | None = None,
         sort: PropertySort | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[SimulatorRoutine | SimulatorRoutineList]:
+    ) -> AsyncIterator[SimulatorRoutine] | AsyncIterator[SimulatorRoutineList]:
         """Iterate over simulator routines
 
         Fetches simulator routines as they are iterated over, so you keep a limited number of simulator routines in memory.
@@ -79,7 +79,7 @@ class SimulatorRoutinesAPI(APIClient):
 
         Yields:
             SimulatorRoutine | SimulatorRoutineList: yields SimulatorRoutine one by one if chunk is not specified, else SimulatorRoutineList objects.
-        """
+        """  # noqa: DOC404
         self._warning.warn()
         routines_filter = SimulatorRoutinesFilter(
             model_external_ids=model_external_ids,

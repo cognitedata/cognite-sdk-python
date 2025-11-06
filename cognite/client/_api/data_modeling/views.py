@@ -57,7 +57,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> AsyncIterator[View | ViewList]:
+    ) -> AsyncIterator[View] | AsyncIterator[ViewList]:
         """Iterate over views
 
         Fetches views as they are iterated over, so you keep a limited number of views in memory.
@@ -72,7 +72,7 @@ class ViewsAPI(APIClient):
 
         Yields:
             View | ViewList: yields View one by one if chunk_size is not specified, else ViewList objects.
-        """
+        """  # noqa: DOC404
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
         async for item in self._list_generator(
             list_cls=ViewList,

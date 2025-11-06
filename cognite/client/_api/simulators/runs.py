@@ -93,7 +93,7 @@ class SimulatorRunsAPI(APIClient):
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
         sort: SimulationRunsSort | None = None,
-    ) -> AsyncIterator[SimulationRun | SimulationRunList]:
+    ) -> AsyncIterator[SimulationRun] | AsyncIterator[SimulationRunList]:
         """Iterate over simulation runs
 
         Fetches simulation runs as they are iterated over, so you keep a limited number of simulation runs in memory.
@@ -115,8 +115,7 @@ class SimulatorRunsAPI(APIClient):
 
         Yields:
             SimulationRun | SimulationRunList: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
-        """
-
+        """  # noqa: DOC404
         filter_runs = SimulatorRunsFilter(
             status=status,
             run_type=run_type,

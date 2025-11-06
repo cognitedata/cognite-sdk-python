@@ -102,7 +102,7 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
-    ) -> AsyncIterator[Row | RowList]:
+    ) -> AsyncIterator[Row] | AsyncIterator[RowList]:
         """Iterate over rows.
 
         Fetches rows as they are iterated over, so you keep a limited number of rows in memory.
@@ -123,7 +123,7 @@ class RawRowsAPI(APIClient):
 
         Yields:
             Row | RowList: An iterator yielding the requested row or rows.
-        """
+        """  # noqa: DOC404
         if partitions is None or _RUNNING_IN_BROWSER:
             iterator = self._list_generator(
                 list_cls=RowList,

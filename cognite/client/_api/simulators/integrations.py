@@ -50,7 +50,7 @@ class SimulatorIntegrationsAPI(APIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[SimulatorIntegration | SimulatorIntegrationList]:
+    ) -> AsyncIterator[SimulatorIntegration] | AsyncIterator[SimulatorIntegrationList]:
         """Iterate over simulator integrations
 
         Fetches simulator integrations as they are iterated over, so you keep a limited number of simulator integrations in memory.
@@ -63,7 +63,7 @@ class SimulatorIntegrationsAPI(APIClient):
 
         Yields:
             SimulatorIntegration | SimulatorIntegrationList: yields SimulatorIntegration one by one if chunk_size is not specified, else SimulatorIntegrationList objects.
-        """
+        """  # noqa: DOC404
         integrations_filter = SimulatorIntegrationFilter(simulator_external_ids=simulator_external_ids, active=active)
         async for item in self._list_generator(
             list_cls=SimulatorIntegrationList,

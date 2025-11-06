@@ -24,6 +24,8 @@ exclude = ["cognite/client/_proto"]
 ignore = ["E731", "E501", "W605", "RUF059"]
 select = ["E", "W", "F", "I", "T", "RUF", "TID", "UP", "TC005"]
 fixable = ["E", "W", "F", "I", "T", "RUF", "TID", "UP", "TC005"]
+# These are used by pydoclint and we don't want 100 warnings:
+external = ["DOC"]
 
 [tool.ruff.lint.per-file-ignores]
 # let scripts use print statements

@@ -229,7 +229,7 @@ class APIClient(BasicAsyncAPIClient):
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
-    ) -> AsyncIterator[T_CogniteResourceList | T_CogniteResource]:
+    ) -> AsyncIterator[T_CogniteResourceList] | AsyncIterator[T_CogniteResource]:
         limit, url_path, params = self._prepare_params_for_list_generator(
             limit, method, filter, url_path, resource_path, sort, other_params, advanced_filter
         )
@@ -378,7 +378,7 @@ class APIClient(BasicAsyncAPIClient):
         resource_cls: type[T_CogniteResource],
         list_cls: type[T_CogniteResourceList],
         unprocessed_items: list[dict[str, Any]],
-    ) -> Iterator[T_CogniteResourceList | T_CogniteResource]:
+    ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
         if chunk_size is None:
             for item in response["items"]:
                 yield resource_cls._load(item, cognite_client=self._cognite_client)

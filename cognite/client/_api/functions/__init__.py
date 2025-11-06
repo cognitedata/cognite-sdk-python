@@ -111,7 +111,7 @@ class FunctionsAPI(APIClient):
         created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
         metadata: dict[str, str] | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[Function | FunctionList]:
+    ) -> AsyncIterator[Function] | AsyncIterator[FunctionList]:
         """Iterate over functions.
 
         Args:
@@ -127,7 +127,7 @@ class FunctionsAPI(APIClient):
 
         Yields:
             Function | FunctionList: An iterator over functions.
-        """
+        """  # noqa: DOC404
         # The _list_generator method is not used as the /list endpoint does not
         # respond with a cursor (pagination is not supported)
         functions = await self.list(
