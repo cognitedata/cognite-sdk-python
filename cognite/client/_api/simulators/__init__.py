@@ -40,7 +40,7 @@ class SimulatorsAPI(APIClient):
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> AsyncIterator[Simulator | SimulatorList]:
+    ) -> AsyncIterator[Simulator] | AsyncIterator[SimulatorList]:
         """Iterate over simulators
 
         Fetches simulators as they are iterated over, so you keep a limited number of simulators in memory.
@@ -51,7 +51,7 @@ class SimulatorsAPI(APIClient):
 
         Yields:
             Simulator | SimulatorList: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
-        """
+        """  # noqa: DOC404
         async for item in self._list_generator(
             list_cls=SimulatorList,
             resource_cls=Simulator,

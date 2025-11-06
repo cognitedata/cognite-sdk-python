@@ -37,7 +37,9 @@ class UsersAPI(APIClient):
     @overload
     def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[UserList]: ...
 
-    async def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> AsyncIterator[User | UserList]:
+    async def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> AsyncIterator[User] | AsyncIterator[UserList]:
         """Iterate over users
 
         Fetches user as they are iterated over, so you keep a limited number of users in memory.
@@ -48,7 +50,7 @@ class UsersAPI(APIClient):
 
         Yields:
             User | UserList: yields User one by one if chunk_size is not specified, else UserList objects.
-        """
+        """  # noqa: DOC404
         async for item in self._list_generator(
             list_cls=UserList,
             resource_cls=User,

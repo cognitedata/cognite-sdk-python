@@ -144,7 +144,7 @@ class AssetsAPI(APIClient):
         limit: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> AsyncIterator[Asset | AssetList]:
+    ) -> AsyncIterator[Asset] | AsyncIterator[AssetList]:
         """Iterate over assets
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
@@ -173,7 +173,7 @@ class AssetsAPI(APIClient):
 
         Yields:
             Asset | AssetList: yields Asset one by one if chunk_size is not specified, else AssetList objects.
-        """
+        """  # noqa: DOC404
         agg_props = self._process_aggregated_props(aggregated_properties)
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)

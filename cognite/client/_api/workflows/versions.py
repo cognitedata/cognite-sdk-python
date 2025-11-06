@@ -62,7 +62,7 @@ class WorkflowVersionAPI(APIClient):
         chunk_size: int | None = None,
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[WorkflowVersion | WorkflowVersionList]:
+    ) -> AsyncIterator[WorkflowVersion] | AsyncIterator[WorkflowVersionList]:
         """Iterate over workflow versions
 
         Args:
@@ -72,7 +72,7 @@ class WorkflowVersionAPI(APIClient):
 
         Yields:
             WorkflowVersion | WorkflowVersionList: Yields WorkflowVersion one by one if chunk_size is None, otherwise yields WorkflowVersionList objects.
-        """
+        """  # noqa: DOC404
         async for item in self._list_generator(
             method="GET",
             resource_cls=WorkflowVersion,

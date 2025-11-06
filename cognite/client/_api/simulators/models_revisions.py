@@ -185,7 +185,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[SimulatorModelRevision | SimulatorModelRevisionList]:
+    ) -> AsyncIterator[SimulatorModelRevision] | AsyncIterator[SimulatorModelRevisionList]:
         """Iterate over simulator simulator model revisions
 
         Fetches simulator model revisions as they are iterated over, so you keep a limited number of simulator model revisions in memory.
@@ -201,7 +201,7 @@ class SimulatorModelRevisionsAPI(APIClient):
 
         Yields:
             SimulatorModelRevision | SimulatorModelRevisionList: yields SimulatorModelRevision one by one if chunk is not specified, else SimulatorModelRevisionList objects.
-        """
+        """  # noqa: DOC404
         model_revisions_filter = SimulatorModelRevisionsFilter(
             model_external_ids=model_external_ids,
             all_versions=all_versions,

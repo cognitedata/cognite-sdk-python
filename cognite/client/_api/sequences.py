@@ -123,7 +123,7 @@ class SequencesAPI(APIClient):
         limit: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> AsyncIterator[Sequence | SequenceList]:
+    ) -> AsyncIterator[Sequence] | AsyncIterator[SequenceList]:
         """Iterate over sequences
 
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
@@ -146,7 +146,7 @@ class SequencesAPI(APIClient):
 
         Yields:
             Sequence | SequenceList: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
-        """
+        """  # noqa: DOC404
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 

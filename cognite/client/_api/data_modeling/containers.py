@@ -57,7 +57,7 @@ class ContainersAPI(APIClient):
         space: str | None = None,
         include_global: bool = False,
         limit: int | None = None,
-    ) -> AsyncIterator[Container | ContainerList]:
+    ) -> AsyncIterator[Container] | AsyncIterator[ContainerList]:
         """Iterate over containers
 
         Fetches containers as they are iterated over, so you keep a limited number of containers in memory.
@@ -70,7 +70,7 @@ class ContainersAPI(APIClient):
 
         Yields:
             Container | ContainerList: yields Container one by one if chunk_size is not specified, else ContainerList objects.
-        """
+        """  # noqa: DOC404
         flt = _ContainerFilter(space, include_global)
         async for item in self._list_generator(
             list_cls=ContainerList,

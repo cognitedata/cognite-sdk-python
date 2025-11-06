@@ -48,7 +48,7 @@ class TransformationNotificationsAPI(APIClient):
         transformation_external_id: str | None = None,
         destination: str | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[TransformationNotification | TransformationNotificationList]:
+    ) -> AsyncIterator[TransformationNotification] | AsyncIterator[TransformationNotificationList]:
         """Iterate over transformation notifications
 
         Args:
@@ -60,7 +60,7 @@ class TransformationNotificationsAPI(APIClient):
 
         Yields:
             TransformationNotification | TransformationNotificationList: Yields notifications one by one if chunk_size is None, otherwise yields lists of notifications.
-        """
+        """  # noqa: DOC404
         filter_ = TransformationNotificationFilter(
             transformation_id=transformation_id,
             transformation_external_id=transformation_external_id,

@@ -165,7 +165,7 @@ class SimulatorModelsAPI(APIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         sort: PropertySort | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[SimulatorModel | SimulatorModelList]:
+    ) -> AsyncIterator[SimulatorModel] | AsyncIterator[SimulatorModelList]:
         """Iterate over simulator simulator models
 
         Fetches simulator models as they are iterated over, so you keep a limited number of simulator models in memory.
@@ -178,7 +178,7 @@ class SimulatorModelsAPI(APIClient):
 
         Yields:
             SimulatorModel | SimulatorModelList: yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
-        """
+        """  # noqa: DOC404
         model_filter = SimulatorModelsFilter(simulator_external_ids=simulator_external_ids)
         async for item in self._list_generator(
             list_cls=SimulatorModelList,

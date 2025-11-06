@@ -36,7 +36,7 @@ class MappingsAPI(APIClient):
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> AsyncIterator[Mapping | MappingList]:
+    ) -> AsyncIterator[Mapping] | AsyncIterator[MappingList]:
         """Iterate over mappings
 
         Fetches Mapping as they are iterated over, so you keep a limited number of mappings in memory.
@@ -47,7 +47,7 @@ class MappingsAPI(APIClient):
 
         Yields:
             Mapping | MappingList: yields Mapping one by one if chunk_size is not specified, else MappingList objects.
-        """
+        """  # noqa: DOC404
         self._warning.warn()
 
         async for item in self._list_generator(

@@ -43,7 +43,9 @@ class JobsAPI(APIClient):
     @overload
     def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[JobList]: ...
 
-    async def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> AsyncIterator[Job | JobList]:
+    async def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> AsyncIterator[Job] | AsyncIterator[JobList]:
         """Iterate over jobs
 
         Fetches jobs as they are iterated over, so you keep a limited number of jobs in memory.
@@ -54,7 +56,7 @@ class JobsAPI(APIClient):
 
         Yields:
             Job | JobList: yields Job one by one if chunk_size is not specified, else JobList objects.
-        """
+        """  # noqa: DOC404
         self._warning.warn()
         async for item in self._list_generator(
             list_cls=JobList,

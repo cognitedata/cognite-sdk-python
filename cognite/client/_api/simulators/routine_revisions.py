@@ -78,7 +78,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         include_all_fields: bool = False,
         limit: int | None = None,
         sort: PropertySort | None = None,
-    ) -> AsyncIterator[SimulatorRoutineRevision | SimulatorRoutineRevisionList]:
+    ) -> AsyncIterator[SimulatorRoutineRevision] | AsyncIterator[SimulatorRoutineRevisionList]:
         """Iterate over simulator routine revisions
 
         Fetches simulator routine revisions as they are iterated over, so you keep a limited number of simulator routine revisions in memory.
@@ -98,7 +98,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Yields:
             SimulatorRoutineRevision | SimulatorRoutineRevisionList: yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionList objects.
-        """
+        """  # noqa: DOC404
         self._warning.warn()
         filter = SimulatorRoutineRevisionsFilter(
             all_versions=all_versions,

@@ -125,12 +125,14 @@ class DocstrFormatter:
             return string[9:-1]
 
         if string.startswith("AsyncIterator["):
-            if string.count("AsyncIterator[") > 1:
-                raise ValueError(
-                    "pydoclint doesn't allow unions between AsyncIterators in 'Yields:' annotation. Example: instead of "
-                    "`AsyncIterator[int] | AsyncIterator[str]`, use `AsyncIterator[int | str]`. Please fix manually."
-                )
-            return string[14:-1]
+            c = string.count("AsyncIterator[")
+            if c == 1:
+                return string[14:-1]
+            elif c == 2:
+                match = re.match(r"AsyncIterator\[(\w+)\] \| AsyncIterator\[(\w+)\]", string)
+                if not match:
+                    raise ValueError("Failed to parse union of 2 'AsyncIterator's")
+                return " | ".join(match.groups())
 
         if not string.startswith("Generator["):
             raise ValueError("All generators must be annotated using 'Generator' or 'Iterator'")
