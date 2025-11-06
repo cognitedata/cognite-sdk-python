@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e1759a3c63d0e2572244078ef6d332da
+dcb96d2cd929aed40477d4437416b973
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -62,7 +62,7 @@ class SyncFunctionSchedulesAPI(SyncAPIClient):
         created_time: dict[str, int] | TimestampRange | None = None,
         cron_expression: str | None = None,
         limit: int | None = None,
-    ) -> Iterator[FunctionSchedule | FunctionSchedulesList]:
+    ) -> Iterator[FunctionSchedule] | Iterator[FunctionSchedulesList]:
         """
         Iterate over function schedules
 
@@ -77,7 +77,7 @@ class SyncFunctionSchedulesAPI(SyncAPIClient):
 
         Yields:
             FunctionSchedule | FunctionSchedulesList: Function schedules.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.functions.schedules(
                 chunk_size=chunk_size,

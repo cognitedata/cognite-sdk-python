@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f542ffd1d02db6ccc5d458d6e28d107c
+bd17aab24c1acbcf37ae90452f8d16b4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -40,7 +40,7 @@ class SyncJobsAPI(SyncAPIClient):
     @overload
     def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[JobList]: ...
 
-    def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Job | JobList]:
+    def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Job] | Iterator[JobList]:
         """
         Iterate over jobs
 
@@ -52,7 +52,7 @@ class SyncJobsAPI(SyncAPIClient):
 
         Yields:
             Job | JobList: yields Job one by one if chunk_size is not specified, else JobList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.hosted_extractors.jobs(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload

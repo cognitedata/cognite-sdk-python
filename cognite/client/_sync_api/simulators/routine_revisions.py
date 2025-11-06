@@ -1,6 +1,6 @@
 """
 ===============================================================================
-1af1b60173bf15c940b5c0049996451d
+ff594df7d1b2db4d55aa175696b87157
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -77,7 +77,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         include_all_fields: bool = False,
         limit: int | None = None,
         sort: PropertySort | None = None,
-    ) -> Iterator[SimulatorRoutineRevision | SimulatorRoutineRevisionList]:
+    ) -> Iterator[SimulatorRoutineRevision] | Iterator[SimulatorRoutineRevisionList]:
         """
         Iterate over simulator routine revisions
 
@@ -98,7 +98,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
 
         Yields:
             SimulatorRoutineRevision | SimulatorRoutineRevisionList: yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.simulators.routines.revisions(
                 chunk_size=chunk_size,

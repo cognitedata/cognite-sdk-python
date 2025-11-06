@@ -1,6 +1,6 @@
 """
 ===============================================================================
-26240c4f95a66ea3af0e4fdfa6bc5999
+215983ac4df951f01a198f0eca4a529a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -51,7 +51,7 @@ class SyncSimulatorIntegrationsAPI(SyncAPIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorIntegration | SimulatorIntegrationList]:
+    ) -> Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]:
         """
         Iterate over simulator integrations
 
@@ -65,7 +65,7 @@ class SyncSimulatorIntegrationsAPI(SyncAPIClient):
 
         Yields:
             SimulatorIntegration | SimulatorIntegrationList: yields SimulatorIntegration one by one if chunk_size is not specified, else SimulatorIntegrationList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.simulators.integrations(
                 chunk_size=chunk_size, simulator_external_ids=simulator_external_ids, active=active, limit=limit

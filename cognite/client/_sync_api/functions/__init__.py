@@ -1,6 +1,6 @@
 """
 ===============================================================================
-7a974edffeb45e797a86974a7be0a9fd
+5f0d7a91bdea6e72ea67849560637bd6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -84,7 +84,7 @@ class SyncFunctionsAPI(SyncAPIClient):
         created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
         metadata: dict[str, str] | None = None,
         limit: int | None = None,
-    ) -> Iterator[Function | FunctionList]:
+    ) -> Iterator[Function] | Iterator[FunctionList]:
         """
         Iterate over functions.
 
@@ -101,7 +101,7 @@ class SyncFunctionsAPI(SyncAPIClient):
 
         Yields:
             Function | FunctionList: An iterator over functions.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.functions(
                 chunk_size=chunk_size,

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ba6c011e38536e052b57079d06c7758a
+c88452ccacc8a6b19a12e35c955a984e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -92,7 +92,7 @@ class SyncSequencesAPI(SyncAPIClient):
         limit: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[Sequence | SequenceList]:
+    ) -> Iterator[Sequence] | Iterator[SequenceList]:
         """
         Iterate over sequences
 
@@ -116,7 +116,7 @@ class SyncSequencesAPI(SyncAPIClient):
 
         Yields:
             Sequence | SequenceList: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.sequences(
                 chunk_size=chunk_size,

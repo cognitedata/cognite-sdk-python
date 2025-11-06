@@ -1,6 +1,6 @@
 """
 ===============================================================================
-b06eb8802f228411d231d93bf66b321f
+6e1530fd3a8a519036587c4041054fc4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -52,7 +52,7 @@ class SyncContainersAPI(SyncAPIClient):
         space: str | None = None,
         include_global: bool = False,
         limit: int | None = None,
-    ) -> Iterator[Container | ContainerList]:
+    ) -> Iterator[Container] | Iterator[ContainerList]:
         """
         Iterate over containers
 
@@ -66,7 +66,7 @@ class SyncContainersAPI(SyncAPIClient):
 
         Yields:
             Container | ContainerList: yields Container one by one if chunk_size is not specified, else ContainerList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.data_modeling.containers(
                 chunk_size=chunk_size, space=space, include_global=include_global, limit=limit

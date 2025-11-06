@@ -1,6 +1,6 @@
 """
 ===============================================================================
-21c47330969eedc273a7c18877879b7e
+d0ad298bed6251d4f457a2a4c2da0e8d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -85,7 +85,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
         sort: SimulationRunsSort | None = None,
-    ) -> Iterator[SimulationRun | SimulationRunList]:
+    ) -> Iterator[SimulationRun] | Iterator[SimulationRunList]:
         """
         Iterate over simulation runs
 
@@ -108,7 +108,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
         Yields:
             SimulationRun | SimulationRunList: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.simulators.runs(
                 chunk_size=chunk_size,

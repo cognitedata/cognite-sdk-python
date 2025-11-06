@@ -1,6 +1,6 @@
 """
 ===============================================================================
-546c83035081b646ac3ec0dd49457ec3
+548e0609338f18fa22fa7745a576bd52
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -36,7 +36,7 @@ class Sync3DModelsAPI(SyncAPIClient):
 
     def __call__(
         self, chunk_size: int | None = None, published: bool | None = None, limit: int | None = None
-    ) -> Iterator[ThreeDModel | ThreeDModelList]:
+    ) -> Iterator[ThreeDModel] | Iterator[ThreeDModelList]:
         """
         Iterate over 3d models
 
@@ -49,7 +49,7 @@ class Sync3DModelsAPI(SyncAPIClient):
 
         Yields:
             ThreeDModel | ThreeDModelList: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.three_d.models(chunk_size=chunk_size, published=published, limit=limit)
         )  # type: ignore [misc]
