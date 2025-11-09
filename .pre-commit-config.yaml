@@ -13,6 +13,7 @@ repos:
           - --fix
           - --exit-non-zero-on-fix
           - --force-exclude
+
       - id: ruff-format
         name: ruff format
         language: python
@@ -37,8 +38,6 @@ repos:
         language: system
         pass_filenames: false
 
-  - repo: local
-    hooks:
       - id: custom-checks
         name: custom repo checks
         entry: poetry run python scripts/run_checks.py
@@ -46,6 +45,14 @@ repos:
         language: system
         pass_filenames: true
         require_serial: true  # avoid possible race conditions
+
+      - id: sync-client-codegen
+        name: run sync codegen on changed files
+        entry: poetry run python scripts/sync_client_codegen/main.py run --files
+        files: ^cognite/.*.(py|pyi)$
+        language: system
+        pass_filenames: true
+        require_serial: true
 
   - repo: https://github.com/jsh9/pydoclint  # Run after 'custom-checks' as these may auto-fix
     rev: 0.8.3
