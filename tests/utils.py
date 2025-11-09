@@ -67,6 +67,7 @@ from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import random_string, to_snake_case
+from cognite.client.utils._url import get_base_url_with_base_path
 
 if TYPE_CHECKING:
     import pandas
@@ -76,7 +77,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 T_Type = TypeVar("T_Type", bound=type)
 
-UNION_TYPES = {typing.Union, UnionType}
+UNION_TYPES = {typing.Union, UnionType}  # TODO: Can we remove UnionType now that 3.8 is dropped?
+
+
+def get_url(api: APIClient, path: str = "") -> str:
+    """Test helper to get the full URL for a given API + path"""
+    return get_base_url_with_base_path(api._api_version, api._config) + path
 
 
 def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Type]:
@@ -208,10 +214,14 @@ def random_gamma_dist_integer(inclusive_max, max_tries=100):
 
 @contextmanager
 def set_max_workers(cognite_client, new):
-    old = cognite_client._config.max_workers
-    cognite_client._config.max_workers = new
-    yield
-    cognite_client._config.max_workers = old
+    from cognite.client import global_config
+
+    old = global_config.max_workers
+    global_config.max_workers = new
+    try:
+        yield
+    finally:
+        global_config.max_workers = old
 
 
 @contextmanager

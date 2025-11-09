@@ -50,16 +50,11 @@ def test_cognite_client():
     run_docstring_tests(_cognite_client)
 
 
-@patch("cognite.client.credentials.ConfidentialClientApplication")
 @patch("cognite.client.credentials.PublicClientApplication")
+@patch("cognite.client.credentials.ConfidentialClientApplication")
 @patch("pathlib.Path.read_text", Mock(return_value="certificatecontents123"))
 @patch("os.environ", defaultdict(lambda: "value"))  # ensure env.var. lookups does not fail in doctests
-def test_credential_providers(mock_msal_app, mock_public_client):
-    mock_msal_app().acquire_token_for_client.return_value = {
-        "access_token": "azure_token",
-        "expires_in": 1000,
-    }
-    mock_public_client().acquire_token_silent.return_value = {"access_token": "azure_token", "expires_in": 1000}
+def test_credential_providers(mock_confidential_client, mock_public_client):
     run_docstring_tests(credentials)
 
 
