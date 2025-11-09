@@ -3,10 +3,10 @@ from typing import ClassVar
 from unittest.mock import Mock, patch
 
 import pytest
-from oauthlib.oauth2 import InvalidClientIdError
 
 from cognite.client.credentials import (
     CredentialProvider,
+    OAuth2Error,
     OAuthClientCertificate,
     OAuthClientCredentials,
     OAuthDeviceCode,
@@ -170,30 +170,27 @@ class TestOauthClientCredentials:
         }
     )
 
-    @patch("cognite.client.credentials.BackendApplicationClient")
-    @patch("cognite.client.credentials.OAuth2Session")
+    @patch("cognite.client.credentials.OAuth2Client")
     @pytest.mark.parametrize("expires_in", (1000, "1001"))  # some IDPs return as string
-    def test_access_token_generated(self, mock_oauth_session, mock_backend_client, expires_in):
-        mock_oauth_session().fetch_token.return_value = {"access_token": "azure_token", "expires_in": expires_in}
+    def test_access_token_generated(self, mock_oauth_client, expires_in):
+        mock_oauth_client().fetch_token.return_value = {"access_token": "azure_token", "expires_in": expires_in}
         creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
-    @patch("cognite.client.credentials.BackendApplicationClient")
-    @patch("cognite.client.credentials.OAuth2Session")
-    def test_access_token_not_generated_due_to_error(self, mock_oauth_session, mock_backend_client):
-        mock_oauth_session().fetch_token.side_effect = InvalidClientIdError()
+    @patch("cognite.client.credentials.OAuth2Client")
+    def test_access_token_not_generated_due_to_error(self, mock_oauth_client):
+        mock_oauth_client().fetch_token.side_effect = OAuth2Error("Invalid client_id parameter value.", status_code=400)
         with pytest.raises(
             CogniteAuthError,
-            match=r"Error generating access token: invalid_request, 400, Invalid client_id parameter value\.",
+            match="Error generating access token: None, 400, Invalid client_id parameter value.",
         ):
             creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
             creds._refresh_access_token()
 
-    @patch("cognite.client.credentials.BackendApplicationClient")
-    @patch("cognite.client.credentials.OAuth2Session")
-    def test_access_token_expired(self, mock_oauth_session, mock_backend_client):
-        mock_oauth_session().fetch_token.side_effect = [
+    @patch("cognite.client.credentials.OAuth2Client")
+    def test_access_token_expired(self, mock_oauth_client):
+        mock_oauth_client().fetch_token.side_effect = [
             {"access_token": "azure_token_expired", "expires_in": -1000},
             {"access_token": "azure_token_refreshed", "expires_in": 1000},
         ]
