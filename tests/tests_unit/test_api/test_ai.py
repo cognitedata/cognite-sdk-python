@@ -5,10 +5,11 @@ import re
 import pytest
 
 from cognite.client.data_classes.ai import AnswerContent, AnswerLocation, AnswerReference, Summary
+from tests.utils import get_url
 
 
 @pytest.fixture
-def mock_summarize_response(rsps, cognite_client):
+def mock_summarize_response(httpx_mock, cognite_client):
     response_body = {
         "items": [
             {
@@ -18,15 +19,15 @@ def mock_summarize_response(rsps, cognite_client):
         ]
     }
 
-    url_pattern = re.compile(re.escape(cognite_client.ai.tools.documents._get_base_url_with_base_path()) + "/.+")
-    rsps.assert_all_requests_are_fired = False
+    url_pattern = re.compile(re.escape(get_url(cognite_client.ai.tools.documents)) + "/.+")
+    # ....assert_all_requests_are_fired = False  # TODO
 
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    yield rsps
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
+    yield httpx_mock
 
 
 @pytest.fixture
-def mock_ask_response(rsps, cognite_client):
+def mock_ask_response(httpx_mock, cognite_client):
     response_body = {
         "content": [
             {
@@ -81,11 +82,11 @@ def mock_ask_response(rsps, cognite_client):
         ]
     }
 
-    url_pattern = re.compile(re.escape(cognite_client.ai.tools.documents._get_base_url_with_base_path()) + "/.+")
-    rsps.assert_all_requests_are_fired = False
+    url_pattern = re.compile(re.escape(get_url(cognite_client.ai.tools.documents)) + "/.+")
+    # ....assert_all_requests_are_fired = False  # TODO
 
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    yield rsps
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
+    yield httpx_mock
 
 
 class TestAIAPI:
