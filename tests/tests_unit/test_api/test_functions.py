@@ -338,12 +338,14 @@ def cognite_client_with_client_credentials_flow(httpx_mock: HTTPXMock) -> Cognit
     credentials.scopes = ["bla"]
     credentials.authorization_header.return_value = ("Authorization", "Bearer bla")
 
-    return CogniteClient(ClientConfig(client_name="any", project="dummy", credentials=credentials))
+    return CogniteClient(ClientConfig(client_name="any", project="dummy", cluster="api", credentials=credentials))
 
 
 @pytest.fixture
 def cognite_client_with_token() -> CogniteClient:
-    return CogniteClient(ClientConfig(client_name="any", project="dummy", credentials=Token("aabbccddeeffgg")))
+    return CogniteClient(
+        ClientConfig(client_name="any", project="dummy", cluster="api", credentials=Token("aabbccddeeffgg"))
+    )
 
 
 @pytest.fixture
@@ -1072,7 +1074,9 @@ class TestFunctionSchedulesAPI:
         credentials.client_secret = "client_secret"
         credentials.authorization_header.return_value = "Bearer token", "42"
 
-        config = ClientConfig(client_name="test_client", project="dummy_project", credentials=credentials)
+        config = ClientConfig(
+            client_name="test_client", project="dummy_project", cluster="api", credentials=credentials
+        )
         cognite_client = CogniteClient(config)
         base_url = f"{config.base_url}/api/v1/projects/{config.project}"
         schedule = FunctionScheduleWrite(
