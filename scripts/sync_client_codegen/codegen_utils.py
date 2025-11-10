@@ -271,7 +271,9 @@ def clean_up_files(all_expected_files: list[Path], verbose: bool = False) -> Non
 
 
 def setup_async_mock_client() -> AsyncCogniteClient:
-    return AsyncCogniteClient(ClientConfig(client_name="name", project="proj", credentials=Token("not-a-token")))
+    return AsyncCogniteClient(
+        ClientConfig(client_name="name", project="proj", cluster="api", credentials=Token("not-a-token"))
+    )
 
 
 def get_canonical_source(source: Path | str) -> str:

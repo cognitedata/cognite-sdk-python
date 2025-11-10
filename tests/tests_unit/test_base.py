@@ -437,7 +437,9 @@ class TestCogniteResource:
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
     def test_resource_client_correct(self) -> None:
-        async_client = AsyncCogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        async_client = AsyncCogniteClient(
+            ClientConfig(client_name="bla", project="bla", cluster="foo", credentials=Token("bla"))
+        )
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=async_client)._cognite_client is async_client
@@ -682,7 +684,9 @@ class TestCogniteResourceList:
             MyResourceList([1, 2, 3])
 
     def test_resource_list_client_correct(self) -> None:
-        async_client = AsyncCogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        async_client = AsyncCogniteClient(
+            ClientConfig(client_name="bla", project="bla", cluster="foo", credentials=Token("bla"))
+        )
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=async_client)._cognite_client == async_client
@@ -876,7 +880,9 @@ class TestCogniteResponse:
         assert MyResponse(1) != MyResponse()
 
     def test_response_client_correct(self) -> None:
-        async_client = AsyncCogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        async_client = AsyncCogniteClient(
+            ClientConfig(client_name="bla", project="bla", cluster="foo", credentials=Token("bla"))
+        )
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=async_client)._cognite_client == async_client
