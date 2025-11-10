@@ -5,7 +5,7 @@ import json
 import pytest
 
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationUpdate
-from cognite.client.utils._auxiliary import to_snake_case
+from cognite.client.utils._text import to_snake_case
 
 
 @pytest.fixture
@@ -20,9 +20,12 @@ def annotation() -> Annotation:
         status="approved",
         creating_app="UnitTest",
         creating_app_version="0.0.1",
-        creating_user=None,
+        creating_user="sdk-tests",
         annotated_resource_type="file",
         annotated_resource_id=1,
+        id=1,
+        created_time=1,
+        last_updated_time=1,
     )
 
 
@@ -42,12 +45,12 @@ def annotation_filter() -> AnnotationFilter:
 class TestAnnotation:
     @pytest.mark.parametrize(
         "creating_user, camel_case",
-        [("john.doe@cognite.com", False), ("john.doe@cognite.com", True), (None, False), (None, True)],
-        ids=["snake_case", "camel_case", "snake_case_None", "camel_case_None"],
+        [("john.doe@cognite.com", False), ("john.doe@cognite.com", True)],
+        ids=["snake_case", "camel_case"],
     )
-    def test_dump(self, annotation: Annotation, creating_user: str | None, camel_case: bool) -> None:
+    def test_dump(self, annotation: Annotation, creating_user: str, camel_case: bool) -> None:
         annotation.creating_user = creating_user
-        super_dump = super(Annotation, annotation).dump(camel_case=camel_case)
+        super_dump = annotation.dump(camel_case=camel_case)
         dump = annotation.dump(camel_case=camel_case)
         key = "creatingUser" if camel_case else "creating_user"
         for k, v in dump.items():
@@ -94,7 +97,7 @@ class TestAnnotationFilter:
 
 
 class TestAnnotationUpdate:
-    def test_set_chain(self):
+    def test_set_chain(self) -> None:
         update = {
             "data": {"assetRef": {"id": 1}, "textRegion": {"xMin": 0.0, "xMax": 0.5, "yMin": 0.5, "yMax": 1.0}},
             "status": "rejected",

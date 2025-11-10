@@ -29,7 +29,7 @@ from cognite.client.data_classes.capabilities import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 ComparableCapability: TypeAlias = (
@@ -47,43 +47,46 @@ ComparableCapability: TypeAlias = (
 def _convert_capability_to_tuples(
     capabilities: ComparableCapability, project: str | None = None
 ) -> set[CapabilityTuple]:
-    if isinstance(capabilities, ProjectCapability):
-        return ProjectCapabilityList([capabilities]).as_tuples(project)
-    if isinstance(capabilities, ProjectCapabilityList):
-        return capabilities.as_tuples(project)
+    match capabilities:
+        case ProjectCapability():
+            return ProjectCapabilityList([capabilities]).as_tuples(project)
+        case ProjectCapabilityList():
+            return capabilities.as_tuples(project)
+        case dict() | Capability():
+            capabilities = [capabilities]  # type: ignore [assignment]
+        case Group():
+            capabilities = capabilities.capabilities or []
+        case GroupList():
+            capabilities = [cap for grp in capabilities for cap in grp.capabilities or []]
 
-    if isinstance(capabilities, (dict, Capability)):
-        capabilities = [capabilities]  # type: ignore [assignment]
-    elif isinstance(capabilities, Group):
-        capabilities = capabilities.capabilities or []
-    elif isinstance(capabilities, GroupList):
-        capabilities = [cap for grp in capabilities for cap in grp.capabilities or []]
-    if isinstance(capabilities, Sequence):
-        tpls: set[CapabilityTuple] = set()
-        has_skipped = False
-        for cap in capabilities:
-            if isinstance(cap, dict):
+    if not isinstance(capabilities, Sequence):
+        raise TypeError(
+            "input capabilities not understood, expected a ComparableCapability: "
+            f"{ComparableCapability} not {type(capabilities)}"
+        )
+    tpls: set[CapabilityTuple] = set()
+    has_skipped = False
+    for cap in capabilities:
+        match cap:
+            case dict():
                 cap = Capability.load(cap)
-            if isinstance(cap, UnknownAcl):
+            case UnknownAcl():
                 warnings.warn(f"Unknown capability {cap.capability_name} will be ignored in comparison")
                 has_skipped = True
                 continue
-            if isinstance(cap, LegacyCapability):
+            case LegacyCapability():
                 # Legacy capabilities are no longer in use, so they are safe to skip.
                 has_skipped = True
                 continue
-            tpls.update(cap.as_tuples())  # type: ignore [union-attr]
-        if tpls or has_skipped:
-            return tpls
-        raise ValueError("No capabilities given")
-    raise TypeError(
-        "input capabilities not understood, expected a ComparableCapability: "
-        f"{ComparableCapability} not {type(capabilities)}"
-    )
+        tpls.update(cap.as_tuples())  # type: ignore [union-attr]
+
+    if tpls or has_skipped:
+        return tpls
+    raise ValueError("No capabilities given")
 
 
 class IAMAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.groups = GroupsAPI(config, api_version, cognite_client)
         self.security_categories = SecurityCategoriesAPI(config, api_version, cognite_client)
@@ -98,7 +101,6 @@ class IAMAPI(APIClient):
         existing_capabilities: ComparableCapability,
         desired_capabilities: ComparableCapability,
         project: str | None = None,
-        ignore_allscope_meaning: bool = False,
     ) -> list[Capability]:
         """Helper method to compare capabilities across two groups (of capabilities) to find which are missing from the first.
 
@@ -106,16 +108,16 @@ class IAMAPI(APIClient):
             Capabilities that are no longer in use by the API will be ignored. These have names prefixed with `Legacy` and
             all inherit from the base class `LegacyCapability`. If you want to check for these, you must do so manually.
 
+        Tip:
+            If you just want to check against your existing capabilities, you may use the helper method
+            ``client.iam.verify_capabilities`` instead.
+
         Args:
             existing_capabilities (ComparableCapability): List of existing capabilities.
             desired_capabilities (ComparableCapability): List of wanted capabilities to check against existing.
             project (str | None): If a ProjectCapability or ProjectCapabilityList is passed, we need to know which CDF project
                 to pull capabilities from (existing might be from several). If project is not passed, and ProjectCapabilityList
-                is used, it will be inferred from the CogniteClient used to call retrieve it via token/inspect.
-            ignore_allscope_meaning (bool): Option on how to treat scopes that encompass other scopes, like allScope. When True,
-                this function will return e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. The
-                same logic applies to RawAcl scoped to a specific database->table, even when the user have access to all tables
-                in that database. Defaults to False.
+                is used, it will be inferred from the AsyncCogniteClient used to call retrieve it via token/inspect.
 
         Returns:
             list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
@@ -128,6 +130,7 @@ class IAMAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_groups = client.iam.groups.list(all=False)
                 >>> to_check = [
                 ...     AssetsAcl(
@@ -158,10 +161,6 @@ class IAMAPI(APIClient):
 
                 >>> from cognite.client.data_classes.capabilities import Capability
                 >>> acls = [Capability.load(cap) for cap in to_check]
-
-        Tip:
-            If you just want to check against your existing capabilities, you may use the helper method
-            ``client.iam.verify_capabilities`` instead.
         """
         has_capabilties = _convert_capability_to_tuples(existing_capabilities, project)
         to_check = _convert_capability_to_tuples(desired_capabilities, project)
@@ -207,17 +206,11 @@ class IAMAPI(APIClient):
 
         return [Capability.from_tuple(tpl) for tpl in sorted(missing)]
 
-    def verify_capabilities(
-        self,
-        desired_capabilities: ComparableCapability,
-        ignore_allscope_meaning: bool = False,
-    ) -> list[Capability]:
+    async def verify_capabilities(self, desired_capabilities: ComparableCapability) -> list[Capability]:
         """Helper method to compare your current capabilities with a set of desired capabilities and return any missing.
 
         Args:
             desired_capabilities (ComparableCapability): List of desired capabilities to check against existing.
-            ignore_allscope_meaning (bool): Option on how to treat allScopes. When True, this function will return
-                e.g. an Acl scoped to a dataset even if the user have the same Acl scoped to all. Defaults to False.
 
         Returns:
             list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
@@ -230,6 +223,7 @@ class IAMAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> to_check = [
                 ...     AssetsAcl(
                 ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],
@@ -255,5 +249,5 @@ class IAMAPI(APIClient):
                 >>> from cognite.client.data_classes.capabilities import Capability
                 >>> acls = [Capability.load(cap) for cap in to_check]
         """
-        existing_capabilities = self.token.inspect().capabilities
+        existing_capabilities = (await self.token.inspect()).capabilities
         return self.compare_capabilities(existing_capabilities, desired_capabilities)

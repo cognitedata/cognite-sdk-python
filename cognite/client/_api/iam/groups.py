@@ -9,7 +9,7 @@ from cognite.client.data_classes.iam import GroupWrite
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class _GroupListAdapter(GroupList):
@@ -17,7 +17,7 @@ class _GroupListAdapter(GroupList):
     def _load(  # type: ignore[override]
         cls,
         resource_list: Iterable[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> GroupList:
         return GroupList._load(resource_list, cognite_client=cognite_client, allow_unknown=True)
@@ -28,7 +28,7 @@ class _GroupAdapter(Group):
     def _load(  # type: ignore[override]
         cls,
         resource: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> Group:
         return Group._load(resource, cognite_client=cognite_client, allow_unknown=True)
@@ -42,7 +42,7 @@ class _GroupWriteAdapter(GroupWrite):
     def _load(  # type: ignore[override]
         cls,
         resource: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> GroupWrite:
         return GroupWrite._load(resource, cognite_client=cognite_client, allow_unknown=True)
@@ -51,7 +51,7 @@ class _GroupWriteAdapter(GroupWrite):
 class GroupsAPI(APIClient):
     _RESOURCE_PATH = "/groups"
 
-    def list(self, all: bool = False) -> GroupList:
+    async def list(self, all: bool = False) -> GroupList:
         """`List groups. <https://developer.cognite.com/api#tag/Groups/operation/getGroups>`_
 
         Args:
@@ -64,26 +64,27 @@ class GroupsAPI(APIClient):
 
             List your own groups:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_groups = client.iam.groups.list()
 
             List all groups:
 
                 >>> all_groups = client.iam.groups.list(all=True)
         """
-        res = self._get(self._RESOURCE_PATH, params={"all": all})
+        res = await self._get(self._RESOURCE_PATH, params={"all": all})
         # Dev.note: We don't use public load method here (it is final) and we need to pass a magic keyword arg. to
         # not raise whenever new Acls/actions/scopes are added to the API. So we specifically allow the 'unknown':
         return GroupList._load(res.json()["items"], cognite_client=self._cognite_client, allow_unknown=True)
 
     @overload
-    def create(self, group: Group | GroupWrite) -> Group: ...
+    async def create(self, group: Group | GroupWrite) -> Group: ...
 
     @overload
-    def create(self, group: Sequence[Group] | Sequence[GroupWrite]) -> GroupList: ...
+    async def create(self, group: Sequence[Group] | Sequence[GroupWrite]) -> GroupList: ...
 
-    def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
+    async def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
         """`Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
 
         Args:
@@ -99,6 +100,7 @@ class GroupsAPI(APIClient):
                 >>> from cognite.client.data_classes import GroupWrite
                 >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_capabilities = [
                 ...     AssetsAcl([AssetsAcl.Action.Read], AssetsAcl.Scope.All()),
                 ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456]))]
@@ -145,11 +147,11 @@ class GroupsAPI(APIClient):
                 >>> group = GroupWrite(name="Another group", capabilities=acls)
         """
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=_GroupListAdapter, resource_cls=_GroupAdapter, items=group, input_resource_cls=_GroupWriteAdapter
         )
 
-    def delete(self, id: int | Sequence[int]) -> None:
+    async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_
 
         Args:
@@ -159,8 +161,9 @@ class GroupsAPI(APIClient):
 
             Delete group::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.iam.groups.delete(1)
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
+        await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)

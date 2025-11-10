@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import asyncio
+import random
 import time
 import warnings
-from collections.abc import Sequence
+from abc import ABC, abstractmethod
+from collections.abc import MutableMapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar, cast, final
 
-from requests.utils import CaseInsensitiveDict
 from typing_extensions import Self
 
-from cognite.client.data_classes import Annotation
+from cognite.client.data_classes import Annotation, AnnotationWrite
 from cognite.client.data_classes._base import (
     CogniteObject,
     CognitePrimitiveUpdate,
@@ -27,16 +29,17 @@ from cognite.client.data_classes.annotation_types.images import (
     TextRegion,
 )
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
-from cognite.client.data_classes.annotations import AnnotationList
+from cognite.client.data_classes.annotations import AnnotationList, AnnotationType
 from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
+from cognite.client.exceptions import CogniteAPIError, CogniteModelFailedError
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
-from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_snake_case, copy_doc_from_async, to_camel_case
 
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class JobStatus(Enum):
@@ -69,7 +72,7 @@ class ContextualizationJobType(Enum):
     VISION = "vision"
 
 
-class ContextualizationJob(CogniteResource):
+class ContextualizationJob(CogniteResource, ABC):
     """Data class for the result of a contextualization job."""
 
     _COMMON_FIELDS = frozenset(
@@ -85,94 +88,85 @@ class ContextualizationJob(CogniteResource):
             "jobToken",
         }
     )
-    _JOB_TYPE = ContextualizationJobType.ENTITY_MATCHING
 
     def __init__(
         self,
-        job_id: int | None = None,
-        model_id: int | None = None,
-        status: str | None = None,
-        error_message: str | None = None,
-        created_time: int | None = None,
-        start_time: int | None = None,
-        status_time: int | None = None,
-        status_path: str | None = None,
-        job_token: str | None = None,
-        cognite_client: CogniteClient | None = None,
+        job_id: int,
+        status: str,
+        status_time: int,
+        created_time: int,
+        error_message: str | None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.job_id = job_id
-        self.model_id = model_id
         self.status = status
         self.created_time = created_time
-        self.start_time = start_time
         self.status_time = status_time
         self.error_message = error_message
-        self.job_token = job_token
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
         self._result: dict[str, Any] | None = None
-        self._status_path = status_path
+        self.job_token: str | None = None
 
+    @abstractmethod
+    async def update_status_async(self) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
     def update_status(self) -> str:
-        """Updates the model status and returns it"""
-        headers = {"X-Job-Token": self.job_token} if self.job_token else {}
-        data = (
-            getattr(self._cognite_client, self._JOB_TYPE.value)
-            ._get(f"{self._status_path}{self.job_id}", headers=headers)
-            .json()
-        )
-        self.status = data["status"]
-        self.status_time = data.get("statusTime")
-        self.start_time = data.get("startTime")
-        self.created_time = self.created_time or data.get("createdTime")
-        self.error_message = data.get("errorMessage")
-        self._result = {k: v for k, v in data.items() if k not in self._COMMON_FIELDS}
-        assert self.status is not None
-        return self.status
+        raise NotImplementedError
 
-    def wait_for_completion(self, timeout: int | None = None, interval: int = 1) -> None:
+    @abstractmethod
+    def _status_path(self) -> str:
+        raise NotImplementedError
+
+    async def wait_for_completion_async(self, timeout: float | None = None, interval: float = 10) -> None:
         """Waits for job completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
-            timeout (int | None): Time out after this many seconds. (None means wait indefinitely)
-            interval (int): Poll status every this many seconds.
+            timeout (float | None): Time out after this many seconds. (None means wait indefinitely)
+            interval (float): Influence how often to poll status (seconds).
 
         Raises:
-            ModelFailedException: The model fit failed.
+            CogniteModelFailedError: The model fit failed.
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
-            self.update_status()
+            await self.update_status_async()
             if JobStatus(self.status).is_finished():
                 break
-            time.sleep(interval)
-        if JobStatus(self.status) is JobStatus.FAILED:
-            raise ModelFailedException(self.__class__.__name__, cast(int, self.job_id), cast(str, self.error_message))
+            await asyncio.sleep(max(1, random.uniform(0, interval)))
 
-    @property
-    def result(self) -> dict[str, Any]:
-        """Waits for the job to finish and returns the results."""
+        if JobStatus(self.status) is JobStatus.FAILED:
+            raise CogniteModelFailedError(type(self).__name__, self.job_id, cast(str, self.error_message))
+
+    @copy_doc_from_async(wait_for_completion_async)
+    def wait_for_completion(self, timeout: float | None = None, interval: float = 10) -> None:
+        return run_sync(self.wait_for_completion_async(timeout=timeout, interval=interval))
+
+    async def get_result_async(self) -> dict[str, Any]:
+        """Returns results if available, else waits for the job to finish, then returns the results."""
         if not self._result:
-            self.wait_for_completion()
+            await self.wait_for_completion_async()
         assert self._result is not None
         return self._result
 
+    @copy_doc_from_async(get_result_async)
+    def get_result(self) -> dict[str, Any]:
+        return run_sync(self.get_result_async())
+
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.job_id}, status={self.status}, error={self.error_message})"
+        return f"{type(self).__name__}(id={self.job_id}, status={self.status}, error={self.error_message})"
 
     @classmethod
-    def _load_with_status(
+    def _load_with_job_token(
         cls: type[T_ContextualizationJob],
-        *,
         data: dict[str, Any],
-        headers: CaseInsensitiveDict[str],
-        status_path: str,
+        *,
+        headers: MutableMapping[str, str],
         cognite_client: Any,
     ) -> T_ContextualizationJob:
-        obj = cls._load({**data, "jobToken": headers.get("X-Job-Token")}, cognite_client=cognite_client)
-        obj._status_path = status_path
-        # '_load' does not see properties (real attribute stored under a different name, e.g. '_items' not 'items'):
-        if "items" in data and hasattr(obj, "items"):
-            obj.items = data["items"]
+        obj = cls._load(data, cognite_client=cognite_client)
+        obj.job_token = headers.get("X-Job-Token")
         return obj
 
 
@@ -191,10 +185,10 @@ class EntityMatchingModel(CogniteResource):
 
     def __init__(
         self,
-        id: int | None = None,
+        id: int,
+        created_time: int,
         status: str | None = None,
         error_message: str | None = None,
-        created_time: int | None = None,
         start_time: int | None = None,
         status_time: int | None = None,
         classifier: str | None = None,
@@ -204,15 +198,10 @@ class EntityMatchingModel(CogniteResource):
         name: str | None = None,
         description: str | None = None,
         external_id: str | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
-        # id/created_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
+        self.id = id
+        self.created_time = created_time
         self.status = status
         self.start_time = start_time
         self.status_time = status_time
@@ -224,14 +213,33 @@ class EntityMatchingModel(CogniteResource):
         self.name = name
         self.description = description
         self.external_id = external_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            status=resource.get("status"),
+            error_message=resource.get("errorMessage"),
+            created_time=resource["createdTime"],
+            start_time=resource.get("startTime"),
+            status_time=resource.get("statusTime"),
+            classifier=resource.get("classifier"),
+            feature_type=resource.get("featureType"),
+            match_fields=resource.get("matchFields"),
+            model_type=resource.get("modelType"),
+            name=resource.get("name"),
+            description=resource.get("description"),
+            external_id=resource.get("externalId"),
+            cognite_client=cognite_client,
+        )
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.id}, status={self.status}, error={self.error_message})"
+        return f"{type(self).__name__}(id={self.id}, status={self.status}, error={self.error_message})"
 
-    def update_status(self) -> str:
+    async def update_status_async(self) -> str:
         """Updates the model status and returns it"""
-        data = self._cognite_client.entity_matching._get(f"{self._STATUS_PATH}{self.id}").json()
+        data = (await self._cognite_client.entity_matching._get(f"{self._STATUS_PATH}{self.id}")).json()
         self.status = data["status"]
         self.status_time = data.get("statusTime")
         self.start_time = data.get("startTime")
@@ -240,35 +248,47 @@ class EntityMatchingModel(CogniteResource):
         assert self.status is not None
         return self.status
 
-    def wait_for_completion(self, timeout: int | None = None, interval: int = 1) -> None:
+    @copy_doc_from_async(update_status_async)
+    def update_status(self) -> str:
+        return run_sync(self.update_status_async())
+
+    async def wait_for_completion_async(self, timeout: int | None = None, interval: int = 10) -> None:
         """Waits for model completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
             timeout (int | None): Time out after this many seconds. (None means wait indefinitely)
-            interval (int): Poll status every this many seconds.
+            interval (int): Influence how often to poll status (seconds).
 
         Raises:
-            ModelFailedException: The model fit failed.
+            CogniteModelFailedError: The model fit failed.
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
-            self.update_status()
+            await self.update_status_async()
             if JobStatus(self.status) not in [JobStatus.QUEUED, JobStatus.RUNNING]:
                 break
-            time.sleep(interval)
+            await asyncio.sleep(max(1, random.uniform(0, interval)))
+
         if JobStatus(self.status) is JobStatus.FAILED:
             assert self.id is not None
             assert self.error_message is not None
-            raise ModelFailedException(self.__class__.__name__, self.id, self.error_message)
+            raise CogniteModelFailedError(type(self).__name__, self.id, self.error_message)
 
-    def predict(
+    @copy_doc_from_async(wait_for_completion_async)
+    def wait_for_completion(self, timeout: int | None = None, interval: int = 10) -> None:
+        return run_sync(self.wait_for_completion_async(timeout=timeout, interval=interval))
+
+    async def predict_async(
         self,
         sources: list[dict] | None = None,
         targets: list[dict] | None = None,
         num_matches: int = 1,
         score_threshold: float | None = None,
-    ) -> ContextualizationJob:
-        """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
+    ) -> EntityMatchingPredictionResult:
+        """Predict entity matching.
+
+        Note:
+            Blocks and waits for the model to be ready if it has been recently created.
 
         Args:
             sources (list[dict] | None): entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
@@ -277,22 +297,37 @@ class EntityMatchingModel(CogniteResource):
             score_threshold (float | None): only return matches with a score above this threshold
 
         Returns:
-            ContextualizationJob: object which can be used to wait for and retrieve results."""
-        self.wait_for_completion()
-        return self._cognite_client.entity_matching._run_job(
-            job_path="/predict",
-            job_cls=ContextualizationJob,
-            status_path="/jobs/",
-            json={
-                "id": self.id,
-                "sources": self._dump_entities(sources),
-                "targets": self._dump_entities(targets),
-                "numMatches": num_matches,
-                "scoreThreshold": score_threshold,
-            },
+            EntityMatchingPredictionResult: object which can be used to wait for and retrieve results."""
+        await self.wait_for_completion_async()
+        json = {
+            "id": self.id,
+            "sources": self._dump_entities(sources),
+            "targets": self._dump_entities(targets),
+            "numMatches": num_matches,
+            "scoreThreshold": score_threshold,
+        }
+        response = await self._cognite_client.entity_matching._post(f"{self._RESOURCE_PATH}/predict", json=json)
+        return EntityMatchingPredictionResult._load_with_job_token(
+            data=response.json(),
+            headers=response.headers,
+            cognite_client=self._cognite_client,
         )
 
-    def refit(self, true_matches: Sequence[dict | tuple[int | str, int | str]]) -> EntityMatchingModel:
+    @copy_doc_from_async(predict_async)
+    def predict(
+        self,
+        sources: list[dict] | None = None,
+        targets: list[dict] | None = None,
+        num_matches: int = 1,
+        score_threshold: float | None = None,
+    ) -> EntityMatchingPredictionResult:
+        return run_sync(
+            self.predict_async(
+                sources=sources, targets=targets, num_matches=num_matches, score_threshold=score_threshold
+            )
+        )
+
+    async def refit_async(self, true_matches: Sequence[dict | tuple[int | str, int | str]]) -> EntityMatchingModel:
         """Re-fits an entity matching model, using the combination of the old and new true matches.
 
         Args:
@@ -300,11 +335,15 @@ class EntityMatchingModel(CogniteResource):
         Returns:
             EntityMatchingModel: new model refitted to true_matches."""
         true_matches = [convert_true_match(true_match) for true_match in true_matches]
-        self.wait_for_completion()
-        response = self._cognite_client.entity_matching._post(
+        await self.wait_for_completion_async()
+        response = await self._cognite_client.entity_matching._post(
             self._RESOURCE_PATH + "/refit", json={"trueMatches": true_matches, "id": self.id}
         )
         return self._load(response.json(), cognite_client=self._cognite_client)
+
+    @copy_doc_from_async(refit_async)
+    def refit(self, true_matches: Sequence[dict | tuple[int | str, int | str]]) -> EntityMatchingModel:
+        return run_sync(self.refit_async(true_matches=true_matches))
 
     @staticmethod
     def _flatten_entity(entity: dict | CogniteResource) -> dict:
@@ -390,15 +429,24 @@ class FileReference:
 class DiagramConvertPage(CogniteResource):
     def __init__(
         self,
-        page: int | None = None,
-        png_url: str | None = None,
-        svg_url: str | None = None,
-        cognite_client: CogniteClient | None = None,
+        page: int,
+        png_url: str,
+        svg_url: str,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.page = page
         self.png_url = png_url
         self.svg_url = svg_url
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            page=resource["page"],
+            png_url=resource["pngUrl"],
+            svg_url=resource["svgUrl"],
+            cognite_client=cognite_client,
+        )
 
 
 class DiagramConvertPageList(CogniteResourceList[DiagramConvertPage]):
@@ -408,15 +456,24 @@ class DiagramConvertPageList(CogniteResourceList[DiagramConvertPage]):
 class DiagramConvertItem(CogniteResource):
     def __init__(
         self,
-        file_id: int | None = None,
-        file_external_id: str | None = None,
-        results: list | None = None,
-        cognite_client: CogniteClient | None = None,
+        file_id: int,
+        file_external_id: str | None,
+        results: list[dict[str, Any]],
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.results = results
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            file_id=resource["fileId"],
+            file_external_id=resource.get("fileExternalId"),
+            results=resource["results"],
+            cognite_client=cognite_client,
+        )
 
     def __len__(self) -> int:
         assert self.results
@@ -424,7 +481,6 @@ class DiagramConvertItem(CogniteResource):
 
     @property
     def pages(self) -> DiagramConvertPageList:
-        assert self.results is not None
         return DiagramConvertPageList._load(self.results, cognite_client=self._cognite_client)
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
@@ -441,60 +497,119 @@ class DiagramConvertItem(CogniteResource):
         return df
 
 
+@final
 class DiagramConvertResults(ContextualizationJob):
-    _JOB_TYPE = ContextualizationJobType.DIAGRAMS
+    def __init__(
+        self,
+        job_id: int,
+        status: str,
+        status_time: int,
+        created_time: int,
+        items: list[DiagramConvertItem],
+        start_time: int,
+        error_message: str | None,
+        cognite_client: AsyncCogniteClient | None = None,
+    ) -> None:
+        super().__init__(
+            job_id=job_id,
+            status=status,
+            status_time=status_time,
+            created_time=created_time,
+            error_message=error_message,
+            cognite_client=cognite_client,
+        )
+        self.items = items
+        self.start_time = start_time
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self._items: list | None = None
+    @property
+    def result(self) -> dict[str, Any]:
+        """Get the result of the diagram conversion job."""
+        return self.get_result()
 
-    def __getitem__(self, find_id: Any) -> DiagramConvertItem:
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            job_id=resource["jobId"],
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource["startTime"],
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[DiagramConvertItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
+            cognite_client=cognite_client,
+        )
+
+    def _status_path(self) -> str:
+        return f"/context/diagram/convert/{self.job_id}"
+
+    async def update_status_async(self) -> str:
+        """Updates the model status and returns it"""
+        job_token = self.job_token
+        headers = {"X-Job-Token": job_token} if job_token else {}
+        resource = (await self._cognite_client.diagrams._get(self._status_path(), headers=headers)).json()
+        self.__init__(
+            job_id=resource["jobId"],
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource["startTime"],
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[DiagramConvertItem._load(item, cognite_client=self._cognite_client) for item in resource["items"]],
+            cognite_client=self._cognite_client,
+        )
+        self.job_token = job_token
+        self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
+        return self.status
+
+    @copy_doc_from_async(update_status_async)
+    def update_status(self) -> str:
+        return run_sync(self.update_status_async())
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        data = super().dump(camel_case=camel_case)
+        data["items"] = [item.dump(camel_case=camel_case) for item in self.items]
+        return data
+
+    def __getitem__(self, find_id: int | str) -> DiagramConvertItem:
         """Retrieves the results for the file with (external) id"""
-        found = [
-            item
-            for item in self.result["items"]
-            if item.get("fileId") == find_id or item.get("fileExternalId") == find_id
-        ]
+        found = [item for item in self.items if item.file_id == find_id or item.file_external_id == find_id]
         if not found:
             raise IndexError(f"File with (external) id {find_id} not found in results")
         if len(found) != 1:
             raise IndexError(f"Found multiple results for file with (external) id {find_id}, use .items instead")
-        return DiagramConvertItem._load(found[0], cognite_client=self._cognite_client)
-
-    @property
-    def items(self) -> list[DiagramConvertItem] | None:
-        """returns a list of all results by file"""
-        if JobStatus(self.status) is JobStatus.COMPLETED:
-            self._items = [
-                DiagramConvertItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
-            ]
-        return self._items
-
-    @items.setter
-    def items(self, items: list) -> None:
-        self._items = items
+        return found[0]
 
 
 class DiagramDetectItem(CogniteResource):
     def __init__(
         self,
-        file_id: int | None = None,
-        file_external_id: str | None = None,
-        file_instance_id: dict[str, str] | None = None,
-        annotations: list | None = None,
-        error_message: str | None = None,
-        cognite_client: CogniteClient | None = None,
-        page_range: dict[str, int] | None = None,
-        page_count: int | None = None,
+        file_id: int,
+        file_external_id: str | None,
+        file_instance_id: dict[str, str] | None,
+        annotations: list[dict[str, Any]] | None,
+        page_range: dict[str, int] | None,
+        page_count: int | None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.file_instance_id = file_instance_id
-        self.annotations = annotations
-        self.error_message = error_message
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self.annotations = annotations or []
         self.page_range = page_range
         self.page_count = page_count
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            file_id=resource["fileId"],
+            file_external_id=resource.get("fileExternalId"),
+            file_instance_id=resource.get("fileInstanceId"),
+            annotations=resource.get("annotations"),
+            cognite_client=cognite_client,
+            page_range=resource.get("pageRange"),
+            page_count=resource.get("pageCount"),
+        )
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -510,47 +625,110 @@ class DiagramDetectItem(CogniteResource):
         return df
 
 
+@final
 class DiagramDetectResults(ContextualizationJob):
-    _JOB_TYPE = ContextualizationJobType.DIAGRAMS
+    def __init__(
+        self,
+        job_id: int,
+        status: str,
+        status_time: int,
+        created_time: int,
+        items: list[DiagramDetectItem],
+        start_time: int,
+        error_message: str | None,
+        cognite_client: AsyncCogniteClient | None = None,
+    ) -> None:
+        super().__init__(
+            job_id=job_id,
+            status=status,
+            status_time=status_time,
+            created_time=created_time,
+            error_message=error_message,
+            cognite_client=cognite_client,
+        )
+        self.items: list[DiagramDetectItem] = items
+        self.start_time = start_time
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self._items: list[DiagramDetectItem] | None = None
+    @property
+    def result(self) -> dict[str, Any]:
+        """Get the result of the diagram detection job."""
+        return self.get_result()
+
+    @property
+    def errors(self) -> list[str]:
+        """Get the errors from the diagram detection job."""
+        return self.error_message.split(";") if self.error_message else []
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            job_id=resource["jobId"],
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource["startTime"],
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[DiagramDetectItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
+            cognite_client=cognite_client,
+        )
+
+    def _status_path(self) -> str:
+        return f"/context/diagram/detect/{self.job_id}"
+
+    async def update_status_async(self) -> str:
+        job_token = self.job_token
+        headers = {"X-Job-Token": job_token} if job_token else {}
+        resource = (await self._cognite_client.diagrams._get(self._status_path(), headers=headers)).json()
+        self.__init__(
+            job_id=resource["jobId"],
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource["startTime"],
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[
+                DiagramDetectItem._load(item, cognite_client=self._cognite_client) for item in resource.get("items", [])
+            ],
+            cognite_client=self._cognite_client,
+        )
+        self.job_token = job_token
+        self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
+        return self.status
+
+    @copy_doc_from_async(update_status_async)
+    def update_status(self) -> str:
+        return run_sync(self.update_status_async())
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        data = super().dump(camel_case=camel_case)
+        data["items"] = [item.dump(camel_case=camel_case) for item in self.items]
+        return data
 
     def __getitem__(self, find_id: Any) -> DiagramDetectItem:
         """retrieves the results for the file with (external) id"""
-        found = [
-            item
-            for item in self.result["items"]
-            if item.get("fileId") == find_id or item.get("fileExternalId") == find_id
-        ]
+        found = [item for item in self.items if item.file_id == find_id or item.file_external_id == find_id]
         if not found:
             raise IndexError(f"File with (external) id {find_id} not found in results")
         if len(found) != 1:
             raise IndexError(f"Found multiple results for file with (external) id {find_id}, use .items instead")
-        return DiagramDetectItem._load(found[0], cognite_client=self._cognite_client)
+        return found[0]
 
-    @property
-    def items(self) -> list[DiagramDetectItem] | None:
-        """Returns a list of all results by file"""
-        if JobStatus(self.status) is JobStatus.COMPLETED:
-            self._items = [
-                DiagramDetectItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
-            ]
-        return self._items
+    async def get_errors_async(self) -> list[str]:
+        """Returns a list of all error messages across files. Will wait for results if not available."""
+        results = (await self.get_result_async())["items"]
+        return [item["errorMessage"] for item in results if "errorMessage" in item]
 
-    @items.setter
-    def items(self, items: list[DiagramDetectItem]) -> None:
-        self._items = items
+    @copy_doc_from_async(get_errors_async)
+    def get_errors(self) -> list[str]:
+        return run_sync(self.get_errors_async())
 
-    @property
-    def errors(self) -> list[str]:
-        """Returns a list of all error messages across files"""
-        return [item["errorMessage"] for item in self.result["items"] if "errorMessage" in item]
-
-    def convert(self) -> DiagramConvertResults:
+    async def convert_async(self) -> DiagramConvertResults:
         """Convert a P&ID to an interactive SVG where the provided annotations are highlighted"""
-        return self._cognite_client.diagrams.convert(detect_job=self)
+        return await self._cognite_client.diagrams.convert(detect_job=self)
+
+    @copy_doc_from_async(convert_async)
+    def convert(self) -> DiagramConvertResults:
+        return run_sync(self.convert_async())
 
 
 # Vision dataclasses
@@ -638,19 +816,6 @@ class VisionExtractPredictions(VisionResource):
         )
 
 
-VISION_FEATURE_MAP: dict[str, Any] = {
-    "text_predictions": TextRegion,
-    "asset_tag_predictions": AssetLink,
-    "industrial_object_predictions": ObjectDetection,
-    "people_predictions": ObjectDetection,
-    "personal_protective_equipment_predictions": ObjectDetection,
-    "digital_gauge_predictions": ObjectDetection,
-    "dial_gauge_predictions": KeypointCollectionWithObjectDetection,
-    "level_gauge_predictions": KeypointCollectionWithObjectDetection,
-    "valve_predictions": KeypointCollectionWithObjectDetection,
-}
-
-
 VISION_ANNOTATION_TYPE_MAP: dict[str, str | dict[str, str]] = {
     "text_predictions": "images.TextRegion",
     "asset_tag_predictions": "images.AssetLink",
@@ -683,25 +848,41 @@ class AssetTagDetectionParameters(VisionResource, ThresholdParameter):
     partial_match: bool | None = None
     asset_subtree_ids: list[int] | None = None
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            threshold=resource.get("threshold"),
+            partial_match=resource.get("partialMatch"),
+            asset_subtree_ids=resource.get("assetSubtreeIds"),
+        )
+
 
 @dataclass
 class TextDetectionParameters(VisionResource, ThresholdParameter):
-    pass
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
 class PeopleDetectionParameters(VisionResource, ThresholdParameter):
-    pass
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
 class IndustrialObjectDetectionParameters(VisionResource, ThresholdParameter):
-    pass
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
 class PersonalProtectiveEquipmentDetectionParameters(VisionResource, ThresholdParameter):
-    pass
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
@@ -711,11 +892,29 @@ class DialGaugeDetection(VisionResource, ThresholdParameter):
     dead_angle: float | None = None
     non_linear_angle: float | None = None
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            threshold=resource.get("threshold"),
+            min_level=resource.get("minLevel"),
+            max_level=resource.get("maxLevel"),
+            dead_angle=resource.get("deadAngle"),
+            non_linear_angle=resource.get("nonLinearAngle"),
+        )
+
 
 @dataclass
 class LevelGaugeDetection(VisionResource, ThresholdParameter):
     min_level: float | None = None
     max_level: float | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            threshold=resource.get("threshold"),
+            min_level=resource.get("minLevel"),
+            max_level=resource.get("maxLevel"),
+        )
 
 
 @dataclass
@@ -724,10 +923,21 @@ class DigitalGaugeDetection(VisionResource, ThresholdParameter):
     min_num_digits: int | None = None
     max_num_digits: int | None = None
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            threshold=resource.get("threshold"),
+            comma_position=resource.get("commaPosition"),
+            min_num_digits=resource.get("minNumDigits"),
+            max_num_digits=resource.get("maxNumDigits"),
+        )
+
 
 @dataclass
 class ValveDetection(VisionResource, ThresholdParameter):
-    pass
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(threshold=resource.get("threshold"))
 
 
 class DetectJobBundle:
@@ -735,13 +945,13 @@ class DetectJobBundle:
     _STATUS_PATH = "/context/diagram/detect/status"
     _WAIT_TIME = 2
 
-    def __init__(self, job_ids: list[int], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(self, job_ids: list[int], cognite_client: AsyncCogniteClient | None = None) -> None:
         warnings.warn(
             "DetectJobBundle.result is calling a beta endpoint which is still in development. "
             "Breaking changes can happen in between patch versions."
         )
 
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
         if not job_ids:
             raise ValueError("You need to specify job_ids")
         self.job_ids = job_ids
@@ -763,7 +973,7 @@ class DetectJobBundle:
         if self._WAIT_TIME < 10:
             self._WAIT_TIME += 2
 
-    def wait_for_completion(self, timeout: int | None = None) -> None:
+    async def wait_for_completion_async(self, timeout: int | None = None) -> None:
         """Waits for all jobs to complete, generally not needed to call as it is called by result.
 
         Args:
@@ -773,7 +983,9 @@ class DetectJobBundle:
         self._remaining_job_ids = self.job_ids
         while timeout is None or time.time() < start + timeout:
             try:
-                res = self._cognite_client.diagrams._post(self._STATUS_PATH, json={"items": self._remaining_job_ids})
+                res = await self._cognite_client.diagrams._post(
+                    self._STATUS_PATH, json={"items": self._remaining_job_ids}
+                )
             except CogniteAPIError:
                 self._back_off()
                 continue
@@ -790,16 +1002,24 @@ class DetectJobBundle:
                 self._WAIT_TIME = 2
                 break
 
-    def fetch_results(self) -> list[dict[str, Any]]:
-        return [self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids]
+    @copy_doc_from_async(wait_for_completion_async)
+    def wait_for_completion(self, timeout: int | None = None) -> None:
+        return run_sync(self.wait_for_completion_async(timeout=timeout))
 
     @property
     def result(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """Get the result of the detect job bundle."""
+        return self.get_result()
+
+    async def fetch_results(self) -> list[dict[str, Any]]:
+        return [(await self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}")).json() for j in self.job_ids]
+
+    async def get_result_async(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Waits for the job to finish and returns the results."""
         if not self._result:
-            self.wait_for_completion()
+            await self.wait_for_completion_async()
 
-            self._result = self.fetch_results()
+            self._result = await self.fetch_results()
         assert self._result is not None
         # Sort into succeeded and failed
         failed: list[dict[str, Any]] = []
@@ -811,6 +1031,10 @@ class DetectJobBundle:
                 else:
                     succeeded.append({**item, **{"job_id": job_result["jobId"], "status": job_result["status"]}})
         return succeeded, failed
+
+    @copy_doc_from_async(get_result_async)
+    def get_result(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        return run_sync(self.get_result_async())
 
 
 @dataclass
@@ -856,121 +1080,138 @@ class FeatureParameters(VisionResource):
         )
 
 
-class VisionJob(ContextualizationJob):
-    def update_status(self) -> str:
-        # Override update_status since we need to handle the vision-specific
-        # edge case where we also record failed items per batch
-        data = getattr(self._cognite_client, self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
-        self.status = data["status"]
-        self.status_time = data.get("statusTime")
-        self.start_time = data.get("startTime")
-        self.created_time = self.created_time or data.get("createdTime")
-        self.error_message = data.get("errorMessage") or data.get("failedItems")
-        self._result = {k: v for k, v in data.items() if k not in self._COMMON_FIELDS}
-        assert self.status is not None
-        return self.status
-
-
 class VisionExtractItem(CogniteResource):
     """Data class for storing predictions for a single image file"""
 
     def __init__(
         self,
-        file_id: int | None = None,
-        predictions: dict[str, Any] | None = None,
-        file_external_id: str | None = None,
-        error_message: str | None = None,
-        cognite_client: CogniteClient | None = None,
+        file_id: int,
+        predictions: VisionExtractPredictions,
+        file_external_id: str | None,
+        error_message: str | None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.error_message = error_message
-        self.predictions = self._process_predictions_dict(predictions) if isinstance(predictions, dict) else predictions
+        self.predictions = predictions
 
         self._predictions_dict = predictions  # The "raw" predictions dict returned by the endpoint
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> VisionExtractItem:
-        """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
-        extracted_item = super()._load(resource, cognite_client=cognite_client)
-        if isinstance(extracted_item.predictions, dict):
-            extracted_item._predictions_dict = extracted_item.predictions
-            extracted_item.predictions = cls._process_predictions_dict(extracted_item._predictions_dict)
-        return extracted_item
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> VisionExtractItem:
+        return cls(
+            file_id=resource["fileId"],
+            predictions=VisionExtractPredictions._load(resource["predictions"], cognite_client=cognite_client)
+            if "predictions" in resource
+            else VisionExtractPredictions(),
+            file_external_id=resource.get("fileExternalId"),
+            error_message=resource.get("errorMessage"),
+            cognite_client=cognite_client,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item_dump = super().dump(camel_case=camel_case)
-        # Replace the loaded VisionExtractPredictions with its corresponding dict representation
-        if "predictions" in item_dump and isinstance(self._predictions_dict, dict):
-            item_dump["predictions"] = (
-                self._predictions_dict if camel_case else self._resource_to_snake_case(self._predictions_dict)
-            )
+        item_dump["predictions"] = self.predictions.dump(camel_case=camel_case)
         return item_dump
 
-    @classmethod
-    def _process_predictions_dict(cls, predictions_dict: dict[str, Any]) -> VisionExtractPredictions:
-        """Converts a (validated) predictions dict to a corresponding VisionExtractPredictions"""
-        prediction_object = VisionExtractPredictions()
-        snake_case_predictions_dict = cls._resource_to_snake_case(predictions_dict)
-        for key, value in snake_case_predictions_dict.items():
-            if hasattr(prediction_object, key):
-                feature_class = VISION_FEATURE_MAP[key]
-                setattr(prediction_object, key, [feature_class(**v) for v in value])
-        return prediction_object
+
+P = ParamSpec("P")
+
+
+@final
+class VisionExtractJob(ContextualizationJob, Generic[P]):
+    def __init__(
+        self,
+        job_id: int,
+        status: str,
+        status_time: int,
+        created_time: int,
+        items: list[VisionExtractItem],
+        start_time: int | None,
+        error_message: str | None,
+        cognite_client: AsyncCogniteClient | None = None,
+    ) -> None:
+        super().__init__(
+            job_id=job_id,
+            status=status,
+            status_time=status_time,
+            created_time=created_time,
+            error_message=error_message,
+            cognite_client=cognite_client,
+        )
+        self.items = items
+        self.start_time = start_time
+
+    def _status_path(self) -> str:
+        return f"/context/vision/extract/{self.job_id}"
 
     @classmethod
-    def _resource_to_snake_case(cls, resource: Any) -> Any:
-        if isinstance(resource, list):
-            return [cls._resource_to_snake_case(element) for element in resource]
-        elif isinstance(resource, dict):
-            return {to_snake_case(k): cls._resource_to_snake_case(v) for k, v in resource.items() if v is not None}
-        elif hasattr(resource, "__dict__"):
-            return cls._resource_to_snake_case(resource.__dict__)
-        return resource
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> VisionExtractJob:
+        return cls(
+            job_id=resource["jobId"],
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource.get("startTime"),
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[VisionExtractItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
+            cognite_client=cognite_client,
+        )
 
+    async def update_status_async(self) -> str:
+        resource = (await self._cognite_client.vision._get(self._status_path())).json()
+        self.__init__(
+            job_id=resource["jobId"],
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource.get("startTime"),
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[
+                VisionExtractItem._load(item, cognite_client=self._cognite_client) for item in resource.get("items", [])
+            ],
+            cognite_client=self._cognite_client,
+        )
+        self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
+        return self.status
 
-class VisionExtractJob(VisionJob):
-    _JOB_TYPE = ContextualizationJobType.VISION
+    @copy_doc_from_async(update_status_async)
+    def update_status(self) -> str:
+        return run_sync(self.update_status_async())
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self._items: list[VisionExtractItem] | None = None
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        job_dump = super().dump(camel_case=camel_case)
+        job_dump["items"] = [item.dump(camel_case=camel_case) for item in self.items]
+        return job_dump
 
     def __getitem__(self, file_id: int) -> VisionExtractItem:
         """Retrieves the results for a file by id"""
-        found = [item for item in self.result["items"] if item.get("fileId") == file_id]
+        # TODO: O(N) lookup here:
+        found = [item for item in self.items if item.file_id == file_id]
         if not found:
             raise IndexError(f"File with id {file_id} not found in results")
-        return VisionExtractItem._load(found[0], cognite_client=self._cognite_client)
+        return found[0]
 
-    @property
-    def items(self) -> list[VisionExtractItem] | None:
-        """Returns a list of all predictions by file"""
-        if JobStatus(self.status) is JobStatus.COMPLETED:
-            self._items = [
-                VisionExtractItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
-            ]
-        return self._items
+    async def get_errors_async(self) -> list[str]:
+        """Returns a list of all error messages across files. Will wait for results if not available."""
+        results = (await self.get_result_async())["items"]
+        return [item["errorMessage"] for item in results if "errorMessage" in item]
 
-    @items.setter
-    def items(self, items: list[VisionExtractItem]) -> None:
-        self._items = items
-
-    @property
-    def errors(self) -> list[str]:
-        """Returns a list of all error messages across files"""
-        return [item["errorMessage"] for item in self.result["items"] if "errorMessage" in item]
+    @copy_doc_from_async(get_errors_async)
+    def get_errors(self) -> list[str]:
+        return run_sync(self.get_errors_async())
 
     def _predictions_to_annotations(
         self,
-        creating_user: str | None = None,
+        creating_user: str,
         creating_app: str | None = None,
         creating_app_version: str | None = None,
-    ) -> list[Annotation]:
+    ) -> list[AnnotationWrite]:
         annotations = []
 
-        for item in self.items or []:
+        for item in self.items:
             if item.predictions is not None:
                 for prediction_type, prediction_data_list in item.predictions.dump(camel_case=False).items():
                     for data in prediction_data_list:
@@ -978,38 +1219,36 @@ class VisionExtractJob(VisionJob):
                         annotation_type = VISION_ANNOTATION_TYPE_MAP[prediction_type]
                         if isinstance(annotation_type, dict):
                             for key, value in annotation_type.items():
-                                annotation = Annotation(
+                                annotation = AnnotationWrite(
                                     annotated_resource_id=item.file_id,
-                                    annotation_type=value,
+                                    annotation_type=cast(AnnotationType, value),
                                     data=data[key],
                                     annotated_resource_type="file",
                                     status="suggested",
                                     creating_app=creating_app or "cognite-sdk-python",
                                     creating_app_version=creating_app_version or self._cognite_client.version,
-                                    creating_user=creating_user or None,
+                                    creating_user=creating_user,
                                 )
                                 annotations.append(annotation)
                         elif isinstance(annotation_type, str):
-                            annotation = Annotation(
+                            annotation = AnnotationWrite(
                                 annotated_resource_id=item.file_id,
-                                annotation_type=annotation_type,
+                                annotation_type=cast(AnnotationType, annotation_type),
                                 data=data,
                                 annotated_resource_type="file",
                                 status="suggested",
                                 creating_app=creating_app or "cognite-sdk-python",
                                 creating_app_version=creating_app_version or self._cognite_client.version,
-                                creating_user=creating_user or None,
+                                creating_user=creating_user,
                             )
-
                             annotations.append(annotation)
                         else:
                             raise TypeError("annotation_type must be str or dict")
-
         return annotations
 
-    def save_predictions(
+    async def save_predictions_async(
         self,
-        creating_user: str | None = None,
+        creating_user: str,
         creating_app: str | None = None,
         creating_app_version: str | None = None,
     ) -> Annotation | AnnotationList:
@@ -1018,7 +1257,7 @@ class VisionExtractJob(VisionJob):
         See https://docs.cognite.com/api/v1/#operation/annotationsSuggest
 
         Args:
-            creating_user (str | None): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+            creating_user (str): (str, optional): A username, or email, or name.
             creating_app (str | None): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-python'.
             creating_app_version (str | None): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string. Defaults to client version.
         Returns:
@@ -1029,21 +1268,97 @@ class VisionExtractJob(VisionJob):
             annotations = self._predictions_to_annotations(
                 creating_user=creating_user, creating_app=creating_app, creating_app_version=creating_app_version
             )
+            return await self._cognite_client.annotations.suggest(annotations=annotations if annotations else [])
 
-            return self._cognite_client.annotations.suggest(annotations=annotations if annotations else [])
-
-        raise CogniteException(
+        raise RuntimeError(
             "Extract job is not completed. If the job is queued or running, wait for completion and try again"
         )
+
+    @copy_doc_from_async(save_predictions_async)
+    def save_predictions(
+        self,
+        creating_user: str,
+        creating_app: str | None = None,
+        creating_app_version: str | None = None,
+    ) -> Annotation | AnnotationList:
+        return run_sync(self.save_predictions_async(creating_user, creating_app, creating_app_version))
+
+
+@final
+class EntityMatchingPredictionResult(ContextualizationJob):
+    def __init__(
+        self,
+        job_id: int,
+        status: str,
+        status_time: int,
+        created_time: int,
+        start_time: int,
+        error_message: str | None,
+        cognite_client: AsyncCogniteClient | None = None,
+    ) -> None:
+        super().__init__(
+            job_id=job_id,
+            status=status,
+            status_time=status_time,
+            created_time=created_time,
+            error_message=error_message,
+            cognite_client=cognite_client,
+        )
+        self.start_time = start_time
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            job_id=resource["jobId"],
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource["startTime"],
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            cognite_client=cognite_client,
+        )
+
+    def _status_path(self) -> str:
+        return f"/context/entitymatching/jobs/{self.job_id}"
+
+    async def update_status_async(self) -> str:
+        """Updates the model status and returns it"""
+        job_token = self.job_token
+        headers = {"X-Job-Token": job_token} if job_token else {}
+        resource = (await self._cognite_client.entity_matching._get(self._status_path(), headers=headers)).json()
+        self.__init__(
+            job_id=resource["jobId"],
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource["startTime"],
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            cognite_client=self._cognite_client,
+        )
+        self.job_token = job_token
+        self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
+        return self.status
+
+    @copy_doc_from_async(update_status_async)
+    def update_status(self) -> str:
+        return run_sync(self.update_status_async())
 
 
 class ResourceReference(CogniteResource):
     def __init__(
-        self, id: int | None = None, external_id: str | None = None, cognite_client: None | CogniteClient = None
+        self, id: int | None = None, external_id: str | None = None, cognite_client: None | AsyncCogniteClient = None
     ) -> None:
         self.id = id
         self.external_id = external_id
         self._cognite_client = None  # Read only
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            id=resource.get("id"),
+            external_id=resource.get("externalId"),
+            cognite_client=cognite_client,
+        )
 
 
 class ResourceReferenceList(CogniteResourceList[ResourceReference], IdTransformerMixin):
@@ -1075,7 +1390,7 @@ class DirectionWeights(CogniteObject):
         self.down = down
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             left=resource.get("left"),
             right=resource.get("right"),
@@ -1104,7 +1419,7 @@ class CustomizeFuzziness(CogniteObject):
         self.min_chars = min_chars
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             fuzzy_score=resource.get("fuzzyScore"),
             max_boxes=resource.get("maxBoxes"),
@@ -1137,7 +1452,7 @@ class ConnectionFlags:
         return [k for k, v in self._flags.items() if v]
 
     @classmethod
-    def load(cls, resource: list[str], cognite_client: CogniteClient | None = None) -> Self:
+    def load(cls, resource: list[str], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(**{flag: True for flag in resource})
 
 
@@ -1164,6 +1479,7 @@ class DiagramDetectConfig(CogniteObject):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.contextualization import ConnectionFlags, DiagramDetectConfig
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> config = DiagramDetectConfig(
             ...     remove_leading_zeros=True,
             ...     connection_flags=ConnectionFlags(
@@ -1211,9 +1527,7 @@ class DiagramDetectConfig(CogniteObject):
         self._extra_params = {}
         for param_name, value in params.items():
             if known := _known_params.get(to_camel_case(param_name)):
-                raise ValueError(
-                    f"Provided parameter name `{param_name}` collides with a known parameter `{known}`. Please use it insead."
-                )
+                raise ValueError(f"Provided parameter name `{param_name}` collides with a known parameter `{known}`.")
             self._extra_params[param_name] = value
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -1239,7 +1553,7 @@ class DiagramDetectConfig(CogniteObject):
         return dumped
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         resource_copy = resource.copy()
 
         if con_flg := resource_copy.pop("connectionFlags", None):

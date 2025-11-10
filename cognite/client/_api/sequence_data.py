@@ -3,36 +3,36 @@ from __future__ import annotations
 import math
 import typing
 import warnings
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, overload
+from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING, Any, NoReturn, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
     SequenceRows,
     SequenceRowsList,
 )
-from cognite.client.utils._auxiliary import handle_renamed_argument
-from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._auxiliary import split_into_chunks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    import pandas
+    import pandas as pd
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class SequencesDataAPI(APIClient):
-    _DATA_PATH = "/sequences/data"
+    _RESOURCE_PATH = "/sequences/data"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._SEQ_POST_LIMIT_ROWS = 10_000
         self._SEQ_POST_LIMIT_VALUES = 100_000
         self._SEQ_RETRIEVE_LIMIT = 10_000
 
-    def insert(
+    async def insert(
         self,
         rows: SequenceRows
         | dict[int, typing.Sequence[int | float | str]]
@@ -41,7 +41,6 @@ class SequencesDataAPI(APIClient):
         columns: SequenceNotStr[str] | None = None,
         id: int | None = None,
         external_id: str | None = None,
-        **kwargs: Any,
     ) -> None:
         """`Insert rows into a sequence <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
 
@@ -50,16 +49,22 @@ class SequencesDataAPI(APIClient):
             columns (SequenceNotStr[str] | None): List of external id for the columns of the sequence.
             id (int | None): Id of sequence to insert rows into.
             external_id (str | None): External id of sequence to insert rows into.
-            **kwargs (Any): To support deprecated argument 'column_external_ids', will be removed in the next major version. Use 'columns' instead.
 
         Examples:
             Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Sequence, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
-                >>> seq = client.sequences.create(Sequence(columns=[SequenceColumn(value_type="String", external_id="col_a"),
-                ...     SequenceColumn(value_type="Double", external_id ="col_b")]))
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> seq = client.sequences.create(
+                ...     SequenceWrite(
+                ...         columns=[
+                ...             SequenceColumnWrite(value_type="STRING", external_id="col_a"),
+                ...             SequenceColumnWrite(value_type="DOUBLE", external_id ="col_b")
+                ...         ],
+                ...     )
+                ... )
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
                 >>> client.sequences.data.insert(columns=["col_a","col_b"], rows=data, id=1)
 
@@ -78,37 +83,43 @@ class SequencesDataAPI(APIClient):
                 >>> data = client.sequences.data.retrieve(id=2,start=0,end=10)
                 >>> client.sequences.data.insert(rows=data, id=1,columns=None)
         """
-        columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
-        if isinstance(rows, SequenceRows):
-            columns = rows.column_external_ids
-            rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
-
-        if isinstance(rows, dict):
-            all_rows: dict | typing.Sequence = [{"rowNumber": k, "values": v} for k, v in rows.items()]
-        elif isinstance(rows, typing.Sequence) and len(rows) > 0 and isinstance(rows[0], dict):
-            all_rows = rows
-        elif isinstance(rows, typing.Sequence) and (len(rows) == 0 or isinstance(rows[0], tuple)):
-            all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
-        else:
-            raise TypeError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
+        match rows:
+            case SequenceRows():
+                columns = rows.column_external_ids
+                all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+            case []:
+                all_rows = []
+            case dict():
+                all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+            case [dict(), *_]:  # Assume homogeneous
+                all_rows = list(rows)  # type: ignore [arg-type]
+            case [(_, _), *_]:  # more assume homogeneous
+                all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
+            case _:
+                raise TypeError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
 
         base_obj = Identifier.of_either(id, external_id).as_dict()
         base_obj.update(self._wrap_columns(columns))
 
-        if len(all_rows) > 0:
-            rows_per_request = min(
-                self._SEQ_POST_LIMIT_ROWS, int(self._SEQ_POST_LIMIT_VALUES / len(all_rows[0]["values"]))
-            )
-        else:
+        if len(all_rows) == 0:
             rows_per_request = self._SEQ_POST_LIMIT_ROWS
+        else:
+            try:
+                length = len(all_rows[0].get("values"))  # type: ignore [arg-type]
+            except (KeyError, TypeError):
+                raise ValueError("Could not determine number of columns from first row, is the format correct?")
 
-        row_objs = [{"rows": all_rows[i : i + rows_per_request]} for i in range(0, len(all_rows), rows_per_request)]
-        tasks = [({**base_obj, **rows},) for rows in row_objs]
-        summary = execute_tasks(self._insert_data, tasks, max_workers=self._config.max_workers)
+            rows_per_request = min(self._SEQ_POST_LIMIT_ROWS, int(self._SEQ_POST_LIMIT_VALUES / length))
+
+        tasks = [
+            AsyncSDKTask(self._insert_data, task=base_obj | {"rows": row_chunk})
+            for row_chunk in split_into_chunks(all_rows, rows_per_request)
+        ]
+        summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks()
 
-    def insert_dataframe(
-        self, dataframe: pandas.DataFrame, id: int | None = None, external_id: str | None = None, dropna: bool = True
+    async def insert_dataframe(
+        self, dataframe: pd.DataFrame, id: int | None = None, external_id: str | None = None, dropna: bool = True
     ) -> None:
         """`Insert a Pandas dataframe. <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
 
@@ -116,7 +127,7 @@ class SequencesDataAPI(APIClient):
         The sequence and columns must already exist.
 
         Args:
-            dataframe (pandas.DataFrame):  Pandas DataFrame object containing the sequence data.
+            dataframe (pd.DataFrame):  Pandas DataFrame object containing the sequence data.
             id (int | None): Id of sequence to insert rows into.
             external_id (str | None): External id of sequence to insert rows into.
             dropna (bool): Whether to drop rows where all values are missing. Default: True.
@@ -127,6 +138,7 @@ class SequencesDataAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> import pandas as pd
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = pd.DataFrame({'col_a': [1, 2, 3], 'col_b': [4, 5, 6]}, index=[1, 2, 3])
                 >>> client.sequences.data.insert_dataframe(df, id=123)
         """
@@ -136,12 +148,12 @@ class SequencesDataAPI(APIClient):
         dataframe = dataframe.replace({math.nan: None})  # TODO: Optimization required (memory usage)
         data = [(row.Index, row[1:]) for row in dataframe.itertuples()]
         columns = list(dataframe.columns.astype(str))
-        self.insert(rows=data, columns=columns, id=id, external_id=external_id)
+        await self.insert(rows=data, columns=columns, id=id, external_id=external_id)
 
-    def _insert_data(self, task: dict[str, Any]) -> None:
-        self._post(url_path=self._DATA_PATH, json={"items": [task]})
+    async def _insert_data(self, task: dict[str, Any]) -> None:
+        await self._post(url_path=self._RESOURCE_PATH, json={"items": [task]})
 
-    def delete(self, rows: typing.Sequence[int], id: int | None = None, external_id: str | None = None) -> None:
+    async def delete(self, rows: typing.Sequence[int], id: int | None = None, external_id: str | None = None) -> None:
         """`Delete rows from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_
 
         Args:
@@ -151,16 +163,21 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+            Delete rows from a sequence:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.data.delete(id=1, rows=[1,2,42])
         """
         post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj["rows"] = rows
 
-        self._post(url_path=self._DATA_PATH + "/delete", json={"items": [post_obj]})
+        await self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": [post_obj]})
 
-    def delete_range(self, start: int, end: int | None, id: int | None = None, external_id: str | None = None) -> None:
+    async def delete_range(
+        self, start: int, end: int | None, id: int | None = None, external_id: str | None = None
+    ) -> None:
         """`Delete a range of rows from a sequence. Note this operation is potentially slow, as retrieves each row before deleting. <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_
 
         Args:
@@ -171,24 +188,36 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.data.delete_range(id=1, start=0, end=None)
         """
-        sequence = self._cognite_client.sequences.retrieve(external_id=external_id, id=id)
+        sequence = await self._cognite_client.sequences.retrieve(external_id=external_id, id=id)
         assert sequence is not None
         post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj.update(self._wrap_columns(column_external_ids=sequence.column_external_ids))
         post_obj.update({"start": start, "end": end})
-        for resp in self._fetch_data(post_obj):
+        async for resp in self._fetch_data(post_obj):
             if rows := resp["rows"]:
-                self.delete(rows=[r["rowNumber"] for r in rows], external_id=external_id, id=id)
+                await self.delete(rows=[r["rowNumber"] for r in rows], external_id=external_id, id=id)
 
     @overload
-    def retrieve(
+    async def retrieve(
         self,
-        *,
+        external_id: None = None,
+        id: None = None,
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> NoReturn: ...
+
+    @overload
+    async def retrieve(
+        self,
         external_id: str,
+        id: None = None,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
@@ -196,10 +225,10 @@ class SequencesDataAPI(APIClient):
     ) -> SequenceRows: ...
 
     @overload
-    def retrieve(
+    async def retrieve(
         self,
-        *,
         external_id: SequenceNotStr[str],
+        id: None = None,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
@@ -207,8 +236,9 @@ class SequencesDataAPI(APIClient):
     ) -> SequenceRowsList: ...
 
     @overload
-    def retrieve(
+    async def retrieve(
         self,
+        external_id: None = None,
         *,
         id: int,
         start: int = 0,
@@ -218,8 +248,9 @@ class SequencesDataAPI(APIClient):
     ) -> SequenceRows: ...
 
     @overload
-    def retrieve(
+    async def retrieve(
         self,
+        external_id: None = None,
         *,
         id: typing.Sequence[int],
         start: int = 0,
@@ -228,7 +259,18 @@ class SequencesDataAPI(APIClient):
         limit: int | None = None,
     ) -> SequenceRowsList: ...
 
-    def retrieve(
+    @overload
+    async def retrieve(
+        self,
+        external_id: SequenceNotStr[str] | str,
+        id: typing.Sequence[int] | int,
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> SequenceRowsList: ...
+
+    async def retrieve(
         self,
         external_id: str | SequenceNotStr[str] | None = None,
         id: int | typing.Sequence[int] | None = None,
@@ -236,7 +278,6 @@ class SequencesDataAPI(APIClient):
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
-        **kwargs: Any,
     ) -> SequenceRows | SequenceRowsList:
         """`Retrieve data from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
 
@@ -247,41 +288,39 @@ class SequencesDataAPI(APIClient):
             end (int | None): Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
             columns (SequenceNotStr[str] | None): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
             limit (int | None): Maximum number of rows to return per sequence. Pass None to fetch all (possibly limited by 'end').
-            **kwargs (Any): To support deprecated argument 'column_external_ids', will be removed in the next major version. Use 'columns' instead.
 
         Returns:
-            SequenceRows | SequenceRowsList: SequenceRows if a single identifier was given, else SequenceDataList
+            SequenceRows | SequenceRowsList: SequenceRows if a single identifier was given, else SequenceRowsList
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.data.retrieve(id=1)
                 >>> tuples = [(r,v) for r,v in res.items()] # You can use this iterator in for loops and list comprehensions,
                 >>> single_value = res[23] # ... get the values at a single row number,
                 >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
                 >>> df = res.to_pandas() # ... or convert the result to a dataframe
         """
-        columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
-
         ident_sequence = IdentifierSequence.load(id, external_id)
-        identifiers = ident_sequence.as_dicts()
 
-        def _fetch_sequence(post_obj: dict[str, Any]) -> SequenceRows:
+        async def _fetch_sequence(post_obj: dict[str, Any]) -> SequenceRows:
             post_obj.update(self._wrap_columns(column_external_ids=columns))
             post_obj.update({"start": start, "end": end, "limit": limit})
 
             row_response_iterator = self._fetch_data(post_obj)
             # Get the External ID and ID from the first response
-            sequence_rows = next(row_response_iterator)
-            for row_response in row_response_iterator:
+            sequence_rows = await anext(row_response_iterator)
+            async for row_response in row_response_iterator:
                 sequence_rows["rows"].extend(row_response["rows"])
 
             return SequenceRows._load(sequence_rows)
 
-        tasks_summary = execute_tasks(_fetch_sequence, list(zip(identifiers)), max_workers=self._config.max_workers)
+        tasks = [AsyncSDKTask(_fetch_sequence, id_) for id_ in ident_sequence.as_dicts()]
+        tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_list_element_unwrap_fn=ident_sequence.extract_identifiers
+            task_list_element_unwrap_fn=lambda task: ident_sequence.extract_identifiers(task[0])
         )
         results = tasks_summary.joined_results()
         if ident_sequence.is_singleton():
@@ -289,13 +328,12 @@ class SequencesDataAPI(APIClient):
         else:
             return SequenceRowsList(results)
 
-    def retrieve_last_row(
+    async def retrieve_last_row(
         self,
         id: int | None = None,
         external_id: str | None = None,
         columns: SequenceNotStr[str] | None = None,
         before: int | None = None,
-        **kwargs: Any,
     ) -> SequenceRows:
         """`Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://developer.cognite.com/api#tag/Sequences/operation/getLatestSequenceRow>`_
 
@@ -304,7 +342,6 @@ class SequencesDataAPI(APIClient):
             external_id (str | None): External id or list of external ids.
             columns (SequenceNotStr[str] | None): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
             before (int | None): (optional, int): Get latest datapoint before this row number.
-            **kwargs (Any): To support deprecated argument 'column_external_ids', will be removed in the next major version. Use 'columns' instead.
 
         Returns:
             SequenceRows: A Datapoints object containing the requested data, or a list of such objects.
@@ -313,66 +350,65 @@ class SequencesDataAPI(APIClient):
 
             Getting the latest row in a sequence before row number 1000:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.data.retrieve_last_row(id=1, before=1000)
         """
-        columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
         identifier = Identifier.of_either(id, external_id).as_dict()
-        res = self._do_request(
-            "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns}
-        ).json()
-        return SequenceRows._load(res)
+        res = await self._post(
+            self._RESOURCE_PATH + "/latest", json={**identifier, "before": before, "columns": columns}
+        )
+        return SequenceRows._load(res.json())
 
-    def retrieve_dataframe(
+    async def retrieve_dataframe(
         self,
         start: int,
         end: int | None,
-        column_external_ids: list[str] | None = None,
+        columns: list[str] | None = None,
         external_id: str | None = None,
         column_names: str | None = None,
         id: int | None = None,
         limit: int | None = None,
-    ) -> pandas.DataFrame:
+    ) -> pd.DataFrame:
         """`Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
 
         Args:
             start (int): (inclusive) row number to start from.
             end (int | None): (exclusive) upper limit on the row number. Set to None or -1 to get all rows until end of sequence.
-            column_external_ids (list[str] | None): List of external id for the columns of the sequence.  If 'None' is passed, all columns will be retrieved.
+            columns (list[str] | None): List of external id for the columns of the sequence.  If 'None' is passed, all columns will be retrieved.
             external_id (str | None): External id of sequence.
             column_names (str | None):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
             id (int | None): Id of sequence
             limit (int | None): Maximum number of rows to return per sequence.
 
         Returns:
-            pandas.DataFrame: The requested sequence data in a pandas DataFrame
+            pd.DataFrame: The requested sequence data in a pandas DataFrame
 
         Examples:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.sequences.data.retrieve_dataframe(id=1, start=0, end=None)
         """
         warnings.warn("This method is deprecated. Use retrieve(...).to_pandas(..) instead.", DeprecationWarning)
+        # TODO(doctrino): type annotation does not mention list?
         if isinstance(external_id, list) or isinstance(id, list) or (id is not None and external_id is not None):
             column_names_default = "externalId|columnExternalId"
         else:
             column_names_default = "columnExternalId"
 
         if external_id is not None and id is None:
-            return self.retrieve(
-                external_id=external_id, start=start, end=end, limit=limit, columns=column_external_ids
-            ).to_pandas(
-                column_names=column_names or column_names_default,  # type: ignore  [arg-type]
-            )
+            response = await self.retrieve(external_id=external_id, start=start, end=end, limit=limit, columns=columns)
+            return response.to_pandas(column_names=column_names or column_names_default)  # type: ignore  [arg-type]
+
         elif id is not None and external_id is None:
-            return self.retrieve(id=id, start=start, end=end, limit=limit, columns=column_external_ids).to_pandas(
-                column_names=column_names or column_names_default,  # type: ignore  [arg-type]
-            )
+            response = await self.retrieve(id=id, start=start, end=end, limit=limit, columns=columns)
+            return response.to_pandas(column_names=column_names or column_names_default)  # type: ignore  [arg-type]
         else:
             raise ValueError("Either external_id or id must be specified")
 
-    def _fetch_data(self, task: dict[str, Any]) -> Iterator[dict[str, Any]]:
+    async def _fetch_data(self, task: dict[str, Any]) -> AsyncIterator[dict[str, Any]]:
         remaining_limit = task.get("limit")
         cursor = None
         if task["end"] == -1:
@@ -380,7 +416,7 @@ class SequencesDataAPI(APIClient):
         while True:
             task["limit"] = min(self._SEQ_RETRIEVE_LIMIT, remaining_limit or self._SEQ_RETRIEVE_LIMIT)
             task["cursor"] = cursor
-            resp = self._post(url_path=self._DATA_PATH + "/list", json=task).json()
+            resp = (await self._post(url_path=self._RESOURCE_PATH + "/list", json=task)).json()
             yield resp
             cursor = resp.get("nextCursor")
             if remaining_limit:

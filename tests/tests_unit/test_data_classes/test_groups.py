@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 
 import pytest
@@ -9,7 +10,7 @@ from cognite.client.data_classes.capabilities import DataModelInstancesAcl
 
 
 @pytest.fixture
-def group_with_members():
+def group_with_members() -> dict[str, Any]:
     return {
         "id": 168183,
         "isDeleted": False,
@@ -23,7 +24,7 @@ def group_with_members():
 
 
 @pytest.fixture
-def group_with_all_members():
+def group_with_all_members() -> dict[str, Any]:
     return {
         "name": "internal all user",
         "sourceId": "",
@@ -36,7 +37,7 @@ def group_with_all_members():
     }
 
 
-def raw_groups():
+def raw_groups() -> Iterator[dict[str, Any]]:
     yield {
         "name": "entitymatching",
         "sourceId": "3c5dd595-1234-1234-1234-8db813d2c232",
@@ -70,21 +71,27 @@ def raw_groups():
 class TestGroups:
     def test_group_init__accept_single_acl(self) -> None:
         acl = DataModelInstancesAcl([DataModelInstancesAcl.Action.Write], DataModelInstancesAcl.Scope.All())
-        assert Group(name="a", capabilities=acl) == Group(name="a", capabilities=[acl])
+        assert Group(
+            name="a", capabilities=acl, id=1, source_id="bla", is_deleted=False, deleted_time=None, attributes=None
+        ) == Group(
+            name="a", capabilities=[acl], id=1, source_id="bla", is_deleted=False, deleted_time=None, attributes=None
+        )
 
     @pytest.mark.parametrize("raw", list(raw_groups()))
     def test_load_dump_unknown_group(self, raw: dict[str, Any]) -> None:
         group = Group.load(raw)
         assert group.dump(camel_case=True) == raw
 
-    def test_load_dump__cdf_managed_groups(self, group_with_members, group_with_all_members) -> None:
+    def test_load_dump__cdf_managed_groups(
+        self, group_with_members: dict[str, Any], group_with_all_members: dict[str, Any]
+    ) -> None:
         for raw in (group_with_members, group_with_all_members):
             group = Group.load(raw)
             assert group.dump(camel_case=True) == raw
             assert group.is_managed_in_cdf
 
     @pytest.mark.dsl
-    def test_to_pandas__deleted_time(self):
+    def test_to_pandas__deleted_time(self) -> None:
         import pandas as pd
 
         group = Group.load(next(raw_groups()))
@@ -101,7 +108,7 @@ class TestGroupsList:
             (False, dict(data=[-1, 123456789, None], dtype="Int64", name="deleted_time")),
         ),
     )
-    def test_to_pandas__deleted_time(self, expected, convert_timestamps):
+    def test_to_pandas__deleted_time(self, expected: dict[str, Any], convert_timestamps: bool) -> None:
         import pandas as pd
 
         groups = GroupList.load(list(raw_groups()))
