@@ -15,6 +15,7 @@ To initialise a ``CogniteClient``, simply pass this configuration object, (an in
     my_config = ClientConfig(
         client_name="my-client",
         project="myproj",
+        cluster="api",  # or pass the full 'base_url'
         credentials=Token("verysecret"),
     )
     client = CogniteClient(my_config)
@@ -28,7 +29,10 @@ You can set global configuration options like this:
     from cognite.client import global_config, ClientConfig
     from cognite.client.credentials import Token
     global_config.default_client_config = ClientConfig(
-        client_name="my-client", project="myproj", credentials=Token("verysecret")
+        client_name="my-client",
+        project="myproj",
+        cluster="api",  # or pass the full 'base_url'
+        credentials=Token("verysecret"),
     )
     global_config.disable_pypi_version_check = True
     global_config.disable_gzip = False
@@ -65,6 +69,7 @@ logging on and off by setting the :code:`debug` attribute on the :ref:`ClientCon
         ClientConfig(
             client_name="my-client",
             project="myproj",
+            cluster="api",  # or pass the full 'base_url'
             credentials=Token("verysecret"),
             debug=True,
         )
