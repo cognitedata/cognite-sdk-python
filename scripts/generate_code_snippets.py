@@ -18,7 +18,7 @@ def collect_apis(obj, done):
     return apis + sub
 
 
-client = CogniteClient(ClientConfig(project="_", client_name="_", credentials=Token("_")))
+client = CogniteClient(ClientConfig(project="_", client_name="_", cluster="_", credentials=Token("_")))
 parser = DocTestParser()
 
 apis = collect_apis(client, {})

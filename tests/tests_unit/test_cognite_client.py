@@ -56,9 +56,31 @@ def mock_token_inspect(httpx_mock: HTTPXMock) -> None:
 class TestCogniteClient:
     def test_project_is_empty(self) -> None:
         with pytest.raises(ValueError, match=r"Invalid value for ClientConfig.project: ''"):
-            CogniteClient(ClientConfig(client_name="", project="", credentials=Token("bla")))
+            CogniteClient(ClientConfig(client_name="", project="", cluster="foo", credentials=Token("bla")))
         with pytest.raises(ValueError, match=r"Invalid value for ClientConfig.project: None"):
-            CogniteClient(ClientConfig(client_name="", project=None, credentials=Token("bla")))  # type: ignore[arg-type]
+            CogniteClient(ClientConfig(client_name="", project=None, cluster="foo", credentials=Token("bla")))  # type: ignore[arg-type]
+
+    def test_cluster_or_base_url_are_empty(self) -> None:
+        CogniteClient(ClientConfig(client_name="", project="a", cluster="x", credentials=Token("bla")))
+        CogniteClient(
+            ClientConfig(client_name="", project="a", base_url="https://x.cognitedata.com", credentials=Token("bla"))
+        )
+
+        # Passing both should ignore cluster with a warning:
+        with pytest.warns(UserWarning, match="parameter is ignored when"):
+            CogniteClient(
+                ClientConfig(
+                    client_name="",
+                    project="a",
+                    cluster="foo",
+                    base_url="https://x.cognitedata.com",
+                    credentials=Token("bla"),
+                )
+            )
+
+        # Passing neither should raise:
+        with pytest.raises(ValueError, match=r"must be provided. Passing"):
+            CogniteClient(ClientConfig(client_name="", project="a", credentials=Token("bla")))
 
     def test_project_is_correct(self, client_config_w_token_factory: ClientConfig) -> None:
         async_client = AsyncCogniteClient(client_config_w_token_factory)
@@ -75,7 +97,7 @@ class TestCogniteClient:
             CogniteClient()
 
     def test_client_debug_mode(self) -> None:
-        CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla"), debug=True))
+        CogniteClient(ClientConfig(client_name="bla", project="bla", cluster="x", credentials=Token("bla"), debug=True))
         log = logging.getLogger("cognite.client")
         assert isinstance(log.handlers[0].formatter, DebugLogFormatter)
         log.handlers = []
@@ -102,6 +124,7 @@ class TestCogniteClient:
             "project": "test-project",
             "client_name": "cognite-sdk-python",
             "debug": False,
+            "cluster": "foo",
             "credentials": {
                 "client_credentials": {
                     "client_id": "test-client-id",
@@ -113,6 +136,7 @@ class TestCogniteClient:
         }
         client = which_client.load(config)
         assert client.config.project == "test-project"
+        assert client.config.base_url == "https://foo.cognitedata.com"
         creds = client.config.credentials
         assert isinstance(creds, OAuthClientCredentials)
         assert creds.client_id == "test-client-id"
