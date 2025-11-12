@@ -6,10 +6,13 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast, final
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
 from cognite.client.data_classes.labels import Label
 from cognite.client.data_classes.shared import Geometry
+from cognite.client.utils._auxiliary import all_concrete_subclasses
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr, is_sequence_not_str
@@ -37,34 +40,32 @@ FilterValueList: TypeAlias = Sequence[RawValue] | PropertyReferenceValue | Param
 
 
 def _dump_filter_value(value: FilterValueList | FilterValue) -> Any:
-    if isinstance(value, PropertyReferenceValue):
-        if isinstance(value.property, EnumProperty):
-            return {"property": value.property.as_reference()}
-        return {"property": value.property}
+    match value:
+        case PropertyReferenceValue():
+            if isinstance(value.property, EnumProperty):
+                return {"property": value.property.as_reference()}
+            return {"property": value.property}
+        case ParameterValue():
+            return {"parameter": value.parameter}
+        case InstanceId():
+            return value.dump(include_instance_type=False)
 
-    elif isinstance(value, ParameterValue):
-        return {"parameter": value.parameter}
-
-    elif isinstance(value, InstanceId):
-        return value.dump(include_instance_type=False)
-
-    elif hasattr(value, "dump"):
-        return value.dump()
-
-    elif isinstance(value, SequenceNotStr):
+    if is_sequence_not_str(value):
         return list(map(_dump_filter_value, value))
-
-    return value
+    try:
+        return value.dump()  # type: ignore [union-attr]
+    except AttributeError:
+        return value
 
 
 def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
-    if isinstance(value, Mapping) and len(value.keys()) == 1:
-        ((value_key, to_load),) = value.items()
-        if value_key == "property":
+    match value:
+        case {"property": to_load}:
             return PropertyReferenceValue(to_load)
-        if value_key == "parameter":
+        case {"parameter": to_load}:
             return ParameterValue(to_load)
-    return value
+        case _:
+            return value
 
 
 def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] | tuple[str, ...]:
@@ -117,105 +118,33 @@ class Filter(ABC):
         return {self._filter_name: self._filter_body(camel_case_property=camel_case_property)}
 
     @classmethod
-    def load(cls, filter_: dict[str, Any]) -> Filter:
-        if (filter_body := filter_.get(And._filter_name)) is not None:
-            return And(*(Filter.load(filter_) for filter_ in filter_body))
-        elif (filter_body := filter_.get(Or._filter_name)) is not None:
-            return Or(*(Filter.load(filter_) for filter_ in filter_body))
-        elif (filter_body := filter_.get(Not._filter_name)) is not None:
-            return Not(Filter.load(filter_body))
-        elif (filter_body := filter_.get(Nested._filter_name)) is not None:
-            return Nested(scope=filter_body["scope"], filter=Filter.load(filter_body["filter"]))
-        elif MatchAll._filter_name in filter_:
-            return MatchAll()
-        elif (filter_body := filter_.get(HasData._filter_name)) is not None:
-            containers = []
-            views = []
-            for view_or_space in filter_body:
-                if view_or_space["type"] == "container":
-                    containers.append((view_or_space["space"], view_or_space["externalId"]))
-                else:
-                    views.append((view_or_space["space"], view_or_space["externalId"], view_or_space.get("version")))
-            return HasData(containers=containers, views=views)
-        elif (filter_body := filter_.get(Range._filter_name)) is not None:
-            return Range(
-                property=filter_body["property"],
-                gt=_load_filter_value(filter_body.get("gt")),
-                gte=_load_filter_value(filter_body.get("gte")),
-                lt=_load_filter_value(filter_body.get("lt")),
-                lte=_load_filter_value(filter_body.get("lte")),
-            )
-        elif (filter_body := filter_.get(Overlaps._filter_name)) is not None:
-            return Overlaps(
-                start_property=filter_body.get("startProperty"),
-                end_property=filter_body.get("endProperty"),
-                gt=_load_filter_value(filter_body.get("gt")),
-                gte=_load_filter_value(filter_body.get("gte")),
-                lt=_load_filter_value(filter_body.get("lt")),
-                lte=_load_filter_value(filter_body.get("lte")),
-            )
-        elif (filter_body := filter_.get(Equals._filter_name)) is not None:
-            return Equals(
-                property=filter_body["property"],
-                value=_load_filter_value(filter_body.get("value")),
-            )
-        elif (filter_body := filter_.get(In._filter_name)) is not None:
-            return In(
-                property=filter_body["property"],
-                values=cast(FilterValueList, _load_filter_value(filter_body.get("values"))),
-            )
-        elif (filter_body := filter_.get(Exists._filter_name)) is not None:
-            return Exists(property=filter_body["property"])
-        elif (filter_body := filter_.get(Prefix._filter_name)) is not None:
-            return Prefix(
-                property=filter_body["property"],
-                value=_load_filter_value(filter_body["value"]),
-            )
-        elif (filter_body := filter_.get(ContainsAny._filter_name)) is not None:
-            return ContainsAny(
-                property=filter_body["property"],
-                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
-            )
-        elif (filter_body := filter_.get(ContainsAll._filter_name)) is not None:
-            return ContainsAll(
-                property=filter_body["property"],
-                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
-            )
-        elif (filter_body := filter_.get(GeoJSONIntersects._filter_name)) is not None:
-            return GeoJSONIntersects(
-                property=filter_body["property"],
-                geometry=Geometry.load(filter_body["geometry"]),
-            )
-        elif (filter_body := filter_.get(GeoJSONDisjoint._filter_name)) is not None:
-            return GeoJSONDisjoint(
-                property=filter_body["property"],
-                geometry=Geometry.load(filter_body["geometry"]),
-            )
-        elif (filter_body := filter_.get(GeoJSONWithin._filter_name)) is not None:
-            return GeoJSONWithin(
-                property=filter_body["property"],
-                geometry=Geometry.load(filter_body["geometry"]),
-            )
-        elif (filter_body := filter_.get(InAssetSubtree._filter_name)) is not None:
-            return InAssetSubtree(
-                property=filter_body["property"],
-                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
-            )
-        elif (filter_body := filter_.get(Search._filter_name)) is not None:
-            return Search(
-                property=filter_body["property"],
-                value=_load_filter_value(filter_body["value"]),
-            )
-        elif (filter_body := filter_.get(InvalidFilter._filter_name)) is not None:
-            return InvalidFilter(
-                previously_referenced_properties=filter_body["previouslyReferencedProperties"],
-                filter_type=filter_body["filterType"],
-            )
-        elif (filter_body := filter_.get(InstanceReferences._filter_name)) is not None:
-            return InstanceReferences(references=filter_body)
-        else:
-            filter_name, filter_body = next(iter(filter_.items()))
-            return UnknownFilter(filter_name, filter_body)
+    def load(cls, flt: dict[str, Any]) -> Filter:
+        match len(flt):
+            case 1:
+                ((filter_name, body),) = flt.items()
+                try:
+                    return _CONCRETE_FILTER_MAPPING[filter_name]._load(body)
+                except KeyError:
+                    return cast(Self, UnknownFilter(filter_name, body))
+            case 0:
+                raise ValueError("Filter dictionary is empty, missing required filter name and body")
+            case _:
+                # A lot of trouble to support 'test_handle_unknown_arguments_when_loading' test:
+                maybe_keys = _CONCRETE_FILTER_MAPPING.keys() & flt
+                match len(maybe_keys):
+                    case 0:
+                        return cls.load({})  # Will raise the "empty" ValueError above
+                    case 1:
+                        flt_name = maybe_keys.pop()
+                        return cls.load({flt_name: flt[flt_name]})
+                raise ValueError(
+                    f"Filter dictionary has more than one valid filter key: {sorted(maybe_keys)}. "
+                    "Expected exactly one key representing the filter name."
+                )
+
+    @classmethod
+    @abstractmethod
+    def _load(cls, resource: Any) -> Self: ...
 
     @abstractmethod
     def _filter_body(self, camel_case_property: bool) -> list | dict: ...
@@ -223,8 +152,8 @@ class Filter(ABC):
     def _involved_filter_types(self) -> set[type[Filter]]:
         output = {type(self)}
         if isinstance(self, CompoundFilter):
-            for filter_ in self._filters:
-                output.update(filter_._involved_filter_types())
+            for flt in self._filters:
+                output.update(flt._involved_filter_types())
         return output
 
     def _list_filters_without_nesting(self, other: Filter, operator: type[CompoundFilter]) -> list[Filter]:
@@ -244,15 +173,19 @@ class Filter(ABC):
 
 
 class UnknownFilter(Filter):
-    def __init__(self, filter_name: str, filter_body: dict[str, Any]) -> None:
+    def __init__(self, filter_name: str, resource: dict[str, Any]) -> None:
         self.__actual_filter_name = filter_name
-        self.__actual_filter_body = filter_body
+        self.__actual_filter_body = resource
 
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         if camel_case_property:
             return convert_all_keys_to_camel_case(self.__actual_filter_body)
         else:
             return self.__actual_filter_body
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> NoReturn:
+        raise NotImplementedError("UnknownFilter cannot be loaded (is a fallback for unknown filter types)")
 
     def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
         return {self.__actual_filter_name: self._filter_body(camel_case_property)}
@@ -264,6 +197,13 @@ class InvalidFilter(Filter):
     def __init__(self, previously_referenced_properties: list[list[str]], filter_type: str) -> None:
         self.__previously_reference_properties = previously_referenced_properties
         self.__filter_type = filter_type
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            previously_referenced_properties=resource["previouslyReferencedProperties"],
+            filter_type=resource["filterType"],
+        )
 
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         body = {
@@ -303,7 +243,7 @@ class CompoundFilter(Filter, ABC):
         self._filters = filters
 
     def _filter_body(self, camel_case_property: bool) -> list | dict:
-        return [filter_.dump(camel_case_property) for filter_ in self._filters]
+        return [flt.dump(camel_case_property) for flt in self._filters]
 
 
 class FilterWithProperty(Filter, ABC):
@@ -326,6 +266,10 @@ class FilterWithPropertyAndValue(FilterWithProperty, ABC):
         super().__init__(property)
         self._value = value
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(property=resource["property"], value=_load_filter_value(resource["value"]))
+
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         return {"property": self._dump_property(camel_case_property), "value": _dump_filter_value(self._value)}
 
@@ -336,6 +280,13 @@ class FilterWithPropertyAndValueList(FilterWithProperty, ABC):
     def __init__(self, property: PropertyReference, values: FilterValueList) -> None:
         super().__init__(property)
         self._values = values
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            property=resource["property"],
+            values=cast(FilterValueList, _load_filter_value(resource["values"])),
+        )
 
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         return {"property": self._dump_property(camel_case_property), "values": _dump_filter_value(self._values)}
@@ -372,6 +323,10 @@ class And(CompoundFilter):
 
     _filter_name = "and"
 
+    @classmethod
+    def _load(cls, resource: list[dict[str, Any]]) -> Self:
+        return cls(*map(Filter.load, resource))
+
 
 @final
 class Or(CompoundFilter):
@@ -403,6 +358,10 @@ class Or(CompoundFilter):
 
     _filter_name = "or"
 
+    @classmethod
+    def _load(cls, resource: list[dict[str, Any]]) -> Self:
+        return cls(*map(Filter.load, resource))
+
 
 class Not(CompoundFilter):
     """A filter that negates another filter.
@@ -433,6 +392,10 @@ class Not(CompoundFilter):
 
     def __init__(self, filter: Filter) -> None:
         super().__init__(filter)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(Filter.load(resource))
 
     def _filter_body(self, camel_case_property: bool) -> dict:
         return self._filters[0].dump(camel_case_property)
@@ -470,6 +433,10 @@ class Nested(Filter):
         self._scope = scope
         self._filter = filter
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(scope=resource["scope"], filter=Filter.load(resource["filter"]))
+
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         return {"scope": self._scope, "filter": self._filter.dump(camel_case_property)}
 
@@ -486,6 +453,10 @@ class MatchAll(Filter):
     """
 
     _filter_name = "matchAll"
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls()
 
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         return {}
@@ -524,16 +495,24 @@ class HasData(Filter):
         self.__containers: list[ContainerId] = [ContainerId.load(container) for container in (containers or [])]
         self.__views: list[ViewId] = [ViewId.load(view) for view in (views or [])]
 
+    @classmethod
+    def _load(cls, resource: list[dict[str, Any]]) -> Self:
+        containers, views = [], []
+        for item in resource:
+            match item:
+                case {"type": "container", "space": space, "externalId": xid}:
+                    containers.append((space, xid))
+                case {"type": "view", "space": space, "externalId": xid, "version": version}:
+                    views.append((space, xid, version))
+        return cls(containers=containers, views=views)
+
     def _filter_body(self, camel_case_property: bool) -> list:
         views = [v.as_tuple() for v in self.__views]
         filter_body_views = [
-            {"type": "view", "space": space, "externalId": externalId, "version": version}
-            for space, externalId, version in views
+            {"type": "view", "space": space, "externalId": xid, "version": version} for space, xid, version in views
         ]
         containers = [c.as_tuple() for c in self.__containers]
-        filter_body_containers = [
-            {"type": "container", "space": space, "externalId": externalId} for space, externalId in containers
-        ]
+        filter_body_containers = [{"type": "container", "space": space, "externalId": xid} for space, xid in containers]
         return filter_body_views + filter_body_containers
 
 
@@ -576,6 +555,16 @@ class Range(FilterWithProperty):
         self._gte = gte
         self._lt = lt
         self._lte = lte
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            property=resource["property"],
+            gt=_load_filter_value(resource.get("gt")),
+            gte=_load_filter_value(resource.get("gte")),
+            lt=_load_filter_value(resource.get("lt")),
+            lte=_load_filter_value(resource.get("lte")),
+        )
 
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         body = {"property": self._dump_property(camel_case_property)}
@@ -640,6 +629,17 @@ class Overlaps(Filter):
         self._gte = gte
         self._lt = lt
         self._lte = lte
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            start_property=resource["startProperty"],
+            end_property=resource["endProperty"],
+            gt=_load_filter_value(resource.get("gt")),
+            gte=_load_filter_value(resource.get("gte")),
+            lt=_load_filter_value(resource.get("lt")),
+            lte=_load_filter_value(resource.get("lte")),
+        )
 
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         body = {
@@ -746,6 +746,10 @@ class Exists(FilterWithProperty):
 
     _filter_name = "exists"
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(resource["property"])
+
 
 @final
 class Prefix(FilterWithPropertyAndValue):
@@ -843,6 +847,10 @@ class GeoJSON(FilterWithProperty, ABC):
         super().__init__(property)
         self._geometry = geometry
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(resource["property"], Geometry.load(resource["geometry"]))
+
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         return {"property": self._dump_property(camel_case_property), "geometry": self._geometry.dump(camel_case=True)}
 
@@ -892,6 +900,40 @@ class Search(FilterWithPropertyAndValue):
     _filter_name = "search"
 
 
+class InstanceReferences(Filter):
+    """Data modeling filter which matches instances with these fully qualified references.
+
+    Args:
+        references (Sequence[InstanceId] | Sequence[tuple[str, str]] | Sequence[dict[str, str]]): The instance references.
+
+    Example:
+        Filter than can be used to retrieve instances where their space/externalId matches any of the provided values:
+
+        - A filter with two references, passed using tuples:
+
+            >>> from cognite.client.data_classes.filters import InstanceReferences, InstanceId
+            >>> flt = InstanceReferences(
+            ...     [("someSpace", "someExternalId"), ("anotherSpace", "anotherExternalId")]
+            ... )
+
+        - Composing the instance references using the InstanceId class:
+
+            >>> flt = InstanceReferences([InstanceId("someSpace", "someExternalId")])
+    """
+
+    _filter_name = "instanceReferences"
+
+    def __init__(self, references: Sequence[InstanceId] | Sequence[tuple[str, str]] | Sequence[dict[str, str]]) -> None:
+        self.__references = [InstanceId.load(ref) for ref in references]
+
+    @classmethod
+    def _load(cls, resource: list[dict[str, Any]]) -> Self:
+        return cls(resource)
+
+    def _filter_body(self, camel_case_property: bool) -> list:
+        return [ref.dump(camel_case=True, include_instance_type=False) for ref in self.__references]
+
+
 _BASIC_FILTERS: frozenset[type[Filter]] = frozenset(
     {And, Or, Not, In, Equals, Exists, Range, Prefix, ContainsAny, ContainsAll}
 )
@@ -932,8 +974,12 @@ class SpaceFilter(FilterWithProperty):
         self._involved_filter: set[type[Filter]] = {Equals if single else In}
 
     @classmethod
-    def load(cls, filter_: dict[str, Any]) -> NoReturn:
-        raise NotImplementedError("Custom filter 'SpaceFilter' cannot be loaded")
+    def load(cls, resource: Any) -> NoReturn:
+        raise NotImplementedError(f"Custom filter '{cls.__name__}' cannot be loaded")
+
+    @classmethod
+    def _load(cls, resource: Any) -> NoReturn:
+        raise NotImplementedError(f"Custom filter '{cls.__name__}' cannot be loaded")
 
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         return {
@@ -977,36 +1023,21 @@ class IsNull(Not):
         self._filter_name = Not._filter_name
 
     @classmethod
-    def load(cls, filter_: dict[str, Any]) -> NoReturn:
-        raise NotImplementedError("Custom filter 'IsNull' cannot be loaded")
+    def load(cls, resource: Any) -> NoReturn:
+        raise NotImplementedError(f"Custom filter '{cls.__name__}' cannot be loaded")
+
+    @classmethod
+    def _load(cls, resource: Any) -> NoReturn:
+        raise NotImplementedError(f"Custom filter '{cls.__name__}' cannot be loaded")
 
     def _involved_filter_types(self) -> set[type[Filter]]:
         return {Not, Exists}
 
 
-class InstanceReferences(Filter):
-    """Data modeling filter which matches instances with these fully qualified references.
-
-    Args:
-        references (Sequence[InstanceId] | Sequence[tuple[str, str]]): The instance references.
-
-    Example:
-        Filter than can be used to retrieve instances where their space/externalId matches any of the provided values:
-
-        - A filter using a tuple as instance reference:
-
-            >>> from cognite.client.data_classes.filters import InstanceReferences, InstanceId
-            >>> flt = InstanceReferences([("someSpace", "someExternalId")])
-
-        - Composing the instance references using the InstanceId class:
-
-            >>> flt = InstanceReferences([InstanceId("someSpace", "someExternalId")])
-    """
-
-    _filter_name = "instanceReferences"
-
-    def __init__(self, references: Sequence[InstanceId] | Sequence[tuple[str, str]]) -> None:
-        self.__references = [InstanceId.load(ref) for ref in references]
-
-    def _filter_body(self, camel_case_property: bool) -> list:
-        return [ref.dump(camel_case=True, include_instance_type=False) for ref in self.__references]
+_CONCRETE_FILTER_MAPPING: dict[str, type[Filter]] = {
+    flt_cls._filter_name: flt_cls
+    for flt_cls in all_concrete_subclasses(
+        Filter,  # type: ignore [type-abstract]
+        exclude={UnknownFilter, InvalidFilter, SpaceFilter, IsNull},
+    )
+}
