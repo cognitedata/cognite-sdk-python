@@ -6,6 +6,7 @@ import json
 import tempfile
 import threading
 import time
+import warnings
 from abc import abstractmethod
 from collections.abc import Callable
 from datetime import datetime
@@ -566,7 +567,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         )
 
     @classmethod
-    def default_for_azure_ad(
+    def default_for_entra_id(
         cls,
         tenant_id: str,
         client_id: str,
@@ -612,6 +613,21 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             mem_cache_only=mem_cache_only,
             audience=f"https://{cdf_cluster}.cognitedata.com",
         )
+
+    @classmethod
+    def default_for_azure_ad(cls, *args: Any, **kwargs: Any) -> OAuthDeviceCode:
+        """Alias for :meth:`.OAuthDeviceCode.default_for_entra_id`.
+
+        .. deprecated:: 8.x
+            Use :meth:`.OAuthDeviceCode.default_for_entra_id` instead.
+
+        """
+        warnings.warn(
+            "default_for_azure_ad() is deprecated; use default_for_entra_id() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return cls.default_for_entra_id(*args, **kwargs)
 
 
 class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
@@ -727,7 +743,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         )
 
     @classmethod
-    def default_for_azure_ad(
+    def default_for_entra_id(
         cls,
         tenant_id: str,
         client_id: str,
@@ -760,6 +776,21 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             token_expiry_leeway_seconds=token_expiry_leeway_seconds,
             **token_custom_args,
         )
+
+    @classmethod
+    def default_for_azure_ad(cls, *args: Any, **kwargs: Any) -> OAuthInteractive:
+        """Alias for :meth:`.OAuthInteractive.default_for_entra_id`.
+
+        .. deprecated:: 8.x
+            Use :meth:`.OAuthInteractive.default_for_entra_id` instead.
+
+        """
+        warnings.warn(
+            "default_for_azure_ad() is deprecated; use default_for_entra_id() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return cls.default_for_entra_id(*args, **kwargs)
 
 
 class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
@@ -898,7 +929,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         )
 
     @classmethod
-    def default_for_azure_ad(
+    def default_for_entra_id(
         cls,
         tenant_id: str,
         client_id: str,
@@ -934,6 +965,21 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             token_expiry_leeway_seconds=token_expiry_leeway_seconds,
             **token_custom_args,
         )
+
+    @classmethod
+    def default_for_azure_ad(cls, *args: Any, **kwargs: Any) -> OAuthClientCredentials:
+        """Alias for :meth:`.OAuthClientCredentials.default_for_entra_id`.
+
+        .. deprecated:: 8.x
+            Use :meth:`.OAuthClientCredentials.default_for_entra_id` instead.
+
+        """
+        warnings.warn(
+            "default_for_azure_ad() is deprecated; use default_for_entra_id() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return cls.default_for_entra_id(*args, **kwargs)
 
 
 class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):

@@ -194,7 +194,7 @@ class AsyncCogniteClient:
         Returns:
             AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
-        credentials = OAuthClientCredentials.default_for_azure_ad(tenant_id, client_id, client_secret, cdf_cluster)
+        credentials = OAuthClientCredentials.default_for_entra_id(tenant_id, client_id, client_secret, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod
@@ -225,7 +225,7 @@ class AsyncCogniteClient:
         Returns:
             AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
-        credentials = OAuthInteractive.default_for_azure_ad(tenant_id, client_id, cdf_cluster)
+        credentials = OAuthInteractive.default_for_entra_id(tenant_id, client_id, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod
