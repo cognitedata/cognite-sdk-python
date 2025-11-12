@@ -10,15 +10,15 @@ class WorkflowTaskAPI(APIClient):
     _RESOURCE_PATH = "/workflows/tasks"
 
     def update(
-        self, task_id: str, status: Literal["completed", "failed"], output: dict | None = None
+        self, task_id: str, status: Literal["completed", "failed", "failed_with_terminal_error"], output: dict | None = None
     ) -> WorkflowTaskExecution:
         """`Update status of async task. <https://api-docs.cognite.com/20230101/tag/Tasks/operation/UpdateTaskStatus>`_
 
-        For tasks that has been marked with 'is_async = True', the status must be updated by calling this endpoint with either 'completed' or 'failed'.
+        For tasks that has been marked with 'is_async = True', the status must be updated by calling this endpoint with either 'completed', 'failed' or 'failed_with_terminal_error'.
 
         Args:
             task_id (str): The server-generated id of the task.
-            status (Literal['completed', 'failed']): The new status of the task. Must be either 'completed' or 'failed'.
+            status (Literal['completed', 'failed', 'failed_with_terminal_error']): The new status of the task. Must be either 'completed', 'failed' or 'failed_with_terminal_error'.
             output (dict | None): The output of the task. This will be available for tasks that has specified it as an output with the string "${<taskExternalId>.output}"
 
         Returns:
