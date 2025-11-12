@@ -538,6 +538,8 @@ class FakeCogniteResourceGenerator:
                 implementations.remove(filters.HasData)
                 implementations.remove(filters.InvalidFilter)
                 implementations.remove(filters.Nested)
+
+                # ...and geo filters:
                 implementations.remove(filters.GeoJSONWithin)
                 implementations.remove(filters.GeoJSONDisjoint)
                 implementations.remove(filters.GeoJSONIntersects)
