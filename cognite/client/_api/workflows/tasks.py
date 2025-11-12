@@ -10,7 +10,10 @@ class WorkflowTaskAPI(APIClient):
     _RESOURCE_PATH = "/workflows/tasks"
 
     def update(
-        self, task_id: str, status: Literal["completed", "failed", "failed_with_terminal_error"], output: dict | None = None
+        self,
+        task_id: str,
+        status: Literal["completed", "failed", "failed_with_terminal_error"],
+        output: dict | None = None,
     ) -> WorkflowTaskExecution:
         """`Update status of async task. <https://api-docs.cognite.com/20230101/tag/Tasks/operation/UpdateTaskStatus>`_
 
