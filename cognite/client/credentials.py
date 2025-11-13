@@ -420,15 +420,41 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             }
             for key, value in self.__token_custom_args.items():
                 data[key] = value
+
+            # Determine device authorization endpoint with fallbacks
+            device_auth_endpoint = getattr(self.__app.authority, "device_authorization_endpoint", None)
+
+            if not device_auth_endpoint:
+                if self.__authority_url:
+                    # Azure AD/Entra standard device code endpoint
+                    device_auth_endpoint = self.__authority_url.rstrip("/") + "/oauth2/v2.0/devicecode"
+                elif self.__oauth_discovery_url:
+                    # Fetch from OIDC discovery document for generic OIDC providers
+                    try:
+                        oidc_config_url = self.__oauth_discovery_url.rstrip("/") + "/.well-known/openid-configuration"
+                        oidc_metadata = self.__app.http_client.get(oidc_config_url).json()
+                        device_auth_endpoint = oidc_metadata.get("device_authorization_endpoint")
+                    except Exception as e:
+                        raise CogniteAuthError(
+                            f"Error fetching device_authorization_endpoint from OIDC discovery: {e}"
+                        ) from e
+
+            if not device_auth_endpoint:
+                raise CogniteAuthError("Unable to determine device authorization endpoint")
+
             try:
                 device_flow = self.__app.http_client.post(
-                    self.__app.authority.device_authorization_endpoint,
+                    device_auth_endpoint,
                     data=data,
                     headers={
                         "Accept": "application/json",
                         "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
                     },
-                ).json()
+                )
+                if hasattr(device_flow, "json"):
+                    device_flow = device_flow.json()
+                else:
+                    device_flow = json.loads(device_flow)
             except Exception as e:
                 raise CogniteAuthError("Error initiating device flow") from e
             if "verification_uri" in device_flow:
@@ -460,7 +486,13 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
         self._verify_credentials(credentials)
         self.__app.token_cache.add(
-            dict(credentials, environment=self.__app.authority.instance),
+            dict(
+                credentials,
+                environment=getattr(self.__app.authority, "instance", None)
+                or self.__authority_url
+                or self.__oauth_discovery_url
+                or "unknown",
+            ),
         )
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
