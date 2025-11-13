@@ -462,7 +462,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                         device_flow = json.loads(device_flow_response.content.decode("utf-8"))
                     else:
                         raise CogniteAuthError("Unable to parse device flow response")
-            except Exception as e:
+            except (requests.exceptions.RequestException, ValueError) as e:
                 raise CogniteAuthError("Error initiating device flow") from e
             if "verification_uri" in device_flow:
                 print(  # noqa: T201
