@@ -20,6 +20,11 @@ As of 2025-08-29, changes are grouped as follows
 
 * **simint-alpha:** add kind=long routines support ([#2388](https://github.com/cognitedata/cognite-sdk-python/issues/2388)) ([e9e2c9e](https://github.com/cognitedata/cognite-sdk-python/commit/e9e2c9ee7965aed71b1b8db4f609ab3cb17a7e22))
 
+
+### Bug Fixes
+
+* **credentials:** Fix `OAuthDeviceCode` authentication with `oauth_discovery_url` by fetching device authorization endpoint from OIDC discovery document, enabling support for Auth0, Cognito, and other OIDC providers. ([#CDF-26254](https://cognitedata.atlassian.net/browse/CDF-26254))
+
 ## [7.88.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.87.0...v7.88.0) (2025-10-22)
 
 
