@@ -434,7 +434,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                         oidc_config_url = self.__oauth_discovery_url.rstrip("/") + "/.well-known/openid-configuration"
                         oidc_metadata = self.__app.http_client.get(oidc_config_url).json()
                         device_auth_endpoint = oidc_metadata.get("device_authorization_endpoint")
-                    except Exception as e:
+                    except (requests.exceptions.RequestException, ValueError) as e:
                         raise CogniteAuthError(
                             f"Error fetching device_authorization_endpoint from OIDC discovery: {e}"
                         ) from e
