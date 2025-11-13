@@ -112,6 +112,39 @@ class TestOAuthDeviceCode:
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
+    def test_entra_id_uses_authority_endpoint(self, mock_public_client):
+        """Test that Entra ID uses MSAL authority's device_authorization_endpoint when available"""
+        # Mock the device code response
+        mock_device_response = Mock()
+        mock_device_response.json.return_value = {
+            "user_code": "ABCD-EFGH",
+            "device_code": "device123",
+            "verification_uri": "https://login.microsoftonline.com/activate",
+            "expires_in": 900,
+            "interval": 5,
+        }
+
+        # Mock MSAL authority object with device_authorization_endpoint
+        mock_authority = Mock()
+        mock_authority.device_authorization_endpoint = "https://login.microsoftonline.com/xyz/oauth2/v2.0/devicecode"
+        mock_public_client().authority = mock_authority
+        mock_public_client().http_client.post.return_value = mock_device_response
+        mock_public_client().client.obtain_token_by_device_flow.return_value = {
+            "access_token": "azure_token",
+            "expires_in": 3600,
+        }
+
+        creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
+        creds._refresh_access_token()
+
+        # Verify the endpoint from MSAL authority was used (not the fallback)
+        mock_public_client().http_client.post.assert_called_once()
+        call_args = mock_public_client().http_client.post.call_args
+        assert call_args[0][0] == "https://login.microsoftonline.com/xyz/oauth2/v2.0/devicecode"
+
+        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+
+    @patch("cognite.client.credentials.PublicClientApplication")
     def test_load(self, mock_public_client):
         creds = OAuthDeviceCode.load(dict(self.DEFAULT_PROVIDER_ARGS))
         assert isinstance(creds, OAuthDeviceCode)
