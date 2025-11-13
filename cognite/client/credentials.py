@@ -443,7 +443,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                 raise CogniteAuthError("Unable to determine device authorization endpoint")
 
             try:
-                device_flow = self.__app.http_client.post(
+                device_flow_response = self.__app.http_client.post(
                     device_auth_endpoint,
                     data=data,
                     headers={
@@ -451,10 +451,17 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                         "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
                     },
                 )
-                if hasattr(device_flow, "json"):
-                    device_flow = device_flow.json()
-                else:
-                    device_flow = json.loads(device_flow)
+                # Try to parse JSON response - handle different response types
+                try:
+                    device_flow = device_flow_response.json()
+                except (AttributeError, TypeError):
+                    # Fallback: try to get text content and parse
+                    if hasattr(device_flow_response, "text"):
+                        device_flow = json.loads(device_flow_response.text)
+                    elif hasattr(device_flow_response, "content"):
+                        device_flow = json.loads(device_flow_response.content.decode("utf-8"))
+                    else:
+                        raise CogniteAuthError("Unable to parse device flow response")
             except Exception as e:
                 raise CogniteAuthError("Error initiating device flow") from e
             if "verification_uri" in device_flow:
