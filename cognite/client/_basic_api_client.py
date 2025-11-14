@@ -395,11 +395,15 @@ class BasicAsyncAPIClient:
     ) -> dict[str, str]:
         from cognite.client import __version__
 
+        # We use latin-1 to mimic requests' behavior and avoid UnicodeEncodeError; httpx flat out
+        # refuses non-ascii (which is correct per RFC 7230). We cast because the rest of the code
+        # base expects str, not bytes, but bytes is perfectly fine
+        client_name = cast(str, self._config.client_name.encode("latin-1"))
         headers = {
             "content-type": "application/json",
             "accept": "application/json",
             "x-cdp-sdk": "CognitePythonSDK:" + __version__,
-            "x-cdp-app": self._config.client_name,
+            "x-cdp-app": client_name,
             "cdf-version": api_subversion or self._api_subversion,
             "user-agent": get_user_agent(),
             **self._config.headers,
