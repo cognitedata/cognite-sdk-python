@@ -1,18 +1,22 @@
+from __future__ import annotations
+
 import io
 import itertools
 import random
 import string
 import textwrap
 import time
+from collections.abc import Callable
 from contextlib import redirect_stdout
 from pathlib import Path
+from typing import Any, cast
 from unittest import TestCase, mock
-from unittest.mock import call
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import (
-    Asset,
     AssetHierarchy,
     AssetList,
     AssetWrite,
@@ -21,151 +25,165 @@ from cognite.client.data_classes import (
     FileMetadata,
     FileMetadataList,
 )
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteAssetHierarchyError
+from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import rng_context
 
 
 class TestAsset:
-    def test_get_events(self, cognite_client):
-        cognite_client.events.list = mock.MagicMock()
-        a = Asset(id=1, cognite_client=cognite_client)
-        a.events()
-        assert cognite_client.events.list.call_args == call(asset_ids=[1])
-        assert cognite_client.events.list.call_count == 1
+    def test_get_events(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.events, "list", autospec=True) as mock_list:
+            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
+            a.events()
+            mock_list.assert_called_once_with(asset_ids=[1])
 
-    def test_get_time_series(self, cognite_client):
-        cognite_client.time_series.list = mock.MagicMock()
-        a = Asset(id=1, cognite_client=cognite_client)
-        a.time_series()
-        assert cognite_client.time_series.list.call_args == call(asset_ids=[1])
-        assert cognite_client.time_series.list.call_count == 1
+    def test_get_time_series(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.time_series, "list", autospec=True) as mock_list:
+            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
+            a.time_series()
+            mock_list.assert_called_once_with(asset_ids=[1])
 
-    def test_get_sequences(self, cognite_client):
-        cognite_client.sequences.list = mock.MagicMock()
-        a = Asset(id=1, cognite_client=cognite_client)
-        a.sequences()
-        assert cognite_client.sequences.list.call_args == call(asset_ids=[1])
-        assert cognite_client.sequences.list.call_count == 1
+    def test_get_sequences(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.sequences, "list", autospec=True) as mock_list:
+            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
+            a.sequences()
+            mock_list.assert_called_once_with(asset_ids=[1])
 
-    def test_get_files(self, cognite_client):
-        cognite_client.files.list = mock.MagicMock()
-        a = Asset(id=1, cognite_client=cognite_client)
-        a.files()
-        assert cognite_client.files.list.call_args == call(asset_ids=[1])
-        assert cognite_client.files.list.call_count == 1
+    def test_get_files(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.files, "list", autospec=True) as mock_list:
+            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
+            a.files()
+            mock_list.assert_called_once_with(asset_ids=[1])
 
-    def test_get_parent(self, cognite_client):
-        cognite_client.assets.retrieve = mock.MagicMock()
-        a1 = Asset(parent_id=1, cognite_client=cognite_client)
-        a1.parent()
-        assert cognite_client.assets.retrieve.call_args == call(id=1)
-        assert cognite_client.assets.retrieve.call_count == 1
+    def test_get_parent(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.assets, "retrieve", autospec=True) as mock_retrieve:
+            a = DefaultResourceGenerator.asset(parent_id=1, cognite_client=async_client)
+            a.parent()
+            mock_retrieve.assert_called_once_with(id=1)
 
-    def test_get_children(self, cognite_client):
-        cognite_client.assets.list = mock.MagicMock()
-        a1 = Asset(id=1, cognite_client=cognite_client)
-        a1.children()
-        assert cognite_client.assets.list.call_args == call(parent_ids=[1], limit=None)
-        assert cognite_client.assets.list.call_count == 1
+    def test_get_children(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.assets, "list", autospec=True) as mock_list:
+            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
+            a.children()
+            mock_list.assert_called_once_with(parent_ids=[1], limit=None)
 
-    def test_get_subtree(self, cognite_client):
-        cognite_client.assets.retrieve_subtree = mock.MagicMock()
-        a1 = Asset(id=1, cognite_client=cognite_client)
-        a1.subtree(depth=1)
-        assert cognite_client.assets.retrieve_subtree.call_args == call(id=1, depth=1)
-        assert cognite_client.assets.retrieve_subtree.call_count == 1
+    def test_get_subtree(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.assets, "retrieve_subtree", autospec=True) as mock_subtree:
+            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
+            a.subtree(depth=1)
+            mock_subtree.assert_called_once_with(id=1, depth=1)
 
 
 class TestAssetList:
-    def test_get_events(self, cognite_client):
-        cognite_client.events.list = mock.MagicMock()
-        a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
-        a.events()
-        assert cognite_client.events.list.call_args == call(asset_ids=[1], limit=None)
-        assert cognite_client.events.list.call_count == 1
+    def test_get_events(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.events, "list", autospec=True) as mock_list:
+            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=async_client)
+            a.events()
+            mock_list.assert_called_once_with(asset_ids=[1], limit=None)
 
-    def test_get_time_series(self, cognite_client):
-        cognite_client.time_series.list = mock.MagicMock()
-        a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
-        a.time_series()
-        assert cognite_client.time_series.list.call_args == call(asset_ids=[1], limit=None)
-        assert cognite_client.time_series.list.call_count == 1
+    def test_get_time_series(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.time_series, "list", autospec=True) as mock_list:
+            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=async_client)
+            a.time_series()
+            mock_list.assert_called_once_with(asset_ids=[1], limit=None)
 
-    def test_get_sequences(self, cognite_client):
-        cognite_client.sequences.list = mock.MagicMock()
-        a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
-        a.sequences()
-        assert cognite_client.sequences.list.call_args == call(asset_ids=[1], limit=None)
-        assert cognite_client.sequences.list.call_count == 1
+    def test_get_sequences(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.sequences, "list", autospec=True) as mock_list:
+            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=async_client)
+            a.sequences()
+            mock_list.assert_called_once_with(asset_ids=[1], limit=None)
 
-    def test_get_files(self, cognite_client):
-        cognite_client.files.list = mock.MagicMock()
-        a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
-        a.files()
-        assert cognite_client.files.list.call_args == call(asset_ids=[1], limit=None)
-        assert cognite_client.files.list.call_count == 1
+    def test_get_files(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.files, "list", autospec=True) as mock_list:
+            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=async_client)
+            a.files()
+            mock_list.assert_called_once_with(asset_ids=[1], limit=None)
 
     @pytest.mark.parametrize(
         "resource_class, resource_list_class, method",
-        [(FileMetadata, FileMetadataList, "files"), (Event, EventList, "events")],
+        [
+            (FileMetadata, FileMetadataList, "files"),
+            (Event, EventList, "events"),
+        ],
     )
-    def test_get_related_resources_should_not_return_duplicates(
-        self, resource_class, resource_list_class, method, cognite_client
-    ):
-        r1 = resource_class(id=1)
-        r2 = resource_class(id=2)
-        r3 = resource_class(id=3)
+    async def test_get_related_resources_should_not_return_duplicates(
+        self,
+        resource_class: type[CogniteResource],
+        resource_list_class: type[CogniteResourceList],
+        method: str,
+        async_client: AsyncCogniteClient,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        resource_factory: Callable[..., CogniteResource] = cast(
+            Callable,
+            {
+                FileMetadata: DefaultResourceGenerator.file_metadata,
+                Event: DefaultResourceGenerator.event,
+            }[resource_class],
+        )
+        r1 = resource_factory(id=1)
+        r2 = resource_factory(id=2)
+        r3 = resource_factory(id=3)
         resources_a1 = resource_list_class([r1])
         resources_a2 = resource_list_class([r2, r3])
         resources_a3 = resource_list_class([r2, r3])
 
-        mock_method = mock.Mock()
-        setattr(cognite_client, method, mock_method)
+        mock_method = mock.AsyncMock()
+        monkeypatch.setattr(async_client, method, mock_method)
         mock_method.list.side_effect = [resources_a1, resources_a2, resources_a3]
         mock_method._config = mock.Mock(max_workers=3)
 
-        assets = AssetList([Asset(id=1), Asset(id=2), Asset(id=3)], cognite_client=cognite_client)
-        assets._actual_method = assets._retrieve_related_resources
+        assets = AssetList(
+            [
+                DefaultResourceGenerator.asset(id=1),
+                DefaultResourceGenerator.asset(id=2),
+                DefaultResourceGenerator.asset(id=3),
+            ],
+            cognite_client=async_client,
+        )
 
-        def override_chunk_size(*a, **kw):
+        actual_method = assets._retrieve_related_resources
+
+        async def override_chunk_size(*a: Any, **kw: Any) -> Any:
             kw["chunk_size"] = 1
-            return assets._actual_method(*a, **kw)
+            return await actual_method(*a, **kw)
 
-        assets._retrieve_related_resources = override_chunk_size
+        monkeypatch.setattr(assets, "_retrieve_related_resources", override_chunk_size)
 
         resources = getattr(assets, method)()
         expected = [r1, r2, r3]
         TestCase().assertCountEqual(expected, resources)  # Asserts equal, but ignores ordering
 
     @pytest.mark.dsl
-    def test_to_pandas_nullable_int(self, cognite_client):
+    def test_to_pandas_nullable_int(self, cognite_client: CogniteClient) -> None:
         import pandas as pd
 
         for camel_case in [False, True]:
-            assert (
-                pd.Int64Dtype()
-                == AssetList([Asset(parent_id=123), Asset(parent_id=None)]).to_pandas(camel_case=camel_case).dtypes[0]
+            assets = AssetList(
+                [DefaultResourceGenerator.asset(parent_id=123), DefaultResourceGenerator.asset(parent_id=None)]
             )
+            assert pd.Int64Dtype() == assets.to_pandas(camel_case=camel_case).dtypes[0]
 
 
-def basic_issue_assets():
+def basic_issue_assets() -> list[AssetWrite]:
     return [
-        Asset(name="a1", external_id="i am groot", parent_external_id=None),
+        AssetWrite(name="a1", external_id="i am groot", parent_external_id=None),
         # Duplicated XIDs:
-        Asset(name="a2", external_id="a", parent_external_id="i am groot"),
+        AssetWrite(name="a2", external_id="a", parent_external_id="i am groot"),
         AssetWrite(name="a3", external_id="a", parent_external_id="i am groot"),
         # Duplicated AND orphan:
-        Asset(name="a4", external_id="a", parent_external_id="i am orphan"),
+        AssetWrite(name="a4", external_id="a", parent_external_id="i am orphan"),
         # Orphan:
         AssetWrite(name="a5", external_id="b", parent_external_id="i am orphan"),
         # Invalid (missing XIDs):
-        Asset(name="a6", external_id=None, parent_external_id="i am groot"),
+        AssetWrite(name="a6", external_id=None, parent_external_id="i am groot"),
         # Doubly defined parent asset:
         AssetWrite(name="a7", external_id="c", parent_external_id="i am groot", parent_id=42),
     ]
 
 
-def basic_issue_output():
+def basic_issue_output() -> str:
     return textwrap.dedent(
         """\
         Invalid assets (no name, external ID, or with ID set):
@@ -200,26 +218,26 @@ def basic_issue_output():
     )
 
 
-def cycles_issue_assets():
+def cycles_issue_assets() -> list[AssetWrite]:
     mostly_cycles = [  # Add two normal assets
-        Asset(name="no-cycle", external_id="", parent_external_id=None),
-        Asset(name="no-cycle-too", external_id="not-empty", parent_external_id=""),
+        AssetWrite(name="no-cycle", external_id="", parent_external_id=None),
+        AssetWrite(name="no-cycle-too", external_id="not-empty", parent_external_id=""),
     ]
     # Make cycles of various lengths (4, 9, 16, 25, 36, 49, 64):
     for n, s in enumerate("abcdefg", 2):
         n **= 2
         mostly_cycles.extend(
-            Asset(name="R2D2", external_id=f"{s}{i}", parent_external_id=f"{s}{j}")
+            AssetWrite(name="R2D2", external_id=f"{s}{i}", parent_external_id=f"{s}{j}")
             for i, j in itertools.zip_longest(range(n), range(1, n), fillvalue=0)
         )
         # Add a child asset to a "cycle" asset (i.e. not directly part of the loop):
-        mostly_cycles.append(Asset(name="D2R2", external_id=f"{s}-infinity", parent_external_id=f"{s}{1}"))
+        mostly_cycles.append(AssetWrite(name="D2R2", external_id=f"{s}-infinity", parent_external_id=f"{s}{1}"))
     with rng_context(round(time.time(), -3)):  # make parallel test-runners agree on 'random'
         random.shuffle(mostly_cycles)
     return mostly_cycles
 
 
-def cycles_issue_output():
+def cycles_issue_output() -> str:
     return textwrap.dedent(
         """\
         Asset hierarchy had cyclical references:
@@ -237,23 +255,20 @@ class TestAssetHierarchy:
         "asset",
         (
             # Invalid name:
-            Asset(name="", external_id="foo"),
-            AssetWrite(name=None, external_id="foo"),
+            AssetWrite(name="", external_id="foo"),
             # Invalid external_id (empty str allowed):
             AssetWrite(name="a", external_id=None),
-            # Id given:
-            Asset(name="a", external_id="", id=123),
         ),
     )
-    def test_validate_asset_hierarchy___invalid_assets(self, asset):
+    def test_validate_asset_hierarchy___invalid_assets(self, asset: AssetWrite) -> None:
         hierarchy = AssetHierarchy([asset]).validate(on_error="ignore")
         assert len(hierarchy.invalid) == 1
         with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 invalid$"):
             hierarchy.is_valid(on_error="raise")
 
-    def test_validate_asset_hierarchy__orphans_given_ignore_false(self):
+    def test_validate_asset_hierarchy__orphans_given_ignore_false(self) -> None:
         assets = [
-            Asset(name="a", parent_external_id="1", external_id="2"),
+            AssetWrite(name="a", parent_external_id="1", external_id="2"),
             AssetWrite(name="a", parent_external_id="2", external_id="3"),
         ]
         hierarchy = AssetHierarchy(assets, ignore_orphans=False).validate(on_error="ignore")
@@ -262,68 +277,68 @@ class TestAssetHierarchy:
             hierarchy.is_valid(on_error="raise")
 
     @pytest.mark.parametrize("n", [1, 2, 3, 10])
-    def test_validate_asset_hierarchy__orphans_given_ignore_false__all_parent_external_id(self, n):
-        assets = [Asset(name=c, external_id=c, parent_external_id="foo") for c in string.ascii_letters[:n]]
+    def test_validate_asset_hierarchy__orphans_given_ignore_false__all_parent_external_id(self, n: int) -> None:
+        assets = [AssetWrite(name=c, external_id=c, parent_external_id="foo") for c in string.ascii_letters[:n]]
         hierarchy = AssetHierarchy(assets, ignore_orphans=False).validate(on_error="ignore")
         assert len(assets) == len(hierarchy.orphans) == n
         with pytest.raises(CogniteAssetHierarchyError, match=rf"Issue\(s\): {n} orphans$"):
             hierarchy.is_valid(on_error="raise")
 
     @pytest.mark.parametrize("n", [0, 1, 2, 3, 10])
-    def test_validate_asset_hierarchy__orphans_given_ignore_false__all_parent_id(self, n):
-        assets = [Asset(name=c, external_id=c, parent_id=ord(c)) for c in string.ascii_letters[:n]]
+    def test_validate_asset_hierarchy__orphans_given_ignore_false__all_parent_id(self, n: int) -> None:
+        assets = [AssetWrite(name=c, external_id=c, parent_id=ord(c)) for c in string.ascii_letters[:n]]
         hierarchy = AssetHierarchy(assets, ignore_orphans=False).validate(on_error="ignore")
         # Parent ID links are never considered orphans (offline validation impossible as ID can't be set):
         assert len(hierarchy.orphans) == 0
         hierarchy.is_valid(on_error="raise")
 
-    def test_validate_asset_hierarchy__orphans_given_ignore_true(self):
+    def test_validate_asset_hierarchy__orphans_given_ignore_true(self) -> None:
         assets = [
-            Asset(name="a", parent_external_id="1", external_id="2"),
-            Asset(name="a", parent_external_id="2", external_id="3"),
+            AssetWrite(name="a", parent_external_id="1", external_id="2"),
+            AssetWrite(name="a", parent_external_id="2", external_id="3"),
         ]
         hierarchy = AssetHierarchy(assets, ignore_orphans=True).validate(on_error="ignore")
         assert len(hierarchy.orphans) == 1  # note: still marked as orphans, but no issues are raised:
         assert hierarchy.is_valid(on_error="raise") is True
 
-    def test_validate_asset_hierarchy_asset_has_parent_id_and_parent_ref_id(self):
+    def test_validate_asset_hierarchy_asset_has_parent_id_and_parent_ref_id(self) -> None:
         assets = [
-            Asset(name="a", external_id="1"),
-            Asset(name="a", parent_external_id="1", parent_id=1, external_id="2"),
+            AssetWrite(name="a", external_id="1"),
+            AssetWrite(name="a", parent_external_id="1", parent_id=1, external_id="2"),
         ]
         hierarchy = AssetHierarchy(assets).validate(on_error="ignore")
         assert len(hierarchy.unsure_parents) == 1
         with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 unsure_parents$"):
             hierarchy.is_valid(on_error="raise")
 
-    def test_validate_asset_hierarchy_duplicate_ref_ids(self):
-        assets = [Asset(name="a", external_id="1"), Asset(name="a", parent_external_id="1", external_id="1")]
+    def test_validate_asset_hierarchy_duplicate_ref_ids(self) -> None:
+        assets = [AssetWrite(name="a", external_id="1"), AssetWrite(name="a", parent_external_id="1", external_id="1")]
         hierarchy = AssetHierarchy(assets).validate(on_error="ignore")
         assert list(hierarchy.duplicates) == ["1"]
         assert sum(len(assets) for assets in hierarchy.duplicates.values()) == 2
         with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 2 duplicates$"):
             hierarchy.is_valid(on_error="raise")
 
-    def test_validate_asset_hierarchy_circular_dependency(self):
+    def test_validate_asset_hierarchy_circular_dependency(self) -> None:
         assets = [
-            Asset(name="a", external_id="1", parent_external_id="3"),
-            Asset(name="a", external_id="2", parent_external_id="1"),
-            Asset(name="a", external_id="3", parent_external_id="2"),
+            AssetWrite(name="a", external_id="1", parent_external_id="3"),
+            AssetWrite(name="a", external_id="2", parent_external_id="1"),
+            AssetWrite(name="a", external_id="3", parent_external_id="2"),
         ]
         hierarchy = AssetHierarchy(assets).validate(on_error="ignore")
         assert len(hierarchy.cycles) == 1
         with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 cycles$"):
             hierarchy.is_valid(on_error="raise")
 
-    def test_validate_asset_hierarchy_self_dependency(self):
+    def test_validate_asset_hierarchy_self_dependency(self) -> None:
         # Shortest cycle possible is self->self:
-        assets = [Asset(name="a", external_id="2", parent_external_id="2")]
+        assets = [AssetWrite(name="a", external_id="2", parent_external_id="2")]
         hierarchy = AssetHierarchy(assets).validate(on_error="ignore")
         assert len(hierarchy.cycles) == 1
         with pytest.raises(CogniteAssetHierarchyError, match=r"Issue\(s\): 1 cycles$"):
             hierarchy.is_valid(on_error="raise")
 
-    def test_validate_asset_hierarchy__everything_is_wrong(self):
+    def test_validate_asset_hierarchy__everything_is_wrong(self) -> None:
         hierarchy = AssetHierarchy(basic_issue_assets()).validate(on_error="ignore")
         assert hierarchy.invalid and hierarchy.orphans and hierarchy.unsure_parents and hierarchy.duplicates
         with pytest.raises(CogniteAssetHierarchyError, match=r"^Unable to run cycle-check before"):
@@ -333,7 +348,7 @@ class TestAssetHierarchy:
         ):
             hierarchy.is_valid(on_error="raise")
 
-    def test_validate_asset_hierarchy__cycles(self):
+    def test_validate_asset_hierarchy__cycles(self) -> None:
         hierarchy = AssetHierarchy(cycles_issue_assets()).validate(on_error="ignore")
         assert not hierarchy.is_valid()
         found_cycles = set(map(frozenset, hierarchy.cycles))
@@ -347,7 +362,7 @@ class TestAssetHierarchy:
             (cycles_issue_assets(), cycles_issue_output()),
         ),
     )
-    def test_validate_asset_hierarchy__report_to_stdout(self, assets, exp_output):
+    def test_validate_asset_hierarchy__report_to_stdout(self, assets: list[AssetWrite], exp_output: str) -> None:
         with redirect_stdout(io.StringIO()) as stdout:
             AssetHierarchy(assets).validate_and_report()
         # Cycle output does not have deterministic ordering due to extensive set usage
@@ -362,11 +377,13 @@ class TestAssetHierarchy:
             (cycles_issue_assets(), cycles_issue_output()),
         ),
     )
-    def test_validate_asset_hierarchy__report_to_file(self, tmp_path, assets, exp_output):
+    def test_validate_asset_hierarchy__report_to_file(
+        self, tmp_path: Path, assets: list[AssetWrite], exp_output: str
+    ) -> None:
         tmp_path /= "out.txt"
         string_path = str(tmp_path)
         with pytest.raises(TypeError, match=r"^Unable to write to `output_file`, a file-like object is required"):
-            AssetHierarchy(assets).validate_and_report(output_file=string_path)
+            AssetHierarchy(assets).validate_and_report(output_file=string_path)  # type: ignore[arg-type]
 
         # Try again with Path instead of str:
         AssetHierarchy(assets).validate_and_report(output_file=tmp_path)
@@ -380,7 +397,9 @@ class TestAssetHierarchy:
             (cycles_issue_assets(), cycles_issue_output()),
         ),
     )
-    def test_validate_asset_hierarchy__arbitrart_file_obj(self, tmp_path, assets, exp_output):
+    def test_validate_asset_hierarchy__arbitrart_file_obj(
+        self, tmp_path: Path, assets: list[AssetWrite], exp_output: str
+    ) -> None:
         outfile = Path(tmp_path) / "report.txt"
         with outfile.open("w", encoding="utf-8") as file:
             AssetHierarchy(assets).validate_and_report(output_file=file)

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Sequence
@@ -27,7 +26,7 @@ from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 from zoneinfo import ZoneInfo
 
 TaskStatus: TypeAlias = Literal[
@@ -67,7 +66,7 @@ class WorkflowUpsert(WorkflowCore):
     """
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             description=resource.get("description"),
@@ -104,7 +103,7 @@ class Workflow(WorkflowCore):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             description=resource.get("description"),
@@ -220,7 +219,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         self.is_async_complete = is_async_complete
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> FunctionTaskParameters:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> FunctionTaskParameters:
         function: dict[str, Any] = resource["function"]
 
         return cls(
@@ -276,7 +275,7 @@ class SimulationTaskParameters(WorkflowTaskParameters):
         _SIMULATORS_WARNING.warn()
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulationTaskParameters:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> SimulationTaskParameters:
         simulation: dict[str, Any] = resource["simulation"]
 
         return cls(
@@ -322,7 +321,7 @@ class TransformationTaskParameters(WorkflowTaskParameters):
         self.use_transformation_credentials = use_transformation_credentials
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationTaskParameters:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TransformationTaskParameters:
         return cls(
             resource[cls.task_type]["externalId"],
             resource[cls.task_type].get("concurrencyPolicy", "fail"),
@@ -385,7 +384,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
         self.request_timeout_in_millis = request_timeout_in_millis
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         cdf_request: dict[str, Any] = resource["cdfRequest"]
 
         return cls(
@@ -421,7 +420,7 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
         self.tasks = tasks
 
     @classmethod
-    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls: type[Self], resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         subworkflow: dict[str, Any] = resource[cls.task_type]
 
         return cls(
@@ -450,7 +449,7 @@ class SubworkflowReferenceParameters(WorkflowTaskParameters):
         self.version = version
 
     @classmethod
-    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls: type[Self], resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         subworkflow: dict[str, Any] = resource[cls.task_type]
 
         return cls(workflow_external_id=subworkflow["workflowExternalId"], version=subworkflow["version"])
@@ -493,7 +492,7 @@ class DynamicTaskParameters(WorkflowTaskParameters):
         self.tasks = tasks
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         dynamic: dict[str, Any] = resource[cls.task_type]
 
         # can either be a reference string (i.e., in case of WorkflowDefinitions)
@@ -556,7 +555,7 @@ class WorkflowTask(CogniteResource):
         return self.parameters.task_type
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTask:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> WorkflowTask:
         return cls(
             external_id=resource["externalId"],
             parameters=WorkflowTaskParameters.load_parameters(resource),
@@ -822,7 +821,7 @@ class WorkflowTaskExecution(CogniteObject):
         return self.input.task_type
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTaskExecution:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> WorkflowTaskExecution:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -872,7 +871,7 @@ class WorkflowDefinitionCore(WriteableCogniteResource["WorkflowDefinitionUpsert"
         self.description = description
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             tasks=[WorkflowTask._load(task) for task in resource["tasks"]],
             description=resource.get("description"),
@@ -899,15 +898,11 @@ class WorkflowDefinitionUpsert(WorkflowDefinitionCore):
                             the description when updating it.
     """
 
-    def __init__(
-        self,
-        tasks: list[WorkflowTask],
-        description: str | None = None,
-    ) -> None:
+    def __init__(self, tasks: list[WorkflowTask], description: str | None = None) -> None:
         super().__init__(tasks, description)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowDefinitionUpsert:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> WorkflowDefinitionUpsert:
         return cls(
             tasks=[WorkflowTask._load(task) for task in resource["tasks"]],
             description=resource.get("description"),
@@ -946,7 +941,7 @@ class WorkflowDefinition(WorkflowDefinitionCore):
         self.hash_ = hash_
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowDefinition:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> WorkflowDefinition:
         return cls(
             hash_=resource["hash"],
             tasks=[WorkflowTask._load(task) for task in resource["tasks"]],
@@ -1009,7 +1004,7 @@ class WorkflowVersionUpsert(WorkflowVersionCore):
         self.workflow_definition = workflow_definition
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         workflow_definition: dict[str, Any] = resource["workflowDefinition"]
         return cls(
             workflow_external_id=resource["workflowExternalId"],
@@ -1055,7 +1050,7 @@ class WorkflowVersion(WorkflowVersionCore):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowVersion:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> WorkflowVersion:
         workflow_definition: dict[str, Any] = resource["workflowDefinition"]
         return cls(
             workflow_external_id=resource["workflowExternalId"],
@@ -1151,7 +1146,7 @@ class WorkflowExecution(CogniteResource):
         return WorkflowVersionId(workflow_external_id=self.workflow_external_id, version=self.version)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowExecution:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> WorkflowExecution:
         return cls(
             id=resource["id"],
             workflow_external_id=resource["workflowExternalId"],
@@ -1222,7 +1217,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         self.metadata = metadata
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowExecutionDetailed:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> WorkflowExecutionDetailed:
         return cls(
             id=resource["id"],
             workflow_external_id=resource["workflowExternalId"],
@@ -1284,13 +1279,6 @@ class WorkflowVersionId:
 
     def as_tuple(self) -> tuple[str, str | None]:
         return self.workflow_external_id, self.version
-
-    def as_primitive(self) -> tuple[str, str | None]:
-        warnings.warn(
-            "as_primitive() is deprecated, use as_tuple instead. Will be removed in the next major release.",
-            DeprecationWarning,
-        )
-        return self.as_tuple()
 
     @classmethod
     def load(cls, resource: dict) -> Self:
@@ -1373,7 +1361,7 @@ class WorkflowTriggerRule(CogniteObject, ABC):
         return dumped
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         trigger_type = resource["triggerType"]
         if trigger_type in _TRIGGER_RULE_BY_TYPE:
             return cast(Self, _TRIGGER_RULE_BY_TYPE[trigger_type]._load_trigger(resource))
@@ -1401,11 +1389,11 @@ class WorkflowTriggerDataModelingQuery(Query):
     ) -> None:
         super().__init__(with_, select)
         # Parameters and cursors are not supported for workflow trigger queries:
-        self.parameters = None
+        self.parameters = None  # type: ignore [assignment]
         self.cursors = None  # type: ignore [assignment]
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             with_={k: ResultSetExpression.load(v) for k, v in resource["with"].items()},
             select={k: Select.load(v) for k, v in resource["select"].items()},
@@ -1501,25 +1489,15 @@ class WorkflowTriggerCore(WriteableCogniteResource["WorkflowTriggerUpsert"], ABC
         trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
-        input (dict | None): The input data of the workflow version trigger. Defaults to None.
-        metadata (dict | None): Application specific metadata. Defaults to None.
     """
 
     def __init__(
-        self,
-        external_id: str,
-        trigger_rule: WorkflowTriggerRule,
-        workflow_external_id: str,
-        workflow_version: str,
-        input: dict | None = None,
-        metadata: dict | None = None,
+        self, external_id: str, trigger_rule: WorkflowTriggerRule, workflow_external_id: str, workflow_version: str
     ) -> None:
         self.external_id = external_id
         self.trigger_rule = trigger_rule
         self.workflow_external_id = workflow_external_id
         self.workflow_version = workflow_version
-        self.input = input
-        self.metadata = metadata
 
 
 class WorkflowTriggerUpsert(WorkflowTriggerCore):
@@ -1534,6 +1512,24 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
         input (dict | None): The input data of the workflow version trigger. Defaults to None.
         metadata (dict | None): Application specific metadata. Defaults to None.
     """
+
+    def __init__(
+        self,
+        external_id: str,
+        trigger_rule: WorkflowTriggerRule,
+        workflow_external_id: str,
+        workflow_version: str,
+        input: dict | None = None,
+        metadata: dict | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            trigger_rule=trigger_rule,
+            workflow_external_id=workflow_external_id,
+            workflow_version=workflow_version,
+        )
+        self.input = input
+        self.metadata = metadata
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item: dict[str, Any] = {
@@ -1552,7 +1548,7 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
         return item
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerUpsert:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> WorkflowTriggerUpsert:
         return cls(
             external_id=resource["externalId"],
             workflow_external_id=resource["workflowExternalId"],
@@ -1567,9 +1563,6 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
         return self
 
 
-WorkflowTriggerCreate = WorkflowTriggerUpsert
-
-
 class WorkflowTrigger(WorkflowTriggerCore):
     """
     This class represents a workflow trigger.
@@ -1581,8 +1574,8 @@ class WorkflowTrigger(WorkflowTriggerCore):
         workflow_version (str): The version of the workflow.
         input (dict | None): The input data passed to the workflow when an execution is started. Defaults to None.
         metadata (dict | None): Application specific metadata. Defaults to None.
-        created_time (int | None): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
-        last_updated_time (int | None): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
+        created_time (int): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
+        last_updated_time (int): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
     """
 
     def __init__(
@@ -1591,19 +1584,19 @@ class WorkflowTrigger(WorkflowTriggerCore):
         trigger_rule: WorkflowTriggerRule,
         workflow_external_id: str,
         workflow_version: str,
-        input: dict | None = None,
-        metadata: dict | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
+        input: dict | None,
+        metadata: dict | None,
+        created_time: int,
+        last_updated_time: int,
     ) -> None:
         super().__init__(
             external_id=external_id,
             trigger_rule=trigger_rule,
             workflow_external_id=workflow_external_id,
             workflow_version=workflow_version,
-            input=input,
-            metadata=metadata,
         )
+        self.input = input or {}
+        self.metadata = metadata or {}
         self.created_time = created_time
         self.last_updated_time = last_updated_time
 
@@ -1627,7 +1620,7 @@ class WorkflowTrigger(WorkflowTriggerCore):
         return item
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTrigger:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> WorkflowTrigger:
         return cls(
             external_id=resource["externalId"],
             workflow_external_id=resource["workflowExternalId"],
@@ -1635,8 +1628,8 @@ class WorkflowTrigger(WorkflowTriggerCore):
             trigger_rule=WorkflowTriggerRule._load(resource["triggerRule"]),
             input=resource.get("input"),
             metadata=resource.get("metadata"),
-            created_time=resource.get("createdTime"),
-            last_updated_time=resource.get("lastUpdatedTime"),
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
         )
 
     def as_write(self) -> WorkflowTriggerUpsert:
@@ -1681,8 +1674,8 @@ class WorkflowTriggerRun(CogniteResource):
         workflow_external_id: str,
         workflow_version: str,
         status: Literal["success", "failed"],
-        workflow_execution_id: str | None = None,
-        reason_for_failure: str | None = None,
+        workflow_execution_id: str | None,
+        reason_for_failure: str | None,
     ) -> None:
         self.external_id = external_id
         self.fire_time = fire_time
@@ -1709,7 +1702,7 @@ class WorkflowTriggerRun(CogniteResource):
         return item
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerRun:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> WorkflowTriggerRun:
         return cls(
             external_id=resource["externalId"],
             fire_time=resource["fireTime"],

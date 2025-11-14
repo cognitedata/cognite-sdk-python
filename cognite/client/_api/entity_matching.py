@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Literal, TypeVar
+from typing import Literal, TypeVar
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -12,8 +12,9 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingModel,
     EntityMatchingModelList,
     EntityMatchingModelUpdate,
+    EntityMatchingPredictionResult,
 )
-from cognite.client.utils._auxiliary import convert_true_match, is_unlimited
+from cognite.client.utils._auxiliary import convert_true_match, is_unlimited, unpack_items
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -23,26 +24,7 @@ T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=Contextualizati
 class EntityMatchingAPI(APIClient):
     _RESOURCE_PATH = EntityMatchingModel._RESOURCE_PATH
 
-    def _run_job(
-        self,
-        job_path: str,
-        job_cls: type[T_ContextualizationJob],
-        json: dict[str, Any],
-        status_path: str | None = None,
-        headers: dict | None = None,
-    ) -> T_ContextualizationJob:
-        if status_path is None:
-            status_path = job_path + "/"
-        response = self._post(self._RESOURCE_PATH + job_path, json=json, headers=headers)
-
-        return job_cls._load_with_status(
-            data=response.json(),
-            headers=response.headers,
-            status_path=self._RESOURCE_PATH + status_path,
-            cognite_client=self._cognite_client,
-        )
-
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> EntityMatchingModel | None:
+    async def retrieve(self, id: int | None = None, external_id: str | None = None) -> EntityMatchingModel | None:
         """`Retrieve model  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_
 
         Args:
@@ -53,17 +35,18 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModel | None: Model requested.
 
         Examples:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> retrieved_model = client.entity_matching.retrieve(id=1)
         """
 
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=EntityMatchingModelList, resource_cls=EntityMatchingModel, identifiers=identifiers
         )
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self, ids: Sequence[int] | None = None, external_ids: SequenceNotStr[str] | None = None
     ) -> EntityMatchingModelList:
         """`Retrieve models  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_
@@ -76,17 +59,18 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModelList: Models requested.
 
         Examples:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> retrieved_models = client.entity_matching.retrieve_multiple([1,2,3])
 
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=EntityMatchingModelList, resource_cls=EntityMatchingModel, identifiers=identifiers
         )
 
-    def update(
+    async def update(
         self,
         item: EntityMatchingModel
         | EntityMatchingModelUpdate
@@ -104,11 +88,12 @@ class EntityMatchingAPI(APIClient):
 
         Examples:
             >>> from cognite.client.data_classes.contextualization import EntityMatchingModelUpdate
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> client.entity_matching.update(EntityMatchingModelUpdate(id=1).name.set("New name"))
         """
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=EntityMatchingModelList,
             resource_cls=EntityMatchingModel,
             update_cls=EntityMatchingModelUpdate,
@@ -116,7 +101,7 @@ class EntityMatchingAPI(APIClient):
             mode=mode,
         )
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         description: str | None = None,
@@ -139,8 +124,9 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModelList: List of models.
 
         Examples:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> client.entity_matching.list(limit=1, name="test")
         """
         if is_unlimited(limit):
@@ -154,19 +140,19 @@ class EntityMatchingAPI(APIClient):
         }
         filter = {k: v for k, v in filter.items() if v is not None}
         # NB no pagination support yet
-        models = self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}).json()["items"]
+        models = unpack_items(await self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}))
         return EntityMatchingModelList._load(models, cognite_client=self._cognite_client)
 
-    def list_jobs(self) -> ContextualizationJobList:
+    async def list_jobs(self) -> ContextualizationJobList:
         # TODO: Not in service contract
         """List jobs, typically model fit and predict runs.
         Returns:
             ContextualizationJobList: List of jobs."""
         return ContextualizationJobList._load(
-            self._get(self._RESOURCE_PATH + "/jobs").json()["items"], cognite_client=self._cognite_client
+            unpack_items(await self._get(self._RESOURCE_PATH + "/jobs")), cognite_client=self._cognite_client
         )
 
-    def delete(
+    async def delete(
         self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
         """`Delete models  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingDelete>`_
@@ -178,14 +164,17 @@ class EntityMatchingAPI(APIClient):
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
         Examples:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> client.entity_matching.delete(id=1)
         """
 
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
+        await self._delete_multiple(
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True
+        )
 
-    def fit(
+    async def fit(
         self,
         sources: Sequence[dict | CogniteResource],
         targets: Sequence[dict | CogniteResource],
@@ -221,8 +210,9 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModel: Resulting queued model.
 
         Example:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
             >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
             >>> true_matches = [(1, 101)]
@@ -242,7 +232,7 @@ class EntityMatchingAPI(APIClient):
             match_fields_processed = None
         if true_matches:
             true_matches = [convert_true_match(true_match) for true_match in true_matches]
-        response = self._post(
+        response = await self._post(
             self._RESOURCE_PATH + "/",
             json={
                 "name": name,
@@ -259,7 +249,7 @@ class EntityMatchingAPI(APIClient):
         )
         return EntityMatchingModel._load(response.json(), cognite_client=self._cognite_client)
 
-    def predict(
+    async def predict(
         self,
         sources: Sequence[dict] | None = None,
         targets: Sequence[dict] | None = None,
@@ -267,7 +257,7 @@ class EntityMatchingAPI(APIClient):
         score_threshold: float | None = None,
         id: int | None = None,
         external_id: str | None = None,
-    ) -> ContextualizationJob:
+    ) -> EntityMatchingPredictionResult:
         """`Predict entity matching.  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingPredict>`_
 
         Warning:
@@ -286,11 +276,12 @@ class EntityMatchingAPI(APIClient):
             external_id (str | None): external ids of the model to use.
 
         Returns:
-            ContextualizationJob: object which can be used to wait for and retrieve results.
+            EntityMatchingPredictionResult: object which can be used to wait for and retrieve results.
 
         Examples:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> sources = {'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}
             >>> targets = {'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}
             >>> true_matches = [(1, 101)]
@@ -303,16 +294,17 @@ class EntityMatchingAPI(APIClient):
             ... )
         """
 
-        model = self.retrieve(id=id, external_id=external_id)
+        model = await self.retrieve(id=id, external_id=external_id)
+        # TODO: Change assert to proper error
         assert model
-        return model.predict(  # could call predict directly but this is friendlier
+        return await model.predict_async(  # could call predict directly but this is friendlier
             sources=EntityMatchingModel._dump_entities(sources),
             targets=EntityMatchingModel._dump_entities(targets),
             num_matches=num_matches,
             score_threshold=score_threshold,
         )
 
-    def refit(
+    async def refit(
         self,
         true_matches: Sequence[dict | tuple[int | str, int | str]],
         id: int | None = None,
@@ -326,19 +318,21 @@ class EntityMatchingAPI(APIClient):
 
         Args:
             true_matches (Sequence[dict | tuple[int | str, int | str]]): Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId'). A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
-            id (int | None): ids of the model to use.
-            external_id (str | None): external ids of the model to use.
+            id (int | None): id of the model to use.
+            external_id (str | None): external id of the model to use.
         Returns:
             EntityMatchingModel: new model refitted to true_matches.
 
         Examples:
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
             >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
             >>> true_matches = [(1, 101)]
-            >>> model = client.entity_matching.refit(true_matches = true_matches, description="AssetMatchingJob1", id=1)
+            >>> model = client.entity_matching.refit(true_matches=true_matches, id=1)
         """
-        model = self.retrieve(id=id, external_id=external_id)
+        model = await self.retrieve(id=id, external_id=external_id)
+        # TODO: Change assert to proper error
         assert model
-        return model.refit(true_matches=true_matches)
+        return await model.refit_async(true_matches=true_matches)

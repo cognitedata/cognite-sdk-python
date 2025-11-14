@@ -12,20 +12,20 @@ from cognite.client.data_classes.iam import SessionStatus, SessionType
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class SessionsAPI(APIClient):
     _RESOURCE_PATH = "/sessions"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
         self._DELETE_LIMIT = (
             100  # There isn't an API limit so this is a self-inflicted limit due to no support for large payloads
         )
 
-    def create(
+    async def create(
         self,
         client_credentials: ClientCredentials | None = None,
         session_type: SessionType | Literal["DEFAULT"] = "DEFAULT",
@@ -37,7 +37,7 @@ class SessionsAPI(APIClient):
                 if session_type is set to 'CLIENT_CREDENTIALS'.
             session_type (SessionType | Literal['DEFAULT']): The type of session to create. Can be
                 either 'CLIENT_CREDENTIALS', 'TOKEN_EXCHANGE', 'ONESHOT_TOKEN_EXCHANGE' or 'DEFAULT'.
-                Defaults to 'DEFAULT' which will use -this- CogniteClient object to create the session.
+                Defaults to 'DEFAULT' which will use -this- AsyncCogniteClient object to create the session.
                 If this client was created using a token, 'TOKEN_EXCHANGE' will be used, and if
                 this client was created using client credentials, 'CLIENT_CREDENTIALS' will be used.
 
@@ -72,15 +72,17 @@ class SessionsAPI(APIClient):
             items = {"oneshotTokenExchange": True}
         else:
             raise ValueError(f"Session type not understood: {session_type}")
-        return CreatedSession.load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
+
+        response = await self._post(self._RESOURCE_PATH, {"items": [items]})
+        return CreatedSession.load(response.json()["items"][0])
 
     @overload
-    def revoke(self, id: int) -> Session: ...
+    async def revoke(self, id: int) -> Session: ...
 
     @overload
-    def revoke(self, id: Sequence[int]) -> SessionList: ...
+    async def revoke(self, id: Sequence[int]) -> SessionList: ...
 
-    def revoke(self, id: int | Sequence[int]) -> Session | SessionList:
+    async def revoke(self, id: int | Sequence[int]) -> Session | SessionList:
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_
 
         Args:
@@ -94,7 +96,7 @@ class SessionsAPI(APIClient):
 
         revoked_sessions_res = cast(
             list,
-            self._delete_multiple(
+            await self._delete_multiple(
                 identifiers=ident_sequence,
                 wrap_ids=True,
                 returns_items=True,
@@ -106,12 +108,12 @@ class SessionsAPI(APIClient):
         return revoked_sessions[0] if ident_sequence.is_singleton() else revoked_sessions
 
     @overload
-    def retrieve(self, id: int) -> Session: ...
+    async def retrieve(self, id: int) -> Session: ...
 
     @overload
-    def retrieve(self, id: Sequence[int]) -> SessionList: ...
+    async def retrieve(self, id: Sequence[int]) -> SessionList: ...
 
-    def retrieve(self, id: int | Sequence[int]) -> Session | SessionList:
+    async def retrieve(self, id: int | Sequence[int]) -> Session | SessionList:
         """`Retrieves sessions with given IDs. <https://developer.cognite.com/api#tag/Sessions/operation/getSessionsByIds>`_
 
         The request will fail if any of the IDs does not belong to an existing session.
@@ -124,13 +126,13 @@ class SessionsAPI(APIClient):
         """
 
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=SessionList,
             resource_cls=Session,
             identifiers=identifiers,
         )
 
-    def list(self, status: SessionStatus | None = None, limit: int = DEFAULT_LIMIT_READ) -> SessionList:
+    async def list(self, status: SessionStatus | None = None, limit: int = DEFAULT_LIMIT_READ) -> SessionList:
         """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_
 
         Args:
@@ -141,4 +143,4 @@ class SessionsAPI(APIClient):
             SessionList: a list of sessions in the current project.
         """
         filter = {"status": status.upper()} if status is not None else None
-        return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter, limit=limit)
+        return await self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter, limit=limit)

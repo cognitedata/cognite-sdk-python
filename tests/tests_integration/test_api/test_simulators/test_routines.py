@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from itertools import pairwise
 
 import pytest
 
-from cognite.client._cognite_client import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.data_classes.simulators import (
     PropertySort,
     SimulatorRoutine,
@@ -61,6 +63,19 @@ class TestSimulatorRoutines:
         for i in range(1, len(routines_asc)):
             assert routines_asc[i].created_time >= routines_asc[i - 1].created_time
 
+        # Test iterator with sort
+        routines_iter = list(
+            cognite_client.simulators.routines(
+                simulator_integration_external_ids=[simulator_integration_unique_external_id],
+                sort=PropertySort(order="asc", property="created_time"),
+                limit=2,
+            )
+        )
+
+        assert len(routines_iter) == 2
+        for prev, curr in pairwise(routines_iter):
+            assert curr.created_time >= prev.created_time
+
 
 @pytest.mark.usefixtures(
     "seed_resource_names",
@@ -76,7 +91,6 @@ class TestSimulatorRoutinesRunWithRevisions:
         """Test running a simulation using routine and model revision external IDs."""
         routine_revision_external_id = seed_simulator_routine_revisions[0].external_id
         model_revision_external_id = seed_resource_names.simulator_model_revision_external_id
-        simulator_integration_unique_external_id = seed_resource_names.simulator_integration_external_id
 
         # Run simulation using revision external IDs
         run = cognite_client.simulators.routines.run(
@@ -89,15 +103,3 @@ class TestSimulatorRoutinesRunWithRevisions:
         assert run.id is not None
         assert run.routine_revision_external_id == routine_revision_external_id
         assert run.model_revision_external_id == model_revision_external_id
-        # Test iterator with sort
-        routines_iter = list(
-            cognite_client.simulators.routines(
-                simulator_integration_external_ids=[simulator_integration_unique_external_id],
-                sort=PropertySort(order="asc", property="created_time"),
-                limit=3,
-            )
-        )
-
-        assert len(routines_iter) == 3
-        for prev, curr in pairwise(routines_iter):
-            assert curr.created_time >= prev.created_time

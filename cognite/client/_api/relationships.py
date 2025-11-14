@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import itertools
 import warnings
-from collections.abc import Iterator, Sequence
-from functools import partial
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -18,20 +17,20 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.labels import LabelFilter
 from cognite.client.data_classes.relationships import RelationshipCore
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
-from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class RelationshipsAPI(APIClient):
     _RESOURCE_PATH = "/relationships"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_SUBQUERY_LIMIT = 1000
 
@@ -54,8 +53,7 @@ class RelationshipsAPI(APIClient):
         labels: LabelFilter | None = None,
         limit: int | None = None,
         fetch_resources: bool = False,
-        partitions: int | None = None,
-    ) -> Iterator[Relationship]: ...
+    ) -> AsyncIterator[Relationship]: ...
 
     @overload
     def __call__(
@@ -76,10 +74,9 @@ class RelationshipsAPI(APIClient):
         labels: LabelFilter | None = None,
         limit: int | None = None,
         fetch_resources: bool = False,
-        partitions: int | None = None,
-    ) -> Iterator[RelationshipList]: ...
+    ) -> AsyncIterator[RelationshipList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         source_external_ids: SequenceNotStr[str] | None = None,
@@ -97,8 +94,7 @@ class RelationshipsAPI(APIClient):
         labels: LabelFilter | None = None,
         limit: int | None = None,
         fetch_resources: bool = False,
-        partitions: int | None = None,
-    ) -> Iterator[Relationship] | Iterator[RelationshipList]:
+    ) -> AsyncIterator[Relationship] | AsyncIterator[RelationshipList]:
         """Iterate over relationships
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
@@ -120,11 +116,10 @@ class RelationshipsAPI(APIClient):
             labels (LabelFilter | None): Return only the resource matching the specified label constraints.
             limit (int | None): No description.
             fetch_resources (bool): No description.
-            partitions (int | None): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
 
-        Returns:
-            Iterator[Relationship] | Iterator[RelationshipList]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
-        """
+        Yields:
+            Relationship | RelationshipList: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
+        """  # noqa: DOC404
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
         filter = RelationshipFilter(
             source_external_ids=source_external_ids,
@@ -146,33 +141,23 @@ class RelationshipsAPI(APIClient):
                 f"For queries with more than {self._LIST_SUBQUERY_LIMIT} source_external_ids or "
                 "target_external_ids, only `list` is supported"
             )
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=RelationshipList,
             resource_cls=Relationship,
             method="POST",
             limit=limit,
             filter=filter,
             chunk_size=chunk_size,
-            partitions=partitions,
             other_params={"fetchResources": fetch_resources},
-        )
+        ):
+            yield item
 
-    def __iter__(self) -> Iterator[Relationship]:
-        """Iterate over relationships
-
-        Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
-
-        Returns:
-            Iterator[Relationship]: yields Relationships one by one.
-        """
-        return self()
-
-    def retrieve(self, external_id: str, fetch_resources: bool = False) -> Relationship | None:
+    async def retrieve(self, external_id: str, fetch_resources: bool = False) -> Relationship | None:
         """Retrieve a single relationship by external id.
 
         Args:
             external_id (str): External ID
-            fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the source and target fields.
+            fetch_resources (bool): If true, will try to return the full resources referenced by the relationship in the source and target fields.
 
         Returns:
             Relationship | None: Requested relationship or None if it does not exist.
@@ -181,26 +166,27 @@ class RelationshipsAPI(APIClient):
 
             Get relationship by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.relationships.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=RelationshipList,
             resource_cls=Relationship,
             identifiers=identifiers,
             other_params={"fetchResources": fetch_resources},
         )
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self, external_ids: SequenceNotStr[str], fetch_resources: bool = False, ignore_unknown_ids: bool = False
     ) -> RelationshipList:
         """`Retrieve multiple relationships by external id.  <https://developer.cognite.com/api#tag/Relationships/operation/byidsRelationships>`_
 
         Args:
             external_ids (SequenceNotStr[str]): External IDs
-            fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
+            fetch_resources (bool): If true, will try to return the full resources referenced by the relationship in the
                 source and target fields.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
@@ -211,12 +197,13 @@ class RelationshipsAPI(APIClient):
 
             Get relationships by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=RelationshipList,
             resource_cls=Relationship,
             identifiers=identifiers,
@@ -224,7 +211,7 @@ class RelationshipsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(
+    async def list(
         self,
         source_external_ids: SequenceNotStr[str] | None = None,
         source_types: SequenceNotStr[str] | None = None,
@@ -270,14 +257,16 @@ class RelationshipsAPI(APIClient):
 
             List relationships:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> relationship_list = client.relationships.list(limit=5)
 
-            Iterate over relationships:
+            Iterate over relationships, one-by-one:
 
-                >>> for relationship in client.relationships:
-                ...     relationship # do something with the relationship
+                >>> for relationship in client.relationships():
+                ...     relationship  # do something with the relationship
+
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
         filter = RelationshipFilter(
@@ -297,7 +286,7 @@ class RelationshipsAPI(APIClient):
 
         target_external_ids, source_external_ids = target_external_ids or [], source_external_ids or []
         if all(len(xids) <= self._LIST_SUBQUERY_LIMIT for xids in (target_external_ids, source_external_ids)):
-            return self._list(
+            return await self._list(
                 list_cls=RelationshipList,
                 resource_cls=Relationship,
                 method="POST",
@@ -311,19 +300,19 @@ class RelationshipsAPI(APIClient):
                 f"Querying more than {self._LIST_SUBQUERY_LIMIT} source_external_ids/target_external_ids is only "
                 f"supported for unlimited queries (pass -1 / None / inf instead of {limit})"
             )
-        tasks = []
         target_chunks = split_into_chunks(target_external_ids, self._LIST_SUBQUERY_LIMIT) or [[]]
         source_chunks = split_into_chunks(source_external_ids, self._LIST_SUBQUERY_LIMIT) or [[]]
 
         # All sources (if any) must be checked against all targets (if any). When either is not
         # given, we must exhaustively list all matching just the source or the target:
+        filters = []
         for target_xids, source_xids in itertools.product(target_chunks, source_chunks):
             task_filter = filter.copy()
             if target_external_ids:  # keep null if it was
                 task_filter["targetExternalIds"] = target_xids
             if source_external_ids:
                 task_filter["sourceExternalIds"] = source_xids
-            tasks.append({"filter": task_filter})
+            filters.append(task_filter)
 
         if partitions is not None:
             warnings.warn(
@@ -331,29 +320,30 @@ class RelationshipsAPI(APIClient):
                 "elements, `partitions` is ignored",
                 UserWarning,
             )
-        tasks_summary = execute_tasks(
-            partial(
+        tasks = [
+            AsyncSDKTask(
                 self._list,
+                method="POST",
                 list_cls=RelationshipList,
                 resource_cls=Relationship,
-                method="POST",
                 limit=None,
-                partitions=None,  # Otherwise, workers will spawn workers -> deadlock (singleton threadpool)
+                partitions=None,  # We do not allow workers to spawn workers (can lead to deadlock)
                 other_params={"fetchResources": fetch_resources},
-            ),
-            tasks,
-            max_workers=self._config.max_workers,
-        )
+                filter=flt,
+            )
+            for flt in filters
+        ]
+        tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         return RelationshipList(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
     @overload
-    def create(self, relationship: Relationship | RelationshipWrite) -> Relationship: ...
+    async def create(self, relationship: Relationship | RelationshipWrite) -> Relationship: ...
 
     @overload
-    def create(self, relationship: Sequence[Relationship | RelationshipWrite]) -> RelationshipList: ...
+    async def create(self, relationship: Sequence[Relationship | RelationshipWrite]) -> RelationshipList: ...
 
-    def create(
+    async def create(
         self, relationship: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]
     ) -> Relationship | RelationshipList:
         """`Create one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/createRelationships>`_
@@ -365,7 +355,7 @@ class RelationshipsAPI(APIClient):
             Relationship | RelationshipList: Created relationship(s)
 
         Note:
-            - The source_type and target_type field in the Relationship(s) can be any string among "Asset", "TimeSeries", "File", "Event", "Sequence";
+            - The source_type and target_type field in the Relationship(s) can be any string among "Asset", "TimeSeries", "File", "Event", "Sequence".
             - Do not provide the value for the source and target arguments of the Relationship class, only source_external_id / source_type and target_external_id / target_type. These (source and target) are used as part of fetching actual resources specified in other fields.
 
         Examples:
@@ -373,9 +363,10 @@ class RelationshipsAPI(APIClient):
             Create a new relationship specifying object type and external id for source and target:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Relationship
+                >>> from cognite.client.data_classes import RelationshipWrite
                 >>> client = CogniteClient()
-                >>> flowrel1 = Relationship(
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> flowrel1 = RelationshipWrite(
                 ...     external_id="flow_1",
                 ...     source_external_id="source_ext_id",
                 ...     source_type="asset",
@@ -384,7 +375,7 @@ class RelationshipsAPI(APIClient):
                 ...     confidence=0.1,
                 ...     data_set_id=1234
                 ... )
-                >>> flowrel2 = Relationship(
+                >>> flowrel2 = RelationshipWrite(
                 ...     external_id="flow_2",
                 ...     source_external_id="source_ext_id",
                 ...     source_type="asset",
@@ -401,7 +392,7 @@ class RelationshipsAPI(APIClient):
         else:
             relationship = relationship._validate_resource_types()
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=RelationshipList,
             resource_cls=Relationship,
             items=relationship,
@@ -409,12 +400,14 @@ class RelationshipsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Relationship | RelationshipWrite | RelationshipUpdate) -> Relationship: ...
+    async def update(self, item: Relationship | RelationshipWrite | RelationshipUpdate) -> Relationship: ...
 
     @overload
-    def update(self, item: Sequence[Relationship | RelationshipWrite | RelationshipUpdate]) -> RelationshipList: ...
+    async def update(
+        self, item: Sequence[Relationship | RelationshipWrite | RelationshipUpdate]
+    ) -> RelationshipList: ...
 
-    def update(
+    async def update(
         self,
         item: Relationship
         | RelationshipWrite
@@ -435,8 +428,9 @@ class RelationshipsAPI(APIClient):
         Examples:
             Update a data set that you have fetched. This will perform a full update of the data set:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> rel = client.relationships.retrieve(external_id="flow1")
                 >>> rel.confidence = 0.75
                 >>> res = client.relationships.update(rel)
@@ -462,21 +456,21 @@ class RelationshipsAPI(APIClient):
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.remove("PUMP")
                 >>> res = client.relationships.update(my_update)
         """
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item, mode=mode
         )
 
     @overload
-    def upsert(
+    async def upsert(
         self, item: Sequence[Relationship | RelationshipWrite], mode: Literal["patch", "replace"] = "patch"
     ) -> RelationshipList: ...
 
     @overload
-    def upsert(
+    async def upsert(
         self, item: Relationship | RelationshipWrite, mode: Literal["patch", "replace"] = "patch"
     ) -> Relationship: ...
 
-    def upsert(
+    async def upsert(
         self,
         item: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite],
         mode: Literal["patch", "replace"] = "patch",
@@ -499,14 +493,21 @@ class RelationshipsAPI(APIClient):
             Upsert for relationships:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Relationship
+                >>> from cognite.client.data_classes import RelationshipWrite
                 >>> client = CogniteClient()
-                >>> existing_relationship = client.relationships.retrieve(id=1)
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> existing_relationship = client.relationships.retrieve(external_id="foo")
                 >>> existing_relationship.description = "New description"
-                >>> new_relationship = Relationship(external_id="new_relationship", source_external_id="new_source")
+                >>> new_relationship = RelationshipWrite(
+                ...     external_id="new_relationship",
+                ...     source_external_id="new_source",
+                ...     source_type="asset",
+                ...     target_external_id="new_target",
+                ...     target_type="event"
+                ... )
                 >>> res = client.relationships.upsert([existing_relationship, new_relationship], mode="replace")
         """
-        return self._upsert_multiple(
+        return await self._upsert_multiple(
             item,
             list_cls=RelationshipList,
             resource_cls=Relationship,
@@ -515,7 +516,7 @@ class RelationshipsAPI(APIClient):
             mode=mode,
         )
 
-    def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
+    async def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/deleteRelationships>`_
 
         Args:
@@ -525,11 +526,12 @@ class RelationshipsAPI(APIClient):
 
             Delete relationships by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.relationships.delete(external_id=["a","b"])
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
