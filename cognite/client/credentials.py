@@ -453,16 +453,15 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                     },
                 )
                 # Try to parse JSON response - handle different response types
-                try:
-                    device_flow = device_flow_response.json()
-                except (AttributeError, TypeError):
-                    # Fallback: try to get text content and parse
-                    if hasattr(device_flow_response, "text"):
+                if isinstance(device_flow_response, dict):
+                    device_flow = device_flow_response
+                elif not hasattr(device_flow_response, "json"):
+                    raise CogniteAuthError("Unable to parse device flow response due to unexpected type")
+                else:
+                    try:
+                        device_flow = device_flow_response.json()
+                    except ValueError:  # Catches JSONDecodeError from invalid JSON
                         device_flow = json.loads(device_flow_response.text)
-                    elif hasattr(device_flow_response, "content"):
-                        device_flow = json.loads(device_flow_response.content.decode("utf-8"))
-                    else:
-                        raise CogniteAuthError("Unable to parse device flow response")
             except (requests.exceptions.RequestException, ValueError) as e:
                 raise CogniteAuthError("Error initiating device flow") from e
             if "verification_uri" in device_flow:
