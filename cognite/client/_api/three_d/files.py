@@ -20,7 +20,7 @@ class ThreeDFilesAPI(APIClient):
 
             Retrieve the contents of a 3d file by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.files.retrieve(1)

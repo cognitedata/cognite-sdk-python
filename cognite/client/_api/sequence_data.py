@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import typing
 import warnings
+from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
@@ -85,18 +86,21 @@ class SequencesDataAPI(APIClient):
                 >>> client.sequences.data.insert(rows=data, id=1,columns=None)
         """
         columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
-        if isinstance(rows, SequenceRows):
-            columns = rows.column_external_ids
-            rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
 
-        if isinstance(rows, dict):
-            all_rows: typing.Sequence = [{"rowNumber": k, "values": v} for k, v in rows.items()]
-        elif isinstance(rows, typing.Sequence) and len(rows) > 0 and isinstance(rows[0], dict):
-            all_rows = rows
-        elif isinstance(rows, typing.Sequence) and (len(rows) == 0 or isinstance(rows[0], tuple)):
-            all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
-        else:
-            raise TypeError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
+        match rows:
+            case SequenceRows():
+                columns = rows.column_external_ids
+                all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+            case []:
+                all_rows = []
+            case dict():
+                all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+            case [dict(), *_]:  # Assume homogeneous
+                all_rows = list(rows)  # type: ignore [arg-type]
+            case [(_, _), *_]:  # more assume homogeneous
+                all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
+            case _:
+                raise TypeError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
 
         base_obj = Identifier.of_either(id, external_id).as_dict()
         base_obj.update(self._wrap_columns(columns))
@@ -163,7 +167,9 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+            Delete rows from a sequence:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.data.delete(id=1, rows=[1,2,42])
@@ -186,7 +192,7 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.data.delete_range(id=1, start=0, end=None)
@@ -282,7 +288,7 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.data.retrieve(id=1)
@@ -342,7 +348,7 @@ class SequencesDataAPI(APIClient):
 
             Getting the latest row in a sequence before row number 1000:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.data.retrieve_last_row(id=1, before=1000)
@@ -377,7 +383,7 @@ class SequencesDataAPI(APIClient):
             pd.DataFrame: The requested sequence data in a pandas DataFrame
 
         Examples:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.sequences.data.retrieve_dataframe(id=1, start=0, end=None)

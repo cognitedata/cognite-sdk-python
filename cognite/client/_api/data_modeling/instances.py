@@ -265,14 +265,14 @@ class InstancesAPI(APIClient):
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources, debug=debug
         )
-
-        if instance_type == "node":
-            resource_cls: type = Node
-            list_cls: type = NodeList
-        elif instance_type == "edge":
-            resource_cls, list_cls = Edge, EdgeList
-        else:
-            raise ValueError(f"Invalid instance type: {instance_type}")
+        match instance_type:
+            case "node":
+                resource_cls: type[Node | Edge] = Node
+                list_cls: type[NodeList | EdgeList] = NodeList
+            case "edge":
+                resource_cls, list_cls = Edge, EdgeList
+            case _:
+                raise ValueError(f"Invalid instance type: {instance_type}")
 
         headers: None | dict[str, str] = None
         settings_forcing_raw_response_loading = []
@@ -285,33 +285,31 @@ class InstancesAPI(APIClient):
                 headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
 
         if not settings_forcing_raw_response_loading:
-            return cast(
-                Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList],
-                self._list_generator(
-                    list_cls=list_cls,
-                    resource_cls=resource_cls,
-                    method="POST",
-                    chunk_size=chunk_size,
-                    limit=limit,
-                    filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
-                    other_params=other_params,
-                    headers=headers,
-                    semaphore=self.__dm_semaphore,
-                ),
-            )
-        return (
-            list_cls._load_raw_api_response([raw], self._cognite_client)  # type: ignore[attr-defined]
-            for raw in self._list_generator_raw_responses(
+            async for item in self._list_generator(
+                list_cls=list_cls,
+                resource_cls=resource_cls,
                 method="POST",
-                settings_forcing_raw_response_loading=settings_forcing_raw_response_loading,
                 chunk_size=chunk_size,
                 limit=limit,
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
                 headers=headers,
                 semaphore=self.__dm_semaphore,
-            )
-        )
+            ):
+                yield item
+            return
+
+        async for raw in self._list_generator_raw_responses(
+            method="POST",
+            settings_forcing_raw_response_loading=settings_forcing_raw_response_loading,
+            chunk_size=chunk_size,
+            limit=limit,
+            filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
+            other_params=other_params,
+            headers=headers,
+            semaphore=self.__dm_semaphore,
+        ):
+            yield list_cls._load_raw_api_response([raw], self._cognite_client)
 
     @overload
     async def retrieve_edges(

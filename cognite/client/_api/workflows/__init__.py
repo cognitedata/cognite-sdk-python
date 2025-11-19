@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, Literal, TypeAlias, overload
 
 from cognite.client._api.workflows.executions import WorkflowExecutionAPI
 from cognite.client._api.workflows.tasks import WorkflowTaskAPI
@@ -13,16 +13,21 @@ from cognite.client.data_classes.workflows import (
     Workflow,
     WorkflowList,
     WorkflowUpsert,
+    WorkflowVersionId,
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_chunks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, AsyncCogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
+
+WorkflowIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str] | str
+WorkflowVersionIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str]
 
 
 class WorkflowAPI(APIClient):
@@ -139,7 +144,7 @@ class WorkflowAPI(APIClient):
 
             Retrieve workflow with external ID "my_workflow":
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> workflow = client.workflows.retrieve("my_workflow")
@@ -179,7 +184,7 @@ class WorkflowAPI(APIClient):
 
             Delete workflow with external_id "my_workflow":
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.delete("my_workflow")
@@ -203,7 +208,7 @@ class WorkflowAPI(APIClient):
 
             List all workflows:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.list(limit=None)

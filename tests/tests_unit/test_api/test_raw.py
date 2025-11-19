@@ -547,7 +547,7 @@ def test_raw_row__direct_column_access(raw_cls: type[RowCore]) -> None:
         del row["wrong-key"]
 
     row.columns = None  # type: ignore[assignment]
-    with pytest.raises(RuntimeError, match="^columns not set on Row instance$"):
+    with pytest.raises(RuntimeError, match=r"^columns not set on Row instance$"):
         del row["wrong-key"]
 
 

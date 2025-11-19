@@ -9,6 +9,7 @@ from collections.abc import AsyncIterator, MutableMapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
+from urllib.parse import urljoin
 
 import httpx
 from typing_extensions import Self
@@ -201,6 +202,12 @@ class BasicAsyncAPIClient:
     def _select_async_http_client(self, is_retryable: bool) -> AsyncHTTPClientWithRetry:
         return self._http_client_with_retry if is_retryable else self._http_client
 
+    @property
+    def _base_url_with_base_path(self) -> str:
+        if self._api_version:
+            return urljoin(self._config.base_url, f"/api/{self._api_version}/projects/{self._config.project}")
+        return self._config.base_url
+
     async def _request(
         self,
         method: Literal["GET", "PUT", "HEAD"],
@@ -236,8 +243,8 @@ class BasicAsyncAPIClient:
         timeout: float | None = None,
         api_subversion: str | None = None,
     ) -> AsyncIterator[httpx.Response]:
-        assert url_path or full_url
-        full_url = full_url or resolve_url("GET", cast(str, url_path), self._api_version, self._config)[1]
+        assert url_path or full_url, "Either url_path or full_url must be provided"
+        full_url = full_url or resolve_url(self, "GET", cast(str, url_path))[1]
         if full_headers is None:
             full_headers = self._configure_headers(headers, api_subversion)
 
@@ -262,7 +269,7 @@ class BasicAsyncAPIClient:
         api_subversion: str | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> httpx.Response:
-        _, full_url = resolve_url("GET", url_path, self._api_version, self._config)
+        _, full_url = resolve_url(self, "GET", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         try:
             res = await self._http_client_with_retry(
@@ -290,7 +297,7 @@ class BasicAsyncAPIClient:
         api_subversion: str | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> httpx.Response:
-        is_retryable, full_url = resolve_url("POST", url_path, self._api_version, self._config)
+        is_retryable, full_url = resolve_url(self, "POST", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         # We want to control json dumping, so we pass it along to httpx.Client.post as 'content'
         content = self._handle_json_dump(json, full_headers)
@@ -325,7 +332,7 @@ class BasicAsyncAPIClient:
         timeout: float | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> httpx.Response:
-        _, full_url = resolve_url("PUT", url_path, self._api_version, self._config)
+        _, full_url = resolve_url(self, "PUT", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         if content is None:
             content = self._handle_json_dump(json, full_headers)

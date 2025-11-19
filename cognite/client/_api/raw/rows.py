@@ -41,29 +41,55 @@ class RawRowsAPI(APIClient):
         self._LIST_LIMIT = 10000
 
     @overload
-    async def __call__(
+    def __call__(
         self,
         db_name: str,
         table_name: str,
         chunk_size: None = None,
+        partitions: None = None,
         limit: int | None = None,
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
-        partitions: int | None = None,
     ) -> AsyncIterator[Row]: ...
 
     @overload
-    async def __call__(
+    def __call__(
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: None,
+        partitions: int,
+        limit: int | None = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+    ) -> AsyncIterator[RowList]: ...
+
+    @overload
+    def __call__(
         self,
         db_name: str,
         table_name: str,
         chunk_size: int,
+        partitions: None,
         limit: int | None = None,
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
-        partitions: int | None = None,
+    ) -> AsyncIterator[RowList]: ...
+
+    @overload
+    def __call__(
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: int,
+        partitions: int,
+        limit: int | None = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
     ) -> AsyncIterator[RowList]: ...
 
     async def __call__(
@@ -71,11 +97,11 @@ class RawRowsAPI(APIClient):
         db_name: str,
         table_name: str,
         chunk_size: int | None = None,
+        partitions: int | None = None,  # Fun fact: No other API allow partitions on __call__
         limit: int | None = None,
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
-        partitions: int | None = None,
     ) -> AsyncIterator[Row | RowList]:
         """Iterate over rows.
 
@@ -88,15 +114,12 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database
             table_name (str): Name of the table to iterate over rows for
-            chunk_size (int | None): Number of rows to return in each chunk (may be lower). Defaults to yielding one row at a time.
-                Note: When used together with 'partitions' the default is 10000 (matching the API limit) and there's an implicit minimum of 1000 rows.
+            chunk_size (int | None): Number of rows to return in each chunk (may be lower). Defaults to yielding one row at a time. Note: When used together with 'partitions' the default is 10000 (matching the API limit) and there's an implicit minimum of 1000 rows.
+            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to not use concurrency. The setting is capped at ``global_config.max_workers`` and _can_ be used with a finite limit. To prevent unexpected problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
             limit (int | None): Maximum number of rows to return. Can be used with partitions. Defaults to returning all items.
             min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
             max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
-            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to not use concurrency.
-                The setting is capped at ``global_config.max_workers`` and _can_ be used with a finite limit. To prevent unexpected
-                problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Yields:
             Row | RowList: An iterator yielding the requested row or rows.

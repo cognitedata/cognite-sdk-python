@@ -58,9 +58,9 @@ def mock_token_inspect(httpx_mock: HTTPXMock) -> None:
 
 class TestCogniteClient:
     def test_project_is_empty(self) -> None:
-        with pytest.raises(ValueError, match="Invalid value for ClientConfig.project: ''"):
+        with pytest.raises(ValueError, match=r"Invalid value for ClientConfig.project: ''"):
             CogniteClient(ClientConfig(client_name="", project="", credentials=Token("bla")))
-        with pytest.raises(ValueError, match="Invalid value for ClientConfig.project: None"):
+        with pytest.raises(ValueError, match=r"Invalid value for ClientConfig.project: None"):
             CogniteClient(ClientConfig(client_name="", project=None, credentials=Token("bla")))  # type: ignore[arg-type]
 
     def test_project_is_correct(self, client_config_w_token_factory: ClientConfig) -> None:

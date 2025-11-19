@@ -1,7 +1,7 @@
 import time
 from pathlib import Path
 
-from cognite.client._cognite_client import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.exceptions import CogniteAPIError
