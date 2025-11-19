@@ -11,7 +11,9 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._text import copy_doc_from_async
 
 if TYPE_CHECKING:
     import pandas
@@ -201,12 +203,12 @@ class Table(TableCore):
         return TableWrite(name=self.name)
 
     @overload
-    async def rows(self, key: str, limit: int | None = None) -> Row | None: ...
+    async def rows_async(self, key: str, limit: int | None = None) -> Row | None: ...
 
     @overload
-    async def rows(self, key: None = None, limit: int | None = None) -> RowList: ...
+    async def rows_async(self, key: None = None, limit: int | None = None) -> RowList: ...
 
-    async def rows(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:
+    async def rows_async(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:
         """Get the rows in this table.
 
         Args:
@@ -224,6 +226,10 @@ class Table(TableCore):
         if key is not None:
             return await self._cognite_client.raw.rows.retrieve(db_name=self._db_name, table_name=self.name, key=key)
         return await self._cognite_client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
+
+    @copy_doc_from_async(rows_async)
+    def rows(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:
+        return run_sync(self.rows_async(key=key, limit=limit))
 
 
 class TableWrite(TableCore):
@@ -298,7 +304,7 @@ class Database(DatabaseCore):
             raise ValueError("name is required to create a Database")
         return DatabaseWrite(name=self.name)
 
-    async def tables(self, limit: int | None = None) -> TableList:
+    async def tables_async(self, limit: int | None = None) -> TableList:
         """Get the tables in this database.
 
         Args:
@@ -310,6 +316,10 @@ class Database(DatabaseCore):
         if self.name is None:
             raise ValueError("Unable to list tables, 'name' is not set on instance")
         return await self._cognite_client.raw.tables.list(db_name=self.name, limit=limit)
+
+    @copy_doc_from_async(tables_async)
+    def tables(self, limit: int | None = None) -> TableList:
+        return run_sync(self.tables_async(limit=limit))
 
 
 class DatabaseWrite(DatabaseCore):

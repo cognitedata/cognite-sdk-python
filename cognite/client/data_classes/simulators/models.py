@@ -18,6 +18,8 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.utils._async_helpers import run_sync
+from cognite.client.utils._text import copy_doc_from_async
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -165,19 +167,22 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
             description=self.description,
         )
 
-    def get_data(self) -> SimulatorModelRevisionData | None:
+    async def get_data_async(self) -> SimulatorModelRevisionData | None:
         """`Retrieve data associated with this simulator model revision. <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revision_data>`_
 
         Returns:
             SimulatorModelRevisionData | None: Data for the simulator model revision.
         """
-        data = self._cognite_client.simulators.models.revisions.retrieve_data(
+        data = await self._cognite_client.simulators.models.revisions.retrieve_data(
             model_revision_external_id=self.external_id
         )
         if data:
             return data[0]
-
         return None
+
+    @copy_doc_from_async(get_data_async)
+    def get_data(self) -> SimulatorModelRevisionData | None:
+        return run_sync(self.get_data_async())
 
 
 class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):

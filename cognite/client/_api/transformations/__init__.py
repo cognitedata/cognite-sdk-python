@@ -539,14 +539,12 @@ class TransformationsAPI(APIClient):
         """
         IdentifierSequence.load(transformation_id, transformation_external_id).assert_singleton()
 
-        id = {"externalId": transformation_external_id, "id": transformation_id}
+        id_ = {"externalId": transformation_external_id, "id": transformation_id}
 
-        response = await self._post(json=id, url_path=self._RESOURCE_PATH + "/run")
+        response = await self._post(json=id_, url_path=self._RESOURCE_PATH + "/run")
         job = TransformationJob._load(response.json(), cognite_client=self._cognite_client)
-
         if wait:
-            return await job.wait(timeout=timeout)
-
+            return await job.wait_async(timeout=timeout)
         return job
 
     async def cancel(self, transformation_id: int | None = None, transformation_external_id: str | None = None) -> None:

@@ -13,6 +13,8 @@ from cognite.client.data_classes._base import (
     InternalIdTransformerMixin,
 )
 from cognite.client.data_classes.transformations.common import TransformationDestination
+from cognite.client.utils._async_helpers import run_sync
+from cognite.client.utils._text import copy_doc_from_async
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -119,7 +121,7 @@ class TransformationJob(CogniteResource):
         self.last_seen_time = last_seen_time
         self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
-    async def update(self) -> None:
+    async def update_async(self) -> None:
         """`Get updated job status.`"""
         if self.id is None:
             raise ValueError("Unable to update, TransformationJob is missing 'id'")
@@ -134,7 +136,11 @@ class TransformationJob(CogniteResource):
         self.finished_time = updated.finished_time
         self.last_seen_time = updated.last_seen_time
 
-    async def cancel(self) -> None:
+    @copy_doc_from_async(update_async)
+    def update(self) -> None:
+        return run_sync(self.update_async())
+
+    async def cancel_async(self) -> None:
         if self.transformation_id is None:
             await self._cognite_client.transformations.cancel(
                 transformation_external_id=self.transformation_external_id
@@ -142,12 +148,20 @@ class TransformationJob(CogniteResource):
         else:
             await self._cognite_client.transformations.cancel(transformation_id=self.transformation_id)
 
-    async def metrics(self) -> TransformationJobMetricList:
+    @copy_doc_from_async(cancel_async)
+    def cancel(self) -> None:
+        return run_sync(self.cancel_async())
+
+    async def metrics_async(self) -> TransformationJobMetricList:
         """`Get job metrics.`"""
         assert self.id is not None
         return await self._cognite_client.transformations.jobs.list_metrics(self.id)
 
-    async def wait(self, polling_interval: float = 5, timeout: float | None = None) -> TransformationJob:
+    @copy_doc_from_async(metrics_async)
+    def metrics(self) -> TransformationJobMetricList:
+        return run_sync(self.metrics_async())
+
+    async def wait_async(self, polling_interval: float = 5, timeout: float | None = None) -> TransformationJob:
         """`Waits for the job to finish.`
 
         Args:
@@ -155,10 +169,10 @@ class TransformationJob(CogniteResource):
             timeout (float | None): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status.
 
         Returns:
-            TransformationJob: self.
+            TransformationJob: The transformation job (itself).
 
         Examples:
-            run transformations 1 and 2 in parallel, and run 3 once they finish successfully:
+            Run transformations 1 and 2 in parallel, and run 3 once they finish successfully:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
@@ -171,19 +185,20 @@ class TransformationJob(CogniteResource):
                 >>> if TransformationJobStatus.FAILED not in [job1.status, job2.status]:
                 >>>     client.transformations.run(id = 3, wait = False)
 
-            wait transformation for 5 minutes and do something if still running:
+            Wait on transformation for 5 minutes and do something if still running:
 
                 >>>
                 >>> job = client.transformations.run(id = 1, wait = False)
                 >>> job.wait(timeout = 5.0*60)
-                >>> if job.status == TransformationJobStatus.FAILED:
-                >>>     # do something if job failed
-                >>> elif job.status == TransformationJobStatus.COMPLETED:
-                >>>     # do something if job completed successfully
-                >>> else:
-                >>>     # do something if job is still running
+                >>> match job.status:
+                >>>     case TransformationJobStatus.FAILED:
+                >>>         # do something if job failed
+                >>>     case TransformationJobStatus.COMPLETED:
+                >>>         # do something if job completed successfully
+                >>>     case _:
+                >>>         # do something if job is still running
         """
-        await self.update()
+        await self.update_async()
         if timeout is None:
             timeout = float("inf")
         waited = 0.0
@@ -193,10 +208,13 @@ class TransformationJob(CogniteResource):
         ]:
             to_wait = min(timeout - waited, polling_interval)
             await asyncio.sleep(to_wait)
-            await self.update()
+            await self.update_async()
             waited += polling_interval
-
         return self
+
+    @copy_doc_from_async(wait_async)
+    def wait(self, polling_interval: float = 5, timeout: float | None = None) -> TransformationJob:
+        return run_sync(self.wait_async(polling_interval, timeout))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
