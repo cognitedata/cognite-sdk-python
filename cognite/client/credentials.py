@@ -400,17 +400,16 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
         raise CogniteAuthError("Unable to determine device authorization endpoint")
 
-    def _device_code_obj(self, data: dict[str, Any]) -> dict[str, Any]:
+    def _get_device_code_response(self, device_auth_endpoint: str, data: dict[str, Any]) -> dict[str, Any]:
         """Initiate device code flow and return the device flow object.
 
         Args:
+            device_auth_endpoint (str): The device authorization endpoint URL.
             data (dict[str, Any]): The request data (scope, client_id, etc.).
 
         Returns:
             dict[str, Any]: The device flow object containing device_code, user_code, etc.
         """
-
-        device_auth_endpoint = self._get_device_authorization_endpoint()
 
         try:
             device_flow_response = self.__app.http_client.post(
@@ -483,29 +482,32 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             for key, value in self.__token_custom_args.items():
                 data[key] = value
 
-            device_flow_dict = self._device_code_obj(data)
-            if "verification_uri" in device_flow_dict:
+            device_flow_endpoint = self._get_device_authorization_endpoint()
+            device_flow_response = self._get_device_code_response(device_flow_endpoint, data)
+            if "verification_uri" in device_flow_response:
                 print(  # noqa: T201
-                    f"Visit {device_flow_dict['verification_uri']} and enter the code: {device_flow_dict.get('user_code', 'ERROR')}"
+                    f"Visit {device_flow_response['verification_uri']} and enter the code: {device_flow_response.get('user_code', 'ERROR')}"
                 )
-            elif "message" in device_flow_dict:
-                print(f"Device code: {device_flow_dict.get('message', device_flow_dict.get('user_code', 'ERROR'))}")  # noqa: T201
+            elif "message" in device_flow_response:
+                print(  # noqa: T201
+                    f"Device code: {device_flow_response.get('message', device_flow_response.get('user_code', 'ERROR'))}"
+                )
             else:
                 raise CogniteAuthError(
-                    f"Error initiating device flow: {device_flow_dict.get('error')} - {device_flow_dict.get('error_description')}"
+                    f"Error initiating device flow: {device_flow_response.get('error')} - {device_flow_response.get('error_description')}"
                 )
-            if "interval" not in device_flow_dict:
+            if "interval" not in device_flow_response:
                 # Set default interval according to standard
-                device_flow_dict["interval"] = 5
-            if "expires_in" in device_flow_dict:
+                device_flow_response["interval"] = 5
+            if "expires_in" in device_flow_response:
                 # msal library uses expires_at instead of the standard expires_in
-                device_flow_dict["expires_at"] = device_flow_dict["expires_in"] + time.time()
+                device_flow_response["expires_at"] = device_flow_response["expires_in"] + time.time()
             # Poll for token
             credentials = self.__app.client.obtain_token_by_device_flow(
-                flow=device_flow_dict,
+                flow=device_flow_response,
                 data=dict(
                     data,
-                    code=device_flow_dict.get(
+                    code=device_flow_response.get(
                         "device_code"
                     ),  # Hack from msal library to get the code from the device flow, not standard
                 ),
@@ -513,12 +515,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
         self._verify_credentials(credentials)
         self.__app.token_cache.add(
-            dict(
-                credentials,
-                environment=getattr(self.__app.authority, "instance", None)
-                or self.__authority_url
-                or self.__oauth_discovery_url,
-            ),
+            dict(credentials, environment=self.__app.authority.instance),
         )
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
