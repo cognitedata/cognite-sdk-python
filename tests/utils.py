@@ -325,7 +325,7 @@ class FakeCogniteResourceGenerator:
             subclasses = all_concrete_subclasses(resource_cls)
             if len(subclasses) == 0:
                 raise TypeError(f"Cannot create instance of abstract class {resource_cls.__name__}")
-            resource_cls = self._random.choice(subclasses) if subclasses else resource_cls
+            resource_cls = self._random.choice(subclasses)
 
         signature = inspect.signature(resource_cls.__init__)
         try:
@@ -538,6 +538,8 @@ class FakeCogniteResourceGenerator:
                 implementations.remove(filters.HasData)
                 implementations.remove(filters.InvalidFilter)
                 implementations.remove(filters.Nested)
+
+                # ...and geo filters:
                 implementations.remove(filters.GeoJSONWithin)
                 implementations.remove(filters.GeoJSONDisjoint)
                 implementations.remove(filters.GeoJSONIntersects)

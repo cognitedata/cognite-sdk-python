@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8105beb1c4bc1286877edd4efeedd9ab
+465f322855aba108f265e3ba8b07c9aa
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -44,7 +44,7 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
 
     def __call__(
         self, chunk_size: int | None = None, include_public: bool = True, limit: int | None = None
-    ) -> Iterator[TransformationSchedule | TransformationScheduleList]:
+    ) -> Iterator[TransformationSchedule] | Iterator[TransformationScheduleList]:
         """
         Iterate over transformation schedules
 
@@ -55,7 +55,7 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
 
         Yields:
             TransformationSchedule | TransformationScheduleList: Yields schedules one by one if chunk_size is None, otherwise yields lists of schedules.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.transformations.schedules(
                 chunk_size=chunk_size, include_public=include_public, limit=limit

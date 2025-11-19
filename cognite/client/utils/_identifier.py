@@ -52,8 +52,13 @@ class InstanceId:
     def load(cls, data: dict[str, str] | tuple[str, str] | Self) -> Self:
         if isinstance(data, cls):
             return data
-        elif isinstance(data, tuple) and len(data) == 2:
-            return cls(*data)
+        elif isinstance(data, tuple):
+            if len(data) == 2:
+                return cls(*data)
+            raise ValueError(
+                f"Cannot load {data} into {cls}, expected exactly two elements in the tuple, got {len(data)}"
+            )
+
         elif isinstance(data, dict):
             if "externalId" in data:
                 return cls(space=data["space"], external_id=data["externalId"])

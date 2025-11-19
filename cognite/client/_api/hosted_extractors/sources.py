@@ -37,7 +37,7 @@ class SourcesAPI(APIClient):
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> AsyncIterator[Source | SourceList]:
+    ) -> AsyncIterator[Source] | AsyncIterator[SourceList]:
         """Iterate over sources
 
         Fetches sources as they are iterated over, so you keep a limited number of sources in memory.
@@ -48,7 +48,7 @@ class SourcesAPI(APIClient):
 
         Yields:
             Source | SourceList: yields Source one by one if chunk_size is not specified, else SourceList objects.
-        """
+        """  # noqa: DOC404
         self._warning.warn()
 
         async for item in self._list_generator(  # type: ignore [call-overload]

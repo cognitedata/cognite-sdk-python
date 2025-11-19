@@ -42,6 +42,7 @@ def cognite_client() -> Iterator[CogniteClient]:
         cnf = ClientConfig(
             client_name="any",
             project="dummy",
+            cluster="api",
             credentials=Token("bla"),
             timeout=1,
         )

@@ -30,7 +30,7 @@ class ThreeDRevisionsAPI(APIClient):
 
     async def __call__(
         self, model_id: int, chunk_size: int | None = None, published: bool = False, limit: int | None = None
-    ) -> AsyncIterator[ThreeDModelRevision | ThreeDModelRevisionList]:
+    ) -> AsyncIterator[ThreeDModelRevision] | AsyncIterator[ThreeDModelRevisionList]:
         """Iterate over 3d model revisions
 
         Fetches 3d model revisions as they are iterated over, so you keep a limited number of 3d model revisions in memory.
@@ -43,7 +43,7 @@ class ThreeDRevisionsAPI(APIClient):
 
         Yields:
             ThreeDModelRevision | ThreeDModelRevisionList: yields ThreeDModelRevision one by one if chunk is not specified, else ThreeDModelRevisionList objects.
-        """
+        """  # noqa: DOC404
         async for item in self._list_generator(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,

@@ -56,7 +56,7 @@ class WorkflowAPI(APIClient):
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> AsyncIterator[Workflow | WorkflowList]:
+    ) -> AsyncIterator[Workflow] | AsyncIterator[WorkflowList]:
         """Iterate over workflows
 
         Args:
@@ -65,8 +65,7 @@ class WorkflowAPI(APIClient):
 
         Yields:
             Workflow | WorkflowList: Yields Workflow one by one if chunk_size is None, otherwise yields WorkflowList objects.
-
-        """
+        """  # noqa: DOC404
         async for item in self._list_generator(
             method="GET", resource_cls=Workflow, list_cls=WorkflowList, limit=limit, chunk_size=chunk_size
         ):

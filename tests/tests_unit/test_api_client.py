@@ -1722,7 +1722,7 @@ class TestHelpers:
 
 class TestConnectionPooling:
     async def test_connection_pool_is_shared_between_clients(self) -> None:
-        cnf = ClientConfig(client_name="bla", credentials=Token("bla"), project="bla")
+        cnf = ClientConfig(client_name="bla", credentials=Token("bla"), cluster="foo", project="bla")
         c1 = get_wrapped_async_client(CogniteClient(cnf))
         c2 = AsyncCogniteClient(cnf)
         assert c1 is not c2
@@ -1735,7 +1735,7 @@ class TestConnectionPooling:
 
 
 async def test_worker_in_backoff_loop_gets_new_token(httpx_mock: HTTPXMock) -> None:
-    url = "https://api.cognitedata.com/api/v1/projects/c/assets/byids"
+    url = "https://foo.cognitedata.com/api/v1/projects/c/assets/byids"
     httpx_mock.add_response(method="POST", url=url, status_code=429, json={"error": "Backoff plz"})
     httpx_mock.add_response(
         method="POST",
@@ -1753,7 +1753,7 @@ async def test_worker_in_backoff_loop_gets_new_token(httpx_mock: HTTPXMock) -> N
             return "outdated-token"
         return "valid-token"
 
-    client = CogniteClient(ClientConfig(client_name="a", credentials=Token(token_callable), project="c"))
+    client = CogniteClient(ClientConfig(client_name="a", cluster="foo", credentials=Token(token_callable), project="c"))
     assert get_or_raise(client.assets.retrieve(id=1)).id == 123
     assert call_count > 0
     assert httpx_mock.get_requests()[0].headers["Authorization"] == "Bearer outdated-token"

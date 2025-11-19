@@ -48,7 +48,7 @@ def test_ensure_all_apis_are_available_on_cognite_mock(mock_spec_cls_lookup: dic
 
 
 def test_ensure_all_apis_use_equal_attr_paths_on_cognite_mock(mock_spec_cls_lookup: dict[str, type[APIClient]]) -> None:
-    client = AsyncCogniteClient(ClientConfig(client_name="a", project="b", credentials="c"))  # type: ignore[arg-type]
+    client = AsyncCogniteClient(ClientConfig(client_name="a", project="b", cluster="x", credentials="c"))  # type: ignore[arg-type]
     available_apis = set(get_api_class_by_attribute(client).items())
     mocked_apis = set(mock_spec_cls_lookup.items())
 
@@ -91,5 +91,5 @@ def test_cognite_client_accepts_arguments_during_and_after_mock() -> None:
     # This test was here to ensure the old style ".__new__" override didn't fail after
     # reverting as that would break object.__new__ by passing more than the first arg.
     with monkeypatch_cognite_client():
-        CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
-    CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+        CogniteClient(ClientConfig(client_name="bla", project="bla", cluster="x", credentials=Token("bla")))
+    CogniteClient(ClientConfig(client_name="bla", project="bla", cluster="x", credentials=Token("bla")))

@@ -31,7 +31,7 @@ class SpacesAPI(APIClient):
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> AsyncIterator[Space | SpaceList]:
+    ) -> AsyncIterator[Space] | AsyncIterator[SpaceList]:
         """Iterate over spaces
 
         Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
@@ -42,7 +42,7 @@ class SpacesAPI(APIClient):
 
         Yields:
             Space | SpaceList: yields Space one by one if chunk_size is not specified, else SpaceList objects.
-        """
+        """  # noqa: DOC404
         async for item in self._list_generator(
             list_cls=SpaceList,
             resource_cls=Space,

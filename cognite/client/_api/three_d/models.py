@@ -31,7 +31,7 @@ class ThreeDModelsAPI(APIClient):
 
     async def __call__(
         self, chunk_size: int | None = None, published: bool | None = None, limit: int | None = None
-    ) -> AsyncIterator[ThreeDModel | ThreeDModelList]:
+    ) -> AsyncIterator[ThreeDModel] | AsyncIterator[ThreeDModelList]:
         """Iterate over 3d models
 
         Fetches 3d models as they are iterated over, so you keep a limited number of 3d models in memory.
@@ -43,7 +43,7 @@ class ThreeDModelsAPI(APIClient):
 
         Yields:
             ThreeDModel | ThreeDModelList: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
-        """
+        """  # noqa: DOC404
         async for item in self._list_generator(
             list_cls=ThreeDModelList,
             resource_cls=ThreeDModel,

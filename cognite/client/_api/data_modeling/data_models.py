@@ -58,7 +58,7 @@ class DataModelsAPI(APIClient):
         inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> AsyncIterator[DataModel | DataModelList]:
+    ) -> AsyncIterator[DataModel] | AsyncIterator[DataModelList]:
         """Iterate over data model
 
         Fetches data model as they are iterated over, so you keep a limited number of data model in memory.
@@ -73,7 +73,7 @@ class DataModelsAPI(APIClient):
 
         Yields:
             DataModel | DataModelList: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
-        """
+        """  # noqa: DOC404
         filter = DataModelFilter(space, inline_views, all_versions, include_global)
 
         async for item in self._list_generator(

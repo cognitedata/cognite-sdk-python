@@ -5,7 +5,7 @@ import getpass
 import pprint
 import re
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NoReturn, overload
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
@@ -133,7 +133,10 @@ class ClientConfig:
         project (str): CDF Project name.
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
         api_subversion (str | None): API subversion
-        base_url (str | None): Base url to send requests to. Defaults to "https://api.cognitedata.com"
+        base_url (str | None): Base url to send requests to. Typically on the form 'https://<cluster>.cognitedata.com'.
+            Either base_url or cluster must be provided.
+        cluster (str | None): The cluster where the CDF project is located. When passed, it is assumed that the base
+            URL can be constructed as: 'https://<cluster>.cognitedata.com'. Either base_url or cluster must be provided.
         headers (dict[str, str] | None): Additional headers to add to all requests.
         timeout (int | None): Timeout on requests sent to the api. Defaults to 60 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
@@ -147,6 +150,7 @@ class ClientConfig:
         credentials: CredentialProvider,
         api_subversion: str | None = None,
         base_url: str | None = None,
+        cluster: str | None = None,
         headers: dict[str, str] | None = None,
         timeout: int | None = None,
         file_transfer_timeout: int | None = None,
@@ -156,7 +160,8 @@ class ClientConfig:
         self.project = project
         self.credentials = credentials
         self.api_subversion = api_subversion or __api_subversion__
-        self.base_url = (base_url or "https://api.cognitedata.com").rstrip("/")
+        self.base_url = self._validate_base_url_or_cluster(base_url, cluster)
+        self._cluster = cluster
         self.headers = headers or {}
         self.timeout = timeout or 60
         self.file_transfer_timeout = file_transfer_timeout or 600
@@ -187,10 +192,28 @@ class ClientConfig:
     def _validate_config(self) -> None:
         if not self.project:
             raise ValueError(f"Invalid value for ClientConfig.project: {self.project!r}")
-        if not self.base_url:
-            raise ValueError(f"Invalid value for ClientConfig.base_url: {self.base_url!r}")
         elif self.cdf_cluster is None:
             warnings.warn(f"Given base URL may be invalid, please double-check: {self.base_url!r}", UserWarning)
+
+    @overload
+    def _validate_base_url_or_cluster(self, base_url: None, cluster: None) -> NoReturn: ...
+
+    @overload
+    def _validate_base_url_or_cluster(self, base_url: str | None, cluster: str | None) -> str: ...
+
+    def _validate_base_url_or_cluster(self, base_url: str | None, cluster: str | None) -> str:
+        match base_url, cluster:
+            case None, str():
+                return f"https://{cluster}.cognitedata.com"
+            case str(), _:
+                if cluster is not None:
+                    warnings.warn("'cluster' parameter is ignored when 'base_url' is provided.", UserWarning)
+                return base_url.rstrip("/")
+            case _:
+                raise ValueError(
+                    "Either 'base_url' or 'cluster' must be provided. Passing 'cluster' assumes the base URL "
+                    "is of the form: https://<cluster>.cognitedata.com."
+                )
 
     def __str__(self) -> str:
         return pprint.pformat(vars(self), indent=4)
@@ -266,6 +289,7 @@ class ClientConfig:
             credentials=credentials,
             api_subversion=loaded.get("api_subversion"),
             base_url=loaded.get("base_url"),
+            cluster=loaded.get("cluster"),
             headers=loaded.get("headers"),
             timeout=loaded.get("timeout"),
             file_transfer_timeout=loaded.get("file_transfer_timeout"),
@@ -274,6 +298,9 @@ class ClientConfig:
 
     @property
     def cdf_cluster(self) -> str | None:
+        if self._cluster is not None:
+            return self._cluster
+
         # A best effort attempt to extract the cluster from the base url
         if match := re.match(
             r"https?://([^/\.\s]*\.plink\.)?([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)", self.base_url

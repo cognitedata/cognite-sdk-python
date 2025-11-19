@@ -1,6 +1,6 @@
 """
 ===============================================================================
-905a644fdc4c48c8fff8c1b110881492
+ffb8afc8b8e4dd416046292bf4dddc81
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -54,7 +54,7 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
         transformation_external_id: str | None = None,
         destination: str | None = None,
         limit: int | None = None,
-    ) -> Iterator[TransformationNotification | TransformationNotificationList]:
+    ) -> Iterator[TransformationNotification] | Iterator[TransformationNotificationList]:
         """
         Iterate over transformation notifications
 
@@ -67,7 +67,7 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
 
         Yields:
             TransformationNotification | TransformationNotificationList: Yields notifications one by one if chunk_size is None, otherwise yields lists of notifications.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.transformations.notifications(
                 chunk_size=chunk_size,

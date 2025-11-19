@@ -10,7 +10,7 @@ from cognite.client.data_classes._base import UnknownCogniteObject
 from cognite.client.data_classes.data_modeling import (
     Container,
     ContainerApply,
-    ContainerProperty,
+    ContainerPropertyApply,
     MappedPropertyApply,
     Space,
     SpaceApply,
@@ -44,7 +44,7 @@ def one_space(cognite_client: CogniteClient) -> Iterator[Space]:
 @pytest.fixture
 def one_container(cognite_client: CogniteClient, one_space: Space) -> Iterator[Container]:
     my_container = ContainerApply(
-        space=one_space.space, external_id="my_container", properties={"name": ContainerProperty(type=Text())}
+        space=one_space.space, external_id="my_container", properties={"name": ContainerPropertyApply(type=Text())}
     )
     created = cognite_client.data_modeling.containers.apply(my_container)
     yield created

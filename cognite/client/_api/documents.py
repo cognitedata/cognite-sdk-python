@@ -60,7 +60,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
-    ) -> AsyncIterator[Document | DocumentList]:
+    ) -> AsyncIterator[Document] | AsyncIterator[DocumentList]:
         """Iterate over documents
 
         Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
@@ -73,7 +73,7 @@ class DocumentsAPI(APIClient):
 
         Yields:
             Document | DocumentList: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
-        """
+        """  # noqa: DOC404
         self._validate_filter(filter)
         async for item in self._list_generator(
             list_cls=DocumentList,

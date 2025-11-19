@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9cbf5a741c269572a7ad9796090764bd
+8ee0359455da051ef45327ef7f115446
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -89,7 +89,7 @@ class SyncRawRowsAPI(SyncAPIClient):
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
-    ) -> Iterator[Row | RowList]:
+    ) -> Iterator[Row] | Iterator[RowList]:
         """
         Iterate over rows.
 
@@ -111,7 +111,7 @@ class SyncRawRowsAPI(SyncAPIClient):
 
         Yields:
             Row | RowList: An iterator yielding the requested row or rows.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.raw.rows(
                 db_name=db_name,

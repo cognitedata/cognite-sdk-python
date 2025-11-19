@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c8983ce9237658434ca566f8ba93a136
+89cb2979c8c928e5dbdc38ec14974271
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -107,7 +107,7 @@ class SyncEventsAPI(SyncAPIClient):
         sort: SortSpec | list[SortSpec] | None = None,
         limit: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
-    ) -> Iterator[Event | EventList]:
+    ) -> Iterator[Event] | Iterator[EventList]:
         """
         Iterate over events
 
@@ -137,7 +137,7 @@ class SyncEventsAPI(SyncAPIClient):
 
         Yields:
             Event | EventList: yields Event one by one if chunk_size is not specified, else EventList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.events(
                 chunk_size=chunk_size,

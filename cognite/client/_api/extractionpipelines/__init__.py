@@ -44,7 +44,7 @@ class ExtractionPipelinesAPI(APIClient):
 
     async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> AsyncIterator[ExtractionPipeline | ExtractionPipelineList]:
+    ) -> AsyncIterator[ExtractionPipeline] | AsyncIterator[ExtractionPipelineList]:
         """Iterate over extraction pipelines
 
         Args:
@@ -53,8 +53,7 @@ class ExtractionPipelinesAPI(APIClient):
 
         Yields:
             ExtractionPipeline | ExtractionPipelineList: Yields extraction pipelines one by one or in chunks up to the chunk size.
-
-        """
+        """  # noqa: DOC404
         async for item in self._list_generator(
             method="GET",
             limit=limit,
