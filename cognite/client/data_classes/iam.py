@@ -35,6 +35,10 @@ class GroupAttributesToken(CogniteObject):
 
     app_ids: list[str] = field(default_factory=list)
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(app_ids=resource.get("appIds", []))
+
 
 @dataclass
 class GroupAttributes(CogniteObject):
@@ -69,7 +73,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
     Args:
         name (str): Name of the group.
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
+        capabilities (list[Capability] | Capability | None): List of capabilities (acls) this group should grant its users.
         attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
         metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
@@ -78,17 +82,15 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
     def __init__(
         self,
         name: str,
-        source_id: str | None = None,
-        capabilities: list[Capability] | None = None,
-        attributes: GroupAttributes | None = None,
-        metadata: dict[str, str] | None = None,
-        members: Literal["allUserAccounts"] | list[str] | None = None,
+        source_id: str | None,
+        capabilities: list[Capability] | Capability | None,
+        attributes: GroupAttributes | None,
+        metadata: dict[str, str] | None,
+        members: Literal["allUserAccounts"] | list[str] | None,
     ) -> None:
         self.name = name
         self.source_id = source_id
-        self.capabilities = capabilities
-        if isinstance(self.capabilities, Capability):
-            self.capabilities = [capabilities]
+        self.capabilities = [capabilities] if isinstance(capabilities, Capability) else capabilities
         self.attributes = attributes
         self.metadata = metadata
         self.members = members
@@ -125,11 +127,11 @@ class Group(GroupCore):
     Groups can either be managed through the external identity provider for the project or managed by CDF.
 
     Args:
+        id (int): No description.
         name (str): Name of the group.
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
+        capabilities (list[Capability] | Capability | None): List of capabilities (acls) this group should grant its users.
         attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
-        id (int | None): No description.
         is_deleted (bool | None): No description.
         deleted_time (int | None): No description.
         metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
@@ -139,13 +141,13 @@ class Group(GroupCore):
 
     def __init__(
         self,
+        id: int,
         name: str,
-        source_id: str | None = None,
-        capabilities: list[Capability] | None = None,
-        attributes: GroupAttributes | None = None,
-        id: int | None = None,
-        is_deleted: bool | None = None,
-        deleted_time: int | None = None,
+        source_id: str | None,
+        capabilities: list[Capability] | Capability | None,
+        attributes: GroupAttributes | None,
+        is_deleted: bool | None,
+        deleted_time: int | None,
         metadata: dict[str, str] | None = None,
         members: Literal["allUserAccounts"] | list[str] | None = None,
         cognite_client: CogniteClient | None = None,
@@ -158,11 +160,7 @@ class Group(GroupCore):
             metadata=metadata,
             members=members,
         )
-        # id is required when using the class to read, but doesn't make sense passing in when
-        # creating a new object. So in order to make the typing correct here
-        # (i.e. int and not Optional[int]), we force the type to be int rather than Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
+        self.id: int = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -194,15 +192,11 @@ class Group(GroupCore):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Group:
         return cls(
+            id=resource["id"],
             name=resource["name"],
             source_id=resource.get("sourceId"),
-            attributes=(
-                GroupAttributes._load(resource["attributes"], cognite_client=cognite_client)
-                if isinstance(resource.get("attributes"), dict)
-                else None
-            ),
+            attributes=(attrs := resource.get("attributes")) and GroupAttributes._load(attrs, cognite_client),
             capabilities=[Capability.load(c, allow_unknown) for c in resource.get("capabilities", [])] or None,
-            id=resource.get("id"),
             is_deleted=resource.get("isDeleted"),
             deleted_time=resource.get("deletedTime"),
             metadata=resource.get("metadata"),
@@ -335,17 +329,19 @@ class SecurityCategory(SecurityCategoryCore):
     This is the reading version of a security category, which is used when retrieving security categories.
 
     Args:
+        id (int): Id of the security category
         name (str | None): Name of the security category
-        id (int | None): Id of the security category
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
-    def __init__(
-        self, name: str | None = None, id: int | None = None, cognite_client: CogniteClient | None = None
-    ) -> None:
+    def __init__(self, id: int, name: str | None, cognite_client: CogniteClient | None = None) -> None:
         super().__init__(name=name)
         self.id = id
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(id=resource["id"], name=resource.get("name"), cognite_client=cognite_client)
 
     def as_write(self) -> SecurityCategoryWrite:
         """Returns a writing version of this security category."""
@@ -497,23 +493,23 @@ class Session(CogniteResource):
     """Session status
 
     Args:
-        id (int | None): ID of the session.
-        type (SessionType | None): Credentials kind used to create the session.
-        status (SessionStatus | None): Current status of the session.
-        creation_time (int | None): Session creation time, in milliseconds since 1970
-        expiration_time (int | None): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
+        id (int): ID of the session.
+        type (SessionType): Credentials kind used to create the session.
+        status (SessionStatus): Current status of the session.
+        creation_time (int): Session creation time, in milliseconds since 1970
+        expiration_time (int): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
         client_id (str | None): Client ID in identity provider. Returned only if the session was created using client credentials
         cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        type: SessionType | None = None,
-        status: SessionStatus | None = None,
-        creation_time: int | None = None,
-        expiration_time: int | None = None,
-        client_id: str | None = None,
+        id: int,
+        type: SessionType,
+        status: SessionStatus,
+        creation_time: int,
+        expiration_time: int,
+        client_id: str | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
@@ -522,6 +518,18 @@ class Session(CogniteResource):
         self.creation_time = creation_time
         self.expiration_time = expiration_time
         self.client_id = client_id
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            type=resource["type"],
+            status=resource["status"],
+            creation_time=resource["creationTime"],
+            expiration_time=resource["expirationTime"],
+            client_id=resource.get("clientId"),
+            cognite_client=cognite_client,
+        )
 
 
 class SessionList(CogniteResourceList[Session], IdTransformerMixin):

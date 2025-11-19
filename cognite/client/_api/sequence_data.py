@@ -56,10 +56,16 @@ class SequencesDataAPI(APIClient):
             Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Sequence, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
-                >>> seq = client.sequences.create(Sequence(columns=[SequenceColumn(value_type="String", external_id="col_a"),
-                ...     SequenceColumn(value_type="Double", external_id ="col_b")]))
+                >>> seq = client.sequences.create(
+                ...     SequenceWrite(
+                ...         columns=[
+                ...             SequenceColumnWrite(value_type="STRING", external_id="col_a"),
+                ...             SequenceColumnWrite(value_type="DOUBLE", external_id="col_b")
+                ...         ],
+                ...     )
+                ... )
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
                 >>> client.sequences.data.insert(columns=["col_a","col_b"], rows=data, id=1)
 
@@ -222,6 +228,18 @@ class SequencesDataAPI(APIClient):
         self,
         *,
         id: typing.Sequence[int],
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> SequenceRowsList: ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: typing.Sequence[int] | int,
+        external_id: SequenceNotStr[str] | str,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,

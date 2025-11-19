@@ -4,7 +4,6 @@ name: build
 on:
   merge_group:
   pull_request:
-    branches: [master]
 
 concurrency:
   group: pr-${{ github.workflow }}-${{ github.head_ref }}
