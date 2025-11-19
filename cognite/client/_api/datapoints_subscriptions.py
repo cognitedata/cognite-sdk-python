@@ -20,13 +20,13 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class DatapointsSubscriptionAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/subscriptions"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 1
 
@@ -55,10 +55,6 @@ class DatapointsSubscriptionAPI(APIClient):
             list_cls=DatapointSubscriptionList,
             resource_cls=DatapointSubscription,
         )
-
-    def __iter__(self) -> Iterator[DatapointSubscription]:
-        """Iterate over all datapoint subscriptions."""
-        return self()
 
     def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:
         """`Create a subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/postSubscriptions>`_

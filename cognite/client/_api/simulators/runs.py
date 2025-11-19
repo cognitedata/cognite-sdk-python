@@ -19,7 +19,7 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
@@ -31,7 +31,7 @@ class SimulatorRunsAPI(APIClient):
         self,
         config: ClientConfig,
         api_version: str | None,
-        cognite_client: CogniteClient,
+        cognite_client: AsyncCogniteClient,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
@@ -41,16 +41,6 @@ class SimulatorRunsAPI(APIClient):
             sdk_maturity="alpha",
             feature_name="Simulators",
         )
-
-    def __iter__(self) -> Iterator[SimulationRun]:
-        """Iterate over simulation runs
-
-        Fetches simulation runs as they are iterated over, so you keep a limited number of simulation runs in memory.
-
-        Returns:
-            Iterator[SimulationRun]: yields simulation runs one by one.
-        """
-        return self()
 
     @overload
     def __call__(
@@ -191,6 +181,10 @@ class SimulatorRunsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.runs.list()
+
+            Iterate over simulation runs, one-by-one:
+                >>> for run in client.simulators.runs():
+                ...     run  # do something with the simulation run
 
             Filter runs by status and simulator external ids:
                 >>> res = client.simulators.runs.list(

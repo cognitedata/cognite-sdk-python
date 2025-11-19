@@ -20,13 +20,13 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class JobsAPI(APIClient):
     _RESOURCE_PATH = "/hostedextractors/jobs"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="beta", sdk_maturity="alpha", feature_name="Hosted Extractors"
@@ -76,16 +76,6 @@ class JobsAPI(APIClient):
             limit=limit,
             headers={"cdf-version": "beta"},
         )
-
-    def __iter__(self) -> Iterator[Job]:
-        """Iterate over jobs
-
-        Fetches jobs as they are iterated over, so you keep a limited number of jobs in memory.
-
-        Returns:
-            Iterator[Job]: yields Job one by one.
-        """
-        return self()
 
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Job | None: ...
@@ -258,10 +248,10 @@ class JobsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> job_list = client.hosted_extractors.jobs.list(limit=5)
 
-            Iterate over jobs:
+            Iterate over jobs, one-by-one:
 
-                >>> for job in client.hosted_extractors.jobs:
-                ...     job # do something with the job
+                >>> for job in client.hosted_extractors.jobs():
+                ...     job  # do something with the job
 
             Iterate over chunks of jobs to reduce memory load:
 

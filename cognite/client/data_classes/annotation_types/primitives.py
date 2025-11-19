@@ -13,7 +13,7 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive,
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class VisionResource(CogniteResource, ABC):
@@ -59,7 +59,7 @@ class Point(VisionResource):
     y: float
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Point:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Point:
         return cls(x=resource["x"], y=resource["y"])
 
 
@@ -71,7 +71,7 @@ class BoundingBox(VisionResource):
     y_max: float
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> BoundingBox:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> BoundingBox:
         return cls(x_min=resource["xMin"], x_max=resource["xMax"], y_min=resource["yMin"], y_max=resource["yMax"])
 
 
@@ -82,7 +82,7 @@ class CdfResourceRef(VisionResource):
     external_id: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> CdfResourceRef:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> CdfResourceRef:
         return cls(id=resource.get("id"), external_id=resource.get("externalId"))
 
 
@@ -92,7 +92,7 @@ class Polygon(VisionResource):
     vertices: list[Point]
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Polygon:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Polygon:
         return cls(vertices=[Point._load(vertex) for vertex in resource["vertices"]])
 
 
@@ -102,7 +102,7 @@ class Polyline(VisionResource):
     vertices: list[Point]
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(vertices=[Point._load(vertex) for vertex in resource["vertices"]])
 
 
@@ -116,7 +116,7 @@ class Keypoint(VisionResource):
             self.point = Point._load(convert_all_keys_to_camel_case_recursive(self.point))
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Keypoint:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Keypoint:
         return cls(point=Point._load(resource["point"]), confidence=resource.get("confidence"))
 
 
@@ -127,5 +127,5 @@ class Attribute(VisionResource):
     description: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Attribute:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Attribute:
         return cls(type=resource["type"], value=resource["value"], description=resource.get("description"))

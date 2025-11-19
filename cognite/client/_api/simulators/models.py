@@ -19,13 +19,13 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class SimulatorModelsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/models"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.revisions = SimulatorModelRevisionsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
@@ -58,6 +58,10 @@ class SimulatorModelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.models.list(limit=10)
+
+            Iterate over simulator models, one-by-one:
+                >>> for model in client.simulators.models():
+                ...     model  # do something with the simulator model
 
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
@@ -134,16 +138,6 @@ class SimulatorModelsAPI(APIClient):
             resource_cls=SimulatorModel,
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
         )
-
-    def __iter__(self) -> Iterator[SimulatorModel]:
-        """Iterate over simulator models
-
-        Fetches simulator models as they are iterated over, so you keep a limited number of simulator models in memory.
-
-        Returns:
-            Iterator[SimulatorModel]: yields Simulator model one by one.
-        """
-        return self()
 
     @overload
     def __call__(

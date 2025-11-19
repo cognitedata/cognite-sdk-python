@@ -184,16 +184,6 @@ class FilesAPI(APIClient):
             partitions=partitions,
         )
 
-    def __iter__(self) -> Iterator[FileMetadata]:
-        """Iterate over files
-
-        Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
-
-        Returns:
-            Iterator[FileMetadata]: yields Files one by one.
-        """
-        return self()
-
     def create(
         self, file_metadata: FileMetadata | FileMetadataWrite, overwrite: bool = False
     ) -> tuple[FileMetadata, str]:
@@ -1150,15 +1140,16 @@ class FilesAPI(APIClient):
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, file_path_absolute)
 
-    def _download_file_to_path(self, download_link: str, path: Path) -> None:
+    async def _download_file_to_path(self, download_link: str, path: Path) -> None:
         from cognite.client import global_config
 
         stream = self._stream(
             "GET", full_url=download_link, full_headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
         )
-        with stream as r, path.open("wb") as f:
-            for chunk in r.iter_bytes(chunk_size=global_config.file_download_chunk_size):
-                f.write(chunk)
+        with path.open("wb") as file:
+            async with stream as response:
+                async for chunk in response.aiter_bytes(chunk_size=global_config.file_download_chunk_size):
+                    file.write(chunk)
 
     def download_to_path(
         self, path: Path | str, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
@@ -1181,7 +1172,8 @@ class FilesAPI(APIClient):
         if isinstance(path, str):
             path = Path(path)
         if not path.parent.is_dir():
-            raise NotADirectoryError(str(path.parent))
+            raise NotADirectoryError(path.parent)
+
         identifier = Identifier.of_either(id, external_id, instance_id).as_dict()
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)
@@ -1278,10 +1270,10 @@ class FilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> file_list = client.files.list(limit=5, external_id_prefix="prefix")
 
-            Iterate over files metadata:
+            Iterate over files metadata, one-by-one:
 
-                >>> for file_metadata in client.files:
-                ...     file_metadata # do something with the file metadata
+                >>> for file_metadata in client.files():
+                ...     file_metadata  # do something with the file metadata
 
             Iterate over chunks of files metadata to reduce memory load:
 

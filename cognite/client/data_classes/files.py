@@ -29,7 +29,7 @@ from cognite.client.exceptions import CogniteFileUploadError
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
@@ -129,7 +129,7 @@ class FileMetadata(FileMetadataCore):
         source_created_time (int | None): The timestamp for when the file was originally created in the source system.
         source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
         security_categories (Sequence[int] | None): The security category IDs required to access this file.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -153,7 +153,7 @@ class FileMetadata(FileMetadataCore):
         source_created_time: int | None,
         source_modified_time: int | None,
         security_categories: Sequence[int] | None,
-        cognite_client: CogniteClient | None,
+        cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -176,10 +176,10 @@ class FileMetadata(FileMetadataCore):
         self.last_updated_time: int = last_updated_time
         self.uploaded = uploaded
         self.uploaded_time = uploaded_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             uploaded=resource["uploaded"],
@@ -282,7 +282,7 @@ class FileMetadataWrite(FileMetadataCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> FileMetadataWrite:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> FileMetadataWrite:
         return cls(
             name=resource["name"],
             external_id=resource.get("externalId"),
@@ -546,11 +546,11 @@ class FileMultipartUploadSession:
         file_metadata (FileMetadata): The created file in CDF.
         upload_urls (list[str]): List of upload URLs for the file upload.
         upload_id (str): ID of the multipart upload, needed to complete the upload.
-        cognite_client (CogniteClient): Cognite client to use for completing the upload.
+        cognite_client (AsyncCogniteClient): Cognite client to use for completing the upload.
     """
 
     def __init__(
-        self, file_metadata: FileMetadata, upload_urls: list[str], upload_id: str, cognite_client: CogniteClient
+        self, file_metadata: FileMetadata, upload_urls: list[str], upload_id: str, cognite_client: AsyncCogniteClient
     ) -> None:
         self.file_metadata = file_metadata
         self._upload_urls = upload_urls

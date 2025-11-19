@@ -28,7 +28,7 @@ from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 ExternalId: TypeAlias = str
 
@@ -91,7 +91,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             partition_count=resource["partitionCount"],
@@ -152,7 +152,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
         self.instance_ids = instance_ids
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         filter = Filter.load(resource["filter"]) if "filter" in resource else None
         return cls(
             external_id=resource["externalId"],
@@ -282,7 +282,7 @@ class TimeSeriesID(CogniteResource):
         return f"TimeSeriesID({identifier})"
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TimeSeriesID:
         return cls(
             id=resource["id"],
             external_id=resource.get("externalId"),

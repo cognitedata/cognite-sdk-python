@@ -14,14 +14,14 @@ from cognite.client.data_classes.simulators.simulators import Simulator, Simulat
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class SimulatorsAPI(APIClient):
     _RESOURCE_PATH = "/simulators"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.integrations = SimulatorIntegrationsAPI(config, api_version, cognite_client)
         self.models = SimulatorModelsAPI(config, api_version, cognite_client)
@@ -31,16 +31,6 @@ class SimulatorsAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
-
-    def __iter__(self) -> Iterator[Simulator]:
-        """Iterate over simulators
-
-        Fetches simulators as they are iterated over, so you keep a limited number of simulators in memory.
-
-        Returns:
-            Iterator[Simulator]: yields Simulators one by one.
-        """
-        return self()
 
     @overload
     def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Simulator]: ...
@@ -84,6 +74,10 @@ class SimulatorsAPI(APIClient):
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
                     >>> res = client.simulators.list(limit=10)
+
+            Iterate over simulators, one-by-one:
+                    >>> for simulator in client.simulators():
+                    ...     simulator  # do something with the simulator
 
         """
         self._warning.warn()

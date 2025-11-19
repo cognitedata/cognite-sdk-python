@@ -22,13 +22,13 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class SimulatorModelRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/models/revisions"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
@@ -148,16 +148,6 @@ class SimulatorModelRevisionsAPI(APIClient):
             resource_cls=SimulatorModelRevision,
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
         )
-
-    def __iter__(self) -> Iterator[SimulatorModelRevision]:
-        """Iterate over simulator model revisions
-
-        Fetches simulator model revisions as they are iterated over, so you keep a limited number of simulator model revisions in memory.
-
-        Returns:
-            Iterator[SimulatorModelRevision]: yields Simulator model revisions one by one.
-        """
-        return self()
 
     @overload
     def __call__(

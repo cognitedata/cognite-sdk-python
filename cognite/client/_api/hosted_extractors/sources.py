@@ -12,13 +12,13 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class SourcesAPI(APIClient):
     _RESOURCE_PATH = "/hostedextractors/sources"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
@@ -69,16 +69,6 @@ class SourcesAPI(APIClient):
             limit=limit,
             headers={"cdf-version": "beta"},
         )
-
-    def __iter__(self) -> Iterator[Source]:
-        """Iterate over sources
-
-        Fetches sources as they are iterated over, so you keep a limited number of sources in memory.
-
-        Returns:
-            Iterator[Source]: yields Source one by one.
-        """
-        return self()
 
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source: ...
@@ -264,10 +254,10 @@ class SourcesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> source_list = client.hosted_extractors.sources.list(limit=5)
 
-            Iterate over sources:
+            Iterate over sources, one-by-one:
 
-                >>> for source in client.hosted_extractors.sources:
-                ...     source # do something with the source
+                >>> for source in client.hosted_extractors.sources():
+                ...     source  # do something with the source
 
             Iterate over chunks of sources to reduce memory load:
 

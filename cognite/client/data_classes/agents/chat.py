@@ -9,7 +9,7 @@ from cognite.client.data_classes._base import CogniteObject, CogniteResource, Co
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 @dataclass
@@ -19,7 +19,7 @@ class MessageContent(CogniteObject, ABC):
     _type: ClassVar[str]  # To be set by concrete classes
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> MessageContent:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> MessageContent:
         """Dispatch to the correct concrete content class based on `type`."""
         content_type = data.get("type", "")
         content_class = _MESSAGE_CONTENT_CLS_BY_TYPE.get(content_type, UnknownContent)
@@ -93,7 +93,7 @@ class Action(CogniteObject, ABC):
     _type: ClassVar[str]
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Action:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Action:
         """Dispatch to the correct concrete action class based on `type`."""
         action_type = data.get("type", "")
         action_class = _ACTION_CLS_BY_TYPE.get(action_type, UnknownAction)
@@ -101,7 +101,7 @@ class Action(CogniteObject, ABC):
 
     @classmethod
     @abstractmethod
-    def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Action:
+    def _load_action(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Action:
         """Create a concrete action instance from raw data."""
         ...
 
@@ -134,7 +134,7 @@ class ClientToolAction(Action):
         }
 
     @classmethod
-    def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolAction:
+    def _load_action(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ClientToolAction:
         client_tool = data[cls._type]
         return cls(
             name=client_tool["name"],
@@ -161,7 +161,7 @@ class UnknownAction(Action):
         return result
 
     @classmethod
-    def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownAction:
+    def _load_action(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> UnknownAction:
         action_type = data.get("type", "")
         return cls(data=data, type=action_type)
 
@@ -182,7 +182,7 @@ class ActionCall(CogniteObject, ABC):
     action_id: str
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionCall:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ActionCall:
         """Dispatch to the correct concrete action call class based on `type`."""
         action_type = data.get("type", "")
         action_class = _ACTION_CALL_CLS_BY_TYPE.get(action_type, UnknownActionCall)
@@ -190,7 +190,7 @@ class ActionCall(CogniteObject, ABC):
 
     @classmethod
     @abstractmethod
-    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionCall:
+    def _load_call(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ActionCall:
         """Create a concrete action call instance from raw data."""
         ...
 
@@ -221,7 +221,7 @@ class ClientToolCall(ActionCall):
         }
 
     @classmethod
-    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolCall:
+    def _load_call(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ClientToolCall:
         client_tool = data[cls._type]
         arguments_str = client_tool["arguments"]
         return cls(
@@ -271,7 +271,7 @@ class ToolConfirmationCall(ActionCall):
         return result
 
     @classmethod
-    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ToolConfirmationCall:
+    def _load_call(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ToolConfirmationCall:
         tool_confirmation = data[cls._type]
         content = MessageContent._load(tool_confirmation["content"])
         return cls(
@@ -306,7 +306,7 @@ class UnknownActionCall(ActionCall):
         return result
 
     @classmethod
-    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownActionCall:
+    def _load_call(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> UnknownActionCall:
         action_type = data["type"]
         action_id = data["actionId"]
         return cls(action_id=action_id, data=data, type=action_type)
@@ -347,7 +347,7 @@ class Message(CogniteResource):
         }
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Message:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Message:
         content = MessageContent._load(data["content"])
         return cls(content=content, role=data["role"])
 
@@ -396,7 +396,7 @@ class ClientToolResult(ActionResult):
         }
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolResult:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ClientToolResult:
         """Load from dumped data. Only used for testing."""
         content = MessageContent._load(data["content"], cognite_client)
         return cls(
@@ -427,7 +427,7 @@ class ToolConfirmationResult(ActionResult):
         }
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ToolConfirmationResult:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ToolConfirmationResult:
         """Load from dumped data. Not used to load from API response."""
         return cls(
             action_id=data.get("actionId", data.get("action_id", "")),
@@ -454,7 +454,7 @@ class AgentDataItem(CogniteObject):
         return result
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentDataItem:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> AgentDataItem:
         item_type = data["type"]
         item_data = {k: v for k, v in data.items() if k != "type"}
         return cls(type=item_type, data=item_data)
@@ -476,7 +476,7 @@ class AgentReasoningItem(CogniteObject):
         }
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentReasoningItem:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> AgentReasoningItem:
         content = [MessageContent._load(item) for item in data.get("content", [])]
         return cls(content=content)
 
@@ -512,7 +512,7 @@ class AgentMessage(CogniteResource):
         return result
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentMessage:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> AgentMessage:
         content = MessageContent._load(data["content"]) if "content" in data else None
         data_items = [AgentDataItem._load(item, cognite_client) for item in data.get("data", [])]
         reasoning_items = [AgentReasoningItem._load(item, cognite_client) for item in data.get("reasoning", [])]
@@ -582,7 +582,7 @@ class AgentChatResponse(CogniteResource):
         return [call for msgs in self.messages if msgs.actions for call in msgs.actions] or None
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentChatResponse:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> AgentChatResponse:
         response_data = data["response"]
         raw_messages = response_data["messages"]
         messages = [AgentMessage._load(msg, cognite_client) for msg in raw_messages]

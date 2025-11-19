@@ -51,7 +51,7 @@ if TYPE_CHECKING:
     import numpy.typing as npt
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client._api.datapoint_tasks import BaseTaskOrchestrator
 
     NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
@@ -592,7 +592,7 @@ class Datapoint(CogniteResource):
         return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms", tz=tz)])
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         match max_dp_raw := resource.get("maxDatapoint"):
             case dict():
                 max_datapoint: MaxDatapoint | None = _max_dp_class(max_dp_raw)._load(max_dp_raw)
@@ -747,7 +747,7 @@ class DatapointsArray(CogniteResource):
     def _load_from_arrays(
         cls,
         dps_dct: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> DatapointsArray:
         assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
         # We store datetime using nanosecond resolution to future-proof the SDK in case it is ever added:
@@ -758,7 +758,7 @@ class DatapointsArray(CogniteResource):
     def _load(
         cls,
         dps_dct: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> DatapointsArray:
         array_by_attr = {}
         if "datapoints" in dps_dct:
@@ -1298,7 +1298,7 @@ class Datapoints(CogniteResource):
     def _load_from_synthetic(
         cls,
         dps_object: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> Datapoints:
         if dps := dps_object["datapoints"]:
             for dp in dps:
@@ -1317,7 +1317,7 @@ class Datapoints(CogniteResource):
         cls,
         dps_object: dict[str, Any],
         expected_fields: list[str] | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> Datapoints:
         del cognite_client  # just needed for signature
         instance = cls(
@@ -1442,7 +1442,7 @@ class Datapoints(CogniteResource):
 class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
     _RESOURCE = DatapointsArray
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(self, resources: Collection[Any], cognite_client: AsyncCogniteClient | None = None) -> None:
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -1571,7 +1571,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
 class DatapointsList(CogniteResourceList[Datapoints]):
     _RESOURCE = Datapoints
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(self, resources: Collection[Any], cognite_client: AsyncCogniteClient | None = None) -> None:
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:

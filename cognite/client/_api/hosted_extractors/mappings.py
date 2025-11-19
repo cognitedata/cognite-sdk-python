@@ -16,13 +16,13 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class MappingsAPI(APIClient):
     _RESOURCE_PATH = "/hostedextractors/mappings"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
@@ -73,16 +73,6 @@ class MappingsAPI(APIClient):
             limit=limit,
             headers={"cdf-version": "beta"},
         )
-
-    def __iter__(self) -> Iterator[Mapping]:
-        """Iterate over mappings
-
-        Fetches mappings as they are iterated over, so you keep a limited number of mappings in memory.
-
-        Returns:
-            Iterator[Mapping]: yields Mapping one by one.
-        """
-        return self()
 
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Mapping: ...
@@ -245,10 +235,10 @@ class MappingsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> mapping_list = client.hosted_extractors.mappings.list(limit=5)
 
-            Iterate over mappings:
+            Iterate over mappings, one-by-one:
 
-                >>> for mapping in client.hosted_extractors.mappings:
-                ...     mapping # do something with the mapping
+                >>> for mapping in client.hosted_extractors.mappings():
+                ...     mapping  # do something with the mapping
 
             Iterate over chunks of mappings to reduce memory load:
 

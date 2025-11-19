@@ -16,13 +16,13 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class DestinationsAPI(APIClient):
     _RESOURCE_PATH = "/hostedextractors/destinations"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="beta", sdk_maturity="alpha", feature_name="Hosted Extractors"
@@ -73,16 +73,6 @@ class DestinationsAPI(APIClient):
             limit=limit,
             headers={"cdf-version": "beta"},
         )
-
-    def __iter__(self) -> Iterator[Destination]:
-        """Iterate over destinations
-
-        Fetches destinations as they are iterated over, so you keep a limited number of destinations in memory.
-
-        Returns:
-            Iterator[Destination]: yields Destination one by one.
-        """
-        return self()
 
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Destination: ...
@@ -258,10 +248,10 @@ class DestinationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> destination_list = client.hosted_extractors.destinations.list(limit=5)
 
-            Iterate over destinations:
+            Iterate over destinations, one-by-one:
 
-                >>> for destination in client.hosted_extractors.destinations:
-                ...     destination # do something with the destination
+                >>> for destination in client.hosted_extractors.destinations():
+                ...     destination  # do something with the destination
 
             Iterate over chunks of destinations to reduce memory load:
 

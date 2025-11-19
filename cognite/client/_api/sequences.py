@@ -39,7 +39,9 @@ from cognite.client.utils._validation import (
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    import pandas
+
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 SortSpec: TypeAlias = (
@@ -56,7 +58,7 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 class SequencesAPI(APIClient):
     _RESOURCE_PATH = "/sequences"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.rows = SequencesDataAPI(config, api_version, cognite_client)
         self.data = self.rows
@@ -171,16 +173,6 @@ class SequencesAPI(APIClient):
             sort=prep_sort,
             partitions=partitions,
         )
-
-    def __iter__(self) -> Iterator[Sequence]:
-        """Iterate over sequences
-
-        Fetches sequences as they are iterated over, so you keep a limited number of metadata objects in memory.
-
-        Returns:
-            Iterator[Sequence]: yields Sequence one by one.
-        """
-        return self()
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
         """`Retrieve a single sequence by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
@@ -956,10 +948,10 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.sequences.list(limit=5)
 
-            Iterate over sequences:
+            Iterate over sequences, one-by-one:
 
-                >>> for seq in client.sequences:
-                ...     seq # do something with the sequence
+                >>> for seq in client.sequences():
+                ...     seq  # do something with the sequence
 
             Iterate over chunks of sequences to reduce memory load:
 

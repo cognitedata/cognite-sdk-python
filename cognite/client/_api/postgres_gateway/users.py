@@ -17,13 +17,13 @@ from cognite.client.utils._identifier import UsernameSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class UsersAPI(APIClient):
     _RESOURCE_PATH = "/postgresgateway"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
         self._UPDATE_LIMIT = 1
@@ -69,17 +69,6 @@ class UsersAPI(APIClient):
             chunk_size=chunk_size,
             limit=limit,
         )
-
-    def __iter__(self) -> Iterator[User]:
-        """Iterate over users
-
-        Fetches users as they are iterated over, so you keep a
-        limited number of users in memory.
-
-        Returns:
-            Iterator[User]: yields user one by one.
-        """
-        return self()
 
     @overload
     def create(self, user: UserWrite) -> UserCreated: ...
@@ -245,10 +234,10 @@ class UsersAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> user_list = client.postgres_gateway.users.list(limit=5)
 
-            Iterate over users:
+            Iterate over users, one-by-one:
 
-                >>> for user in client.postgres_gateway.users:
-                ...     user # do something with the user
+                >>> for user in client.postgres_gateway.users():
+                ...     user  # do something with the user
 
             Iterate over chunks of users to reduce memory load:
 

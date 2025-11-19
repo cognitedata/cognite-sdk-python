@@ -15,14 +15,14 @@ from cognite.client.data_classes.data_modeling.views import View, ViewApply, Vie
 from cognite.client.utils._concurrency import ConcurrencySettings
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class ViewsAPI(APIClient):
     _RESOURCE_PATH = "/models/views"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
@@ -83,16 +83,6 @@ class ViewsAPI(APIClient):
             limit=limit,
             filter=filter_.dump(camel_case=True),
         )
-
-    def __iter__(self) -> Iterator[View]:
-        """Iterate over views
-
-        Fetches views as they are iterated over, so you keep a limited number of views in memory.
-
-        Returns:
-            Iterator[View]: yields Views one by one.
-        """
-        return self()
 
     def _get_latest_views(self, views: ViewList) -> ViewList:
         views_by_space_and_xid = defaultdict(list)
@@ -193,10 +183,10 @@ class ViewsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> view_list = client.data_modeling.views.list(limit=5)
 
-            Iterate over views:
+            Iterate over views, one-by-one:
 
-                >>> for view in client.data_modeling.views:
-                ...     view # do something with the view
+                >>> for view in client.data_modeling.views():
+                ...     view  # do something with the view
 
             Iterate over chunks of views to reduce memory load:
 

@@ -24,14 +24,14 @@ from cognite.client.utils._validation import assert_type, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class RelationshipsAPI(APIClient):
     _RESOURCE_PATH = "/relationships"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_SUBQUERY_LIMIT = 1000
 
@@ -157,16 +157,6 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
-    def __iter__(self) -> Iterator[Relationship]:
-        """Iterate over relationships
-
-        Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
-
-        Returns:
-            Iterator[Relationship]: yields Relationships one by one.
-        """
-        return self()
-
     def retrieve(self, external_id: str, fetch_resources: bool = False) -> Relationship | None:
         """Retrieve a single relationship by external id.
 
@@ -274,10 +264,11 @@ class RelationshipsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> relationship_list = client.relationships.list(limit=5)
 
-            Iterate over relationships:
+            Iterate over relationships, one-by-one:
 
-                >>> for relationship in client.relationships:
-                ...     relationship # do something with the relationship
+                >>> for relationship in client.relationships():
+                ...     relationship  # do something with the relationship
+
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
         filter = RelationshipFilter(

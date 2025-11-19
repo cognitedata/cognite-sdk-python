@@ -11,13 +11,13 @@ from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class TablesAPI(APIClient):
     _RESOURCE_PATH = "/postgresgateway/tables/{}"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 10
         self._DELETE_LIMIT = 10
@@ -61,17 +61,6 @@ class TablesAPI(APIClient):
             chunk_size=chunk_size,
             limit=limit,
         )
-
-    def __iter__(self) -> Iterator[pg.Table]:
-        """Iterate over custom tables
-
-        Fetches custom tables as they are iterated over, so you keep a
-        limited number of custom tables in memory.
-
-        Returns:
-            Iterator[pg.Table]: yields custom table one by one.
-        """
-        return self()
 
     @overload
     def create(self, username: str, items: pg.TableWrite) -> pg.Table: ...
@@ -208,10 +197,10 @@ class TablesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> custom_table_list = client.postgres_gateway.tables.list("myUserName", limit=5)
 
-            Iterate over tables:
+            Iterate over tables, one-by-one:
 
-                >>> for table in client.postgres_gateway.tables:
-                ...     table # do something with the custom table
+                >>> for table in client.postgres_gateway.tables():
+                ...     table  # do something with the custom table
 
             Iterate over chunks of tables to reduce memory load:
 

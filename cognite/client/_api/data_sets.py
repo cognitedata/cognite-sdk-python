@@ -18,14 +18,14 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class DataSetsAPI(APIClient):
     _RESOURCE_PATH = "/datasets"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 10
 
@@ -89,16 +89,6 @@ class DataSetsAPI(APIClient):
         return self._list_generator(
             list_cls=DataSetList, resource_cls=DataSet, method="POST", chunk_size=chunk_size, filter=filter, limit=limit
         )
-
-    def __iter__(self) -> Iterator[DataSet]:
-        """Iterate over data sets
-
-        Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
-
-        Returns:
-            Iterator[DataSet]: yields DataSet one by one.
-        """
-        return self()
 
     @overload
     def create(self, data_set: Sequence[DataSet] | Sequence[DataSetWrite]) -> DataSetList: ...
@@ -287,10 +277,10 @@ class DataSetsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> data_sets_list = client.data_sets.list(limit=5, write_protected=False)
 
-            Iterate over data sets:
+            Iterate over data sets, one-by-one:
 
-                >>> for data_set in client.data_sets:
-                ...     data_set # do something with the data_set
+                >>> for data_set in client.data_sets():
+                ...     data_set  # do something with the data set
 
             Iterate over chunks of data sets to reduce memory load:
 

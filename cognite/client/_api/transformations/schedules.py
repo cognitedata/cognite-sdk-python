@@ -18,14 +18,14 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class TransformationSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/transformations/schedules"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 5
         self._DELETE_LIMIT = 5
@@ -63,10 +63,6 @@ class TransformationSchedulesAPI(APIClient):
             list_cls=TransformationScheduleList,
             filter=TransformationFilter(include_public=include_public).dump(camel_case=True),
         )
-
-    def __iter__(self) -> Iterator[TransformationSchedule]:
-        """Iterate over all transformation schedules"""
-        return self()
 
     @overload
     def create(self, schedule: TransformationSchedule | TransformationScheduleWrite) -> TransformationSchedule: ...

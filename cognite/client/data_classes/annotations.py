@@ -17,7 +17,7 @@ from cognite.client.data_classes._base import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 AnnotationType: TypeAlias = Literal[
     "images.ObjectDetection",
@@ -98,7 +98,7 @@ class Annotation(AnnotationCore):
         creating_user (str): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
         annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
         annotated_resource_id (int): The internal ID of the annotated resource.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -114,7 +114,7 @@ class Annotation(AnnotationCore):
         creating_user: str,
         annotated_resource_type: str,
         annotated_resource_id: int,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             annotation_type=annotation_type,
@@ -129,10 +129,10 @@ class Annotation(AnnotationCore):
         self.id: int = id
         self.created_time: int = created_time
         self.last_updated_time: int = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Annotation:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Annotation:
         return cls(
             annotation_type=resource["annotationType"],
             data=resource["data"],
@@ -202,7 +202,7 @@ class AnnotationWrite(AnnotationCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AnnotationWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> AnnotationWrite:
         return cls(
             annotation_type=resource["annotationType"],
             data=resource["data"],

@@ -18,13 +18,13 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class SimulatorRoutineRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/routines/revisions"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
@@ -32,16 +32,6 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         self._LIST_LIMIT = 20
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 20
-
-    def __iter__(self) -> Iterator[SimulatorRoutineRevision]:
-        """Iterate over simulator routine revisions
-
-        Fetches simulator routine revisions as they are iterated over, so you keep a limited number of simulator routine revisions in memory.
-
-        Returns:
-            Iterator[SimulatorRoutineRevision]: yields Simulator routine revisions one by one.
-        """
-        return self()
 
     @overload
     def __call__(

@@ -20,7 +20,7 @@ from cognite.client.data_classes.documents import (
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
     {filters.InAssetSubtree, filters.Search, filters.GeoJSONIntersects, filters.GeoJSONDisjoint, filters.GeoJSONWithin}
@@ -30,7 +30,7 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
 class DocumentsAPI(APIClient):
     _RESOURCE_PATH = "/documents"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.previews = DocumentPreviewAPI(config, api_version, cognite_client)
 
@@ -87,16 +87,6 @@ class DocumentsAPI(APIClient):
             limit=limit,
             partitions=partitions,
         )
-
-    def __iter__(self) -> Iterator[Document]:
-        """Iterate over documents
-
-        Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
-
-        Returns:
-            Iterator[Document]: yields documents one by one.
-        """
-        return self()
 
     def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
         """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
@@ -351,7 +341,7 @@ class DocumentsAPI(APIClient):
         """
         return self._post(f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json={"id": id}).content
 
-    def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
+    async def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
         """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
@@ -377,13 +367,14 @@ class DocumentsAPI(APIClient):
         """
         from cognite.client import global_config
 
-        with self._stream(
+        stream = self._stream(
             "GET",
             url_path=f"{self._RESOURCE_PATH}/{id}/content",
             headers={"accept": "text/plain"},
             timeout=self._config.file_transfer_timeout,
-        ) as resp:
-            for chunk in resp.iter_bytes(chunk_size=global_config.file_download_chunk_size):
+        )
+        async with stream as response:
+            async for chunk in response.aiter_bytes(chunk_size=global_config.file_download_chunk_size):
                 buffer.write(chunk)
 
     @overload
@@ -508,11 +499,19 @@ class DocumentsAPI(APIClient):
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
                 >>> pdf_documents = client.documents.list(filter=is_pdf)
 
-            Iterate over all documents in your CDF project:
+            List documents in your CDF project:
 
-                >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> for document in client.documents:
-                ...    print(document.name)
+                >>> documents = client.documents.list(limit=100)
+
+            Iterate over documents, one-by-one:
+
+                >>> for document in client.documents():
+                ...     document  # do something with the document
+
+            Iterate over chunks of documents to reduce memory load:
+
+                >>> for document_list in client.documents(chunk_size=250):
+                ...     document_list  # do something with the document
 
             List all documents in your CDF project sorted by mime/type in descending order:
 

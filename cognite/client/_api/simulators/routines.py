@@ -23,13 +23,13 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class SimulatorRoutinesAPI(APIClient):
     _RESOURCE_PATH = "/simulators/routines"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.revisions = SimulatorRoutineRevisionsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
@@ -37,16 +37,6 @@ class SimulatorRoutinesAPI(APIClient):
         )
         self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 1
-
-    def __iter__(self) -> Iterator[SimulatorRoutine]:
-        """Iterate over simulator routines
-
-        Fetches simulator routines as they are iterated over, so you keep a limited number of simulator routines in memory.
-
-        Returns:
-            Iterator[SimulatorRoutine]: yields Simulator routines one by one.
-        """
-        return self()
 
     @overload
     def __call__(
@@ -206,6 +196,10 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.routines.list(limit=10)
+
+            Iterate over simulator routines, one-by-one:
+                >>> for routine in client.simulators.routines():
+                ...     routine  # do something with the simulator routine
 
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort

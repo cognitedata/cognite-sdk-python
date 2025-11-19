@@ -29,7 +29,7 @@ from cognite.client.utils._validation import prepare_filter_sort, process_asset_
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 SortSpec: TypeAlias = (
@@ -46,7 +46,7 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 class TimeSeriesAPI(APIClient):
     _RESOURCE_PATH = "/timeseries"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.data = DatapointsAPI(config, api_version, cognite_client)
         self.subscriptions = DatapointsSubscriptionAPI(config, api_version, cognite_client)
@@ -189,16 +189,6 @@ class TimeSeriesAPI(APIClient):
             partitions=partitions,
             sort=prep_sort,
         )
-
-    def __iter__(self) -> Iterator[TimeSeries]:
-        """Iterate over time series
-
-        Fetches time series as they are iterated over, so you keep a limited number of metadata objects in memory.
-
-        Returns:
-            Iterator[TimeSeries]: yields TimeSeries one by one.
-        """
-        return self()
 
     def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
@@ -844,10 +834,10 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.time_series.list(limit=5)
 
-            Iterate over time series:
+            Iterate over time series, one-by-one:
 
-                >>> for ts in client.time_series:
-                ...     ts # do something with the time series
+                >>> for ts in client.time_series():
+                ...     ts  # do something with the time series
 
             Iterate over chunks of time series to reduce memory load:
 

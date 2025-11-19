@@ -15,29 +15,19 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class SimulatorIntegrationsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/integrations"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 1
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
-
-    def __iter__(self) -> Iterator[SimulatorIntegration]:
-        """Iterate over simulator integrations
-
-        Fetches simulator integrations as they are iterated over, so you keep a limited number of simulator integrations in memory.
-
-        Returns:
-            Iterator[SimulatorIntegration]: yields Simulator integrations one by one.
-        """
-        return self()
 
     @overload
     def __call__(
@@ -110,6 +100,10 @@ class SimulatorIntegrationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.integrations.list(limit=10)
+
+            Iterate over simulator integrations, one-by-one:
+                >>> for integration in client.simulators.integrations():
+                ...     integration  # do something with the simulator integration
 
             Filter simulator integrations by simulator external ids and active status:
                 >>> res = client.simulators.integrations.list(

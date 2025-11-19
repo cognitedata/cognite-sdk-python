@@ -25,7 +25,6 @@ class ThreeDRevisionsAPI(APIClient):
     def __call__(
         self, model_id: int, chunk_size: None = None, published: bool = False, limit: int | None = None
     ) -> Iterator[ThreeDModelRevision]: ...
-
     @overload
     def __call__(
         self, model_id: int, chunk_size: int, published: bool = False, limit: int | None = None
@@ -80,6 +79,16 @@ class ThreeDRevisionsAPI(APIClient):
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             identifier=InternalId(id),
         )
+
+    @overload
+    def create(
+        self, model_id: int, revision: ThreeDModelRevision | ThreeDModelRevisionWrite
+    ) -> ThreeDModelRevision: ...
+
+    @overload
+    def create(
+        self, model_id: int, revision: Sequence[ThreeDModelRevision] | Sequence[ThreeDModelRevisionWrite]
+    ) -> ThreeDModelRevisionList: ...
 
     def create(
         self,
@@ -272,7 +281,7 @@ class ThreeDRevisionsAPI(APIClient):
             resource_path=resource_path,
             method="GET",
             limit=limit,
-            filter={"depth": depth, "nodeId": node_id},
+            filter=drop_none_values({"depth": depth, "nodeId": node_id}),
             partitions=partitions,
             other_params={"sortByNodeId": sort_by_node_id},
         )
