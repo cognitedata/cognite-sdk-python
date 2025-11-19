@@ -5,7 +5,15 @@ import functools
 import logging
 import random
 import time
-from collections.abc import AsyncIterable, AsyncIterator, Callable, Coroutine, Iterable, Mapping, MutableMapping
+from collections.abc import (
+    AsyncIterable,
+    AsyncIterator,
+    Callable,
+    Coroutine,
+    Iterable,
+    Mapping,
+    MutableMapping,
+)
 from contextlib import asynccontextmanager, suppress
 from http.cookiejar import Cookie, CookieJar
 from json import JSONDecodeError
@@ -220,14 +228,13 @@ class AsyncHTTPClientWithRetry:
         timeout: float | None = None,
     ) -> AsyncIterator[httpx.Response]:
         # This method is basically a clone of httpx.AsyncClient.stream() so that we may add our own retry logic.
-        request = self.httpx_async_client.build_request(
-            method=method, url=url, json=json, headers=headers, timeout=timeout
-        )
-        response: httpx.Response | None = None
-
         def coro_factory() -> HTTPResponseCoro:
+            request = self.httpx_async_client.build_request(
+                method=method, url=url, json=json, headers=headers, timeout=timeout
+            )
             return self.httpx_async_client.send(request, stream=True)
 
+        response: httpx.Response | None = None
         try:
             yield (response := await self._with_retry(coro_factory, url=url, headers=headers))
         finally:
@@ -253,22 +260,23 @@ class AsyncHTTPClientWithRetry:
         while True:
             try:
                 async with semaphore:
-                    res = await coro_factory()
+                    response = await coro_factory()
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
                     # TODO: Can this be removed now if we check the 'cdf-is-auto-retryable' header?
-                    res.json = functools.cache(res.json)  # type: ignore [method-assign]
-                return res.raise_for_status()
+                    response.json = functools.cache(response.json)  # type: ignore [method-assign]
+                return response.raise_for_status()
 
-            except httpx.HTTPStatusError:
+            except httpx.HTTPStatusError as err:
+                response = err.response
                 if accepts_json:
                     with suppress(JSONDecodeError, AttributeError, httpx.ResponseNotRead):
                         # If the response is not JSON or it doesn't conform to the api design guide,
                         # we assume it's not auto-retryable
                         # TODO: Can we just check the header now? 'cdf-is-auto-retryable'
-                        is_auto_retryable = res.json().get("error", {}).get("isAutoRetryable", False)
+                        is_auto_retryable = response.json().get("error", {}).get("isAutoRetryable", False)
 
-                if not retry_tracker.should_retry_status_code(res.status_code, is_auto_retryable):
+                if not retry_tracker.should_retry_status_code(response.status_code, is_auto_retryable):
                     raise
 
             except httpx.ConnectError as err:

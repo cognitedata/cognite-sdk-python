@@ -38,7 +38,12 @@ class GlobalConfig:
         max_workers (int | None): Maximum number of concurrent API calls. Defaults to 5. Note that certain APIs have
             overrides which comes in addition to this limit.
         follow_redirects (bool): Whether or not to follow redirects. Defaults to False.
-        file_download_chunk_size (int | None): Override the chunk size for streaming file downloads. Defaults to None (auto).
+        file_download_chunk_size (int | None): Specify the file chunk size for streaming file downloads. When not specified
+            (default is None), the actual chunk size is determined by the underlying transport, which in turn is based on the
+            size of the data packets being read from the network socket. The chunks will be of a variable and unpredictable
+            size, but optimized for network efficiency (best download speed).
+        file_upload_chunk_size (int | None): Override the chunk size for streaming file uploads. Defaults to None, which
+            translates to 65536 (64KiB chunks).
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
         event_loop (asyncio.AbstractEventLoop | None): Override the default event loop used by the SDK.
@@ -68,6 +73,7 @@ class GlobalConfig:
         self.max_workers: int = 5
         self.follow_redirects: bool = False
         self.file_download_chunk_size: int | None = None
+        self.file_upload_chunk_size: int | None = None
         self.silence_feature_preview_warnings: bool = False
         self.event_loop: asyncio.AbstractEventLoop | None = None
 

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from cognite.client.data_classes import EntityMatchingModel
-from cognite.client.exceptions import ModelFailedException
+from cognite.client.exceptions import CogniteModelFailedError
 from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_url, jsgz_load
 
@@ -175,9 +175,9 @@ class TestEntityMatching:
         entities_from = [{"id": 1, "name": "xx"}]
         entities_to = [{"id": 2, "name": "yy"}]
         model = cognite_client.entity_matching.fit(sources=entities_from, targets=entities_to)
-        with pytest.raises(ModelFailedException) as exc_info:
+        with pytest.raises(CogniteModelFailedError) as exc_info:
             model.wait_for_completion()
-        assert exc_info.type is ModelFailedException
+        assert exc_info.type is CogniteModelFailedError
         assert 123 == exc_info.value.id
         assert "error message" == exc_info.value.error_message
         assert "EntityMatchingModel 123 failed with error 'error message'" == str(exc_info.value)

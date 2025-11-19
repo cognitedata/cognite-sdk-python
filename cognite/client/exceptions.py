@@ -17,6 +17,13 @@ class CogniteException(Exception):
     pass
 
 
+class CogniteOrganizationError(CogniteException):
+    """Raised when we cannot determine the organization of the current project."""
+
+    def __str__(self) -> str:
+        return "Could not look-up organization"
+
+
 class CogniteProjectAccessError(CogniteException):
     """Raised when we get a 401 response from the API which means we don't have project access at all."""
 
@@ -349,7 +356,7 @@ class CogniteAssetHierarchyError(CogniteException):
             raise AttributeError(f"{type(self).__name__!r} object has no attribute {attr!r}") from None
 
 
-class ModelFailedException(Exception):
+class CogniteModelFailedError(CogniteException):
     def __init__(self, typename: str, id: int, error_message: str) -> None:
         self.typename = typename
         self.id = id
