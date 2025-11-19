@@ -372,6 +372,67 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
     def scope_string(self) -> str:
         return " ".join(self.__scopes)
 
+    def _get_device_authorization_endpoint(self) -> str:
+        """Get device authorization endpoint."""
+        # First try MSAL authority object
+        if self.__app.authority and (
+            device_auth_endpoint := getattr(self.__app.authority, "device_authorization_endpoint", None)
+        ):
+            return device_auth_endpoint
+
+        # Handle Entra, but not MSAL
+        if self.__authority_url:
+            return self.__authority_url.rstrip("/") + "/oauth2/v2.0/devicecode"
+
+        # Handle OIDC discovery (Auth0, Cognito, etc.)
+        if self.__oauth_discovery_url:
+            try:
+                oidc_config_url = self.__oauth_discovery_url.rstrip("/") + "/.well-known/openid-configuration"
+                oidc_metadata = self.__app.http_client.get(oidc_config_url).json()
+                device_auth_endpoint = oidc_metadata.get("device_authorization_endpoint")
+                if device_auth_endpoint:
+                    return device_auth_endpoint
+                raise CogniteAuthError(
+                    f"device_authorization_endpoint not found in OIDC discovery document at {oidc_config_url}"
+                )
+            except (requests.exceptions.RequestException, ValueError) as e:
+                raise CogniteAuthError(f"Error fetching device_authorization_endpoint from OIDC discovery: {e}") from e
+
+        raise CogniteAuthError("Unable to determine device authorization endpoint")
+
+    def _device_code_obj(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Initiate device code flow and return the device flow object.
+
+        Args:
+            data (dict[str, Any]): The request data (scope, client_id, etc.).
+
+        Returns:
+            dict[str, Any]: The device flow object containing device_code, user_code, etc.
+        """
+
+        device_auth_endpoint = self._get_device_authorization_endpoint()
+
+        try:
+            device_flow_response = self.__app.http_client.post(
+                device_auth_endpoint,
+                data=data,
+                headers={
+                    "Accept": "application/json",
+                    "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                },
+            )
+            # Try to parse JSON response - handle different response types
+            try:
+                return device_flow_response.json()
+            except (AttributeError, TypeError):
+                # Fallback: try to get text content, which is the case for example if getting MSAL's NormalizedResponse
+                if hasattr(device_flow_response, "text"):
+                    return json.loads(device_flow_response.text)
+                else:
+                    raise CogniteAuthError("Unable to parse device flow response")
+        except (requests.exceptions.RequestException, ValueError) as e:
+            raise CogniteAuthError("Error initiating device flow") from e
+
     def _get_token(self, convert_timestamps: bool = True) -> dict[str, Any]:
         """Return a dictionary with the current token and expiry time."""
         if self._token_cache_path.exists():
@@ -422,71 +483,29 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             for key, value in self.__token_custom_args.items():
                 data[key] = value
 
-            # Determine device authorization endpoint with fallbacks
-            device_auth_endpoint = getattr(self.__app.authority, "device_authorization_endpoint", None)
-
-            if not device_auth_endpoint:
-                if self.__authority_url:
-                    # Azure AD/Entra standard device code endpoint
-                    device_auth_endpoint = self.__authority_url.rstrip("/") + "/oauth2/v2.0/devicecode"
-                elif self.__oauth_discovery_url:
-                    # Fetch from OIDC discovery document for generic OIDC providers
-                    try:
-                        oidc_config_url = self.__oauth_discovery_url.rstrip("/") + "/.well-known/openid-configuration"
-                        oidc_metadata = self.__app.http_client.get(oidc_config_url).json()
-                        device_auth_endpoint = oidc_metadata.get("device_authorization_endpoint")
-                    except (requests.exceptions.RequestException, ValueError) as e:
-                        raise CogniteAuthError(
-                            f"Error fetching device_authorization_endpoint from OIDC discovery: {e}"
-                        ) from e
-
-            if not device_auth_endpoint:
-                raise CogniteAuthError("Unable to determine device authorization endpoint")
-
-            try:
-                device_flow_response = self.__app.http_client.post(
-                    device_auth_endpoint,
-                    data=data,
-                    headers={
-                        "Accept": "application/json",
-                        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-                    },
-                )
-                # Try to parse JSON response - handle different response types
-                try:
-                    device_flow = device_flow_response.json()
-                except (AttributeError, TypeError):
-                    # Fallback: try to get text content and parse
-                    if hasattr(device_flow_response, "text"):
-                        device_flow = json.loads(device_flow_response.text)
-                    elif hasattr(device_flow_response, "content"):
-                        device_flow = json.loads(device_flow_response.content.decode("utf-8"))
-                    else:
-                        raise CogniteAuthError("Unable to parse device flow response")
-            except (requests.exceptions.RequestException, ValueError) as e:
-                raise CogniteAuthError("Error initiating device flow") from e
-            if "verification_uri" in device_flow:
+            device_flow_dict = self._device_code_obj(data)
+            if "verification_uri" in device_flow_dict:
                 print(  # noqa: T201
-                    f"Visit {device_flow['verification_uri']} and enter the code: {device_flow.get('user_code', 'ERROR')}"
+                    f"Visit {device_flow_dict['verification_uri']} and enter the code: {device_flow_dict.get('user_code', 'ERROR')}"
                 )
-            elif "message" in device_flow:
-                print(f"Device code: {device_flow.get('message', device_flow.get('user_code', 'ERROR'))}")  # noqa: T201
+            elif "message" in device_flow_dict:
+                print(f"Device code: {device_flow_dict.get('message', device_flow_dict.get('user_code', 'ERROR'))}")  # noqa: T201
             else:
                 raise CogniteAuthError(
-                    f"Error initiating device flow: {device_flow.get('error')} - {device_flow.get('error_description')}"
+                    f"Error initiating device flow: {device_flow_dict.get('error')} - {device_flow_dict.get('error_description')}"
                 )
-            if "interval" not in device_flow:
+            if "interval" not in device_flow_dict:
                 # Set default interval according to standard
-                device_flow["interval"] = 5
-            if "expires_in" in device_flow:
+                device_flow_dict["interval"] = 5
+            if "expires_in" in device_flow_dict:
                 # msal library uses expires_at instead of the standard expires_in
-                device_flow["expires_at"] = device_flow["expires_in"] + time.time()
+                device_flow_dict["expires_at"] = device_flow_dict["expires_in"] + time.time()
             # Poll for token
             credentials = self.__app.client.obtain_token_by_device_flow(
-                flow=device_flow,
+                flow=device_flow_dict,
                 data=dict(
                     data,
-                    code=device_flow.get(
+                    code=device_flow_dict.get(
                         "device_code"
                     ),  # Hack from msal library to get the code from the device flow, not standard
                 ),
@@ -498,8 +517,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                 credentials,
                 environment=getattr(self.__app.authority, "instance", None)
                 or self.__authority_url
-                or self.__oauth_discovery_url
-                or "unknown",
+                or self.__oauth_discovery_url,
             ),
         )
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
