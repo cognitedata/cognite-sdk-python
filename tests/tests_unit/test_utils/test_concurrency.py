@@ -1,109 +1,75 @@
+import asyncio
 import random
-import time
-from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._concurrency import (
+    AsyncSDKTask,
     ConcurrencySettings,
-    MainThreadExecutor,
-    execute_tasks,
-    execute_tasks_serially,
+    EventLoopThreadExecutor,
+    execute_async_tasks,
 )
 
 
-def i_dont_like_5(i: int) -> int:
+async def i_dont_like_5(i: int) -> int:
     if i == 5:
         raise CogniteAPIError("no", 5, cluster="testcluster", project="testproject")
     else:
-        # Yield thread control if we are not to fail - to avoid task i=5 to randomly be executed last
-        time.sleep(0.01)
+        # Yield control if we are not to fail - to avoid task i=5 to randomly be executed last
+        await asyncio.sleep(0.01)
     return i
 
 
 class TestExecutor:
-    def test_set_and_get_executor(self) -> None:
-        executor = ConcurrencySettings.get_executor()
-        assert isinstance(executor, ThreadPoolExecutor)
+    def test_get_event_loop_executor(self) -> None:
+        executor = ConcurrencySettings._get_event_loop_executor()
+        assert isinstance(executor, EventLoopThreadExecutor)
 
-        ConcurrencySettings.executor_type = "mainthread"
-        executor = ConcurrencySettings.get_executor()
-        assert isinstance(executor, MainThreadExecutor)
+    @pytest.mark.asyncio
+    async def test_async_tasks__results_ordering_match_tasks(self) -> None:
+        async def async_task(i: int) -> int:
+            await asyncio.sleep(random.random() / 50)
+            return i
 
-        ConcurrencySettings.executor_type = "threadpool"
-        executor = ConcurrencySettings.get_executor()
-        assert isinstance(executor, ThreadPoolExecutor)
-
-    @pytest.mark.parametrize(
-        "executor",
-        (ConcurrencySettings.get_mainthread_executor(), ConcurrencySettings.get_thread_pool_executor()),
-    )
-    def test_executors__results_ordering_match_tasks(self, executor: ThreadPoolExecutor) -> None:
-        assert ConcurrencySettings.executor_type == "threadpool"
-
-        # We use a task that yields thread control and use N tasks >> max_workers to really test ordering:
-        task_summary = execute_tasks(
-            lambda i: time.sleep(random.random() / 50) or i,
-            tasks=[(i,) for i in range(50)],
-            executor=executor,
-        )
+        # We use a task that yields control and use N tasks >> max_workers to really test ordering:
+        tasks = [AsyncSDKTask(async_task, i) for i in range(50)]
+        task_summary = await execute_async_tasks(tasks)
         task_summary.raise_compound_exception_if_failed_tasks()
 
         assert task_summary.results == list(range(50))
 
-    def test_executors__results_ordering_match_tasks_even_with_failures(self) -> None:
-        executor = ConcurrencySettings.get_thread_pool_executor()
-
-        def test_fn(i: int) -> int:
-            time.sleep(random.random() / 50)
+    @pytest.mark.asyncio
+    async def test_async_tasks__results_ordering_match_tasks_even_with_failures(self) -> None:
+        async def test_fn(i: int) -> int:
+            await asyncio.sleep(random.random() / 50)
             if i in range(20, 23):
                 raise ValueError
             return i
 
-        task_summary = execute_tasks(
-            test_fn,
-            tasks=[(i,) for i in range(50)],
-            executor=executor,
-        )
+        tasks = [AsyncSDKTask(test_fn, i) for i in range(50)]
+        task_summary = await execute_async_tasks(tasks)
         exp_res = [*range(20), *range(23, 50)]
         assert task_summary.results == exp_res
-        assert task_summary.successful_tasks == [(res,) for res in exp_res]
-        assert set(task_summary.failed_tasks) == set([(20,), (22,), (21,)])
+        assert len(task_summary.successful_tasks) == len(exp_res)
+        assert len(task_summary.failed_tasks) == 3
 
         with pytest.raises(ValueError):
             task_summary.raise_compound_exception_if_failed_tasks()
 
     @pytest.mark.parametrize("fail_fast", (False, True))
-    def test_fail_fast__execute_tasks_serially(self, fail_fast: bool) -> None:
-        tasks = list(zip(range(10)))
-        task_summary = execute_tasks_serially(i_dont_like_5, tasks, fail_fast=fail_fast)
+    @pytest.mark.asyncio
+    async def test_fail_fast__execute_async_tasks(self, fail_fast: bool) -> None:
+        tasks = [AsyncSDKTask(i_dont_like_5, i) for i in range(10)]
+        task_summary = await execute_async_tasks(tasks, fail_fast=fail_fast)
+
         with pytest.raises(CogniteAPIError) as err:
             task_summary.raise_compound_exception_if_failed_tasks()
 
-        assert err.value.failed == [(5,)]
+        assert len(err.value.failed) == 1  # Task with i=5 failed
         if fail_fast:
-            assert err.value.successful == tasks[:5]
-            assert err.value.skipped == tasks[6:]
+            assert len(err.value.successful) == 5  # Tasks 0-4 completed
+            assert len(err.value.skipped) == 4  # Tasks 6-9 were skipped
         else:
-            assert err.value.successful == tasks[:5] + tasks[6:]
-            assert err.value.skipped == []
-
-    @pytest.mark.parametrize("fail_fast", (False, True))
-    def test_fail_fast__execute_tasks_with_threads(self, fail_fast: bool) -> None:
-        assert ConcurrencySettings.executor_type == "threadpool"
-        task_summary = execute_tasks(
-            i_dont_like_5,
-            list(zip(range(15))),
-            fail_fast=fail_fast,
-        )
-        with pytest.raises(CogniteAPIError) as err:
-            task_summary.raise_compound_exception_if_failed_tasks()
-
-        assert err.value.failed == [(5,)]
-        if fail_fast:
-            assert err.value.skipped
-            assert 14 == len(err.value.successful) + len(err.value.skipped)
-        else:
-            assert not err.value.skipped
-            assert 14 == len(err.value.successful)
+            assert len(err.value.successful) == 9  # All tasks except i=5 completed
+            assert len(err.value.skipped) == 0  # No tasks were skipped

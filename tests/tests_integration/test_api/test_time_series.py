@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from unittest import mock
 
 import pytest
@@ -17,7 +17,7 @@ from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesAp
 from cognite.client.data_classes.time_series import TimeSeriesProperty
 from cognite.client.utils._text import random_string
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
-from tests.utils import get_or_raise, set_request_limit
+from tests.utils import get_or_raise
 
 
 @pytest.fixture(scope="class")
@@ -102,9 +102,9 @@ class TestTimeSeriesAPI:
             retrieved_asset.external_id = listed_asset.external_id
         assert res == retrieved_assets
 
-    def test_list(self, cognite_client: CogniteClient, post_spy: None) -> None:
-        with set_request_limit(cognite_client.time_series, 10):
-            res = cognite_client.time_series.list(limit=20)
+    def test_list(self, cognite_client: CogniteClient, post_spy: None, set_request_limit: Callable) -> None:
+        set_request_limit(cognite_client.time_series, 10)
+        res = cognite_client.time_series.list(limit=20)
 
         assert 20 == len(res)
         assert 2 == cognite_client.time_series._post.call_count  # type: ignore[attr-defined]

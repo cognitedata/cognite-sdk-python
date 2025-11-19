@@ -1,6 +1,6 @@
 import random
 import time
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from typing import Any, Literal
 from unittest.mock import patch
@@ -30,7 +30,7 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
 from cognite.client.utils._time import timestamp_to_ms
-from tests.utils import rng_context, set_max_workers, set_request_limit
+from tests.utils import rng_context, set_max_workers
 
 TEST_LABEL = "integration test label, dont delete"
 
@@ -185,9 +185,15 @@ class TestAssetsAPI:
         assert 1 == len(retr)
 
     @pytest.mark.usefixtures("twenty_assets")
-    def test_list(self, cognite_client: CogniteClient, post_spy: None) -> None:
-        with set_request_limit(cognite_client.assets, 10):
-            res = cognite_client.assets.list(limit=20)
+    def test_list(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        post_spy: AsyncMock,
+        set_request_limit: Callable,
+    ) -> None:
+        set_request_limit(async_client.assets, 10)
+        res = cognite_client.assets.list(limit=20)
 
         assert 20 == len(res)
         assert 2 == cognite_client.assets._post.call_count  # type: ignore[attr-defined]

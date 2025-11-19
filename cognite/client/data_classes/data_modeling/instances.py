@@ -34,6 +34,7 @@ from typing import (
 
 from typing_extensions import Self
 
+from cognite.client._constants import OMITTED, Omitted
 from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteResource,
@@ -67,7 +68,7 @@ from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case
 from cognite.client.utils._time import convert_data_modeling_timestamp
-from cognite.client.utils.useful_types import SequenceNotStr
+from cognite.client.utils.useful_types import SequenceNotStr, is_sequence_not_str
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -204,6 +205,8 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         }
         if self.existing_version is not None:
             output["existingVersion" if camel_case else "existing_version"] = self.existing_version
+        # TODO: For subclasses of type "Typed-', sources' is a property, so this ends up doing repeated
+        #       dump() calls which are expensive...
         if self.sources:
             output["sources"] = [source.dump(camel_case) for source in self.sources]
         return output
@@ -660,7 +663,7 @@ class NodeApply(InstanceApply["NodeApply"]):
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
         super().__init__(space, external_id, "node", existing_version, sources)
-        self.type = DirectRelationReference.load(type) if type else None
+        self.type = DirectRelationReference.load(type) if type else type
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> NodeApply:
@@ -835,6 +838,8 @@ class EdgeApply(InstanceApply["EdgeApply"]):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
+        # TODO: For subclasses of type "Typed-', sources' is a property, so this ends up doing repeated
+        #       dump() calls which are expensive...
         if self.sources:
             output["sources"] = [source.dump(camel_case) for source in self.sources]
         if self.type:
@@ -1600,7 +1605,9 @@ class TypedInstance(ABC):
         raise NotImplementedError
 
     def _dump_properties(self) -> dict[str, Any]:
-        props = {key: prop for key, prop in vars(self).items() if key not in _RESERVED_PROPERTY_NAMES}
+        props = {
+            key: prop for key, prop in vars(self).items() if prop is not OMITTED and key not in _RESERVED_PROPERTY_NAMES
+        }
         return _PropertyValueSerializer.serialize_values(props, camel_case=True)
 
     @classmethod
@@ -1626,7 +1633,9 @@ class TypedInstance(ABC):
                 elif default is inspect.Parameter.empty:
                     args[key] = None
                 else:
-                    args[key] = cls._deserialize_values(default or None, param)
+                    # When loading and value is missing, we want OMITTED, not None:
+                    value = default if default is OMITTED else (default or None)
+                    args[key] = cls._deserialize_values(value, param)
         return args
 
     @classmethod
@@ -1707,9 +1716,15 @@ class TypedNodeApply(NodeApply, TypedInstance):
         space: str,
         external_id: str,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
     ) -> None:
-        super().__init__(space, external_id, existing_version, type=type)
+        super().__init__(
+            space=space,
+            external_id=external_id,
+            existing_version=existing_version,
+            # We only want to keep Omitted for TypedInstances, so we pretend it is not with a cast here:
+            type=cast(DirectRelationReference | tuple[str, str] | None, type),
+        )
 
     @staticmethod
     @lru_cache(1)
@@ -1718,6 +1733,7 @@ class TypedNodeApply(NodeApply, TypedInstance):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+        resource = resource.copy()  # avoid mutating resource (when popping)
         sources = resource.pop("sources", [])
         properties = sources[0].get("properties", {}) if sources else {}
         return cls._load_instance(resource, properties)
@@ -1725,6 +1741,13 @@ class TypedNodeApply(NodeApply, TypedInstance):
     @property
     def sources(self) -> list[NodeOrEdgeData]:
         return [NodeOrEdgeData(source=self.get_source(), properties=self._dump_properties())]
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        # We want to send type=None even though DMS currently treats it "as if omitted":
+        if self.type is not OMITTED:
+            output["type"] = self.type.dump(camel_case) if self.type else None
+        return output
 
 
 class TypedEdgeApply(EdgeApply, TypedInstance):
@@ -1845,7 +1868,7 @@ class _PropertyValueSerializer:
         properties: dict[str, Any] = {}
         for key, value in props.items():
             key = PropertyOptions.resolve_property(key)
-            if isinstance(value, SequenceNotStr):
+            if is_sequence_not_str(value):
                 properties[key] = [cls._serialize_value(v, camel_case) for v in value]
             else:
                 properties[key] = cls._serialize_value(value, camel_case)
@@ -1853,14 +1876,15 @@ class _PropertyValueSerializer:
 
     @staticmethod
     def _serialize_value(value: Any, camel_case: bool) -> PropertyValue:
-        if isinstance(value, NodeId):
-            # We don't want to dump the instance_type field when serializing NodeId in this context
-            return value.dump(camel_case, include_instance_type=False)
-        elif isinstance(value, DirectRelationReference):
-            return value.dump(camel_case)
-        elif isinstance(value, datetime):
-            return value.isoformat(timespec="milliseconds")
-        elif isinstance(value, date):
-            return value.isoformat()
-        else:
-            return value
+        match value:
+            case NodeId():
+                # We don't want to dump the instance_type field when serializing NodeId in this context
+                return value.dump(camel_case, include_instance_type=False)
+            case DirectRelationReference():
+                return value.dump(camel_case)
+            case datetime():
+                return value.isoformat(timespec="milliseconds")
+            case date():
+                return value.isoformat()
+            case _:
+                return value

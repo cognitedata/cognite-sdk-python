@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import cast
 from unittest import TestCase, mock
 
@@ -25,7 +25,7 @@ from cognite.client.data_classes.sequences import (
 )
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._text import random_string
-from tests.utils import get_or_raise, set_request_limit
+from tests.utils import get_or_raise
 
 
 @pytest.fixture
@@ -148,17 +148,17 @@ class TestSequencesAPI:
         assert failed ^ ignore_unknown_ids  # xor
 
     @pytest.mark.usefixtures("twenty_sequences")
-    def test_call(self, cognite_client: CogniteClient, post_spy: None) -> None:
-        with set_request_limit(cognite_client.sequences, 10):
-            res = [s for s in cognite_client.sequences(limit=20)]
+    def test_call(self, cognite_client: CogniteClient, post_spy: None, set_request_limit: Callable) -> None:
+        set_request_limit(cognite_client.sequences, 10)
+        res = [s for s in cognite_client.sequences(limit=20)]
 
         assert 20 == len(res)
         assert 2 == cognite_client.sequences._post.call_count  # type: ignore[attr-defined]
 
     @pytest.mark.usefixtures("twenty_sequences")
-    def test_list(self, cognite_client: CogniteClient, post_spy: None) -> None:
-        with set_request_limit(cognite_client.sequences, 10):
-            res = cognite_client.sequences.list(limit=20)
+    def test_list(self, cognite_client: CogniteClient, post_spy: None, set_request_limit: Callable) -> None:
+        set_request_limit(cognite_client.sequences, 10)
+        res = cognite_client.sequences.list(limit=20)
 
         assert 20 == len(res)
         assert 2 == cognite_client.sequences._post.call_count  # type: ignore[attr-defined]
