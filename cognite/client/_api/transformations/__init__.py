@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
@@ -58,11 +58,11 @@ class TransformationsAPI(APIClient):
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        data_set_ids: list[int] | None = None,
-        data_set_external_ids: list[str] | None = None,
+        data_set_ids: int | list[int] | None = None,
+        data_set_external_ids: str | list[str] | None = None,
         tags: TagsFilter | None = None,
         limit: int | None = None,
-    ) -> Iterator[Transformation]: ...
+    ) -> AsyncIterator[Transformation]: ...
 
     @overload
     def __call__(
@@ -77,13 +77,13 @@ class TransformationsAPI(APIClient):
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        data_set_ids: list[int] | None = None,
-        data_set_external_ids: list[str] | None = None,
+        data_set_ids: int | list[int] | None = None,
+        data_set_external_ids: str | list[str] | None = None,
         tags: TagsFilter | None = None,
         limit: int | None = None,
-    ) -> Iterator[TransformationList]: ...
+    ) -> AsyncIterator[TransformationList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         include_public: bool = True,
@@ -99,7 +99,7 @@ class TransformationsAPI(APIClient):
         data_set_external_ids: str | list[str] | None = None,
         tags: TagsFilter | None = None,
         limit: int | None = None,
-    ) -> Iterator[Transformation] | Iterator[TransformationList]:
+    ) -> AsyncIterator[Transformation | TransformationList]:
         """Iterate over transformations
 
         Args:
@@ -118,8 +118,8 @@ class TransformationsAPI(APIClient):
             tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
             limit (int | None): Limits the number of results to be returned. Defaults to yielding all transformations.
 
-        Returns:
-            Iterator[Transformation] | Iterator[TransformationList]: Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
+        Yields:
+            Transformation | TransformationList: Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
         """
         ds_ids = IdentifierSequence.load(data_set_ids, data_set_external_ids, id_name="data_set").as_dicts()
 
@@ -137,7 +137,7 @@ class TransformationsAPI(APIClient):
             data_set_ids=ds_ids or None,
         ).dump(camel_case=True)
 
-        return self._list_generator(
+        async for item in self._list_generator(
             method="POST",
             url_path=f"{self._RESOURCE_PATH}/filter",
             limit=limit,
@@ -145,17 +145,18 @@ class TransformationsAPI(APIClient):
             filter=filter_,
             resource_cls=Transformation,
             list_cls=TransformationList,
-        )
+        ):
+            yield item
 
     @overload
-    def create(self, transformation: Transformation | TransformationWrite) -> Transformation: ...
+    async def create(self, transformation: Transformation | TransformationWrite) -> Transformation: ...
 
     @overload
-    def create(
+    async def create(
         self, transformation: Sequence[Transformation] | Sequence[TransformationWrite]
     ) -> TransformationList: ...
 
-    def create(
+    async def create(
         self,
         transformation: Transformation | TransformationWrite | Sequence[Transformation] | Sequence[TransformationWrite],
     ) -> Transformation | TransformationList:
@@ -232,26 +233,26 @@ class TransformationsAPI(APIClient):
             # When calling as_write() the transformation is copied
             transformation = [t.as_write() if isinstance(t, Transformation) else t.copy() for t in transformation]
             for t in transformation:
-                t._process_credentials(cognite_client=self._cognite_client, sessions_cache=sessions)
+                await t._process_credentials(cognite_client=self._cognite_client, sessions_cache=sessions)
         elif isinstance(transformation, Transformation):
             transformation = transformation.as_write()
-            transformation._process_credentials(self._cognite_client)
+            await transformation._process_credentials(self._cognite_client)
         elif isinstance(transformation, TransformationWrite):
             transformation = transformation.copy()
-            transformation._process_credentials(self._cognite_client)
+            await transformation._process_credentials(self._cognite_client)
         else:
             raise TypeError(
                 "transformation must be Sequence[Transformation] or Sequence[TransformationWrite] or Transformation or TransformationWrite"
             )
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=TransformationList,
             resource_cls=Transformation,
             items=transformation,
             input_resource_cls=TransformationWrite,
         )
 
-    def delete(
+    async def delete(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -272,13 +273,13 @@ class TransformationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.transformations.delete(id=[1,2,3], external_id="function3")
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
-    def list(
+    async def list(
         self,
         include_public: bool = True,
         name_regex: str | None = None,
@@ -338,7 +339,7 @@ class TransformationsAPI(APIClient):
             data_set_ids=ds_ids or None,
         ).dump(camel_case=True)
 
-        return self._list(
+        return await self._list(
             list_cls=TransformationList,
             resource_cls=Transformation,
             method="POST",
@@ -347,7 +348,7 @@ class TransformationsAPI(APIClient):
             filter=filter,
         )
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Transformation | None:
+    async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Transformation | None:
         """`Retrieve a single transformation by id. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_
 
         Args:
@@ -370,13 +371,13 @@ class TransformationsAPI(APIClient):
                 >>> res = client.transformations.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=TransformationList,
             resource_cls=Transformation,
             identifiers=identifiers,
         )
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
@@ -401,7 +402,7 @@ class TransformationsAPI(APIClient):
                 >>> res = client.transformations.retrieve_multiple(ids=[1,2,3], external_ids=['transform-1','transform-2'])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=TransformationList,
             resource_cls=Transformation,
             identifiers=identifiers,
@@ -409,20 +410,20 @@ class TransformationsAPI(APIClient):
         )
 
     @overload
-    def update(
+    async def update(
         self,
         item: Transformation | TransformationWrite | TransformationUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Transformation: ...
 
     @overload
-    def update(
+    async def update(
         self,
         item: Sequence[Transformation | TransformationWrite | TransformationUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TransformationList: ...
 
-    def update(
+    async def update(
         self,
         item: Transformation
         | TransformationWrite
@@ -479,17 +480,17 @@ class TransformationsAPI(APIClient):
                     t = t.copy()
                     item[i] = t
                     t._cognite_client = self._cognite_client
-                    t._process_credentials(sessions_cache=sessions, keep_none=True)
+                    await t._process_credentials(sessions_cache=sessions, keep_none=True)
         elif isinstance(item, Transformation):
             item = item.copy()
             item._cognite_client = self._cognite_client
-            item._process_credentials(keep_none=True)
+            await item._process_credentials(keep_none=True)
         elif not isinstance(item, TransformationUpdate):
             raise TypeError(
                 "item must be one of: TransformationUpdate, Transformation, Sequence[TransformationUpdate | Transformation]."
             )
 
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=TransformationList,
             resource_cls=Transformation,
             update_cls=TransformationUpdate,
@@ -497,7 +498,7 @@ class TransformationsAPI(APIClient):
             mode=mode,
         )
 
-    def run(
+    async def run(
         self,
         transformation_id: int | None = None,
         transformation_external_id: str | None = None,
@@ -533,53 +534,15 @@ class TransformationsAPI(APIClient):
 
         id = {"externalId": transformation_external_id, "id": transformation_id}
 
-        response = self._post(json=id, url_path=self._RESOURCE_PATH + "/run")
+        response = await self._post(json=id, url_path=self._RESOURCE_PATH + "/run")
         job = TransformationJob._load(response.json(), cognite_client=self._cognite_client)
 
         if wait:
-            return job.wait(timeout=timeout)
+            return await job.wait(timeout=timeout)
 
         return job
 
-    async def run_async(
-        self,
-        transformation_id: int | None = None,
-        transformation_external_id: str | None = None,
-        timeout: float | None = None,
-    ) -> TransformationJob:
-        """`Run a transformation to completion asynchronously. <https://developer.cognite.com/api#tag/Transformations/operation/runTransformation>`_
-
-        Args:
-            transformation_id (int | None): internal Transformation id
-            transformation_external_id (str | None): external Transformation id
-            timeout (float | None): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status.
-
-        Returns:
-            TransformationJob: Completed (if finished) or running (if timeout reached) transformation job.
-
-        Examples:
-
-            Run transformation asynchronously by id:
-
-                >>> import asyncio
-                >>> from cognite.client import CogniteClient
-                >>>
-                >>> client = CogniteClient()
-                >>>
-                >>> async def run_transformation():
-                >>>     res = await client.transformations.run_async(id = 1)
-                >>>
-                >>> loop = asyncio.get_event_loop()
-                >>> loop.run_until_complete(run_transformation())
-                >>> loop.close()
-        """
-
-        job = self.run(
-            transformation_id=transformation_id, transformation_external_id=transformation_external_id, wait=False
-        )
-        return await job.wait_async(timeout=timeout)
-
-    def cancel(self, transformation_id: int | None = None, transformation_external_id: str | None = None) -> None:
+    async def cancel(self, transformation_id: int | None = None, transformation_external_id: str | None = None) -> None:
         """`Cancel a running transformation. <https://developer.cognite.com/api#tag/Transformations/operation/postApiV1ProjectsProjectTransformationsCancel>`_
 
         Args:
@@ -600,11 +563,11 @@ class TransformationsAPI(APIClient):
         """
         IdentifierSequence.load(transformation_id, transformation_external_id).assert_singleton()
 
-        id = {"externalId": transformation_external_id, "id": transformation_id}
+        body = {"externalId": transformation_external_id, "id": transformation_id}
 
-        self._post(json=id, url_path=self._RESOURCE_PATH + "/cancel")
+        await self._post(json=body, url_path=self._RESOURCE_PATH + "/cancel")
 
-    def preview(
+    async def preview(
         self,
         query: str | None = None,
         convert_to_string: bool = False,
@@ -637,24 +600,19 @@ class TransformationsAPI(APIClient):
 
             Preview transformation results as pandas dataframe:
 
-                >>>
                 >>> df = client.transformations.preview(query="select * from _cdf.assets").to_pandas()
 
             Notice that the results are limited both by the `limit` and `source_limit` parameters. If you have
             a query that converts one source row to one result row, you may need to increase the `source_limit`.
             For example, given that you have a query that reads from a raw table with 10,903 rows
 
-                >>>
                 >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None)
-                >>> print(result.results)
-                100
+                >>> print(result.results)  # 100
 
             To get all rows, you also need to set the `source_limit` to None:
 
-                >>>
                 >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None, source_limit=None)
-                >>> print(result.results)
-                10903
+                >>> print(result.results)  # 10903
 
         """
         request_body = {
@@ -665,6 +623,6 @@ class TransformationsAPI(APIClient):
             "inferSchemaLimit": infer_schema_limit,
             "timeout": timeout,
         }
-        response = self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body)
+        response = await self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body)
         result = TransformationPreviewResult._load(response.json(), cognite_client=self._cognite_client)
         return result

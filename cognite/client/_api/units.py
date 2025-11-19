@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 
 
 @cache
-def _create_unit_lookups(unit_client: UnitAPI) -> tuple[dict[str, dict[str, Unit]], dict[str, list[Unit]]]:
-    units = unit_client.list()
+async def _create_unit_lookups(unit_client: UnitAPI) -> tuple[dict[str, dict[str, Unit]], dict[str, list[Unit]]]:
+    units = await unit_client.list()
     alias_by_quantity: defaultdict[str, dict[str, Unit]] = defaultdict(dict)
     for unit in units:
         dct = alias_by_quantity[unit.quantity]
@@ -51,12 +51,12 @@ class UnitAPI(APIClient):
         self.systems = UnitSystemAPI(config, api_version, cognite_client)
 
     @overload
-    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | Unit: ...
+    async def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | Unit: ...
 
     @overload
-    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UnitList: ...
+    async def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UnitList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Unit | UnitList | None:
         """`Retrieve one or more unit <https://developer.cognite.com/api#tag/Units/operation/byIdsUnits>`_
@@ -82,7 +82,7 @@ class UnitAPI(APIClient):
 
         """
         identifier = IdentifierSequence.load(external_ids=external_id)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             identifiers=identifier,
             list_cls=UnitList,
             resource_cls=Unit,
@@ -90,7 +90,7 @@ class UnitAPI(APIClient):
         )
 
     @overload
-    def from_alias(
+    async def from_alias(
         self,
         alias: str,
         quantity: str | None = None,
@@ -100,7 +100,7 @@ class UnitAPI(APIClient):
     ) -> Unit: ...
 
     @overload
-    def from_alias(
+    async def from_alias(
         self,
         alias: str,
         quantity: str | None = None,
@@ -109,7 +109,7 @@ class UnitAPI(APIClient):
         return_closest_matches: bool = False,
     ) -> UnitList: ...
 
-    def from_alias(
+    async def from_alias(
         self,
         alias: str,
         quantity: str | None = None,
@@ -153,7 +153,7 @@ class UnitAPI(APIClient):
 
                     >>> unit_matches = client.units.from_alias("kilo watt", return_closest_matches=True)
         """
-        alias_by_quantity, alias_lookup = _create_unit_lookups(self)
+        alias_by_quantity, alias_lookup = await _create_unit_lookups(self)
         if quantity is None:
             return self._lookup_unit_by_alias(alias, alias_lookup, return_ambiguous, return_closest_matches)
         else:
@@ -207,7 +207,7 @@ class UnitAPI(APIClient):
                 err_msg += f" Did you mean one of: {close_matches}?"
             raise ValueError(err_msg) from None
 
-    def list(self) -> UnitList:
+    async def list(self) -> UnitList:
         """`List all supported units <https://developer.cognite.com/api#tag/Units/operation/listUnits>`_
 
         Returns:
@@ -221,4 +221,4 @@ class UnitAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.units.list()
         """
-        return self._list(method="GET", list_cls=UnitList, resource_cls=Unit)
+        return await self._list(method="GET", list_cls=UnitList, resource_cls=Unit)

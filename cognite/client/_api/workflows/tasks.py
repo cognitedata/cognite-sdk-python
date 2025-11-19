@@ -9,7 +9,7 @@ from cognite.client.data_classes.workflows import WorkflowTaskExecution
 class WorkflowTaskAPI(APIClient):
     _RESOURCE_PATH = "/workflows/tasks"
 
-    def update(
+    async def update(
         self,
         task_id: str,
         status: Literal["completed", "failed", "failed_with_terminal_error"],
@@ -49,5 +49,5 @@ class WorkflowTaskAPI(APIClient):
         body: dict[str, Any] = {"status": status.upper()}
         if output is not None:
             body["output"] = output
-        response = self._post(url_path=f"{self._RESOURCE_PATH}/{task_id}/update", json=body)
+        response = await self._post(url_path=f"{self._RESOURCE_PATH}/{task_id}/update", json=body)
         return WorkflowTaskExecution.load(response.json())

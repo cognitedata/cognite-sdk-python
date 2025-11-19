@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api.simulators.routine_revisions import SimulatorRoutineRevisionsAPI
@@ -46,7 +46,7 @@ class SimulatorRoutinesAPI(APIClient):
         simulator_integration_external_ids: Sequence[str] | None = None,
         sort: PropertySort | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorRoutineList]: ...
+    ) -> AsyncIterator[SimulatorRoutineList]: ...
 
     @overload
     def __call__(
@@ -56,16 +56,16 @@ class SimulatorRoutinesAPI(APIClient):
         simulator_integration_external_ids: Sequence[str] | None = None,
         sort: PropertySort | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorRoutine]: ...
+    ) -> AsyncIterator[SimulatorRoutine]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         model_external_ids: Sequence[str] | None = None,
         simulator_integration_external_ids: Sequence[str] | None = None,
         sort: PropertySort | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorRoutine] | Iterator[SimulatorRoutineList]:
+    ) -> AsyncIterator[SimulatorRoutine | SimulatorRoutineList]:
         """Iterate over simulator routines
 
         Fetches simulator routines as they are iterated over, so you keep a limited number of simulator routines in memory.
@@ -77,15 +77,15 @@ class SimulatorRoutinesAPI(APIClient):
             sort (PropertySort | None): The criteria to sort by.
             limit (int | None): Maximum number of simulator routines to return. Defaults to return all items.
 
-        Returns:
-            Iterator[SimulatorRoutine] | Iterator[SimulatorRoutineList]: yields SimulatorRoutine one by one if chunk is not specified, else SimulatorRoutineList objects.
+        Yields:
+            SimulatorRoutine | SimulatorRoutineList: yields SimulatorRoutine one by one if chunk is not specified, else SimulatorRoutineList objects.
         """
         self._warning.warn()
         routines_filter = SimulatorRoutinesFilter(
             model_external_ids=model_external_ids,
             simulator_integration_external_ids=simulator_integration_external_ids,
         )
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=SimulatorRoutineList,
             resource_cls=SimulatorRoutine,
             method="POST",
@@ -93,15 +93,16 @@ class SimulatorRoutinesAPI(APIClient):
             sort=[PropertySort.load(sort).dump()] if sort else None,
             chunk_size=chunk_size,
             limit=limit,
-        )
+        ):
+            yield item
 
     @overload
-    def create(self, routine: Sequence[SimulatorRoutineWrite]) -> SimulatorRoutineList: ...
+    async def create(self, routine: Sequence[SimulatorRoutineWrite]) -> SimulatorRoutineList: ...
 
     @overload
-    def create(self, routine: SimulatorRoutineWrite) -> SimulatorRoutine: ...
+    async def create(self, routine: SimulatorRoutineWrite) -> SimulatorRoutine: ...
 
-    def create(
+    async def create(
         self,
         routine: SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite],
     ) -> SimulatorRoutine | SimulatorRoutineList:
@@ -138,7 +139,7 @@ class SimulatorRoutinesAPI(APIClient):
         self._warning.warn()
         assert_type(routine, "simulator_routines", [SimulatorRoutineWrite, Sequence])
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SimulatorRoutineList,
             resource_cls=SimulatorRoutine,
             items=routine,
@@ -146,7 +147,7 @@ class SimulatorRoutinesAPI(APIClient):
             resource_path=self._RESOURCE_PATH,
         )
 
-    def delete(
+    async def delete(
         self,
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
@@ -164,12 +165,12 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> client.simulators.routines.delete(ids=[1,2,3], external_ids="foo")
         """
         self._warning.warn()
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             wrap_ids=True,
         )
 
-    def list(
+    async def list(
         self,
         limit: int = DEFAULT_LIMIT_READ,
         model_external_ids: Sequence[str] | None = None,
@@ -224,7 +225,7 @@ class SimulatorRoutinesAPI(APIClient):
             kind=kind,
         )
         self._warning.warn()
-        return self._list(
+        return await self._list(
             limit=limit,
             method="POST",
             url_path="/simulators/routines/list",
@@ -235,7 +236,7 @@ class SimulatorRoutinesAPI(APIClient):
         )
 
     @overload
-    def run(
+    async def run(
         self,
         *,
         routine_external_id: str,
@@ -248,7 +249,7 @@ class SimulatorRoutinesAPI(APIClient):
     ) -> SimulationRun: ...
 
     @overload
-    def run(
+    async def run(
         self,
         *,
         routine_revision_external_id: str,
@@ -261,7 +262,8 @@ class SimulatorRoutinesAPI(APIClient):
         timeout: float = 60,
     ) -> SimulationRun: ...
 
-    def run(
+    # TODO: Add overload with NoReturn
+    async def run(
         self,
         routine_external_id: str | None = None,
         routine_revision_external_id: str | None = None,
@@ -322,8 +324,8 @@ class SimulatorRoutinesAPI(APIClient):
             log_severity=log_severity,
         )
 
-        simulation_run = self._cognite_client.simulators.runs.create(run_object)
+        simulation_run = await self._cognite_client.simulators.runs.create(run_object)
 
         if wait:
-            simulation_run.wait(timeout)
+            await simulation_run.wait(timeout)
         return simulation_run

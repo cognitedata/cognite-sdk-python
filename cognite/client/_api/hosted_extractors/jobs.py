@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -38,24 +38,12 @@ class JobsAPI(APIClient):
         self._UPDATE_LIMIT = 10
 
     @overload
-    def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-    ) -> Iterator[Job]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Job]: ...
 
     @overload
-    def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-    ) -> Iterator[JobList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[JobList]: ...
 
-    def __call__(
-        self,
-        chunk_size: int | None = None,
-        limit: int | None = None,
-    ) -> Iterator[Job] | Iterator[JobList]:
+    async def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> AsyncIterator[Job | JobList]:
         """Iterate over jobs
 
         Fetches jobs as they are iterated over, so you keep a limited number of jobs in memory.
@@ -64,26 +52,27 @@ class JobsAPI(APIClient):
             chunk_size (int | None): Number of jobs to return in each chunk. Defaults to yielding one job a time.
             limit (int | None): Maximum number of jobs to return. Defaults to returning all items.
 
-        Returns:
-            Iterator[Job] | Iterator[JobList]: yields Job one by one if chunk_size is not specified, else JobList objects.
+        Yields:
+            Job | JobList: yields Job one by one if chunk_size is not specified, else JobList objects.
         """
         self._warning.warn()
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=JobList,
             resource_cls=Job,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             headers={"cdf-version": "beta"},
-        )
+        ):
+            yield item
 
     @overload
-    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Job | None: ...
+    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Job | None: ...
 
     @overload
-    def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> JobList: ...
+    async def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> JobList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Job | None | JobList:
         """`Retrieve one or more jobs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/retrieve_jobs>`_
@@ -107,7 +96,7 @@ class JobsAPI(APIClient):
 
         """
         self._warning.warn()
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=JobList,
             resource_cls=Job,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
@@ -115,7 +104,7 @@ class JobsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def delete(
+    async def delete(
         self,
         external_ids: str | SequenceNotStr[str],
         ignore_unknown_ids: bool = False,
@@ -138,7 +127,7 @@ class JobsAPI(APIClient):
         if ignore_unknown_ids:
             extra_body_fields["ignoreUnknownIds"] = True
 
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
             returns_items=False,
@@ -147,12 +136,12 @@ class JobsAPI(APIClient):
         )
 
     @overload
-    def create(self, items: JobWrite) -> Job: ...
+    async def create(self, items: JobWrite) -> Job: ...
 
     @overload
-    def create(self, items: Sequence[JobWrite]) -> JobList: ...
+    async def create(self, items: Sequence[JobWrite]) -> JobList: ...
 
-    def create(self, items: JobWrite | Sequence[JobWrite]) -> Job | JobList:
+    async def create(self, items: JobWrite | Sequence[JobWrite]) -> Job | JobList:
         """`Create one or more jobs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/create_jobs>`_
 
         Args:
@@ -172,7 +161,7 @@ class JobsAPI(APIClient):
                 >>> job = client.hosted_extractors.jobs.create(job_write)
         """
         self._warning.warn()
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=JobList,
             resource_cls=Job,
             items=items,
@@ -181,20 +170,20 @@ class JobsAPI(APIClient):
         )
 
     @overload
-    def update(
+    async def update(
         self,
         items: JobWrite | JobUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Job: ...
 
     @overload
-    def update(
+    async def update(
         self,
         items: Sequence[JobWrite | JobUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> JobList: ...
 
-    def update(
+    async def update(
         self,
         items: JobWrite | JobUpdate | Sequence[JobWrite | JobUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
@@ -219,7 +208,7 @@ class JobsAPI(APIClient):
                 >>> updated_job = client.hosted_extractors.jobs.update(job)
         """
         self._warning.warn()
-        return self._update_multiple(
+        return await self._update_multiple(
             items=items,
             list_cls=JobList,
             resource_cls=Job,
@@ -228,7 +217,7 @@ class JobsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def list(
+    async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> JobList:
@@ -259,7 +248,7 @@ class JobsAPI(APIClient):
                 ...     job_list # do something with the jobs
         """
         self._warning.warn()
-        return self._list(
+        return await self._list(
             list_cls=JobList,
             resource_cls=Job,
             method="GET",
@@ -267,7 +256,7 @@ class JobsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def list_logs(
+    async def list_logs(
         self,
         job: str | None = None,
         source: str | None = None,
@@ -302,7 +291,7 @@ class JobsAPI(APIClient):
         if destination:
             filter_["destination"] = destination
 
-        return self._list(
+        return await self._list(
             url_path=self._RESOURCE_PATH + "/logs",
             list_cls=JobLogsList,
             resource_cls=JobLogs,
@@ -312,7 +301,7 @@ class JobsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def list_metrics(
+    async def list_metrics(
         self,
         job: str | None = None,
         source: str | None = None,
@@ -347,7 +336,7 @@ class JobsAPI(APIClient):
         if destination:
             filter_["destination"] = destination
 
-        return self._list(
+        return await self._list(
             url_path=self._RESOURCE_PATH + "/metrics",
             list_cls=JobMetricsList,
             resource_cls=JobMetrics,

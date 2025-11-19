@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceList
-from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -25,24 +24,14 @@ class SpacesAPI(APIClient):
         self._CREATE_LIMIT = 100
 
     @overload
-    def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-    ) -> Iterator[Space]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Space]: ...
 
     @overload
-    def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-    ) -> Iterator[SpaceList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[SpaceList]: ...
 
-    def __call__(
-        self,
-        chunk_size: int | None = None,
-        limit: int | None = None,
-    ) -> Iterator[Space] | Iterator[SpaceList]:
+    async def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> AsyncIterator[Space | SpaceList]:
         """Iterate over spaces
 
         Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
@@ -51,24 +40,25 @@ class SpacesAPI(APIClient):
             chunk_size (int | None): Number of spaces to return in each chunk. Defaults to yielding one space a time.
             limit (int | None): Maximum number of spaces to return. Defaults to returning all items.
 
-        Returns:
-            Iterator[Space] | Iterator[SpaceList]: yields Space one by one if chunk_size is not specified, else SpaceList objects.
+        Yields:
+            Space | SpaceList: yields Space one by one if chunk_size is not specified, else SpaceList objects.
         """
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=SpaceList,
             resource_cls=Space,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
-        )
+        ):
+            yield item
 
     @overload
-    def retrieve(self, spaces: str) -> Space | None: ...
+    async def retrieve(self, spaces: str) -> Space | None: ...
 
     @overload
-    def retrieve(self, spaces: SequenceNotStr[str]) -> SpaceList: ...
+    async def retrieve(self, spaces: SequenceNotStr[str]) -> SpaceList: ...
 
-    def retrieve(self, spaces: str | SequenceNotStr[str]) -> Space | SpaceList | None:
+    async def retrieve(self, spaces: str | SequenceNotStr[str]) -> Space | SpaceList | None:
         """`Retrieve one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/bySpaceIdsSpaces>`_
 
         Args:
@@ -89,14 +79,13 @@ class SpacesAPI(APIClient):
 
         """
         identifier = _load_space_identifier(spaces)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=SpaceList,
             resource_cls=Space,
             identifiers=identifier,
-            executor=ConcurrencySettings.get_data_modeling_executor(),
         )
 
-    def delete(self, spaces: str | SequenceNotStr[str]) -> list[str]:
+    async def delete(self, spaces: str | SequenceNotStr[str]) -> list[str]:
         """`Delete one or more spaces <https://developer.cognite.com/api#tag/Spaces/operation/deleteSpacesV3>`_
 
         Args:
@@ -113,16 +102,15 @@ class SpacesAPI(APIClient):
         """
         deleted_spaces = cast(
             list,
-            self._delete_multiple(
+            await self._delete_multiple(
                 identifiers=_load_space_identifier(spaces),
                 wrap_ids=True,
                 returns_items=True,
-                executor=ConcurrencySettings.get_data_modeling_executor(),
             ),
         )
         return [item["space"] for item in deleted_spaces]
 
-    def list(
+    async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
         include_global: bool = False,
@@ -154,7 +142,7 @@ class SpacesAPI(APIClient):
                 >>> for space_list in client.data_modeling.spaces(chunk_size=2500):
                 ...     space_list # do something with the spaces
         """
-        return self._list(
+        return await self._list(
             list_cls=SpaceList,
             resource_cls=Space,
             method="GET",
@@ -163,12 +151,12 @@ class SpacesAPI(APIClient):
         )
 
     @overload
-    def apply(self, spaces: Sequence[SpaceApply]) -> SpaceList: ...
+    async def apply(self, spaces: Sequence[SpaceApply]) -> SpaceList: ...
 
     @overload
-    def apply(self, spaces: SpaceApply) -> Space: ...
+    async def apply(self, spaces: SpaceApply) -> Space: ...
 
-    def apply(self, spaces: SpaceApply | Sequence[SpaceApply]) -> Space | SpaceList:
+    async def apply(self, spaces: SpaceApply | Sequence[SpaceApply]) -> Space | SpaceList:
         """`Create or patch one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/ApplySpaces>`_
 
         Args:
@@ -188,10 +176,9 @@ class SpacesAPI(APIClient):
                 ... SpaceApply(space="myOtherSpace", description="My second space", name="My Other Space")]
                 >>> res = client.data_modeling.spaces.apply(spaces)
         """
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SpaceList,
             resource_cls=Space,
             items=spaces,
             input_resource_cls=SpaceApply,
-            executor=ConcurrencySettings.get_data_modeling_executor(),
         )

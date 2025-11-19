@@ -207,7 +207,7 @@ class IAMAPI(APIClient):
 
         return [Capability.from_tuple(tpl) for tpl in sorted(missing)]
 
-    def verify_capabilities(
+    async def verify_capabilities(
         self,
         desired_capabilities: ComparableCapability,
         ignore_allscope_meaning: bool = False,
@@ -255,5 +255,5 @@ class IAMAPI(APIClient):
                 >>> from cognite.client.data_classes.capabilities import Capability
                 >>> acls = [Capability.load(cap) for cap in to_check]
         """
-        existing_capabilities = self.token.inspect().capabilities
+        existing_capabilities = (await self.token.inspect()).capabilities
         return self.compare_capabilities(existing_capabilities, desired_capabilities)
