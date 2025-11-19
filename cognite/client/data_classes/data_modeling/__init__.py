@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from cognite.client.data_classes import aggregations, filters
 from cognite.client.data_classes.aggregations import AggregatedValue, Aggregation
-from cognite.client.data_classes.data_modeling import query
 from cognite.client.data_classes.data_modeling.containers import (
     Constraint,
     Container,
@@ -90,7 +89,22 @@ from cognite.client.data_classes.data_modeling.instances import (
     TypedNode,
     TypedNodeApply,
 )
+from cognite.client.data_classes.data_modeling.query import (
+    EdgeResultSetExpression,
+    Intersection,
+    NodeOrEdgeResultSetExpression,
+    NodeResultSetExpression,
+    Query,
+    QueryResult,
+    ResultSetExpression,
+    Select,
+    SetOperation,
+    SourceSelector,
+    Union,
+    UnionAll,
+)
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
+from cognite.client.data_classes.data_modeling.sync import SubscriptionContext
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
     EdgeConnection,
@@ -149,6 +163,7 @@ __all__ = [
     "EdgeId",
     "EdgeList",
     "EdgeListWithCursor",
+    "EdgeResultSetExpression",
     "ExecutionPlan",
     "FileReference",
     "Filter",
@@ -163,6 +178,7 @@ __all__ = [
     "InstancesResult",
     "Int32",
     "Int64",
+    "Intersection",
     "InvolvedContainers",
     "InvolvedViews",
     "Json",
@@ -181,16 +197,25 @@ __all__ = [
     "NodeList",
     "NodeListWithCursor",
     "NodeOrEdgeData",
+    "NodeOrEdgeResultSetExpression",
+    "NodeResultSetExpression",
     "PropertyId",
     "PropertyOptions",
     "PropertyType",
+    "Query",
+    "QueryResult",
     "RequiresConstraint",
+    "ResultSetExpression",
+    "Select",
     "SequenceReference",
+    "SetOperation",
     "SingleHopConnectionDefinition",
+    "SourceSelector",
     "Space",
     "SpaceApply",
     "SpaceApplyList",
     "SpaceList",
+    "SubscriptionContext",
     "Text",
     "TimeSeriesReference",
     "Timestamp",
@@ -199,6 +224,8 @@ __all__ = [
     "TypedEdgeApply",
     "TypedNode",
     "TypedNodeApply",
+    "Union",
+    "UnionAll",
     "UniquenessConstraint",
     "VersionedDataModelingId",
     "View",
@@ -210,5 +237,4 @@ __all__ = [
     "ViewList",
     "aggregations",
     "filters",
-    "query",
 ]

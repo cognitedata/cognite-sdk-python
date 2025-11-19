@@ -131,6 +131,12 @@ class DpsFetchStrategy(ABC):
                 project=self.dps_client._config.project,
             )
 
+    def _raise_if_unknown_failed(self, unknown_failed: list[BaseException]) -> None:
+        if unknown_failed:
+            # Typically this happens when asking for aggregates for a string time series.
+            # We don't do anything fancy like ExceptionGroup (Python 3.11+), just raise the first:
+            raise unknown_failed[0]
+
     @abstractmethod
     def _fetch_all(self, use_numpy: bool) -> AsyncIterator[BaseTaskOrchestrator]:
         raise NotImplementedError
@@ -259,8 +265,14 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         # Note to future dev: As of 3.13, we can do 'async for future in asyncio.as_completed(...)' and it
         # will return the Tasks - not coroutines. Thus, we can't do this micro-optimization yet and need to
         # use asyncio.wait instead:
+        unknown_failed = []
         done, _ = await asyncio.wait(initial_futures_dct, return_when=asyncio.ALL_COMPLETED)
         for future in done:
+            if exc := future.exception():
+                # We don't immediately reraise here to avoid 'Task exception was never retrieved' (when multiple fail):
+                unknown_failed.append(exc)
+                continue
+
             res_lst = future.result()
             new_ts_tasks, chunk_missing = self._create_ts_tasks_and_handle_missing(
                 res_lst, initial_futures_dct.pop(future), initial_query_limits, use_numpy
@@ -268,6 +280,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             missing_to_raise.update(chunk_missing)
             ts_task_lookup.update(new_ts_tasks)
 
+        self._raise_if_unknown_failed(unknown_failed)
         self._raise_if_missing(missing_to_raise)
 
         if ts_tasks_left := self._update_queries_with_new_chunking_limit(ts_task_lookup):
