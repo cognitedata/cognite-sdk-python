@@ -36,10 +36,9 @@ class DocumentPreviewAPI(APIClient):
                 >>> binary_png = client.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
                 >>> Image(binary_png)
         """
-        res = self._do_request(
-            "GET", f"{self._RESOURCE_PATH}/{id}/preview/image/pages/{page_number}", accept="image/png"
-        )
-        return res.content
+        return self._get(
+            f"{self._RESOURCE_PATH}/{id}/preview/image/pages/{page_number}", headers={"accept": "image/png"}
+        ).content
 
     def download_page_as_png(
         self, path: Path | str | IO, id: int, page_number: int = 1, overwrite: bool = False
@@ -93,8 +92,7 @@ class DocumentPreviewAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> content = client.documents.previews.download_document_as_pdf_bytes(id=123)
         """
-        res = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/preview/pdf", accept="application/pdf")
-        return res.content
+        return self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf", headers={"accept": "application/pdf"}).content
 
     def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
@@ -115,6 +113,7 @@ class DocumentPreviewAPI(APIClient):
                 >>> client.documents.previews.download_document_as_pdf("previews", id=123)
         """
         if isinstance(path, IO):
+            # TODO(doctrino): This seems impossible to trigger
             content = self.download_document_as_pdf_bytes(id)
             path.write(content)
             return

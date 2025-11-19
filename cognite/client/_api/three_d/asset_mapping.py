@@ -12,8 +12,9 @@ from cognite.client.data_classes import (
     ThreeDAssetMappingWrite,
 )
 from cognite.client.utils import _json
-from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks, unpack_items_in_payload
+from cognite.client.utils._auxiliary import split_into_chunks, unpack_items_in_payload
 from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 
 
@@ -148,7 +149,7 @@ class ThreeDAssetMappingAPI(APIClient):
             [ThreeDAssetMapping(a.node_id, a.asset_id).dump(camel_case=True) for a in asset_mapping], self._DELETE_LIMIT
         )
         tasks = [{"url_path": path + "/delete", "json": {"items": chunk}} for chunk in chunks]
-        summary = execute_tasks(self._post, tasks, self._config.max_workers)
+        summary = execute_tasks(self._post, tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping._load(el)
         )

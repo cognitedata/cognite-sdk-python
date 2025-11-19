@@ -1,6 +1,4 @@
 import math
-import re
-import warnings
 from itertools import zip_longest
 
 import pytest
@@ -11,67 +9,11 @@ from cognite.client.utils._auxiliary import (
     fast_dict_load,
     find_duplicates,
     get_accepted_params,
-    handle_deprecated_camel_case_argument,
-    interpolate_and_url_encode,
     load_resource_to_dict,
     remove_duplicates_keep_order,
     split_into_chunks,
     split_into_n_parts,
 )
-
-
-@pytest.mark.parametrize(
-    "new_arg, old_arg_name, fn_name, kw_dct, expected",
-    (
-        ("Ceci n'est pas une pipe", "extractionPipeline", "f", {}, "Ceci n'est pas une pipe"),
-        (None, "extractionPipeline", "f", {"extractionPipeline": "Ceci n'est pas une pipe"}, "Ceci n'est pas une pipe"),
-        (42, "raw_geoLocation", "f", {}, 42),
-        (None, "raw_geoLocation", "f", {"raw_geoLocation": 42}, 42),
-    ),
-)
-def test_handle_deprecated_camel_case_argument__expected(new_arg, old_arg_name, fn_name, kw_dct, expected):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        value = handle_deprecated_camel_case_argument(new_arg, old_arg_name, fn_name, kw_dct)
-    assert value == expected
-
-
-@pytest.mark.parametrize(
-    "new_arg, old_arg_name, fn_name, kw_dct, err_msg",
-    (
-        (
-            "Ceci n'est pas une pipe",
-            "extractionPipeline",
-            "f",
-            {"owner": "René Magritte"},
-            "Got unexpected keyword argument(s): ['owner']",
-        ),
-        (
-            None,
-            "extractionPipeline",
-            "fun_func",
-            {"extractionPipeline": None},
-            "fun_func() missing 1 required positional argument: 'extraction_pipeline'",
-        ),
-        (
-            "what",
-            "extractionPipeline",
-            "f",
-            {"extractionPipeline": "what"},
-            "Pass either 'extraction_pipeline' or 'extractionPipeline' (deprecated), not both",
-        ),
-    ),
-)
-def test_handle_deprecated_camel_case_argument__raises(new_arg, old_arg_name, fn_name, kw_dct, err_msg):
-    with pytest.raises(TypeError, match=re.escape(err_msg)), warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        handle_deprecated_camel_case_argument(new_arg, old_arg_name, fn_name, kw_dct)
-
-
-class TestUrlEncode:
-    def test_url_encode(self):
-        assert "/bla/yes%2Fno/bla" == interpolate_and_url_encode("/bla/{}/bla", "yes/no")
-        assert "/bla/123/bla/456" == interpolate_and_url_encode("/bla/{}/bla/{}", "123", "456")
 
 
 class TestSplitIntoChunks:

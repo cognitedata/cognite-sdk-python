@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from cognite.client._api_client import APIClient
-from cognite.client.utils._auxiliary import interpolate_and_url_encode
+from cognite.client.utils._url import interpolate_and_url_encode
 
 
 class ThreeDFilesAPI(APIClient):

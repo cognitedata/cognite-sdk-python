@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import math
-import platform
 import warnings
 from abc import ABC
 from collections.abc import Hashable, Iterable, Iterator, Sequence
@@ -14,7 +13,6 @@ from typing import (
     TypeVar,
     overload,
 )
-from urllib.parse import quote
 
 from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
@@ -22,11 +20,12 @@ from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
     to_camel_case,
-    to_snake_case,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
+    import httpx
+
     from cognite.client import CogniteClient
     from cognite.client.data_classes._base import T_CogniteObject, T_CogniteResource
 
@@ -140,36 +139,6 @@ def handle_renamed_argument(
     return old_arg
 
 
-def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, fn_name: str, kw_dct: dict[str, Any]) -> T:
-    new_arg_name = to_snake_case(old_arg_name)
-    return handle_renamed_argument(new_arg, new_arg_name, old_arg_name, fn_name, kw_dct)
-
-
-def interpolate_and_url_encode(path: str, *args: Any) -> str:
-    return path.format(*[quote(str(arg), safe="") for arg in args])
-
-
-def get_current_sdk_version() -> str:
-    from cognite.client import __version__
-
-    return __version__
-
-
-@functools.lru_cache(maxsize=1)
-def get_user_agent() -> str:
-    sdk_version = f"CognitePythonSDK/{get_current_sdk_version()}"
-    python_version = (
-        f"{platform.python_implementation()}/{platform.python_version()} "
-        f"({platform.python_build()};{platform.python_compiler()})"
-    )
-    os_version_info = [platform.release(), platform.machine(), platform.architecture()[0]]
-    os_version_info = [s for s in os_version_info if s]  # Ignore empty strings
-    os_version_info_str = "-".join(os_version_info)
-    operating_system = f"{platform.system()}/{os_version_info_str}"
-
-    return f"{sdk_version} {python_version} {operating_system}"
-
-
 @overload
 def split_into_n_parts(seq: list[T], *, n: int) -> Iterator[list[T]]: ...
 
@@ -277,3 +246,11 @@ def flatten_dict(d: dict[str, Any], parent_keys: tuple[str, ...], sep: str = "."
         else:
             items.append((sep.join((*parent_keys, key)), value))
     return dict(items)
+
+
+def unpack_items(res: httpx.Response) -> list[Any]:
+    return res.json()["items"]
+
+
+def drop_none_values(dct: dict[str, Any]) -> dict[str, Any]:
+    return {k: v for k, v in dct.items() if v is not None}
