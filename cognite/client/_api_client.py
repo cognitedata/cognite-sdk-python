@@ -8,6 +8,7 @@ from collections import UserList
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from typing import (
     Any,
+    ClassVar,
     Literal,
     TypeVar,
     cast,
@@ -57,7 +58,7 @@ VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "un
 
 
 class APIClient(BasicAsyncAPIClient):
-    _RESOURCE_PATH: str
+    _RESOURCE_PATH: ClassVar[str]
 
     async def _retrieve(
         self,
@@ -223,18 +224,12 @@ class APIClient(BasicAsyncAPIClient):
         filter: dict[str, Any] | None = None,
         sort: SequenceNotStr[str | dict[str, Any]] | None = None,
         other_params: dict[str, Any] | None = None,
-        partitions: int | None = None,
         headers: dict[str, Any] | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> AsyncIterator[T_CogniteResourceList | T_CogniteResource]:
-        if partitions:
-            warnings.warn("passing `partitions` to a generator method is not supported, so it's being ignored")
-            # set chunk_size to None in order to not break the existing API.
-            # TODO: Remove this and support for partitions (in combo with generator) in the next major version
-            chunk_size = None
         limit, url_path, params = self._prepare_params_for_list_generator(
             limit, method, filter, url_path, resource_path, sort, other_params, advanced_filter
         )
@@ -277,15 +272,12 @@ class APIClient(BasicAsyncAPIClient):
         filter: dict[str, Any] | None = None,
         sort: SequenceNotStr[str | dict[str, Any]] | None = None,
         other_params: dict[str, Any] | None = None,
-        partitions: int | None = None,
         headers: dict[str, Any] | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
-        if partitions:
-            raise ValueError("When fetching additional data (besides items), using partitions is not supported")
         if not chunk_size:
             raise ValueError(
                 f"When fetching additional data (besides items), {chunk_size=} must match the "
@@ -562,34 +554,25 @@ class APIClient(BasicAsyncAPIClient):
 
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
-    async def _aggregate(
+    async def _aggregate_count(
         self,
-        cls: type[T],
         resource_path: str | None = None,
         filter: CogniteFilter | dict[str, Any] | None = None,
-        aggregate: str | None = None,
-        fields: SequenceNotStr[str] | None = None,
-        keys: SequenceNotStr[str] | None = None,
         headers: dict[str, Any] | None = None,
-    ) -> list[T]:
+    ) -> int:
         assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
-        assert_type(fields, "fields", [list], allow_none=True)
+
         if isinstance(filter, CogniteFilter):
             dumped_filter = filter.dump(camel_case=True)
         elif isinstance(filter, dict):
             dumped_filter = convert_all_keys_to_camel_case(filter)
         else:
             dumped_filter = {}
+
         resource_path = resource_path or self._RESOURCE_PATH
         body: dict[str, Any] = {"filter": dumped_filter}
-        if aggregate is not None:
-            body["aggregate"] = aggregate
-        if fields is not None:
-            body["fields"] = fields
-        if keys is not None:
-            body["keys"] = keys
         res = await self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
-        return [cls._load(agg) for agg in unpack_items(res)]
+        return unpack_items(res)[0]["count"]
 
     @overload
     async def _advanced_aggregate(

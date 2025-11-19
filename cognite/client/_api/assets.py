@@ -5,7 +5,6 @@ import functools
 import heapq
 import itertools
 import math
-import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -27,7 +26,6 @@ from cognite.client.data_classes import (
     AssetHierarchy,
     AssetList,
     AssetUpdate,
-    CountAggregate,
     GeoLocationFilter,
     LabelFilter,
     TimestampRange,
@@ -144,7 +142,6 @@ class AssetsAPI(APIClient):
         external_id_prefix: str | None = None,
         aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> AsyncIterator[Asset | AssetList]:
@@ -171,7 +168,6 @@ class AssetsAPI(APIClient):
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
             limit (int | None): Maximum number of assets to return. Defaults to return all items.
-            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
@@ -210,7 +206,6 @@ class AssetsAPI(APIClient):
             advanced_filter=advanced_filter,
             sort=prep_sort,
             limit=limit,
-            partitions=partitions,
             other_params=agg_props,
         ):
             yield item
@@ -274,29 +269,6 @@ class AssetsAPI(APIClient):
         return await self._retrieve_multiple(
             list_cls=AssetList, resource_cls=Asset, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
-
-    async def aggregate(self, filter: AssetFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
-        """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
-
-        Args:
-            filter (AssetFilter | dict[str, Any] | None): Filter on assets with strict matching.
-
-        Returns:
-            list[CountAggregate]: List of asset aggregates
-
-        Examples:
-
-            Aggregate assets:
-
-                >>> from cognite.client import CogniteClient, AsyncCogniteClient
-                >>> client = CogniteClient()
-                >>> # async_client = AsyncCogniteClient()  # another option
-                >>> aggregate_by_prefix = client.assets.aggregate(filter={"external_id_prefix": "prefix"})
-        """
-        warnings.warn(
-            f"This method is deprecated. Use {self.__class__.__name__}.aggregate_count instead.", DeprecationWarning
-        )
-        return await self._aggregate(filter=filter, cls=CountAggregate)
 
     async def aggregate_count(
         self,
@@ -846,70 +818,6 @@ class AssetsAPI(APIClient):
             update_cls=AssetUpdate,
             input_resource_cls=Asset,
             mode=mode,
-        )
-
-    async def filter(
-        self,
-        filter: Filter | dict,
-        sort: SortSpec | list[SortSpec] | None = None,
-        aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
-        limit: int | None = DEFAULT_LIMIT_READ,
-    ) -> AssetList:
-        """`Advanced filter assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
-
-        Advanced filter lets you create complex filtering expressions that combine simple operations,
-        such as equals, prefix, exists, etc., using boolean operators and, or, and not.
-        It applies to basic fields as well as metadata.
-
-        Args:
-            filter (Filter | dict): Filter to apply.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            AssetList: List of assets that match the filter criteria.
-
-        Examples:
-
-            Find all assets that have a metadata key 'timezone' starting with 'Europe',
-            and sort by external id ascending:
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
-                >>> client = CogniteClient()
-                >>> # async_client = AsyncCogniteClient()  # another option
-                >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
-                >>> res = client.assets.filter(filter=in_timezone, sort=("external_id", "asc"))
-
-            Note that you can check the API documentation above to see which properties you can filter on
-            with which filters.
-
-            To make it easier to avoid spelling mistakes and easier to look up available properties
-            for filtering and sorting, you can also use the `AssetProperty` and `SortableAssetProperty` Enums.
-
-                >>> from cognite.client.data_classes import filters
-                >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
-                >>> in_timezone = filters.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
-                >>> res = client.assets.filter(
-                ...     filter=in_timezone,
-                ...     sort=(SortableAssetProperty.external_id, "asc"))
-
-        """
-        warnings.warn(
-            f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Please use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
-            DeprecationWarning,
-        )
-        self._validate_filter(filter)
-        agg_props = self._process_aggregated_props(aggregated_properties)
-        return await self._list(
-            list_cls=AssetList,
-            resource_cls=Asset,
-            method="POST",
-            limit=limit,
-            advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
-            sort=prepare_filter_sort(sort, AssetSort),
-            other_params=agg_props,
         )
 
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:

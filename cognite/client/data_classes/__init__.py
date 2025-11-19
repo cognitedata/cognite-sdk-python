@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from cognite.client.data_classes._base import Geometry, HasExternalAndInternalId, HasExternalId, HasInternalId, HasName
-from cognite.client.data_classes.aggregations import CountAggregate
 from cognite.client.data_classes.annotations import (
     Annotation,
     AnnotationFilter,
@@ -51,7 +50,6 @@ from cognite.client.data_classes.datapoints import (
 )
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
-    DataPointSubscriptionCreate,
     DatapointSubscriptionList,
     DataPointSubscriptionUpdate,
     DataPointSubscriptionWrite,
@@ -293,7 +291,6 @@ from cognite.client.data_classes.workflows import (
     WorkflowTask,
     WorkflowTaskExecution,
     WorkflowTrigger,
-    WorkflowTriggerCreate,
     WorkflowTriggerList,
     WorkflowTriggerRun,
     WorkflowTriggerRunList,
@@ -338,9 +335,7 @@ __all__ = [
     "CoordinateReferenceSystemList",
     "CoordinateReferenceSystemWrite",
     "CoordinateReferenceSystemWriteList",
-    "CountAggregate",
     "CreatedSession",
-    "DataPointSubscriptionCreate",
     "DataPointSubscriptionUpdate",
     "DataPointSubscriptionWrite",
     "DataSet",
@@ -558,7 +553,6 @@ __all__ = [
     "WorkflowTask",
     "WorkflowTaskExecution",
     "WorkflowTrigger",
-    "WorkflowTriggerCreate",
     "WorkflowTriggerList",
     "WorkflowTriggerRun",
     "WorkflowTriggerRunList",

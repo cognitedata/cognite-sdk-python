@@ -4,7 +4,6 @@ import contextlib
 import datetime
 import json
 import typing
-import warnings
 from abc import abstractmethod
 from collections import ChainMap, defaultdict
 from collections.abc import Collection, Iterator, Sequence
@@ -290,22 +289,6 @@ class DatapointsQuery:
     @classmethod
     def valid_from_user_query(cls, query: Self, **settings: Any) -> Self:
         return cls(**ChainMap(query.dump(), settings, cls._API_DEFAULTS))  # type: ignore [arg-type]
-
-    @classmethod
-    # TODO: Remove in next major version (require use of DatapointsQuery directly)
-    def from_dict(cls, dct: dict[str, Any], id_type: Literal["id", "external_id", "instance_id"]) -> Self:
-        if id_type not in dct:
-            if (arg_name_cc := to_camel_case(id_type)) not in dct:
-                raise KeyError(f"Missing required key `{id_type}` in dict: {dct}.")
-            # For backwards compatibility we accept identifiers in camel case:
-            dct[id_type] = (dct := dct.copy()).pop(arg_name_cc)  # copy to avoid side effects for user's input
-
-        if bad_keys := set(dct) - cls._API_DEFAULTS.keys() - {id_type}:
-            raise KeyError(
-                f"Dict provided by argument `{id_type}` included key(s) not understood: {sorted(bad_keys)}. "
-                f"Required key: `{id_type}`. Optional: {list(cls._API_DEFAULTS)}."
-            )
-        return cls(**dct)
 
     @property
     def identifier(self) -> Identifier:
@@ -840,38 +823,13 @@ class DatapointsArray(CogniteResource):
             )
         return DatapointsArray(**self._ts_info, **data)
 
-    def __iter__(self) -> Iterator[Datapoint]:
-        """Iterate over datapoints
-
-        Warning:
-            For efficient storage, datapoints are not stored as a sequence of (singular) Datapoint
-            objects, so these are created on demand while iterating (slow).
-
-        Yields:
-            Datapoint: No description.
-        """
-        warnings.warn(
-            "Iterating through a DatapointsArray is very inefficient. Tip: Access the arrays directly and use "
-            "vectorised numpy ops on those. E.g. `dps.average` for the 'average' aggregate, `dps.value` for the "
-            "raw datapoints or `dps.timestamp` for the timestamps. You may also convert to a pandas DataFrame using "
-            "`dps.to_pandas()`. In the next major version, iteration will no longer be possible.",
-            UserWarning,
+    def __iter__(self) -> NoReturn:
+        raise NotImplementedError(
+            "Iterating through a DatapointsArray is very inefficient and support was dropped in major version 8. "
+            "Tip: Access the arrays directly and use vectorised numpy ops on those. E.g. `dps.average` for the "
+            "'average' aggregate, `dps.value` for the raw datapoints or `dps.timestamp` for the timestamps. You may "
+            "also convert to a pandas DataFrame using `dps.to_pandas()`.",
         )
-        attrs, arrays = self._data_fields()
-        # Let's not create a single Datapoint more than we have too:
-        for i, row in enumerate(zip(*arrays)):
-            timestamp = row[0].item() // 1_000_000
-            data: dict[str, Any] = dict(zip(map(to_camel_case, attrs[1:]), map(numpy_dtype_fix, row[1:])))
-            data.update(timestamp=timestamp, timezone=self.timezone)
-            if self.status_code is not None:
-                data.update(statusCode=self.status_code[i], statusSymbol=self.status_symbol[i])  # type: ignore [index]
-            if self.null_timestamps and timestamp in self.null_timestamps:
-                data["value"] = None
-            if self.min_datapoint is not None:
-                data["minDatapoint"] = self.min_datapoint[i]
-            if self.max_datapoint is not None:
-                data["maxDatapoint"] = self.max_datapoint[i]
-            yield Datapoint._load(data)
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
         # Note: Does not return status-related fields

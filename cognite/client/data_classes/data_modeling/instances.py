@@ -418,9 +418,8 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         ignore: list[str] | None = None,
         camel_case: bool = False,
         convert_timestamps: bool = True,
-        expand_properties: bool = False,
+        expand_properties: bool = True,
         remove_property_prefix: bool = True,
-        **kwargs: Any,
     ) -> pd.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
@@ -428,21 +427,12 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
             camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect properties if expanded.
             convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
-            expand_properties (bool): Expand the properties into separate rows. Note: Will change default to True in the next major version.
+            expand_properties (bool): Expand the properties into separate rows.
             remove_property_prefix (bool): Attempt to remove the view ID prefix from row names of expanded properties (in index). Requires data to be from a single view and that all property names do not conflict with base properties (e.g. 'space' or 'type'). In such cases, a warning is issued and the prefix is kept.
-            **kwargs (Any): For backwards compatibility.
 
         Returns:
             pd.DataFrame: The dataframe.
         """
-        kwargs.pop("expand_metadata", None), kwargs.pop("metadata_prefix", None)
-        if kwargs:
-            raise TypeError(f"Unsupported keyword arguments: {kwargs}")
-        if not expand_properties:
-            warnings.warn(
-                "Keyword argument 'expand_properties' will change default from False to True in the next major version.",
-                DeprecationWarning,
-            )
         df = super().to_pandas(
             expand_metadata=False, ignore=ignore, camel_case=camel_case, convert_timestamps=convert_timestamps
         )
@@ -1041,32 +1031,22 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
         self,
         instance_id: InstanceId | tuple[str, str] | None = None,
         external_id: str | None = None,
-        *,
-        id: InstanceId | tuple[str, str] | None = None,
     ) -> T_Instance | None:
         """Get an instance from this list by instance ID.
 
         Args:
             instance_id (InstanceId | tuple[str, str] | None): The instance ID to get. A tuple on the form (space, external_id) is also accepted.
             external_id (str | None): The external ID of the instance to return. Will raise ValueError when ambiguous (in presence of multiple spaces).
-            id (InstanceId | tuple[str, str] | None): (DEPRECATED) Backwards-compatible alias for instance_id. Will be removed in the next major version.
 
         Returns:
             T_Instance | None: The requested instance if present, else None
         """
-        if not exactly_one_is_not_none(instance_id, external_id, id):
+        if not exactly_one_is_not_none(instance_id, external_id):
             raise ValueError(
-                "Pass exactly one of 'instance_id' or 'external_id' ('id' is a deprecated alias for 'instance_id'). "
+                "Pass exactly one of 'instance_id' or 'external_id'. "
                 "Using an external ID requires all instances to be from the same space."
             )
-        if id is not None:
-            instance_id = id
-            warnings.warn(
-                "Calling .get using `id` is deprecated and will be removed in the next major version. "
-                "Use 'instance_id' instead",
-                UserWarning,
-            )
-        elif external_id is not None:
+        if external_id is not None:
             if external_id in self._ambiguous_xids:
                 raise ValueError(
                     f"{external_id=} is ambiguous (multiple spaces are present). Pass 'instance_id' instead."
@@ -1089,9 +1069,8 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
         self,
         camel_case: bool = False,
         convert_timestamps: bool = True,
-        expand_properties: bool = False,
+        expand_properties: bool = True,
         remove_property_prefix: bool = True,
-        **kwargs: Any,
     ) -> pd.DataFrame:
         """Convert the instance into a pandas DataFrame. Note that if the properties column is expanded and there are
         keys in the metadata that already exist in the DataFrame, then an error will be raised by pandas during joining.
@@ -1099,21 +1078,12 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
         Args:
             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`). Does not apply to properties.
             convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
-            expand_properties (bool): Expand the properties into separate columns. Note: Will change default to True in the next major version.
+            expand_properties (bool): Expand the properties into separate columns.
             remove_property_prefix (bool): Attempt to remove the view ID prefix from columns names of expanded properties. Requires data to be from a single view and that all property names do not conflict with base properties (e.g. 'space' or 'type'). In such cases, a warning is issued and the prefix is kept.
-            **kwargs (Any): For backwards compatibility.
 
         Returns:
             pd.DataFrame: The Cognite resource as a dataframe.
         """
-        kwargs.pop("expand_metadata", None), kwargs.pop("metadata_prefix", None)
-        if kwargs:
-            raise TypeError(f"Unsupported keyword arguments: {kwargs}")
-        if not expand_properties:
-            warnings.warn(
-                "Keyword argument 'expand_properties' will change default from False to True in the next major version.",
-                DeprecationWarning,
-            )
         df = super().to_pandas(camel_case=camel_case, expand_metadata=False, convert_timestamps=convert_timestamps)
         if not expand_properties or "properties" not in df.columns:
             return df

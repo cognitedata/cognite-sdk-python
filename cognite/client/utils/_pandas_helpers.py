@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._text import shorten, to_camel_case
 from cognite.client.utils._time import TIME_ATTRIBUTES
 
 if TYPE_CHECKING:
@@ -94,18 +94,16 @@ def notebook_display_with_fallback(inst: T_CogniteResource | T_CogniteResourceLi
     # Default of False enforced (when accepted by method):
     if "camel_case" in params:
         kwargs["camel_case"] = False
-    # TODO: Next major, flip this default to True in the method itself (and delete here):
-    if "expand_properties" in params:
-        kwargs["expand_properties"] = True
     try:
         return inst.to_pandas(**kwargs)._repr_html_()
     except CogniteImportError:
         warnings.warn(
             "The 'cognite-sdk' depends on 'pandas' for pretty-printing objects like 'Asset' or 'DatapointsList' in "
-            "(Jupyter) notebooks and similar environments. Consider installing it! Using fallback method.",
+            "(Jupyter) notebooks and similar environments. Consider installing it! Using fallback method (string "
+            "truncated to 10,000 characters).",
             UserWarning,
         )
-        return str(inst)
+        return shorten(str(inst), 10_000)
 
 
 def convert_nullable_int_cols(df: pd.DataFrame) -> pd.DataFrame:
