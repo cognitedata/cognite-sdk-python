@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient
 from cognite.client.data_classes.data_modeling import ViewList
 from tests.tests_unit.test_api.test_data_modeling.conftest import make_test_view
 
@@ -19,17 +21,17 @@ class TestViewsRetrieveLatest:
             ]
         )
 
-    def test_different_versions(self, cognite_client: CogniteClient, views: ViewList) -> None:
+    def test_different_versions(self, async_client: AsyncCogniteClient, views: ViewList) -> None:
         views = ViewList([views[0], views[1]])
-        result = cognite_client.data_modeling.views._get_latest_views(views)
+        result = async_client.data_modeling.views._get_latest_views(views)
         assert result == ViewList([views[1]])
 
-    def test_different_external_ids(self, cognite_client: CogniteClient, views: ViewList) -> None:
+    def test_different_external_ids(self, async_client: AsyncCogniteClient, views: ViewList) -> None:
         views = ViewList([views[0], views[1], views[2], views[3]])
 
-        result = cognite_client.data_modeling.views._get_latest_views(views)
+        result = async_client.data_modeling.views._get_latest_views(views)
         assert result == ViewList([views[1], views[3]])
 
-    def test_different_spaces(self, cognite_client: CogniteClient, views: ViewList) -> None:
-        result = cognite_client.data_modeling.views._get_latest_views(views)
+    def test_different_spaces(self, async_client: AsyncCogniteClient, views: ViewList) -> None:
+        result = async_client.data_modeling.views._get_latest_views(views)
         assert result == ViewList([views[1], views[3], views[5]])

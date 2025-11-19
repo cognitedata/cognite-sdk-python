@@ -1,19 +1,25 @@
+from __future__ import annotations
+
 import re
 from collections.abc import Iterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import (
-    AggregateResult,
     EndTimeFilter,
     TimestampRange,
 )
 from cognite.client.data_classes.events import Event, EventFilter, EventList, EventUpdate, EventWrite
 from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_url, jsgz_load
+
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
@@ -34,10 +40,13 @@ def example_event() -> dict[str, Any]:
 
 @pytest.fixture
 def mock_events_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, example_event: dict[str, Any]
+    httpx_mock: HTTPXMock,
+    cognite_client: CogniteClient,
+    example_event: dict[str, Any],
+    async_client: AsyncCogniteClient,
 ) -> Iterator[HTTPXMock]:
     response_body = {"items": [example_event]}
-    url_pattern = re.compile(re.escape(get_url(cognite_client.events)) + "/.+")
+    url_pattern = re.compile(re.escape(get_url(async_client.events)) + "/.+")
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
@@ -45,15 +54,19 @@ def mock_events_response(
 
 
 @pytest.fixture
-def mock_count_aggregate_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
-    url_pattern = re.compile(re.escape(get_url(cognite_client.events)) + "/events/aggregate")
+def mock_count_aggregate_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[HTTPXMock]:
+    url_pattern = re.compile(re.escape(get_url(async_client.events)) + "/events/aggregate")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": [{"count": 10}]})
     yield httpx_mock
 
 
 @pytest.fixture
-def mock_aggregate_unique_values_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
-    url_pattern = re.compile(re.escape(get_url(cognite_client.events)) + "/events/aggregate")
+def mock_aggregate_unique_values_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[HTTPXMock]:
+    url_pattern = re.compile(re.escape(get_url(async_client.events)) + "/events/aggregate")
     httpx_mock.add_response(
         method="POST", url=url_pattern, status_code=200, json={"items": [{"count": 5, "value": "WORKORDER"}]}
     )
@@ -82,10 +95,12 @@ class TestEvents:
         assert "bla" == jsgz_load(mock_events_response.get_requests()[0].content)["filter"]["source"]
         assert [example_event] == res.dump(camel_case=True)
 
-    def test_list_partitions(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
+    def test_list_partitions(
+        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
+    ) -> None:
         for _ in range(10):
             httpx_mock.add_response(
-                method="POST", url=get_url(cognite_client.events) + "/events/list", status_code=200, json={"items": []}
+                method="POST", url=get_url(async_client.events) + "/events/list", status_code=200, json={"items": []}
             )
         cognite_client.events.list(partitions=10, limit=float("inf"))  # type: ignore[arg-type]
         assert 10 == len(httpx_mock.get_requests())
@@ -127,9 +142,8 @@ class TestEvents:
         assert "max" not in jsgz_load(mock_events_response.get_requests()[0].content)["filter"]["startTime"]
 
     def test_count_aggregate(self, cognite_client: CogniteClient, mock_count_aggregate_response: Any) -> None:
-        res = cognite_client.events.aggregate(filter={"type": "WORKORDER"})
-        assert isinstance(res[0], AggregateResult)
-        assert res[0].count == 10
+        res = cognite_client.events.aggregate_count(filter={"type": "WORKORDER"})
+        assert res == 10
 
     def test_call_root(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         list(cognite_client.events(asset_subtree_external_ids=["a"], limit=10))
@@ -162,12 +176,6 @@ class TestEvents:
         res = cognite_client.events.create([EventWrite(external_id="1")])
         assert isinstance(res, EventList)
         assert [example_event] == res.dump(camel_case=True)
-
-    def test_iter_single(
-        self, cognite_client: CogniteClient, mock_events_response: HTTPXMock, example_event: dict[str, Any]
-    ) -> None:
-        for event in cognite_client.events:
-            assert example_event == event.dump(camel_case=True)
 
     def test_iter_chunk(
         self, cognite_client: CogniteClient, mock_events_response: HTTPXMock, example_event: dict[str, Any]
@@ -233,7 +241,7 @@ class TestEvents:
             mock_events_response.get_requests()[0].content
         )
 
-    def test_event_update_object(self) -> None:
+    def test_event_update_object(self, async_client: AsyncCogniteClient) -> None:
         update = (
             EventUpdate(1)
             .asset_ids.add([])
@@ -254,8 +262,10 @@ class TestEvents:
 
 
 @pytest.fixture
-def mock_events_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
-    url_pattern = re.compile(re.escape(get_url(cognite_client.events)) + "/.+")
+def mock_events_empty(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[HTTPXMock]:
+    url_pattern = re.compile(re.escape(get_url(async_client.events)) + "/.+")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []})
     yield httpx_mock
 

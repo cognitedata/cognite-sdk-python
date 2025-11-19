@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import itertools
 import random
@@ -13,7 +15,7 @@ from unittest import TestCase, mock
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import (
     AssetHierarchy,
     AssetList,
@@ -30,84 +32,87 @@ from tests.utils import rng_context
 
 
 class TestAsset:
-    def test_get_events(self, cognite_client: CogniteClient) -> None:
-        with mock.patch.object(cognite_client.events, "list", autospec=True) as mock_list:
-            a = DefaultResourceGenerator.asset(id=1, cognite_client=cognite_client)
+    def test_get_events(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.events, "list", autospec=True) as mock_list:
+            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
             a.events()
             mock_list.assert_called_once_with(asset_ids=[1])
 
-    def test_get_time_series(self, cognite_client: CogniteClient) -> None:
-        with mock.patch.object(cognite_client.time_series, "list", autospec=True) as mock_list:
-            a = DefaultResourceGenerator.asset(id=1, cognite_client=cognite_client)
+    def test_get_time_series(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.time_series, "list", autospec=True) as mock_list:
+            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
             a.time_series()
             mock_list.assert_called_once_with(asset_ids=[1])
 
-    def test_get_sequences(self, cognite_client: CogniteClient) -> None:
-        with mock.patch.object(cognite_client.sequences, "list", autospec=True) as mock_list:
-            a = DefaultResourceGenerator.asset(id=1, cognite_client=cognite_client)
+    def test_get_sequences(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.sequences, "list", autospec=True) as mock_list:
+            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
             a.sequences()
             mock_list.assert_called_once_with(asset_ids=[1])
 
-    def test_get_files(self, cognite_client: CogniteClient) -> None:
-        with mock.patch.object(cognite_client.files, "list", autospec=True) as mock_list:
-            a = DefaultResourceGenerator.asset(id=1, cognite_client=cognite_client)
+    def test_get_files(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.files, "list", autospec=True) as mock_list:
+            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
             a.files()
             mock_list.assert_called_once_with(asset_ids=[1])
 
-    def test_get_parent(self, cognite_client: CogniteClient) -> None:
-        with mock.patch.object(cognite_client.assets, "retrieve", autospec=True) as mock_retrieve:
-            a = DefaultResourceGenerator.asset(parent_id=1, cognite_client=cognite_client)
+    def test_get_parent(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.assets, "retrieve", autospec=True) as mock_retrieve:
+            a = DefaultResourceGenerator.asset(parent_id=1, cognite_client=async_client)
             a.parent()
             mock_retrieve.assert_called_once_with(id=1)
 
-    def test_get_children(self, cognite_client: CogniteClient) -> None:
-        with mock.patch.object(cognite_client.assets, "list", autospec=True) as mock_list:
-            a = DefaultResourceGenerator.asset(id=1, cognite_client=cognite_client)
+    def test_get_children(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.assets, "list", autospec=True) as mock_list:
+            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
             a.children()
             mock_list.assert_called_once_with(parent_ids=[1], limit=None)
 
-    def test_get_subtree(self, cognite_client: CogniteClient) -> None:
-        with mock.patch.object(cognite_client.assets, "retrieve_subtree", autospec=True) as mock_subtree:
-            a = DefaultResourceGenerator.asset(id=1, cognite_client=cognite_client)
+    def test_get_subtree(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.assets, "retrieve_subtree", autospec=True) as mock_subtree:
+            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
             a.subtree(depth=1)
             mock_subtree.assert_called_once_with(id=1, depth=1)
 
 
 class TestAssetList:
-    def test_get_events(self, cognite_client: CogniteClient) -> None:
-        with mock.patch.object(cognite_client.events, "list", autospec=True) as mock_list:
-            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=cognite_client)
+    def test_get_events(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.events, "list", autospec=True) as mock_list:
+            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=async_client)
             a.events()
             mock_list.assert_called_once_with(asset_ids=[1], limit=None)
 
-    def test_get_time_series(self, cognite_client: CogniteClient) -> None:
-        with mock.patch.object(cognite_client.time_series, "list", autospec=True) as mock_list:
-            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=cognite_client)
+    def test_get_time_series(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.time_series, "list", autospec=True) as mock_list:
+            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=async_client)
             a.time_series()
             mock_list.assert_called_once_with(asset_ids=[1], limit=None)
 
-    def test_get_sequences(self, cognite_client: CogniteClient) -> None:
-        with mock.patch.object(cognite_client.sequences, "list", autospec=True) as mock_list:
-            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=cognite_client)
+    def test_get_sequences(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.sequences, "list", autospec=True) as mock_list:
+            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=async_client)
             a.sequences()
             mock_list.assert_called_once_with(asset_ids=[1], limit=None)
 
-    def test_get_files(self, cognite_client: CogniteClient) -> None:
-        with mock.patch.object(cognite_client.files, "list", autospec=True) as mock_list:
-            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=cognite_client)
+    def test_get_files(self, async_client: AsyncCogniteClient) -> None:
+        with mock.patch.object(async_client.files, "list", autospec=True) as mock_list:
+            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=async_client)
             a.files()
             mock_list.assert_called_once_with(asset_ids=[1], limit=None)
 
     @pytest.mark.parametrize(
         "resource_class, resource_list_class, method",
-        [(FileMetadata, FileMetadataList, "files"), (Event, EventList, "events")],
+        [
+            (FileMetadata, FileMetadataList, "files"),
+            (Event, EventList, "events"),
+        ],
     )
-    def test_get_related_resources_should_not_return_duplicates(
+    async def test_get_related_resources_should_not_return_duplicates(
         self,
         resource_class: type[CogniteResource],
         resource_list_class: type[CogniteResourceList],
         method: str,
-        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
         monkeypatch: MonkeyPatch,
     ) -> None:
         resource_factory: Callable[..., CogniteResource] = cast(
@@ -124,8 +129,8 @@ class TestAssetList:
         resources_a2 = resource_list_class([r2, r3])
         resources_a3 = resource_list_class([r2, r3])
 
-        mock_method = mock.Mock()
-        setattr(cognite_client, method, mock_method)
+        mock_method = mock.AsyncMock()
+        monkeypatch.setattr(async_client, method, mock_method)
         mock_method.list.side_effect = [resources_a1, resources_a2, resources_a3]
         mock_method._config = mock.Mock(max_workers=3)
 
@@ -135,14 +140,14 @@ class TestAssetList:
                 DefaultResourceGenerator.asset(id=2),
                 DefaultResourceGenerator.asset(id=3),
             ],
-            cognite_client=cognite_client,
+            cognite_client=async_client,
         )
 
         actual_method = assets._retrieve_related_resources
 
-        def override_chunk_size(*a: Any, **kw: Any) -> Any:
+        async def override_chunk_size(*a: Any, **kw: Any) -> Any:
             kw["chunk_size"] = 1
-            return actual_method(*a, **kw)
+            return await actual_method(*a, **kw)
 
         monkeypatch.setattr(assets, "_retrieve_related_resources", override_chunk_size)
 
@@ -155,14 +160,10 @@ class TestAssetList:
         import pandas as pd
 
         for camel_case in [False, True]:
-            assert (
-                pd.Int64Dtype()
-                == AssetList(
-                    [DefaultResourceGenerator.asset(parent_id=123), DefaultResourceGenerator.asset(parent_id=None)]
-                )
-                .to_pandas(camel_case=camel_case)
-                .dtypes[0]
+            assets = AssetList(
+                [DefaultResourceGenerator.asset(parent_id=123), DefaultResourceGenerator.asset(parent_id=None)]
             )
+            assert pd.Int64Dtype() == assets.to_pandas(camel_case=camel_case).dtypes[0]
 
 
 def basic_issue_assets() -> list[AssetWrite]:

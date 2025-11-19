@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from cognite.client.data_classes._base import Geometry, HasExternalAndInternalId, HasExternalId, HasInternalId, HasName
 from cognite.client.data_classes.annotations import (
     Annotation,
     AnnotationFilter,
@@ -198,6 +197,7 @@ from cognite.client.data_classes.shared import (
     AggregateUniqueValuesResult,
     GeoLocation,
     GeoLocationFilter,
+    Geometry,
     GeometryFilter,
     TimestampRange,
 )
@@ -433,14 +433,6 @@ __all__ = [
     "GroupList",
     "GroupWrite",
     "GroupWriteList",
-    "HasExternalAndInternalId",
-    "HasExternalAndInternalId",
-    "HasExternalId",
-    "HasExternalId",
-    "HasInternalId",
-    "HasInternalId",
-    "HasName",
-    "HasName",
     "JobStatus",
     "Label",
     "LabelDefinition",

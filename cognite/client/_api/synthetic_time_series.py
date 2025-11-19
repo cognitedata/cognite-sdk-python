@@ -159,25 +159,31 @@ class SyntheticDatapointsAPI(APIClient):
                 user_expr, variables, aggregate, granularity, target_unit, target_unit_system
             )
             query = {"expression": expression, "start": timestamp_to_ms(start), "end": timestamp_to_ms(end)}
-            # NOTE / TODO: We misuse the 'external_id' field for the entire 'expression string':
-            query_datapoints = Datapoints(external_id=short_expression, value=[], error=[])
-            tasks.append(AsyncSDKTask(self._fetch_datapoints, query, query_datapoints, limit))
+            tasks.append(AsyncSDKTask(self._fetch_datapoints, query, limit, short_expression))
 
         datapoints_summary = await execute_async_tasks(tasks)
         datapoints_summary.raise_compound_exception_if_failed_tasks()
         return (
-            # TODO: Using .results here may need to be changed to .joined_results()
             DatapointsList(datapoints_summary.results, cognite_client=self._cognite_client)
             if not single_expr
             else datapoints_summary.results[0]
         )
 
-    async def _fetch_datapoints(self, query: dict[str, Any], datapoints: Datapoints, limit: int) -> Datapoints:
+    async def _fetch_datapoints(self, query: dict[str, Any], limit: int, short_expression: str) -> Datapoints:
+        datapoints = None
         while True:
             query["limit"] = min(limit, self._DPS_LIMIT_SYNTH)
             resp = await self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
             data = resp.json()["items"][0]
-            datapoints._extend(Datapoints._load_from_synthetic(data))
+            new_dps = Datapoints._load_from_synthetic(data)
+            if datapoints is None:
+                # NOTE / TODO: We misuse the 'external_id' field for the entire 'expression string':
+                new_dps.external_id = short_expression
+                datapoints = new_dps
+            else:
+                datapoints.timestamp.extend(new_dps.timestamp)
+                datapoints.value.extend(new_dps.value)  # type: ignore[attr-defined]
+                datapoints.error.extend(new_dps.error)  # type: ignore[attr-defined]
             limit -= (n_fetched := len(data["datapoints"]))
             if n_fetched < self._DPS_LIMIT_SYNTH or limit <= 0:
                 break

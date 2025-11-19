@@ -3,7 +3,6 @@ from __future__ import annotations
 import platform
 import re
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from unittest import mock
@@ -23,7 +22,6 @@ from cognite.client.utils._time import (
     parse_str_timezone,
     parse_str_timezone_offset,
     split_time_range,
-    timed_cache,
     timestamp_to_ms,
 )
 from tests.utils import tmp_set_envvar
@@ -365,30 +363,6 @@ class TestSplitTimeDomain:
         (single_diff,) = {next - prev for next, prev in zip(res[1:], res[:-1])}
         assert expected == single_diff
         assert all(val % gran_ms == 0 for val in res)
-
-
-class TestTimedCache:
-    def test_is_thread_safe(self) -> None:
-        hello = []
-
-        @timed_cache(ttl=2)
-        def the_function(i: int) -> None:
-            hello.append(i)
-
-        def entry(i: int) -> int:
-            the_function(i)
-            return i
-
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            results = sorted(executor.map(entry, range(10)))
-
-        assert len(hello) == 1
-        assert results == list(range(10))
-
-        # Wait for TTL and retry
-        time.sleep(2.01)
-        the_function(42)
-        assert len(hello) == 2 and hello[-1] == 42
 
 
 def call_time_tzset() -> None:

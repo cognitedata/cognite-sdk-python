@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import re
 from collections.abc import Iterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -10,9 +12,16 @@ from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeries
 from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_or_raise, get_url, jsgz_load
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
 
 @pytest.fixture
-def mock_ts_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[dict[str, Any]]:
+def mock_ts_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[dict[str, Any]]:
     response_body = {
         "items": [
             {
@@ -32,7 +41,7 @@ def mock_ts_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> It
         ]
     }
     url_pattern = re.compile(
-        re.escape(get_url(cognite_client.time_series)) + r"/timeseries(?:/byids|/update|/delete|/list|/search|$|\?.+)"
+        re.escape(get_url(async_client.time_series)) + r"/timeseries(?:/byids|/update|/delete|/list|/search|$|\?.+)"
     )
 
     httpx_mock.add_response(
@@ -106,10 +115,6 @@ class TestTimeSeries:
         res = cognite_client.time_series.create([TimeSeriesWrite(external_id="1", name="blabla")])
         assert isinstance(res, TimeSeriesList)
         assert mock_ts_response["items"] == res.dump(camel_case=True)
-
-    def test_iter_single(self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any]) -> None:
-        for asset in cognite_client.time_series:
-            assert mock_ts_response["items"][0] == asset.dump(camel_case=True)
 
     def test_iter_chunk(self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any]) -> None:
         for assets in cognite_client.time_series(chunk_size=1):
@@ -191,7 +196,7 @@ class TestTimeSeries:
         assert "bla" == req_body["filter"]["unit"]
         assert {"name": "n", "description": "d", "query": "q"} == req_body["search"]
 
-    def test_update_object(self) -> None:
+    def test_update_object(self, async_client: AsyncCogniteClient) -> None:
         assert isinstance(
             TimeSeriesUpdate(1)
             .asset_id.set(1)
@@ -219,8 +224,10 @@ class TestTimeSeries:
 
 
 @pytest.fixture
-def mock_time_series_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
-    url_pattern = re.compile(re.escape(get_url(cognite_client.time_series)) + "/.+")
+def mock_time_series_empty(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
+    url_pattern = re.compile(re.escape(get_url(async_client.time_series)) + "/.+")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []}, is_optional=True)
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json={"items": []}, is_optional=True)
     return httpx_mock

@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import datetime
 import re
 from collections.abc import Iterator
+from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -10,9 +14,14 @@ from cognite.client.data_classes import Function, FunctionCallLog, FunctionCallL
 from cognite.client.utils._time import datetime_to_ms
 from tests.utils import get_url, jsgz_load
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
 
 @pytest.fixture
-def empty_function(cognite_mock_client_placeholder: CogniteClient) -> Function:
+def empty_function(cognite_async_mock_client_placeholder: AsyncCogniteClient) -> Function:
     return Function(
         id=123,
         created_time=123,
@@ -31,12 +40,13 @@ def empty_function(cognite_mock_client_placeholder: CogniteClient) -> Function:
         runtime_version=None,
         metadata=None,
         error=None,
-        cognite_client=cognite_mock_client_placeholder,
+        last_called=None,
+        cognite_client=cognite_async_mock_client_placeholder,
     )
 
 
 @pytest.fixture
-def function(cognite_mock_client_placeholder: CogniteClient) -> Function:
+def function(cognite_async_mock_client_placeholder: AsyncCogniteClient) -> Function:
     return Function(
         id=123,
         name="my-function",
@@ -55,12 +65,15 @@ def function(cognite_mock_client_placeholder: CogniteClient) -> Function:
         runtime=None,
         runtime_version=None,
         error=None,
-        cognite_client=cognite_mock_client_placeholder,
+        last_called=123456789,
+        cognite_client=cognite_async_mock_client_placeholder,
     )
 
 
 @pytest.fixture
-def mock_function_call_resp(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
+def mock_function_call_resp(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[HTTPXMock]:
     response_body = {
         "items": [
             {
@@ -72,20 +85,20 @@ def mock_function_call_resp(httpx_mock: HTTPXMock, cognite_client: CogniteClient
             }
         ]
     }
-    url_pattern = re.compile(re.escape(get_url(cognite_client.functions)) + "/.+")
+    url_pattern = re.compile(re.escape(get_url(async_client.functions)) + "/.+")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
     yield httpx_mock
 
 
 class TestFunction:
     def test_update(self, empty_function: Function, function: Function) -> None:
-        empty_function._cognite_client.functions.retrieve.return_value = function  # type: ignore[attr-defined]
+        empty_function._cognite_client.functions.retrieve = AsyncMock(return_value=function)
 
         empty_function.update()
         assert function == empty_function
 
     def test_update_on_deleted_function(self, empty_function: Function) -> None:
-        empty_function._cognite_client.functions.retrieve.return_value = None  # type: ignore[attr-defined]
+        empty_function._cognite_client.functions.retrieve = AsyncMock(return_value=None)
         empty_function.update()
 
 

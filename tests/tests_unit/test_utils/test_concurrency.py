@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import random
 
@@ -13,12 +15,13 @@ from cognite.client.utils._concurrency import (
 
 
 async def i_dont_like_5(i: int) -> int:
-    if i == 5:
+    if i < 5:
+        return i
+    elif i == 5:
         raise CogniteAPIError("no", 5, cluster="testcluster", project="testproject")
     else:
-        # Yield control if we are not to fail - to avoid task i=5 to randomly be executed last
         await asyncio.sleep(0.01)
-    return i
+        return i
 
 
 class TestExecutor:
@@ -26,7 +29,6 @@ class TestExecutor:
         executor = ConcurrencySettings._get_event_loop_executor()
         assert isinstance(executor, EventLoopThreadExecutor)
 
-    @pytest.mark.asyncio
     async def test_async_tasks__results_ordering_match_tasks(self) -> None:
         async def async_task(i: int) -> int:
             await asyncio.sleep(random.random() / 50)
@@ -39,7 +41,6 @@ class TestExecutor:
 
         assert task_summary.results == list(range(50))
 
-    @pytest.mark.asyncio
     async def test_async_tasks__results_ordering_match_tasks_even_with_failures(self) -> None:
         async def test_fn(i: int) -> int:
             await asyncio.sleep(random.random() / 50)
@@ -58,7 +59,6 @@ class TestExecutor:
             task_summary.raise_compound_exception_if_failed_tasks()
 
     @pytest.mark.parametrize("fail_fast", (False, True))
-    @pytest.mark.asyncio
     async def test_fail_fast__execute_async_tasks(self, fail_fast: bool) -> None:
         tasks = [AsyncSDKTask(i_dont_like_5, i) for i in range(10)]
         task_summary = await execute_async_tasks(tasks, fail_fast=fail_fast)

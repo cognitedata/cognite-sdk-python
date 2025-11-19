@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import math
 import random
 import re
-import time
 import unittest
 from collections import namedtuple
 from collections.abc import Callable, Iterator
@@ -15,7 +15,7 @@ from httpx import Headers, Request, Response
 from pytest_httpx import HTTPXMock
 from typing_extensions import Self
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import Token
@@ -34,16 +34,16 @@ from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._url import validate_url_and_return_retryability
 from tests.tests_unit.conftest import DefaultResourceGenerator
-from tests.utils import get_or_raise, jsgz_load
+from tests.utils import get_or_raise, get_wrapped_async_client, jsgz_load
 
-BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
+BASE_URL = "http://localtest.com/api/v1/projects/test-project"
 URL_PATH = "/someurl"
 
 RESPONSE = {"any": "ok"}
 
 
 @pytest.fixture(scope="class")
-def api_client_with_token_factory(cognite_client: CogniteClient) -> APIClient:
+def api_client_with_token_factory(async_client: AsyncCogniteClient) -> APIClient:
     return APIClient(
         ClientConfig(
             client_name="any",
@@ -53,12 +53,12 @@ def api_client_with_token_factory(cognite_client: CogniteClient) -> APIClient:
             credentials=Token(lambda: "abc"),
         ),
         api_version=None,
-        cognite_client=cognite_client,
+        cognite_client=async_client,
     )
 
 
 @pytest.fixture(scope="class")
-def api_client_with_token(cognite_client: CogniteClient) -> APIClient:
+def api_client_with_token(async_client: AsyncCogniteClient) -> APIClient:
     return APIClient(
         ClientConfig(
             client_name="any",
@@ -68,7 +68,7 @@ def api_client_with_token(cognite_client: CogniteClient) -> APIClient:
             credentials=Token("abc"),
         ),
         api_version=None,
-        cognite_client=cognite_client,
+        cognite_client=async_client,
     )
 
 
@@ -123,9 +123,11 @@ class TestBasicRequests:
     ]
 
     @pytest.mark.parametrize("fn", request_cases)
-    def test_requests_ok(self, fn: Any, mock_all_requests_ok: HTTPXMock, api_client_with_token: APIClient) -> None:
+    async def test_requests_ok(
+        self, fn: Any, mock_all_requests_ok: HTTPXMock, api_client_with_token: APIClient
+    ) -> None:
         name, method, kwargs = fn(api_client_with_token)
-        response = method(**kwargs)
+        response = await method(**kwargs)
         assert response.status_code == 200
         assert response.json() == RESPONSE
 
@@ -138,27 +140,27 @@ class TestBasicRequests:
 
     @pytest.mark.usefixtures("mock_all_requests_fail")
     @pytest.mark.parametrize("fn", request_cases)
-    def test_requests_fail(self, fn: Any, api_client_with_token: APIClient) -> None:
+    async def test_requests_fail(self, fn: Any, api_client_with_token: APIClient) -> None:
         name, method, kwargs = fn(api_client_with_token)
         with pytest.raises(CogniteAPIError, match="Client error") as e:
-            method(**kwargs)
+            await method(**kwargs)
         assert e.value.code == 400
 
         with pytest.raises(CogniteAPIError, match="Server error") as e:
-            method(**kwargs)
+            await method(**kwargs)
         assert e.value.code == 500
 
         with pytest.raises(CogniteAPIError, match="Server error") as e:
-            method(**kwargs)
+            await method(**kwargs)
         assert e.value.code == 500
 
         with pytest.raises(CogniteAPIError, match=re.escape("Client error | code: 400 | X-Request-ID:")) as e:
-            method(**kwargs)
+            await method(**kwargs)
         assert e.value.code == 400
         assert e.value.message == "Client error"
 
     @pytest.mark.usefixtures("disable_gzip")
-    def test_request_gzip_disabled(self, httpx_mock: HTTPXMock, api_client_with_token: APIClient) -> None:
+    async def test_request_gzip_disabled(self, httpx_mock: HTTPXMock, api_client_with_token: APIClient) -> None:
         def check_gzip_disabled(request: Any) -> Response:
             assert "Content-Encoding" not in request.headers
             assert {"any": "OK"} == json.loads(request.content)
@@ -167,10 +169,10 @@ class TestBasicRequests:
         for method in ["PUT", "POST"]:
             httpx_mock.add_callback(check_gzip_disabled, method=method, url=BASE_URL + URL_PATH)
 
-        api_client_with_token._post(URL_PATH, json={"any": "OK"}, headers={})
-        api_client_with_token._put(URL_PATH, json={"any": "OK"}, headers={})
+        await api_client_with_token._post(URL_PATH, json={"any": "OK"}, headers={})
+        await api_client_with_token._put(URL_PATH, json={"any": "OK"}, headers={})
 
-    def test_request_gzip_enabled(self, httpx_mock: HTTPXMock, api_client_with_token: APIClient) -> None:
+    async def test_request_gzip_enabled(self, httpx_mock: HTTPXMock, api_client_with_token: APIClient) -> None:
         def check_gzip_enabled(request: Any) -> Response:
             assert "Content-Encoding" in request.headers
             assert {"any": "OK"} == jsgz_load(request.content)
@@ -179,13 +181,13 @@ class TestBasicRequests:
         for method in ["PUT", "POST"]:
             httpx_mock.add_callback(check_gzip_enabled, method=method, url=BASE_URL + URL_PATH)
 
-        api_client_with_token._post(URL_PATH, json={"any": "OK"}, headers={})
-        api_client_with_token._put(URL_PATH, json={"any": "OK"}, headers={})
+        await api_client_with_token._post(URL_PATH, json={"any": "OK"}, headers={})
+        await api_client_with_token._put(URL_PATH, json={"any": "OK"}, headers={})
 
-    def test_headers_correct(self, mock_all_requests_ok: HTTPXMock, api_client_with_token: APIClient) -> None:
+    async def test_headers_correct(self, mock_all_requests_ok: HTTPXMock, api_client_with_token: APIClient) -> None:
         from cognite.client import __version__
 
-        api_client_with_token._post(URL_PATH, {"any": "OK"}, headers={"additional": "stuff"})
+        await api_client_with_token._post(URL_PATH, {"any": "OK"}, headers={"additional": "stuff"})
         headers = mock_all_requests_ok.get_requests()[0].headers
 
         assert {"gzip", "deflate"} <= set(headers["accept-encoding"].split(", "))
@@ -194,36 +196,36 @@ class TestBasicRequests:
         assert "Bearer abc" == headers["Authorization"]
         assert "stuff" == headers["additional"]
 
-    def test_headers_correct_with_token_factory(
+    async def test_headers_correct_with_token_factory(
         self, mock_all_requests_ok: HTTPXMock, api_client_with_token_factory: APIClient
     ) -> None:
-        api_client_with_token_factory._post(URL_PATH, {"any": "OK"})
+        await api_client_with_token_factory._post(URL_PATH, {"any": "OK"})
         headers = mock_all_requests_ok.get_requests()[0].headers
 
         assert "api-key" not in headers
         assert api_client_with_token_factory._config.credentials.authorization_header()[1] == headers["Authorization"]
 
-    def test_headers_correct_with_token(
+    async def test_headers_correct_with_token(
         self, mock_all_requests_ok: HTTPXMock, api_client_with_token: APIClient
     ) -> None:
-        api_client_with_token._post(URL_PATH, {"any": "OK"})
+        await api_client_with_token._post(URL_PATH, {"any": "OK"})
         headers = mock_all_requests_ok.get_requests()[0].headers
 
         assert "api-key" not in headers
         assert api_client_with_token._config.credentials.authorization_header()[1] == headers["Authorization"]
 
     @pytest.mark.parametrize("payload", [math.nan, math.inf, -math.inf, {"foo": {"bar": {"baz": [[[math.nan]]]}}}])
-    def test__request_raises_more_verbose_exception(self, api_client_with_token: APIClient, payload: Any) -> None:
+    async def test__request_raises_more_verbose_exception(self, api_client_with_token: APIClient, payload: Any) -> None:
         with pytest.raises(ValueError, match=r"contain NaN\(s\) or \+/\- Inf\!"):
-            api_client_with_token._post(URL_PATH, json=payload)
+            await api_client_with_token._post(URL_PATH, json=payload)
 
-    def test__request_raises_unmodified_exception(self, api_client_with_token: APIClient) -> None:
+    async def test__request_raises_unmodified_exception(self, api_client_with_token: APIClient) -> None:
         # Create circular ref in payload to raise an arbitrary ValueError
         # we want to make sure we _don't_ modify:
         payload: list = []
         payload.append(payload)
         with pytest.raises(ValueError) as exc_info:
-            api_client_with_token._post(URL_PATH, json=payload)  # type: ignore[arg-type]
+            await api_client_with_token._post(URL_PATH, json=payload)  # type: ignore[arg-type]
         exc_msg = exc_info.value.args[0]
         assert "contain NaN(s) or +/- Inf!" not in exc_msg
 
@@ -254,7 +256,7 @@ class SomeResource(WriteableCogniteResource):
         y: int | None = None,
         id: int | None = None,
         external_id: str | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.x = x
         self.y = y
@@ -286,46 +288,38 @@ class SomeFilter(CogniteFilter):
         self.var_y = var_y
 
 
-class SomeAggregation(CogniteResource):
-    def __init__(self, count: int) -> None:
-        self.count = count
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SomeAggregation:
-        return cls(count=resource["count"])
-
-
 class TestStandardRetrieve:
-    def test_standard_retrieve_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_retrieve_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(method="GET", url=BASE_URL + URL_PATH + "/1", status_code=200, json={"x": 1, "y": 2})
-        assert SomeResource(1, 2) == api_client_with_token._retrieve(
+        assert SomeResource(1, 2) == await api_client_with_token._retrieve(
             cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1)
         )
 
-    def test_standard_retrieve_not_found(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_retrieve_not_found(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="GET", url=BASE_URL + URL_PATH + "/1", status_code=404, json={"error": {"message": "Not Found."}}
         )
         assert (
-            api_client_with_token._retrieve(cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1)) is None
+            await api_client_with_token._retrieve(cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1))
+            is None
         )
 
-    def test_standard_retrieve_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_retrieve_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="GET", url=BASE_URL + URL_PATH + "/1", status_code=400, json={"error": {"message": "Client Error"}}
         )
         with pytest.raises(CogniteAPIError, match="Client Error") as e:
-            api_client_with_token._retrieve(cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1))
+            await api_client_with_token._retrieve(cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1))
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
 
-    def test_cognite_client_is_set(
-        self, cognite_client: CogniteClient, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    async def test_cognite_client_is_set(
+        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, httpx_mock: HTTPXMock
     ) -> None:
         httpx_mock.add_response(method="GET", url=BASE_URL + URL_PATH + "/1", status_code=200, json={"x": 1, "y": 2})
-        res = api_client_with_token._retrieve(cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1))
+        res = await api_client_with_token._retrieve(cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1))
         assert res
-        assert cognite_client == res._cognite_client
+        assert async_client is res._cognite_client
 
 
 class TestStandardRetrieveMultiple:
@@ -339,8 +333,10 @@ class TestStandardRetrieveMultiple:
         )
         return httpx_mock
 
-    def test_by_id_wrap_OK(self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock) -> None:
-        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == api_client_with_token._retrieve_multiple(
+    async def test_by_id_wrap_OK(self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock) -> None:
+        assert SomeResourceList(
+            [SomeResource(1, 2), SomeResource(1)]
+        ) == await api_client_with_token._retrieve_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -348,8 +344,8 @@ class TestStandardRetrieveMultiple:
         )
         assert {"items": [{"id": 1}, {"id": 2}]} == jsgz_load(mock_by_ids.get_requests()[0].content)
 
-    def test_by_single_id_wrap_OK(self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock) -> None:
-        assert SomeResource(1, 2) == api_client_with_token._retrieve_multiple(
+    async def test_by_single_id_wrap_OK(self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock) -> None:
+        assert SomeResource(1, 2) == await api_client_with_token._retrieve_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -357,8 +353,10 @@ class TestStandardRetrieveMultiple:
         )
         assert {"items": [{"id": 1}]} == jsgz_load(mock_by_ids.get_requests()[0].content)
 
-    def test_by_external_id_wrap_OK(self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock) -> None:
-        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == api_client_with_token._retrieve_multiple(
+    async def test_by_external_id_wrap_OK(self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock) -> None:
+        assert SomeResourceList(
+            [SomeResource(1, 2), SomeResource(1)]
+        ) == await api_client_with_token._retrieve_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -366,8 +364,10 @@ class TestStandardRetrieveMultiple:
         )
         assert {"items": [{"externalId": "1"}, {"externalId": "2"}]} == jsgz_load(mock_by_ids.get_requests()[0].content)
 
-    def test_by_single_external_id_wrap_OK(self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock) -> None:
-        assert SomeResource(1, 2) == api_client_with_token._retrieve_multiple(
+    async def test_by_single_external_id_wrap_OK(
+        self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock
+    ) -> None:
+        assert SomeResource(1, 2) == await api_client_with_token._retrieve_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -375,8 +375,12 @@ class TestStandardRetrieveMultiple:
         )
         assert {"items": [{"externalId": "1"}]} == jsgz_load(mock_by_ids.get_requests()[0].content)
 
-    def test_retrieve_multiple_ignore_unknown(self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock) -> None:
-        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == api_client_with_token._retrieve_multiple(
+    async def test_retrieve_multiple_ignore_unknown(
+        self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock
+    ) -> None:
+        assert SomeResourceList(
+            [SomeResource(1, 2), SomeResource(1)]
+        ) == await api_client_with_token._retrieve_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -387,8 +391,10 @@ class TestStandardRetrieveMultiple:
             mock_by_ids.get_requests()[0].content
         )
 
-    def test_id_and_external_id_mixed(self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock) -> None:
-        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == api_client_with_token._retrieve_multiple(
+    async def test_id_and_external_id_mixed(self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock) -> None:
+        assert SomeResourceList(
+            [SomeResource(1, 2), SomeResource(1)]
+        ) == await api_client_with_token._retrieve_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -396,7 +402,9 @@ class TestStandardRetrieveMultiple:
         )
         assert {"items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(mock_by_ids.get_requests()[0].content)
 
-    def test_standard_retrieve_multiple_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_retrieve_multiple_fail(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    ) -> None:
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/byids",
@@ -404,7 +412,7 @@ class TestStandardRetrieveMultiple:
             json={"error": {"message": "Client Error"}},
         )
         with pytest.raises(CogniteAPIError, match="Client Error") as e:
-            api_client_with_token._retrieve_multiple(
+            await api_client_with_token._retrieve_multiple(
                 list_cls=SomeResourceList,
                 resource_cls=SomeResource,
                 resource_path=URL_PATH,
@@ -413,8 +421,8 @@ class TestStandardRetrieveMultiple:
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
 
-    def test_ids_all_None(self, api_client_with_token: APIClient) -> None:
-        result = api_client_with_token._retrieve_multiple(
+    async def test_ids_all_None(self, api_client_with_token: APIClient) -> None:
+        result = await api_client_with_token._retrieve_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -424,14 +432,14 @@ class TestStandardRetrieveMultiple:
         assert isinstance(result, SomeResourceList)
         assert len(result) == 0
 
-    def test_single_id_not_found(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_single_id_not_found(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/byids",
             status_code=400,
             json={"error": {"message": "Not Found", "missing": [{"id": 1}]}},
         )
-        res = api_client_with_token._retrieve_multiple(
+        res = await api_client_with_token._retrieve_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -439,7 +447,7 @@ class TestStandardRetrieveMultiple:
         )
         assert res is None
 
-    def test_multiple_ids_not_found(
+    async def test_multiple_ids_not_found(
         self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
         httpx_mock.add_response(
@@ -459,7 +467,7 @@ class TestStandardRetrieveMultiple:
 
         set_request_limit(api_client_with_token, 1)
         with pytest.raises(CogniteNotFoundError) as e:
-            api_client_with_token._retrieve_multiple(
+            await api_client_with_token._retrieve_multiple(
                 list_cls=SomeResourceList,
                 resource_cls=SomeResource,
                 resource_path=URL_PATH,
@@ -468,18 +476,18 @@ class TestStandardRetrieveMultiple:
         assert {"id": 1} in e.value.not_found
         assert {"id": 2} in e.value.not_found + e.value.skipped
 
-    def test_cognite_client_is_set(
-        self, cognite_client: CogniteClient, api_client_with_token: APIClient, mock_by_ids: HTTPXMock
+    async def test_cognite_client_is_set(
+        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, mock_by_ids: HTTPXMock
     ) -> None:
-        res = api_client_with_token._retrieve_multiple(
+        res = await api_client_with_token._retrieve_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
             identifiers=IdentifierSequence.of(1, 2),
         )
-        assert cognite_client == res._cognite_client
+        assert async_client is res._cognite_client
 
-    def test_over_limit_concurrent(
+    async def test_over_limit_concurrent(
         self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
         httpx_mock.add_response(
@@ -490,7 +498,7 @@ class TestStandardRetrieveMultiple:
         )
 
         set_request_limit(api_client_with_token, 1)
-        api_client_with_token._retrieve_multiple(
+        await api_client_with_token._retrieve_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -506,26 +514,28 @@ class TestStandardRetrieveMultiple:
 
 
 class TestStandardList:
-    def test_standard_list_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_list_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="GET",
             url=BASE_URL + URL_PATH + "?limit=1000",
             status_code=200,
             json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
         )
-        res = api_client_with_token._list(
+        res = await api_client_with_token._list(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
         )
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]).dump() == res.dump()
 
-    def test_standard_list_with_filter_get_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_list_with_filter_get_ok(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    ) -> None:
         httpx_mock.add_response(
             method="GET",
             url=BASE_URL + URL_PATH + "?filter=bla&limit=1000",
             status_code=200,
             json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
         )
-        res = api_client_with_token._list(
+        res = await api_client_with_token._list(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -534,14 +544,16 @@ class TestStandardList:
         )
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]).dump() == res.dump()
 
-    def test_standard_list_with_filter_post_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_list_with_filter_post_ok(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    ) -> None:
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/list",
             status_code=200,
             json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
         )
-        res = api_client_with_token._list(
+        res = await api_client_with_token._list(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -551,7 +563,7 @@ class TestStandardList:
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == res
         assert {"filter": {"filter": "bla"}, "limit": 1000} == jsgz_load(httpx_mock.get_requests()[0].content)
 
-    def test_standard_list_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_list_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="GET",
             url=BASE_URL + URL_PATH + "?limit=1000",
@@ -559,7 +571,7 @@ class TestStandardList:
             json={"error": {"message": "Client Error"}},
         )
         with pytest.raises(CogniteAPIError, match="Client Error") as e:
-            api_client_with_token._list(
+            await api_client_with_token._list(
                 list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
             )
         assert 400 == e.value.code
@@ -568,7 +580,7 @@ class TestStandardList:
     NUMBER_OF_ITEMS_FOR_AUTOPAGING = 11500
     ITEMS_TO_GET_WHILE_AUTOPAGING: ClassVar = [{"x": 1, "y": 1} for _ in range(NUMBER_OF_ITEMS_FOR_AUTOPAGING)]
 
-    def test_list_partitions(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_list_partitions(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         for _ in range(3):
             httpx_mock.add_response(
                 method="POST",
@@ -576,7 +588,7 @@ class TestStandardList:
                 status_code=200,
                 json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
             )
-        res = api_client_with_token._list(
+        res = await api_client_with_token._list(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -596,15 +608,16 @@ class TestStandardList:
             del payload["partition"]
             assert {"cursor": None, "filter": {}, "limit": 1000} == payload
 
-    def test_list_partitions_with_failure(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        def request_callback(request: Any) -> Response:
+    async def test_list_partitions_with_failure(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+        async def request_callback(request: Any) -> Response:
             payload = jsgz_load(request.content)
-            np, total = payload["partition"].split("/")
-            if int(np) == 3:
+            partition = int(payload["partition"].split("/")[0])
+            if partition == 3:
                 return Response(503, headers={}, json={"message": "Service Unavailable"})
-            else:
-                time.sleep(0.05)  # ensures bad luck race condition where 503 above executes last
-                return Response(200, headers={}, json={"items": [{"x": 42, "y": 13}]})
+            elif partition < 5:
+                # Ensure we don't hit the bad luck race condition when 503 above executes last:
+                await asyncio.sleep(0.05)
+            return Response(200, headers={}, json={"items": [{"x": 42, "y": 13}]})
 
         httpx_mock.add_callback(
             request_callback,
@@ -614,7 +627,7 @@ class TestStandardList:
             is_reusable=True,
         )
         with pytest.raises(CogniteAPIError) as exc:
-            api_client_with_token._list(
+            await api_client_with_token._list(
                 list_cls=SomeResourceList,
                 resource_cls=SomeResource,
                 resource_path=URL_PATH,
@@ -622,8 +635,8 @@ class TestStandardList:
                 partitions=15,
                 limit=None,
             )
-        assert 500 == exc.value.code
-        assert exc.value.unknown == [("3/15",)]
+        assert 503 == exc.value.code
+        assert [task["partition"] for task in exc.value.unknown] == ["3/15"]
         assert exc.value.skipped
         assert exc.value.successful
         assert 14 == len(exc.value.successful) + len(exc.value.skipped)
@@ -679,9 +692,9 @@ class TestStandardList:
         )
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
-    def test_standard_list_generator(self, api_client_with_token: APIClient) -> None:
+    async def test_standard_list_generator(self, api_client_with_token: APIClient) -> None:
         total_resources = 0
-        for resource in api_client_with_token._list_generator(
+        async for resource in api_client_with_token._list_generator(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
         ):
             assert isinstance(resource, SomeResource)
@@ -689,9 +702,9 @@ class TestStandardList:
         assert 11500 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
-    def test_standard_list_generator_with_limit(self, api_client_with_token: APIClient) -> None:
+    async def test_standard_list_generator_with_limit(self, api_client_with_token: APIClient) -> None:
         total_resources = 0
-        for resource in api_client_with_token._list_generator(
+        async for resource in api_client_with_token._list_generator(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET", limit=10000
         ):
             assert isinstance(resource, SomeResource)
@@ -699,9 +712,9 @@ class TestStandardList:
         assert 10000 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
-    def test_standard_list_generator_with_chunk_size(self, api_client_with_token: APIClient) -> None:
+    async def test_standard_list_generator_with_chunk_size(self, api_client_with_token: APIClient) -> None:
         total_resources = 0
-        for resource_chunk in api_client_with_token._list_generator(
+        async for resource_chunk in api_client_with_token._list_generator(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET", chunk_size=1000
         ):
             assert isinstance(resource_chunk, SomeResourceList)
@@ -714,9 +727,11 @@ class TestStandardList:
         assert 11500 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging_2589")
-    def test_standard_list_generator_with_chunk_size_chunk_edge_case(self, api_client_with_token: APIClient) -> None:
+    async def test_standard_list_generator_with_chunk_size_chunk_edge_case(
+        self, api_client_with_token: APIClient
+    ) -> None:
         total_resources = 0
-        for resource_chunk in api_client_with_token._list_generator(
+        async for resource_chunk in api_client_with_token._list_generator(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET", chunk_size=2500
         ):
             assert isinstance(resource_chunk, SomeResourceList)
@@ -725,9 +740,9 @@ class TestStandardList:
         assert 2589 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging_2589")
-    def test_standard_list_generator_with_chunk_size_chunk_limit(self, api_client_with_token: APIClient) -> None:
+    async def test_standard_list_generator_with_chunk_size_chunk_limit(self, api_client_with_token: APIClient) -> None:
         total_resources = 0
-        for resource_chunk in api_client_with_token._list_generator(
+        async for resource_chunk in api_client_with_token._list_generator(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -741,9 +756,9 @@ class TestStandardList:
         assert 2563 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
-    def test_standard_list_generator_with_chunk_size_with_limit(self, api_client_with_token: APIClient) -> None:
+    async def test_standard_list_generator_with_chunk_size_with_limit(self, api_client_with_token: APIClient) -> None:
         total_resources = 0
-        for resource_chunk in api_client_with_token._list_generator(
+        async for resource_chunk in api_client_with_token._list_generator(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -757,11 +772,11 @@ class TestStandardList:
         assert 10000 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
-    def test_standard_list_generator_with_chunk_size_below_default_limit_and_global_limit(
+    async def test_standard_list_generator_with_chunk_size_below_default_limit_and_global_limit(
         self, api_client_with_token: APIClient
     ) -> None:
         total_resources = 0
-        for resource_chunk in api_client_with_token._list_generator(
+        async for resource_chunk in api_client_with_token._list_generator(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -775,9 +790,9 @@ class TestStandardList:
         assert 1000 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
-    def test_standard_list_generator__chunk_size_exceeds_max(self, api_client_with_token: APIClient) -> None:
+    async def test_standard_list_generator__chunk_size_exceeds_max(self, api_client_with_token: APIClient) -> None:
         total_resources = 0
-        for resource_chunk in api_client_with_token._list_generator(
+        async for resource_chunk in api_client_with_token._list_generator(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -791,39 +806,37 @@ class TestStandardList:
         assert 2002 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
-    def test_standard_list_generator_vs_partitions(self, api_client_with_token: APIClient) -> None:
+    async def test_standard_list_generator_vs_partitions(self, api_client_with_token: APIClient) -> None:
         total_resources = 0
-        for resource_chunk in api_client_with_token._list_generator(
+        async for resource_chunk in api_client_with_token._list_generator(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
             method="GET",
-            partitions=1,
             limit=2000,
             chunk_size=1001,
         ):
-            # TODO: chunk_size is ignored when partitions is set, fix in next major version
-            assert isinstance(resource_chunk, SomeResource)
-            total_resources += 1
+            assert isinstance(resource_chunk, SomeResourceList)
+            total_resources += len(resource_chunk)
 
         assert 2000 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
-    def test_standard_list_autopaging(self, api_client_with_token: APIClient) -> None:
-        res = api_client_with_token._list(
+    async def test_standard_list_autopaging(self, api_client_with_token: APIClient) -> None:
+        res = await api_client_with_token._list(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
         )
         assert self.NUMBER_OF_ITEMS_FOR_AUTOPAGING == len(res)
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
-    def test_standard_list_autopaging_with_limit(self, api_client_with_token: APIClient) -> None:
-        res = api_client_with_token._list(
+    async def test_standard_list_autopaging_with_limit(self, api_client_with_token: APIClient) -> None:
+        res = await api_client_with_token._list(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET", limit=5333
         )
         assert 5333 == len(res)
 
-    def test_cognite_client_is_set_asfdsa(
-        self, cognite_client: CogniteClient, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    async def test_cognite_client_is_set(
+        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, httpx_mock: HTTPXMock
     ) -> None:
         httpx_mock.add_response(
             method="POST",
@@ -837,27 +850,25 @@ class TestStandardList:
             status_code=200,
             json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
         )
-        res = api_client_with_token._list(
+        res = await api_client_with_token._list(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="POST"
         )
-        assert cognite_client == res._cognite_client
+        assert async_client is res._cognite_client
 
-        res = api_client_with_token._list(
+        res = await api_client_with_token._list(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
         )
-        assert cognite_client == res._cognite_client
+        assert async_client is res._cognite_client
 
 
 class TestStandardAggregate:
-    def test_standard_aggregate_OK(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_aggregate_OK(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/aggregate", status_code=200, json={"items": [{"count": 1}]}
         )
-        assert [SomeAggregation(1)] == api_client_with_token._aggregate(
-            resource_path=URL_PATH, filter={"x": 1}, cls=SomeAggregation
-        )
+        assert 1 == await api_client_with_token._aggregate_count(resource_path=URL_PATH, filter={"x": 1})
 
-    def test_standard_aggregate_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_aggregate_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/aggregate",
@@ -865,17 +876,17 @@ class TestStandardAggregate:
             json={"error": {"message": "Client Error"}},
         )
         with pytest.raises(CogniteAPIError, match="Client Error") as e:
-            api_client_with_token._aggregate(resource_path=URL_PATH, filter={"x": 1}, cls=SomeAggregation)
+            await api_client_with_token._aggregate_count(resource_path=URL_PATH, filter={"x": 1})
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
 
 
 class TestStandardCreate:
-    def test_standard_create_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_create_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]}
         )
-        res = api_client_with_token._create_multiple(
+        res = await api_client_with_token._create_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -885,11 +896,13 @@ class TestStandardCreate:
         assert SomeResource(1, 2) == res[0]
         assert SomeResource(1) == res[1]
 
-    def test_standard_create_extra_body_fields(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_create_extra_body_fields(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    ) -> None:
         httpx_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]}
         )
-        api_client_with_token._create_multiple(
+        await api_client_with_token._create_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -898,29 +911,31 @@ class TestStandardCreate:
         )
         assert {"items": [{"x": 1, "y": 1}, {"x": 1}], "foo": "bar"} == jsgz_load(httpx_mock.get_requests()[0].content)
 
-    def test_standard_create_single_item_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
-            method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}]}
-        )
-        res = api_client_with_token._create_multiple(
-            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, items=SomeResource(1, 2)
-        )
-        assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(httpx_mock.get_requests()[0].content)
-        assert SomeResource(1, 2) == res
-
-    def test_standard_create_single_item_in_list_ok(
+    async def test_standard_create_single_item_ok(
         self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
     ) -> None:
         httpx_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
-        res = api_client_with_token._create_multiple(
+        res = await api_client_with_token._create_multiple(
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, items=SomeResource(1, 2)
+        )
+        assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert SomeResource(1, 2) == res
+
+    async def test_standard_create_single_item_in_list_ok(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}]}
+        )
+        res = await api_client_with_token._create_multiple(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, items=[SomeResource(1, 2)]
         )
         assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert SomeResourceList([SomeResource(1, 2)]) == res
 
-    def test_standard_create_fail(
+    async def test_standard_create_fail(
         self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
         def callback(request: Any) -> Response:
@@ -936,7 +951,7 @@ class TestStandardCreate:
         )
         set_request_limit(api_client_with_token, 1)
         with pytest.raises(CogniteAPIError) as e:
-            api_client_with_token._create_multiple(
+            await api_client_with_token._create_multiple(
                 list_cls=SomeResourceList,
                 resource_cls=SomeResource,
                 resource_path=URL_PATH,
@@ -952,7 +967,7 @@ class TestStandardCreate:
         assert [SomeResource(1, 1, external_id="200")] == e.value.successful
         assert [SomeResource(external_id="500")] == e.value.unknown
 
-    def test_standard_create_concurrent(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_create_concurrent(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
@@ -960,7 +975,7 @@ class TestStandardCreate:
             method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 3, "y": 4}]}
         )
 
-        res = api_client_with_token._create_multiple(
+        res = await api_client_with_token._create_multiple(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
@@ -977,8 +992,8 @@ class TestStandardCreate:
         ]
         unittest.TestCase().assertCountEqual(expected_item_bodies, gotten_item_bodies)
 
-    def test_cognite_client_is_set(
-        self, cognite_client: CogniteClient, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    async def test_cognite_client_is_set(
+        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, httpx_mock: HTTPXMock
     ) -> None:
         httpx_mock.add_response(
             method="POST",
@@ -987,47 +1002,46 @@ class TestStandardCreate:
             json={"items": [{"x": 1, "y": 2}]},
             is_reusable=True,
         )
-        assert (
-            cognite_client
-            == api_client_with_token._create_multiple(
-                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, items=SomeResource()
-            )._cognite_client
+        res1 = await api_client_with_token._create_multiple(
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, items=SomeResource()
         )
-        assert (
-            cognite_client
-            == api_client_with_token._create_multiple(
-                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, items=[SomeResource()]
-            )._cognite_client
+        assert async_client is res1._cognite_client
+
+        res2 = await api_client_with_token._create_multiple(
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, items=[SomeResource()]
         )
+        assert async_client is res2._cognite_client
 
 
 class TestStandardDelete:
-    def test_standard_delete_multiple_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_delete_multiple_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
-        api_client_with_token._delete_multiple(
+        await api_client_with_token._delete_multiple(
             resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1, 2])
         )
         assert {"items": [1, 2]} == jsgz_load(httpx_mock.get_requests()[0].content)
 
-    def test_standard_delete_multiple_ok__single_id(
+    async def test_standard_delete_multiple_ok__single_id(
         self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
     ) -> None:
         httpx_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
-        api_client_with_token._delete_multiple(
+        await api_client_with_token._delete_multiple(
             resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of(1)
         )
         assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
 
-    def test_standard_delete_multiple_ok__single_id_in_list(
+    async def test_standard_delete_multiple_ok__single_id_in_list(
         self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
     ) -> None:
         httpx_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
-        api_client_with_token._delete_multiple(
+        await api_client_with_token._delete_multiple(
             resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1])
         )
         assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
 
-    def test_standard_delete_multiple_fail_4xx(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_delete_multiple_fail_4xx(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    ) -> None:
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/delete",
@@ -1035,14 +1049,16 @@ class TestStandardDelete:
             json={"error": {"message": "Client Error"}},
         )
         with pytest.raises(CogniteAPIError) as e:
-            api_client_with_token._delete_multiple(
+            await api_client_with_token._delete_multiple(
                 resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1, 2])
             )
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
         assert e.value.failed == [1, 2]
 
-    def test_standard_delete_multiple_fail_5xx(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_delete_multiple_fail_5xx(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    ) -> None:
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/delete",
@@ -1050,7 +1066,7 @@ class TestStandardDelete:
             json={"error": {"message": "Server Error"}},
         )
         with pytest.raises(CogniteAPIError) as e:
-            api_client_with_token._delete_multiple(
+            await api_client_with_token._delete_multiple(
                 resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1, 2])
             )
         assert 500 == e.value.code
@@ -1058,7 +1074,7 @@ class TestStandardDelete:
         assert e.value.unknown == [1, 2]
         assert e.value.failed == []
 
-    def test_standard_delete_multiple_fail_missing_ids(
+    async def test_standard_delete_multiple_fail_missing_ids(
         self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
         httpx_mock.add_response(
@@ -1075,21 +1091,21 @@ class TestStandardDelete:
         )
         set_request_limit(api_client_with_token, 2)
         with pytest.raises(CogniteNotFoundError) as e:
-            api_client_with_token._delete_multiple(
+            await api_client_with_token._delete_multiple(
                 resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1, 2, 3])
             )
 
         unittest.TestCase().assertCountEqual([{"id": 1}, {"id": 3}], e.value.not_found)
         assert [1, 2, 3] == sorted(e.value.failed)
 
-    def test_over_limit_concurrent(
+    async def test_over_limit_concurrent(
         self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
         httpx_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
         httpx_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
 
         set_request_limit(api_client_with_token, 2)
-        api_client_with_token._delete_multiple(
+        await api_client_with_token._delete_multiple(
             resource_path=URL_PATH, identifiers=IdentifierSequence.of([1, 2, 3, 4]), wrap_ids=False
         )
         unittest.TestCase().assertCountEqual(
@@ -1113,10 +1129,10 @@ class TestStandardUpdate:
         )
         return httpx_mock
 
-    def test_standard_update_with_cognite_resource_OK(
+    async def test_standard_update_with_cognite_resource_OK(
         self, api_client_with_token: APIClient, mock_update: HTTPXMock
     ) -> None:
-        res = api_client_with_token._update_multiple(
+        res = await api_client_with_token._update_multiple(
             update_cls=SomeUpdate,
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
@@ -1126,10 +1142,10 @@ class TestStandardUpdate:
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.get_requests()[0].content)
 
-    def test_standard_update_with_cognite_resource__subject_to_camel_case_issue(
+    async def test_standard_update_with_cognite_resource__subject_to_camel_case_issue(
         self, api_client_with_token: APIClient, mock_update: HTTPXMock
     ) -> None:
-        api_client_with_token._update_multiple(
+        await api_client_with_token._update_multiple(
             update_cls=SomeUpdate,
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
@@ -1140,10 +1156,10 @@ class TestStandardUpdate:
             mock_update.get_requests()[0].content
         )
 
-    def test_standard_update_with_cognite_resource__non_update_attributes(
+    async def test_standard_update_with_cognite_resource__non_update_attributes(
         self, api_client_with_token: APIClient, mock_update: HTTPXMock
     ) -> None:
-        res = api_client_with_token._update_multiple(
+        res = await api_client_with_token._update_multiple(
             update_cls=SomeUpdate,
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
@@ -1153,10 +1169,10 @@ class TestStandardUpdate:
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.get_requests()[0].content)
 
-    def test_standard_update_with_cognite_resource__id_and_external_id_set(
+    async def test_standard_update_with_cognite_resource__id_and_external_id_set(
         self, api_client_with_token: APIClient, mock_update: HTTPXMock
     ) -> None:
-        api_client_with_token._update_multiple(
+        await api_client_with_token._update_multiple(
             update_cls=SomeUpdate,
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
@@ -1167,10 +1183,10 @@ class TestStandardUpdate:
             mock_update.get_requests()[0].content
         )
 
-    def test_standard_update_with_cognite_resource_and_external_id_OK(
+    async def test_standard_update_with_cognite_resource_and_external_id_OK(
         self, api_client_with_token: APIClient, mock_update: HTTPXMock
     ) -> None:
-        res = api_client_with_token._update_multiple(
+        res = await api_client_with_token._update_multiple(
             update_cls=SomeUpdate,
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
@@ -1182,10 +1198,10 @@ class TestStandardUpdate:
             mock_update.get_requests()[0].content
         )
 
-    def test_standard_update_with_cognite_update_object_OK(
+    async def test_standard_update_with_cognite_update_object_OK(
         self, api_client_with_token: APIClient, mock_update: HTTPXMock
     ) -> None:
-        res = api_client_with_token._update_multiple(
+        res = await api_client_with_token._update_multiple(
             update_cls=SomeUpdate,
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
@@ -1195,8 +1211,10 @@ class TestStandardUpdate:
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.get_requests()[0].content)
 
-    def test_standard_update_single_object(self, api_client_with_token: APIClient, mock_update: HTTPXMock) -> None:
-        res = api_client_with_token._update_multiple(
+    async def test_standard_update_single_object(
+        self, api_client_with_token: APIClient, mock_update: HTTPXMock
+    ) -> None:
+        res = await api_client_with_token._update_multiple(
             update_cls=SomeUpdate,
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
@@ -1206,10 +1224,10 @@ class TestStandardUpdate:
         assert SomeResource(id=1, x=1, y=100) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.get_requests()[0].content)
 
-    def test_standard_update_with_cognite_update_object_and_external_id_OK(
+    async def test_standard_update_with_cognite_update_object_and_external_id_OK(
         self, api_client_with_token: APIClient, mock_update: HTTPXMock
     ) -> None:
-        res = api_client_with_token._update_multiple(
+        res = await api_client_with_token._update_multiple(
             update_cls=SomeUpdate,
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
@@ -1221,7 +1239,7 @@ class TestStandardUpdate:
             mock_update.get_requests()[0].content
         )
 
-    def test_standard_update_fail_4xx(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_update_fail_4xx(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/update",
@@ -1229,7 +1247,7 @@ class TestStandardUpdate:
             json={"error": {"message": "Client Error"}},
         )
         with pytest.raises(CogniteAPIError) as e:
-            api_client_with_token._update_multiple(
+            await api_client_with_token._update_multiple(
                 update_cls=SomeUpdate,
                 list_cls=SomeResourceList,
                 resource_cls=SomeResource,
@@ -1240,7 +1258,7 @@ class TestStandardUpdate:
         assert e.value.code == 400
         assert e.value.failed == [0, "abc"]
 
-    def test_standard_update_fail_5xx(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_update_fail_5xx(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/update",
@@ -1248,7 +1266,7 @@ class TestStandardUpdate:
             json={"error": {"message": "Server Error"}},
         )
         with pytest.raises(CogniteAPIError) as e:
-            api_client_with_token._update_multiple(
+            await api_client_with_token._update_multiple(
                 update_cls=SomeUpdate,
                 list_cls=SomeResourceList,
                 resource_cls=SomeResource,
@@ -1261,7 +1279,7 @@ class TestStandardUpdate:
         assert e.value.unknown == [0, "abc"]
 
     @pytest.mark.usefixtures("disable_gzip")  # -> because match_json doesn't work with gzip
-    def test_standard_update_fail_missing_and_5xx(
+    async def test_standard_update_fail_missing_and_5xx(
         self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
         # Note 1: We have two tasks being added to an executor, but that doesn't mean we know the
@@ -1287,7 +1305,7 @@ class TestStandardUpdate:
 
         set_request_limit(api_client_with_token, 1)
         with pytest.raises(CogniteAPIError) as e:
-            api_client_with_token._update_multiple(
+            await api_client_with_token._update_multiple(
                 update_cls=SomeUpdate,
                 list_cls=SomeResourceList,
                 resource_cls=SomeResource,
@@ -1298,31 +1316,28 @@ class TestStandardUpdate:
         assert [0] == e.value.failed
         assert [{"id": 0}] == e.value.missing
 
-    def test_cognite_client_is_set(
-        self, cognite_client: CogniteClient, api_client_with_token: APIClient, mock_update: HTTPXMock
+    async def test_cognite_client_is_set(
+        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, mock_update: HTTPXMock
     ) -> None:
-        assert (
-            cognite_client
-            == api_client_with_token._update_multiple(
-                update_cls=SomeUpdate,
-                list_cls=SomeResourceList,
-                resource_cls=SomeResource,
-                resource_path=URL_PATH,
-                items=SomeResource(id=0),
-            )._cognite_client
+        res1 = await api_client_with_token._update_multiple(
+            update_cls=SomeUpdate,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=SomeResource(id=0),
         )
-        assert (
-            cognite_client
-            == api_client_with_token._update_multiple(
-                update_cls=SomeUpdate,
-                list_cls=SomeResourceList,
-                resource_cls=SomeResource,
-                resource_path=URL_PATH,
-                items=[SomeResource(id=0)],
-            )._cognite_client
-        )
+        assert async_client is res1._cognite_client
 
-    def test_over_limit_concurrent(
+        res2 = await api_client_with_token._update_multiple(
+            update_cls=SomeUpdate,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=[SomeResource(id=0)],
+        )
+        assert async_client is res2._cognite_client
+
+    async def test_over_limit_concurrent(
         self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
         httpx_mock.add_response(
@@ -1333,7 +1348,7 @@ class TestStandardUpdate:
         )
 
         set_request_limit(api_client_with_token, 1)
-        api_client_with_token._update_multiple(
+        await api_client_with_token._update_multiple(
             update_cls=SomeUpdate,
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
@@ -1350,12 +1365,12 @@ class TestStandardUpdate:
 
 
 class TestStandardSearch:
-    def test_standard_search_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_search_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/search", status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
 
-        res = api_client_with_token._search(
+        res = await api_client_with_token._search(
             list_cls=SomeResourceList,
             resource_path=URL_PATH,
             search={"name": "bla"},
@@ -1367,12 +1382,14 @@ class TestStandardSearch:
             httpx_mock.get_requests()[0].content
         )
 
-    def test_standard_search_dict_filter_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_search_dict_filter_ok(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    ) -> None:
         httpx_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/search", status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
 
-        res = api_client_with_token._search(
+        res = await api_client_with_token._search(
             list_cls=SomeResourceList,
             resource_path=URL_PATH,
             search={"name": "bla"},
@@ -1384,7 +1401,7 @@ class TestStandardSearch:
             httpx_mock.get_requests()[0].content
         )
 
-    def test_standard_search_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_standard_search_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/search",
@@ -1393,29 +1410,26 @@ class TestStandardSearch:
         )
 
         with pytest.raises(CogniteAPIError, match="Client Error") as e:
-            api_client_with_token._search(
+            await api_client_with_token._search(
                 list_cls=SomeResourceList, resource_path=URL_PATH, search={}, filter={}, limit=1
             )
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
 
-    def test_cognite_client_is_set(
-        self, cognite_client: CogniteClient, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    async def test_cognite_client_is_set(
+        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, httpx_mock: HTTPXMock
     ) -> None:
         httpx_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/search", status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
-
-        assert (
-            cognite_client
-            == api_client_with_token._search(
-                list_cls=SomeResourceList,
-                resource_path=URL_PATH,
-                search={"name": "bla"},
-                filter={"name": "bla"},
-                limit=1000,
-            )._cognite_client
+        res = await api_client_with_token._search(
+            list_cls=SomeResourceList,
+            resource_path=URL_PATH,
+            search={"name": "bla"},
+            filter={"name": "bla"},
+            limit=1000,
         )
+        assert async_client == res._cognite_client
 
 
 class TestRetryableEndpoints:
@@ -1446,9 +1460,7 @@ class TestRetryableEndpoints:
             ]
         ],
     )
-    def test_is_retryable_resource_api_endpoints(
-        self, api_client_with_token: APIClient, method: str, path: str, expected: bool
-    ) -> None:
+    async def test_is_retryable_resource_api_endpoints(self, method: str, path: str, expected: bool) -> None:
         assert expected is validate_url_and_return_retryability(method, path)
 
     @pytest.mark.parametrize(
@@ -1457,7 +1469,9 @@ class TestRetryableEndpoints:
             [
                 # Versions, only v1 is currently recognized:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/assets/list", True),
-                ("POST", "https://api.cognitedata.com/api/playground/projects/bla/assets/list", False),
+                # 'playground' is no longer a valid version, but since we use a deny-list, we don't match,
+                # and thus say it is retryable:
+                ("POST", "https://api.cognitedata.com/api/playground/projects/bla/assets/list", True),
                 # Hosts
                 *(
                     # Should work on all hosts
@@ -1611,20 +1625,24 @@ class TestRetryableEndpoints:
             ]
         ),
     )
-    def test_is_retryable(self, api_client_with_token: APIClient, method: str, path: str, expected: bool) -> None:
+    async def test_is_retryable(self, method: str, path: str, expected: bool) -> None:
         assert expected is validate_url_and_return_retryability(method, path)
 
     @pytest.mark.parametrize(
-        "method, path", [("POST", "htt://bla/bla"), ("BLOP", "http://localhost:8000/token/inspect")]
+        "method, path, expected_error",
+        [
+            ("POST", "htt://bla/bla", r"is not valid\. Cannot resolve whether or not it is retryable"),
+            ("BLOP", "http://localhost:8000/token/inspect", r"^Method BLOP is not valid\. Must be one of"),
+        ],
     )
-    def test_is_retryable_should_fail(self, api_client_with_token: APIClient, method: str, path: str) -> None:
-        with pytest.raises(ValueError, match="is not valid"):
+    async def test_is_retryable_should_fail(self, method: str, path: str, expected_error: str) -> None:
+        with pytest.raises(ValueError, match=expected_error):
             validate_url_and_return_retryability(method, path)
 
 
 class TestHelpers:
     @pytest.mark.parametrize("header_type", [Headers, dict])
-    def test_sanitize_headers(self, header_type: Any) -> None:
+    async def test_sanitize_headers(self, header_type: Any) -> None:
         before = header_type({"Authorization": "bla", "key": "bla"})
         after = header_type({"Authorization": "***", "key": "bla"})
 
@@ -1690,7 +1708,7 @@ class TestHelpers:
             ),
         ],
     )
-    def test_convert_resource_to_patch_object(
+    async def test_convert_resource_to_patch_object(
         self,
         resource: CogniteResource,
         update_obj: type[CogniteUpdate],
@@ -1703,19 +1721,20 @@ class TestHelpers:
 
 
 class TestConnectionPooling:
-    def test_connection_pool_is_shared_between_clients(self) -> None:
+    async def test_connection_pool_is_shared_between_clients(self) -> None:
         cnf = ClientConfig(client_name="bla", credentials=Token("bla"), project="bla")
-        c1 = CogniteClient(cnf)
-        c2 = CogniteClient(cnf)
+        c1 = get_wrapped_async_client(CogniteClient(cnf))
+        c2 = AsyncCogniteClient(cnf)
+        assert c1 is not c2
         assert (
-            c1._api_client._http_client.httpx_client
-            is c2._api_client._http_client.httpx_client
-            is c1._api_client._http_client_with_retry.httpx_client
-            is c2._api_client._http_client_with_retry.httpx_client
+            c1._api_client._http_client.httpx_async_client
+            is c2._api_client._http_client.httpx_async_client
+            is c1._api_client._http_client_with_retry.httpx_async_client
+            is c2._api_client._http_client_with_retry.httpx_async_client
         )
 
 
-def test_worker_in_backoff_loop_gets_new_token(httpx_mock: HTTPXMock) -> None:
+async def test_worker_in_backoff_loop_gets_new_token(httpx_mock: HTTPXMock) -> None:
     url = "https://api.cognitedata.com/api/v1/projects/c/assets/byids"
     httpx_mock.add_response(method="POST", url=url, status_code=429, json={"error": "Backoff plz"})
     httpx_mock.add_response(
@@ -1742,7 +1761,7 @@ def test_worker_in_backoff_loop_gets_new_token(httpx_mock: HTTPXMock) -> None:
 
 
 @pytest.mark.parametrize("limit, expected_error", ((-2, ValueError), (0, ValueError), ("10", TypeError)))
-def test_list_and_search__bad_limit_value_raises(
+async def test_list_and_search__bad_limit_value_raises(
     limit: Any, expected_error: Any, cognite_client: CogniteClient
 ) -> None:
     with pytest.raises(expected_error):

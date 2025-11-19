@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import ssl
 from typing import Any
@@ -5,15 +7,10 @@ from typing import Any
 import pytest
 from pytest_httpx import HTTPXMock
 
-from cognite.client import ClientConfig, CogniteClient, global_config
+from cognite.client import AsyncCogniteClient, ClientConfig, CogniteClient, global_config
+from cognite.client._http_client import get_global_async_httpx_client
 from cognite.client.credentials import OAuthClientCredentials, Token
-from cognite.client.data_classes import Asset, Event, EventList, FileMetadata, TimeSeries
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.data_classes.assets import AssetList
-from cognite.client.data_classes.files import FileMetadataList
-from cognite.client.data_classes.time_series import TimeSeriesList
 from cognite.client.utils._logging import DebugLogFormatter
-from tests.tests_unit.conftest import DefaultResourceGenerator
 
 BASE_URL = "http://blabla.cognitedata.com"
 TOKEN_URL = "https://test.com/token"
@@ -64,13 +61,13 @@ class TestCogniteClient:
             CogniteClient(ClientConfig(client_name="", project=None, credentials=Token("bla")))  # type: ignore[arg-type]
 
     def test_project_is_correct(self, client_config_w_token_factory: ClientConfig) -> None:
-        client = CogniteClient(client_config_w_token_factory)
-        assert client.config.project == "test-project"
+        async_client = AsyncCogniteClient(client_config_w_token_factory)
+        assert async_client.config.project == "test-project"
 
     def test_default_client_config_set(self, client_config_w_token_factory: ClientConfig) -> None:
         global_config.default_client_config = client_config_w_token_factory
-        client = CogniteClient()
-        assert client.config == client_config_w_token_factory
+        async_client = AsyncCogniteClient()
+        assert async_client.config == client_config_w_token_factory
         global_config.default_client_config = None
 
     def test_default_client_config_not_set(self) -> None:
@@ -84,29 +81,27 @@ class TestCogniteClient:
         log.handlers = []
         log.propagate = False
 
-    def test_api_version_present_in_header(
+    async def test_api_version_present_in_header(
         self, httpx_mock: HTTPXMock, client_config_w_token_factory: ClientConfig, mock_token_inspect: Any
     ) -> None:
-        client = CogniteClient(client_config_w_token_factory)
-        client.iam.token.inspect()
-        assert httpx_mock.get_requests()[0].headers["cdf-version"] == client.config.api_subversion
+        async_client = AsyncCogniteClient(client_config_w_token_factory)
+        await async_client.iam.token.inspect()
+        assert httpx_mock.get_requests()[0].headers["cdf-version"] == async_client.config.api_subversion
 
-    def test_verify_ssl_enabled_by_default(self, client_config_w_token_factory: ClientConfig) -> None:
-        client = CogniteClient(client_config_w_token_factory)
+    def test_verify_ssl_enabled_by_default(self, async_client: AsyncCogniteClient) -> None:
+        httpx_client = get_global_async_httpx_client()
+        assert ssl.CERT_REQUIRED is httpx_client._transport._pool._ssl_context.verify_mode
 
-        assert (
-            ssl.CERT_REQUIRED is client._api_client._http_client.httpx_client._transport._pool._ssl_context.verify_mode  # type: ignore[attr-defined]
-        )
-        assert (
-            ssl.CERT_REQUIRED
-            is client._api_client._http_client_with_retry.httpx_client._transport._pool._ssl_context.verify_mode  # type: ignore[attr-defined]
-        )
+        # Using iam is just a random choice here, could be any APIClient:
+        assert httpx_client is async_client.iam._http_client.httpx_async_client
+        assert httpx_client is async_client.iam._http_client_with_retry.httpx_async_client
 
-    def test_client_load(self) -> None:
+    @pytest.mark.parametrize("which_client", [CogniteClient, AsyncCogniteClient])
+    def test_client_load(self, which_client: type[CogniteClient | AsyncCogniteClient]) -> None:
         config = {
             "project": "test-project",
             "client_name": "cognite-sdk-python",
-            "debug": True,
+            "debug": False,
             "credentials": {
                 "client_credentials": {
                     "client_id": "test-client-id",
@@ -116,7 +111,7 @@ class TestCogniteClient:
                 }
             },
         }
-        client = CogniteClient.load(config)
+        client = which_client.load(config)
         assert client.config.project == "test-project"
         creds = client.config.credentials
         assert isinstance(creds, OAuthClientCredentials)
@@ -124,30 +119,4 @@ class TestCogniteClient:
         assert creds.client_secret == "test-client-secret"
         assert creds.token_url == TOKEN_URL
         assert creds.scopes == ["https://test.com/.default", "https://test.com/.admin"]
-        assert client.config.debug is True
-        log = logging.getLogger("cognite.client")
-        log.handlers = []
-        log.propagate = False
-
-
-class TestInstantiateWithClient:
-    @pytest.mark.parametrize("cls", [Asset, Event, FileMetadata, TimeSeries])
-    def test_instantiate_resources_with_cognite_client(
-        self, cls: type[CogniteResource], client_config_w_token_factory: ClientConfig
-    ) -> None:
-        client = CogniteClient(client_config_w_token_factory)
-        cls_map: dict[type[CogniteResource], CogniteResource] = {
-            Asset: DefaultResourceGenerator.asset(cognite_client=client),
-            Event: DefaultResourceGenerator.event(cognite_client=client),
-            FileMetadata: DefaultResourceGenerator.file_metadata(cognite_client=client),
-            TimeSeries: DefaultResourceGenerator.time_series(cognite_client=client),
-        }
-        instance = cls_map[cls]
-        assert instance._cognite_client == client
-
-    @pytest.mark.parametrize("cls", [AssetList, EventList, FileMetadataList, TimeSeriesList])
-    def test_instantiate_resource_lists_with_cognite_client(
-        self, cls: type[CogniteResourceList], client_config_w_token_factory: ClientConfig
-    ) -> None:
-        client = CogniteClient(client_config_w_token_factory)
-        assert cls([], cognite_client=client)._cognite_client == client
+        assert client.config.debug is False
