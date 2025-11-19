@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8a40bb13bf895e182628f40657186557
+b06eb8802f228411d231d93bf66b321f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -33,14 +33,18 @@ if TYPE_CHECKING:
 class SyncContainersAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Container]: ...
+    def __call__(
+        self, chunk_size: None = None, space: str | None = None, include_global: bool = False, limit: int | None = None
+    ) -> Iterator[Container]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[ContainerList]: ...
+    def __call__(
+        self, chunk_size: int, space: str | None = None, include_global: bool = False, limit: int | None = None
+    ) -> Iterator[ContainerList]: ...
 
     def __call__(
         self,
@@ -67,7 +71,7 @@ class SyncContainersAPI(SyncAPIClient):
             self.__async_client.data_modeling.containers(
                 chunk_size=chunk_size, space=space, include_global=include_global, limit=limit
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def retrieve(self, ids: ContainerIdentifier) -> Container | None: ...
@@ -225,6 +229,7 @@ class SyncContainersAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.data_modeling import (
                 ...     ContainerApply, ContainerProperty, Text, Float64)
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> container = ContainerApply(
                 ...     space="mySpace",
                 ...     external_id="myContainer",

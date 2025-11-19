@@ -18,7 +18,7 @@ from cognite.client.utils._async_helpers import run_sync
 class SyncWorkflowTaskAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     def update(

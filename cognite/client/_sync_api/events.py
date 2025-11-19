@@ -1,6 +1,6 @@
 """
 ===============================================================================
-bfc59b87972253161926e6c07a36e18e
+c8983ce9237658434ca566f8ba93a136
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -32,14 +32,58 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class SyncEventsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Event]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+        limit: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+    ) -> Iterator[Event]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[EventList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+        limit: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+    ) -> Iterator[EventList]: ...
 
     def __call__(
         self,
@@ -117,7 +161,7 @@ class SyncEventsAPI(SyncAPIClient):
                 limit=limit,
                 advanced_filter=advanced_filter,
             )
-        )
+        )  # type: ignore [misc]
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
         """
@@ -207,6 +251,7 @@ class SyncEventsAPI(SyncAPIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> result = client.events.aggregate_unique_values(property=EventProperty.type)
             >>> print(result.unique)
 
@@ -302,6 +347,7 @@ class SyncEventsAPI(SyncAPIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> type_count = client.events.aggregate_cardinality_values(EventProperty.type)
 
         Count the number of types of events linked to asset 123 in your CDF project:
@@ -343,6 +389,7 @@ class SyncEventsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.events import EventProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> type_count = client.events.aggregate_cardinality_properties(EventProperty.metadata)
         """
         return run_sync(
@@ -378,6 +425,7 @@ class SyncEventsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.events import EventProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.events.aggregate_unique_properties(EventProperty.metadata)
                 >>> print(result.unique)
         """
@@ -410,6 +458,7 @@ class SyncEventsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> events = [EventWrite(start_time=0, end_time=1), EventWrite(start_time=2, end_time=3)]
                 >>> res = client.events.create(events)
         """
@@ -549,6 +598,7 @@ class SyncEventsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_event = client.events.retrieve(id=1)
                 >>> existing_event.description = "New description"
                 >>> new_event = EventWrite(external_id="new_event", description="New event")

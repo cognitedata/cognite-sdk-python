@@ -1,6 +1,6 @@
 """
 ===============================================================================
-4284fe831151ba6fb3b13f60847c0c83
+546c83035081b646ac3ec0dd49457ec3
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -21,14 +21,18 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class Sync3DModelsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[ThreeDModel]: ...
+    def __call__(
+        self, chunk_size: None = None, published: bool | None = None, limit: int | None = None
+    ) -> Iterator[ThreeDModel]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[ThreeDModelList]: ...
+    def __call__(
+        self, chunk_size: int, published: bool | None = None, limit: int | None = None
+    ) -> Iterator[ThreeDModelList]: ...
 
     def __call__(
         self, chunk_size: int | None = None, published: bool | None = None, limit: int | None = None
@@ -48,7 +52,7 @@ class Sync3DModelsAPI(SyncAPIClient):
         """
         yield from SyncIterator(
             self.__async_client.three_d.models(chunk_size=chunk_size, published=published, limit=limit)
-        )
+        )  # type: ignore [misc]
 
     def retrieve(self, id: int) -> ThreeDModel | None:
         """
@@ -149,6 +153,7 @@ class Sync3DModelsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ThreeDModelWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_model = ThreeDModelWrite(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
                 >>> my_other_model = ThreeDModelWrite(name="My Other Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
                 >>> res = client.three_d.models.create([my_model, my_other_model])

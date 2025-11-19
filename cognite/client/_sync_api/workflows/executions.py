@@ -30,7 +30,7 @@ from cognite.client.data_classes import ClientCredentials
 class SyncWorkflowExecutionAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:

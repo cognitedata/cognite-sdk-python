@@ -1,6 +1,6 @@
 """
 ===============================================================================
-095cf76b161e9f80a1d645fe4494034b
+682cc895226cf66f89083037d763db10
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -24,14 +24,14 @@ if TYPE_CHECKING:
 class SyncMappingsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Mapping]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Mapping]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[Mapping]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[Mapping]: ...
 
     def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Mapping | MappingList]:
         """
@@ -134,6 +134,7 @@ class SyncMappingsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import MappingWrite, CustomMapping
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping = MappingWrite(external_id="my_mapping", mapping=CustomMapping("some expression"), published=True, input="json")
                 >>> res = client.hosted_extractors.mappings.create(mapping)
         """
@@ -164,6 +165,7 @@ class SyncMappingsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import MappingUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping = MappingUpdate('my_mapping').published.set(False)
                 >>> res = client.hosted_extractors.mappings.update(mapping)
         """

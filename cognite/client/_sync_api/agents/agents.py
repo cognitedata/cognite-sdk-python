@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0c2ad8063135aae7d3d1190f8c6c8939
+7e14a554efcc7d388d9f90c968de31a6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 class SyncAgentsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
@@ -261,6 +261,7 @@ class SyncAgentsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.agents import Message
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> response = client.agents.chat(
                 ...     agent_external_id="my_agent",
                 ...     messages=Message("What can you help me with?")

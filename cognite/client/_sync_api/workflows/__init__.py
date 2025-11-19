@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8de1a06d164e2a472aa3c6911e41a991
+bd4e442835f712dad08ceadefacb70b9
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 class SyncWorkflowAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.versions = SyncWorkflowVersionAPI(async_client)
         self.executions = SyncWorkflowExecutionAPI(async_client)
@@ -36,10 +36,10 @@ class SyncWorkflowAPI(SyncAPIClient):
         self.triggers = SyncWorkflowTriggerAPI(async_client)
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Workflow]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Workflow]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[WorkflowList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[WorkflowList]: ...
 
     def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Workflow | WorkflowList]:
         """
@@ -52,7 +52,7 @@ class SyncWorkflowAPI(SyncAPIClient):
         Yields:
             Workflow | WorkflowList: Yields Workflow one by one if chunk_size is None, otherwise yields WorkflowList objects.
         """
-        yield from SyncIterator(self.__async_client.workflows(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.workflows(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload
     def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow: ...
@@ -82,6 +82,7 @@ class SyncWorkflowAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowUpsert
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> wf = WorkflowUpsert(external_id="my_workflow", description="my workflow description")
                 >>> res = client.workflows.upsert(wf)
 

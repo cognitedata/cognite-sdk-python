@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f0ef21e3c2f87b01ca37ee1c89d64b8c
+26240c4f95a66ea3af0e4fdfa6bc5999
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -24,14 +24,26 @@ if TYPE_CHECKING:
 class SyncSimulatorIntegrationsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SimulatorIntegrationList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        active: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[SimulatorIntegrationList]: ...
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[SimulatorIntegration]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        active: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[SimulatorIntegration]: ...
 
     def __call__(
         self,
@@ -58,7 +70,7 @@ class SyncSimulatorIntegrationsAPI(SyncAPIClient):
             self.__async_client.simulators.integrations(
                 chunk_size=chunk_size, simulator_external_ids=simulator_external_ids, active=active, limit=limit
             )
-        )
+        )  # type: ignore [misc]
 
     def list(
         self,

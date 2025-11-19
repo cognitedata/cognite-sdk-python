@@ -1,6 +1,6 @@
 """
 ===============================================================================
-2278ee58d5848b6f27ba865ac38c4d47
+7dcd97d249f7e98689d5da3018b94234
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -39,7 +39,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class SyncGeospatialAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
@@ -70,6 +70,7 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.geospatial import FeatureTypeWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> feature_types = [
                 ...     FeatureTypeWrite(external_id="wells", properties={"location": {"type": "POINT", "srid": 4326}})
                 ...     FeatureTypeWrite(
@@ -240,6 +241,7 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.geospatial import FeatureTypeWrite, FeatureWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> feature_types = [
                 ...     FeatureTypeWrite(
                 ...         external_id="my_feature_type",
@@ -794,6 +796,7 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import CoordinateReferenceSystemWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> custom_crs = CoordinateReferenceSystemWrite(
                 ...     srid = 121111,
                 ...     wkt=(
@@ -1008,6 +1011,7 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.geospatial import GeospatialGeometryTransformComputeFunction, GeospatialGeometryValueComputeFunction
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> compute_function = GeospatialGeometryTransformComputeFunction(GeospatialGeometryValueComputeFunction("SRID=4326;POLYGON((0 0,10 0,10 10,0 10,0 0))"), srid=23031)
                 >>> compute_result = client.geospatial.compute(output = {"output": compute_function})
         """

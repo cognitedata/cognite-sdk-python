@@ -148,7 +148,7 @@ class TestDataModelsAPI:
         )
 
     def test_iterate(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
-        for containers in cognite_client.data_modeling.data_models(chunk_size=2, limit=-1):
+        for containers in cognite_client.data_modeling.data_models(chunk_size=2):
             assert isinstance(containers, DataModelList)
 
     def test_list_expand_inline_views(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:

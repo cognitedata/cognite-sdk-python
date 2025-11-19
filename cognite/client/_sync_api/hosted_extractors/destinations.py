@@ -1,6 +1,6 @@
 """
 ===============================================================================
-b9cc50d0274c8bd1cef9f8f73abb5509
+57e02fb82f3f1931cd4a078a89d90829
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -29,14 +29,14 @@ if TYPE_CHECKING:
 class SyncDestinationsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Destination]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Destination]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[Destination]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[Destination]: ...
 
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
@@ -141,6 +141,7 @@ class SyncDestinationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import DestinationWrite, SessionWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> destination = DestinationWrite(external_id='my_dest', credentials=SessionWrite("my_nonce"), target_data_set_id=123)
                 >>> res = client.hosted_extractors.destinations.create(destination)
         """
@@ -182,6 +183,7 @@ class SyncDestinationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import DestinationUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> destination = DestinationUpdate('my_dest').target_data_set_id.set(123)
                 >>> res = client.hosted_extractors.destinations.update(destination)
         """

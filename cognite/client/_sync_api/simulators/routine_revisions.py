@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a28661302438648ad307b55a1e1a5010
+1af1b60173bf15c940b5c0049996451d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +8,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
@@ -29,14 +29,40 @@ if TYPE_CHECKING:
 class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SimulatorRoutineRevisionList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
+        kind: Literal["long"] | None = None,
+        created_time: TimestampRange | None = None,
+        all_versions: bool = False,
+        include_all_fields: bool = False,
+        limit: int | None = None,
+        sort: PropertySort | None = None,
+    ) -> Iterator[SimulatorRoutineRevisionList]: ...
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[SimulatorRoutineRevision]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
+        kind: Literal["long"] | None = None,
+        created_time: TimestampRange | None = None,
+        all_versions: bool = False,
+        include_all_fields: bool = False,
+        limit: int | None = None,
+        sort: PropertySort | None = None,
+    ) -> Iterator[SimulatorRoutineRevision]: ...
 
     def __call__(
         self,
@@ -45,6 +71,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
+        kind: Literal["long"] | None = None,
         created_time: TimestampRange | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
@@ -62,6 +89,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
             model_external_ids (SequenceNotStr[str] | None): Filter on model external ids.
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter on simulator integration external ids.
             simulator_external_ids (SequenceNotStr[str] | None): Filter on simulator external ids.
+            kind (Literal['long'] | None): Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
             created_time (TimestampRange | None): Filter on created time.
             all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
@@ -78,13 +106,14 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
                 model_external_ids=model_external_ids,
                 simulator_integration_external_ids=simulator_integration_external_ids,
                 simulator_external_ids=simulator_external_ids,
+                kind=kind,
                 created_time=created_time,
                 all_versions=all_versions,
                 include_all_fields=include_all_fields,
                 limit=limit,
                 sort=sort,
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def retrieve(self, *, ids: int) -> SimulatorRoutineRevision | None: ...
@@ -123,7 +152,11 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
             Get simulator routine revision by external id:
                 >>> res = client.simulators.routines.revisions.retrieve(external_ids="routine_v1")
         """
-        return run_sync(self.__async_client.simulators.routines.revisions.retrieve(ids=ids, external_ids=external_ids))
+        return run_sync(
+            self.__async_client.simulators.routines.revisions.retrieve(  # type: ignore [call-overload]
+                ids=ids, external_ids=external_ids
+            )
+        )
 
     @overload
     def create(self, items: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionList: ...
@@ -158,6 +191,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
                 ...     SimulationValueUnitInput,
                 ... )
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> routine_revisions = [
                 ...     SimulatorRoutineRevisionWrite(
                 ...         external_id="routine_rev_1",
@@ -254,6 +288,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
+        kind: Literal["long"] | None = None,
         created_time: TimestampRange | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
@@ -270,6 +305,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
             model_external_ids (SequenceNotStr[str] | None): Filter on model external ids.
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter on simulator integration external ids.
             simulator_external_ids (SequenceNotStr[str] | None): Filter on simulator external ids.
+            kind (Literal['long'] | None): Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
             created_time (TimestampRange | None): Filter on created time.
             all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
@@ -293,6 +329,11 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
                 ...     sort=PropertySort(order="asc", property="createdTime"),
                 ...     include_all_fields=True
                 ... )
+
+            List simulator routine revisions by kind:
+                >>> res = client.simulators.routines.revisions.list(
+                ...     kind="long"
+                ... )
         """
         return run_sync(
             self.__async_client.simulators.routines.revisions.list(
@@ -300,6 +341,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
                 model_external_ids=model_external_ids,
                 simulator_integration_external_ids=simulator_integration_external_ids,
                 simulator_external_ids=simulator_external_ids,
+                kind=kind,
                 created_time=created_time,
                 all_versions=all_versions,
                 include_all_fields=include_all_fields,

@@ -404,7 +404,6 @@ class Or(CompoundFilter):
     _filter_name = "or"
 
 
-@final
 class Not(CompoundFilter):
     """A filter that negates another filter.
 
@@ -946,7 +945,7 @@ class SpaceFilter(FilterWithProperty):
         return self._involved_filter
 
 
-class IsNull(Not):  # type: ignore [misc]
+class IsNull(Not):
     """Data modeling filter for instances whose property is null, effectively a negated Exists-filter.
 
     Args:

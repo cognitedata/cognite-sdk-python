@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d6b0080645719a3270447e9f773c8ff2
+71b623a4539f9d79757ebfd3b25edf46
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -29,14 +29,30 @@ if TYPE_CHECKING:
 class SyncDataModelsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[DataModel]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        limit: int | None = None,
+        space: str | None = None,
+        inline_views: bool = False,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ) -> Iterator[DataModel]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[DataModelList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        limit: int | None = None,
+        space: str | None = None,
+        inline_views: bool = False,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ) -> Iterator[DataModelList]: ...
 
     def __call__(
         self,
@@ -72,7 +88,7 @@ class SyncDataModelsAPI(SyncAPIClient):
                 all_versions=all_versions,
                 include_global=include_global,
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def retrieve(
@@ -104,7 +120,11 @@ class SyncDataModelsAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.data_models.retrieve(("mySpace", "myDataModel", "v1"))
         """
-        return run_sync(self.__async_client.data_modeling.data_models.retrieve(ids=ids, inline_views=inline_views))
+        return run_sync(
+            self.__async_client.data_modeling.data_models.retrieve(  # type: ignore [call-overload]
+                ids=ids, inline_views=inline_views
+            )
+        )
 
     def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
         """
@@ -186,7 +206,7 @@ class SyncDataModelsAPI(SyncAPIClient):
                 ...     data_model_list # do something with the data model
         """
         return run_sync(
-            self.__async_client.data_modeling.data_models.list(
+            self.__async_client.data_modeling.data_models.list(  # type: ignore [call-overload]
                 inline_views=inline_views,
                 limit=limit,
                 space=space,
@@ -218,6 +238,7 @@ class SyncDataModelsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import DataModelApply, ViewId
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> data_models = [
                 ...     DataModelApply(space="mySpace",external_id="myDataModel",version="v1",views=[ViewId("mySpace","myView","v1")]),
                 ...     DataModelApply(space="mySpace",external_id="myOtherDataModel",version="v1",views=[ViewId("mySpace","myView","v1")])]

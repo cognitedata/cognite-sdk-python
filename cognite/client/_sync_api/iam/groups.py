@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f25241082c8f9272e0bb26f7b5814867
+c4311d2607d4ce62fb4356aa80ebcd47
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class SyncGroupsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     def list(self, all: bool = False) -> GroupList:
@@ -74,6 +74,7 @@ class SyncGroupsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import GroupWrite
                 >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_capabilities = [
                 ...     AssetsAcl([AssetsAcl.Action.Read], AssetsAcl.Scope.All()),
                 ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456]))]

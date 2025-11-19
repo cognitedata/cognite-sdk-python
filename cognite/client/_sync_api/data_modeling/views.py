@@ -1,6 +1,6 @@
 """
 ===============================================================================
-286155d9ffa73428bab0192dd2914c82
+2f2683c1e337ead8ed467e1d4287b5d9
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -24,14 +24,30 @@ if TYPE_CHECKING:
 class SyncViewsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[View]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        limit: int | None = None,
+        space: str | None = None,
+        include_inherited_properties: bool = True,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ) -> Iterator[View]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[ViewList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        limit: int | None = None,
+        space: str | None = None,
+        include_inherited_properties: bool = True,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ) -> Iterator[ViewList]: ...
 
     def __call__(
         self,
@@ -67,7 +83,7 @@ class SyncViewsAPI(SyncAPIClient):
                 all_versions=all_versions,
                 include_global=include_global,
             )
-        )
+        )  # type: ignore [misc]
 
     def retrieve(
         self,
@@ -194,6 +210,7 @@ class SyncViewsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewApply, MappedPropertyApply, ContainerId
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> views = [
                 ...     ViewApply(
                 ...         space="mySpace",

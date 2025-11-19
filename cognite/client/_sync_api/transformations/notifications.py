@@ -1,6 +1,6 @@
 """
 ===============================================================================
-cbc3cbea063b7c98d3966a98835d337a
+905a644fdc4c48c8fff8c1b110881492
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -24,14 +24,28 @@ from cognite.client.utils._async_helpers import SyncIterator, run_sync
 class SyncTransformationNotificationsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[TransformationNotification]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        destination: str | None = None,
+        limit: int | None = None,
+    ) -> Iterator[TransformationNotification]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[TransformationNotificationList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        destination: str | None = None,
+        limit: int | None = None,
+    ) -> Iterator[TransformationNotificationList]: ...
 
     def __call__(
         self,
@@ -62,7 +76,7 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
                 destination=destination,
                 limit=limit,
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def create(
@@ -97,6 +111,7 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationNotification
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> notifications = [TransformationNotification(transformation_id = 1, destination="my@email.com"), TransformationNotification(transformation_external_id="transformation2", destination="other@email.com"))]
                 >>> res = client.transformations.notifications.create(notifications)
         """

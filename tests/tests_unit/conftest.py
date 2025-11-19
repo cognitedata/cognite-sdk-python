@@ -49,7 +49,7 @@ def cognite_client() -> Iterator[CogniteClient]:
 
 
 @pytest.fixture(scope="class")
-def async_client(cognite_client) -> Iterator[AsyncCogniteClient]:
+def async_client(cognite_client: CogniteClient) -> Iterator[AsyncCogniteClient]:
     yield get_wrapped_async_client(cognite_client)
 
 
@@ -317,6 +317,7 @@ class DefaultResourceGenerator:
         description: str | None = None,
         instructions: str | None = None,
         model: str | None = None,
+        labels: list[str] | None = None,
         tools: Sequence[AgentTool] | None = None,
         created_time: int = 123,
         last_updated_time: int = 123,
@@ -328,6 +329,7 @@ class DefaultResourceGenerator:
             description=description,
             instructions=instructions,
             model=model,
+            labels=labels,
             tools=tools,
             created_time=created_time,
             last_updated_time=last_updated_time,

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f068713c972aa9edaff075bc232ec4b0
+a46e0cb96e62d5a0110c9b4bd0751f07
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class SyncSyntheticDatapointsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload

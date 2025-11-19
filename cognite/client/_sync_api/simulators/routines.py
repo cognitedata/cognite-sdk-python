@@ -1,6 +1,6 @@
 """
 ===============================================================================
-3f63301cb49fd587302d590cf0e11794
+e879070669902b289a4d6d571bb015bc
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,15 +31,29 @@ if TYPE_CHECKING:
 class SyncSimulatorRoutinesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.revisions = SyncSimulatorRoutineRevisionsAPI(async_client)
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SimulatorRoutineList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
+        sort: PropertySort | None = None,
+        limit: int | None = None,
+    ) -> Iterator[SimulatorRoutineList]: ...
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[SimulatorRoutine]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
+        sort: PropertySort | None = None,
+        limit: int | None = None,
+    ) -> Iterator[SimulatorRoutine]: ...
 
     def __call__(
         self,
@@ -72,7 +86,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 sort=sort,
                 limit=limit,
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def create(self, routine: Sequence[SimulatorRoutineWrite]) -> SimulatorRoutineList: ...
@@ -97,6 +111,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators.routines import SimulatorRoutineWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> routines = [
                 ...     SimulatorRoutineWrite(
                 ...         name="routine1",
@@ -109,6 +124,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 ...         external_id="routine_ext_id_2",
                 ...         simulator_integration_external_id="integration_ext_id_2",
                 ...         model_external_id="model_ext_id_2",
+                ...         kind="long",
                 ...     )
                 ... ]
                 >>> res = client.simulators.routines.create(routines)
@@ -141,6 +157,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
         model_external_ids: Sequence[str] | None = None,
         simulator_integration_external_ids: Sequence[str] | None = None,
+        kind: Literal["long"] | None = None,
         sort: PropertySort | None = None,
     ) -> SimulatorRoutineList:
         """
@@ -152,6 +169,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             model_external_ids (Sequence[str] | None): Filter on model external ids.
             simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
+            kind (Literal['long'] | None): Filter on routine kind.
             sort (PropertySort | None): The criteria to sort by.
 
         Returns:
@@ -177,12 +195,18 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 ...         order="desc"
                 ...     )
                 ... )
+
+            Filter on routine kind:
+                >>> res = client.simulators.routines.list(
+                ...     kind="long"
+                ... )
         """
         return run_sync(
             self.__async_client.simulators.routines.list(
                 limit=limit,
                 model_external_ids=model_external_ids,
                 simulator_integration_external_ids=simulator_integration_external_ids,
+                kind=kind,
                 sort=sort,
             )
         )
@@ -267,7 +291,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 ... )
         """
         return run_sync(
-            self.__async_client.simulators.routines.run(
+            self.__async_client.simulators.routines.run(  # type: ignore [call-overload, misc]
                 routine_external_id=routine_external_id,
                 routine_revision_external_id=routine_revision_external_id,
                 model_revision_external_id=model_revision_external_id,

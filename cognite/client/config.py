@@ -77,6 +77,13 @@ class GlobalConfig:
         self.silence_feature_preview_warnings: bool = False
         self.event_loop: asyncio.AbstractEventLoop | None = None
 
+    def __str__(self) -> str:
+        return pprint.pformat(vars(self), indent=4)
+
+    def _repr_html_(self) -> str:
+        pd = local_import("pandas")
+        return pd.Series(vars(self)).to_frame("GlobalConfig").sort_index()._repr_html_()
+
     def apply_settings(self, settings: dict[str, Any] | str) -> None:
         """Apply settings to the global configuration object from a YAML/JSON string or dict.
 

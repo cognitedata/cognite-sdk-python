@@ -5,14 +5,13 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient
-from cognite.client._cognite_client import AsyncCogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import DataSet, DataSetFilter, DataSetUpdate, DataSetWrite
 from cognite.client.exceptions import CogniteNotFoundError
 
 
 @pytest.fixture(scope="class")
-def new_dataset(cognite_client: CogniteClient, os_and_py_version) -> Iterator[DataSet]:
+def new_dataset(cognite_client: CogniteClient, os_and_py_version: str) -> Iterator[DataSet]:
     xid = "pysdk-test-dataset-" + os_and_py_version
     dataset = cognite_client.data_sets.retrieve(external_id=xid)
     if dataset:

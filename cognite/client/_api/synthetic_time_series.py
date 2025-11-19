@@ -182,8 +182,8 @@ class SyntheticDatapointsAPI(APIClient):
                 datapoints = new_dps
             else:
                 datapoints.timestamp.extend(new_dps.timestamp)
-                datapoints.value.extend(new_dps.value)  # type: ignore[attr-defined]
-                datapoints.error.extend(new_dps.error)  # type: ignore[attr-defined]
+                datapoints.value.extend(new_dps.value)  # type: ignore[union-attr, arg-type]
+                datapoints.error.extend(new_dps.error)  # type: ignore[union-attr, arg-type]
             limit -= (n_fetched := len(data["datapoints"]))
             if n_fetched < self._DPS_LIMIT_SYNTH or limit <= 0:
                 break

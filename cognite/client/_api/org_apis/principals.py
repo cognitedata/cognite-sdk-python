@@ -32,26 +32,38 @@ class PrincipalsAPI(OrgAPIClient):
         path = f"/api/{self._api_version}{self._RESOURCE_PATH}/me"
         full_url = urljoin(self._AUTH_URL, path)
 
-        response = await self._get(full_url=full_url)
+        response = await self._cognite_client._a.get(url=full_url)  # type: ignore [attr-defined]
         return Principal._load(response.json())
 
     @overload
-    async def retrieve(self, id: str) -> Principal | None: ...
+    async def retrieve(
+        self,
+        id: str,
+        external_id: None = None,
+        ignore_unknown_ids: bool = False,
+    ) -> Principal | None: ...
 
     @overload
-    async def retrieve(self, *, external_id: str) -> Principal | None: ...
+    async def retrieve(
+        self,
+        id: None = None,
+        *,
+        external_id: str,
+        ignore_unknown_ids: bool = False,
+    ) -> Principal | None: ...
 
     @overload
     async def retrieve(
         self,
         id: SequenceNotStr[str],
-        *,
+        external_id: None = None,
         ignore_unknown_ids: bool = False,
     ) -> PrincipalList: ...
 
     @overload
     async def retrieve(
         self,
+        id: None = None,
         *,
         external_id: SequenceNotStr[str],
         ignore_unknown_ids: bool = False,
@@ -61,33 +73,22 @@ class PrincipalsAPI(OrgAPIClient):
     async def retrieve(
         self,
         id: None = None,
-        *,
-        ignore_unknown_ids: bool = False,
-    ) -> PrincipalList: ...
-
-    @overload
-    async def retrieve(
-        self,
-        *,
         external_id: None = None,
         ignore_unknown_ids: bool = False,
     ) -> PrincipalList: ...
 
     async def retrieve(
         self,
-        id: str | Sequence[str] | None = None,
-        external_id: str | Sequence[str] | None = None,
+        id: str | SequenceNotStr[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> Principal | PrincipalList | None:
         """`Retrieve principal by reference in the organization <https://developer.cognite.com/api#tag/Principals/operation/getPrincipalsById>`_
 
         Args:
-            id (str | Sequence[str] | None): The ID(s) of the principal(s) to retrieve.
-            external_id (str | Sequence[str] | None): The external ID(s) of the principal to retrieve.
-            ignore_unknown_ids (bool): This is only relevant when retrieving multiple principals. If set to True,
-                the method will return the principals that were found and ignore the ones that were not found.
-                If set to False, the method will raise a CogniteAPIError if any of the
-                specified principals were not found. Defaults to False.
+            id (str | SequenceNotStr[str] | None): The ID(s) of the principal(s) to retrieve.
+            external_id (str | SequenceNotStr[str] | None): The external ID(s) of the principal to retrieve.
+            ignore_unknown_ids (bool): This is only relevant when retrieving multiple principals. If set to True, the method will return the principals that were found and ignore the ones that were not found. If set to False, the method will raise a CogniteAPIError if any of the specified principals were not found. Defaults to False.
 
         Returns:
             Principal | PrincipalList | None: The principal(s) with the specified ID(s) or external ID(s).

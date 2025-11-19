@@ -76,7 +76,7 @@ class TestDataset:
         assert "min" not in jsgz_load(mock_ds_response.get_requests()[0].content)["filter"]["lastUpdatedTime"]
 
     def test_call_root(self, cognite_client: CogniteClient, mock_ds_response: HTTPXMock) -> None:
-        list(cognite_client.data_sets(write_protected=True, limit=10))
+        list(cognite_client.data_sets(chunk_size=None, write_protected=True, limit=10))
         calls = mock_ds_response.get_requests()
         assert 1 == len(calls)
         assert {"limit": 10, "filter": {"writeProtected": True}} == jsgz_load(calls[0].content)

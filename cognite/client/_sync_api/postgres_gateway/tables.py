@@ -1,6 +1,6 @@
 """
 ===============================================================================
-cee739aab6c29319b2333faea5e5a88d
+789d58776aa258529e2d0c9453d9e029
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -24,14 +24,14 @@ if TYPE_CHECKING:
 class SyncTablesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[pg.Table]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[pg.Table]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[pg.TableList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[pg.TableList]: ...
 
     def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[pg.Table | pg.TableList]:
         """
@@ -46,7 +46,7 @@ class SyncTablesAPI(SyncAPIClient):
         Yields:
             pg.Table | pg.TableList: yields Table one by one if chunk_size is not specified, else TableList objects.
         """
-        yield from SyncIterator(self.__async_client.postgres_gateway.tables(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.postgres_gateway.tables(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload
     def create(self, username: str, items: pg.TableWrite) -> pg.Table: ...
@@ -73,6 +73,7 @@ class SyncTablesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes.postgres_gateway import ViewTableWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> table = ViewTableWrite(tablename="myCustom", options=ViewId(space="mySpace", external_id="myExternalId", version="v1"))
                 >>> res = client.postgres_gateway.tables.create("myUserName",table)
         """
@@ -120,7 +121,9 @@ class SyncTablesAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.postgres_gateway.tables.retrieve(
-                username=username, tablename=tablename, ignore_unknown_ids=ignore_unknown_ids
+                username=username,
+                tablename=tablename,  # type: ignore [arg-type]
+                ignore_unknown_ids=ignore_unknown_ids,
             )
         )
 

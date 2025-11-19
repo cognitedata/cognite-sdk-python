@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e02d60ffd03fe36c05041b5bbdfd6458
+21c47330969eedc273a7c18877879b7e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,14 +31,44 @@ if TYPE_CHECKING:
 class SyncSimulatorRunsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SimulationRunList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        limit: int | None = None,
+        status: str | None = None,
+        run_type: str | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        routine_revision_external_ids: SequenceNotStr[str] | None = None,
+        model_revision_external_ids: SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
+        simulation_time: TimestampRange | None = None,
+        sort: SimulationRunsSort | None = None,
+    ) -> Iterator[SimulationRunList]: ...
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[SimulationRun]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        limit: int | None = None,
+        status: str | None = None,
+        run_type: str | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        routine_revision_external_ids: SequenceNotStr[str] | None = None,
+        model_revision_external_ids: SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
+        simulation_time: TimestampRange | None = None,
+        sort: SimulationRunsSort | None = None,
+    ) -> Iterator[SimulationRun]: ...
 
     def __call__(
         self,
@@ -95,7 +125,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
                 simulation_time=simulation_time,
                 sort=sort,
             )
-        )
+        )  # type: ignore [misc]
 
     def list(
         self,
@@ -221,6 +251,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators.runs import SimulationRunWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> run = [
                 ...     SimulationRunWrite(
                 ...         routine_external_id="routine1",

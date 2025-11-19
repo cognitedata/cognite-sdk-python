@@ -1,6 +1,6 @@
 """
 ===============================================================================
-40535cb165ab439531b0e145ec36ee1f
+91573c9ff33c35aeaf45a974eaf04c38
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -16,7 +16,7 @@ from cognite.client.utils._async_helpers import run_sync
 class SyncVisionAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     def extract(
@@ -43,6 +43,7 @@ class SyncVisionAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.contextualization import VisionFeature
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> extract_job = client.vision.extract(features=VisionFeature.ASSET_TAG_DETECTION, file_ids=[1])
                 >>> extract_job.wait_for_completion()
                 >>> for item in extract_job.items:

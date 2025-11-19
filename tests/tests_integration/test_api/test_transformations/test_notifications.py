@@ -24,6 +24,7 @@ prefix = random_string(6, string.ascii_letters)
 def new_transformation(cognite_client: CogniteClient) -> Iterator[Transformation]:
     creds = cognite_client.config.credentials
     assert isinstance(creds, OAuthClientCredentials)
+    assert creds.scopes is not None
     transform = TransformationWrite(
         name="any",
         external_id=f"{prefix}-transformation",

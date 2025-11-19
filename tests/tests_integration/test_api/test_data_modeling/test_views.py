@@ -150,9 +150,7 @@ class TestViewsAPI:
         assert not cognite_client.data_modeling.views.retrieve(("myNonExistingSpace", "myImaginaryView", "v0"))
 
     def test_iterate(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
-        for containers in cognite_client.data_modeling.views(
-            chunk_size=2, limit=-1, space=integration_test_space.space
-        ):
+        for containers in cognite_client.data_modeling.views(chunk_size=2, space=integration_test_space.space):
             assert isinstance(containers, ViewList)
 
     def test_apply_invalid_view(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:

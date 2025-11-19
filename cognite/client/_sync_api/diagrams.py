@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0abf6d100ed5bb2cc4a7c6be6ecff503
+f6f7ffe998d45d3d1b965468ba5bbe24
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 class SyncDiagramsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
@@ -112,6 +112,7 @@ class SyncDiagramsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.contextualization import FileReference
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> detect_job = client.diagrams.detect(
                 ...     entities=[
                 ...         {"userDefinedField": "21PT1017","ignoredField": "AA11"},
@@ -185,7 +186,7 @@ class SyncDiagramsAPI(SyncAPIClient):
                 pattern_mode=pattern_mode,
                 configuration=configuration,
                 multiple_jobs=multiple_jobs,
-            )
+            )  # type: ignore [call-overload, misc]
         )
 
     def get_detect_jobs(self, job_ids: list[int]) -> list[DiagramDetectResults]:

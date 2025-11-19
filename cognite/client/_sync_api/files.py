@@ -1,6 +1,6 @@
 """
 ===============================================================================
-6c1c42132e1b371d885eb22ff47f5467
+704e6bd8fc93957c4b7ddae068278f1f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -35,14 +35,62 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class SyncFilesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[FileMetadata]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        source_created_time: dict[str, Any] | TimestampRange | None = None,
+        source_modified_time: dict[str, Any] | TimestampRange | None = None,
+        uploaded_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        directory_prefix: str | None = None,
+        uploaded: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[FileMetadata]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[FileMetadataList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        source_created_time: dict[str, Any] | TimestampRange | None = None,
+        source_modified_time: dict[str, Any] | TimestampRange | None = None,
+        uploaded_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        directory_prefix: str | None = None,
+        uploaded: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[FileMetadataList]: ...
 
     def __call__(
         self,
@@ -126,7 +174,7 @@ class SyncFilesAPI(SyncAPIClient):
                 uploaded=uploaded,
                 limit=limit,
             )
-        )
+        )  # type: ignore [misc]
 
     def create(
         self, file_metadata: FileMetadata | FileMetadataWrite, overwrite: bool = False
@@ -148,6 +196,7 @@ class SyncFilesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> file_metadata = FileMetadataWrite(name="MyFile")
                 >>> res = client.files.create(file_metadata)
         """
@@ -622,7 +671,7 @@ class SyncFilesAPI(SyncAPIClient):
         the parts are stored in the correct order by uploading each chunk to the correct upload URL.
 
         This returns a context manager you must enter (using the `with` keyword), then call `upload_part`
-        for each part before exiting.
+        for each part before exiting. It also supports async usage with `async with`, then calling `await upload_part_async`.
 
         Args:
             name (str): Name of the file.
@@ -687,8 +736,8 @@ class SyncFilesAPI(SyncAPIClient):
         The file chunks may be uploaded in any order, and in parallel, but the client must ensure that
         the parts are stored in the correct order by uploading each chunk to the correct upload URL.
 
-        This returns a context manager (that also supports async) you must enter (using the `with` keyword, or `async with`), then call `upload_part`
-        for each part before exiting, which will automatically finalize the multipart upload.
+        This returns a context manager you must enter (using the `with` keyword), then call `upload_part`
+        for each part before exiting. It also supports async usage with `async with`, then calling `await upload_part_async`.
 
         Args:
             parts (int): The number of parts to upload, must be between 1 and 250.

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0d794d9b77af8607e4e0d3217fae3ad8
+43304d1797d1e61bcfc3fb698eca2bbc
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -27,7 +27,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class Sync3DRevisionsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
@@ -55,7 +55,10 @@ class Sync3DRevisionsAPI(SyncAPIClient):
         """
         yield from SyncIterator(
             self.__async_client.three_d.revisions(
-                model_id=model_id, chunk_size=chunk_size, published=published, limit=limit
+                model_id=model_id,
+                chunk_size=chunk_size,
+                published=published,
+                limit=limit,  # type: ignore [call-overload]
             )
         )
 
@@ -116,6 +119,7 @@ class Sync3DRevisionsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ThreeDModelRevisionWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_revision = ThreeDModelRevisionWrite(file_id=1)
                 >>> res = client.three_d.revisions.create(model_id=1, revision=my_revision)
         """

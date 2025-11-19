@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a98416ce52e9dbf7e93c562767fc169e
+f0a2f88100629f77edb6ad5e99425c61
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,14 +31,14 @@ if TYPE_CHECKING:
 class SyncUsersAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[User]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[User]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[UserList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[UserList]: ...
 
     def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[User | UserList]:
         """
@@ -53,7 +53,7 @@ class SyncUsersAPI(SyncAPIClient):
         Yields:
             User | UserList: yields User one by one if chunk_size is not specified, else UserList objects.
         """
-        yield from SyncIterator(self.__async_client.postgres_gateway.users(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.postgres_gateway.users(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload
     def create(self, user: UserWrite) -> UserCreated: ...
@@ -82,6 +82,7 @@ class SyncUsersAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.postgres_gateway import UserWrite, SessionCredentials
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> session = client.iam.sessions.create(
                 ...     ClientCredentials(os.environ["IDP_CLIENT_ID"], os.environ["IDP_CLIENT_SECRET"]),
                 ...     session_type="CLIENT_CREDENTIALS"
@@ -118,6 +119,7 @@ class SyncUsersAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.postgres_gateway import UserUpdate, SessionCredentials
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> session = client.iam.sessions.create(
                 ...     ClientCredentials(os.environ["IDP_CLIENT_ID"], os.environ["IDP_CLIENT_SECRET"]),
                 ...     session_type="CLIENT_CREDENTIALS"

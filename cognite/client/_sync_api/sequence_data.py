@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9812a01728a87fc7f57b745b3b175322
+aba5e77f64d4560ca306431aa52ccfd5
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +8,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 import typing
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, NoReturn, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class SyncSequencesDataAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     def insert(
@@ -51,6 +51,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> seq = client.sequences.create(
                 ...     SequenceWrite(
                 ...         columns=[
@@ -102,6 +103,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> import pandas as pd
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = pd.DataFrame({'col_a': [1, 2, 3], 'col_b': [4, 5, 6]}, index=[1, 2, 3])
                 >>> client.sequences.data.insert_dataframe(df, id=123)
         """
@@ -155,8 +157,19 @@ class SyncSequencesDataAPI(SyncAPIClient):
     @overload
     def retrieve(
         self,
-        *,
+        external_id: None = None,
+        id: None = None,
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> NoReturn: ...
+
+    @overload
+    def retrieve(
+        self,
         external_id: str,
+        id: None = None,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
@@ -166,8 +179,8 @@ class SyncSequencesDataAPI(SyncAPIClient):
     @overload
     def retrieve(
         self,
-        *,
         external_id: SequenceNotStr[str],
+        id: None = None,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
@@ -177,6 +190,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
     @overload
     def retrieve(
         self,
+        external_id: None = None,
         *,
         id: int,
         start: int = 0,
@@ -188,6 +202,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
     @overload
     def retrieve(
         self,
+        external_id: None = None,
         *,
         id: typing.Sequence[int],
         start: int = 0,
@@ -199,9 +214,8 @@ class SyncSequencesDataAPI(SyncAPIClient):
     @overload
     def retrieve(
         self,
-        *,
-        id: typing.Sequence[int] | int,
         external_id: SequenceNotStr[str] | str,
+        id: typing.Sequence[int] | int,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
@@ -229,7 +243,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
             limit (int | None): Maximum number of rows to return per sequence. Pass None to fetch all (possibly limited by 'end').
 
         Returns:
-            SequenceRows | SequenceRowsList: SequenceRows if a single identifier was given, else SequenceDataList
+            SequenceRows | SequenceRowsList: SequenceRows if a single identifier was given, else SequenceRowsList
 
         Examples:
 

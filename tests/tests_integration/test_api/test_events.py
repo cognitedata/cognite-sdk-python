@@ -6,8 +6,7 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient, utils
-from cognite.client._cognite_client import AsyncCogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient, utils
 from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventList, EventUpdate, filters
 from cognite.client.data_classes.events import EventProperty, EventWrite, SortableEventProperty
 from cognite.client.exceptions import CogniteNotFoundError

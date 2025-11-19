@@ -1,6 +1,6 @@
 """
 ===============================================================================
-4e9b309cc7ad75e8c178dbc87a8a62ac
+8105beb1c4bc1286877edd4efeedd9ab
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -29,14 +29,18 @@ if TYPE_CHECKING:
 class SyncTransformationSchedulesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[TransformationSchedule]: ...
+    def __call__(
+        self, chunk_size: None = None, include_public: bool = True, limit: int | None = None
+    ) -> Iterator[TransformationSchedule]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[TransformationScheduleList]: ...
+    def __call__(
+        self, chunk_size: int, include_public: bool = True, limit: int | None = None
+    ) -> Iterator[TransformationScheduleList]: ...
 
     def __call__(
         self, chunk_size: int | None = None, include_public: bool = True, limit: int | None = None
@@ -56,7 +60,7 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
             self.__async_client.transformations.schedules(
                 chunk_size=chunk_size, include_public=include_public, limit=limit
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def create(self, schedule: TransformationSchedule | TransformationScheduleWrite) -> TransformationSchedule: ...
@@ -89,6 +93,7 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationScheduleWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> schedules = [TransformationScheduleWrite(id = 1, interval = "0 * * * *"), TransformationScheduleWrite(external_id="transformation2", interval = "5 * * * *"))]
                 >>> res = client.transformations.schedules.create(schedules)
         """

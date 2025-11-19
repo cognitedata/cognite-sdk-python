@@ -1,6 +1,6 @@
 """
 ===============================================================================
-487393dca45db624fbbc00b67ff1d158
+ba6c011e38536e052b57079d06c7758a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -34,15 +34,47 @@ if TYPE_CHECKING:
 class SyncSequencesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.data = SyncSequencesDataAPI(async_client)
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Sequence]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: typing.Sequence[int] | None = None,
+        asset_subtree_ids: int | typing.Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | typing.Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        limit: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+    ) -> Iterator[Sequence]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SequenceList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: typing.Sequence[int] | None = None,
+        asset_subtree_ids: int | typing.Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | typing.Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        limit: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+    ) -> Iterator[SequenceList]: ...
 
     def __call__(
         self,
@@ -102,7 +134,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 advanced_filter=advanced_filter,
                 sort=sort,
             )
-        )
+        )  # type: ignore [misc]
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
         """
@@ -225,6 +257,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.sequences.aggregate_cardinality_values(SequenceProperty.metadata_key("efficiency"))
 
             Count the number of timezones (metadata key) for sequences with the word "critical" in the description
@@ -271,6 +304,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
         """
         return run_sync(
@@ -305,6 +339,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.sequences.aggregate_unique_values(SequenceProperty.metadata_key("timezone"))
                 >>> print(result.unique)
 
@@ -360,6 +395,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.sequences.aggregate_unique_properties(SequenceProperty.metadata)
         """
         return run_sync(
@@ -393,6 +429,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> column_def = [
                 ...     SequenceColumnWrite(value_type="STRING", external_id="user", description="some description"),
                 ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount")
@@ -563,6 +600,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_sequence = client.sequences.retrieve(id=1)
                 >>> existing_sequence.description = "New description"
                 >>> new_sequence = SequenceWrite(

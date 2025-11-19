@@ -1,6 +1,6 @@
 """
 ===============================================================================
-78f40e7a27949090a0e6c70356c9f300
+6e10e7034ddf2252bb88d682c2617b49
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,14 +31,14 @@ if TYPE_CHECKING:
 class SyncDatapointsSubscriptionAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[DatapointSubscription]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[DatapointSubscription]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[DatapointSubscriptionList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[DatapointSubscriptionList]: ...
 
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
@@ -53,7 +53,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
         Yields:
             DatapointSubscription | DatapointSubscriptionList: Yields datapoint subscriptions one by one if chunk is not specified, otherwise returns a list of datapoint subscriptions.
         """
-        yield from SyncIterator(self.__async_client.time_series.subscriptions(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.time_series.subscriptions(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:
         """
@@ -74,6 +74,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> sub = DataPointSubscriptionWrite(
                 ...     external_id="my_subscription",
                 ...     name="My subscription",
@@ -174,6 +175,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> members = client.time_series.subscriptions.list_member_time_series("my_subscription")
                 >>> timeseries_external_ids = members.as_external_ids()
         """
@@ -206,6 +208,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> update = DataPointSubscriptionUpdate("my_subscription").name.set("My New Name")
                 >>> updated = client.time_series.subscriptions.update(update)
 

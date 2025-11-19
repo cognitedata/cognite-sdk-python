@@ -65,6 +65,7 @@ def new_transformation(
         pytest.skip("Only run in CI environment")
     # TODO: Data Integration team, add:
     pytest.skip("Need valid credentials for: 'source_oidc_credentials' and 'destination_oidc_credentials'...")
+    assert creds.scopes is not None
     transform = TransformationWrite(
         name="any",
         query="select 1",
@@ -109,7 +110,7 @@ class TestTransformationsAPI:
     @pytest.mark.skip(reason="Awaiting access to more than one CDF project for our credentials")
     def test_create_asset_with_source_destination_oidc_transformation(self, cognite_client: CogniteClient) -> None:
         prefix = random_string(6, string.ascii_letters)
-        creds = cognite_client._config.credentials
+        creds = cognite_client.config.credentials
         assert isinstance(creds, OAuthClientCredentials)
         transform = TransformationWrite(
             name="any",
@@ -407,8 +408,8 @@ class TestTransformationsAPI:
         session = cognite_client.iam.sessions.create()
         update_transformation = (
             TransformationUpdate(id=new_transformation.id)
-            .source_nonce.set(NonceCredentials(session.id, session.nonce, cognite_client._config.project))
-            .destination_nonce.set(NonceCredentials(session.id, session.nonce, cognite_client._config.project))
+            .source_nonce.set(NonceCredentials(session.id, session.nonce, cognite_client.config.project))
+            .destination_nonce.set(NonceCredentials(session.id, session.nonce, cognite_client.config.project))
         )
 
         updated_transformation = cognite_client.transformations.update(update_transformation)
@@ -430,9 +431,9 @@ class TestTransformationsAPI:
     )
     def test_update_nonce_full(self, cognite_client: CogniteClient, new_transformation: Transformation) -> None:
         session = cognite_client.iam.sessions.create()
-        new_transformation.source_nonce = NonceCredentials(session.id, session.nonce, cognite_client._config.project)
+        new_transformation.source_nonce = NonceCredentials(session.id, session.nonce, cognite_client.config.project)
         new_transformation.destination_nonce = NonceCredentials(
-            session.id, session.nonce, cognite_client._config.project
+            session.id, session.nonce, cognite_client.config.project
         )
 
         updated_transformation = cognite_client.transformations.update(new_transformation)

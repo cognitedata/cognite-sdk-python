@@ -16,7 +16,7 @@ global_config.disable_pypi_version_check = True
 
 
 @pytest.fixture(scope="session")
-def anyio_backend():
+def anyio_backend() -> str:
     # The anyio package by default runs all async tests using all backends like trio and asyncio
     # but we just want to use asyncio:
     return "asyncio"

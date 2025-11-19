@@ -10,7 +10,7 @@ from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, NoReturn, overload
+from typing import TYPE_CHECKING, Any, ClassVar, NoReturn, TypeAlias, overload
 from zoneinfo import ZoneInfo
 
 from typing_extensions import Self
@@ -56,11 +56,11 @@ if TYPE_CHECKING:
     from cognite.client._api.datapoint_tasks import BaseTaskOrchestrator
     from cognite.client.data_classes.datapoint_aggregates import Aggregate
 
-    NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
-    NumpyUInt32Array = npt.NDArray[np.uint32]
-    NumpyInt64Array = npt.NDArray[np.int64]
-    NumpyFloat64Array = npt.NDArray[np.float64]
-    NumpyObjArray = npt.NDArray[np.object_]
+    NumpyDatetime64NSArray: TypeAlias = npt.NDArray[np.datetime64]
+    NumpyUInt32Array: TypeAlias = npt.NDArray[np.uint32]
+    NumpyInt64Array: TypeAlias = npt.NDArray[np.int64]
+    NumpyFloat64Array: TypeAlias = npt.NDArray[np.float64]
+    NumpyObjArray: TypeAlias = npt.NDArray[np.object_]
 
 
 def numpy_dtype_fix(
@@ -980,7 +980,7 @@ class Datapoints(CogniteResource):
         self.unit = unit
         self.unit_external_id = unit_external_id
         self.granularity = granularity
-        self.timestamp: list[int] = timestamp or []  # type: ignore
+        self.timestamp: list[int] = timestamp or []
         self.value = value
         self.average = average
         self.max = max
@@ -1131,7 +1131,7 @@ class Datapoints(CogniteResource):
         return instance
 
     @classmethod
-    def _load(  # type: ignore [override]
+    def _load(
         cls,
         dps_object: dict[str, Any],
         cognite_client: AsyncCogniteClient | None = None,

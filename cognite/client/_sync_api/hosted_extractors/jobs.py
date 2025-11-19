@@ -1,6 +1,6 @@
 """
 ===============================================================================
-6ca49a702912a31decfb46b9c6b61e22
+f542ffd1d02db6ccc5d458d6e28d107c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,14 +31,14 @@ if TYPE_CHECKING:
 class SyncJobsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Job]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Job]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[JobList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[JobList]: ...
 
     def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Job | JobList]:
         """
@@ -53,7 +53,7 @@ class SyncJobsAPI(SyncAPIClient):
         Yields:
             Job | JobList: yields Job one by one if chunk_size is not specified, else JobList objects.
         """
-        yield from SyncIterator(self.__async_client.hosted_extractors.jobs(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.hosted_extractors.jobs(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Job | None: ...
@@ -136,6 +136,7 @@ class SyncJobsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> job_write = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
                 >>> job = client.hosted_extractors.jobs.create(job_write)
         """
@@ -177,6 +178,7 @@ class SyncJobsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> job = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
                 >>> updated_job = client.hosted_extractors.jobs.update(job)
         """

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-98e4f0c8b9c49ed283cc7f11792b2999
+3f643634e376e43ff956e24881ee0f34
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -24,14 +24,32 @@ if TYPE_CHECKING:
 class SyncDataSetsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[DataSet]: ...
+    def __call__(
+        self,
+        chunk_size: None = None,
+        metadata: dict[str, str] | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        write_protected: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[DataSet]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[DataSetList]: ...
+    def __call__(
+        self,
+        chunk_size: int,
+        metadata: dict[str, str] | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        write_protected: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[DataSetList]: ...
 
     def __call__(
         self,
@@ -70,7 +88,7 @@ class SyncDataSetsAPI(SyncAPIClient):
                 write_protected=write_protected,
                 limit=limit,
             )
-        )
+        )  # type: ignore [misc]
 
     @overload
     def create(self, data_set: Sequence[DataSet] | Sequence[DataSetWrite]) -> DataSetList: ...
@@ -97,6 +115,7 @@ class SyncDataSetsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataSetWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> data_sets = [DataSetWrite(name="1st level"), DataSetWrite(name="2nd level")]
                 >>> res = client.data_sets.create(data_sets)
         """

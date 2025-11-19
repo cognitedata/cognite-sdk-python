@@ -1,6 +1,6 @@
 """
 ===============================================================================
-05d0853992db787473021dbdd653b725
+8dedeab93e14ad6efe0b97625676174f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -24,14 +24,14 @@ if TYPE_CHECKING:
 class SyncSourcesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
 
-    def __init__(self, async_client: AsyncCogniteClient):
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     @overload
-    def __call__(self, chunk_size: None = None) -> Iterator[Source]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Source]: ...
 
     @overload
-    def __call__(self, chunk_size: int) -> Iterator[SourceList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[SourceList]: ...
 
     def __call__(self, chunk_size: int | None = None, limit: int | None = None) -> Iterator[Source | SourceList]:
         """
@@ -46,7 +46,7 @@ class SyncSourcesAPI(SyncAPIClient):
         Yields:
             Source | SourceList: yields Source one by one if chunk_size is not specified, else SourceList objects.
         """
-        yield from SyncIterator(self.__async_client.hosted_extractors.sources(chunk_size=chunk_size, limit=limit))
+        yield from SyncIterator(self.__async_client.hosted_extractors.sources(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source: ...
@@ -132,6 +132,7 @@ class SyncSourcesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> source = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
                 >>> res = client.hosted_extractors.sources.create(source)
         """
@@ -173,6 +174,7 @@ class SyncSourcesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> source = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
                 >>> res = client.hosted_extractors.sources.update(source)
         """

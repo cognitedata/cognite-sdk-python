@@ -64,7 +64,7 @@ class TestPNIDParsingUnit:
             file_ids=file_ids, entities=entities, multiple_jobs=True
         )
         assert job_bundle
-        successes, failures = await job_bundle.get_result()
+        successes, failures = job_bundle.get_result()
         assert len(successes) == 3
 
         monkeypatch.setattr(async_client.diagrams, "_DETECT_API_STATUS_JOB_LIMIT", 1)

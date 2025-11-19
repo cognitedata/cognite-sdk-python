@@ -28,7 +28,7 @@ from cognite.client.utils._text import shorten
 from cognite.client.utils._url import resolve_url
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import AsyncCogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
@@ -430,14 +430,9 @@ class BasicAsyncAPIClient:
         }
         if not stream and self._config.debug:
             extra["response-payload"] = shorten(res.text, 1_000)
-        try:
-            http_protocol = res.http_version
-        except AttributeError:
-            # If this fails, it prob. means we are running in a browser (pyodide) with patched httpx package:
-            http_protocol = "XMLHTTP"
 
         logger.debug(
-            f"{http_protocol} {res.request.method} {res.url} {res.status_code}",
+            f"{res.http_version} {res.request.method} {res.url} {res.status_code}",
             extra=drop_none_values(extra),
         )
 

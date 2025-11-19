@@ -12,8 +12,7 @@ import pytest
 from _pytest.fixtures import FixtureRequest
 from tenacity import Retrying, retry_if_exception, stop_after_attempt, wait_exponential_jitter
 
-from cognite.client import CogniteClient
-from cognite.client._cognite_client import AsyncCogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import Asset, AssetWrite, FeatureTypeWrite, FeatureWrite
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
