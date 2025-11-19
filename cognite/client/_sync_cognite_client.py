@@ -1,104 +1,102 @@
+"""
+===================================================
+This file is auto-generated - do not edit manually!
+===================================================
+"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from cognite.client._api.agents import AgentsAPI
-from cognite.client._api.ai import AIAPI
-from cognite.client._api.annotations import AnnotationsAPI
-from cognite.client._api.assets import AssetsAPI
-from cognite.client._api.data_modeling import DataModelingAPI
-from cognite.client._api.data_sets import DataSetsAPI
-from cognite.client._api.diagrams import DiagramsAPI
-from cognite.client._api.documents import DocumentsAPI
-from cognite.client._api.entity_matching import EntityMatchingAPI
-from cognite.client._api.events import EventsAPI
-from cognite.client._api.extractionpipelines import ExtractionPipelinesAPI
-from cognite.client._api.files import FilesAPI
-from cognite.client._api.functions import FunctionsAPI
-from cognite.client._api.geospatial import GeospatialAPI
-from cognite.client._api.hosted_extractors import HostedExtractorsAPI
-from cognite.client._api.iam import IAMAPI
-from cognite.client._api.labels import LabelsAPI
-from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
-from cognite.client._api.raw import RawAPI
-from cognite.client._api.relationships import RelationshipsAPI
-from cognite.client._api.sequences import SequencesAPI
-from cognite.client._api.simulators import SimulatorsAPI
-from cognite.client._api.three_d import ThreeDAPI
-from cognite.client._api.time_series import TimeSeriesAPI
-from cognite.client._api.transformations import TransformationsAPI
-from cognite.client._api.units import UnitAPI
-from cognite.client._api.vision import VisionAPI
-from cognite.client._api.workflows import WorkflowAPI
-from cognite.client._api_client import APIClient
-from cognite.client.config import ClientConfig, global_config
+import httpx
+
+from cognite.client import AsyncCogniteClient
+from cognite.client._sync_api.agents.agents import SyncAgentsAPI
+from cognite.client._sync_api.ai import SyncAIAPI
+from cognite.client._sync_api.annotations import SyncAnnotationsAPI
+from cognite.client._sync_api.assets import SyncAssetsAPI
+from cognite.client._sync_api.data_modeling import SyncDataModelingAPI
+from cognite.client._sync_api.data_sets import SyncDataSetsAPI
+from cognite.client._sync_api.diagrams import SyncDiagramsAPI
+from cognite.client._sync_api.documents import SyncDocumentsAPI
+from cognite.client._sync_api.entity_matching import SyncEntityMatchingAPI
+from cognite.client._sync_api.events import SyncEventsAPI
+from cognite.client._sync_api.extractionpipelines import SyncExtractionPipelinesAPI
+from cognite.client._sync_api.files import SyncFilesAPI
+from cognite.client._sync_api.functions import SyncFunctionsAPI
+from cognite.client._sync_api.geospatial import SyncGeospatialAPI
+from cognite.client._sync_api.hosted_extractors import SyncHostedExtractorsAPI
+from cognite.client._sync_api.iam import SyncIAMAPI
+from cognite.client._sync_api.labels import SyncLabelsAPI
+from cognite.client._sync_api.postgres_gateway import SyncPostgresGatewaysAPI
+from cognite.client._sync_api.raw import SyncRawAPI
+from cognite.client._sync_api.relationships import SyncRelationshipsAPI
+from cognite.client._sync_api.sequences import SyncSequencesAPI
+from cognite.client._sync_api.simulators import SyncSimulatorsAPI
+from cognite.client._sync_api.three_d import Sync3DAPI
+from cognite.client._sync_api.time_series import SyncTimeSeriesAPI
+from cognite.client._sync_api.transformations import SyncTransformationsAPI
+from cognite.client._sync_api.units import SyncUnitAPI
+from cognite.client._sync_api.vision import SyncVisionAPI
+from cognite.client._sync_api.workflows import SyncWorkflowAPI
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._auxiliary import load_resource_to_dict
 
 if TYPE_CHECKING:
-    import httpx
+    from cognite.client import ClientConfig
 
 
-class AsyncCogniteClient:
+class CogniteClient:
     """Main entrypoint into the Cognite Python SDK.
 
-    All Cognite Data Fusion APIs are accessible through this asynchronous client.
-    For the synchronous client, see :class:`~cognite.client._cognite_client.CogniteClient`.
+    All Cognite Data Fusion APIs are accessible through this synchronous client.
+    For the asynchronous client, see :class:`~cognite.client._cognite_client.AsyncCogniteClient`.
 
     Args:
         config (ClientConfig | None): The configuration for this client.
     """
 
-    _API_VERSION = "v1"
-
     def __init__(self, config: ClientConfig | None = None) -> None:
-        if (client_config := config or global_config.default_client_config) is None:
-            raise ValueError(
-                "No ClientConfig has been provided, either pass it directly to the client on "
-                "initialization or set global_config.default_client_config."
-            )
-        else:
-            self._config = client_config
+        self.__async_client = async_client = AsyncCogniteClient(config)
 
-        # APIs using base_url / resource path:
-        self.agents = AgentsAPI(self._config, self._API_VERSION, self)
-        self.ai = AIAPI(self._config, self._API_VERSION, self)
-        self.assets = AssetsAPI(self._config, self._API_VERSION, self)
-        self.events = EventsAPI(self._config, self._API_VERSION, self)
-        self.files = FilesAPI(self._config, self._API_VERSION, self)
-        self.iam = IAMAPI(self._config, self._API_VERSION, self)
-        self.data_sets = DataSetsAPI(self._config, self._API_VERSION, self)
-        self.sequences = SequencesAPI(self._config, self._API_VERSION, self)
-        self.time_series = TimeSeriesAPI(self._config, self._API_VERSION, self)
-        self.geospatial = GeospatialAPI(self._config, self._API_VERSION, self)
-        self.raw = RawAPI(self._config, self._API_VERSION, self)
-        self.three_d = ThreeDAPI(self._config, self._API_VERSION, self)
-        self.labels = LabelsAPI(self._config, self._API_VERSION, self)
-        self.relationships = RelationshipsAPI(self._config, self._API_VERSION, self)
-        self.entity_matching = EntityMatchingAPI(self._config, self._API_VERSION, self)
-        self.vision = VisionAPI(self._config, self._API_VERSION, self)
-        self.extraction_pipelines = ExtractionPipelinesAPI(self._config, self._API_VERSION, self)
-        self.hosted_extractors = HostedExtractorsAPI(self._config, self._API_VERSION, self)
-        self.postgres_gateway = PostgresGatewaysAPI(self._config, self._API_VERSION, self)
-        self.transformations = TransformationsAPI(self._config, self._API_VERSION, self)
-        self.diagrams = DiagramsAPI(self._config, self._API_VERSION, self)
-        self.annotations = AnnotationsAPI(self._config, self._API_VERSION, self)
-        self.functions = FunctionsAPI(self._config, self._API_VERSION, self)
-        self.data_modeling = DataModelingAPI(self._config, self._API_VERSION, self)
-        self.documents = DocumentsAPI(self._config, self._API_VERSION, self)
-        self.workflows = WorkflowAPI(self._config, self._API_VERSION, self)
-        self.units = UnitAPI(self._config, self._API_VERSION, self)
-        self.simulators = SimulatorsAPI(self._config, self._API_VERSION, self)
-        # APIs just using base_url:
-        self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
+        # Initialize all sync. APIs:
+        self.ai = SyncAIAPI(async_client)
+        self.agents = SyncAgentsAPI(async_client)
+        self.annotations = SyncAnnotationsAPI(async_client)
+        self.assets = SyncAssetsAPI(async_client)
+        self.data_modeling = SyncDataModelingAPI(async_client)
+        self.data_sets = SyncDataSetsAPI(async_client)
+        self.diagrams = SyncDiagramsAPI(async_client)
+        self.documents = SyncDocumentsAPI(async_client)
+        self.entity_matching = SyncEntityMatchingAPI(async_client)
+        self.events = SyncEventsAPI(async_client)
+        self.extraction_pipelines = SyncExtractionPipelinesAPI(async_client)
+        self.files = SyncFilesAPI(async_client)
+        self.functions = SyncFunctionsAPI(async_client)
+        self.geospatial = SyncGeospatialAPI(async_client)
+        self.hosted_extractors = SyncHostedExtractorsAPI(async_client)
+        self.iam = SyncIAMAPI(async_client)
+        self.labels = SyncLabelsAPI(async_client)
+        self.postgres_gateway = SyncPostgresGatewaysAPI(async_client)
+        self.raw = SyncRawAPI(async_client)
+        self.relationships = SyncRelationshipsAPI(async_client)
+        self.sequences = SyncSequencesAPI(async_client)
+        self.simulators = SyncSimulatorsAPI(async_client)
+        self.three_d = Sync3DAPI(async_client)
+        self.time_series = SyncTimeSeriesAPI(async_client)
+        self.transformations = SyncTransformationsAPI(async_client)
+        self.units = SyncUnitAPI(async_client)
+        self.vision = SyncVisionAPI(async_client)
+        self.workflows = SyncWorkflowAPI(async_client)
 
-    async def get(
+    def get(
         self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
     ) -> httpx.Response:
         """Perform a GET request to an arbitrary path in the API."""
-        return await self._api_client._get(url, params=params, headers=headers)
+        return run_sync(self.__async_client.get(url, params=params, headers=headers))
 
-    async def post(
+    def post(
         self,
         url: str,
         json: dict[str, Any] | None = None,
@@ -106,9 +104,9 @@ class AsyncCogniteClient:
         headers: dict[str, Any] | None = None,
     ) -> httpx.Response:
         """Perform a POST request to an arbitrary path in the API."""
-        return await self._api_client._post(url, json=json, params=params, headers=headers)
+        return run_sync(self.__async_client.post(url, json=json, params=params, headers=headers))
 
-    async def put(
+    def put(
         self,
         url: str,
         json: dict[str, Any] | None = None,
@@ -116,7 +114,7 @@ class AsyncCogniteClient:
         headers: dict[str, Any] | None = None,
     ) -> httpx.Response:
         """Perform a PUT request to an arbitrary path in the API."""
-        return await self._api_client._put(url, json=json, params=params, headers=headers)
+        return run_sync(self.__async_client.put(url, json=json, params=params, headers=headers))
 
     @property
     def version(self) -> str:
@@ -136,7 +134,7 @@ class AsyncCogniteClient:
         Returns:
             ClientConfig: The configuration object.
         """
-        return self._config
+        return self.__async_client._config
 
     @classmethod
     def default(
@@ -145,9 +143,9 @@ class AsyncCogniteClient:
         cdf_cluster: str,
         credentials: CredentialProvider,
         client_name: str | None = None,
-    ) -> AsyncCogniteClient:
+    ) -> CogniteClient:
         """
-        Create an AsyncCogniteClient with default configuration.
+        Create an CogniteClient with default configuration.
 
         The default configuration creates the URLs based on the project and cluster:
 
@@ -160,8 +158,10 @@ class AsyncCogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
+            CogniteClient: An CogniteClient instance with default configurations.
         """
+        from cognite.client import ClientConfig
+
         return cls(ClientConfig.default(project, cdf_cluster, credentials, client_name=client_name))
 
     @classmethod
@@ -173,9 +173,9 @@ class AsyncCogniteClient:
         client_id: str,
         client_secret: str,
         client_name: str | None = None,
-    ) -> AsyncCogniteClient:
+    ) -> CogniteClient:
         """
-        Create an AsyncCogniteClient with default configuration using a client credentials flow.
+        Create an CogniteClient with default configuration using a client credentials flow.
 
         The default configuration creates the URLs based on the project and cluster:
 
@@ -192,7 +192,7 @@ class AsyncCogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
+            CogniteClient: An CogniteClient instance with default configurations.
         """
         credentials = OAuthClientCredentials.default_for_azure_ad(tenant_id, client_id, client_secret, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
@@ -205,9 +205,9 @@ class AsyncCogniteClient:
         tenant_id: str,
         client_id: str,
         client_name: str | None = None,
-    ) -> AsyncCogniteClient:
+    ) -> CogniteClient:
         """
-        Create an AsyncCogniteClient with default configuration using the interactive flow.
+        Create an CogniteClient with default configuration using the interactive flow.
 
         The default configuration creates the URLs based on the tenant_id and cluster:
 
@@ -223,26 +223,26 @@ class AsyncCogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
+            CogniteClient: An CogniteClient instance with default configurations.
         """
         credentials = OAuthInteractive.default_for_azure_ad(tenant_id, client_id, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod
-    def load(cls, config: dict[str, Any] | str) -> AsyncCogniteClient:
+    def load(cls, config: dict[str, Any] | str) -> CogniteClient:
         """Load a cognite client object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the AsyncCogniteClient class.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the CogniteClient class.
 
         Returns:
-            AsyncCogniteClient: A cognite client object.
+            CogniteClient: A cognite client object.
 
         Examples:
 
             Create a cognite client object from a dictionary input:
 
-                >>> from cognite.client import AsyncCogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> import os
                 >>> config = {
                 ...     "client_name": "abcd",
@@ -257,7 +257,9 @@ class AsyncCogniteClient:
                 ...         },
                 ...     },
                 ... }
-                >>> client = AsyncCogniteClient.load(config)
+                >>> client = CogniteClient.load(config)
         """
+        from cognite.client import ClientConfig
+
         loaded = load_resource_to_dict(config)
         return cls(config=ClientConfig.load(loaded))

@@ -213,13 +213,31 @@ class BasicAsyncAPIClient:
         method: Literal["GET", "PUT", "HEAD"],
         /,
         full_url: str,
-        content: str | bytes | Iterable[bytes] | None = None,
+        content: bytes | AsyncIterator[bytes] | None = None,
         headers: dict[str, Any] | None = None,
         timeout: float | None = None,
-        api_subversion: str | None = None,
         include_cdf_headers: bool = False,
+        api_subversion: str | None = None,
     ) -> httpx.Response:
-        """Make a request to something that is outside Cognite Data Fusion"""
+        """
+        Make a request to something that is outside Cognite Data Fusion, with retry enabled.
+        Requires the caller to handle errors coming from non-2xx response status codes.
+
+        Args:
+            method (Literal['GET', 'PUT', 'HEAD']): HTTP method.
+            full_url (str): Full URL to make the request to.
+            content (bytes | AsyncIterator[bytes] | None): Optional body content to send along with the request.
+            headers (dict[str, Any] | None): Optional headers to include in the request.
+            timeout (float | None): Override the default timeout for this request.
+            include_cdf_headers (bool): Whether to include Cognite Data Fusion headers in the request. Defaults to False.
+            api_subversion (str | None): When include_cdf_headers=True, override the API subversion to use for the request. Has no effect otherwise.
+
+        Returns:
+            httpx.Response: The response from the server.
+
+        Raises:
+            httpx.HTTPStatusError: If the response status code is 4xx or 5xx.
+        """
         client = self._select_async_http_client(method in {"GET", "PUT", "HEAD"})
         if include_cdf_headers:
             headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
@@ -227,11 +245,13 @@ class BasicAsyncAPIClient:
             res = await client(
                 method, full_url, content=content, headers=headers, timeout=timeout or self._config.timeout
             )
-        except httpx.HTTPStatusError as err:
-            await self._handle_status_error(err)
+            self._log_successful_request(res)
+            return res
 
-        self._log_successful_request(res)
-        return res
+        except httpx.HTTPStatusError as err:
+            handler = await FailedRequestHandler.from_status_error(err, stream=False)
+            handler.log_failed_request()
+            raise
 
     @asynccontextmanager
     async def _stream(
@@ -241,14 +261,14 @@ class BasicAsyncAPIClient:
         *,
         url_path: str | None = None,
         full_url: str | None = None,
-        json: Any = None,
+        json: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
         full_headers: dict[str, Any] | None = None,
         timeout: float | None = None,
         api_subversion: str | None = None,
     ) -> AsyncIterator[httpx.Response]:
         assert url_path or full_url, "Either url_path or full_url must be provided"
-        full_url = full_url or resolve_url(self, "GET", cast(str, url_path))[1]
+        full_url = full_url or resolve_url(self, method, cast(str, url_path))[1]
         if full_headers is None:
             full_headers = self._configure_headers(headers, api_subversion)
 
@@ -262,7 +282,7 @@ class BasicAsyncAPIClient:
                 yield resp
 
         except httpx.HTTPStatusError as err:
-            await self._handle_status_error(err, stream=True)
+            await self._handle_status_error(err, payload=json, stream=True)
 
     async def _get(
         self,
@@ -319,7 +339,7 @@ class BasicAsyncAPIClient:
                 semaphore=semaphore,
             )
         except httpx.HTTPStatusError as err:
-            await self._handle_status_error(err)
+            await self._handle_status_error(err, payload=json)
 
         self._log_successful_request(res, payload=json)
         return res
@@ -327,7 +347,7 @@ class BasicAsyncAPIClient:
     async def _put(
         self,
         url_path: str,
-        content: str | bytes | Iterable[bytes] | None = None,
+        content: str | bytes | AsyncIterator[bytes] | None = None,
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
@@ -337,10 +357,10 @@ class BasicAsyncAPIClient:
         semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> httpx.Response:
         _, full_url = resolve_url(self, "PUT", url_path)
+
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         if content is None:
             content = self._handle_json_dump(json, full_headers)
-
         try:
             res = await self._http_client_with_retry(
                 "PUT",
@@ -353,7 +373,7 @@ class BasicAsyncAPIClient:
                 semaphore=semaphore,
             )
         except httpx.HTTPStatusError as err:
-            await self._handle_status_error(err)
+            await self._handle_status_error(err, payload=json)
 
         self._log_successful_request(res, payload=json)
         return res
@@ -381,7 +401,7 @@ class BasicAsyncAPIClient:
         headers[auth_header_name] = auth_header_value
 
     async def _handle_status_error(
-        self, error: httpx.HTTPStatusError, payload: dict | None = None, stream: bool = False
+        self, error: httpx.HTTPStatusError, payload: dict[str, Any] | None = None, stream: bool = False
     ) -> NoReturn:
         """The response had an HTTP status code of 4xx or 5xx"""
         handler = await FailedRequestHandler.from_status_error(error, stream=stream)
