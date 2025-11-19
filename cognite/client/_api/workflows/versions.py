@@ -115,6 +115,7 @@ class WorkflowVersionAPI(APIClient):
                 ...     WorkflowTask, FunctionTaskParameters,
                 ... )
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> function_task = WorkflowTask(
                 ...     external_id="my_workflow-task1",
                 ...     parameters=FunctionTaskParameters(
@@ -163,6 +164,7 @@ class WorkflowVersionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.versions.delete(("my workflow", "1"))
 
             Delete workflow version "1" of workflow "my workflow" and workflow version "2" of workflow "my workflow 2" using the WorkflowVersionId class:
@@ -220,6 +222,7 @@ class WorkflowVersionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionId
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.versions.retrieve(WorkflowVersionId("my_workflow", "v1"))
 
             Retrieve multiple workflow versions and ignore unknown:
@@ -302,6 +305,7 @@ class WorkflowVersionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.versions.list(["my_workflow", "my_workflow_2"])
 
             Get all workflow versions for workflows 'my_workflow' and 'my_workflow_2' using the WorkflowVersionId class:

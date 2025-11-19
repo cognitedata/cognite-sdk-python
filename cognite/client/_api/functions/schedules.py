@@ -141,6 +141,7 @@ class FunctionSchedulesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.functions.schedules.retrieve(id=1)
 
         """
@@ -180,6 +181,7 @@ class FunctionSchedulesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> schedules = client.functions.schedules.list()
 
             List schedules directly on a function object to get only schedules associated with this particular function:
@@ -255,6 +257,7 @@ class FunctionSchedulesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> schedule = client.functions.schedules.create(
                 ...     name="My schedule",
                 ...     function_id=123,
@@ -344,6 +347,7 @@ class FunctionSchedulesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.functions.schedules.delete(id = 123)
 
         """
@@ -365,6 +369,7 @@ class FunctionSchedulesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.functions.schedules.get_input_data(id=123)
         """
         url = f"{self._RESOURCE_PATH}/{id}/input_data"

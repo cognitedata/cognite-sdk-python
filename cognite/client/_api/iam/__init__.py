@@ -128,6 +128,7 @@ class IAMAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_groups = client.iam.groups.list(all=False)
                 >>> to_check = [
                 ...     AssetsAcl(
@@ -230,6 +231,7 @@ class IAMAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.capabilities import AssetsAcl, EventsAcl
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> to_check = [
                 ...     AssetsAcl(
                 ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],

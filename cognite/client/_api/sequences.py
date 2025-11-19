@@ -58,8 +58,16 @@ class SequencesAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self.rows = SequencesDataAPI(config, api_version, cognite_client)
-        self.data = self.rows
+        self.data = SequencesDataAPI(config, api_version, cognite_client)
+
+    @property
+    def rows(self) -> SequencesDataAPI:
+        warnings.warn(
+            "The 'sequences.rows' property is deprecated and may be removed in the future. "
+            "Use 'client.sequences.data' to future-proof your code.",
+            DeprecationWarning,
+        )
+        return self.data
 
     @overload
     def __call__(
@@ -185,8 +193,9 @@ class SequencesAPI(APIClient):
 
             Get sequence by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.retrieve(id=1)
 
             Get sequence by external id:
@@ -216,8 +225,9 @@ class SequencesAPI(APIClient):
 
             Get sequences by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.retrieve_multiple(ids=[1, 2, 3])
 
             Get sequences by external id:
@@ -242,8 +252,9 @@ class SequencesAPI(APIClient):
 
             Aggregate sequences:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.aggregate(filter={"external_id_prefix": "prefix"})
         """
         warnings.warn(
@@ -269,8 +280,9 @@ class SequencesAPI(APIClient):
 
             Count the number of time series in your CDF project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.sequences.aggregate_count()
 
             Count the number of sequences with external id prefixed with "mapping:" in your CDF project:
@@ -314,6 +326,7 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.sequences.aggregate_cardinality_values(SequenceProperty.metadata_key("efficiency"))
 
             Count the number of timezones (metadata key) for sequences with the word "critical" in the description
@@ -363,6 +376,7 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
         """
         self._validate_filter(advanced_filter)
@@ -400,6 +414,7 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.sequences.aggregate_unique_values(SequenceProperty.metadata_key("timezone"))
                 >>> print(result.unique)
 
@@ -467,6 +482,7 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.sequences.aggregate_unique_properties(SequenceProperty.metadata)
         """
         self._validate_filter(advanced_filter)
@@ -503,6 +519,7 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> column_def = [
                 ...     SequenceColumnWrite(value_type="STRING", external_id="user", description="some description"),
                 ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount")
@@ -537,8 +554,9 @@ class SequencesAPI(APIClient):
 
             Delete sequences by id or external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.delete(id=[1,2,3], external_id="3")
         """
         await self._delete_multiple(
@@ -579,8 +597,9 @@ class SequencesAPI(APIClient):
 
             Update a sequence that you have fetched. This will perform a full update of the sequences:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.retrieve(id=1)
                 >>> res.description = "New description"
                 >>> res = client.sequences.update(res)
@@ -683,6 +702,7 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_sequence = client.sequences.retrieve(id=1)
                 >>> existing_sequence.description = "New description"
                 >>> new_sequence = SequenceWrite(
@@ -815,8 +835,9 @@ class SequencesAPI(APIClient):
 
             Search for a sequence:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.search(name="some name")
         """
         return await self._search(
@@ -854,6 +875,7 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> asset_filter = filters.Equals("asset_id", 123)
                 >>> is_efficiency = filters.Equals(["metadata", "type"], "efficiency")
                 >>> res = client.sequences.filter(filter=filters.And(asset_filter, is_efficiency), sort="created_time")
@@ -941,8 +963,9 @@ class SequencesAPI(APIClient):
 
             List sequences:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.list(limit=5)
 
             Iterate over sequences, one-by-one:

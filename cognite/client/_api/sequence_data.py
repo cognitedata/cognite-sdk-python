@@ -57,6 +57,7 @@ class SequencesDataAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> seq = client.sequences.create(
                 ...     SequenceWrite(
                 ...         columns=[
@@ -137,6 +138,7 @@ class SequencesDataAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> import pandas as pd
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = pd.DataFrame({'col_a': [1, 2, 3], 'col_b': [4, 5, 6]}, index=[1, 2, 3])
                 >>> client.sequences.data.insert_dataframe(df, id=123)
         """
@@ -163,6 +165,7 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.data.delete(id=1, rows=[1,2,42])
         """
         post_obj = Identifier.of_either(id, external_id).as_dict()
@@ -185,6 +188,7 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.data.delete_range(id=1, start=0, end=None)
         """
         sequence = await self._cognite_client.sequences.retrieve(external_id=external_id, id=id)
@@ -280,6 +284,7 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.data.retrieve(id=1)
                 >>> tuples = [(r,v) for r,v in res.items()] # You can use this iterator in for loops and list comprehensions,
                 >>> single_value = res[23] # ... get the values at a single row number,
@@ -339,6 +344,7 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.data.retrieve_last_row(id=1, before=1000)
         """
         columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
@@ -373,6 +379,7 @@ class SequencesDataAPI(APIClient):
         Examples:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.sequences.data.retrieve_dataframe(id=1, start=0, end=None)
         """
         warnings.warn("This method is deprecated. Use retrieve(...).to_pandas(..) instead.", DeprecationWarning)

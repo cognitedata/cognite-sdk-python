@@ -31,6 +31,7 @@ class TransformationSchemaAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationDestination
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> columns = client.transformations.schema.retrieve(destination = TransformationDestination.assets())
         """
 

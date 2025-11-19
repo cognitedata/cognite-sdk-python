@@ -11,7 +11,7 @@ from cognite.client.data_classes import (
     ThreeDAssetMappingList,
     ThreeDAssetMappingWrite,
 )
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import split_into_chunks, unpack_items_in_payload
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._url import interpolate_and_url_encode
@@ -49,6 +49,7 @@ class ThreeDAssetMappingAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.asset_mappings.list(model_id=1, revision_id=1)
 
             List 3d node asset mappings for assets whose bounding box intersects with a given bounding box:
@@ -111,6 +112,7 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> from cognite.client.data_classes import ThreeDAssetMappingWrite
                 >>> my_mapping = ThreeDAssetMappingWrite(node_id=1, asset_id=1)
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.asset_mappings.create(model_id=1, revision_id=1, asset_mapping=my_mapping)
         """
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
@@ -138,6 +140,7 @@ class ThreeDAssetMappingAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping_to_delete = client.three_d.asset_mappings.list(model_id=1, revision_id=1)[0]
                 >>> res = client.three_d.asset_mappings.delete(model_id=1, revision_id=1, asset_mapping=mapping_to_delete)
         """

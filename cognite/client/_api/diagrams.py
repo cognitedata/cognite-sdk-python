@@ -158,6 +158,7 @@ class DiagramsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.contextualization import FileReference
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> detect_job = client.diagrams.detect(
                 ...     entities=[
                 ...         {"userDefinedField": "21PT1017","ignoredField": "AA11"},
@@ -326,8 +327,9 @@ class DiagramsAPI(APIClient):
 
             Run a detection job, then convert the results:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> detect_job = client.diagrams.detect(...)
                 >>> client.diagrams.convert(detect_job=detect_job)
 

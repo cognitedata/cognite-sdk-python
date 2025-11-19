@@ -88,8 +88,9 @@ class DestinationsAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.hosted_extractors.destinations.retrieve('myDestination')
 
             Get multiple destinations by id:
@@ -120,8 +121,9 @@ class DestinationsAPI(APIClient):
 
             Delete destinations by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.hosted_extractors.destinations.delete(["myDest", "MyDest2"])
         """
         self._warning.warn()
@@ -161,6 +163,7 @@ class DestinationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import DestinationWrite, SessionWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> destination = DestinationWrite(external_id='my_dest', credentials=SessionWrite("my_nonce"), target_data_set_id=123)
                 >>> res = client.hosted_extractors.destinations.create(destination)
         """
@@ -208,6 +211,7 @@ class DestinationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import DestinationUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> destination = DestinationUpdate('my_dest').target_data_set_id.set(123)
                 >>> res = client.hosted_extractors.destinations.update(destination)
         """
@@ -237,8 +241,9 @@ class DestinationsAPI(APIClient):
 
             List destinations:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> destination_list = client.hosted_extractors.destinations.list(limit=5)
 
             Iterate over destinations, one-by-one:

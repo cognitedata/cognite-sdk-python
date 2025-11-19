@@ -101,8 +101,9 @@ class DocumentsAPI(APIClient):
 
             Count the number of documents in your CDF project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.documents.aggregate_count()
 
             Count the number of PDF documents in your CDF project:
@@ -152,6 +153,7 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.documents.aggregate_cardinality_values(DocumentProperty.type)
 
             Count the number of authors of plain/text documents in your CDF project:
@@ -201,8 +203,9 @@ class DocumentsAPI(APIClient):
 
             Count the number metadata keys for documents in your CDF project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.documents.aggregate_cardinality_properties()
         """
         self._validate_filter(filter)
@@ -242,6 +245,7 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.documents.aggregate_unique_values(DocumentProperty.mime_type)
                 >>> unique_types = result.unique
 
@@ -299,6 +303,7 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import SourceFileProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.documents.aggregate_unique_values(SourceFileProperty.metadata)
         """
         self._validate_filter(filter)
@@ -334,8 +339,9 @@ class DocumentsAPI(APIClient):
 
             Retrieve the content of a document with id 123:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.retrieve_content(id=123)
         """
         response = await self._post(f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json={"id": id})
@@ -362,6 +368,7 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from pathlib import Path
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> with Path("my_file.txt").open("wb") as buffer:
                 ...     client.documents.retrieve_content_buffer(id=123, buffer=buffer)
         """
@@ -429,6 +436,7 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
                 >>> documents = client.documents.search("pump 123", filter=is_pdf)
 
@@ -496,6 +504,7 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
                 >>> pdf_documents = client.documents.list(filter=is_pdf)
 

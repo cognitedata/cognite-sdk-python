@@ -57,6 +57,7 @@ class VisionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.contextualization import VisionFeature
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> extract_job = client.vision.extract(features=VisionFeature.ASSET_TAG_DETECTION, file_ids=[1])
                 >>> extract_job.wait_for_completion()
                 >>> for item in extract_job.items:
@@ -99,8 +100,9 @@ class VisionAPI(APIClient):
         Examples:
             Retrieve a vision extract job by ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> extract_job = client.vision.get_extract_job(job_id=1)
                 >>> extract_job.wait_for_completion()
                 >>> for item in extract_job.items:

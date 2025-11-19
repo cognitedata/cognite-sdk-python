@@ -41,6 +41,7 @@ class WorkflowExecutionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.retrieve_detailed("000560bc-9080-4286-b242-a27bb4819253")
 
             List workflow executions and retrieve detailed information for the first one:
@@ -119,6 +120,7 @@ class WorkflowExecutionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.run("foo", "1")
 
             Trigger a workflow execution with input data:
@@ -173,6 +175,7 @@ class WorkflowExecutionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.list(("my_workflow", "1"))
 
             Get all workflow executions from the last 24 hours:
@@ -232,6 +235,7 @@ class WorkflowExecutionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.run("foo", "1")
                 >>> client.workflows.executions.cancel(id="foo", reason="test cancellation")
         """
@@ -256,6 +260,7 @@ class WorkflowExecutionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.run("foo", "1")
                 >>> client.workflows.executions.cancel(id=res.id, reason="test cancellation")
                 >>> client.workflows.executions.retry(res.id)

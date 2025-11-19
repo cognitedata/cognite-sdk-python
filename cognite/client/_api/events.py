@@ -191,8 +191,9 @@ class EventsAPI(APIClient):
 
             Get event by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.events.retrieve(id=1)
 
             Get event by external id:
@@ -222,8 +223,9 @@ class EventsAPI(APIClient):
 
             Get events by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.events.retrieve_multiple(ids=[1, 2, 3])
 
             Get events by external id:
@@ -248,8 +250,9 @@ class EventsAPI(APIClient):
 
             Aggregate events:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> aggregate_type = client.events.aggregate(filter={"type": "failure"})
         """
         warnings.warn(
@@ -283,6 +286,7 @@ class EventsAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> result = client.events.aggregate_unique_values(property=EventProperty.type)
             >>> print(result.unique)
 
@@ -338,8 +342,9 @@ class EventsAPI(APIClient):
 
             Count the number of events in your CDF project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.events.aggregate_count()
 
             Count the number of workorder events in your CDF project:
@@ -381,6 +386,7 @@ class EventsAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> type_count = client.events.aggregate_cardinality_values(EventProperty.type)
 
         Count the number of types of events linked to asset 123 in your CDF project:
@@ -426,6 +432,7 @@ class EventsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.events import EventProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> type_count = client.events.aggregate_cardinality_properties(EventProperty.metadata)
 
         """
@@ -464,6 +471,7 @@ class EventsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.events import EventProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.events.aggregate_unique_properties(EventProperty.metadata)
                 >>> print(result.unique)
         """
@@ -498,6 +506,7 @@ class EventsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> events = [EventWrite(start_time=0, end_time=1), EventWrite(start_time=2, end_time=3)]
                 >>> res = client.events.create(events)
         """
@@ -522,8 +531,9 @@ class EventsAPI(APIClient):
 
             Delete events by id or external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.events.delete(id=[1,2,3], external_id="3")
         """
         await self._delete_multiple(
@@ -564,8 +574,9 @@ class EventsAPI(APIClient):
 
             Update an event that you have fetched. This will perform a full update of the event:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> event = client.events.retrieve(id=1)
                 >>> event.description = "New description"
                 >>> res = client.events.update(event)
@@ -601,8 +612,9 @@ class EventsAPI(APIClient):
 
             Search for events:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.events.search(description="some description")
         """
         return await self._search(
@@ -640,6 +652,7 @@ class EventsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_event = client.events.retrieve(id=1)
                 >>> existing_event.description = "New description"
                 >>> new_event = EventWrite(external_id="new_event", description="New event")
@@ -682,6 +695,7 @@ class EventsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> is_workorder = filters.Prefix("external_id", "workorder")
                 >>> has_failure = filters.Search("description", "failure")
                 >>> res = client.events.filter(
@@ -780,8 +794,9 @@ class EventsAPI(APIClient):
 
             List events and filter on max start time:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> event_list = client.events.list(limit=5, start_time={"max": 1500000000})
 
             Iterate over events, one-by-one:

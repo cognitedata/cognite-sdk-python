@@ -52,6 +52,7 @@ class WorkflowTriggerAPI(APIClient):
                 >>> from cognite.client.data_classes.workflows import WorkflowTriggerUpsert, WorkflowScheduledTriggerRule
                 >>> from zoneinfo import ZoneInfo
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.triggers.upsert(
                 ...     WorkflowTriggerUpsert(
                 ...         external_id="my_trigger",
@@ -128,6 +129,7 @@ class WorkflowTriggerAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.triggers.delete("my_trigger")
 
             Delete a list of triggers:
@@ -167,6 +169,7 @@ class WorkflowTriggerAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.triggers.list(limit=None)
         """
         return await self._list(
@@ -208,6 +211,7 @@ class WorkflowTriggerAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.triggers.list_runs("my_trigger", limit=None)
         """
         return await self._list(

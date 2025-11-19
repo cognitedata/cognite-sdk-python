@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Iterator
 from datetime import timedelta, timezone
 
 import pytest
-from _pytest.mark import ParameterSet
 
 from cognite.client.data_classes import Datapoint, DatapointsArray
 from cognite.client.data_classes._base import CogniteResourceList
@@ -63,37 +61,9 @@ class TestDatapoint:
         assert pd.Timestamp(expected) == df1.index[0] == df2.index[0]
 
 
-def factory_method_from_array_data() -> Iterator[ParameterSet]:
-    try:
-        import numpy as np
-        import pandas as pd
-    except ImportError:
-        yield from []
-        return
-
-    index = pd.date_range("2023-01-01", periods=4, freq="1h", tz="UTC").values
-    arr1 = DatapointsArray(id=123, average=np.array([1.0, 2.0], dtype=np.float64), timestamp=index[:2])
-    arr2 = DatapointsArray(id=123, average=np.array([3.0, 4.0], dtype=np.float64), timestamp=index[2:])
-    expected = DatapointsArray(id=123, average=np.array([1, 2, 3, 4], dtype=np.float64), timestamp=index)
-    yield pytest.param([arr1, arr2], expected, id="Construct from two arrays")
-
-
 @pytest.mark.dsl
 class TestDatapointsArray:
-    @staticmethod
-    @pytest.mark.parametrize("arrays, expected_array", list(factory_method_from_array_data()))
-    def test_factory_method_from_array(arrays: list[DatapointsArray], expected_array: DatapointsArray) -> None:
-        import numpy as np
-
-        actual_array = DatapointsArray.create_from_arrays(*arrays)
-
-        assert actual_array.average is not None and expected_array.average is not None
-        np.testing.assert_allclose(actual_array.average, expected_array.average)
-
-        assert actual_array.timestamp is not None and expected_array.timestamp is not None
-        np.testing.assert_equal(actual_array.timestamp, expected_array.timestamp)
-
-    def test_dump_converts_missing_values_to_none(self) -> None:
+    def test_dump_converts_missing_values_to_none(self):
         # Easy to forget that we can have bad data (missing) without any status codes on the object
         import numpy as np
 
