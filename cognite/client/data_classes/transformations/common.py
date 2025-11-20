@@ -11,17 +11,17 @@ from cognite.client.utils._auxiliary import basic_obj_dump
 from cognite.client.utils._text import iterable_to_case
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class TransformationDestination(CogniteObject):
     """TransformationDestination has static methods to define the target resource type of a transformation
 
     Args:
-        type (str | None): Used as data type identifier on transformation creation/retrieval.
+        type (str): Used as data type identifier on transformation creation/retrieval.
     """
 
-    def __init__(self, type: str | None = None) -> None:
+    def __init__(self, type: str) -> None:
         self.type = type
 
     def __hash__(self) -> int:
@@ -160,7 +160,9 @@ class TransformationDestination(CogniteObject):
         return Instances(data_model=data_model, instance_space=instance_space)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TransformationDestination:
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
+    ) -> TransformationDestination:
         type_ = resource.get("type")
         if type_ is None:
             return UnknownCogniteObject(resource)  # type: ignore[return-value]
@@ -175,11 +177,11 @@ class TransformationDestination(CogniteObject):
             return Edges._load(resource)
         elif type_ == "instances":
             return Instances._load(resource)
-        return TransformationDestination(type_)
+        return cls(type_)
 
 
 class RawTable(TransformationDestination):
-    def __init__(self, database: str | None = None, table: str | None = None) -> None:
+    def __init__(self, database: str, table: str) -> None:
         super().__init__(type="raw")
         self.database = database
         self.table = table
@@ -188,12 +190,12 @@ class RawTable(TransformationDestination):
         return hash((self.type, self.database, self.table))
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(database=resource["database"], table=resource["table"])
 
 
 class SequenceRowsDestination(TransformationDestination):
-    def __init__(self, external_id: str | None = None) -> None:
+    def __init__(self, external_id: str) -> None:
         super().__init__(type="sequence_rows")
         self.external_id = external_id
 
@@ -201,7 +203,7 @@ class SequenceRowsDestination(TransformationDestination):
         return hash((self.type, self.external_id))
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(external_id=resource["externalId"])
 
 
@@ -215,7 +217,7 @@ class ViewInfo(CogniteObject):
         return hash((self.space, self.external_id, self.version))
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> ViewInfo:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ViewInfo:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -232,7 +234,7 @@ class EdgeType(CogniteObject):
         return hash((self.space, self.external_id))
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> EdgeType:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> EdgeType:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -258,7 +260,7 @@ class DataModelInfo(CogniteObject):
         self.destination_relationship_from_type = destination_relationship_from_type
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -271,15 +273,15 @@ class DataModelInfo(CogniteObject):
 class Nodes(TransformationDestination):
     def __init__(
         self,
-        view: ViewInfo | None = None,
-        instance_space: str | None = None,
+        view: ViewInfo | None,
+        instance_space: str | None,
     ) -> None:
         super().__init__(type="nodes")
         self.view = view
         self.instance_space = instance_space
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             view=ViewInfo._load(resource["view"]) if resource.get("view") is not None else None,
             instance_space=resource.get("instanceSpace"),
@@ -289,9 +291,9 @@ class Nodes(TransformationDestination):
 class Edges(TransformationDestination):
     def __init__(
         self,
-        view: ViewInfo | None = None,
-        instance_space: str | None = None,
-        edge_type: EdgeType | None = None,
+        view: ViewInfo | None,
+        instance_space: str | None,
+        edge_type: EdgeType | None,
     ) -> None:
         super().__init__(type="edges")
         self.view = view
@@ -299,7 +301,7 @@ class Edges(TransformationDestination):
         self.edge_type = edge_type
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             view=ViewInfo._load(resource["view"]) if resource.get("view") is not None else None,
             instance_space=resource.get("instanceSpace"),
@@ -318,7 +320,7 @@ class Instances(TransformationDestination):
         self.instance_space = instance_space
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             data_model=DataModelInfo._load(resource["dataModel"]) if resource.get("dataModel") is not None else None,
             instance_space=resource.get("instanceSpace"),

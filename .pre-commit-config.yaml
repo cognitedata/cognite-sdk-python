@@ -13,6 +13,7 @@ repos:
           - --fix
           - --exit-non-zero-on-fix
           - --force-exclude
+
       - id: ruff-format
         name: ruff format
         language: python
@@ -32,22 +33,11 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-      # Eventually we want to run mypy on the whole test code base. But for now we only enable it for data modeling, simulators and datapoints
-        entry: |
-          poetry run dmypy run -- cognite tests/tests_integration/test_api/test_data_modeling
-          tests/tests_unit/test_data_classes/test_data_models
-          tests/tests_unit/test_utils/test_time.py
-          tests/tests_integration/test_api/test_datapoints.py
-          tests/tests_integration/test_api/test_simulators
-          tests/tests_integration/test_api/test_principals.py
-          tests/tests_unit/test_api/test_simulators
-          tests/tests_unit/test_data_classes/test_simulators.py
+        entry: poetry run dmypy run -- cognite tests
         files: ^.*.(py|pyi)$
         language: system
         pass_filenames: false
 
-  - repo: local
-    hooks:
       - id: custom-checks
         name: custom repo checks
         entry: poetry run python scripts/run_checks.py
@@ -56,8 +46,16 @@ repos:
         pass_filenames: true
         require_serial: true  # avoid possible race conditions
 
+      - id: sync-client-codegen
+        name: run sync codegen on changed files
+        entry: poetry run python scripts/sync_client_codegen/main.py run --files
+        files: ^cognite/.*.(py|pyi)$
+        language: system
+        pass_filenames: true
+        require_serial: true
+
   - repo: https://github.com/jsh9/pydoclint  # Run after 'custom-checks' as these may auto-fix
-    rev: 0.7.3
+    rev: 0.8.1
     hooks:
       - id: pydoclint
         require_serial: true  # Spammy in run-all scenarios (more than fast enough already)

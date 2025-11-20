@@ -3,39 +3,34 @@ from __future__ import annotations
 import contextlib
 import datetime
 import json
-import typing
-import warnings
 from abc import abstractmethod
 from collections import ChainMap, defaultdict
-from collections.abc import Collection, Iterator, Sequence
+from collections.abc import Collection, Iterator
 from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Literal,
-    NoReturn,
-    TypedDict,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, NoReturn, TypeAlias, overload
+from zoneinfo import ZoneInfo
 
-from typing_extensions import NotRequired, Self
+from typing_extensions import Self
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.utils import _json
+from cognite.client.data_classes.datapoint_aggregates import (
+    _INT_AGGREGATES_CAMEL,
+    ALL_SORTED_DP_AGGS,
+)
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier, InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
     concat_dps_dataframe_list,
+    convert_dps_to_dataframe,
     convert_tz_for_pandas,
     notebook_display_with_fallback,
-    resolve_ts_identifier_as_df_column_name,
 )
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
@@ -45,12 +40,10 @@ from cognite.client.utils._text import (
     to_snake_case,
 )
 from cognite.client.utils._time import (
-    ZoneInfo,
     convert_and_isoformat_timestamp,
     convert_timezone_to_str,
     parse_str_timezone,
 )
-from cognite.client.utils.useful_types import SequenceNotStr
 
 if NUMPY_IS_AVAILABLE:
     import numpy as np
@@ -59,50 +52,15 @@ if TYPE_CHECKING:
     import numpy.typing as npt
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client._api.datapoint_tasks import BaseTaskOrchestrator
+    from cognite.client.data_classes.datapoint_aggregates import Aggregate
 
-    NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
-    NumpyUInt32Array = npt.NDArray[np.uint32]
-    NumpyInt64Array = npt.NDArray[np.int64]
-    NumpyFloat64Array = npt.NDArray[np.float64]
-    NumpyObjArray = npt.NDArray[np.object_]
-
-
-Aggregate = Literal[
-    "average",
-    "continuous_variance",
-    "count",
-    "count_bad",
-    "count_good",
-    "count_uncertain",
-    "discrete_variance",
-    "duration_bad",
-    "duration_good",
-    "duration_uncertain",
-    "interpolation",
-    "max",
-    "max_datapoint",
-    "min",
-    "min_datapoint",
-    "step_interpolation",
-    "sum",
-    "total_variation",
-]
-_OBJECT_AGGREGATES: frozenset[Literal["maxDatapoint", "minDatapoint"]] = frozenset({"maxDatapoint", "minDatapoint"})
-_INT_AGGREGATES = frozenset(
-    {
-        "count",
-        "countBad",
-        "countGood",
-        "countUncertain",
-        "durationBad",
-        "durationGood",
-        "durationUncertain",
-    }
-)
-ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
-ALL_SORTED_NUMERIC_DP_AGGS = [agg for agg in ALL_SORTED_DP_AGGS if agg not in ("min_datapoint", "max_datapoint")]
+    NumpyDatetime64NSArray: TypeAlias = npt.NDArray[np.datetime64]
+    NumpyUInt32Array: TypeAlias = npt.NDArray[np.uint32]
+    NumpyInt64Array: TypeAlias = npt.NDArray[np.int64]
+    NumpyFloat64Array: TypeAlias = npt.NDArray[np.float64]
+    NumpyObjArray: TypeAlias = npt.NDArray[np.object_]
 
 
 def numpy_dtype_fix(
@@ -226,40 +184,12 @@ class MaxDatapointWithStatus(MaxDatapoint):
         }
 
 
-def _select_min_or_max_datapoint_cls(dct: dict[str, Any], is_minimum: bool) -> type[MaxOrMinDatapoint]:
-    match is_minimum, "statusCode" in dct:
-        case True, True:
-            return MinDatapointWithStatus
-        case True, False:
-            return MinDatapoint
-        case False, True:
-            return MaxDatapointWithStatus
-        case False, False:
-            return MaxDatapoint
-        case _:
-            assert False
+def _min_dp_class(dct: dict[str, Any]) -> type[MinDatapoint | MinDatapointWithStatus]:
+    return MinDatapointWithStatus if "statusCode" in dct else MinDatapoint
 
 
-class _DatapointsPayloadItem(TypedDict, total=False):
-    # No field required
-    start: int
-    end: int
-    aggregates: list[str] | None
-    granularity: str | None
-    timeZone: str | None
-    targetUnit: str | None
-    targetUnitSystem: str | None
-    limit: int
-    includeOutsidePoints: bool
-    includeStatus: bool
-    ignoreBadDataPoints: bool
-    treatUncertainAsBad: bool
-    cursor: str | None
-
-
-class _DatapointsPayload(_DatapointsPayloadItem):
-    items: list[_DatapointsPayloadItem]
-    ignoreUnknownIds: NotRequired[bool]
+def _max_dp_class(dct: dict[str, Any]) -> type[MaxDatapoint | MaxDatapointWithStatus]:
+    return MaxDatapointWithStatus if "statusCode" in dct else MaxDatapoint
 
 
 @dataclass
@@ -326,22 +256,6 @@ class DatapointsQuery:
     @classmethod
     def valid_from_user_query(cls, query: Self, **settings: Any) -> Self:
         return cls(**ChainMap(query.dump(), settings, cls._API_DEFAULTS))  # type: ignore [arg-type]
-
-    @classmethod
-    # TODO: Remove in next major version (require use of DatapointsQuery directly)
-    def from_dict(cls, dct: dict[str, Any], id_type: Literal["id", "external_id", "instance_id"]) -> Self:
-        if id_type not in dct:
-            if (arg_name_cc := to_camel_case(id_type)) not in dct:
-                raise KeyError(f"Missing required key `{id_type}` in dict: {dct}.")
-            # For backwards compatibility we accept identifiers in camel case:
-            dct[id_type] = (dct := dct.copy()).pop(arg_name_cc)  # copy to avoid side effects for user's input
-
-        if bad_keys := set(dct) - cls._API_DEFAULTS.keys() - {id_type}:
-            raise KeyError(
-                f"Dict provided by argument `{id_type}` included key(s) not understood: {sorted(bad_keys)}. "
-                f"Required key: `{id_type}`. Optional: {list(cls._API_DEFAULTS)}."
-            )
-        return cls(**dct)
 
     @property
     def identifier(self) -> Identifier:
@@ -435,13 +349,13 @@ class DatapointsQuery:
 
         return get_task_orchestrator(self)
 
-    def to_payload_item(self) -> _DatapointsPayloadItem:
-        payload = _DatapointsPayloadItem(
-            **self.identifier.as_dict(),  # type: ignore [typeddict-item]
-            start=self.start,
-            end=self.end,
-            limit=self.capped_limit,
-        )
+    def to_payload_item(self) -> dict[str, Any]:
+        payload = {
+            **self.identifier.as_dict(),
+            "start": self.start,
+            "end": self.end,
+            "limit": self.capped_limit,
+        }
         if self.target_unit is not None:
             payload["targetUnit"] = self.target_unit
         elif self.target_unit_system is not None:
@@ -505,7 +419,7 @@ class Datapoint(CogniteResource):
     """An object representing a datapoint.
 
     Args:
-        timestamp (int | None): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        timestamp (int): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
         value (str | float | None): The raw data value. Can be string or numeric.
         average (float | None): The time-weighted average value in the aggregate interval.
         max (float | None): The maximum value in the aggregate interval.
@@ -532,7 +446,7 @@ class Datapoint(CogniteResource):
 
     def __init__(
         self,
-        timestamp: int | None = None,
+        timestamp: int,
         value: str | float | None = None,
         average: float | None = None,
         max: float | None = None,
@@ -556,7 +470,7 @@ class Datapoint(CogniteResource):
         status_symbol: str | None = None,
         timezone: datetime.timezone | ZoneInfo | None = None,
     ) -> None:
-        self.timestamp: int = timestamp  # type: ignore
+        self.timestamp: int = timestamp
         self.value = value
         self.average = average
         self.max = max
@@ -592,7 +506,7 @@ class Datapoint(CogniteResource):
             camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
 
         Returns:
-            pandas.DataFrame: pandas.DataFrame
+            pandas.DataFrame: The DataFrame representation of the datapoint.
         """
         pd = local_import("pandas")
 
@@ -606,16 +520,53 @@ class Datapoint(CogniteResource):
         return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms", tz=tz)])
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client=cognite_client)
-        if isinstance(max_dp := instance.max_datapoint, dict):
-            instance.max_datapoint = _select_min_or_max_datapoint_cls(max_dp, is_minimum=False)._load(max_dp)
-        if isinstance(min_dp := instance.min_datapoint, dict):
-            instance.min_datapoint = _select_min_or_max_datapoint_cls(min_dp, is_minimum=True)._load(min_dp)
-        if isinstance(instance.timezone, str):
-            with contextlib.suppress(ValueError):  # Dont fail load if invalid
-                instance.timezone = parse_str_timezone(instance.timezone)
-        return instance
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        match max_dp_raw := resource.get("maxDatapoint"):
+            case dict():
+                max_datapoint: MaxDatapoint | None = _max_dp_class(max_dp_raw)._load(max_dp_raw)
+            case MaxDatapoint() | None:
+                max_datapoint = max_dp_raw
+            case _:
+                raise TypeError(f"Expected dict or MaxDatapoint, got {type(max_dp_raw)}")
+
+        match min_dp_raw := resource.get("minDatapoint"):
+            case dict():
+                min_datapoint: MinDatapoint | None = _min_dp_class(min_dp_raw)._load(min_dp_raw)
+            case MinDatapoint() | None:
+                min_datapoint = min_dp_raw
+            case _:
+                raise TypeError(f"Expected dict or MinDatapoint, got {type(min_dp_raw)}")
+
+        timezone = None
+        if (raw_timezone := resource.get("timezone")) is not None:
+            with contextlib.suppress(ValueError):
+                timezone = parse_str_timezone(raw_timezone)
+
+        return cls(
+            timestamp=resource["timestamp"],
+            value=resource.get("value"),
+            average=resource.get("average"),
+            max=resource.get("max"),
+            max_datapoint=max_datapoint,
+            min=resource.get("min"),
+            min_datapoint=min_datapoint,
+            count=resource.get("count"),
+            sum=resource.get("sum"),
+            interpolation=resource.get("interpolation"),
+            step_interpolation=resource.get("stepInterpolation"),
+            continuous_variance=resource.get("continuousVariance"),
+            discrete_variance=resource.get("discreteVariance"),
+            total_variation=resource.get("totalVariation"),
+            count_bad=resource.get("countBad"),
+            count_good=resource.get("countGood"),
+            count_uncertain=resource.get("countUncertain"),
+            duration_bad=resource.get("durationBad"),
+            duration_good=resource.get("durationGood"),
+            duration_uncertain=resource.get("durationUncertain"),
+            status_code=resource.get("statusCode"),
+            status_symbol=resource.get("statusSymbol"),
+            timezone=timezone,
+        )
 
     def dump(self, camel_case: bool = True, include_timezone: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
@@ -724,7 +675,7 @@ class DatapointsArray(CogniteResource):
     def _load_from_arrays(
         cls,
         dps_dct: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> DatapointsArray:
         assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
         # We store datetime using nanosecond resolution to future-proof the SDK in case it is ever added:
@@ -735,7 +686,7 @@ class DatapointsArray(CogniteResource):
     def _load(
         cls,
         dps_dct: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> DatapointsArray:
         array_by_attr = {}
         if "datapoints" in dps_dct:
@@ -747,7 +698,7 @@ class DatapointsArray(CogniteResource):
             for attr, values in datapoints_by_attr.items():
                 if attr == "timestamp":
                     array_by_attr[attr] = np.array(values, dtype="datetime64[ms]").astype("datetime64[ns]")
-                elif attr in _INT_AGGREGATES:
+                elif attr in _INT_AGGREGATES_CAMEL:
                     array_by_attr[attr] = np.array(values, dtype=np.int64)
                 else:
                     try:
@@ -795,29 +746,6 @@ class DatapointsArray(CogniteResource):
             timezone=timezone,  # type: ignore [arg-type]
         )
 
-    @classmethod
-    def create_from_arrays(cls, *arrays: DatapointsArray) -> DatapointsArray:
-        sort_by_time = sorted((a for a in arrays if len(a.timestamp) > 0), key=lambda a: a.timestamp[0])
-        if len(sort_by_time) == 0:
-            return arrays[0]
-
-        first = sort_by_time[0]
-        if len(sort_by_time) == 1:
-            return first
-
-        arrays_by_attribute = defaultdict(list)
-        for array in sort_by_time:
-            for attr, arr in zip(*array._data_fields()):
-                arrays_by_attribute[attr].append(arr)
-        arrays_by_attribute = {attr: np.concatenate(arrs) for attr, arrs in arrays_by_attribute.items()}  # type: ignore [assignment]
-
-        all_null_ts = set().union(*(arr.null_timestamps for arr in sort_by_time if arr.null_timestamps))
-        return cls(
-            **first._ts_info,
-            **arrays_by_attribute,  # type: ignore [arg-type]
-            null_timestamps=all_null_ts,
-        )
-
     def __len__(self) -> int:
         return len(self.timestamp)
 
@@ -862,38 +790,13 @@ class DatapointsArray(CogniteResource):
             )
         return DatapointsArray(**self._ts_info, **data)
 
-    def __iter__(self) -> Iterator[Datapoint]:
-        """Iterate over datapoints
-
-        Warning:
-            For efficient storage, datapoints are not stored as a sequence of (singular) Datapoint
-            objects, so these are created on demand while iterating (slow).
-
-        Yields:
-            Datapoint: No description.
-        """
-        warnings.warn(
-            "Iterating through a DatapointsArray is very inefficient. Tip: Access the arrays directly and use "
-            "vectorised numpy ops on those. E.g. `dps.average` for the 'average' aggregate, `dps.value` for the "
-            "raw datapoints or `dps.timestamp` for the timestamps. You may also convert to a pandas DataFrame using "
-            "`dps.to_pandas()`. In the next major version, iteration will no longer be possible.",
-            UserWarning,
+    def __iter__(self) -> NoReturn:
+        raise NotImplementedError(
+            "Iterating through a DatapointsArray is very inefficient and support was dropped in major version 8. "
+            "Tip: Access the arrays directly and use vectorised numpy ops on those. E.g. `dps.average` for the "
+            "'average' aggregate, `dps.value` for the raw datapoints or `dps.timestamp` for the timestamps. You may "
+            "also convert to a pandas DataFrame using `dps.to_pandas()`.",
         )
-        attrs, arrays = self._data_fields()
-        # Let's not create a single Datapoint more than we have too:
-        for i, row in enumerate(zip(*arrays)):
-            timestamp = row[0].item() // 1_000_000
-            data: dict[str, Any] = dict(zip(map(to_camel_case, attrs[1:]), map(numpy_dtype_fix, row[1:])))
-            data.update(timestamp=timestamp, timezone=self.timezone)
-            if self.status_code is not None:
-                data.update(statusCode=self.status_code[i], statusSymbol=self.status_symbol[i])  # type: ignore [index]
-            if self.null_timestamps and timestamp in self.null_timestamps:
-                data["value"] = None
-            if self.min_datapoint is not None:
-                data["minDatapoint"] = self.min_datapoint[i]
-            if self.max_datapoint is not None:
-                data["maxDatapoint"] = self.max_datapoint[i]
-            yield Datapoint._load(data)
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
         # Note: Does not return status-related fields
@@ -968,51 +871,32 @@ class DatapointsArray(CogniteResource):
 
     def to_pandas(  # type: ignore [override]
         self,
-        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_unit: bool = True,
         include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArray into a pandas DataFrame.
 
         Args:
-            column_names (Literal['id', 'external_id', 'instance_id']): Which field to use for the columns. Defaults to "instance_id", if it exists, then uses "external_id" if available, and "id" as fallback.
-            include_aggregate_name (bool): Include aggregate in the column name
-            include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
-            include_status (bool): Include status code and status symbol as separate columns, if available.
+            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
+            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
+                as a separate level in the columns (MultiIndex).
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
         """
-        pd = local_import("pandas")
-        idx, tz = self.timestamp, self.timezone
-        if tz is not None:
-            idx = pd.to_datetime(idx, utc=True).tz_convert(convert_tz_for_pandas(tz))
+        local_import("pandas")  # throw nice import error early
 
-        identifier = resolve_ts_identifier_as_df_column_name(self, column_names)
-        if self.value is not None:
-            raw_columns: dict[str, npt.NDArray] = {identifier: self.value}
-            if include_status:
-                if self.status_code is not None:
-                    raw_columns[f"{identifier}|status_code"] = self.status_code
-                if self.status_symbol is not None:
-                    raw_columns[f"{identifier}|status_symbol"] = self.status_symbol
-            return pd.DataFrame(raw_columns, index=idx, copy=False)
-
-        (_, *agg_names), (_, *arrays) = self._data_fields()
-        aggregate_columns = [
-            identifier + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
-            for agg in agg_names
-        ]
-        # We need special handling for object aggregates:
-        for i, agg in enumerate(agg_names):
-            if agg in ("min_datapoint", "max_datapoint"):
-                arrays[i] = np.array([dp.dump(camel_case=False) for dp in arrays[i]], dtype=np.object_)
-
-        # Since columns might contain duplicates, we can't instantiate from dict as only the
-        # last key (array/column) would be kept:
-        (df := pd.DataFrame(dict(enumerate(arrays)), index=idx, copy=False)).columns = aggregate_columns
-        return df
+        return convert_dps_to_dataframe(
+            self,
+            include_aggregate_name=include_aggregate_name,
+            include_granularity_name=include_granularity_name,
+            include_status=include_status,
+            include_unit=include_unit,
+        )
 
 
 class Datapoints(CogniteResource):
@@ -1027,8 +911,8 @@ class Datapoints(CogniteResource):
         unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
         unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
-        timestamp (Sequence[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (SequenceNotStr[str] | Sequence[float] | None): The raw data values. Can be string or numeric.
+        timestamp (list[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        value (list[str] | list[float] | None): The raw data values. Can be string or numeric.
         average (list[float] | None): The time-weighted average values per aggregate interval.
         max (list[float] | None): The maximum values per aggregate interval.
         max_datapoint (list[MaxDatapoint] | list[MaxDatapointWithStatus] | None): Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
@@ -1063,8 +947,8 @@ class Datapoints(CogniteResource):
         unit: str | None = None,
         unit_external_id: str | None = None,
         granularity: str | None = None,
-        timestamp: Sequence[int] | None = None,
-        value: SequenceNotStr[str] | Sequence[float] | None = None,
+        timestamp: list[int] | None = None,
+        value: list[str] | list[float] | None = None,
         average: list[float] | None = None,
         max: list[float] | None = None,
         max_datapoint: list[MaxDatapoint] | list[MaxDatapointWithStatus] | None = None,
@@ -1096,7 +980,7 @@ class Datapoints(CogniteResource):
         self.unit = unit
         self.unit_external_id = unit_external_id
         self.granularity = granularity
-        self.timestamp: list[int] = timestamp or []  # type: ignore
+        self.timestamp: list[int] = timestamp or []
         self.value = value
         self.average = average
         self.max = max
@@ -1200,82 +1084,41 @@ class Datapoints(CogniteResource):
 
     def to_pandas(  # type: ignore [override]
         self,
-        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_unit: bool = True,
         include_errors: bool = False,
         include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
-            column_names (Literal['id', 'external_id', 'instance_id']): Which field to use for the columns. Defaults to "instance_id", if it exists, then uses "external_id" if available, and "id" as fallback.
-            include_aggregate_name (bool): Include aggregate in the column name
-            include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
+            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
             include_errors (bool): For synthetic datapoint queries, include a column with errors.
-            include_status (bool): Include status code and status symbol as separate columns, if available.
+            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
+                as a separate level in the columns (MultiIndex).
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = local_import("pandas")
-        if column_names == "externalId":
-            column_names = "external_id"  # Camel case for backwards compatibility
-        identifier = resolve_ts_identifier_as_df_column_name(self, column_names)
+        local_import("pandas")  # throw nice import error early
 
-        if include_errors and self.error is None:
-            raise ValueError("Unable to 'include_errors', only available for data from synthetic datapoint queries")
-
-        # Make sure columns (aggregates) always come in alphabetical order (e.g. "average" before "max"):
-        field_names, data_lists = [], []
-        data_fields = self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors)
-        if not include_errors:  # We do not touch column ordering for synthetic datapoints
-            data_fields = sorted(data_fields)
-        for attr, data in data_fields:
-            if attr == "timestamp":
-                continue
-            id_col_name = identifier
-            if attr == "value":
-                field_names.append(id_col_name)
-                data_lists.append(data)
-                if include_status:
-                    if self.status_code is not None:
-                        field_names.append(f"{identifier}|status_code")
-                        data_lists.append(self.status_code)
-                    if self.status_symbol is not None:
-                        field_names.append(f"{identifier}|status_symbol")
-                        data_lists.append(self.status_symbol)
-                continue
-            if include_aggregate_name:
-                id_col_name += f"|{attr}"
-            if include_granularity_name and self.granularity is not None:
-                id_col_name += f"|{self.granularity}"
-            field_names.append(id_col_name)
-            if attr == "error":
-                data_lists.append(data)
-                continue  # Keep string (object) column non-numeric
-
-            if to_camel_case(attr) in _OBJECT_AGGREGATES:
-                data_lists.append([v.dump(camel_case=False) for v in data])
-                continue
-            data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing agg values
-            if to_camel_case(attr) in _INT_AGGREGATES:
-                data_lists.append(data.astype("int64"))
-            else:
-                data_lists.append(data.astype("float64"))
-
-        if (tz := self.timezone) is None:
-            idx = pd.to_datetime(self.timestamp, unit="ms")
-        else:
-            idx = pd.to_datetime(self.timestamp, unit="ms", utc=True).tz_convert(convert_tz_for_pandas(tz))
-        (df := pd.DataFrame(dict(enumerate(data_lists)), index=idx)).columns = field_names
-        return df
+        return convert_dps_to_dataframe(
+            self,
+            include_aggregate_name=include_aggregate_name,
+            include_granularity_name=include_granularity_name,
+            include_status=include_status,
+            include_unit=include_unit,
+            include_errors=include_errors,
+        )
 
     @classmethod
     def _load_from_synthetic(
         cls,
         dps_object: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> Datapoints:
         if dps := dps_object["datapoints"]:
             for dp in dps:
@@ -1287,14 +1130,11 @@ class Datapoints(CogniteResource):
         instance.error, instance.value = [], []
         return instance
 
-    # TODO: remove 'expected_fields' in the next major version:
-    #       the method should not need to be told what to load...
     @classmethod
-    def _load(  # type: ignore [override]
+    def _load(
         cls,
         dps_object: dict[str, Any],
-        expected_fields: list[str] | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> Datapoints:
         del cognite_client  # just needed for signature
         instance = cls(
@@ -1306,13 +1146,11 @@ class Datapoints(CogniteResource):
             unit=dps_object.get("unit"),
             unit_external_id=dps_object.get("unitExternalId"),
         )
-        expected_fields = (expected_fields or ["value"]) + ["timestamp"]
         if len(dps_object["datapoints"]) == 0:
-            for key in expected_fields:
+            for key in ["value", "timestamp"]:
                 snake_key = to_snake_case(key)
                 setattr(instance, snake_key, [])
             return instance
-
         data_lists = defaultdict(list)
         for row in dps_object["datapoints"]:
             for attr, value in row.items():
@@ -1323,11 +1161,9 @@ class Datapoints(CogniteResource):
             data_lists["status_code"] = [s["code"] for s in status]
             data_lists["status_symbol"] = [s["symbol"] for s in status]
         if min_dp := data_lists.get("minDatapoint"):
-            min_load_cls = _select_min_or_max_datapoint_cls(min_dp[0], is_minimum=True)
-            data_lists["minDatapoint"] = list(map(min_load_cls._load, min_dp))
+            data_lists["minDatapoint"] = list(map(_min_dp_class(min_dp[0])._load, min_dp))
         if max_dp := data_lists.get("maxDatapoint"):
-            max_load_cls = _select_min_or_max_datapoint_cls(max_dp[0], is_minimum=False)
-            data_lists["maxDatapoint"] = list(map(max_load_cls._load, max_dp))
+            data_lists["maxDatapoint"] = list(map(_max_dp_class(max_dp[0])._load, max_dp))
 
         for key, data in data_lists.items():
             snake_key = to_snake_case(key)
@@ -1335,22 +1171,7 @@ class Datapoints(CogniteResource):
         return instance
 
     def _extend(self, other_dps: Datapoints) -> None:
-        # TODO: Only used by synthetic time series API, consider removing in a refactoring.
-        if self.id is None and self.external_id is None:
-            self.id = other_dps.id
-            self.external_id = other_dps.external_id
-            self.is_string = other_dps.is_string
-            self.is_step = other_dps.is_step
-            self.unit = other_dps.unit
-            self.unit_external_id = other_dps.unit_external_id
-            self.timezone = other_dps.timezone
-
-        for attr, other_value in other_dps._get_non_empty_data_fields(get_empty_lists=True):
-            value = getattr(self, attr)
-            if not value:
-                setattr(self, attr, other_value)
-            else:
-                value.extend(other_value)
+        raise NotImplementedError("Extending Datapoints is not supported.")
 
     def _get_non_empty_data_fields(
         self, get_empty_lists: bool = False, get_error: bool = True
@@ -1421,7 +1242,7 @@ class Datapoints(CogniteResource):
 class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
     _RESOURCE = DatapointsArray
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(self, resources: Collection[Any], cognite_client: AsyncCogniteClient | None = None) -> None:
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -1443,45 +1264,6 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         self._id_to_item.update(id_dct)
         self._external_id_to_item.update(xid_dct)
         self._instance_id_to_item.update(inst_id_dct)
-
-    def concat_duplicate_ids(self) -> None:
-        """
-        Concatenates all arrays with duplicated IDs.
-
-        Arrays with the same ids are stacked in chronological order.
-
-        **Caveat** This method is not guaranteed to preserve the order of the list.
-        """
-        # Rebuilt list instead of removing duplicated one at a time at the cost of O(n).
-        self.data.clear()
-
-        # This implementation takes advantage of the ordering of the duplicated in the __init__ method
-        has_external_ids = set()
-        for ext_id, items in self._external_id_to_item.items():
-            if not isinstance(items, list):
-                self.data.append(items)
-                if items.id is not None:
-                    has_external_ids.add(items.id)
-                continue
-            concatenated = DatapointsArray.create_from_arrays(*items)
-            self._external_id_to_item[ext_id] = concatenated
-            if concatenated.id is not None:
-                has_external_ids.add(concatenated.id)
-                self._id_to_item[concatenated.id] = concatenated
-            self.data.append(concatenated)
-
-        if not (only_ids := set(self._id_to_item) - has_external_ids):
-            return
-
-        for id_, items in self._id_to_item.items():
-            if id_ not in only_ids:
-                continue
-            if not isinstance(items, list):
-                self.data.append(items)
-                continue
-            concatenated = DatapointsArray.create_from_arrays(*items)
-            self._id_to_item[id_] = concatenated
-            self.data.append(concatenated)
 
     def get(  # type: ignore [override]
         self,
@@ -1510,28 +1292,29 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
 
     def to_pandas(  # type: ignore [override]
         self,
-        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_unit: bool = True,
         include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
         Args:
-            column_names (Literal['id', 'external_id', 'instance_id']): Which field to use for the columns. Defaults to "instance_id", if it exists, then uses "external_id" if available, and "id" as fallback.
-            include_aggregate_name (bool): Include aggregate in the column name
-            include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
-            include_status (bool): Include status code and status symbol as separate columns, if available.
+            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
+            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
+                as a separate level in the columns (MultiIndex).
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
         """
         return concat_dps_dataframe_list(
             self,
-            column_names=column_names,
             include_aggregate_name=include_aggregate_name,
             include_granularity_name=include_granularity_name,
             include_status=include_status,
+            include_unit=include_unit,
         )
 
     def dump(self, camel_case: bool = True, convert_timestamps: bool = False) -> list[dict[str, Any]]:
@@ -1550,7 +1333,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
 class DatapointsList(CogniteResourceList[Datapoints]):
     _RESOURCE = Datapoints
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(self, resources: Collection[Any], cognite_client: AsyncCogniteClient | None = None) -> None:
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -1604,26 +1387,27 @@ class DatapointsList(CogniteResourceList[Datapoints]):
 
     def to_pandas(  # type: ignore [override]
         self,
-        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_unit: bool = True,
         include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
-            column_names (Literal['id', 'external_id', 'instance_id']): Which field to use for the columns. Defaults to "instance_id", if it exists, then uses "external_id" if available, and "id" as fallback.
-            include_aggregate_name (bool): Include aggregate in the column name
-            include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
-            include_status (bool): Include status code and status symbol as separate columns, if available.
+            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
+            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
+                as a separate level in the columns (MultiIndex).
 
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
         return concat_dps_dataframe_list(
             self,
-            column_names=column_names,
             include_aggregate_name=include_aggregate_name,
             include_granularity_name=include_granularity_name,
             include_status=include_status,
+            include_unit=include_unit,
         )

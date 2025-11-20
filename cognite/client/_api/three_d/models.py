@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -11,6 +11,7 @@ from cognite.client.data_classes import (
     ThreeDModelUpdate,
     ThreeDModelWrite,
 )
+from cognite.client.utils._auxiliary import drop_none_values
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -21,16 +22,16 @@ class ThreeDModelsAPI(APIClient):
     @overload
     def __call__(
         self, chunk_size: None = None, published: bool | None = None, limit: int | None = None
-    ) -> Iterator[ThreeDModel]: ...
+    ) -> AsyncIterator[ThreeDModel]: ...
 
     @overload
     def __call__(
         self, chunk_size: int, published: bool | None = None, limit: int | None = None
-    ) -> Iterator[ThreeDModelList]: ...
+    ) -> AsyncIterator[ThreeDModelList]: ...
 
-    def __call__(
+    async def __call__(
         self, chunk_size: int | None = None, published: bool | None = None, limit: int | None = None
-    ) -> Iterator[ThreeDModel] | Iterator[ThreeDModelList]:
+    ) -> AsyncIterator[ThreeDModel] | AsyncIterator[ThreeDModelList]:
         """Iterate over 3d models
 
         Fetches 3d models as they are iterated over, so you keep a limited number of 3d models in memory.
@@ -40,29 +41,20 @@ class ThreeDModelsAPI(APIClient):
             published (bool | None): Filter based on whether or not the model has published revisions.
             limit (int | None): Maximum number of 3d models to return. Defaults to return all items.
 
-        Returns:
-            Iterator[ThreeDModel] | Iterator[ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
-        """
-        return self._list_generator(
+        Yields:
+            ThreeDModel | ThreeDModelList: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
+        """  # noqa: DOC404
+        async for item in self._list_generator(
             list_cls=ThreeDModelList,
             resource_cls=ThreeDModel,
             method="GET",
             chunk_size=chunk_size,
-            filter={"published": published},
+            filter=drop_none_values({"published": published}),
             limit=limit,
-        )
+        ):
+            yield item
 
-    def __iter__(self) -> Iterator[ThreeDModel]:
-        """Iterate over 3d models
-
-        Fetches models as they are iterated over, so you keep a limited number of models in memory.
-
-        Returns:
-            Iterator[ThreeDModel]: yields models one by one.
-        """
-        return self()
-
-    def retrieve(self, id: int) -> ThreeDModel | None:
+    async def retrieve(self, id: int) -> ThreeDModel | None:
         """`Retrieve a 3d model by id <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModel>`_
 
         Args:
@@ -73,15 +65,16 @@ class ThreeDModelsAPI(APIClient):
 
         Example:
 
-            Get 3d model by id::
+            Get 3d model by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.models.retrieve(id=1)
         """
-        return self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
+        return await self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
 
-    def list(self, published: bool | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> ThreeDModelList:
+    async def list(self, published: bool | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> ThreeDModelList:
         """`List 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModels>`_
 
         Args:
@@ -95,29 +88,46 @@ class ThreeDModelsAPI(APIClient):
 
             List 3d models:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
-                >>> three_d_model_list = client.three_d.models.list()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> model_list = client.three_d.models.list()
 
-            Iterate over 3d models:
+            Iterate over 3d models, one-by-one:
 
-                >>> for three_d_model in client.three_d.models:
-                ...     three_d_model # do something with the 3d model
+                >>> for model in client.three_d.models():
+                ...     model  # do something with the 3d model
 
             Iterate over chunks of 3d models to reduce memory load:
 
-                >>> for three_d_model in client.three_d.models(chunk_size=50):
-                ...     three_d_model # do something with the 3d model
+                >>> for model in client.three_d.models(chunk_size=50):
+                ...     model # do something with the 3d model
         """
-        return self._list(
+        return await self._list(
             list_cls=ThreeDModelList,
             resource_cls=ThreeDModel,
             method="GET",
-            filter={"published": published},
+            filter=drop_none_values({"published": published}),
             limit=limit,
         )
 
-    def create(
+    @overload
+    async def create(
+        self,
+        name: str | ThreeDModelWrite,
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> ThreeDModel: ...
+
+    @overload
+    async def create(
+        self,
+        name: SequenceNotStr[str | ThreeDModelWrite],
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> ThreeDModelList: ...
+
+    async def create(
         self,
         name: str | ThreeDModelWrite | SequenceNotStr[str | ThreeDModelWrite],
         data_set_id: int | None = None,
@@ -137,17 +147,19 @@ class ThreeDModelsAPI(APIClient):
 
         Example:
 
-            Create new 3d models::
+            Create new 3d models:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
 
-            Create multiple new 3D Models::
+            Create multiple new 3D Models:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ThreeDModelWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_model = ThreeDModelWrite(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
                 >>> my_other_model = ThreeDModelWrite(name="My Other Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
                 >>> res = client.three_d.models.create([my_model, my_other_model])
@@ -160,23 +172,23 @@ class ThreeDModelsAPI(APIClient):
             items = name
         else:
             items = [ThreeDModelWrite(n, data_set_id, metadata) if isinstance(n, str) else n for n in name]
-        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=items)
+        return await self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=items)
 
     @overload
-    def update(
+    async def update(
         self,
         item: ThreeDModel | ThreeDModelUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModel: ...
 
     @overload
-    def update(
+    async def update(
         self,
         item: Sequence[ThreeDModel | ThreeDModelUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModelList: ...
 
-    def update(
+    async def update(
         self,
         item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
@@ -194,11 +206,12 @@ class ThreeDModelsAPI(APIClient):
 
             Update 3d model that you have fetched. This will perform a full update of the model:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
-                >>> three_d_model = client.three_d.models.retrieve(id=1)
-                >>> three_d_model.name = "New Name"
-                >>> res = client.three_d.models.update(three_d_model)
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> model = client.three_d.models.retrieve(id=1)
+                >>> model.name = "New Name"
+                >>> res = client.three_d.models.update(model)
 
             Perform a partial update on a 3d model:
 
@@ -209,7 +222,7 @@ class ThreeDModelsAPI(APIClient):
         """
         # Note that we cannot use the ThreeDModelWrite to update as the write format of a 3D model
         # does not have ID or External ID, thus no identifier to know which model to update.
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=ThreeDModelList,
             resource_cls=ThreeDModel,
             update_cls=ThreeDModelUpdate,
@@ -217,7 +230,7 @@ class ThreeDModelsAPI(APIClient):
             mode=mode,
         )
 
-    def delete(self, id: int | Sequence[int]) -> None:
+    async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/delete3DModels>`_
 
         Args:
@@ -225,10 +238,11 @@ class ThreeDModelsAPI(APIClient):
 
         Example:
 
-            Delete 3d model by id::
+            Delete 3d model by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.models.delete(id=1)
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
+        await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)

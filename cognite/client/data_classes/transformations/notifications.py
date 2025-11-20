@@ -3,6 +3,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, Any, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResourceList,
@@ -13,19 +15,19 @@ from cognite.client.data_classes._base import (
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class TransformationNotificationCore(WriteableCogniteResource["TransformationNotificationWrite"], ABC):
     """The transformation notification resource allows configuring email alerts on events related to a transformation run.
 
     Args:
-        destination (str | None): Email address where notifications should be sent.
+        destination (str): Email address where notifications should be sent.
     """
 
     def __init__(
         self,
-        destination: str | None = None,
+        destination: str,
     ) -> None:
         self.destination = destination
 
@@ -35,40 +37,47 @@ class TransformationNotification(TransformationNotificationCore):
     This is the read format of a transformation notification.
 
     Args:
-        id (int | None): A server-generated ID for the object.
-        transformation_id (int | None): Transformation Id.
-        transformation_external_id (str | None): Transformation external Id.
-        destination (str | None): Email address where notifications should be sent.
-        created_time (int | None): Time when the notification was created.
-        last_updated_time (int | None): Time when the notification was last updated.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        id (int): A server-generated ID for the object.
+        transformation_id (int): Transformation Id.
+        transformation_external_id (str): Transformation external Id.
+        destination (str): Email address where notifications should be sent.
+        created_time (int): Time when the notification was created.
+        last_updated_time (int): Time when the notification was last updated.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        transformation_id: int | None = None,
-        transformation_external_id: str | None = None,
-        destination: str | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        id: int,
+        transformation_id: int,
+        transformation_external_id: str,
+        destination: str,
+        created_time: int,
+        last_updated_time: int,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(destination)
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.transformation_id: int = transformation_id  # type: ignore
-        self.transformation_external_id: str = transformation_external_id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self.id: int = id
+        self.transformation_id: int = transformation_id
+        self.transformation_external_id: str = transformation_external_id
+        self.created_time: int = created_time
+        self.last_updated_time: int = last_updated_time
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     def __hash__(self) -> int:
         return hash(self.id)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            transformation_id=resource["transformationId"],
+            transformation_external_id=resource["transformationExternalId"],
+            destination=resource["destination"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> TransformationNotificationWrite:
         """Returns this Asset in its writing format."""
@@ -108,7 +117,7 @@ class TransformationNotificationWrite(TransformationNotificationCore):
 
     @classmethod
     def _load(
-        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
     ) -> TransformationNotificationWrite:
         return cls(
             destination=resource["destination"],

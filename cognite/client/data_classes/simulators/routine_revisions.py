@@ -26,7 +26,7 @@ from cognite.client.utils._text import to_snake_case
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 @dataclass
@@ -43,7 +43,7 @@ class SimulationValueUnitInput(CogniteObject):
     quantity: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             name=resource["name"],
             quantity=resource.get("quantity"),
@@ -71,12 +71,12 @@ class SimulatorRoutineInput(CogniteObject, ABC):
 
     @classmethod
     @abstractmethod
-    def _load_input(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load_input(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         raise NotImplementedError()
 
     @classmethod
     def _load(
-        cls, resource: dict[str, Any] | SimulatorRoutineInput, cognite_client: CogniteClient | None = None
+        cls, resource: dict[str, Any] | SimulatorRoutineInput, cognite_client: AsyncCogniteClient | None = None
     ) -> Self:
         if isinstance(resource, SimulatorRoutineInput):
             return cast(Self, resource)
@@ -128,7 +128,7 @@ class SimulatorRoutineInputTimeseries(SimulatorRoutineInput):
         self.aggregate = aggregate
 
     @classmethod
-    def _load_input(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load_input(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             name=resource["name"],
             reference_id=resource["referenceId"],
@@ -169,7 +169,7 @@ class SimulatorRoutineInputConstant(SimulatorRoutineInput):
         self.value_type = value_type
 
     @classmethod
-    def _load_input(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load_input(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             name=resource["name"],
             reference_id=resource["referenceId"],
@@ -201,7 +201,7 @@ class SimulatorRoutineOutput(CogniteObject):
 
     @classmethod
     def _load(
-        cls, resource: dict[str, Any] | SimulatorRoutineOutput, cognite_client: CogniteClient | None = None
+        cls, resource: dict[str, Any] | SimulatorRoutineOutput, cognite_client: AsyncCogniteClient | None = None
     ) -> Self:
         if isinstance(resource, SimulatorRoutineOutput):
             return cast(Self, resource)
@@ -234,7 +234,9 @@ class SimulatorRoutineSchedule(CogniteObject):
     cron_expression: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulatorRoutineSchedule:
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
+    ) -> SimulatorRoutineSchedule:
         return cls(
             cron_expression=resource["cronExpression"],
         )
@@ -258,7 +260,7 @@ class SimulatorRoutineDataSampling(CogniteObject):
     validation_window: int | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             sampling_window=resource["samplingWindow"],
             granularity=resource["granularity"],
@@ -286,7 +288,7 @@ class SimulatorRoutineLogicalCheck(CogniteObject):
     timeseries_external_id: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             aggregate=resource["aggregate"],
             operator=resource["operator"],
@@ -317,7 +319,7 @@ class SimulatorRoutineSteadyStateDetection(CogniteObject):
     timeseries_external_id: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             aggregate=resource["aggregate"],
             min_section_size=resource["minSectionSize"],
@@ -373,7 +375,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
         self.data_sampling = data_sampling
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         inputs = None
         outputs = None
 
@@ -445,7 +447,7 @@ class SimulatorRoutineStepArguments(CogniteObject, dict, MutableMapping[str, str
         super().__init__(data)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(resource)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -471,7 +473,7 @@ class SimulatorRoutineStep(CogniteObject):
 
     @classmethod
     def _load(
-        cls, resource: dict[str, Any] | SimulatorRoutineStep, cognite_client: CogniteClient | None = None
+        cls, resource: dict[str, Any] | SimulatorRoutineStep, cognite_client: AsyncCogniteClient | None = None
     ) -> Self:
         if isinstance(resource, SimulatorRoutineStep):
             return cast(Self, resource)
@@ -506,7 +508,7 @@ class SimulatorRoutineStage(CogniteObject):
 
     @classmethod
     def _load(
-        cls, resource: dict[str, Any] | SimulatorRoutineStage, cognite_client: CogniteClient | None = None
+        cls, resource: dict[str, Any] | SimulatorRoutineStage, cognite_client: AsyncCogniteClient | None = None
     ) -> Self:
         if isinstance(resource, SimulatorRoutineStage):
             return cast(Self, resource)
@@ -563,7 +565,7 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
     """
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
         configuration = (
             SimulatorRoutineConfiguration._load(resource.get("configuration", {}), cognite_client)
             if resource.get("configuration")
@@ -611,6 +613,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         created_by_user_id (str): The ID of the user who created the simulator routine revision.
         configuration (SimulatorRoutineConfiguration | None): The configuration of the simulator routine revision.
         script (SimulatorRoutineStageList | Sequence[SimulatorRoutineStage] | None): The script of the simulator routine revision.
+        kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
 
     def __init__(
@@ -627,6 +630,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         created_by_user_id: str,
         configuration: SimulatorRoutineConfiguration | None = None,
         script: SimulatorRoutineStageList | Sequence[SimulatorRoutineStage] | None = None,
+        kind: Literal["long"] | None = None,
     ) -> None:
         super().__init__(external_id, routine_external_id, configuration, script)
 
@@ -636,12 +640,15 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         self.simulator_integration_external_id = simulator_integration_external_id
         self.model_external_id = model_external_id
         self.data_set_id = data_set_id
+        self.kind = kind
         self.created_by_user_id = created_by_user_id
         self.created_time = created_time
         self.version_number = version_number
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulatorRoutineRevision:
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
+    ) -> SimulatorRoutineRevision:
         configuration = (
             SimulatorRoutineConfiguration._load(resource.get("configuration", {}))
             if resource.get("configuration")
@@ -662,6 +669,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
             created_by_user_id=resource["createdByUserId"],
             configuration=configuration,
             script=script,
+            kind=resource.get("kind"),
             created_time=resource["createdTime"],
             version_number=resource["versionNumber"],
         )

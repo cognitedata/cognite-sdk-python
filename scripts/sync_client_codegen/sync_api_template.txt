@@ -1,0 +1,26 @@
+"""
+===============================================================================
+{file_hash}
+This file is auto-generated from the Async API modules, - do not edit manually!
+===============================================================================
+"""
+
+{existing_imports}
+from cognite.client import AsyncCogniteClient
+from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.utils._async_helpers import SyncIterator, run_sync
+from cognite.client.utils._concurrency import ConcurrencySettings
+from typing import Any, Iterator, TYPE_CHECKING, overload
+from collections.abc import Coroutine
+
+if TYPE_CHECKING:
+    import pandas as pd
+    {type_checking_imports}
+
+
+class Sync{class_name}(SyncAPIClient):
+    """Auto-generated, do not modify manually."""
+
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
+        self.__async_client = async_client
+        {nested_apis_init}

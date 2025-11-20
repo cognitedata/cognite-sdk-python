@@ -1,0 +1,738 @@
+"""
+===============================================================================
+89cb2979c8c928e5dbdc38ec14974271
+This file is auto-generated from the Async API modules, - do not edit manually!
+===============================================================================
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterator, Sequence
+from typing import Any, Literal, overload
+
+from cognite.client import AsyncCogniteClient
+from cognite.client._api.events import SortSpec
+from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.data_classes import (
+    EndTimeFilter,
+    Event,
+    EventFilter,
+    EventList,
+    EventUpdate,
+    TimestampRange,
+)
+from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
+from cognite.client.data_classes.events import EventPropertyLike, EventWrite
+from cognite.client.data_classes.filters import Filter
+from cognite.client.utils._async_helpers import SyncIterator, run_sync
+from cognite.client.utils.useful_types import SequenceNotStr
+
+
+class SyncEventsAPI(SyncAPIClient):
+    """Auto-generated, do not modify manually."""
+
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
+        self.__async_client = async_client
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+        limit: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+    ) -> Iterator[Event]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+        limit: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+    ) -> Iterator[EventList]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+        limit: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+    ) -> Iterator[Event] | Iterator[EventList]:
+        """
+        Iterate over events
+
+        Fetches events as they are iterated over, so you keep a limited number of events in memory.
+
+        Args:
+            chunk_size (int | None): Number of events to return in each chunk. Defaults to yielding one event a time.
+            start_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            end_time (dict[str, Any] | EndTimeFilter | None): Range between two timestamps
+            active_at_time (dict[str, Any] | TimestampRange | None): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
+            type (str | None): Type of the event, e.g 'failure'.
+            subtype (str | None): Subtype of the event, e.g 'electrical'.
+            metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
+            asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
+            asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of related equipment that this event relates to.
+            asset_subtree_ids (int | Sequence[int] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include events that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            data_set_ids (int | Sequence[int] | None): Return only events in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only events in the specified data set(s) with this external id / these external ids.
+            source (str | None): The source of this event.
+            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            external_id_prefix (str | None): External Id provided by client. Should be unique within the project
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            limit (int | None): Maximum number of events to return. Defaults to return all items.
+            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+
+        Yields:
+            Event | EventList: yields Event one by one if chunk_size is not specified, else EventList objects.
+        """  # noqa: DOC404
+        yield from SyncIterator(
+            self.__async_client.events(
+                chunk_size=chunk_size,
+                start_time=start_time,
+                end_time=end_time,
+                active_at_time=active_at_time,
+                type=type,
+                subtype=subtype,
+                metadata=metadata,
+                asset_ids=asset_ids,
+                asset_external_ids=asset_external_ids,
+                asset_subtree_ids=asset_subtree_ids,
+                asset_subtree_external_ids=asset_subtree_external_ids,
+                data_set_ids=data_set_ids,
+                data_set_external_ids=data_set_external_ids,
+                source=source,
+                created_time=created_time,
+                last_updated_time=last_updated_time,
+                external_id_prefix=external_id_prefix,
+                sort=sort,
+                limit=limit,
+                advanced_filter=advanced_filter,
+            )
+        )  # type: ignore [misc]
+
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
+        """
+        `Retrieve a single event by id. <https://developer.cognite.com/api#tag/Events/operation/getEventByInternalId>`_
+
+        Args:
+            id (int | None): ID
+            external_id (str | None): External ID
+
+        Returns:
+            Event | None: Requested event or None if it does not exist.
+
+        Examples:
+
+            Get event by id:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.events.retrieve(id=1)
+
+            Get event by external id:
+
+                >>> res = client.events.retrieve(external_id="1")
+        """
+        return run_sync(self.__async_client.events.retrieve(id=id, external_id=external_id))
+
+    def retrieve_multiple(
+        self,
+        ids: Sequence[int] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
+        ignore_unknown_ids: bool = False,
+    ) -> EventList:
+        """
+        `Retrieve multiple events by id. <https://developer.cognite.com/api#tag/Events/operation/byIdsEvents>`_
+
+        Args:
+            ids (Sequence[int] | None): IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Returns:
+            EventList: The requested events.
+
+        Examples:
+
+            Get events by id:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.events.retrieve_multiple(ids=[1, 2, 3])
+
+            Get events by external id:
+
+                >>> res = client.events.retrieve_multiple(external_ids=["abc", "def"])
+        """
+        return run_sync(
+            self.__async_client.events.retrieve_multiple(
+                ids=ids, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids
+            )
+        )
+
+    def aggregate_unique_values(
+        self,
+        filter: EventFilter | dict[str, Any] | None = None,
+        property: EventPropertyLike | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+    ) -> UniqueResultList:
+        """
+        `Get unique properties with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+
+        Args:
+            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
+            property (EventPropertyLike | None): The property name(s) to apply the aggregation on.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to consider.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+
+        Returns:
+            UniqueResultList: List of unique values of events matching the specified filters and search.
+
+        Examples:
+
+        Get the unique types with count of events in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.events import EventProperty
+            >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
+            >>> result = client.events.aggregate_unique_values(property=EventProperty.type)
+            >>> print(result.unique)
+
+        Get the unique types of events after 2020-01-01 in your CDF project:
+
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.events import EventProperty
+            >>> from cognite.client.utils import timestamp_to_ms
+            >>> from datetime import datetime
+            >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> result = client.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020)
+            >>> print(result.unique)
+
+        Get the unique types of events after 2020-01-01 in your CDF project, but exclude all types that start with
+        "planned":
+
+            >>> from cognite.client.data_classes.events import EventProperty
+            >>> from cognite.client.data_classes import aggregations
+            >>> agg = aggregations
+            >>> not_planned = agg.Not(agg.Prefix("planned"))
+            >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> result = client.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020, aggregate_filter=not_planned)
+            >>> print(result.unique)
+        """
+        return run_sync(
+            self.__async_client.events.aggregate_unique_values(
+                filter=filter, property=property, advanced_filter=advanced_filter, aggregate_filter=aggregate_filter
+            )
+        )
+
+    def aggregate_count(
+        self,
+        property: EventPropertyLike | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        filter: EventFilter | dict[str, Any] | None = None,
+    ) -> int:
+        """
+        `Count of event matching the specified filters. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+
+        Args:
+            property (EventPropertyLike | None): If specified, Get an approximate number of Events with a specific property
+                (property is not null) and matching the filters.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count.
+            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
+
+        Returns:
+            int: The number of events matching the specified filters and search.
+
+        Examples:
+
+            Count the number of events in your CDF project:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> count = client.events.aggregate_count()
+
+            Count the number of workorder events in your CDF project:
+
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.events import EventProperty
+                >>> is_workorder = filters.Equals(EventProperty.type, "workorder")
+                >>> workorder_count = client.events.aggregate_count(advanced_filter=is_workorder)
+        """
+        return run_sync(
+            self.__async_client.events.aggregate_count(
+                property=property, advanced_filter=advanced_filter, filter=filter
+            )
+        )
+
+    def aggregate_cardinality_values(
+        self,
+        property: EventPropertyLike,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: EventFilter | dict[str, Any] | None = None,
+    ) -> int:
+        """
+        `Find approximate property count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+
+        Args:
+            property (EventPropertyLike): The property to count the cardinality of.
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
+        Returns:
+            int: The number of properties matching the specified filter.
+
+        Examples:
+
+        Count the number of types of events in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.events import EventProperty
+            >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
+            >>> type_count = client.events.aggregate_cardinality_values(EventProperty.type)
+
+        Count the number of types of events linked to asset 123 in your CDF project:
+
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.events import EventProperty
+            >>> is_asset = filters.ContainsAny(EventProperty.asset_ids, 123)
+            >>> plain_text_author_count = client.events.aggregate_cardinality_values(EventProperty.type, advanced_filter=is_asset)
+        """
+        return run_sync(
+            self.__async_client.events.aggregate_cardinality_values(
+                property=property, advanced_filter=advanced_filter, aggregate_filter=aggregate_filter, filter=filter
+            )
+        )
+
+    def aggregate_cardinality_properties(
+        self,
+        path: EventPropertyLike,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: EventFilter | dict[str, Any] | None = None,
+    ) -> int:
+        """
+        `Find approximate paths count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+
+        Args:
+            path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
+                It means to aggregate only metadata properties (aka keys).
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
+        Returns:
+            int: The number of properties matching the specified filters and search.
+
+        Examples:
+
+            Count the number of metadata keys for events in your CDF project:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.events import EventProperty
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> type_count = client.events.aggregate_cardinality_properties(EventProperty.metadata)
+        """
+        return run_sync(
+            self.__async_client.events.aggregate_cardinality_properties(
+                path=path, advanced_filter=advanced_filter, aggregate_filter=aggregate_filter, filter=filter
+            )
+        )
+
+    def aggregate_unique_properties(
+        self,
+        path: EventPropertyLike,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        filter: EventFilter | dict[str, Any] | None = None,
+    ) -> UniqueResultList:
+        """
+        `Get unique paths with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+
+        Args:
+            path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
+                It means to aggregate only metadata properties (aka keys).
+            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count cardinality.
+            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
+
+        Returns:
+            UniqueResultList: List of unique values of events matching the specified filters and search.
+
+        Examples:
+
+            Get the unique metadata keys with count of events in your CDF project:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.events import EventProperty
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> result = client.events.aggregate_unique_properties(EventProperty.metadata)
+                >>> print(result.unique)
+        """
+        return run_sync(
+            self.__async_client.events.aggregate_unique_properties(
+                path=path, advanced_filter=advanced_filter, aggregate_filter=aggregate_filter, filter=filter
+            )
+        )
+
+    @overload
+    def create(self, event: Sequence[Event] | Sequence[EventWrite]) -> EventList: ...
+
+    @overload
+    def create(self, event: Event | EventWrite) -> Event: ...
+
+    def create(self, event: Event | EventWrite | Sequence[Event] | Sequence[EventWrite]) -> Event | EventList:
+        """
+        `Create one or more events. <https://developer.cognite.com/api#tag/Events/operation/createEvents>`_
+
+        Args:
+            event (Event | EventWrite | Sequence[Event] | Sequence[EventWrite]): Event or list of events to create.
+
+        Returns:
+            Event | EventList: Created event(s)
+
+        Examples:
+
+            Create new events:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import EventWrite
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> events = [EventWrite(start_time=0, end_time=1), EventWrite(start_time=2, end_time=3)]
+                >>> res = client.events.create(events)
+        """
+        return run_sync(self.__async_client.events.create(event=event))
+
+    def delete(
+        self,
+        id: int | Sequence[int] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
+        ignore_unknown_ids: bool = False,
+    ) -> None:
+        """
+        `Delete one or more events <https://developer.cognite.com/api#tag/Events/operation/deleteEvents>`_
+
+        Args:
+            id (int | Sequence[int] | None): Id or list of ids
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Examples:
+
+            Delete events by id or external id:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> client.events.delete(id=[1,2,3], external_id="3")
+        """
+        return run_sync(
+            self.__async_client.events.delete(id=id, external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)
+        )
+
+    @overload
+    def update(
+        self,
+        item: Sequence[Event | EventWrite | EventUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> EventList: ...
+
+    @overload
+    def update(
+        self,
+        item: Event | EventWrite | EventUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Event: ...
+
+    def update(
+        self,
+        item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Event | EventList:
+        """
+        `Update one or more events <https://developer.cognite.com/api#tag/Events/operation/updateEvents>`_
+
+        Args:
+            item (Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]): Event(s) to update
+            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Event or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+
+        Returns:
+            Event | EventList: Updated event(s)
+
+        Examples:
+
+            Update an event that you have fetched. This will perform a full update of the event:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> event = client.events.retrieve(id=1)
+                >>> event.description = "New description"
+                >>> res = client.events.update(event)
+
+            Perform a partial update on a event, updating the description and adding a new field to metadata:
+
+                >>> from cognite.client.data_classes import EventUpdate
+                >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> res = client.events.update(my_update)
+        """
+        return run_sync(self.__async_client.events.update(item=item, mode=mode))
+
+    def search(
+        self,
+        description: str | None = None,
+        filter: EventFilter | dict[str, Any] | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
+    ) -> EventList:
+        """
+        `Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_
+        Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
+
+        Args:
+            description (str | None): Fuzzy match on description.
+            filter (EventFilter | dict[str, Any] | None): Filter to apply. Performs exact match on these fields.
+            limit (int): Maximum number of results to return.
+
+        Returns:
+            EventList: List of requested events
+
+        Examples:
+
+            Search for events:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.events.search(description="some description")
+        """
+        return run_sync(self.__async_client.events.search(description=description, filter=filter, limit=limit))
+
+    @overload
+    def upsert(self, item: Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch") -> EventList: ...
+
+    @overload
+    def upsert(self, item: Event | EventWrite, mode: Literal["patch", "replace"] = "patch") -> Event: ...
+
+    def upsert(
+        self, item: Event | EventWrite | Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch"
+    ) -> Event | EventList:
+        """
+        Upsert events, i.e., update if it exists, and create if it does not exist.
+            Note this is a convenience method that handles the upserting for you by first calling update on all items,
+            and if any of them fail because they do not exist, it will create them instead.
+
+            For more details, see :ref:`appendix-upsert`.
+
+        Args:
+            item (Event | EventWrite | Sequence[Event | EventWrite]): Event or list of events to upsert.
+            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+
+        Returns:
+            Event | EventList: The upserted event(s).
+
+        Examples:
+
+            Upsert for events:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import EventWrite
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> existing_event = client.events.retrieve(id=1)
+                >>> existing_event.description = "New description"
+                >>> new_event = EventWrite(external_id="new_event", description="New event")
+                >>> res = client.events.upsert([existing_event, new_event], mode="replace")
+        """
+        return run_sync(self.__async_client.events.upsert(item=item, mode=mode))
+
+    def list(
+        self,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+        partitions: int | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+    ) -> EventList:
+        """
+        `List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
+
+        Args:
+            start_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+            end_time (dict[str, Any] | EndTimeFilter | None): Range between two timestamps.
+            active_at_time (dict[str, Any] | TimestampRange | None): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
+            type (str | None): Type of the event, e.g 'failure'.
+            subtype (str | None): Subtype of the event, e.g 'electrical'.
+            metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
+            asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
+            asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of related equipment that this event relates to.
+            asset_subtree_ids (int | Sequence[int] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include events that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            data_set_ids (int | Sequence[int] | None): Return only events in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only events in the specified data set(s) with this external id / these external ids.
+            source (str | None): The source of this event.
+            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
+            limit (int | None): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+
+        Returns:
+            EventList: List of requested events
+
+        .. note::
+            When using `partitions`, there are few considerations to keep in mind:
+                * `limit` has to be set to `None` (or `-1`).
+                * API may reject requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests result in a 400 Bad Request status.
+                * Partitions are done independently of sorting: there's no guarantee of the sort order between elements from different partitions. For this reason providing a `sort` parameter when using `partitions` is not allowed.
+
+
+        Examples:
+
+            List events and filter on max start time:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> event_list = client.events.list(limit=5, start_time={"max": 1500000000})
+
+            Iterate over events, one-by-one:
+
+                >>> for event in client.events():
+                ...     event  # do something with the event
+
+            Iterate over chunks of events to reduce memory load:
+
+                >>> for event_list in client.events(chunk_size=2500):
+                ...     event_list # do something with the events
+
+            Using advanced filter, find all events that have a metadata key 'timezone' starting with 'Europe',
+            and sort by external id ascending:
+
+                >>> from cognite.client.data_classes import filters
+                >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
+                >>> res = client.events.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
+
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
+
+            To make it easier to avoid spelling mistakes and easier to look up available properties
+            for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` Enums.
+
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
+                >>> in_timezone = filters.Prefix(EventProperty.metadata_key("timezone"), "Europe")
+                >>> res = client.events.list(
+                ...     advanced_filter=in_timezone,
+                ...     sort=(SortableEventProperty.external_id, "asc"))
+
+            Combine filter and advanced filter:
+
+                >>> from cognite.client.data_classes import filters
+                >>> not_instrument_lvl5 = filters.And(
+                ...    filters.ContainsAny("labels", ["Level5"]),
+                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
+                ... )
+                >>> res = client.events.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+        """
+        return run_sync(
+            self.__async_client.events.list(
+                start_time=start_time,
+                end_time=end_time,
+                active_at_time=active_at_time,
+                type=type,
+                subtype=subtype,
+                metadata=metadata,
+                asset_ids=asset_ids,
+                asset_external_ids=asset_external_ids,
+                asset_subtree_ids=asset_subtree_ids,
+                asset_subtree_external_ids=asset_subtree_external_ids,
+                data_set_ids=data_set_ids,
+                data_set_external_ids=data_set_external_ids,
+                source=source,
+                created_time=created_time,
+                last_updated_time=last_updated_time,
+                external_id_prefix=external_id_prefix,
+                sort=sort,
+                partitions=partitions,
+                limit=limit,
+                advanced_filter=advanced_filter,
+            )
+        )

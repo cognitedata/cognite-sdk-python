@@ -3,32 +3,36 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import (
     CogniteResourceList,
     NameTransformerMixin,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._text import copy_doc_from_async
 
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class RowCore(WriteableCogniteResource["RowWrite"], ABC):
     """No description.
 
     Args:
-        key (str | None): Unique row key
-        columns (dict[str, Any] | None): Row data stored as a JSON object.
+        key (str): Unique row key
+        columns (dict[str, Any]): Row data stored as a JSON object.
     """
 
     def __init__(
         self,
-        key: str | None = None,
-        columns: dict[str, Any] | None = None,
+        key: str,
+        columns: dict[str, Any],
     ) -> None:
         self.key = key
         self.columns = columns
@@ -72,22 +76,31 @@ class Row(RowCore):
     This is the reading version of the Row class, which is used when retrieving a row.
 
     Args:
-        key (str | None): Unique row key
-        columns (dict[str, Any] | None): Row data stored as a JSON object.
-        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        key (str): Unique row key
+        columns (dict[str, Any]): Row data stored as a JSON object.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        key: str | None = None,
-        columns: dict[str, Any] | None = None,
-        last_updated_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        key: str,
+        columns: dict[str, Any],
+        last_updated_time: int,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(key, columns)
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            key=resource["key"],
+            columns=resource["columns"],
+            last_updated_time=resource["lastUpdatedTime"],
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> RowWrite:
         """Returns this Row as a RowWrite"""
@@ -105,15 +118,11 @@ class RowWrite(RowCore):
         columns (dict[str, Any]): Row data stored as a JSON object.
     """
 
-    def __init__(
-        self,
-        key: str,
-        columns: dict[str, Any],
-    ) -> None:
+    def __init__(self, key: str, columns: dict[str, Any]) -> None:
         super().__init__(key, columns)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> RowWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> RowWrite:
         return cls(resource["key"], resource["columns"])
 
     def as_write(self) -> RowWrite:
@@ -154,13 +163,10 @@ class TableCore(WriteableCogniteResource["TableWrite"]):
     """A NoSQL database table to store customer data
 
     Args:
-        name (str | None): Unique name of the table
+        name (str): Unique name of the table
     """
 
-    def __init__(
-        self,
-        name: str | None = None,
-    ) -> None:
+    def __init__(self, name: str) -> None:
         self.name = name
 
 
@@ -169,22 +175,26 @@ class Table(TableCore):
     This is the reading version of the Table class, which is used when retrieving a table.
 
     Args:
-        name (str | None): Unique name of the table
+        name (str): Unique name of the table
         created_time (int | None): Time the table was created.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        name: str | None = None,
-        created_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        name: str,
+        created_time: int | None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(name)
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
         self._db_name: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(name=resource["name"], created_time=resource.get("createdTime"), cognite_client=cognite_client)
 
     def as_write(self) -> TableWrite:
         """Returns this Table as a TableWrite"""
@@ -193,12 +203,12 @@ class Table(TableCore):
         return TableWrite(name=self.name)
 
     @overload
-    def rows(self, key: str, limit: int | None = None) -> Row | None: ...
+    async def rows_async(self, key: str, limit: int | None = None) -> Row | None: ...
 
     @overload
-    def rows(self, key: None = None, limit: int | None = None) -> RowList: ...
+    async def rows_async(self, key: None = None, limit: int | None = None) -> RowList: ...
 
-    def rows(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:
+    async def rows_async(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:
         """Get the rows in this table.
 
         Args:
@@ -214,8 +224,18 @@ class Table(TableCore):
             raise ValueError("Table 'name' is missing")
 
         if key is not None:
-            return self._cognite_client.raw.rows.retrieve(db_name=self._db_name, table_name=self.name, key=key)
-        return self._cognite_client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
+            return await self._cognite_client.raw.rows.retrieve(db_name=self._db_name, table_name=self.name, key=key)
+        return await self._cognite_client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
+
+    @overload
+    def rows(self, key: str, limit: int | None = None) -> Row | None: ...
+
+    @overload
+    def rows(self, key: None = None, limit: int | None = None) -> RowList: ...
+
+    @copy_doc_from_async(rows_async)
+    def rows(self, key: str | None = None, limit: int | None = None) -> Row | RowList | None:
+        return run_sync(self.rows_async(key=key, limit=limit))
 
 
 class TableWrite(TableCore):
@@ -226,14 +246,11 @@ class TableWrite(TableCore):
         name (str): Unique name of the table
     """
 
-    def __init__(
-        self,
-        name: str,
-    ) -> None:
+    def __init__(self, name: str) -> None:
         super().__init__(name)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TableWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> TableWrite:
         return cls(resource["name"])
 
     def as_write(self) -> TableWrite:
@@ -257,13 +274,10 @@ class DatabaseCore(WriteableCogniteResource["DatabaseWrite"], ABC):
     """A NoSQL database to store customer data.
 
     Args:
-        name (str | None): Unique name of a database.
+        name (str): Unique name of a database.
     """
 
-    def __init__(
-        self,
-        name: str | None = None,
-    ) -> None:
+    def __init__(self, name: str) -> None:
         self.name = name
 
 
@@ -271,20 +285,24 @@ class Database(DatabaseCore):
     """A NoSQL database to store customer data.
 
     Args:
-        name (str | None): Unique name of a database.
+        name (str): Unique name of a database.
         created_time (int | None): Time the database was created.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        name: str | None = None,
-        created_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        name: str,
+        created_time: int | None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(name)
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(name=resource["name"], created_time=resource.get("createdTime"), cognite_client=cognite_client)
 
     def as_write(self) -> DatabaseWrite:
         """Returns this Database as a DatabaseWrite"""
@@ -292,7 +310,7 @@ class Database(DatabaseCore):
             raise ValueError("name is required to create a Database")
         return DatabaseWrite(name=self.name)
 
-    def tables(self, limit: int | None = None) -> TableList:
+    async def tables_async(self, limit: int | None = None) -> TableList:
         """Get the tables in this database.
 
         Args:
@@ -303,7 +321,11 @@ class Database(DatabaseCore):
         """
         if self.name is None:
             raise ValueError("Unable to list tables, 'name' is not set on instance")
-        return self._cognite_client.raw.tables.list(db_name=self.name, limit=limit)
+        return await self._cognite_client.raw.tables.list(db_name=self.name, limit=limit)
+
+    @copy_doc_from_async(tables_async)
+    def tables(self, limit: int | None = None) -> TableList:
+        return run_sync(self.tables_async(limit=limit))
 
 
 class DatabaseWrite(DatabaseCore):
@@ -317,7 +339,7 @@ class DatabaseWrite(DatabaseCore):
         super().__init__(name)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> DatabaseWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> DatabaseWrite:
         return cls(resource["name"])
 
     def as_write(self) -> DatabaseWrite:

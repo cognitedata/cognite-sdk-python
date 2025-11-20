@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -15,7 +17,7 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def fresh_session(cognite_client: CogniteClient) -> SessionWrite:
+def fresh_session(cognite_client: CogniteClient) -> Iterator[SessionWrite]:
     new_session = cognite_client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
     yield SessionWrite(nonce=new_session.nonce)
     cognite_client.iam.sessions.revoke(new_session.id)
@@ -32,7 +34,7 @@ def a_data_set(cognite_client: CogniteClient) -> DataSet:
 
 
 @pytest.fixture
-def one_destination(cognite_client: CogniteClient, fresh_session: SessionWrite) -> Destination:
+def one_destination(cognite_client: CogniteClient, fresh_session: SessionWrite) -> Iterator[Destination]:
     my_dest = DestinationWrite(
         external_id=f"myNewDestination-{random_string(10)}",
         credentials=fresh_session,

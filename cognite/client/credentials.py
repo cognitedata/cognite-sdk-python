@@ -6,6 +6,7 @@ import json
 import tempfile
 import threading
 import time
+import warnings
 from abc import abstractmethod
 from collections.abc import Callable
 from datetime import datetime
@@ -13,11 +14,10 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Protocol, runtime_checkable
 
+from authlib.integrations.httpx_client import OAuth2Client, OAuthError
 from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
-from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
-from requests_oauthlib import OAuth2Session
 
-from cognite.client.exceptions import CogniteAuthError
+from cognite.client.exceptions import CogniteAuthError, CogniteOAuthError
 from cognite.client.utils._auxiliary import at_least_one_is_not_none, exactly_one_is_not_none, load_resource_to_dict
 
 _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
@@ -179,9 +179,7 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
 
         # 'error_description' includes Windows-style newlines \r\n meant to print nicely. Prettify for exception:
         err_descr = " ".join(credentials.get("error_description", "").splitlines())
-        raise CogniteAuthError(
-            f"Error generating access token! Error: {credentials['error']}, error description: {err_descr}"
-        )
+        raise CogniteOAuthError(credentials["error"], err_descr)
 
     def authorization_header(self) -> tuple[str, str]:
         # We lock here to ensure we don't issue a herd of refresh requests in concurrent scenarios.
@@ -438,9 +436,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             elif "message" in device_flow:
                 print(f"Device code: {device_flow.get('message', device_flow.get('user_code', 'ERROR'))}")  # noqa: T201
             else:
-                raise CogniteAuthError(
-                    f"Error initiating device flow: {device_flow.get('error')} - {device_flow.get('error_description')}"
-                )
+                raise CogniteOAuthError(device_flow.get("error"), device_flow.get("error_description"))
+
             if "interval" not in device_flow:
                 # Set default interval according to standard
                 device_flow["interval"] = 5
@@ -502,7 +499,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         )
 
     @classmethod
-    def default_for_azure_ad(
+    def default_for_entra_id(
         cls,
         tenant_id: str,
         client_id: str,
@@ -548,6 +545,21 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             mem_cache_only=mem_cache_only,
             audience=f"https://{cdf_cluster}.cognitedata.com",
         )
+
+    @classmethod
+    def default_for_azure_ad(cls, *args: Any, **kwargs: Any) -> OAuthDeviceCode:
+        """Alias for :meth:`.OAuthDeviceCode.default_for_entra_id`.
+
+        .. deprecated:: 8.x
+            Use :meth:`.OAuthDeviceCode.default_for_entra_id` instead.
+
+        """
+        warnings.warn(
+            "default_for_azure_ad() is deprecated; use default_for_entra_id() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return cls.default_for_entra_id(*args, **kwargs)
 
 
 class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
@@ -663,7 +675,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         )
 
     @classmethod
-    def default_for_azure_ad(
+    def default_for_entra_id(
         cls,
         tenant_id: str,
         client_id: str,
@@ -697,6 +709,21 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             **token_custom_args,
         )
 
+    @classmethod
+    def default_for_azure_ad(cls, *args: Any, **kwargs: Any) -> OAuthInteractive:
+        """Alias for :meth:`.OAuthInteractive.default_for_entra_id`.
+
+        .. deprecated:: 8.x
+            Use :meth:`.OAuthInteractive.default_for_entra_id` instead.
+
+        """
+        warnings.warn(
+            "default_for_azure_ad() is deprecated; use default_for_entra_id() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return cls.default_for_entra_id(*args, **kwargs)
+
 
 class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
     """OAuth credential provider for the "Client Credentials" flow.
@@ -705,7 +732,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         token_url (str): OAuth token url
         client_id (str): Your application's client id.
         client_secret (str): Your application's client secret
-        scopes (list[str]): A list of scopes.
+        scopes (list[str] | None): A list of scopes.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
         **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
@@ -728,7 +755,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         token_url: str,
         client_id: str,
         client_secret: str,
-        scopes: list[str],
+        scopes: list[str] | None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
         **token_custom_args: Any,
     ) -> None:
@@ -738,11 +765,13 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         self.__client_secret = client_secret
         self.__scopes = scopes
         self.__token_custom_args: dict[str, Any] = token_custom_args
-        self.__oauth = self._create_oauth_session()
+        self.__oauth = self._create_oauth_client()
         self._validate_token_custom_args()
 
-    def _create_oauth_session(self) -> OAuth2Session:
-        return OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id, scope=self.__scopes))
+    def _create_oauth_client(self) -> OAuth2Client:
+        from cognite.client.config import global_config
+
+        return OAuth2Client(client_id=self.__client_id, scope=self.__scopes, verify=not global_config.disable_ssl)
 
     def _validate_token_custom_args(self) -> None:
         # We make sure that whatever is passed as part of 'token_custom_args' can't set or override any of the
@@ -755,7 +784,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             )
 
     def __getstate__(self) -> dict[str, Any]:
-        # OAuth2Session is not picklable, temporarily remove:
+        # OAuth2Client is not picklable, temporarily remove:
         oauth_session_tmp, self.__oauth = self.__oauth, None
         state = super().__getstate__()
         self.__oauth = oauth_session_tmp
@@ -763,7 +792,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         super().__setstate__(state)
-        self.__oauth = self._create_oauth_session()
+        self.__oauth = self._create_oauth_client()
 
     @property
     def token_url(self) -> str:
@@ -778,7 +807,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         return self.__client_secret
 
     @property
-    def scopes(self) -> list[str]:
+    def scopes(self) -> list[str] | None:
         return self.__scopes
 
     @property
@@ -786,22 +815,15 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         return self.__token_custom_args
 
     def _refresh_access_token(self) -> tuple[str, float]:
-        from cognite.client.config import global_config
-
         try:
             credentials = self.__oauth.fetch_token(
-                token_url=self.__token_url,
-                verify=not global_config.disable_ssl,
-                client_secret=self.__client_secret,
-                **self.__token_custom_args,
+                url=self.__token_url, client_secret=self.__client_secret, **self.__token_custom_args
             )
             # Azure gives 'expires_at' directly, but it's not a part of the RFC:
             return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
-        except OAuth2Error as oauth_err:
-            raise CogniteAuthError(
-                f"Error generating access token: {oauth_err.error}, {oauth_err.status_code}, {oauth_err.description}"
-            ) from oauth_err
+        except OAuthError as err:
+            raise CogniteOAuthError(err.error, err.description) from err
 
     @classmethod
     def load(cls, config: dict[str, Any] | str) -> OAuthClientCredentials:
@@ -839,7 +861,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         )
 
     @classmethod
-    def default_for_azure_ad(
+    def default_for_entra_id(
         cls,
         tenant_id: str,
         client_id: str,
@@ -875,6 +897,21 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             token_expiry_leeway_seconds=token_expiry_leeway_seconds,
             **token_custom_args,
         )
+
+    @classmethod
+    def default_for_azure_ad(cls, *args: Any, **kwargs: Any) -> OAuthClientCredentials:
+        """Alias for :meth:`.OAuthClientCredentials.default_for_entra_id`.
+
+        .. deprecated:: 8.x
+            Use :meth:`.OAuthClientCredentials.default_for_entra_id` instead.
+
+        """
+        warnings.warn(
+            "default_for_azure_ad() is deprecated; use default_for_entra_id() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return cls.default_for_entra_id(*args, **kwargs)
 
 
 class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):

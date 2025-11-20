@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from cognite.client.data_classes import SequenceColumn, SequenceColumnList, SequenceRow, SequenceRows, SequenceRowsList
@@ -5,12 +7,25 @@ from cognite.client.data_classes import SequenceColumn, SequenceColumnList, Sequ
 
 class TestSequenceRowsList:
     @pytest.mark.dsl
-    def test_sequence_notebook_repr_html(self):
+    def test_sequence_notebook_repr_html(self) -> None:
         sequence_rows_list = SequenceRowsList(
             [
                 SequenceRows(
                     rows=[SequenceRow(row_number=0, values=[1, 2, 3])],
-                    columns=SequenceColumnList([SequenceColumn(col) for col in ["co1", "col2", "col3"]]),
+                    columns=SequenceColumnList(
+                        [
+                            SequenceColumn(
+                                col,
+                                created_time=123,
+                                last_updated_time=123,
+                                name=None,
+                                description=None,
+                                value_type="STRING",
+                                metadata=None,
+                            )
+                            for col in ["co1", "col2", "col3"]
+                        ]
+                    ),
                     external_id="external_id",
                 )
             ]

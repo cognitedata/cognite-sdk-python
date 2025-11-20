@@ -14,7 +14,7 @@ List files metadata
 
 Aggregate files metadata
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.files.FilesAPI.aggregate
+.. automethod:: cognite.client._api.files.FilesAPI.aggregate_count
 
 Search for files
 ^^^^^^^^^^^^^^^^

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, BinaryIO, Literal, cast, overload
+from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING, Any, BinaryIO, Literal, overload
 
 from cognite.client._api.document_preview import DocumentPreviewAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import filters
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.documents import (
     Document,
     DocumentHighlightList,
@@ -18,9 +19,10 @@ from cognite.client.data_classes.documents import (
     SourceFileProperty,
 )
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
     {filters.InAssetSubtree, filters.Search, filters.GeoJSONIntersects, filters.GeoJSONDisjoint, filters.GeoJSONWithin}
@@ -30,7 +32,7 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
 class DocumentsAPI(APIClient):
     _RESOURCE_PATH = "/documents"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.previews = DocumentPreviewAPI(config, api_version, cognite_client)
 
@@ -41,27 +43,24 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
-    ) -> Iterator[DocumentList]: ...
+    ) -> AsyncIterator[DocumentList]: ...
 
     @overload
     def __call__(
         self,
-        chunk_size: Literal[None] = None,
+        chunk_size: None = None,
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
-    ) -> Iterator[DocumentList]: ...
+    ) -> AsyncIterator[Document]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
-    ) -> Iterator[Document] | Iterator[DocumentList]:
+    ) -> AsyncIterator[Document] | AsyncIterator[DocumentList]:
         """Iterate over documents
 
         Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
@@ -71,13 +70,12 @@ class DocumentsAPI(APIClient):
             filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to return.
             sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal['asc', 'desc']] | None): The property to sort by. The default order is ascending.
             limit (int | None): Maximum number of documents to return. Default to return all items.
-            partitions (int | None): Retrieve documents in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
-        Returns:
-            Iterator[Document] | Iterator[DocumentList]: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
-        """
+        Yields:
+            Document | DocumentList: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
+        """  # noqa: DOC404
         self._validate_filter(filter)
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=DocumentList,
             resource_cls=Document,
             sort=[DocumentSort.load(sort).dump()] if sort else None,
@@ -85,20 +83,10 @@ class DocumentsAPI(APIClient):
             chunk_size=chunk_size,
             filter=filter.dump() if isinstance(filter, Filter) else filter,
             limit=limit,
-            partitions=partitions,
-        )
+        ):
+            yield item
 
-    def __iter__(self) -> Iterator[Document]:
-        """Iterate over documents
-
-        Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
-
-        Returns:
-            Iterator[Document]: yields documents one by one.
-        """
-        return cast(Iterator[Document], self())
-
-    def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
+    async def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
         """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
@@ -112,8 +100,9 @@ class DocumentsAPI(APIClient):
 
             Count the number of documents in your CDF project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.documents.aggregate_count()
 
             Count the number of PDF documents in your CDF project:
@@ -134,11 +123,11 @@ class DocumentsAPI(APIClient):
                 ... )
         """
         self._validate_filter(filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "count", filter=filter.dump() if isinstance(filter, Filter) else filter, query=query
         )
 
-    def aggregate_cardinality_values(
+    async def aggregate_cardinality_values(
         self,
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
@@ -163,6 +152,7 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.documents.aggregate_cardinality_values(DocumentProperty.type)
 
             Count the number of authors of plain/text documents in your CDF project:
@@ -182,7 +172,7 @@ class DocumentsAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityValues",
             properties=property,
             query=query,
@@ -190,7 +180,7 @@ class DocumentsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_cardinality_properties(
+    async def aggregate_cardinality_properties(
         self,
         path: SourceFileProperty | list[str] = SourceFileProperty.metadata,
         query: str | None = None,
@@ -212,13 +202,14 @@ class DocumentsAPI(APIClient):
 
             Count the number metadata keys for documents in your CDF project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.documents.aggregate_cardinality_properties()
         """
         self._validate_filter(filter)
 
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityProperties",
             path=path,
             query=query,
@@ -226,7 +217,7 @@ class DocumentsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_unique_values(
+    async def aggregate_unique_values(
         self,
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
@@ -253,6 +244,7 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.documents.aggregate_unique_values(DocumentProperty.mime_type)
                 >>> unique_types = result.unique
 
@@ -274,7 +266,7 @@ class DocumentsAPI(APIClient):
                 >>> unique_mime_types = result.unique
         """
         self._validate_filter(filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueValues",
             properties=property,
             query=query,
@@ -283,7 +275,7 @@ class DocumentsAPI(APIClient):
             limit=limit,
         )
 
-    def aggregate_unique_properties(
+    async def aggregate_unique_properties(
         self,
         path: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
@@ -310,11 +302,12 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import SourceFileProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.documents.aggregate_unique_values(SourceFileProperty.metadata)
         """
         self._validate_filter(filter)
 
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueProperties",
             # There is a bug/inconsistency in the API where the path parameter is called properties for documents.
             # This has been reported to the API team, and will be fixed in the future.
@@ -325,7 +318,12 @@ class DocumentsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve_content(self, id: int) -> bytes:
+    async def retrieve_content(
+        self,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+    ) -> bytes:
         """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
@@ -335,9 +333,10 @@ class DocumentsAPI(APIClient):
         in order to reduce the size of the returned payload. If you want the whole text for a document,
         you can use this endpoint.
 
-
         Args:
-            id (int): The server-generated ID for the document you want to retrieve the content of.
+            id (int | None): The server-generated ID for the document you want to retrieve the content of.
+            external_id (str | None): External ID of the document.
+            instance_id (NodeId | None): Instance ID of the document.
 
         Returns:
             bytes: The content of the document.
@@ -346,16 +345,34 @@ class DocumentsAPI(APIClient):
 
             Retrieve the content of a document with id 123:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.retrieve_content(id=123)
-        """
 
-        body = {"id": id}
-        response = self._do_request("POST", f"{self._RESOURCE_PATH}/content", accept="text/plain", json=body)
+            Retrieve the content of a document with external_id "my_document":
+
+                >>> content = client.documents.retrieve_content(external_id="my_document")
+
+            Retrieve the content of a document with instance_id:
+
+                >>> from cognite.client.data_classes.data_modeling.ids import NodeId
+                >>> instance_id = NodeId(space="my_space", external_id="my_document")
+                >>> content = client.documents.retrieve_content(instance_id=instance_id)
+        """
+        ident = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()[0]
+        response = await self._post(
+            f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json=ident.as_dict()
+        )
         return response.content
 
-    def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
+    async def retrieve_content_buffer(
+        self,
+        buffer: BinaryIO,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+    ) -> None:
         """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
@@ -365,10 +382,11 @@ class DocumentsAPI(APIClient):
         in order to reduce the size of the returned payload. If you want the whole text for a document,
         you can use this endpoint.
 
-
         Args:
-            id (int): The server-generated ID for the document you want to retrieve the content of.
             buffer (BinaryIO): The document content is streamed directly into the buffer. This is useful for retrieving large documents.
+            id (int | None): The server-generated ID for the document you want to retrieve the content of.
+            external_id (str | None): External ID of the document.
+            instance_id (NodeId | None): Instance ID of the document.
 
         Examples:
 
@@ -377,37 +395,50 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from pathlib import Path
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> with Path("my_file.txt").open("wb") as buffer:
-                ...     client.documents.retrieve_content_buffer(id=123, buffer=buffer)
+                ...     client.documents.retrieve_content_buffer(buffer, id=123)
+
+            Retrieve the content of a document with external_id "my_document" into local file "my_text.txt":
+
+                >>> with Path("my_file.txt").open("wb") as buffer:
+                ...     client.documents.retrieve_content_buffer(buffer, external_id="my_document")
         """
-        with self._do_request(
-            "GET", f"{self._RESOURCE_PATH}/{id}/content", stream=True, accept="text/plain"
-        ) as response:
-            for chunk in response.iter_content(chunk_size=2**21):
-                if chunk:  # filter out keep-alive new chunks
-                    buffer.write(chunk)
+        from cognite.client import global_config
+
+        ident = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()[0]
+        stream = self._stream(
+            "POST",
+            url_path=f"{self._RESOURCE_PATH}/content",
+            headers={"accept": "text/plain"},
+            timeout=self._config.file_transfer_timeout,
+            json=ident.as_dict(),
+        )
+        async with stream as response:
+            async for chunk in response.aiter_bytes(chunk_size=global_config.file_download_chunk_size):
+                buffer.write(chunk)
 
     @overload
-    def search(
+    async def search(
         self,
         query: str,
         highlight: Literal[False] = False,
         filter: Filter | dict[str, Any] | None = None,
-        sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentList: ...
 
     @overload
-    def search(
+    async def search(
         self,
         query: str,
         highlight: Literal[True],
         filter: Filter | dict[str, Any] | None = None,
-        sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentHighlightList: ...
 
-    def search(
+    async def search(
         self,
         query: str,
         highlight: bool = False,
@@ -439,6 +470,7 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
                 >>> documents = client.documents.search("pump 123", filter=is_pdf)
 
@@ -467,7 +499,7 @@ class DocumentsAPI(APIClient):
         if highlight:
             body["highlight"] = highlight
 
-        response = self._post(f"{self._RESOURCE_PATH}/search", json=body)
+        response = await self._post(f"{self._RESOURCE_PATH}/search", json=body)
         json_content = response.json()
         results = json_content["items"]
 
@@ -478,7 +510,7 @@ class DocumentsAPI(APIClient):
             )
         return DocumentList._load((item["item"] for item in results), cognite_client=self._cognite_client)
 
-    def list(
+    async def list(
         self,
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
@@ -506,14 +538,23 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
                 >>> pdf_documents = client.documents.list(filter=is_pdf)
 
-            Iterate over all documents in your CDF project:
+            List documents in your CDF project:
 
-                >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> for document in client.documents:
-                ...    print(document.name)
+                >>> documents = client.documents.list(limit=100)
+
+            Iterate over documents, one-by-one:
+
+                >>> for document in client.documents():
+                ...     document  # do something with the document
+
+            Iterate over chunks of documents to reduce memory load:
+
+                >>> for document_list in client.documents(chunk_size=250):
+                ...     document_list  # do something with the document
 
             List all documents in your CDF project sorted by mime/type in descending order:
 
@@ -522,7 +563,7 @@ class DocumentsAPI(APIClient):
 
         """
         self._validate_filter(filter)
-        return self._list(
+        return await self._list(
             list_cls=DocumentList,
             resource_cls=Document,
             method="POST",

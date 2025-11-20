@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import functools
 import math
-import platform
-import warnings
 from abc import ABC
 from collections.abc import Hashable, Iterable, Iterator, Sequence
 from inspect import isabstract
@@ -14,21 +12,20 @@ from typing import (
     TypeVar,
     overload,
 )
-from urllib.parse import quote
 
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
     to_camel_case,
-    to_snake_case,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-    from cognite.client.data_classes._base import T_CogniteObject, T_CogniteResource
+    import httpx
+
+    from cognite.client.data_classes._base import T_CogniteResource
 
 T = TypeVar("T")
 K = TypeVar("K")
@@ -80,24 +77,6 @@ def load_resource_to_dict(resource: dict[str, Any] | str) -> dict[str, Any]:
     raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
 
 
-def fast_dict_load(
-    cls: type[T_CogniteObject], item: dict[str, Any], cognite_client: CogniteClient | None
-) -> T_CogniteObject:
-    try:
-        instance = cls(cognite_client=cognite_client)  # type: ignore [call-arg]
-    except TypeError:
-        instance = cls()
-    # Note: Do not use cast(Hashable, cls) here as this is often called in a hot loop
-    # Accepted: {camel_case(attribute_name): attribute_name}
-    accepted = get_accepted_params(cls)
-    for camel_attr, value in item.items():
-        try:
-            setattr(instance, accepted[camel_attr], value)
-        except KeyError:
-            pass
-    return instance
-
-
 def load_yaml_or_json(resource: str) -> Any:
     try:
         yaml = local_import("yaml")
@@ -110,64 +89,6 @@ def basic_obj_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
     if camel_case:
         return convert_all_keys_to_camel_case(vars(obj))
     return convert_all_keys_to_snake_case(vars(obj))
-
-
-def handle_renamed_argument(
-    new_arg: T,
-    new_arg_name: str,
-    old_arg_name: str,
-    fn_name: str,
-    kw_dct: dict[str, Any],
-    required: bool = True,
-) -> T:
-    old_arg = kw_dct.pop(old_arg_name, None)
-    if kw_dct:
-        raise TypeError(f"Got unexpected keyword argument(s): {list(kw_dct)}")
-
-    if old_arg is None:
-        if new_arg is None and required:
-            raise TypeError(f"{fn_name}() missing 1 required positional argument: {new_arg_name!r}")
-        return new_arg
-
-    warnings.warn(
-        f"Argument {old_arg_name!r} have been changed to {new_arg_name!r}, but the old is still supported until "
-        "the next major version. Consider updating your code.",
-        UserWarning,
-        stacklevel=2,
-    )
-    if new_arg is not None:
-        raise TypeError(f"Pass either {new_arg_name!r} or {old_arg_name!r} (deprecated), not both")
-    return old_arg
-
-
-def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, fn_name: str, kw_dct: dict[str, Any]) -> T:
-    new_arg_name = to_snake_case(old_arg_name)
-    return handle_renamed_argument(new_arg, new_arg_name, old_arg_name, fn_name, kw_dct)
-
-
-def interpolate_and_url_encode(path: str, *args: Any) -> str:
-    return path.format(*[quote(str(arg), safe="") for arg in args])
-
-
-def get_current_sdk_version() -> str:
-    from cognite.client import __version__
-
-    return __version__
-
-
-@functools.lru_cache(maxsize=1)
-def get_user_agent() -> str:
-    sdk_version = f"CognitePythonSDK/{get_current_sdk_version()}"
-    python_version = (
-        f"{platform.python_implementation()}/{platform.python_version()} "
-        f"({platform.python_build()};{platform.python_compiler()})"
-    )
-    os_version_info = [platform.release(), platform.machine(), platform.architecture()[0]]
-    os_version_info = [s for s in os_version_info if s]  # Ignore empty strings
-    os_version_info_str = "-".join(os_version_info)
-    operating_system = f"{platform.system()}/{os_version_info_str}"
-
-    return f"{sdk_version} {python_version} {operating_system}"
 
 
 @overload
@@ -244,7 +165,7 @@ def exactly_one_is_not_none(*args: Any) -> bool:
 
 
 def at_least_one_is_not_none(*args: Any) -> bool:
-    return sum(a is not None for a in args) >= 1
+    return any(a is not None for a in args)
 
 
 def at_most_one_is_not_none(*args: Any) -> bool:
@@ -277,3 +198,11 @@ def flatten_dict(d: dict[str, Any], parent_keys: tuple[str, ...], sep: str = "."
         else:
             items.append((sep.join((*parent_keys, key)), value))
     return dict(items)
+
+
+def unpack_items(res: httpx.Response) -> list[Any]:
+    return res.json()["items"]
+
+
+def drop_none_values(dct: dict[str, Any]) -> dict[str, Any]:
+    return {k: v for k, v in dct.items() if v is not None}

@@ -8,19 +8,19 @@ from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, cast
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteObject, UnknownCogniteObject
-from cognite.client.data_classes.data_modeling.ids import ContainerId
+from cognite.client.data_classes.data_modeling.ids import ContainerId, NodeId
 from cognite.client.utils._auxiliary import is_positive, rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 logger = logging.getLogger(__name__)
 
 _PROPERTY_ALIAS = {"isList": "list", "is_list": "list"}
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DirectRelationReference:
     space: str
     external_id: str
@@ -32,15 +32,16 @@ class DirectRelationReference:
         }
 
     @classmethod
-    def load(cls, data: dict | tuple[str, str] | DirectRelationReference) -> DirectRelationReference:
-        if isinstance(data, dict):
-            return cls(space=data["space"], external_id=data["externalId"])
-        elif isinstance(data, tuple) and len(data) == 2:
-            return cls(*data)
-        elif isinstance(data, cls):
-            return data
-        else:
-            raise ValueError("Invalid data provided to load method. Must be dict or tuple with two elements.")
+    def load(cls, data: dict[str, str] | tuple[str, str] | DirectRelationReference | NodeId) -> DirectRelationReference:
+        match data:
+            case {"space": space, "externalId": xid}:
+                return cls(space, xid)
+            case (space, xid):
+                return cls(space, xid)
+            case cls() | NodeId():  # type: ignore [misc]
+                return cls(data.space, data.external_id)
+            case _:
+                raise ValueError("Invalid data provided to load method. Must be dict or tuple with two elements.")
 
     def as_tuple(self) -> tuple[str, str]:
         return self.space, self.external_id
@@ -67,7 +68,7 @@ class PropertyType(CogniteObject, ABC):
         return unit
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> PropertyType:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> PropertyType:
         match type_ := resource["type"]:
             case "text":
                 return Text(
@@ -264,6 +265,13 @@ class DirectRelation(ListablePropertyType):
 class EnumValue(CogniteObject):
     name: str | None = None
     description: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            name=resource.get("name"),
+            description=resource.get("description"),
+        )
 
 
 @dataclass

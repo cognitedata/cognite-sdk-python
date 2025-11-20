@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import warnings
-from collections.abc import Iterator, MutableSequence, Sequence
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
+from collections.abc import AsyncIterator, MutableSequence, Sequence
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -14,16 +13,15 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks
-from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._auxiliary import split_into_chunks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import WorkflowVersionIdentifierSequence
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
-
-WorkflowIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str] | str
-WorkflowVersionIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str]
+    from cognite.client import AsyncCogniteClient, ClientConfig
+    from cognite.client._api.workflows import WorkflowIdentifier, WorkflowVersionIdentifier
 
 
 def wrap_workflow_ids(
@@ -37,7 +35,7 @@ def wrap_workflow_ids(
 class WorkflowVersionAPI(APIClient):
     _RESOURCE_PATH = "/workflows/versions"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 1
@@ -49,7 +47,7 @@ class WorkflowVersionAPI(APIClient):
         chunk_size: None = None,
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int | None = None,
-    ) -> Iterator[WorkflowVersion]: ...
+    ) -> AsyncIterator[WorkflowVersion]: ...
 
     @overload
     def __call__(
@@ -57,14 +55,14 @@ class WorkflowVersionAPI(APIClient):
         chunk_size: int,
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int | None = None,
-    ) -> Iterator[WorkflowVersionList]: ...
+    ) -> AsyncIterator[WorkflowVersionList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int | None = None,
-    ) -> Iterator[WorkflowVersion] | Iterator[WorkflowVersionList]:
+    ) -> AsyncIterator[WorkflowVersion] | AsyncIterator[WorkflowVersionList]:
         """Iterate over workflow versions
 
         Args:
@@ -72,29 +70,26 @@ class WorkflowVersionAPI(APIClient):
             workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
             limit (int | None): Maximum number of workflow versions to return. Defaults to returning all.
 
-        Returns:
-            Iterator[WorkflowVersion] | Iterator[WorkflowVersionList]: Yields WorkflowVersion one by one if chunk_size is None, otherwise yields WorkflowVersionList objects.
-        """
-        return self._list_generator(
+        Yields:
+            WorkflowVersion | WorkflowVersionList: Yields WorkflowVersion one by one if chunk_size is None, otherwise yields WorkflowVersionList objects.
+        """  # noqa: DOC404
+        async for item in self._list_generator(
             method="GET",
             resource_cls=WorkflowVersion,
             list_cls=WorkflowVersionList,
             filter={"workflowFilters": wrap_workflow_ids(workflow_version_ids)},
             limit=limit,
             chunk_size=chunk_size,
-        )
-
-    def __iter__(self) -> Iterator[WorkflowVersion]:
-        """Iterate all over workflow versions"""
-        return self()
+        ):
+            yield item
 
     @overload
-    def upsert(self, version: WorkflowVersionUpsert) -> WorkflowVersion: ...
+    async def upsert(self, version: WorkflowVersionUpsert) -> WorkflowVersion: ...
 
     @overload
-    def upsert(self, version: Sequence[WorkflowVersionUpsert]) -> WorkflowVersionList: ...
+    async def upsert(self, version: Sequence[WorkflowVersionUpsert]) -> WorkflowVersionList: ...
 
-    def upsert(
+    async def upsert(
         self, version: WorkflowVersionUpsert | Sequence[WorkflowVersionUpsert], mode: Literal["replace"] = "replace"
     ) -> WorkflowVersion | WorkflowVersionList:
         """`Create one or more workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
@@ -118,6 +113,7 @@ class WorkflowVersionAPI(APIClient):
                 ...     WorkflowTask, FunctionTaskParameters,
                 ... )
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> function_task = WorkflowTask(
                 ...     external_id="my_workflow-task1",
                 ...     parameters=FunctionTaskParameters(
@@ -140,30 +136,33 @@ class WorkflowVersionAPI(APIClient):
 
         assert_type(version, "workflow version", [WorkflowVersionUpsert, Sequence])
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=WorkflowVersionList,
             resource_cls=WorkflowVersion,
             items=version,
             input_resource_cls=WorkflowVersionUpsert,
         )
 
-    def delete(
+    async def delete(
         self,
-        workflow_version_id: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier],
+        workflow_version_id: WorkflowVersionIdentifier
+        | MutableSequence[WorkflowVersionId]
+        | MutableSequence[tuple[str, str]],
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete a workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/DeleteSpecificVersionsOfWorkflow>`_
 
         Args:
-            workflow_version_id (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier]): Workflow version id or list of workflow version ids to delete.
+            workflow_version_id (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionId] | MutableSequence[tuple[str, str]]): Workflow version id or list of workflow version ids to delete.
             ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
 
         Examples:
 
             Delete workflow version "1" of workflow "my workflow" specified by using a tuple:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.versions.delete(("my workflow", "1"))
 
             Delete workflow version "1" of workflow "my workflow" and workflow version "2" of workflow "my workflow 2" using the WorkflowVersionId class:
@@ -173,42 +172,30 @@ class WorkflowVersionAPI(APIClient):
 
         """
         identifiers = WorkflowIds.load(workflow_version_id).dump(camel_case=True)
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=WorkflowVersionIdentifierSequence.load(identifiers),
             params={"ignoreUnknownIds": ignore_unknown_ids},
             wrap_ids=True,
         )
 
     @overload
-    def retrieve(
-        self,
-        workflow_external_id: WorkflowVersionIdentifier | str,
-        version: str | None = None,
-        *,
-        ignore_unknown_ids: bool = False,
-    ) -> WorkflowVersion | None: ...
+    async def retrieve(self, workflow_external_id: WorkflowVersionIdentifier) -> WorkflowVersion | None: ...
 
     @overload
-    def retrieve(
-        self,
-        workflow_external_id: Sequence[WorkflowVersionIdentifier] | WorkflowIds,
-        version: None = None,
-        *,
-        ignore_unknown_ids: bool = False,
+    async def retrieve(
+        self, workflow_external_id: Sequence[WorkflowVersionIdentifier] | WorkflowIds
     ) -> WorkflowVersionList: ...
 
-    def retrieve(
+    async def retrieve(
         self,
-        workflow_external_id: WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds | str,
-        version: str | None = None,
+        workflow_external_id: WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds,
         *,
         ignore_unknown_ids: bool = False,
     ) -> WorkflowVersion | WorkflowVersionList | None:
         """`Retrieve a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/GetSpecificVersion>`_
 
         Args:
-            workflow_external_id (WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds | str): External id of the workflow.
-            version (str | None): Version of the workflow.
+            workflow_external_id (WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds): External id of the workflow.
             ignore_unknown_ids (bool): When requesting multiple, whether to ignore external IDs that are not found rather than throwing an exception.
 
         Returns:
@@ -221,6 +208,7 @@ class WorkflowVersionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionId
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.versions.retrieve(WorkflowVersionId("my_workflow", "v1"))
 
             Retrieve multiple workflow versions and ignore unknown:
@@ -231,31 +219,14 @@ class WorkflowVersionAPI(APIClient):
                 ... )
                 >>> # A sequence of tuples is also accepted:
                 >>> res = client.workflows.versions.retrieve([("my_workflow", "v1"), ("other", "v3.2")])
-
-            DEPRECATED: You can also pass workflow_external_id and version as separate arguments:
-
-                >>> res = client.workflows.versions.retrieve("my_workflow", "v1")
-
         """
-        match workflow_external_id, version:
-            case str(), str():
-                warnings.warn(
-                    "This usage is deprecated, please pass one or more `WorkflowVersionId` instead.'",
-                    DeprecationWarning,
-                )
-                workflow_external_id = WorkflowVersionId(workflow_external_id, version)
-            case str(), None:
-                raise TypeError(
-                    "You must specify which 'version' of the workflow to retrieve. Deprecation Warning: This usage is deprecated, please pass "
-                    "one or more `WorkflowVersionId` instead."
-                )
-            case WorkflowVersionId() | Sequence(), str():
-                warnings.warn("Argument 'version' is ignored when passing one or more 'WorkflowVersionId'", UserWarning)
 
         # We can not use _retrieve_multiple as the backend doesn't support 'ignore_unknown_ids':
-        def get_single(wf_xid: WorkflowVersionId, ignore_missing: bool = ignore_unknown_ids) -> WorkflowVersion | None:
+        async def get_single(
+            wf_xid: WorkflowVersionId, ignore_missing: bool = ignore_unknown_ids
+        ) -> WorkflowVersion | None:
             try:
-                response = self._get(
+                response = await self._get(
                     url_path=interpolate_and_url_encode("/workflows/{}/versions/{}", *wf_xid.as_tuple())
                 )
                 return WorkflowVersion._load(response.json())
@@ -269,19 +240,20 @@ class WorkflowVersionAPI(APIClient):
         if any(wf_id.version is None for wf_id in given_wf_ids):
             raise ValueError("Version must be specified for all workflow version IDs.")
 
+        # TODO: Use is_singleton here:
         is_single = isinstance(workflow_external_id, WorkflowVersionId) or (
             isinstance(workflow_external_id, tuple) and len(given_wf_ids) == 1
         )
         if is_single:
-            return get_single(given_wf_ids[0], ignore_missing=True)
+            return await get_single(given_wf_ids[0], ignore_missing=True)
 
         # Not really a point in splitting into chunks when chunk_size is 1, but...
-        tasks = list(map(tuple, split_into_chunks(given_wf_ids, self._RETRIEVE_LIMIT)))
-        tasks_summary = execute_tasks(get_single, tasks=tasks, max_workers=self._config.max_workers, fail_fast=True)
+        tasks = [AsyncSDKTask(get_single, wf_xid) for wf_xid in split_into_chunks(given_wf_ids, self._RETRIEVE_LIMIT)]
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         return WorkflowVersionList(list(filter(None, tasks_summary.results)), cognite_client=self._cognite_client)
 
-    def list(
+    async def list(
         self,
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
@@ -299,8 +271,9 @@ class WorkflowVersionAPI(APIClient):
 
             Get all workflow version for workflows 'my_workflow' and 'my_workflow_2':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.versions.list(["my_workflow", "my_workflow_2"])
 
             Get all workflow versions for workflows 'my_workflow' and 'my_workflow_2' using the WorkflowVersionId class:
@@ -315,7 +288,7 @@ class WorkflowVersionAPI(APIClient):
                 ...     [("my_workflow", "1"), ("my_workflow_2", "2")])
 
         """
-        return self._list(
+        return await self._list(
             method="POST",
             resource_cls=WorkflowVersion,
             list_cls=WorkflowVersionList,

@@ -7,7 +7,7 @@ from cognite.client.data_classes._base import CogniteObject, CogniteResource, Co
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 @dataclass
@@ -35,7 +35,7 @@ class InstanceStatistics(CogniteObject):
     soft_deleted_instances_limit: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: "AsyncCogniteClient | None" = None) -> Self:
         return cls(
             edges=resource["edges"],
             soft_deleted_edges=resource["softDeletedEdges"],
@@ -62,7 +62,7 @@ class CountLimit(CogniteObject):
     limit: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: "AsyncCogniteClient | None" = None) -> Self:
         return cls(count=resource["count"], limit=resource["limit"])
 
 
@@ -92,7 +92,7 @@ class SpaceStatistics(CogniteResource):
     soft_deleted_nodes: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: "AsyncCogniteClient | None" = None) -> Self:
         instance = cls(
             space=resource["space"],
             containers=resource["containers"],
@@ -139,7 +139,7 @@ class ProjectStatistics(CogniteResource):
         return self._cognite_client.config.project
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: "AsyncCogniteClient | None" = None) -> Self:
         instance = cls(
             spaces=CountLimit._load(resource["spaces"]),
             containers=CountLimit._load(resource["containers"]),

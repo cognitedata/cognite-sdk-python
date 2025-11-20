@@ -1,20 +1,29 @@
+from __future__ import annotations
+
 import pickle
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.credentials import OAuthClientCertificate, Token
 from cognite.client.exceptions import CogniteAPIError, CogniteProjectAccessError
+from cognite.client.utils._async_helpers import run_sync
 
 
 @pytest.fixture
-def cognite_client_with_wrong_base_url(cognite_client, monkeypatch):
-    monkeypatch.setattr(cognite_client.config, "base_url", "https://cognitedata.com")
-    yield cognite_client
+def cognite_client_with_wrong_base_url(
+    cognite_client: CogniteClient, async_client: AsyncCogniteClient, monkeypatch: MonkeyPatch
+) -> CogniteClient:
+    monkeypatch.setattr(async_client.config, "base_url", "https://cognitedata.com")
+    return cognite_client
 
 
 class TestCogniteClient:
-    def test_wrong_project(self, monkeypatch, cognite_client):
-        monkeypatch.setattr(cognite_client.config, "project", "that-looks-wrong")
+    def test_wrong_project(
+        self, monkeypatch: MonkeyPatch, async_client: AsyncCogniteClient, cognite_client: CogniteClient
+    ) -> None:
+        monkeypatch.setattr(async_client.config, "project", "that-looks-wrong")
         to_match = (
             "^You don't have access to the requested CDF project='that-looks-wrong'. "
             "Did you intend to use one of: ['python-sdk-test']? | code: 401 |"
@@ -22,36 +31,43 @@ class TestCogniteClient:
         with pytest.raises(CogniteProjectAccessError, match=to_match):
             cognite_client.assets.list()
 
-    def test_wrong_project_and_wrong_cluster(self, monkeypatch, cognite_client):
-        monkeypatch.setattr(cognite_client.config, "project", "that-looks-wrong")
-        monkeypatch.setattr(cognite_client.config, "base_url", "https://aws-dub-dev.cognitedata.com")
+    def test_wrong_project_and_wrong_cluster(
+        self, monkeypatch: MonkeyPatch, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    ) -> None:
+        monkeypatch.setattr(async_client.config, "project", "that-looks-wrong")
+        monkeypatch.setattr(async_client.config, "base_url", "https://aws-dub-dev.cognitedata.com")
         to_match = "^You don't have access to the requested CDF project='that-looks-wrong' | code: 401 |"
 
         with pytest.raises(CogniteProjectAccessError, match=to_match):
             cognite_client.assets.list()
 
-    def test_wrong_base_url_resulting_in_301(self, cognite_client_with_wrong_base_url):
-        with pytest.raises(CogniteAPIError):
+    def test_wrong_base_url_resulting_in_301(self, cognite_client_with_wrong_base_url: CogniteClient) -> None:
+        with pytest.raises(CogniteAPIError) as e:
             cognite_client_with_wrong_base_url.assets.list(limit=1)
+        assert e.value.code == 301
 
-    def test_post(self, cognite_client):
+    def test_post(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(CogniteAPIError) as e:
             cognite_client.post("/login", json={})
         assert e.value.code == 404
 
-    def test_put(self, cognite_client):
+    def test_put(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(CogniteAPIError) as e:
             cognite_client.put("/login")
         assert e.value.code == 404
 
-    def test_delete(self, cognite_client):
-        with pytest.raises(CogniteAPIError) as e:
-            cognite_client.delete("/login")
-        assert e.value.code == 404
 
-
-def test_cognite_client_is_picklable(cognite_client):
+def test_cognite_client_is_picklable(cognite_client: CogniteClient) -> None:
     if isinstance(cognite_client.config.credentials, (Token, OAuthClientCertificate)):
         pytest.skip()
-    roundtrip_client = pickle.loads(pickle.dumps(cognite_client))
+    dumped = pickle.dumps(cognite_client)
+    roundtrip_client = pickle.loads(dumped)
     assert roundtrip_client.iam.token.inspect().projects
+
+
+def test_async_cognite_client_is_picklable(async_client: AsyncCogniteClient) -> None:
+    if isinstance(async_client.config.credentials, (Token, OAuthClientCertificate)):
+        pytest.skip()
+    dumped = pickle.dumps(async_client)
+    roundtrip_client = pickle.loads(dumped)
+    assert run_sync(roundtrip_client.iam.token.inspect()).projects

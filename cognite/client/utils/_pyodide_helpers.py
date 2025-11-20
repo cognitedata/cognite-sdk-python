@@ -2,56 +2,28 @@ from __future__ import annotations
 
 import logging
 import os
-import warnings
-from collections.abc import Callable, MutableMapping
-from typing import TYPE_CHECKING, Any
 
 import cognite.client as cc  # Do not import individual entities
-from cognite.client._http_client import _RetryTracker
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider
-
-if TYPE_CHECKING:
-    from requests import Session
-
-    from cognite.client._http_client import HTTPClient, HTTPClientConfig
-
 
 logger = logging.getLogger(__name__)
 
 
 def patch_sdk_for_pyodide() -> None:
-    # -------------------
     # Patch Pyodide related issues
-    # - Patch 'requests' as it does not work in pyodide (socket not implemented):
-    from pyodide_http import patch_all
-
-    patch_all()
-
     # -----------------
     # Patch Cognite SDK
     # - For good measure ;)
     global_config.disable_pypi_version_check = True
 
-    # - Disable gzip, not supported:
+    # - Disable gzip. Although supported in pyodide, setting header 'content-encoding = gzip'
+    #   currently gets blocked by the browser policy. If we return 'content-encoding' as part
+    #   of 'access-control-allow-headers' from the pre-flight OPTIONS request, this prob goes away:
     global_config.disable_gzip = True
-
-    # - Use another HTTP adapter:
-    cc._http_client.HTTPClient._old__init__ = cc._http_client.HTTPClient.__init__  # type: ignore [attr-defined]
-    cc._http_client.HTTPClient.__init__ = http_client__init__  # type: ignore [method-assign]
 
     # - Inject these magic classes into the correct modules so that the user may import them normally:
     cc.config.FusionNotebookConfig = FusionNotebookConfig  # type: ignore [attr-defined]
-
-    # - Set all usage of thread pool executors to use dummy/serial-implementations:
-    cc.utils._concurrency.ConcurrencySettings.executor_type = "mainthread"
-
-    # - Auto-ignore protobuf warning for the user (as they can't fix this):
-    warnings.filterwarnings(
-        action="ignore",
-        category=UserWarning,
-        message="Your installation of 'protobuf' is missing compiled C binaries",
-    )
 
     # - If we are running inside of a JupyterLite Notebook spawned from Cognite Data Fusion, we set
     #   the default config to FusionNotebookConfig(). This allows the user to:
@@ -74,20 +46,6 @@ def patch_sdk_for_pyodide() -> None:
             "Could not load 'tzdata' package automatically in pyodide. You may need to do this manually:"
             "import micropip; await micropip.install('tzdata')"
         )
-
-
-def http_client__init__(
-    self: HTTPClient,
-    config: HTTPClientConfig,
-    session: Session,
-    refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
-    retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
-) -> None:
-    import pyodide_http
-
-    self._old__init__(config, session, refresh_auth_header, retry_tracker_factory)  # type: ignore [attr-defined]
-    self.session.mount("https://", pyodide_http._requests.PyodideHTTPAdapter())
-    self.session.mount("http://", pyodide_http._requests.PyodideHTTPAdapter())
 
 
 class EnvVarToken(CredentialProvider):
@@ -130,5 +88,4 @@ class FusionNotebookConfig(ClientConfig):
             project=os.environ["COGNITE_PROJECT"],
             credentials=EnvVarToken(),  # Magic!
             base_url=os.environ["COGNITE_BASE_URL"],
-            max_workers=1,
         )
