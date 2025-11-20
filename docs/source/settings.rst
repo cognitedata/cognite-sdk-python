@@ -42,14 +42,13 @@ You can set global configuration options like this:
     global_config.max_connection_pool_size = 10
     global_config.status_forcelist = {429, 502, 503, 504}
 
-These must be set prior to instantiating a ``CogniteClient`` in order for them to take effect.
+You should assume that these must be set prior to instantiating a ``CogniteClient`` in order for them to take effect.
 
 Concurrency and connection pooling
 ----------------------------------
 This library does not expose API limits to the user. If your request exceeds API limits, the SDK splits your
-request into chunks and performs the sub-requests in parallel. To control how many concurrent requests you send
-to the API, you can either pass the :code:`max_workers` attribute to :ref:`ClientConfig <class_client_ClientConfig>` before
-you instantiate the :ref:`cognite_client:CogniteClient` from it, or set the global :code:`max_workers` config option.
+request into chunks and performs the sub-requests in parallel when possible. To control how many concurrent requests you send
+to the API, you can set the global :code:`max_workers` config option. *This must be set prior to the first request you make.*
 
 If you are working with multiple instances of :ref:`cognite_client:CogniteClient`, all instances will share the same connection pool.
 If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests.
