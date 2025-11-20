@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from contextlib import nullcontext as does_not_raise
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 from cognite.client import global_config
 from cognite.client.config import ClientConfig, GlobalConfig
@@ -10,7 +13,7 @@ _LOAD_RESOURCE_TO_DICT_ERROR = r"Resource must be json or yaml str, or dict, not
 
 
 class TestGlobalConfig:
-    def test_global_config_singleton(self):
+    def test_global_config_singleton(self) -> None:
         with pytest.raises(
             TypeError,
             match=r"GlobalConfig is a singleton and cannot be instantiated directly. Use `global_config` instead,",
@@ -35,7 +38,7 @@ class TestGlobalConfig:
             None,
         ],
     )
-    def test_apply_settings(self, monkeypatch, client_config):
+    def test_apply_settings(self, monkeypatch: MonkeyPatch, client_config: ClientConfig) -> None:
         monkeypatch.delattr(GlobalConfig, "_instance")  # ensure that the singleton is re-instantiated
         gc = GlobalConfig()
         assert gc.max_workers == 5
@@ -54,7 +57,7 @@ class TestGlobalConfig:
             assert isinstance(gc.default_client_config.credentials, Token)
             assert gc.default_client_config.project == "test-project"
 
-    def test_load_non_existent_attr(self):
+    def test_load_non_existent_attr(self) -> None:
         settings = {
             "max_workers": 0,  # use a nonsensical value to ensure that it is not applied without assuming other tests kept the default value
             "invalid_1": 10,
@@ -71,17 +74,15 @@ class TestGlobalConfig:
 @pytest.fixture
 def client_config() -> ClientConfig:
     return ClientConfig.default(
-        **{
-            "project": "test-project",
-            "cdf_cluster": "test-cluster",
-            "credentials": Token("abc"),
-            "client_name": "test-client",
-        }
+        project="test-project",
+        cdf_cluster="test-cluster",
+        credentials=Token("abc"),
+        client_name="test-client",
     )
 
 
 class TestClientConfig:
-    def test_default(self, client_config):
+    def test_default(self, client_config: ClientConfig) -> None:
         assert client_config.project == "test-project"
         assert client_config.base_url == "https://test-cluster.cognitedata.com"
         assert isinstance(client_config.credentials, Token)
@@ -91,7 +92,7 @@ class TestClientConfig:
         "credentials",
         [{"token": "abc"}, '{"token": "abc"}', {"token": (lambda: "abc")}, Token("abc"), Token(lambda: "abc"), None],
     )
-    def test_load(self, credentials):
+    def test_load(self, credentials: dict) -> None:
         config = {
             "project": "test-project",
             "base_url": "https://test-cluster.cognitedata.com/",

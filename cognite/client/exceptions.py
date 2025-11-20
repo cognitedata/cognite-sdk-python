@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import reprlib
-from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from cognite.client._constants import _RUNNING_IN_BROWSER
-from cognite.client.utils import _json
-from cognite.client.utils._time import timed_cache
+from cognite.client.utils import _json_extended as _json
+from cognite.client.utils._async_helpers import async_timed_cache
+from cognite.client.utils._url import resolve_url
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes import AssetHierarchy
 
 
@@ -18,26 +17,33 @@ class CogniteException(Exception):
     pass
 
 
+class CogniteOrganizationError(CogniteException):
+    """Raised when we cannot determine the organization of the current project."""
+
+    def __str__(self) -> str:
+        return "Could not look-up organization"
+
+
 class CogniteProjectAccessError(CogniteException):
     """Raised when we get a 401 response from the API which means we don't have project access at all."""
 
     def __init__(
-        self, client: CogniteClient, project: str, x_request_id: str | None, cluster: str | None = None
+        self, project: str, x_request_id: str | None, maybe_projects: list[str] | None, cluster: str | None = None
     ) -> None:
         self.x_request_id = x_request_id
         self.cluster = cluster
         self.project = project
-        self.maybe_projects = self._attempt_to_get_projects(client, project)
+        self.maybe_projects = maybe_projects
 
     @staticmethod
-    @timed_cache(ttl=5)  # Don't spam requests when using concurrency
-    def _attempt_to_get_projects(client: CogniteClient, current_project: str) -> list[str] | None:
+    @async_timed_cache(ttl=5)  # Don't spam requests when using concurrency
+    async def _attempt_to_get_projects(client: AsyncCogniteClient, current_project: str) -> list[str] | None:
         # To avoid an infinte loop, we can't just use client.iam.token.inspect(), but use http_client directly:
         api_client = client.iam.token
-        _, full_url = api_client._resolve_url("GET", "/api/v1/token/inspect")
-        headers = api_client._configure_headers("application/json", client._config.headers.copy())
+        _, full_url = resolve_url(api_client, "GET", "/api/v1/token/inspect")
+        full_headers = api_client._configure_headers(additional_headers=None, api_subversion=api_client._api_version)
         try:
-            token_inspect = api_client._http_client.request("GET", url=full_url, headers=headers)
+            token_inspect = await api_client._http_client.request("GET", full_url, headers=full_headers, timeout=5)
             projects = {proj["projectUrlName"] for proj in token_inspect.json()["projects"]} - {current_project}
             return sorted(projects)
         except Exception:
@@ -91,16 +97,20 @@ class CogniteGraphQLError(CogniteException):
         self.errors = errors
 
 
-class CogniteConnectionError(CogniteException):
+class CogniteRequestError(CogniteException):
+    pass
+
+
+class CogniteConnectionError(CogniteRequestError):
     pass
 
 
 class CogniteConnectionRefused(CogniteConnectionError):
-    def __str__(self) -> str:
-        return "Cognite API connection refused. Please try again later."
+    def __init__(self) -> None:
+        super().__init__("Cognite API connection refused. Please try again later.")
 
 
-class CogniteReadTimeout(CogniteException):
+class CogniteReadTimeout(CogniteRequestError):
     pass
 
 
@@ -120,20 +130,20 @@ class CogniteFileUploadError(CogniteException):
 class CogniteMultiException(CogniteException):
     def __init__(
         self,
-        successful: Sequence | None = None,
-        failed: Sequence | None = None,
-        unknown: Sequence | None = None,
-        skipped: Sequence | None = None,
+        successful: list | None = None,
+        failed: list | None = None,
+        unknown: list | None = None,
+        skipped: list | None = None,
     ) -> None:
-        self.successful: Sequence = successful or []
-        self.failed: Sequence = failed or []
-        self.unknown: Sequence = unknown or []
-        self.skipped: Sequence = skipped or []
+        self.successful = successful or []
+        self.failed = failed or []
+        self.unknown = unknown or []
+        self.skipped = skipped or []
 
-    def _truncate_elements(self, lst: Sequence) -> str:
+    def _truncate_elements(self, lst: list) -> str:
         truncate_at = 10
-        elements = ",".join([str(element) for element in lst[:truncate_at]])
-        if len(elements) > truncate_at:
+        elements = ",".join(str(element) for element in lst[:truncate_at])
+        if len(lst) > truncate_at:
             elements += ", ..."
         return f"[{elements}]"
 
@@ -142,14 +152,14 @@ class CogniteMultiException(CogniteException):
             return ""
         summary = [
             "",  # start string with newline
-            "The API Failed to process some items.",
-            f"Successful (2xx): {len(self.successful)}",
-            f"Unknown (5xx): {len(self.unknown)}",
-            f"Failed (4xx): {len(self.failed)}",
+            "The API Failed to process some items:",
+            f"- Successful (2xx): {len(self.successful)} item(s)",
+            f"- Unknown (5xx): {len(self.unknown)} item(s)",
+            f"- Failed (4xx): {len(self.failed)} item(s)",
         ]
         # Only show 'skipped' when tasks were skipped to avoid confusion:
         if skipped := self.skipped:
-            summary.append(f"Skipped: {len(skipped)}")
+            summary.append(f"- Skipped: {len(skipped)} item(s)")
         return "\n".join(summary)
 
 
@@ -164,34 +174,15 @@ class CogniteAPIError(CogniteMultiException):
         message (str): The error message produced by the API.
         code (int): The error code produced by the failure.
         x_request_id (str | None): The request-id generated for the failed request.
-        missing (Sequence | None): (List) List of missing identifiers.
-        duplicated (Sequence | None): (List) List of duplicated identifiers.
-        successful (Sequence | None): List of items which were successfully processed.
-        failed (Sequence | None): List of items which failed.
-        unknown (Sequence | None): List of items which may or may not have been successfully processed.
-        skipped (Sequence | None): List of items that were skipped due to "fail fast" mode.
+        missing (list | None): List of missing identifiers.
+        duplicated (list | None): List of duplicated identifiers.
+        successful (list | None): List of items which were successfully processed.
+        failed (list | None): List of items which failed.
+        unknown (list | None): List of items which may or may not have been successfully processed.
+        skipped (list | None): List of items that were skipped due to "fail fast" mode.
         cluster (str | None): Which Cognite cluster the user's project is on.
         project (str | None): No description.
         extra (dict | None): A dict of any additional information.
-
-    Examples:
-        Catching an API-error and handling it based on the error code::
-
-            from cognite.client import CogniteClient
-            from cognite.client.exceptions import CogniteAPIError
-
-            client = CogniteClient()
-
-            try:
-                client.iam.token.inspect()
-            except CogniteAPIError as e:
-                if e.code == 401:
-                    print("You are not authorized")
-                elif e.code == 400:
-                    print("Something is wrong with your request")
-                elif e.code == 500:
-                    print(f"Something went terribly wrong. Here is the request-id: {e.x_request_id}"
-                print(f"The message returned from the API: {e.message}")
     """
 
     def __init__(
@@ -199,12 +190,12 @@ class CogniteAPIError(CogniteMultiException):
         message: str,
         code: int,
         x_request_id: str | None = None,
-        missing: Sequence | None = None,
-        duplicated: Sequence | None = None,
-        successful: Sequence | None = None,
-        failed: Sequence | None = None,
-        unknown: Sequence | None = None,
-        skipped: Sequence | None = None,
+        missing: list | None = None,
+        duplicated: list | None = None,
+        successful: list | None = None,
+        failed: list | None = None,
+        unknown: list | None = None,
+        skipped: list | None = None,
         cluster: str | None = None,
         project: str | None = None,
         extra: dict | None = None,
@@ -220,15 +211,18 @@ class CogniteAPIError(CogniteMultiException):
         super().__init__(successful, failed, unknown, skipped)
 
     def __str__(self) -> str:
-        msg = f"{self.message} | code: {self.code} | X-Request-ID: {self.x_request_id}"
+        msg = self.message
+        if self.missing:
+            msg += f", missing: {self._truncate_elements(self.missing)}"
+        elif self.duplicated:
+            msg += f", duplicated: {self._truncate_elements(self.duplicated)}"
+
+        msg += f" | code: {self.code} | X-Request-ID: {self.x_request_id}"
         if self.cluster:
             msg += f" | cluster: {self.cluster}"
         if self.project:
             msg += f" | project: {self.project}"
-        if self.missing:
-            msg += f"\nMissing: {self._truncate_elements(self.missing)}"
-        if self.duplicated:
-            msg += f"\nDuplicated: {self._truncate_elements(self.duplicated)}"
+
         msg += self._get_multi_exception_summary()
         if self.extra:
             pretty_extra = _json.dumps(self.extra, indent=4, sort_keys=True)
@@ -236,64 +230,42 @@ class CogniteAPIError(CogniteMultiException):
         return msg
 
 
-class CogniteNotFoundError(CogniteMultiException):
+class CogniteNotFoundError(CogniteAPIError):
     """Cognite Not Found Error
 
-    Raised if one or more of the referenced ids/external ids are not found.
-
-    Args:
-        not_found (Sequence): The ids not found.
-        successful (Sequence | None): List of items which were successfully processed.
-        failed (Sequence | None): List of items which failed.
-        unknown (Sequence | None): List of items which may or may not have been successfully processed.
-        skipped (Sequence | None): List of items that were skipped due to "fail fast" mode.
+    Raised if one or more of the referenced identifiers are not found.
     """
 
     def __init__(
         self,
-        not_found: Sequence,
-        successful: Sequence | None = None,
-        failed: Sequence | None = None,
-        unknown: Sequence | None = None,
-        skipped: Sequence | None = None,
+        message: str,
+        code: int,
+        missing: list,
+        **kwargs: Any,
     ) -> None:
-        self.not_found = not_found
-        super().__init__(successful, failed, unknown, skipped)
+        super().__init__(message, code, **kwargs)
+        self.missing: list = missing
 
-    def __str__(self) -> str:
-        if len(not_found := self.not_found) > 200:
-            not_found = reprlib.repr(self.not_found)
-        return f"Not found: {not_found}{self._get_multi_exception_summary()}"
+    @property
+    def not_found(self) -> list:
+        return self.missing
 
 
-class CogniteDuplicatedError(CogniteMultiException):
+class CogniteDuplicatedError(CogniteAPIError):
     """Cognite Duplicated Error
 
-    Raised if one or more of the referenced ids/external ids have been duplicated in the request.
-
-    Args:
-        duplicated (Sequence): The duplicated ids.
-        successful (Sequence | None): List of items which were successfully processed.
-        failed (Sequence | None): List of items which failed.
-        unknown (Sequence | None): List of items which may or may not have been successfully processed.
-        skipped (Sequence | None): List of items that were skipped due to "fail fast" mode.
+    Raised if one or more of the referenced identifiers have been duplicated in the request.
     """
 
     def __init__(
         self,
-        duplicated: Sequence,
-        successful: Sequence | None = None,
-        failed: Sequence | None = None,
-        unknown: Sequence | None = None,
-        skipped: Sequence | None = None,
+        message: str,
+        code: int,
+        duplicated: list,
+        **kwargs: Any,
     ) -> None:
-        self.duplicated = duplicated
-        super().__init__(successful, failed, unknown, skipped)
-
-    def __str__(self) -> str:
-        msg = f"Duplicated: {self.duplicated}"
-        msg += self._get_multi_exception_summary()
-        return msg
+        super().__init__(message, code, **kwargs)
+        self.duplicated: list = duplicated
 
 
 class CogniteImportError(CogniteException, ImportError):
@@ -328,12 +300,21 @@ class CogniteMissingClientError(CogniteException):
 
     def __str__(self) -> str:
         return (
-            f"A CogniteClient has not been set on this object ({self.type}), did you create it yourself? "
+            f"An AsyncCogniteClient has not been set on this object ({self.type}), did you create it yourself? "
             "Hint: You can pass an instantiated client along when you initialise the object."
         )
 
 
 class CogniteAuthError(CogniteException): ...
+
+
+class CogniteOAuthError(CogniteAuthError):
+    def __init__(self, error: str, description: str) -> None:
+        self.error = error
+        self.description = description
+
+    def __str__(self) -> str:
+        return f"Error generating access token: {self.error!r}. Description: {self.description}"
 
 
 class CogniteAssetHierarchyError(CogniteException):
@@ -375,7 +356,7 @@ class CogniteAssetHierarchyError(CogniteException):
             raise AttributeError(f"{type(self).__name__!r} object has no attribute {attr!r}") from None
 
 
-class ModelFailedException(Exception):
+class CogniteModelFailedError(CogniteException):
     def __init__(self, typename: str, id: int, error_message: str) -> None:
         self.typename = typename
         self.id = id

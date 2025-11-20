@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.data_modeling import (
     ContainerId,
     DataModel,
@@ -148,7 +148,7 @@ class TestDataModelsAPI:
         )
 
     def test_iterate(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
-        for containers in cognite_client.data_modeling.data_models(chunk_size=2, limit=-1):
+        for containers in cognite_client.data_modeling.data_models(chunk_size=2):
             assert isinstance(containers, DataModelList)
 
     def test_list_expand_inline_views(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
@@ -172,7 +172,11 @@ class TestDataModelsAPI:
         assert "One or more spaces do not exist" in error.value.message
 
     def test_apply_failed_and_successful_task(
-        self, cognite_client: CogniteClient, integration_test_space: Space, monkeypatch: Any
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        integration_test_space: Space,
+        monkeypatch: Any,
     ) -> None:
         valid_data_model = DataModelApply(
             space=integration_test_space.space,
@@ -184,7 +188,7 @@ class TestDataModelsAPI:
             external_id="IntegrationTestDataModel2",
             version="v1",
         )
-        monkeypatch.setattr(cognite_client.data_modeling.data_models, "_CREATE_LIMIT", 1)
+        monkeypatch.setattr(async_client.data_modeling.data_models, "_CREATE_LIMIT", 1)
 
         try:
             with pytest.raises(CogniteAPIError) as error:

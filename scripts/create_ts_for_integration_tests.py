@@ -388,11 +388,7 @@ def create_if_not_exists(ts_api: TimeSeriesAPI, ts_list: list[TimeSeries], df_ls
     for df in df_lst:
         if df.columns[0] in existing:
             continue
-        ts_api.data.insert_dataframe(
-            df,
-            external_id_headers=True,
-            dropna=True,
-        )
+        ts_api.data.insert_dataframe(df, dropna=True)
         inserted += 1
     print(f"Inserted datapoints to {inserted} time series")
 
@@ -403,11 +399,7 @@ def create_time_series(ts_api, ts_lst: list[TimeSeries], df_lst: list[pd.DataFra
     time.sleep(5)
     # Concat consumes too much RAM, loop through dfs:
     for df in df_lst:
-        ts_api.data.insert_dataframe(
-            df,
-            external_id_headers=True,
-            dropna=True,
-        )
+        ts_api.data.insert_dataframe(df, dropna=True)
     print("Inserted loads of dps!")
 
 

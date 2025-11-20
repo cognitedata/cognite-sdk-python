@@ -16,30 +16,12 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self
-
 from cognite.client.data_classes._base import CogniteObject, CogniteResourceList, UnknownCogniteObject
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._text import convert_all_keys_recursive
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-
-
-class CountAggregate(CogniteObject):
-    """
-    [DEPRECATED] This represents the result of a count aggregation.
-
-    Args:
-        count (int): The number of items matching the aggregation.
-    """
-
-    def __init__(self, count: int) -> None:
-        self.count = count
-
-    @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> CountAggregate:
-        return cls(count=resource["count"])
+    from cognite.client import AsyncCogniteClient
 
 
 @dataclass
@@ -49,7 +31,7 @@ class Aggregation(CogniteObject, ABC):
     property: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Aggregation:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Aggregation:
         if "avg" in resource:
             return Avg(property=resource["avg"]["property"])
         elif "count" in resource:
@@ -121,32 +103,33 @@ class Histogram(Aggregation):
 @dataclass
 class AggregatedValue(CogniteObject, ABC):
     _aggregate: ClassVar[str] = field(init=False)
-
     property: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if "aggregate" not in resource:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> AggregatedValue:
+        aggregate = resource.get("aggregate")
+        if not aggregate:
             raise ValueError("Missing aggregate, this is required")
-        aggregate = resource["aggregate"]
 
-        if aggregate == "avg":
-            deserialized: Any = AvgValue(property=resource["property"], value=resource.get("value"))
-        elif aggregate == "count":
-            deserialized = CountValue(property=resource["property"], value=resource.get("value"))
-        elif aggregate == "max":
-            deserialized = MaxValue(property=resource["property"], value=resource.get("value"))
-        elif aggregate == "min":
-            deserialized = MinValue(property=resource["property"], value=resource.get("value"))
-        elif aggregate == "sum":
-            deserialized = SumValue(property=resource["property"], value=resource.get("value"))
-        elif aggregate == "histogram":
-            deserialized = HistogramValue(
-                property=resource["property"], interval=resource["interval"], buckets=resource["buckets"]
-            )
-        else:
-            deserialized = UnknownCogniteObject(resource)
-        return cast(Self, deserialized)
+        match aggregate:
+            case "avg":
+                return AvgValue(resource["property"], resource.get("value"))
+            case "count":
+                return CountValue(resource["property"], resource.get("value"))
+            case "max":
+                return MaxValue(resource["property"], resource.get("value"))
+            case "min":
+                return MinValue(resource["property"], resource.get("value"))
+            case "sum":
+                return SumValue(resource["property"], resource.get("value"))
+            case "histogram":
+                return HistogramValue(
+                    property=resource["property"],
+                    interval=resource["interval"],
+                    buckets=resource["buckets"],
+                )
+            case _:
+                return cast(AggregatedValue, UnknownCogniteObject(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"aggregate": self._aggregate, "property": self.property}
@@ -384,7 +367,7 @@ class UniqueResult(CogniteObject):
         return self.values[0]
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> UniqueResult:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> UniqueResult:
         return cls(
             count=resource["count"],
             values=resource["values"],

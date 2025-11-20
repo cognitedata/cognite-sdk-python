@@ -5,7 +5,7 @@
 Get the code!
 
 ```bash
-git clone https://github.com/cognitedata/cognite-sdk-python.git
+git clone https://github.com/cognitedata/cognite-sdk-python
 cd cognite-sdk-python
 ```
 
@@ -15,10 +15,12 @@ Install dependencies and initialize a shell within the virtual environment, with
 
 ```bash
 poetry install -E all
-poetry shell
+poetry env activate
 ```
 
-Install pre-commit hooks to run static code checks on every commit:
+Note that `poetry env activate` only prints out the command, you have to run it yourself (or wrap it in `eval`). You may also prefix commands with `poetry run`.
+
+Install pre-commit hooks to run various checks and linters on every commit:
 
 ```bash
 pre-commit install
@@ -30,9 +32,15 @@ You can also manually trigger the static checks with:
 pre-commit run --all-files
 ```
 
-### Getting access to python-sdk-test CDF project for running integration tests
+To include slower checks that run in CI, include `--hook-stage manual`
 
-- Request access to python-sdk AAD tenant.
+```bash
+pre-commit run --all-files --hook-stage manual
+```
+
+### Getting access to `python-sdk-contributor` CDF project for running integration tests
+
+- Request access to python-sdk AAD tenant. Cognite internals can tag the Python SDK Maintainer shield on Slack.
 - Set environment variables as per the interactive login flow below
 
 ### Environment Variables
@@ -69,6 +77,46 @@ COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
 #COGNITE_CERTIFICATE=aadappcert.pem
 ```
 
+### Automatic Code Generation
+
+The main code base in this repository is written for the `AsyncCogniteClient`. From this source code we also create a
+"sync" `CogniteClient` through automatic code generation. The async->sync conversion script can be found in `scripts/sync_client_codegen/main.py`. It exclusively writes to `cognite/client/_sync_api/` (and temporary files as part of normalized file compares).
+
+The script stores the hash of file it was created from in the module docstring, in order to quickly skip files that don't need to be updated. A variety of updates does not result in actual code changes in the SyncAPIs, as it only wraps the async client directly.
+
+We have certain rules in place that must be followed:
+
+- **Adding nested APIs: Put one API class per file.**
+
+If the entire API addition is "flat", like classic resource types EventsAPI or FilesAPI, please use a single file directly below `cognite/client/_api/`. Else, add a directory instead. There are plenty of existing examples, e.g. IAMAPI, RawAPI.
+
+#### Run modes
+`usage: main.py [-h] [-v] {verify,run} ...`
+
+Use `verify` to ensure all sync source code files are up-to-date and no stale files (that should be removed exists). This is mostly useful as a CI check.
+
+Use `run` to pass a subset of _async_ source files (i.e. anything below `cognite/client/_api/`) to update:
+
+```sh
+python scripts/sync_client_codegen/main.py run --files FILE1 FILE2 ...
+```
+Note: This is how we run it as part of `pre-commit`.
+
+To run through all files, pass `--all-files`. This will also run cleanup automatically:
+
+```sh
+python scripts/sync_client_codegen/main.py run --all-files
+```
+
+If a sync API file has entered into a bad state (e.g. through manual changes), you can simply delete it (or modify
+the hash) to have it re-generated from scratch.
+
+Verbose mode is supported (e.g. debugging). Pass `-v` before the subcommand `run`/`verify`:
+
+```sh
+python scripts/sync_client_codegen/main.py -v [run, verify] ...
+```
+
 ### Testing
 
 Initiate unit tests by running the following command from the root directory:
@@ -84,7 +132,7 @@ If you want to generate code coverage reports run:
 ```
 pytest tests/tests_unit --cov-report html \
                         --cov-report xml \
-                        --cov cognite
+                        --cov cognite tests
 ```
 
 Open `htmlcov/index.html` in the browser to navigate through the report.
@@ -110,8 +158,8 @@ pytest docs
 If you need to add a new capability to the integration runner, you need to create a new Pull Requests (PR) in which
 you do the following:
 
-1. Add a read-only version of the new capability to the `scripts/toolkit/acces/auth/readonly.Group.yaml`
-2. Add a read-write version of the new capability to the `scripts/toolkit/acces/auth/readwrite.Group.yaml`
+1. Add a read-only version of the new capability to the `scripts/toolkit/access/auth/readonly.Group.yaml`
+2. Add a read-write version of the new capability to the `scripts/toolkit/access/auth/readwrite.Group.yaml`
 
 Get the PR reviewed by an SDK maintainer. The integration runner will be updated once the PR is merged.
 

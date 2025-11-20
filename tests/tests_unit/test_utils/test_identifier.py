@@ -29,7 +29,9 @@ class TestIdentifier:
             (None, None, InstanceId("s", "extid"), ("instance_id", InstanceId("s", "extid"))),
         ),
     )
-    def test_of_either__normal_input(self, id, external_id, instance_id, exp_tpl):
+    def test_of_either__normal_input(
+        self, id: int | None, external_id: str | None, instance_id: InstanceId | None, exp_tpl: tuple
+    ) -> None:
         assert exp_tpl == Identifier.of_either(id, external_id, instance_id).as_tuple(camel_case=False)
 
     @pytest.mark.parametrize(
@@ -47,11 +49,13 @@ class TestIdentifier:
             (MAX_VALID_INTERNAL_ID + 1, None, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
         ),
     )
-    def test_of_either__bad_input(self, id, external_id, instance_id, err_msg):
+    def test_of_either__bad_input(
+        self, id: int | None, external_id: str | None, instance_id: InstanceId | None, err_msg: str
+    ) -> None:
         with pytest.raises(ValueError, match=err_msg):
             Identifier.of_either(id, external_id, instance_id)
 
-    def test_handles_id_type_correctly(self):
+    def test_handles_id_type_correctly(self) -> None:
         # int is ok
         Identifier(1)
 
@@ -63,7 +67,7 @@ class TestIdentifier:
 
         # anything else is not ok
         with pytest.raises(TypeError, match="Expected id/external_id to be of type int or str"):
-            Identifier(object())
+            Identifier(object())  # type: ignore[type-var]
 
     def test_is_hashable(self) -> None:
         assert hash(Identifier(1)) == hash(Identifier(1))
@@ -88,7 +92,13 @@ class TestIdentifierSequence:
             (None, ("1", "2"), True, [{"externalId": "1"}, {"externalId": "2"}]),
         ],
     )
-    def test_load_and_dump(self, ids, external_ids, wrap_ids, expected) -> None:
+    def test_load_and_dump(
+        self,
+        ids: int | list[int] | None,
+        external_ids: str | list[str] | None,
+        wrap_ids: bool,
+        expected: dict | list[dict],
+    ) -> None:
         identifiers = IdentifierSequence.load(ids, external_ids)
         if wrap_ids:
             assert identifiers.as_dicts() == expected
@@ -104,7 +114,7 @@ class TestIdentifierSequence:
         "id, external_id, expected",
         [(1, None, True), (None, "1", True), ([1], None, False), (None, ["1"], False)],
     )
-    def test_is_singleton(self, id, external_id, expected):
+    def test_is_singleton(self, id: int | None, external_id: str | None, expected: bool) -> None:
         identifiers = IdentifierSequence.load(id, external_id)
         assert identifiers.is_singleton() == expected
 
@@ -115,7 +125,7 @@ class TestIdentifierSequence:
         IdentifierSequence.load(None, "1").assert_singleton()
 
     @pytest.mark.parametrize("external_ids, is_singleton", [("bla", True), (["bla"], False)])
-    def test_disambiguate_str_and_seq_str(self, external_ids, is_singleton) -> None:
+    def test_disambiguate_str_and_seq_str(self, external_ids: str, is_singleton: bool) -> None:
         seq = IdentifierSequence.load(ids=None, external_ids=external_ids)
         assert seq.is_singleton() is is_singleton
 
@@ -131,12 +141,12 @@ class TestIdentifierSequence:
             ({"instanceId": {"space": "s", "externalId": "x"}}, {"instanceId": {"space": "s", "externalId": "x"}}),
         ],
     )
-    def test_extract_identifiers(self, payload, expected) -> None:
+    def test_extract_identifiers(self, payload: dict, expected: dict) -> None:
         assert expected == IdentifierSequenceCore.extract_identifiers(payload)
 
 
 class TestUserIdentifier:
-    def test_methods(self):
+    def test_methods(self) -> None:
         user_id = UserIdentifier("foo")
         assert user_id.as_primitive() == "foo"
         assert user_id.as_dict(camel_case=True) == {"userIdentifier": "foo"}
@@ -151,14 +161,14 @@ class TestUserIdentifierSequence:
             (["foo", "bar"], [{"userIdentifier": "foo"}, {"userIdentifier": "bar"}], ["foo", "bar"]),
         ),
     )
-    def test_load_and_dump(self, user_ids, exp_dcts, exp_primitives):
+    def test_load_and_dump(self, user_ids: str | list[str], exp_dcts: list[dict], exp_primitives: list[str]) -> None:
         user_id_seq = UserIdentifierSequence.load(user_ids)
         assert user_id_seq.as_primitives() == exp_primitives
         assert user_id_seq.as_dicts() == exp_dcts
 
-    def test_load_wrong_type(self):
+    def test_load_wrong_type(self) -> None:
         with pytest.raises(TypeError):
-            UserIdentifierSequence.load(123)
+            UserIdentifierSequence.load(123)  # type: ignore[arg-type]
 
 
 class TestUsername:
@@ -186,7 +196,7 @@ class TestUsernameSequence:
 
     def test_load_wrong_type(self) -> None:
         with pytest.raises(TypeError):
-            UsernameSequence.load(123)
+            UsernameSequence.load(123)  # type: ignore[arg-type]
 
 
 class TestTablename:
@@ -214,4 +224,4 @@ class TestTablenameSequence:
 
     def test_load_wrong_type(self) -> None:
         with pytest.raises(TypeError):
-            TablenameSequence.load(123)
+            TablenameSequence.load(123)  # type: ignore[arg-type]

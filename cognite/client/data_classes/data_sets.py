@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -20,7 +22,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.shared import TimestampRange
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class DataSetCore(WriteableCogniteResource["DataSetWrite"]):
@@ -55,28 +57,28 @@ class DataSet(DataSetCore):
     This is the read version of the DataSet, which is used when retrieving from CDF.
 
     Args:
+        id (int): A server-generated ID for the object.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        write_protected (bool): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set. To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         name (str | None): The name of the data set.
         description (str | None): The description of the data set.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        write_protected (bool | None): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set. To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
-        id (int | None): A server-generated ID for the object.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        external_id: str | None = None,
-        name: str | None = None,
-        description: str | None = None,
-        metadata: dict[str, str] | None = None,
-        write_protected: bool | None = None,
-        id: int | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        id: int,
+        created_time: int,
+        last_updated_time: int,
+        write_protected: bool,
+        external_id: str | None,
+        name: str | None,
+        description: str | None,
+        metadata: dict[str, str] | None,
+        cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -85,15 +87,24 @@ class DataSet(DataSetCore):
             metadata=metadata,
             write_protected=write_protected,
         )
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self.id: int = id
+        self.created_time: int = created_time
+        self.last_updated_time: int = last_updated_time
+        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            write_protected=resource["writeProtected"],
+            external_id=resource.get("externalId"),
+            name=resource.get("name"),
+            description=resource.get("description"),
+            metadata=resource.get("metadata"),
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> DataSetWrite:
         return DataSetWrite(
@@ -136,6 +147,16 @@ class DataSetWrite(DataSetCore):
     def as_write(self) -> DataSetWrite:
         """Returns this DataSetWrite instance."""
         return self
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(
+            external_id=resource.get("externalId"),
+            name=resource.get("name"),
+            description=resource.get("description"),
+            metadata=resource.get("metadata"),
+            write_protected=resource.get("writeProtected"),
+        )
 
 
 class DataSetFilter(CogniteFilter):
