@@ -420,17 +420,18 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                     "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
                 },
             )
-            # Try to parse JSON response - handle different response types
-            try:
-                return device_flow_response.json()
-            except (AttributeError, TypeError):
-                # Fallback: try to get text content, which is the case for example if getting MSAL's NormalizedResponse
-                try:
-                    return json.loads(device_flow_response.text)
-                except (JSONDecodeError, TypeError, AttributeError) as e:
-                    raise CogniteAuthError("Unable to parse device flow response") from e
         except (requests.exceptions.RequestException, ValueError) as e:
             raise CogniteAuthError("Error initiating device flow") from e
+
+        # Try to parse JSON response - handle different response types
+        try:
+            return device_flow_response.json()
+        except (json.JSONDecodeError, TypeError, AttributeError):
+            # Fallback: try to get text content, which is the case for example if getting MSAL's NormalizedResponse
+            try:
+                return json.loads(device_flow_response.text)
+            except (json.JSONDecodeError, TypeError, AttributeError) as e:
+                raise CogniteAuthError("Unable to parse device flow response") from e
 
     def _get_token(self, convert_timestamps: bool = True) -> dict[str, Any]:
         """Return a dictionary with the current token and expiry time."""
