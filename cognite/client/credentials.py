@@ -425,10 +425,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                 return device_flow_response.json()
             except (AttributeError, TypeError):
                 # Fallback: try to get text content, which is the case for example if getting MSAL's NormalizedResponse
-                if hasattr(device_flow_response, "text"):
+                try:
                     return json.loads(device_flow_response.text)
-                else:
-                    raise CogniteAuthError("Unable to parse device flow response")
+                except (JSONDecodeError, TypeError, AttributeError) as e:
+                    raise CogniteAuthError("Unable to parse device flow response") from e
         except (requests.exceptions.RequestException, ValueError) as e:
             raise CogniteAuthError("Error initiating device flow") from e
 
