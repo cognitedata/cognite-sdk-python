@@ -250,11 +250,11 @@ class BasicAsyncAPIClient:
         Raises:
             httpx.HTTPStatusError: If the response status code is 4xx or 5xx.
         """
-        client = self._select_async_http_client(method in {"GET", "PUT", "HEAD"})
+        http_client = self._select_async_http_client(method in {"GET", "PUT", "HEAD"})
         if include_cdf_headers:
             headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         try:
-            res = await client(
+            res = await http_client.request(
                 method, full_url, content=content, headers=headers, timeout=timeout or self._config.timeout
             )
             self._log_successful_request(res)
@@ -308,7 +308,7 @@ class BasicAsyncAPIClient:
         _, full_url = resolve_url(self, "GET", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         try:
-            res = await self._http_client_with_retry(
+            res = await self._http_client_with_retry.request(
                 "GET",
                 full_url,
                 params=params,
@@ -340,7 +340,7 @@ class BasicAsyncAPIClient:
 
         http_client = self._select_async_http_client(is_retryable)
         try:
-            res = await http_client(
+            res = await http_client.request(
                 "POST",
                 full_url,
                 content=content,
@@ -374,7 +374,7 @@ class BasicAsyncAPIClient:
         if content is None:
             content = self._handle_json_dump(json, full_headers)
         try:
-            res = await self._http_client_with_retry(
+            res = await self._http_client_with_retry.request(
                 "PUT",
                 full_url,
                 content=content,

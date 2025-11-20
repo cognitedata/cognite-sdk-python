@@ -185,7 +185,7 @@ class AsyncHTTPClientWithRetry:
         self.refresh_auth_header = refresh_auth_header
         self.httpx_async_client = httpx_async_client or get_global_async_httpx_client()
 
-    async def __call__(
+    async def request(
         self,
         method: Literal["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
         /,
