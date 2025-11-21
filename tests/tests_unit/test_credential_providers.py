@@ -1,3 +1,4 @@
+import json
 from types import MappingProxyType
 from typing import ClassVar
 from unittest.mock import Mock, patch
@@ -413,6 +414,101 @@ class TestOAuthDeviceCode:
 
         with pytest.raises(CogniteAuthError, match=r"Error initiating device flow.*invalid_client"):
             creds._refresh_access_token()
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    @pytest.mark.parametrize(
+        "json_error,text_error,expected_error",
+        [
+            # JSONDecodeError when parsing .json()
+            pytest.param(
+                json.JSONDecodeError("Expecting value", "", 0),
+                None,
+                None,  # Should fallback to text parsing
+                id="json_decode_error_fallback",
+            ),
+            # TypeError when parsing .json()
+            pytest.param(
+                TypeError("Not callable"),
+                None,
+                None,  # Should fallback to text parsing
+                id="type_error_fallback",
+            ),
+            # Both .json() and .text parsing fail
+            pytest.param(
+                json.JSONDecodeError("Expecting value", "", 0),
+                json.JSONDecodeError("Expecting value", "", 0),
+                "Unable to parse device flow response",
+                id="both_parsing_fail",
+            ),
+            # Missing .text attribute
+            pytest.param(
+                AttributeError("No json method"),
+                AttributeError("No text attribute"),
+                "Unable to parse device flow response",
+                id="missing_text_attribute",
+            ),
+        ],
+    )
+    def test_device_code_response_parsing_errors(self, mock_public_client, json_error, text_error, expected_error):
+        """Test error handling when parsing device code response fails"""
+        mock_device_response = Mock()
+        mock_device_response.json.side_effect = json_error
+
+        if text_error is None:
+            # Successful text fallback
+            mock_device_response.text = '{"user_code": "ABCD", "device_code": "device123", "verification_uri": "https://example.com/activate", "expires_in": 900}'
+        else:
+            # Text parsing also fails
+            if isinstance(text_error, AttributeError):
+                del mock_device_response.text
+            else:
+                mock_device_response.text = "invalid json"
+
+        mock_public_client().http_client.post.return_value = mock_device_response
+        mock_authority = Mock()
+        mock_authority.device_authorization_endpoint = None
+        mock_public_client().authority = mock_authority
+
+        if expected_error:
+            mock_public_client().client.obtain_token_by_device_flow.return_value = {
+                "access_token": "token",
+                "expires_in": 3600,
+            }
+
+        creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
+
+        if expected_error:
+            with pytest.raises(CogniteAuthError, match=expected_error):
+                creds._refresh_access_token()
+        else:
+            mock_public_client().client.obtain_token_by_device_flow.return_value = {
+                "access_token": "token",
+                "expires_in": 3600,
+            }
+            creds._refresh_access_token()
+            assert "Authorization", "Bearer token" == creds.authorization_header()
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_oidc_discovery_json_parse_error(self, mock_public_client):
+        """Test error handling when OIDC discovery document JSON parsing fails"""
+        mock_oidc_response = Mock()
+        mock_oidc_response.json.side_effect = json.JSONDecodeError("Expecting value", "", 0)
+
+        mock_public_client().http_client.get.return_value = mock_oidc_response
+        mock_authority = Mock()
+        mock_authority.instance = None
+        mock_authority.device_authorization_endpoint = None
+        mock_public_client().authority = mock_authority
+
+        creds = OAuthDeviceCode(
+            authority_url=None,
+            oauth_discovery_url="https://auth0.example.com/oauth",
+            client_id="auth0-client-id",
+            scopes=["openid", "profile"],
+        )
+
+        with pytest.raises(CogniteAuthError, match="Error parsing OIDC discovery document"):
+            creds._get_device_authorization_endpoint()
 
 
 class TestOAuthInteractive:
