@@ -373,7 +373,6 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         return " ".join(self.__scopes)
 
     def _get_device_authorization_endpoint(self) -> str:
-        """Get device authorization endpoint."""
         # First try MSAL authority object
         if self.__app.authority and (
             device_auth_endpoint := getattr(self.__app.authority, "device_authorization_endpoint", None)
