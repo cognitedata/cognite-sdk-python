@@ -379,11 +379,11 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         ):
             return device_auth_endpoint
 
-        # Handle Entra, but not MSAL
+        # Handle Entra ID without MSAL
         if self.__authority_url:
             return self.__authority_url.rstrip("/") + "/oauth2/v2.0/devicecode"
 
-        # Handle OIDC discovery (Auth0, Cognito, etc.)
+        # Handle standard OIDC discovery (Auth0, Cognito, etc.)
         if self.__oauth_discovery_url:
             oidc_config_url = self.__oauth_discovery_url.rstrip("/") + "/.well-known/openid-configuration"
             try:
@@ -393,11 +393,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
             try:
                 oidc_metadata = oidc_response.json()
-            except ValueError as e:
+            except (json.JSONDecodeError, TypeError, AttributeError) as e:
                 raise CogniteAuthError(f"Error parsing OIDC discovery document: {e}") from e
 
-            device_auth_endpoint = oidc_metadata.get("device_authorization_endpoint")
-            if device_auth_endpoint:
+            if device_auth_endpoint := oidc_metadata.get("device_authorization_endpoint"):
                 return device_auth_endpoint
             raise CogniteAuthError(
                 f"device_authorization_endpoint not found in OIDC discovery document at {oidc_config_url}"
