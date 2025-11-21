@@ -373,7 +373,6 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         return " ".join(self.__scopes)
 
     def _get_device_authorization_endpoint(self) -> str:
-        """Get device authorization endpoint."""
         # First try MSAL authority object
         if self.__app.authority and (
             device_auth_endpoint := getattr(self.__app.authority, "device_authorization_endpoint", None)
@@ -386,17 +385,23 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
         # Handle OIDC discovery (Auth0, Cognito, etc.)
         if self.__oauth_discovery_url:
+            oidc_config_url = self.__oauth_discovery_url.rstrip("/") + "/.well-known/openid-configuration"
             try:
-                oidc_config_url = self.__oauth_discovery_url.rstrip("/") + "/.well-known/openid-configuration"
-                oidc_metadata = self.__app.http_client.get(oidc_config_url).json()
-                device_auth_endpoint = oidc_metadata.get("device_authorization_endpoint")
-                if device_auth_endpoint:
-                    return device_auth_endpoint
-                raise CogniteAuthError(
-                    f"device_authorization_endpoint not found in OIDC discovery document at {oidc_config_url}"
-                )
-            except (requests.exceptions.RequestException, ValueError) as e:
+                oidc_response = self.__app.http_client.get(oidc_config_url)
+            except requests.exceptions.RequestException as e:
                 raise CogniteAuthError(f"Error fetching device_authorization_endpoint from OIDC discovery: {e}") from e
+
+            try:
+                oidc_metadata = oidc_response.json()
+            except ValueError as e:
+                raise CogniteAuthError(f"Error parsing OIDC discovery document: {e}") from e
+
+            device_auth_endpoint = oidc_metadata.get("device_authorization_endpoint")
+            if device_auth_endpoint:
+                return device_auth_endpoint
+            raise CogniteAuthError(
+                f"device_authorization_endpoint not found in OIDC discovery document at {oidc_config_url}"
+            )
 
         raise CogniteAuthError("Unable to determine device authorization endpoint")
 
@@ -420,7 +425,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                     "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
                 },
             )
-        except (requests.exceptions.RequestException, ValueError) as e:
+        except requests.exceptions.RequestException as e:
             raise CogniteAuthError("Error initiating device flow") from e
 
         # Try to parse JSON response - handle different response types
