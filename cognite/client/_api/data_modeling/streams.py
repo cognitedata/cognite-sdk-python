@@ -54,7 +54,7 @@ class StreamsAPI(APIClient):
             raise
 
     def delete(self, external_id: str) -> None:
-        """`Delete a stream <https://developer.cognite.com/api#tag/Streams/operation/deleteStream>`_
+        """`Delete a stream <https://developer.cognite.com/api#tag/Streams/operation/deleteStreams>`_
 
         Args:
             external_id (str): External ID of stream.
@@ -68,7 +68,7 @@ class StreamsAPI(APIClient):
                 >>> client.data_modeling.streams.delete(external_id="myStream")
         """
         self._warning.warn()
-        self._delete(url_path=f"{self._RESOURCE_PATH}/{external_id}")
+        self._post(url_path=f"{self._RESOURCE_PATH}/delete", json={"items": [{"externalId": external_id}]})
 
     def list(self) -> StreamList:
         """`List streams <https://developer.cognite.com/api#tag/Streams/operation/listStreams>`_

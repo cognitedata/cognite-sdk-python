@@ -144,9 +144,9 @@ class TestStreams:
     @pytest.fixture
     def mock_streams_delete_response(self, rsps: RequestsMock, cognite_client: CogniteClient) -> Iterator[RequestsMock]:
         url_pattern = re.compile(
-            re.escape(cognite_client.data_modeling.streams._get_base_url_with_base_path()) + "/streams/test_stream"
+            re.escape(cognite_client.data_modeling.streams._get_base_url_with_base_path()) + "/streams/delete"
         )
-        rsps.add(rsps.DELETE, url_pattern, status=200, json=None)
+        rsps.add(rsps.POST, url_pattern, status=200, json={})
         yield rsps
 
     @pytest.fixture
@@ -155,9 +155,9 @@ class TestStreams:
     ) -> Iterator[RequestsMock]:
         response_body = {"error": {"message": "Stream not found", "code": 404}}
         url_pattern = re.compile(
-            re.escape(cognite_client.data_modeling.streams._get_base_url_with_base_path()) + "/streams/.*"
+            re.escape(cognite_client.data_modeling.streams._get_base_url_with_base_path()) + "/streams/delete"
         )
-        rsps.add(rsps.DELETE, url_pattern, status=404, json=response_body)
+        rsps.add(rsps.POST, url_pattern, status=404, json=response_body)
         yield rsps
 
     def test_create_stream(self, cognite_client: CogniteClient, mock_streams_create_response: RequestsMock) -> None:
