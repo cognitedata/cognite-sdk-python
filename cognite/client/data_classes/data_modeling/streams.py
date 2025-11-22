@@ -59,32 +59,27 @@ class StreamLifecycleSettings(CogniteObject):
 
     Args:
         retained_after_soft_delete (str): Time until soft-deleted stream is actually deleted, in ISO-8601 format.
-        hot_phase_duration (str | None): Time for which records are kept in hot storage, in ISO-8601 format. Only for immutable streams.
         data_deleted_after (str | None): Time after which records are scheduled for deletion, in ISO-8601 format. Only for immutable streams.
     """
 
     def __init__(
         self,
         retained_after_soft_delete: str,
-        hot_phase_duration: str | None = None,
         data_deleted_after: str | None = None,
     ) -> None:
         self.retained_after_soft_delete = retained_after_soft_delete
-        self.hot_phase_duration = hot_phase_duration
         self.data_deleted_after = data_deleted_after
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             retained_after_soft_delete=resource["retainedAfterSoftDelete"],
-            hot_phase_duration=resource.get("hotPhaseDuration"),
             data_deleted_after=resource.get("dataDeletedAfter"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "retainedAfterSoftDelete": self.retained_after_soft_delete,
-            "hotPhaseDuration": self.hot_phase_duration,
             "dataDeletedAfter": self.data_deleted_after,
         }
 

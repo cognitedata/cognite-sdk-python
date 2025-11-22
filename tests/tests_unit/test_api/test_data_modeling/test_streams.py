@@ -22,7 +22,6 @@ class TestStreams:
                     "settings": {
                         "lifecycle": {
                             "retainedAfterSoftDelete": "PT24H",
-                            "hotPhaseDuration": "PT72H",
                             "dataDeletedAfter": "PT168H",
                         },
                         "limits": {
@@ -52,7 +51,6 @@ class TestStreams:
                     "settings": {
                         "lifecycle": {
                             "retainedAfterSoftDelete": "PT24H",
-                            "hotPhaseDuration": "PT72H",
                             "dataDeletedAfter": "PT168H",
                         },
                         "limits": {
