@@ -210,7 +210,6 @@ class TestOAuthDeviceCode:
             scopes=["test-scope"],
         )
 
-        # Test the method
         if expected_error:
             with pytest.raises(CogniteAuthError, match=expected_error):
                 creds._get_device_authorization_endpoint()
