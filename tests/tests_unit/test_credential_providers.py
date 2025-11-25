@@ -220,7 +220,6 @@ class TestOAuthDeviceCode:
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_entra_id_uses_authority_endpoint(self, mock_public_client):
         """Test that Entra ID uses MSAL authority's device_authorization_endpoint when available"""
-        # Mock the device code response
         mock_device_response = Mock()
         mock_device_response.json.return_value = {
             "user_code": "ABCD-EFGH",
