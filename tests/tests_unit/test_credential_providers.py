@@ -229,7 +229,6 @@ class TestOAuthDeviceCode:
             "interval": 5,
         }
 
-        # Mock MSAL authority object with device_authorization_endpoint
         mock_authority = Mock()
         mock_authority.device_authorization_endpoint = "https://login.microsoftonline.com/xyz/oauth2/v2.0/devicecode"
         mock_authority.instance = "instance"
