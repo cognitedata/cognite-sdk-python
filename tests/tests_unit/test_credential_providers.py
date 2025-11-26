@@ -364,6 +364,39 @@ class TestOAuthDeviceCode:
             creds._get_device_authorization_endpoint()
 
     @patch("cognite.client.credentials.PublicClientApplication")
+    def test_device_flow_missing_endpoint(self, mock_public_client):
+        mock_public_client().authority = Mock()
+        mock_public_client().oauth_discovery_url = None
+        mock_public_client().authority.device_authorization_endpoint = None
+
+        # Bypass __init__ validation to simulate an object without authority_url or oauth_discovery_url
+        creds = object.__new__(OAuthDeviceCode)
+        creds._OAuthDeviceCode__authority_url = None
+        creds._OAuthDeviceCode__oauth_discovery_url = None
+        creds._OAuthDeviceCode__app = mock_public_client()
+
+        with pytest.raises(CogniteAuthError, match="Unable to determine device authorization endpoint"):
+            creds._get_device_authorization_endpoint()
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_device_failed_discovery_error(self, mock_public_client):
+        mock_public_client().http_client.get.side_effect = requests.exceptions.HTTPError("404 Client Error")
+        mock_authority = Mock()
+        mock_authority.instance = None
+        mock_authority.device_authorization_endpoint = None
+        mock_public_client().authority = mock_authority
+
+        creds = OAuthDeviceCode(
+            authority_url=None,
+            oauth_discovery_url="https://auth0.example.com/oauth",
+            client_id="auth0-client-id",
+            scopes=["openid", "profile"],
+        )
+
+        with pytest.raises(CogniteAuthError, match="Error fetching device_authorization_endpoint from OIDC discovery"):
+            creds._get_device_authorization_endpoint()
+
+    @patch("cognite.client.credentials.PublicClientApplication")
     def test_device_flow_response_invalid_client(self, mock_public_client):
         mock_device_response = Mock()
         mock_device_response.json.return_value = {
