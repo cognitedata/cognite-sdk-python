@@ -217,3 +217,53 @@ class WorkflowTriggerAPI(APIClient):
             list_cls=WorkflowTriggerRunList,
             limit=limit,
         )
+
+    def pause(self, external_id: str) -> None:
+        """`Pause a workflow trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/pauseTrigger>`_
+
+        When a trigger is paused, it will not trigger new workflow executions. 
+        This operation is idempotent - pausing an already paused trigger has no effect.
+
+        Args:
+            external_id (str): The external id of the trigger to pause.
+
+        Returns:
+            None: This method does not return anything.
+
+        Examples:
+
+            Pause a trigger:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> client.workflows.triggers.pause("my_trigger")
+        """
+        self._post(
+            url_path=interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/pause", external_id),
+            json={},
+        )
+
+    def resume(self, external_id: str) -> None:
+        """`Resume a paused workflow trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/resumeTrigger>`_
+
+        When a trigger is resumed, it will start triggering workflow executions again according to its schedule.
+        This operation is idempotent - resuming an already running trigger has no effect.
+
+        Args:
+            external_id (str): The external id of the trigger to resume.
+
+        Returns:
+            None: This method does not return anything.
+
+        Examples:
+
+            Resume a trigger:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> client.workflows.triggers.resume("my_trigger")
+        """
+        self._post(
+            url_path=interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/resume", external_id),
+            json={},
+        )

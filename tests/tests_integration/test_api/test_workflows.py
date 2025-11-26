@@ -761,3 +761,79 @@ class TestWorkflowTriggers:
             cognite_client.workflows.triggers.get_trigger_run_history(
                 external_id="integration_test-non_existing_trigger"
             )
+
+    def test_pause_resume_trigger(
+        self,
+        cognite_client: CogniteClient,
+        permanent_scheduled_trigger: WorkflowTrigger,
+    ) -> None:
+        # Get initial state
+        initial_trigger = cognite_client.workflows.triggers.list(limit=100)
+        trigger = next(
+            (t for t in initial_trigger if t.external_id == permanent_scheduled_trigger.external_id), 
+            None
+        )
+        assert trigger is not None
+        initial_paused_state = trigger.is_paused
+
+        # Test pause operation
+        cognite_client.workflows.triggers.pause(permanent_scheduled_trigger.external_id)
+        
+        # Verify trigger is paused
+        paused_triggers = cognite_client.workflows.triggers.list(limit=100)
+        paused_trigger = next(
+            (t for t in paused_triggers if t.external_id == permanent_scheduled_trigger.external_id), 
+            None
+        )
+        assert paused_trigger is not None
+        assert paused_trigger.is_paused is True
+
+        # Test idempotency - pause again
+        cognite_client.workflows.triggers.pause(permanent_scheduled_trigger.external_id)
+        
+        # Verify still paused
+        still_paused_triggers = cognite_client.workflows.triggers.list(limit=100)
+        still_paused_trigger = next(
+            (t for t in still_paused_triggers if t.external_id == permanent_scheduled_trigger.external_id), 
+            None
+        )
+        assert still_paused_trigger is not None
+        assert still_paused_trigger.is_paused is True
+
+        # Test resume operation
+        cognite_client.workflows.triggers.resume(permanent_scheduled_trigger.external_id)
+        
+        # Verify trigger is resumed
+        resumed_triggers = cognite_client.workflows.triggers.list(limit=100)
+        resumed_trigger = next(
+            (t for t in resumed_triggers if t.external_id == permanent_scheduled_trigger.external_id), 
+            None
+        )
+        assert resumed_trigger is not None
+        assert resumed_trigger.is_paused is False
+
+        # Test idempotency - resume again
+        cognite_client.workflows.triggers.resume(permanent_scheduled_trigger.external_id)
+        
+        # Verify still resumed
+        still_resumed_triggers = cognite_client.workflows.triggers.list(limit=100)
+        still_resumed_trigger = next(
+            (t for t in still_resumed_triggers if t.external_id == permanent_scheduled_trigger.external_id), 
+            None
+        )
+        assert still_resumed_trigger is not None
+        assert still_resumed_trigger.is_paused is False
+
+        # Restore initial state if it was paused
+        if initial_paused_state:
+            cognite_client.workflows.triggers.pause(permanent_scheduled_trigger.external_id)
+
+    def test_pause_resume_nonexistent_trigger(self, cognite_client: CogniteClient) -> None:
+        # Test pause on non-existent trigger
+        with pytest.raises(CogniteAPIError, match=r"Workflow trigger not found\."):
+            cognite_client.workflows.triggers.pause("integration_test-non_existing_trigger")
+
+        # Test resume on non-existent trigger  
+        with pytest.raises(CogniteAPIError, match=r"Workflow trigger not found\."):
+            cognite_client.workflows.triggers.resume("integration_test-non_existing_trigger")
+

@@ -18,8 +18,11 @@ from cognite.client.data_classes.workflows import (
     WorkflowDefinitionUpsert,
     WorkflowExecutionDetailed,
     WorkflowIds,
+    WorkflowScheduledTriggerRule,
     WorkflowTask,
+    WorkflowTaskExecution,
     WorkflowTaskOutput,
+    WorkflowTrigger,
     WorkflowVersionId,
 )
 
@@ -248,3 +251,113 @@ class TestWorkflowTask:
     def test_serialization(self, raw: dict):
         loaded = WorkflowTask._load(raw)
         assert loaded.dump() == raw
+
+
+class TestWorkflowTrigger:
+    def test_load_with_is_paused_true(self):
+        """Test loading WorkflowTrigger from JSON with isPaused=true."""
+        raw_data = {
+            "externalId": "test-trigger",
+            "workflowExternalId": "test-workflow",
+            "workflowVersion": "1.0",
+            "triggerRule": {
+                "triggerType": "scheduled",
+                "cronExpression": "0 0 * * *"
+            },
+            "createdTime": 1696240547972,
+            "lastUpdatedTime": 1696240548972,
+            "isPaused": True,
+        }
+        
+        trigger = WorkflowTrigger._load(raw_data)
+        
+        assert trigger.external_id == "test-trigger"
+        assert trigger.workflow_external_id == "test-workflow"
+        assert trigger.workflow_version == "1.0"
+        assert trigger.is_paused is True
+        assert trigger.created_time == 1696240547972
+        assert trigger.last_updated_time == 1696240548972
+
+    def test_load_with_is_paused_false(self):
+        """Test loading WorkflowTrigger from JSON with isPaused=false."""
+        raw_data = {
+            "externalId": "test-trigger",
+            "workflowExternalId": "test-workflow", 
+            "workflowVersion": "1.0",
+            "triggerRule": {
+                "triggerType": "scheduled",
+                "cronExpression": "0 0 * * *"
+            },
+            "isPaused": False,
+        }
+        
+        trigger = WorkflowTrigger._load(raw_data)
+        
+        assert trigger.external_id == "test-trigger"
+        assert trigger.is_paused is False
+
+    def test_load_without_is_paused(self):
+        """Test loading WorkflowTrigger from JSON without isPaused field."""
+        raw_data = {
+            "externalId": "test-trigger",
+            "workflowExternalId": "test-workflow",
+            "workflowVersion": "1.0", 
+            "triggerRule": {
+                "triggerType": "scheduled",
+                "cronExpression": "0 0 * * *"
+            },
+        }
+        
+        trigger = WorkflowTrigger._load(raw_data)
+        
+        assert trigger.external_id == "test-trigger"
+        assert trigger.is_paused is None
+
+    def test_dump_with_is_paused_true(self):
+        """Test dumping WorkflowTrigger to JSON with isPaused=true."""
+        trigger = WorkflowTrigger(
+            external_id="test-trigger",
+            workflow_external_id="test-workflow",
+            workflow_version="1.0",
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+            is_paused=True,
+        )
+        
+        dumped = trigger.dump(camel_case=True)
+        assert dumped["isPaused"] is True
+        
+        dumped_snake = trigger.dump(camel_case=False)
+        assert dumped_snake["is_paused"] is True
+
+    def test_dump_with_is_paused_false(self):
+        """Test dumping WorkflowTrigger to JSON with isPaused=false."""
+        trigger = WorkflowTrigger(
+            external_id="test-trigger",
+            workflow_external_id="test-workflow", 
+            workflow_version="1.0",
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+            is_paused=False,
+        )
+        
+        dumped = trigger.dump(camel_case=True)
+        assert dumped["isPaused"] is False
+        
+        dumped_snake = trigger.dump(camel_case=False)
+        assert dumped_snake["is_paused"] is False
+
+    def test_dump_without_is_paused(self):
+        """Test dumping WorkflowTrigger to JSON without isPaused field (None)."""
+        trigger = WorkflowTrigger(
+            external_id="test-trigger",
+            workflow_external_id="test-workflow",
+            workflow_version="1.0",
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+            is_paused=None,
+        )
+        
+        dumped = trigger.dump(camel_case=True)
+        # When None, the field should not be included in dump
+        assert "isPaused" not in dumped
+        
+        dumped_snake = trigger.dump(camel_case=False)
+        assert "is_paused" not in dumped_snake
