@@ -388,6 +388,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             # all options exhausted, raise error
             raise CogniteAuthError("Unable to determine device authorization endpoint")
 
+        # This will attempt to make a request to get OIDC service
+        # and parse the response (the discovery document)
         oidc_config_url = self.__oauth_discovery_url.rstrip("/") + "/.well-known/openid-configuration"
         try:
             oidc_response = self.__app.http_client.get(oidc_config_url)
