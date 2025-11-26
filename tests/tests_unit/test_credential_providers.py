@@ -265,7 +265,6 @@ class TestOAuthDeviceCode:
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_oauth_discovery_url_device_flow(self, mock_public_client):
         """Test that device code flow works with oauth_discovery_url (Auth0/Cognito)"""
-        # Mock the OIDC discovery document response
         mock_oidc_response = Mock()
         mock_oidc_response.json.return_value = {
             "device_authorization_endpoint": "https://auth0.example.com/oauth/device/code",
