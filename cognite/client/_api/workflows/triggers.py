@@ -221,7 +221,7 @@ class WorkflowTriggerAPI(APIClient):
     def pause(self, external_id: str) -> None:
         """`Pause a workflow trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/pauseTrigger>`_
 
-        When a trigger is paused, it will not trigger new workflow executions. 
+        When a trigger is paused, it will not trigger new workflow executions.
         This operation is idempotent - pausing an already paused trigger has no effect.
 
         Args:
