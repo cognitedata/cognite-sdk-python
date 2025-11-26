@@ -1,4 +1,5 @@
 import time
+from json import JSONDecodeError
 from types import MappingProxyType
 from typing import ClassVar
 from unittest.mock import Mock, patch
@@ -394,6 +395,28 @@ class TestOAuthDeviceCode:
         )
 
         with pytest.raises(CogniteAuthError, match="Error fetching device_authorization_endpoint from OIDC discovery"):
+            creds._get_device_authorization_endpoint()
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_device_discovery_invalid_json(self, mock_public_client):
+        # Simulate valid HTTP response but with invalid JSON in response body
+        mock_response = Mock()
+        # No exception on status or .text, but .json() raises JSONDecodeError
+        mock_response.json.side_effect = JSONDecodeError("Expecting value", "", 0)
+        mock_public_client().http_client.get.return_value = mock_response
+
+        mock_authority = Mock()
+        mock_authority.device_authorization_endpoint = None
+        mock_public_client().authority = mock_authority
+
+        creds = OAuthDeviceCode(
+            authority_url=None,
+            oauth_discovery_url="https://auth0.example.com/oauth",
+            client_id="auth0-client-id",
+            scopes=["openid", "profile"],
+        )
+
+        with pytest.raises(CogniteAuthError, match="Error parsing OIDC discovery document"):
             creds._get_device_authorization_endpoint()
 
     @patch("cognite.client.credentials.PublicClientApplication")
