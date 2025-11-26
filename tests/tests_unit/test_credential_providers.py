@@ -271,7 +271,6 @@ class TestOAuthDeviceCode:
             "token_endpoint": "https://auth0.example.com/oauth/token",
         }
 
-        # Mock the device code response
         mock_device_response = Mock()
         mock_device_response.json.return_value = {
             "user_code": "ABCD-EFGH",
