@@ -20,7 +20,6 @@ from cognite.client.data_classes.workflows import (
     WorkflowIds,
     WorkflowScheduledTriggerRule,
     WorkflowTask,
-    WorkflowTaskExecution,
     WorkflowTaskOutput,
     WorkflowTrigger,
     WorkflowVersionId,
@@ -356,8 +355,9 @@ class TestWorkflowTrigger:
         )
         
         dumped = trigger.dump(camel_case=True)
-        # When None, the field should not be included in dump
-        assert "isPaused" not in dumped
-        
+        assert "isPaused" in dumped
+        assert dumped["isPaused"] is None
+
         dumped_snake = trigger.dump(camel_case=False)
-        assert "is_paused" not in dumped_snake
+        assert "is_paused" in dumped_snake
+        assert dumped_snake["is_paused"] is None

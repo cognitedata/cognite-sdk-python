@@ -227,9 +227,6 @@ class WorkflowTriggerAPI(APIClient):
         Args:
             external_id (str): The external id of the trigger to pause.
 
-        Returns:
-            None: This method does not return anything.
-
         Examples:
 
             Pause a trigger:
@@ -251,9 +248,6 @@ class WorkflowTriggerAPI(APIClient):
 
         Args:
             external_id (str): The external id of the trigger to resume.
-
-        Returns:
-            None: This method does not return anything.
 
         Examples:
 
