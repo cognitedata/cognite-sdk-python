@@ -13,6 +13,18 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.90.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.89.0...v7.90.0) (2025-11-26)
+
+
+### Features
+
+* workflows: Allow status for workflow task updates ([#2392](https://github.com/cognitedata/cognite-sdk-python/issues/2392)) ([24673c5](https://github.com/cognitedata/cognite-sdk-python/commit/24673c58350ee6865bb606c0dd0055da96da90a5))
+
+
+### Bug Fixes
+
+* dont send null for system-managed props CogniteFile ([#2414](https://github.com/cognitedata/cognite-sdk-python/issues/2414)) ([35bb475](https://github.com/cognitedata/cognite-sdk-python/commit/35bb475ed91dfa36063799364f335e0a6e65e708))
+
 ## [7.89.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.88.0...v7.89.0) (2025-11-04)
 
 
