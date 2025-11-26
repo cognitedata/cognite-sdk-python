@@ -87,6 +87,14 @@ Delete Triggers
 ^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.delete
 
+Pause Trigger
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.pause
+
+Resume Trigger
+^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.resume
+
 
 Data Workflows data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
