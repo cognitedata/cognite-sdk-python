@@ -398,11 +398,12 @@ class TestOAuthDeviceCode:
             creds._get_device_authorization_endpoint()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_device_discovery_invalid_json(self, mock_public_client):
+    @pytest.mark.parametrize("error_type", (JSONDecodeError, TypeError, AttributeError))
+    def test_device_discovery_invalid_json(self, mock_public_client, error_type):
         # Simulate valid HTTP response but with invalid JSON in response body
         mock_response = Mock()
         # No exception on status or .text, but .json() raises JSONDecodeError
-        mock_response.json.side_effect = JSONDecodeError("Expecting value", "", 0)
+        mock_response.json.side_effect = error_type("Expecting value", "", 0)
         mock_public_client().http_client.get.return_value = mock_response
 
         mock_authority = Mock()
