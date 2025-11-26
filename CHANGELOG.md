@@ -13,6 +13,17 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.90.0] (2025-11-26)
+
+
+### Features
+
+* **workflows:** Add pause and resume functionality for workflow triggers ([ca58b39](https://github.com/cognitedata/cognite-sdk-python/commit/ca58b391)) 
+  - Add `pause()` and `resume()` methods to WorkflowTriggerAPI
+  - Add `is_paused` field to WorkflowTrigger data class
+  - Support for pausing and resuming scheduled and data modeling triggers
+  - Includes comprehensive unit and integration tests
+
 ## [7.89.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.88.0...v7.89.0) (2025-11-04)
 
 
