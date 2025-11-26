@@ -384,25 +384,26 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             return self.__authority_url.rstrip("/") + "/oauth2/v2.0/devicecode"
 
         # Handle standard OIDC discovery (Auth0, Cognito, etc.)
-        if self.__oauth_discovery_url:
-            oidc_config_url = self.__oauth_discovery_url.rstrip("/") + "/.well-known/openid-configuration"
-            try:
-                oidc_response = self.__app.http_client.get(oidc_config_url)
-            except requests.exceptions.RequestException as e:
-                raise CogniteAuthError(f"Error fetching device_authorization_endpoint from OIDC discovery: {e}") from e
+        if not self.__oauth_discovery_url:
+            # all options exhausted, raise error
+            raise CogniteAuthError("Unable to determine device authorization endpoint")
 
-            try:
-                oidc_metadata = oidc_response.json()
-            except (json.JSONDecodeError, TypeError, AttributeError) as e:
-                raise CogniteAuthError(f"Error parsing OIDC discovery document: {e}") from e
+        oidc_config_url = self.__oauth_discovery_url.rstrip("/") + "/.well-known/openid-configuration"
+        try:
+            oidc_response = self.__app.http_client.get(oidc_config_url)
+        except requests.exceptions.RequestException as e:
+            raise CogniteAuthError(f"Error fetching device_authorization_endpoint from OIDC discovery: {e}") from e
 
-            if device_auth_endpoint := oidc_metadata.get("device_authorization_endpoint"):
-                return device_auth_endpoint
-            raise CogniteAuthError(
-                f"device_authorization_endpoint not found in OIDC discovery document at {oidc_config_url}"
-            )
+        try:
+            oidc_metadata = oidc_response.json()
+        except (json.JSONDecodeError, TypeError, AttributeError) as e:
+            raise CogniteAuthError(f"Error parsing OIDC discovery document: {e}") from e
 
-        raise CogniteAuthError("Unable to determine device authorization endpoint")
+        if device_auth_endpoint := oidc_metadata.get("device_authorization_endpoint"):
+            return device_auth_endpoint
+        raise CogniteAuthError(
+            f"device_authorization_endpoint not found in OIDC discovery document at {oidc_config_url}"
+        )
 
     def _get_device_code_response(self, device_auth_endpoint: str, data: dict[str, Any]) -> dict[str, Any]:
         """Initiate device code flow and return the device flow object.
@@ -428,7 +429,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             raise CogniteAuthError("Error initiating device flow") from e
 
         # Handle MSAL NormalizedResponse which lacks .json() method
-        if not hasattr(device_flow_response, 'json'):
+        if not hasattr(device_flow_response, "json"):
             try:
                 return json.loads(device_flow_response.text)
             except (json.JSONDecodeError, TypeError, AttributeError) as e:
