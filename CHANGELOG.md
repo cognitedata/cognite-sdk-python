@@ -13,6 +13,101 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.90.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.89.0...cognite-sdk-python-v7.90.0) (2025-11-26)
+
+
+### Features
+
+* [CDF-25309] Add service principal API ([#2332](https://github.com/cognitedata/cognite-sdk-python/issues/2332)) ([10f3ea8](https://github.com/cognitedata/cognite-sdk-python/commit/10f3ea8087c569fff49cc13d53e796f15ee73551))
+* add debug support to DM APIs query/list/sync ([#2329](https://github.com/cognitedata/cognite-sdk-python/issues/2329)) ([d304cef](https://github.com/cognitedata/cognite-sdk-python/commit/d304cef27f0c9c83cd9d06dfdb10f1f2950f2eca))
+* add future time shift strings ([#2048](https://github.com/cognitedata/cognite-sdk-python/issues/2048)) ([eeb15bf](https://github.com/cognitedata/cognite-sdk-python/commit/eeb15bf1ce7a04c274ea7428c5eabc24ccf84ff9))
+* add helper methods to access simulator quantities and units ([#2305](https://github.com/cognitedata/cognite-sdk-python/issues/2305)) ([0c16785](https://github.com/cognitedata/cognite-sdk-python/commit/0c16785ff2009747bd1d4f500a741d7ab19f1328))
+* add labels property to agents SDK ([#2372](https://github.com/cognitedata/cognite-sdk-python/issues/2372)) ([489c703](https://github.com/cognitedata/cognite-sdk-python/commit/489c703aa70530559546d36e8063cbe2d0c0149a))
+* add metadata to workflow triggers ([#2002](https://github.com/cognitedata/cognite-sdk-python/issues/2002)) ([0691b84](https://github.com/cognitedata/cognite-sdk-python/commit/0691b84b895404e9e5f527e044d0ec19df959415))
+* add pandas DataFrame conversion methods to SimulatorRoutineRevisionCore ([#2228](https://github.com/cognitedata/cognite-sdk-python/issues/2228)) ([de2f810](https://github.com/cognitedata/cognite-sdk-python/commit/de2f810ca019b22be47b10cfe3402d517f8d01db))
+* add sort parameter to simulators API list and iteration methods ([#2355](https://github.com/cognitedata/cognite-sdk-python/issues/2355)) ([d21f9e3](https://github.com/cognitedata/cognite-sdk-python/commit/d21f9e3991834ed69bcf52c97f425f441a25acc1))
+* adding load method to CogniteClient, GlobalConfig, ClientConfig, and CredentialProviders ([#1859](https://github.com/cognitedata/cognite-sdk-python/issues/1859)) ([8ff7c8c](https://github.com/cognitedata/cognite-sdk-python/commit/8ff7c8c4dff5b13a8eace60bc2a80b91200e46a7))
+* **agents:** add support for client-side actions in agent chat ([#2350](https://github.com/cognitedata/cognite-sdk-python/issues/2350)) ([49dfb19](https://github.com/cognitedata/cognite-sdk-python/commit/49dfb19a929c284a10a9d930d84d5860a2fda40c))
+* **agents:** addition of data classes in preparation for adding agents support ([#2170](https://github.com/cognitedata/cognite-sdk-python/issues/2170)) ([c1b5098](https://github.com/cognitedata/cognite-sdk-python/commit/c1b5098740a28e41b1f1cab6e5a4312f224dd83e))
+* **agents:** update agents SDK to use beta API ([#2289](https://github.com/cognitedata/cognite-sdk-python/issues/2289)) ([d11e92e](https://github.com/cognitedata/cognite-sdk-python/commit/d11e92e593c445cd1a8d2db977c87df2e0aa1961))
+* **ai:** add document qa and document summary ([#2054](https://github.com/cognitedata/cognite-sdk-python/issues/2054)) ([0e564df](https://github.com/cognitedata/cognite-sdk-python/commit/0e564df65acd5149ade58af150bfb642921f0fd6))
+* **atlas-ai:** low-level agents chat implementation ([#2232](https://github.com/cognitedata/cognite-sdk-python/issues/2232)) ([a63de6d](https://github.com/cognitedata/cognite-sdk-python/commit/a63de6d54545f399b0959b9c43ef17e09169ada6))
+* **capabilities:** Add support for Streams and Records ACLs ([#2366](https://github.com/cognitedata/cognite-sdk-python/issues/2366)) ([6b17c88](https://github.com/cognitedata/cognite-sdk-python/commit/6b17c88bec2e1eb840d6e8e9f9487287f1b32596))
+* **CDF-19308:** Add timezone as an optional param to WorkflowScheduledTriggerRule ([#2200](https://github.com/cognitedata/cognite-sdk-python/issues/2200)) ([4d72b0c](https://github.com/cognitedata/cognite-sdk-python/commit/4d72b0c9fd4857ef161533626a04518bee50a380))
+* data classes for debug notices ([#2336](https://github.com/cognitedata/cognite-sdk-python/issues/2336)) ([4be6ca0](https://github.com/cognitedata/cognite-sdk-python/commit/4be6ca09bae1468884ecfb70793c6205efd711f2))
+* **data_modeling:** DM-3146 Support constraint and index state fields ([#2361](https://github.com/cognitedata/cognite-sdk-python/issues/2361)) ([996296d](https://github.com/cognitedata/cognite-sdk-python/commit/996296dd6cd5a7bcc3e4ffad75c4b582e0d9f531))
+* **data-modeling:** resolve DOGE-76 by replacing movie examples ([#2190](https://github.com/cognitedata/cognite-sdk-python/issues/2190)) ([6a25b89](https://github.com/cognitedata/cognite-sdk-python/commit/6a25b89d7245924f843cbec3f9091fd59bed203d))
+* **documents-api:** add content, status, and passages endpoints to retryable list ([#2238](https://github.com/cognitedata/cognite-sdk-python/issues/2238)) ([4a7d1ba](https://github.com/cognitedata/cognite-sdk-python/commit/4a7d1ba33b59348a105ff50a3548389f0c13bd1c))
+* **functions:** [FUN-466] Add `last_called` field to Function dataclass. ([#2356](https://github.com/cognitedata/cognite-sdk-python/issues/2356)) ([3b3a6b5](https://github.com/cognitedata/cognite-sdk-python/commit/3b3a6b50e0fb9de9da09e83a825b42c875887fa6))
+* **functions:** Relax handle validation ([#2357](https://github.com/cognitedata/cognite-sdk-python/issues/2357)) ([23ebe95](https://github.com/cognitedata/cognite-sdk-python/commit/23ebe9597644008b1ad25f3b1c05a17c6e0f2763))
+* **iam:** add support for attributes in groups create, groups list ([#2231](https://github.com/cognitedata/cognite-sdk-python/issues/2231)) ([3c0148e](https://github.com/cognitedata/cognite-sdk-python/commit/3c0148e7047c45f2ed16d5ee58e6ab9a496b26b7))
+* **instances/search:** `operator` is now supported (AND/OR) ([#2344](https://github.com/cognitedata/cognite-sdk-python/issues/2344)) ([317439b](https://github.com/cognitedata/cognite-sdk-python/commit/317439b11f8459373137d3ffdff53dd86b155b1e))
+* **simint-alpha:** add kind=long routines support ([#2388](https://github.com/cognitedata/cognite-sdk-python/issues/2388)) ([e9e2c9e](https://github.com/cognitedata/cognite-sdk-python/commit/e9e2c9ee7965aed71b1b8db4f609ab3cb17a7e22))
+* **simint-alpha:** change mouthfull class names ([#2277](https://github.com/cognitedata/cognite-sdk-python/issues/2277)) ([15bc400](https://github.com/cognitedata/cognite-sdk-python/commit/15bc4001e2c310667092759856360ba7bc9f8ebd))
+* **simint-alpha:** consistency and dev experience of simulation run ([#2152](https://github.com/cognitedata/cognite-sdk-python/issues/2152)) ([1a3be35](https://github.com/cognitedata/cognite-sdk-python/commit/1a3be35cd9efa6a0fdf47b73f215fb0c64e1fc06))
+* **simint-alpha:** dev experience of simulation run data ([#2158](https://github.com/cognitedata/cognite-sdk-python/issues/2158)) ([a4634ac](https://github.com/cognitedata/cognite-sdk-python/commit/a4634ac1d3cbfafd2bc925dc7e3469cd8d92617b))
+* **simulators:** Add created_time and simulation_time filters to simulation runs list method ([#2274](https://github.com/cognitedata/cognite-sdk-python/issues/2274)) ([e54c6eb](https://github.com/cognitedata/cognite-sdk-python/commit/e54c6eb4776e8f3879ef3db4ea1f2ca3e8ff0a8b))
+* **simulators:** Add support for external dependencies  ([#2218](https://github.com/cognitedata/cognite-sdk-python/issues/2218)) ([ad056bb](https://github.com/cognitedata/cognite-sdk-python/commit/ad056bb019120d5640146eeac9be2f1f15cc2cde))
+* **simulators:** Add support for model revision data ([#2268](https://github.com/cognitedata/cognite-sdk-python/issues/2268)) ([af56d56](https://github.com/cognitedata/cognite-sdk-python/commit/af56d569e97e442c46506690a125784db803bac4))
+* **simulators:** Add support for running simulations using revisions ([#2339](https://github.com/cognitedata/cognite-sdk-python/issues/2339)) ([dc76513](https://github.com/cognitedata/cognite-sdk-python/commit/dc765130663863cfd01d978869ed1357ef30bb7b))
+* **simulators:** filtering consistency in __call__ methods ([#2223](https://github.com/cognitedata/cognite-sdk-python/issues/2223)) ([74c6e2f](https://github.com/cognitedata/cognite-sdk-python/commit/74c6e2f2db9b05a84b704a20495b38df5f52c6b8))
+* use compact encoding for json serialization ([#2368](https://github.com/cognitedata/cognite-sdk-python/issues/2368)) ([9b0d5b5](https://github.com/cognitedata/cognite-sdk-python/commit/9b0d5b5599d08e44d7fb5e6de70d4c7c34d67399))
+* using agents data classes in new CRUD API ([#2196](https://github.com/cognitedata/cognite-sdk-python/issues/2196)) ([c115e99](https://github.com/cognitedata/cognite-sdk-python/commit/c115e994dce1ecf88e898b2e981d3fbab854fee8))
+* workflows: Allow status for workflow task updates ([#2392](https://github.com/cognitedata/cognite-sdk-python/issues/2392)) ([24673c5](https://github.com/cognitedata/cognite-sdk-python/commit/24673c58350ee6865bb606c0dd0055da96da90a5))
+* **workflows:** Add support for simulation integration ([#1999](https://github.com/cognitedata/cognite-sdk-python/issues/1999)) ([126d0c9](https://github.com/cognitedata/cognite-sdk-python/commit/126d0c902c121a8de025a84e4edd53c23cc88659))
+
+
+### Bug Fixes
+
+* `scripts/generate_code_snippets.py` doesn't work with cached_property ([#2051](https://github.com/cognitedata/cognite-sdk-python/issues/2051)) ([279cda9](https://github.com/cognitedata/cognite-sdk-python/commit/279cda9d0ad5f4b324fd08e323a62c8b4645c7f4))
+* **agents:** replace agentId with agentExternalId in chat API ([#2349](https://github.com/cognitedata/cognite-sdk-python/issues/2349)) ([d9bca80](https://github.com/cognitedata/cognite-sdk-python/commit/d9bca8081f17329ce332746b4126bc7699a7978f))
+* auto-load tzdata in pyodide ([#2343](https://github.com/cognitedata/cognite-sdk-python/issues/2343)) ([f0a6ed3](https://github.com/cognitedata/cognite-sdk-python/commit/f0a6ed376f4e96a8eb8e7937ba51340323844b15))
+* configure release-please to use manifest mode ([#2395](https://github.com/cognitedata/cognite-sdk-python/issues/2395)) ([ff4f0a5](https://github.com/cognitedata/cognite-sdk-python/commit/ff4f0a554a9019df398ee13416c2e63155718f22))
+* datapoints raises IndexError ([#2014](https://github.com/cognitedata/cognite-sdk-python/issues/2014)) ([3a29744](https://github.com/cognitedata/cognite-sdk-python/commit/3a2974415d3cb25746ce3e11e4391b681f71bf6f))
+* **datapoints:** fix rare bug when instance ID time series would repo… ([#2348](https://github.com/cognitedata/cognite-sdk-python/issues/2348)) ([74bb53a](https://github.com/cognitedata/cognite-sdk-python/commit/74bb53a5b37374410bced4a91c65f00c2aac34b1))
+* DMS triggers tests: set explicit _with limit when referenced from select ([#2333](https://github.com/cognitedata/cognite-sdk-python/issues/2333)) ([f087e6d](https://github.com/cognitedata/cognite-sdk-python/commit/f087e6d185893388da39c3106e93d4203a5eb071))
+* do not throw UserWarning from SDK code ([#2341](https://github.com/cognitedata/cognite-sdk-python/issues/2341)) ([2e67d76](https://github.com/cognitedata/cognite-sdk-python/commit/2e67d764092ece70e2ea0e0d1dab15e958f3fc22))
+* **documents:** add `instance_id` field to `Document` class ([#2154](https://github.com/cognitedata/cognite-sdk-python/issues/2154)) ([9175cfb](https://github.com/cognitedata/cognite-sdk-python/commit/9175cfb4bff6565c546cc00cda9ab094618f2594))
+* **documents:** stop paginating at limit ([#2331](https://github.com/cognitedata/cognite-sdk-python/issues/2331)) ([affcd1d](https://github.com/cognitedata/cognite-sdk-python/commit/affcd1d2b9b3edb092435a90c6e7e59718e4d9dc))
+* dont send null for system-managed props CogniteFile ([#2414](https://github.com/cognitedata/cognite-sdk-python/issues/2414)) ([35bb475](https://github.com/cognitedata/cognite-sdk-python/commit/35bb475ed91dfa36063799364f335e0a6e65e708))
+* filters now accept DirectRelationReference as instance identifier ([#2334](https://github.com/cognitedata/cognite-sdk-python/issues/2334)) ([597f7ca](https://github.com/cognitedata/cognite-sdk-python/commit/597f7ca70493498a13dd3363c018d1c7fec3d887))
+* **functions:** [FUN-594] Fix bug in handler handle validation ([#2363](https://github.com/cognitedata/cognite-sdk-python/issues/2363)) ([d949a9a](https://github.com/cognitedata/cognite-sdk-python/commit/d949a9a999649f13e645bc7985aa98d1e59c1fca))
+* make filters throw warning when used in a boolean context ([#2330](https://github.com/cognitedata/cognite-sdk-python/issues/2330)) ([66390e6](https://github.com/cognitedata/cognite-sdk-python/commit/66390e6046d7ea4a44791c84d39154de6fb3df72))
+* mocking of sequences ([#2077](https://github.com/cognitedata/cognite-sdk-python/issues/2077)) ([d50d151](https://github.com/cognitedata/cognite-sdk-python/commit/d50d151983edd66198af86e386004776a6965c3f))
+* Passing empty string to external_id in datapoints.retrieve_dataframe raises error ([#2070](https://github.com/cognitedata/cognite-sdk-python/issues/2070)) ([ba07876](https://github.com/cognitedata/cognite-sdk-python/commit/ba078764d8c5b6a00dc097aa3a2c73056f82250f))
+* **simint-alpha:** wrong type in routine configuration ([#2159](https://github.com/cognitedata/cognite-sdk-python/issues/2159)) ([0c3fc37](https://github.com/cognitedata/cognite-sdk-python/commit/0c3fc37776c5992870d8a0ede5d7b10e7dc8a5e5))
+* **simint:** retrieve(..) overloads and enable mypy checks ([#2315](https://github.com/cognitedata/cognite-sdk-python/issues/2315)) ([05b164b](https://github.com/cognitedata/cognite-sdk-python/commit/05b164bcb2c6eff4a070e04b3d3ff1dd0f828630))
+* **simulators:** Consistency for filtering ([#2148](https://github.com/cognitedata/cognite-sdk-python/issues/2148)) ([b5d7943](https://github.com/cognitedata/cognite-sdk-python/commit/b5d7943152c0d0fe9bc811f2c8ef5991d5255e2a))
+* **simulators:** make SimulatorModelRevision.get_data() return single item for consistency ([#2346](https://github.com/cognitedata/cognite-sdk-python/issues/2346)) ([6c3be3d](https://github.com/cognitedata/cognite-sdk-python/commit/6c3be3d4dfcf890a4624d7a3c9df8d01251ba17d))
+* TransformationScheduleWrite not ABC ([#1756](https://github.com/cognitedata/cognite-sdk-python/issues/1756)) ([230d9ca](https://github.com/cognitedata/cognite-sdk-python/commit/230d9ca181e14e0fde3360b255c557ea72a33749))
+* typed instances to_pandas ([#1911](https://github.com/cognitedata/cognite-sdk-python/issues/1911)) ([9e1add3](https://github.com/cognitedata/cognite-sdk-python/commit/9e1add336b502cef40a82eb4f76b1a01e2119f74))
+* typehint for Group metadata ([#1760](https://github.com/cognitedata/cognite-sdk-python/issues/1760)) ([9e6f942](https://github.com/cognitedata/cognite-sdk-python/commit/9e6f9424907a8deb90ccf89fcfc73f96d537d79d))
+* update DM files upload ([#1875](https://github.com/cognitedata/cognite-sdk-python/issues/1875)) ([e6a5cbc](https://github.com/cognitedata/cognite-sdk-python/commit/e6a5cbce2bd42d7887d3aef01cc7aa8a9130058b))
+* Updated all Data Modeling limits to match API spec ([#1771](https://github.com/cognitedata/cognite-sdk-python/issues/1771)) ([3750f59](https://github.com/cognitedata/cognite-sdk-python/commit/3750f5963136c415174ba6687a4018751b4bd388))
+* **workflows:** support None value for simulation input unit override ([#2055](https://github.com/cognitedata/cognite-sdk-python/issues/2055)) ([688b956](https://github.com/cognitedata/cognite-sdk-python/commit/688b9568efa343873051ef5b116d85105dc8fc16))
+* wrong url paths for hosted_extractors.jobs.list_logs and list_metrics ([#2038](https://github.com/cognitedata/cognite-sdk-python/issues/2038)) ([a55fec4](https://github.com/cognitedata/cognite-sdk-python/commit/a55fec4dd4130736b1d8d57c2354daf131bc1a00))
+
+
+### Performance Improvements
+
+* **functions:** Use exponential instead of constant backoff for FunctionCall:wait ([#2312](https://github.com/cognitedata/cognite-sdk-python/issues/2312)) ([ce24f0c](https://github.com/cognitedata/cognite-sdk-python/commit/ce24f0cad58387165867f0084f084be06f16a9e6))
+
+
+### Documentation
+
+* add examples for filtering on special node properties (externalId, space) ([#2371](https://github.com/cognitedata/cognite-sdk-python/issues/2371)) ([86b1ecd](https://github.com/cognitedata/cognite-sdk-python/commit/86b1ecd3a4278dabf7436fd7958e025c81aca2f4))
+* Add info about the automated release process to contributing.md ([#2280](https://github.com/cognitedata/cognite-sdk-python/issues/2280)) ([e303ff8](https://github.com/cognitedata/cognite-sdk-python/commit/e303ff80c082ba2b3d29c1e5e01912264de611b2))
+* add new example to container apply ([#1761](https://github.com/cognitedata/cognite-sdk-python/issues/1761)) ([602c1a3](https://github.com/cognitedata/cognite-sdk-python/commit/602c1a39d1d00f2b7ad0c9674f642263aefb4bb0))
+* Added insert directly to the container example ([#2247](https://github.com/cognitedata/cognite-sdk-python/issues/2247)) ([3e73d3b](https://github.com/cognitedata/cognite-sdk-python/commit/3e73d3b0bd4752a8b7f355bd1696398bdad4c9c4))
+* fix agent_id to agent_external_id in chat() docstring examples ([#2373](https://github.com/cognitedata/cognite-sdk-python/issues/2373)) ([787926e](https://github.com/cognitedata/cognite-sdk-python/commit/787926ed7d939e3ad51c9e83040541dff792ed35))
+* fix import statements in cognite/client/_api/assets.py ([#1749](https://github.com/cognitedata/cognite-sdk-python/issues/1749)) ([4ad16ef](https://github.com/cognitedata/cognite-sdk-python/commit/4ad16ef3b363d5ecc654b766feaf318de89d2f13))
+* improve containers/apply ([#2025](https://github.com/cognitedata/cognite-sdk-python/issues/2025)) ([733200e](https://github.com/cognitedata/cognite-sdk-python/commit/733200e1e67b58455c47ef2e1f605e00b877c9da))
+* include CredentialProviders class in docs ([#1904](https://github.com/cognitedata/cognite-sdk-python/issues/1904)) ([2fa0318](https://github.com/cognitedata/cognite-sdk-python/commit/2fa031886d3d0c72fe0aafa277b27bc7bf5a616e))
+* **simulators:** expose all simulator types in the simulators namespace ([#2362](https://github.com/cognitedata/cognite-sdk-python/issues/2362)) ([b156f5e](https://github.com/cognitedata/cognite-sdk-python/commit/b156f5e401fc12cf483ba627ab92590e6a83f7f5))
+* switch quickstart note to warning ([#1912](https://github.com/cognitedata/cognite-sdk-python/issues/1912)) ([82284f3](https://github.com/cognitedata/cognite-sdk-python/commit/82284f3f736689ce45b3c68e42f3bfb3f8f2b628))
+* updated example to include adding views ([#2233](https://github.com/cognitedata/cognite-sdk-python/issues/2233)) ([b489732](https://github.com/cognitedata/cognite-sdk-python/commit/b489732e125ddc30cf151edd3200e783bad4d74e))
+* updated example to include sources for instances.list and one with to_pandas ([#2235](https://github.com/cognitedata/cognite-sdk-python/issues/2235)) ([842b073](https://github.com/cognitedata/cognite-sdk-python/commit/842b07354026667a4a7a664264bd2584ca7997bb))
+
 ## [7.89.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.88.0...v7.89.0) (2025-11-04)
 
 
