@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.90.1](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.90.0...cognite-sdk-python-v7.90.1) (2025-11-27)
+
+
+### Bug Fixes
+
+* Device code authentication fails. ([#2394](https://github.com/cognitedata/cognite-sdk-python/issues/2394)) ([24e6078](https://github.com/cognitedata/cognite-sdk-python/commit/24e607839c322babcf32c1cd48003fc9303d24ae))
+
 ## [7.90.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.89.0...cognite-sdk-python-v7.90.0) (2025-11-26)
 
 
