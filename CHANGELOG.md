@@ -13,6 +13,18 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.90.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.89.0...cognite-sdk-python-v7.90.0) (2025-11-26)
+
+
+### Features
+
+* workflows: Allow status for workflow task updates ([#2392](https://github.com/cognitedata/cognite-sdk-python/issues/2392)) ([24673c5](https://github.com/cognitedata/cognite-sdk-python/commit/24673c58350ee6865bb606c0dd0055da96da90a5))
+
+
+### Bug Fixes
+
+* dont send null for system-managed props CogniteFile ([#2414](https://github.com/cognitedata/cognite-sdk-python/issues/2414)) ([35bb475](https://github.com/cognitedata/cognite-sdk-python/commit/35bb475ed91dfa36063799364f335e0a6e65e708))
+
 ## [7.89.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.88.0...v7.89.0) (2025-11-04)
 
 
@@ -127,7 +139,7 @@ As of 2025-08-29, changes are grouped as follows
 
 ## [7.82.1] - 2025-08-28
 ### Fixed
-- Fix documentation of files.upload_content. It does not support directories. Use more meaningful errors when the path is not a file. 
+- Fix documentation of files.upload_content. It does not support directories. Use more meaningful errors when the path is not a file.
 
 ## [7.82.0] - 2025-08-26
 ### Added
@@ -135,7 +147,7 @@ As of 2025-08-29, changes are grouped as follows
 
 ## [7.81.3] - 2025-08-26
 ### Added
-- Added missing parameter `nonce` to the `FunctionScheduleWrite` method to allow passing 
+- Added missing parameter `nonce` to the `FunctionScheduleWrite` method to allow passing
   a custom nonce.
 
 ## [7.81.2] - 2025-08-21
@@ -173,7 +185,7 @@ As of 2025-08-29, changes are grouped as follows
 
 ## [7.78.1] - 2025-08-01
 ### Changed
-- Only emit counts for each status (successful, failed, unknown, skipped) in exception __str__ reprs. The actual 
+- Only emit counts for each status (successful, failed, unknown, skipped) in exception __str__ reprs. The actual
   underlying objects are still available through the `succesful`, `unknown`, `failed`, and `skipped` attributes.
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
@@ -193,7 +205,7 @@ As of 2025-08-29, changes are grouped as follows
 
 ## [7.77.2] - 2025-07-25
 ### Added
-- Agents now maintains all properties returned from the API when using the `.load(...)` and `.dump(...)` methods. 
+- Agents now maintains all properties returned from the API when using the `.load(...)` and `.dump(...)` methods.
   Similarly, you can load an `AgentUpsert` from a `dict`/`YAML`/`JSON` object using the `AgentUpsert.load(...)` method
   and all properties will be sent to the API.
 
