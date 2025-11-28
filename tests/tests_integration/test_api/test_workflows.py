@@ -772,7 +772,7 @@ class TestWorkflowTriggers:
         trigger_upsert = WorkflowTriggerUpsert(
             external_id=trigger_external_id,
             workflow_external_id=created_workflow.external_id,
-            workflow_version=created_workflow.version,
+            workflow_version="1",
             trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
         )
 
