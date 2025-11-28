@@ -786,6 +786,9 @@ class TestWorkflowTriggers:
             assert trigger_after_pause.is_paused is True
             
             cognite_client.workflows.triggers.pause(trigger_external_id)
+            
+            trigger_still_paused = cognite_client.workflows.triggers.retrieve(trigger_external_id)
+            assert trigger_still_paused.is_paused is True
 
             cognite_client.workflows.triggers.resume(trigger_external_id)
             
@@ -794,6 +797,9 @@ class TestWorkflowTriggers:
             assert trigger_after_resume.is_paused is False
             
             cognite_client.workflows.triggers.resume(trigger_external_id)
+            
+            trigger_still_resumed = cognite_client.workflows.triggers.retrieve(trigger_external_id)
+            assert trigger_still_resumed.is_paused is False
             
         finally:
             try:
