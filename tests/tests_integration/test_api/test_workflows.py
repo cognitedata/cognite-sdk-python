@@ -815,4 +815,3 @@ class TestWorkflowTriggers:
         # Test resume on non-existent trigger
         with pytest.raises(CogniteAPIError, match=r"Trigger not found\."):
             cognite_client.workflows.triggers.resume("integration_test-non_existing_trigger")
-
