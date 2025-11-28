@@ -762,16 +762,17 @@ class TestWorkflowTriggers:
                 external_id="integration_test-non_existing_trigger"
             )
 
-    def test_pause_resume_trigger(
-        self,
-        cognite_client: CogniteClient,
-        permanent_workflow_for_triggers: WorkflowVersion,
-    ) -> None:
+    def test_pause_resume_trigger(self, cognite_client: CogniteClient) -> None:
+        # Create a temporary workflow for this test
+        workflow_external_id = f"integration_test-pause_resume_workflow-{int(time.time())}"
+        workflow = WorkflowUpsert(external_id=workflow_external_id)
+        created_workflow = cognite_client.workflows.upsert(workflow)
+        
         trigger_external_id = f"integration_test-pause_resume_trigger-{int(time.time())}"
         trigger_upsert = WorkflowTriggerUpsert(
             external_id=trigger_external_id,
-            workflow_external_id=permanent_workflow_for_triggers.workflow_external_id,
-            workflow_version=permanent_workflow_for_triggers.version,
+            workflow_external_id=created_workflow.external_id,
+            workflow_version=created_workflow.version,
             trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
         )
 
@@ -802,8 +803,13 @@ class TestWorkflowTriggers:
             assert trigger_still_resumed.is_paused is False
 
         finally:
+            # Clean up trigger and workflow
             try:
                 cognite_client.workflows.triggers.delete(trigger_external_id)
+            except Exception:
+                pass
+            try:
+                cognite_client.workflows.delete(workflow_external_id)
             except Exception:
                 pass
 
