@@ -767,6 +767,24 @@ class TestWorkflowTriggers:
         workflow_external_id = f"integration_test-pause_resume_workflow-{int(time.time())}"
         workflow = WorkflowUpsert(external_id=workflow_external_id)
         created_workflow = cognite_client.workflows.upsert(workflow)
+        
+        # Create a workflow version with definition
+        version = WorkflowVersionUpsert(
+            workflow_external_id=created_workflow.external_id,
+            version="1",
+            workflow_definition=WorkflowDefinitionUpsert(
+                tasks=[
+                    WorkflowTask(
+                        external_id=f"{created_workflow.external_id}-task1",
+                        parameters=CDFTaskParameters(
+                            resource_path="/timeseries",
+                            method="GET",
+                        ),
+                    ),
+                ],
+            ),
+        )
+        cognite_client.workflows.versions.upsert(version)
 
         trigger_external_id = f"integration_test-pause_resume_trigger-{int(time.time())}"
         trigger_upsert = WorkflowTriggerUpsert(
