@@ -23,6 +23,8 @@ from cognite.client.data_classes.workflows import (
     Workflow,
     WorkflowDataModelingTriggerRule,
     WorkflowDefinitionUpsert,
+    WorkflowExecution,
+    WorkflowExecutionDetailed,
     WorkflowExecutionList,
     WorkflowList,
     WorkflowScheduledTriggerRule,
