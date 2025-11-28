@@ -826,7 +826,6 @@ class TestWorkflowTriggers:
             cognite_client.workflows.triggers.pause(trigger_external_id)
             cognite_client.workflows.triggers.resume(trigger_external_id)
             cognite_client.workflows.triggers.resume(trigger_external_id)
-
         finally:
             try:
                 cognite_client.workflows.triggers.delete(trigger_external_id)
