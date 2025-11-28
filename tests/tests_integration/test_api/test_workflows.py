@@ -800,24 +800,29 @@ class TestWorkflowTriggers:
 
             cognite_client.workflows.triggers.pause(trigger_external_id)
 
-            trigger_after_pause = cognite_client.workflows.triggers.retrieve(trigger_external_id)
+            # Get trigger by listing and filtering by external_id  
+            all_triggers = cognite_client.workflows.triggers.list(limit=-1)
+            trigger_after_pause = next((t for t in all_triggers if t.external_id == trigger_external_id), None)
             assert trigger_after_pause is not None
             assert trigger_after_pause.is_paused is True
 
             cognite_client.workflows.triggers.pause(trigger_external_id)
 
-            trigger_still_paused = cognite_client.workflows.triggers.retrieve(trigger_external_id)
+            all_triggers = cognite_client.workflows.triggers.list(limit=-1)
+            trigger_still_paused = next((t for t in all_triggers if t.external_id == trigger_external_id), None)
             assert trigger_still_paused.is_paused is True
 
             cognite_client.workflows.triggers.resume(trigger_external_id)
 
-            trigger_after_resume = cognite_client.workflows.triggers.retrieve(trigger_external_id)
+            all_triggers = cognite_client.workflows.triggers.list(limit=-1)
+            trigger_after_resume = next((t for t in all_triggers if t.external_id == trigger_external_id), None)
             assert trigger_after_resume is not None
             assert trigger_after_resume.is_paused is False
 
             cognite_client.workflows.triggers.resume(trigger_external_id)
 
-            trigger_still_resumed = cognite_client.workflows.triggers.retrieve(trigger_external_id)
+            all_triggers = cognite_client.workflows.triggers.list(limit=-1)
+            trigger_still_resumed = next((t for t in all_triggers if t.external_id == trigger_external_id), None)
             assert trigger_still_resumed.is_paused is False
 
         finally:
