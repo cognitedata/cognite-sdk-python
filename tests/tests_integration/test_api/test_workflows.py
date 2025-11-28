@@ -765,23 +765,41 @@ class TestWorkflowTriggers:
     def test_pause_resume_trigger(
         self,
         cognite_client: CogniteClient,
-        permanent_scheduled_trigger: WorkflowTrigger,
+        permanent_workflow: Workflow,
     ) -> None:
-        cognite_client.workflows.triggers.pause(permanent_scheduled_trigger.external_id)
+        trigger_external_id = f"integration_test-pause_resume_trigger-{int(time.time())}"
+        trigger_upsert = WorkflowTriggerUpsert(
+            external_id=trigger_external_id,
+            workflow_external_id=permanent_workflow.external_id,
+            workflow_version=permanent_workflow.version,
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+        )
         
-        trigger_after_pause = cognite_client.workflows.triggers.retrieve(permanent_scheduled_trigger.external_id)
-        assert trigger_after_pause is not None
-        assert trigger_after_pause.is_paused is True
-        
-        cognite_client.workflows.triggers.pause(permanent_scheduled_trigger.external_id)
+        try:
+            created_trigger = cognite_client.workflows.triggers.upsert(trigger_upsert)
+            assert created_trigger.external_id == trigger_external_id
+            
+            cognite_client.workflows.triggers.pause(trigger_external_id)
+            
+            trigger_after_pause = cognite_client.workflows.triggers.retrieve(trigger_external_id)
+            assert trigger_after_pause is not None
+            assert trigger_after_pause.is_paused is True
+            
+            cognite_client.workflows.triggers.pause(trigger_external_id)
 
-        cognite_client.workflows.triggers.resume(permanent_scheduled_trigger.external_id)
-        
-        trigger_after_resume = cognite_client.workflows.triggers.retrieve(permanent_scheduled_trigger.external_id)
-        assert trigger_after_resume is not None
-        assert trigger_after_resume.is_paused is False
-        
-        cognite_client.workflows.triggers.resume(permanent_scheduled_trigger.external_id)
+            cognite_client.workflows.triggers.resume(trigger_external_id)
+            
+            trigger_after_resume = cognite_client.workflows.triggers.retrieve(trigger_external_id)
+            assert trigger_after_resume is not None
+            assert trigger_after_resume.is_paused is False
+            
+            cognite_client.workflows.triggers.resume(trigger_external_id)
+            
+        finally:
+            try:
+                cognite_client.workflows.triggers.delete(trigger_external_id)
+            except Exception:
+                pass
 
     def test_pause_resume_nonexistent_trigger(self, cognite_client: CogniteClient) -> None:
         # Test pause on non-existent trigger
