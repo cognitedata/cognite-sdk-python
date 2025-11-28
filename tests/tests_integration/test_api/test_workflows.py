@@ -767,7 +767,7 @@ class TestWorkflowTriggers:
         workflow_external_id = f"integration_test-pause_resume_workflow-{int(time.time())}"
         workflow = WorkflowUpsert(external_id=workflow_external_id)
         created_workflow = cognite_client.workflows.upsert(workflow)
-        
+
         trigger_external_id = f"integration_test-pause_resume_trigger-{int(time.time())}"
         trigger_upsert = WorkflowTriggerUpsert(
             external_id=trigger_external_id,
