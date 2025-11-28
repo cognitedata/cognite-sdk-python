@@ -802,7 +802,6 @@ class TestWorkflowTriggers:
             assert trigger_still_resumed.is_paused is False
 
         finally:
-        finally:
             try:
                 cognite_client.workflows.triggers.delete(trigger_external_id)
             except Exception:
