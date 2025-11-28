@@ -634,12 +634,9 @@ class TestWorkflowExecutions:
 
 class TestWorkflowTriggers:
     def test_create_update_scheduled_trigger(self, cognite_client: CogniteClient) -> None:
-        # Create a temporary workflow for this test
         workflow_external_id = f"integration_test-scheduled_trigger_workflow-{int(time.time())}"
         workflow = WorkflowUpsert(external_id=workflow_external_id)
         created_workflow = cognite_client.workflows.upsert(workflow)
-
-        # Create a workflow version with definition
         version = WorkflowVersionUpsert(
             workflow_external_id=created_workflow.external_id,
             version="1",
@@ -676,7 +673,6 @@ class TestWorkflowTriggers:
             updated = cognite_client.workflows.triggers.upsert(update)
             assert updated.trigger_rule.dump() == new_rule.dump()
         finally:
-            # Clean up trigger and workflow
             if created is not None:
                 try:
                     cognite_client.workflows.triggers.delete(created.external_id)
@@ -789,12 +785,9 @@ class TestWorkflowTriggers:
             )
 
     def test_pause_resume_trigger(self, cognite_client: CogniteClient) -> None:
-        # Create a temporary workflow for this test
         workflow_external_id = f"integration_test-pause_resume_workflow-{int(time.time())}"
         workflow = WorkflowUpsert(external_id=workflow_external_id)
         created_workflow = cognite_client.workflows.upsert(workflow)
-
-        # Create a workflow version with definition
         version = WorkflowVersionUpsert(
             workflow_external_id=created_workflow.external_id,
             version="1",
@@ -850,7 +843,6 @@ class TestWorkflowTriggers:
             # TODO: Add is_paused assertions once API field is confirmed
 
         finally:
-            # Clean up trigger and workflow
             try:
                 cognite_client.workflows.triggers.delete(trigger_external_id)
             except Exception:
