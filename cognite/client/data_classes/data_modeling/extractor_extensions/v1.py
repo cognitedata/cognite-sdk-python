@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import warnings
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from cognite.client.data_classes.data_modeling import DirectRelationReference
 from cognite.client.data_classes.data_modeling.ids import ViewId
@@ -179,6 +180,24 @@ class CogniteExtractorFileApply(_CogniteExtractorFileProperties, TypedNodeApply)
         self.uploaded_time = uploaded_time
         self.category = DirectRelationReference.load(category) if category else None
         self.extracted_data = extracted_data
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        data = super().dump()
+        properties = data["sources"][0]["properties"]
+
+        # TODO: Remove attributes entirely in v8
+        system_managed_props = ("isUploaded", "uploadedTime") if camel_case else ("is_uploaded", "uploaded_time")
+        for prop in system_managed_props:
+            if properties.get(prop) is None:
+                properties.pop(prop)
+            else:
+                warnings.warn(
+                    f"The property '{prop}' is system-managed and cannot be modified (but the non-null value set will "
+                    "be included in the request). In next major version (v8), CogniteExtractorFileApply won't have "
+                    "this property at all.",
+                    UserWarning,
+                )
+        return data
 
 
 class CogniteExtractorFile(_CogniteExtractorFileProperties, TypedNode):
