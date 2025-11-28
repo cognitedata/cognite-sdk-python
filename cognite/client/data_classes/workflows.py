@@ -1608,6 +1608,7 @@ class WorkflowTrigger(WorkflowTriggerCore):
         )
         self.created_time = created_time
         self.last_updated_time = last_updated_time
+        self.is_paused = is_paused
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item: dict[str, Any] = {
