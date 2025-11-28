@@ -819,28 +819,13 @@ class TestWorkflowTriggers:
 
             cognite_client.workflows.triggers.pause(trigger_external_id)
 
-            # Get trigger by listing and filtering by external_id
             all_triggers = cognite_client.workflows.triggers.list(limit=-1)
             trigger_after_pause = next((t for t in all_triggers if t.external_id == trigger_external_id), None)
             assert trigger_after_pause is not None
 
-            # For now, just check that pause was successful by seeing if pause doesn't raise an error
-            # TODO: Add is_paused assertion once API field is confirmed
-            # assert trigger_after_pause.is_paused is True
-
             cognite_client.workflows.triggers.pause(trigger_external_id)
-
-            # Test idempotent pause - should not raise error
-            cognite_client.workflows.triggers.pause(trigger_external_id)
-
-            # Test resume
             cognite_client.workflows.triggers.resume(trigger_external_id)
-
-            # Test idempotent resume - should not raise error
             cognite_client.workflows.triggers.resume(trigger_external_id)
-
-            # For now, just verify that pause/resume operations complete without errors
-            # TODO: Add is_paused assertions once API field is confirmed
 
         finally:
             try:
