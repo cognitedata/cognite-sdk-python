@@ -20,6 +20,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowIds,
     WorkflowScheduledTriggerRule,
     WorkflowTask,
+    WorkflowTaskExecution,
     WorkflowTaskOutput,
     WorkflowTrigger,
     WorkflowVersionId,
@@ -250,5 +251,46 @@ class TestWorkflowTask:
     def test_serialization(self, raw: dict):
         loaded = WorkflowTask._load(raw)
         assert loaded.dump() == raw
+
+
+class TestWorkflowTaskExecution:
+    def test_load_with_parent_task_external_id(self):
+        """Test loading WorkflowTaskExecution with parent_task_external_id."""
+        raw_data = {
+            "id": "task-123",
+            "externalId": "task-external-123", 
+            "status": "completed",
+            "taskType": "function",
+            "input": {"key": "value"},
+            "output": {"result": "success"},
+            "startTime": 1696240547972,
+            "endTime": 1696240548972,
+            "parentTaskExternalId": "parent-task-external-456"
+        }
+        
+        task = WorkflowTaskExecution._load(raw_data)
+        
+        assert task.id == "task-123"
+        assert task.external_id == "task-external-123"
+        assert task.parent_task_external_id == "parent-task-external-456"
+        assert task.start_time == 1696240547972
+        assert task.end_time == 1696240548972
+
+    def test_load_without_parent_task_external_id(self):
+        """Test loading WorkflowTaskExecution without parent_task_external_id."""
+        raw_data = {
+            "id": "task-123",
+            "externalId": "task-external-123",
+            "status": "completed", 
+            "taskType": "function",
+            "input": {"key": "value"},
+            "output": {"result": "success"}
+        }
+        
+        task = WorkflowTaskExecution._load(raw_data)
+        
+        assert task.id == "task-123"
+        assert task.external_id == "task-external-123"
+        assert task.parent_task_external_id is None
 
 
