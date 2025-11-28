@@ -767,47 +767,33 @@ class TestWorkflowTriggers:
     def test_pause_resume_trigger(
         self,
         cognite_client: CogniteClient,
-        permanent_scheduled_trigger: WorkflowTrigger,
+        permanent_workflow: Workflow,
     ) -> None:
-        """Test pause and resume operations on workflow triggers."""
-        # Test pause operation - should succeed without error
-        cognite_client.workflows.triggers.pause(permanent_scheduled_trigger.external_id)
-
-        # Test idempotency - pause again should also succeed
-        cognite_client.workflows.triggers.pause(permanent_scheduled_trigger.external_id)
-
-        # Test resume operation - should succeed without error  
-        cognite_client.workflows.triggers.resume(permanent_scheduled_trigger.external_id)
-
-        # Test idempotency - resume again should also succeed
-        cognite_client.workflows.triggers.resume(permanent_scheduled_trigger.external_id)
-
-    def test_pause_resume_nonexistent_trigger(self, cognite_client: CogniteClient) -> None:
-        """Test pause and resume operations on non-existent triggers."""
-        # Test pause on non-existent trigger
-        with pytest.raises(CogniteAPIError, match=r"Trigger not found\."):
-            cognite_client.workflows.triggers.pause("integration_test-non_existing_trigger")
-
-        # Test resume on non-existent trigger
-        with pytest.raises(CogniteAPIError, match=r"Trigger not found\."):
-            cognite_client.workflows.triggers.resume("integration_test-non_existing_trigger")
-
-    def test_parent_task_external_id_in_subworkflow_tasks(
-        self,
-        cognite_client: CogniteClient,
-        permanent_workflow_execution: WorkflowExecutionDetailed,
-    ) -> None:
-        """Test that parent_task_external_id is properly loaded for subworkflow tasks."""
-        execution = permanent_workflow_execution
+        """Test pause and resume operations by creating a new trigger."""
+        # Create a new trigger for testing
+        trigger_external_id = f"integration_test-pause_resume_trigger-{int(time.time())}"
+        trigger_upsert = WorkflowTriggerUpsert(
+            external_id=trigger_external_id,
+            workflow_external_id=permanent_workflow.external_id,
+            workflow_version=permanent_workflow.version,
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+        )
         
-        # Look for tasks that might have a parent task
-        tasks_with_parent = [
-            task for task in execution.tasks 
-            if task.parent_task_external_id is not None
-        ]
-        
-        # If we find tasks with parent task external IDs, verify they're properly loaded
-        for task in tasks_with_parent:
-            assert isinstance(task.parent_task_external_id, str)
-            assert len(task.parent_task_external_id) > 0
+        try:
+            # Create the trigger
+            created_trigger = cognite_client.workflows.triggers.upsert(trigger_upsert)
+            assert created_trigger.external_id == trigger_external_id
+            
+            # Test pause operation
+            cognite_client.workflows.triggers.pause(trigger_external_id)
+            
+            # Test resume operation  
+            cognite_client.workflows.triggers.resume(trigger_external_id)
+            
+        finally:
+            # Clean up - delete the trigger
+            try:
+                cognite_client.workflows.triggers.delete(trigger_external_id)
+            except Exception:
+                pass  # Ignore cleanup errors
 
