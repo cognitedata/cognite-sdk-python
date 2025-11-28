@@ -633,32 +633,17 @@ class TestWorkflowExecutions:
 
 
 class TestWorkflowTriggers:
-    def test_create_update_scheduled_trigger(self, cognite_client: CogniteClient) -> None:
-        workflow_external_id = f"integration_test-scheduled_trigger_workflow-{int(time.time())}"
-        workflow = WorkflowUpsert(external_id=workflow_external_id)
-        created_workflow = cognite_client.workflows.upsert(workflow)
-        version = WorkflowVersionUpsert(
-            workflow_external_id=created_workflow.external_id,
-            version="1",
-            workflow_definition=WorkflowDefinitionUpsert(
-                tasks=[
-                    WorkflowTask(
-                        external_id=f"{created_workflow.external_id}-task1",
-                        parameters=CDFTaskParameters(
-                            resource_path="/timeseries",
-                            method="GET",
-                        ),
-                    ),
-                ],
-            ),
-        )
-        cognite_client.workflows.versions.upsert(version)
-
+    def test_create_update_scheduled_trigger(
+        self,
+        cognite_client: CogniteClient,
+        permanent_workflow_for_triggers: WorkflowVersion,
+    ) -> None:
+        version = permanent_workflow_for_triggers
         existing = WorkflowTriggerUpsert(
             external_id=f"test_create_update_scheduled_trigger_{random_string(5)}",
             trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *"),
-            workflow_external_id=created_workflow.external_id,
-            workflow_version="1",
+            workflow_external_id=version.workflow_external_id,
+            workflow_version=version.version,
             input={"a": 1, "b": 2},
             metadata={"test": "integration_schedule"},
         )
@@ -674,14 +659,7 @@ class TestWorkflowTriggers:
             assert updated.trigger_rule.dump() == new_rule.dump()
         finally:
             if created is not None:
-                try:
-                    cognite_client.workflows.triggers.delete(created.external_id)
-                except Exception:
-                    pass
-            try:
-                cognite_client.workflows.delete(workflow_external_id)
-            except Exception:
-                pass
+                cognite_client.workflows.triggers.delete(created.external_id)
 
     @pytest.mark.skip("This test is temp. disabled, flaky, awaiting a more robust long-term solution. Task: DOGE-100")
     def test_create_update_delete_data_modeling_trigger(
