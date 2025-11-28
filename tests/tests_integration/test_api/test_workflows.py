@@ -23,8 +23,6 @@ from cognite.client.data_classes.workflows import (
     Workflow,
     WorkflowDataModelingTriggerRule,
     WorkflowDefinitionUpsert,
-    WorkflowExecution,
-    WorkflowExecutionDetailed,
     WorkflowExecutionList,
     WorkflowList,
     WorkflowScheduledTriggerRule,
@@ -767,33 +765,30 @@ class TestWorkflowTriggers:
     def test_pause_resume_trigger(
         self,
         cognite_client: CogniteClient,
-        permanent_workflow: Workflow,
+        permanent_scheduled_trigger: WorkflowTrigger,
     ) -> None:
-        """Test pause and resume operations by creating a new trigger."""
-        # Create a new trigger for testing
-        trigger_external_id = f"integration_test-pause_resume_trigger-{int(time.time())}"
-        trigger_upsert = WorkflowTriggerUpsert(
-            external_id=trigger_external_id,
-            workflow_external_id=permanent_workflow.external_id,
-            workflow_version=permanent_workflow.version,
-            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
-        )
+        cognite_client.workflows.triggers.pause(permanent_scheduled_trigger.external_id)
         
-        try:
-            # Create the trigger
-            created_trigger = cognite_client.workflows.triggers.upsert(trigger_upsert)
-            assert created_trigger.external_id == trigger_external_id
-            
-            # Test pause operation
-            cognite_client.workflows.triggers.pause(trigger_external_id)
-            
-            # Test resume operation  
-            cognite_client.workflows.triggers.resume(trigger_external_id)
-            
-        finally:
-            # Clean up - delete the trigger
-            try:
-                cognite_client.workflows.triggers.delete(trigger_external_id)
-            except Exception:
-                pass  # Ignore cleanup errors
+        trigger_after_pause = cognite_client.workflows.triggers.retrieve(permanent_scheduled_trigger.external_id)
+        assert trigger_after_pause is not None
+        assert trigger_after_pause.is_paused is True
+        
+        cognite_client.workflows.triggers.pause(permanent_scheduled_trigger.external_id)
+
+        cognite_client.workflows.triggers.resume(permanent_scheduled_trigger.external_id)
+        
+        trigger_after_resume = cognite_client.workflows.triggers.retrieve(permanent_scheduled_trigger.external_id)
+        assert trigger_after_resume is not None
+        assert trigger_after_resume.is_paused is False
+        
+        cognite_client.workflows.triggers.resume(permanent_scheduled_trigger.external_id)
+
+    def test_pause_resume_nonexistent_trigger(self, cognite_client: CogniteClient) -> None:
+        # Test pause on non-existent trigger
+        with pytest.raises(CogniteAPIError, match=r"Workflow trigger not found\."):
+            cognite_client.workflows.triggers.pause("integration_test-non_existing_trigger")
+
+        # Test resume on non-existent trigger  
+        with pytest.raises(CogniteAPIError, match=r"Workflow trigger not found\."):
+            cognite_client.workflows.triggers.resume("integration_test-non_existing_trigger")
 
