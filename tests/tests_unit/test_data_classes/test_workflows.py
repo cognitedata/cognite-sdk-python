@@ -18,10 +18,8 @@ from cognite.client.data_classes.workflows import (
     WorkflowDefinitionUpsert,
     WorkflowExecutionDetailed,
     WorkflowIds,
-    WorkflowScheduledTriggerRule,
     WorkflowTask,
     WorkflowTaskOutput,
-    WorkflowTrigger,
     WorkflowVersionId,
 )
 
@@ -250,5 +248,3 @@ class TestWorkflowTask:
     def test_serialization(self, raw: dict):
         loaded = WorkflowTask._load(raw)
         assert loaded.dump() == raw
-
-
