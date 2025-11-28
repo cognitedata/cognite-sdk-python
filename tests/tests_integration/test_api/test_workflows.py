@@ -638,7 +638,7 @@ class TestWorkflowTriggers:
         workflow_external_id = f"integration_test-scheduled_trigger_workflow-{int(time.time())}"
         workflow = WorkflowUpsert(external_id=workflow_external_id)
         created_workflow = cognite_client.workflows.upsert(workflow)
-        
+
         # Create a workflow version with definition
         version = WorkflowVersionUpsert(
             workflow_external_id=created_workflow.external_id,
@@ -793,7 +793,7 @@ class TestWorkflowTriggers:
         workflow_external_id = f"integration_test-pause_resume_workflow-{int(time.time())}"
         workflow = WorkflowUpsert(external_id=workflow_external_id)
         created_workflow = cognite_client.workflows.upsert(workflow)
-        
+
         # Create a workflow version with definition
         version = WorkflowVersionUpsert(
             workflow_external_id=created_workflow.external_id,
