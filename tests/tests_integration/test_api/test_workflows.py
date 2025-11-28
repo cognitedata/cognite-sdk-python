@@ -809,10 +809,10 @@ class TestWorkflowTriggers:
 
     def test_pause_resume_nonexistent_trigger(self, cognite_client: CogniteClient) -> None:
         # Test pause on non-existent trigger
-        with pytest.raises(CogniteAPIError, match=r"Workflow trigger not found\."):
+        with pytest.raises(CogniteAPIError, match=r"Trigger not found\."):
             cognite_client.workflows.triggers.pause("integration_test-non_existing_trigger")
 
         # Test resume on non-existent trigger
-        with pytest.raises(CogniteAPIError, match=r"Workflow trigger not found\."):
+        with pytest.raises(CogniteAPIError, match=r"Trigger not found\."):
             cognite_client.workflows.triggers.resume("integration_test-non_existing_trigger")
 
