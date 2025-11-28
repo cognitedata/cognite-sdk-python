@@ -774,33 +774,34 @@ class TestWorkflowTriggers:
             workflow_version=permanent_workflow.version,
             trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
         )
-        
+
         try:
             created_trigger = cognite_client.workflows.triggers.upsert(trigger_upsert)
             assert created_trigger.external_id == trigger_external_id
-            
+
             cognite_client.workflows.triggers.pause(trigger_external_id)
-            
+
             trigger_after_pause = cognite_client.workflows.triggers.retrieve(trigger_external_id)
             assert trigger_after_pause is not None
             assert trigger_after_pause.is_paused is True
-            
+
             cognite_client.workflows.triggers.pause(trigger_external_id)
-            
+
             trigger_still_paused = cognite_client.workflows.triggers.retrieve(trigger_external_id)
             assert trigger_still_paused.is_paused is True
 
             cognite_client.workflows.triggers.resume(trigger_external_id)
-            
+
             trigger_after_resume = cognite_client.workflows.triggers.retrieve(trigger_external_id)
             assert trigger_after_resume is not None
             assert trigger_after_resume.is_paused is False
-            
+
             cognite_client.workflows.triggers.resume(trigger_external_id)
-            
+
             trigger_still_resumed = cognite_client.workflows.triggers.retrieve(trigger_external_id)
             assert trigger_still_resumed.is_paused is False
-            
+
+        finally:
         finally:
             try:
                 cognite_client.workflows.triggers.delete(trigger_external_id)
@@ -812,7 +813,7 @@ class TestWorkflowTriggers:
         with pytest.raises(CogniteAPIError, match=r"Workflow trigger not found\."):
             cognite_client.workflows.triggers.pause("integration_test-non_existing_trigger")
 
-        # Test resume on non-existent trigger  
+        # Test resume on non-existent trigger
         with pytest.raises(CogniteAPIError, match=r"Workflow trigger not found\."):
             cognite_client.workflows.triggers.resume("integration_test-non_existing_trigger")
 
