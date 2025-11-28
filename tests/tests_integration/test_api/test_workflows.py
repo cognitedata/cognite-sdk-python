@@ -765,13 +765,13 @@ class TestWorkflowTriggers:
     def test_pause_resume_trigger(
         self,
         cognite_client: CogniteClient,
-        permanent_workflow: Workflow,
+        permanent_workflow_for_triggers: Workflow,
     ) -> None:
         trigger_external_id = f"integration_test-pause_resume_trigger-{int(time.time())}"
         trigger_upsert = WorkflowTriggerUpsert(
             external_id=trigger_external_id,
-            workflow_external_id=permanent_workflow.external_id,
-            workflow_version=permanent_workflow.version,
+            workflow_external_id=permanent_workflow_for_triggers.external_id,
+            workflow_version=permanent_workflow_for_triggers.version,
             trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
         )
 
