@@ -237,7 +237,6 @@ class WorkflowTriggerAPI(APIClient):
         """
         self._post(
             url_path=interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/pause", external_id),
-            json={},
         )
 
     def resume(self, external_id: str) -> None:
@@ -259,5 +258,4 @@ class WorkflowTriggerAPI(APIClient):
         """
         self._post(
             url_path=interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/resume", external_id),
-            json={},
         )
