@@ -243,7 +243,7 @@ class WorkflowTriggerAPI(APIClient):
         """`Resume a paused workflow trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/resumeTrigger>`_
 
         When a trigger is resumed, it will start triggering workflow executions again according to its schedule.
-        This operation is idempotent - resuming an already running trigger has no effect.
+        This operation is idempotent - resuming an already active trigger has no effect.
 
         Args:
             external_id (str): The external id of the trigger to resume.
