@@ -128,7 +128,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
     ) -> None:
         self.external_id = external_id
         self.model_external_id = model_external_id
-        self.simulator_integration_external_id = simulator_integration_external_id
+        self.simulator_integration_external_id = simulator_integration_external_id  # type: ignore[assignment]
         self.name = name
         self.description = description
         self.kind = kind
