@@ -40,7 +40,7 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
         self,
         external_id: str,
         model_external_id: str,
-        simulator_integration_external_id: str,
+        simulator_integration_external_id: str | None,
         name: str,
         description: str | None = None,
         kind: Literal["long"] | None = None,
@@ -57,7 +57,7 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
         return cls(
             external_id=resource["externalId"],
             model_external_id=resource["modelExternalId"],
-            simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
+            simulator_integration_external_id=resource.get("simulatorIntegrationExternalId"),
             name=resource["name"],
             description=resource.get("description"),
             kind=resource.get("kind"),
@@ -126,12 +126,14 @@ class SimulatorRoutine(SimulatorRoutineCore):
         description: str | None = None,
         kind: Literal["long"] | None = None,
     ) -> None:
-        self.external_id = external_id
-        self.model_external_id = model_external_id
-        self.simulator_integration_external_id = simulator_integration_external_id  # type: ignore[assignment]
-        self.name = name
-        self.description = description
-        self.kind = kind
+        super().__init__(
+            external_id=external_id,
+            model_external_id=model_external_id,
+            simulator_integration_external_id=simulator_integration_external_id,
+            name=name,
+            description=description,
+            kind=kind,
+        )
 
         self.id = id
         self.created_time = created_time
