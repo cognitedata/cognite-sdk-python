@@ -14,14 +14,17 @@ from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineInputConstant,
     SimulatorRoutineInputTimeseries,
     SimulatorRoutineOutput,
+    SimulatorRoutineRevision,
     SimulatorRoutineRevisionWrite,
     SimulatorRoutineStage,
     SimulatorRoutineStep,
     SimulatorRoutineStepArguments,
 )
+from cognite.client.data_classes.simulators.routines import SimulatorRoutine, SimulatorRoutineList
 from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
     SimulationOutput,
+    SimulationRun,
     SimulationRunDataItem,
     SimulationRunDataList,
     SimulationRunWrite,
@@ -489,3 +492,150 @@ class TestSimulationRunWrite:
             SimulationRunWrite(
                 routine_revision_external_id="routine_revision_external_id_1",
             )
+
+
+class TestSimulatorRoutine:
+    def test_load_with_simulator_integration_externalId(self) -> None:
+        resource = {
+            "id": 123,
+            "externalId": "routine_1",
+            "simulatorExternalId": "simulator_1",
+            "modelExternalId": "model_1",
+            "simulatorIntegrationExternalId": "integration_1",
+            "name": "Test Routine",
+            "dataSetId": 456,
+            "createdTime": 1625247600000,
+            "lastUpdatedTime": 1625247600000,
+        }
+
+        routine = SimulatorRoutine._load(resource)
+        assert routine.simulator_integration_external_id == "integration_1"
+        assert isinstance(routine, SimulatorRoutine)
+
+    def test_load_without_simulator_integration_externalId(self) -> None:
+        resource = {
+            "id": 124,
+            "externalId": "routine_2",
+            "simulatorExternalId": "simulator_2",
+            "modelExternalId": "model_2",
+            "name": "Test Routine 2",
+            "dataSetId": 457,
+            "createdTime": 1625247600000,
+            "lastUpdatedTime": 1625247600000,
+        }
+
+        routine = SimulatorRoutine._load(resource)
+        assert routine.simulator_integration_external_id is None
+        assert isinstance(routine, SimulatorRoutine)
+
+    def test_list_load_with_mixed_simulator_integration_external_ids(self) -> None:
+        resource_list = [
+            {
+                "id": 123,
+                "externalId": "routine1",
+                "simulatorExternalId": "simulator1",
+                "modelExternalId": "model1",
+                "simulatorIntegrationExternalId": "integration1",
+                "name": "Routine 1",
+                "dataSetId": 456,
+                "createdTime": 1000000,
+                "lastUpdatedTime": 1000001,
+            },
+            {
+                "id": 124,
+                "externalId": "routine2",
+                "simulatorExternalId": "simulator1",
+                "modelExternalId": "model1",
+                "name": "Routine 2",
+                "dataSetId": 456,
+                "createdTime": 1000001,
+                "lastUpdatedTime": 1000002,
+            },
+        ]
+
+        routine_list = SimulatorRoutineList._load(resource_list)
+        assert len(routine_list) == 2
+        assert routine_list[0].simulator_integration_external_id == "integration1"
+        assert routine_list[1].simulator_integration_external_id is None
+
+
+class TestSimulatorRoutineRevision:
+    def test_load_with_simulator_integration_externalId(self) -> None:
+        resource = {
+            "id": 123,
+            "externalId": "revision1",
+            "simulatorExternalId": "simulator1",
+            "routineExternalId": "routine1",
+            "simulatorIntegrationExternalId": "integration1",
+            "modelExternalId": "model1",
+            "dataSetId": 456,
+            "createdByUserId": "user1",
+            "createdTime": 1000000,
+            "versionNumber": 1,
+        }
+
+        revision = SimulatorRoutineRevision._load(resource)
+        assert revision.simulator_integration_external_id == "integration1"
+        assert isinstance(revision, SimulatorRoutineRevision)
+
+    def test_load_without_simulator_integration_externalId(self) -> None:
+        resource = {
+            "id": 123,
+            "externalId": "revision1",
+            "simulatorExternalId": "simulator1",
+            "routineExternalId": "routine1",
+            "modelExternalId": "model1",
+            "dataSetId": 456,
+            "createdByUserId": "user1",
+            "createdTime": 1000000,
+            "versionNumber": 1,
+        }
+
+        revision = SimulatorRoutineRevision._load(resource)
+        assert revision.simulator_integration_external_id is None
+        assert isinstance(revision, SimulatorRoutineRevision)
+
+
+class TestSimulationRun:
+    def test_load_with_simulator_integration_externalId(self) -> None:
+        resource = {
+            "id": 123,
+            "createdTime": 1000000,
+            "lastUpdatedTime": 1000001,
+            "simulatorExternalId": "simulator1",
+            "simulatorIntegrationExternalId": "integration1",
+            "modelExternalId": "model1",
+            "modelRevisionExternalId": "model_rev1",
+            "routineExternalId": "routine1",
+            "routineRevisionExternalId": "routine_rev1",
+            "status": "success",
+            "dataSetId": 456,
+            "runType": "manual",
+            "userId": "user1",
+            "logId": 789,
+        }
+
+        run = SimulationRun._load(resource)
+        assert run.simulator_integration_external_id == "integration1"
+        assert isinstance(run, SimulationRun)
+
+    def test_load_without_simulator_integration_externalId(self) -> None:
+        resource = {
+            "id": 123,
+            "createdTime": 1000000,
+            "lastUpdatedTime": 1000001,
+            "simulatorExternalId": "simulator1",
+            "modelExternalId": "model1",
+            "modelRevisionExternalId": "model_rev1",
+            "routineExternalId": "routine1",
+            "routineRevisionExternalId": "routine_rev1",
+            "status": "success",
+            "dataSetId": 456,
+            "runType": "manual",
+            "userId": "user1",
+            "logId": 789,
+        }
+
+        run = SimulationRun._load(resource)
+        assert run.simulator_integration_external_id is None
+        assert isinstance(run, SimulationRun)
