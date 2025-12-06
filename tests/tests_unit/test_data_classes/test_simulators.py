@@ -14,14 +14,17 @@ from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineInputConstant,
     SimulatorRoutineInputTimeseries,
     SimulatorRoutineOutput,
+    SimulatorRoutineRevision,
     SimulatorRoutineRevisionWrite,
     SimulatorRoutineStage,
     SimulatorRoutineStep,
     SimulatorRoutineStepArguments,
 )
+from cognite.client.data_classes.simulators.routines import SimulatorRoutine
 from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
     SimulationOutput,
+    SimulationRun,
     SimulationRunDataItem,
     SimulationRunDataList,
     SimulationRunWrite,
@@ -489,3 +492,206 @@ class TestSimulationRunWrite:
             SimulationRunWrite(
                 routine_revision_external_id="routine_revision_external_id_1",
             )
+
+
+class TestSimulatorRoutine:
+    @pytest.mark.parametrize(
+        "resource,expected_routine",
+        [
+            (
+                {
+                    "id": 123,
+                    "externalId": "routine_1",
+                    "simulatorExternalId": "simulator_1",
+                    "modelExternalId": "model_1",
+                    "simulatorIntegrationExternalId": "integration_1",
+                    "name": "Test Routine",
+                    "dataSetId": 456,
+                    "createdTime": 1625247600000,
+                    "lastUpdatedTime": 1625247600000,
+                },
+                SimulatorRoutine(
+                    id=123,
+                    external_id="routine_1",
+                    simulator_external_id="simulator_1",
+                    model_external_id="model_1",
+                    simulator_integration_external_id="integration_1",
+                    name="Test Routine",
+                    data_set_id=456,
+                    created_time=1625247600000,
+                    last_updated_time=1625247600000,
+                ),
+            ),
+            (
+                {
+                    "id": 124,
+                    "externalId": "routine_2",
+                    "simulatorExternalId": "simulator_2",
+                    "modelExternalId": "model_2",
+                    "name": "Test Routine 2",
+                    "dataSetId": 457,
+                    "createdTime": 1625247600000,
+                    "lastUpdatedTime": 1625247600000,
+                },
+                SimulatorRoutine(
+                    id=124,
+                    external_id="routine_2",
+                    simulator_external_id="simulator_2",
+                    model_external_id="model_2",
+                    simulator_integration_external_id=None,
+                    name="Test Routine 2",
+                    data_set_id=457,
+                    created_time=1625247600000,
+                    last_updated_time=1625247600000,
+                ),
+            ),
+        ],
+    )
+    def test_load_simulator_integration(self, resource: dict, expected_routine: SimulatorRoutine) -> None:
+        routine = SimulatorRoutine._load(resource)
+        assert isinstance(routine, SimulatorRoutine)
+        assert routine.dump() == expected_routine.dump()
+
+
+class TestSimulatorRoutineRevision:
+    @pytest.mark.parametrize(
+        "resource,expected_routine_revision",
+        [
+            (
+                {
+                    "id": 123,
+                    "externalId": "revision1",
+                    "simulatorExternalId": "simulator1",
+                    "routineExternalId": "routine1",
+                    "simulatorIntegrationExternalId": "integration1",
+                    "modelExternalId": "model1",
+                    "dataSetId": 456,
+                    "createdByUserId": "user1",
+                    "createdTime": 1000000,
+                    "versionNumber": 1,
+                },
+                SimulatorRoutineRevision(
+                    id=123,
+                    external_id="revision1",
+                    simulator_external_id="simulator1",
+                    routine_external_id="routine1",
+                    simulator_integration_external_id="integration1",
+                    model_external_id="model1",
+                    data_set_id=456,
+                    created_by_user_id="user1",
+                    created_time=1000000,
+                    version_number=1,
+                ),
+            ),
+            (
+                {
+                    "id": 123,
+                    "externalId": "revision1",
+                    "simulatorExternalId": "simulator1",
+                    "routineExternalId": "routine1",
+                    "modelExternalId": "model1",
+                    "dataSetId": 456,
+                    "createdByUserId": "user1",
+                    "createdTime": 1000000,
+                    "versionNumber": 1,
+                },
+                SimulatorRoutineRevision(
+                    id=123,
+                    external_id="revision1",
+                    simulator_external_id="simulator1",
+                    routine_external_id="routine1",
+                    simulator_integration_external_id=None,
+                    model_external_id="model1",
+                    data_set_id=456,
+                    created_by_user_id="user1",
+                    created_time=1000000,
+                    version_number=1,
+                ),
+            ),
+        ],
+    )
+    def test_load_simulator_integration(
+        self, resource: dict, expected_routine_revision: SimulatorRoutineRevision
+    ) -> None:
+        revision = SimulatorRoutineRevision._load(resource)
+        assert isinstance(revision, SimulatorRoutineRevision)
+        assert revision.dump() == expected_routine_revision.dump()
+
+
+class TestSimulationRun:
+    @pytest.mark.parametrize(
+        "resource,expected_run",
+        [
+            (
+                {
+                    "id": 123,
+                    "createdTime": 1000000,
+                    "lastUpdatedTime": 1000001,
+                    "simulatorExternalId": "simulator1",
+                    "simulatorIntegrationExternalId": "integration1",
+                    "modelExternalId": "model1",
+                    "modelRevisionExternalId": "model_rev1",
+                    "routineExternalId": "routine1",
+                    "routineRevisionExternalId": "routine_rev1",
+                    "status": "success",
+                    "dataSetId": 456,
+                    "runType": "manual",
+                    "userId": "user1",
+                    "logId": 789,
+                },
+                SimulationRun(
+                    id=123,
+                    created_time=1000000,
+                    last_updated_time=1000001,
+                    simulator_external_id="simulator1",
+                    simulator_integration_external_id="integration1",
+                    model_external_id="model1",
+                    model_revision_external_id="model_rev1",
+                    routine_external_id="routine1",
+                    routine_revision_external_id="routine_rev1",
+                    status="success",
+                    data_set_id=456,
+                    run_type="manual",
+                    user_id="user1",
+                    log_id=789,
+                ),
+            ),
+            (
+                {
+                    "id": 123,
+                    "createdTime": 1000000,
+                    "lastUpdatedTime": 1000001,
+                    "simulatorExternalId": "simulator1",
+                    "modelExternalId": "model1",
+                    "modelRevisionExternalId": "model_rev1",
+                    "routineExternalId": "routine1",
+                    "routineRevisionExternalId": "routine_rev1",
+                    "status": "success",
+                    "dataSetId": 456,
+                    "runType": "manual",
+                    "userId": "user1",
+                    "logId": 789,
+                },
+                SimulationRun(
+                    id=123,
+                    created_time=1000000,
+                    last_updated_time=1000001,
+                    simulator_external_id="simulator1",
+                    simulator_integration_external_id=None,
+                    model_external_id="model1",
+                    model_revision_external_id="model_rev1",
+                    routine_external_id="routine1",
+                    routine_revision_external_id="routine_rev1",
+                    status="success",
+                    data_set_id=456,
+                    run_type="manual",
+                    user_id="user1",
+                    log_id=789,
+                ),
+            ),
+        ],
+    )
+    def test_load_simulator_integration(self, resource: dict, expected_run: SimulationRun) -> None:
+        run = SimulationRun._load(resource)
+        assert isinstance(run, SimulationRun)
+        assert run.dump() == expected_run.dump()

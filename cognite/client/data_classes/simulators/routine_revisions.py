@@ -602,7 +602,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         id (int): The unique identifier of the simulator routine revision.
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         simulator_external_id (str): The external ID of the simulator.
-        simulator_integration_external_id (str): The external ID of the simulator integration.
+        simulator_integration_external_id (str | None): The external ID of the simulator integration.
         routine_external_id (str): The external ID of the simulator routine.
         model_external_id (str): The external ID of the simulator model.
         version_number (int): The version number of the simulator routine revision. Unique for each simulator routine.
@@ -619,7 +619,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         id: int,
         external_id: str,
         simulator_external_id: str,
-        simulator_integration_external_id: str,
+        simulator_integration_external_id: str | None,
         routine_external_id: str,
         model_external_id: str,
         version_number: int,
@@ -659,7 +659,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
             external_id=resource["externalId"],
             simulator_external_id=resource["simulatorExternalId"],
             routine_external_id=resource["routineExternalId"],
-            simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
+            simulator_integration_external_id=resource.get("simulatorIntegrationExternalId"),
             model_external_id=resource["modelExternalId"],
             data_set_id=resource["dataSetId"],
             created_by_user_id=resource["createdByUserId"],
