@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteSort
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._text import to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
@@ -83,22 +84,40 @@ class SimulatorRoutinesFilter(CogniteFilter):
         self,
         model_external_ids: Sequence[str] | None = None,
         simulator_integration_external_ids: Sequence[str] | None = None,
+        kind: Literal["long"] | None = None,
     ) -> None:
         self.model_external_ids = model_external_ids
         self.simulator_integration_external_ids = simulator_integration_external_ids
+        self.kind = kind
 
 
 class PropertySort(CogniteSort):
     def __init__(
         self,
-        property: Literal["createdTime"] = "createdTime",
+        property: Literal["created_time"] = "created_time",
         order: Literal["asc", "desc"] = "asc",
     ):
         super().__init__(property, order)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
-        dumped["property"] = self.property
+        prop = cast(str, self.property)
+        dumped["property"] = to_camel_case(prop) if camel_case else prop
+        return dumped
+
+
+class SimulationRunsSort(CogniteSort):
+    def __init__(
+        self,
+        property: Literal["created_time", "simulation_time"] = "created_time",
+        order: Literal["asc", "desc"] = "asc",
+    ):
+        super().__init__(property, order)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        prop = cast(str, self.property)
+        dumped["property"] = to_camel_case(prop) if camel_case else prop
         return dumped
 
 
@@ -110,6 +129,7 @@ class SimulatorRoutineRevisionsFilter(CogniteFilter):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
+        kind: Literal["long"] | None = None,
         created_time: TimestampRange | None = None,
     ) -> None:
         self.model_external_ids = model_external_ids
@@ -117,4 +137,5 @@ class SimulatorRoutineRevisionsFilter(CogniteFilter):
         self.routine_external_ids = routine_external_ids
         self.simulator_integration_external_ids = simulator_integration_external_ids
         self.simulator_external_ids = simulator_external_ids
+        self.kind = kind
         self.created_time = created_time

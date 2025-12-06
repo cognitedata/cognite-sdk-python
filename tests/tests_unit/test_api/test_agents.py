@@ -25,6 +25,7 @@ def agent_response_body() -> dict:
                 "description": "Description 1",
                 "instructions": "Instructions 1",
                 "model": "vendor/model_1",
+                "labels": ["published"],
                 "tools": [
                     {
                         "name": "tool_1",
@@ -138,6 +139,7 @@ class TestAgentsAPI:
                             )
                         ],
                         instance_spaces=InstanceSpaces(type="all"),
+                        version="v2",
                     ),
                 )
             ],
@@ -176,3 +178,22 @@ class TestAgentsAPI:
         created = cognite_client.agents.upsert(AgentUpsert(external_id="agent_1", name="Agent 1"))
 
         assert isinstance(created, Agent)
+
+    def test_upsert_with_labels(self, cognite_client: CogniteClient, mock_agent_upsert_response: MagicMock) -> None:
+        agent_write = AgentUpsert(
+            external_id="agent_1",
+            name="Agent 1",
+            labels=["published"],
+        )
+        created_agent = cognite_client.agents.upsert(agent_write)
+        assert isinstance(created_agent, Agent)
+        assert created_agent.external_id == "agent_1"
+        assert created_agent.labels == ["published"]
+
+    def test_retrieve_agent_with_labels(
+        self, cognite_client: CogniteClient, mock_agent_retrieve_response: MagicMock
+    ) -> None:
+        retrieved_agent = cognite_client.agents.retrieve("agent_1")
+        assert isinstance(retrieved_agent, Agent)
+        assert retrieved_agent.external_id == "agent_1"
+        assert retrieved_agent.labels == ["published"]

@@ -10,15 +10,14 @@ import pytest
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.simulators import SimulatorModelWrite
-from cognite.client.data_classes.simulators.models import SimulatorModel
-from cognite.client.data_classes.simulators.routine_revisions import (
-    SimulatorRoutineRevision,
-    SimulatorRoutineRevisionWrite,
-)
-from cognite.client.data_classes.simulators.routines import (
+from cognite.client.data_classes.simulators import (
+    SimulatorModel,
+    SimulatorModelRevisionWrite,
+    SimulatorModelWrite,
     SimulatorRoutine,
     SimulatorRoutineList,
+    SimulatorRoutineRevision,
+    SimulatorRoutineRevisionWrite,
     SimulatorRoutineWrite,
 )
 from cognite.client.utils._text import to_snake_case
@@ -172,18 +171,13 @@ def seed_simulator_model_revisions(
 
     for revision in revisions:
         if not model_revisions.get(external_id=revision):
-            cognite_client.simulators._post(
-                "/simulators/models/revisions",
-                json={
-                    "items": [
-                        {
-                            "description": "test sim model revision description",
-                            "fileId": seed_model_revision_file.id,
-                            "modelExternalId": model_unique_external_id,
-                            "externalId": revision,
-                        }
-                    ]
-                },
+            cognite_client.simulators.models.revisions.create(
+                SimulatorModelRevisionWrite(
+                    external_id=revision,
+                    model_external_id=model_unique_external_id,
+                    file_id=seed_model_revision_file.id,
+                    description="test sim model revision description",
+                )
             )
 
 
@@ -215,9 +209,7 @@ def seed_simulator_routines(
 
     yield routines
 
-    cognite_client.simulators.routines.delete(
-        external_ids=[simulator_routine_unique_external_id, simulator_routine_unique_external_id + "_1"]
-    )
+    cognite_client.simulators.routines.delete(external_ids=[routine.external_id for routine in routines])
 
 
 def seed_simulator_routine_revision(

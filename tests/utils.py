@@ -53,6 +53,7 @@ from cognite.client.data_classes.datapoints import (
 from cognite.client.data_classes.filters import Filter
 from cognite.client.data_classes.hosted_extractors.jobs import BodyLoad, NextUrlLoad, RestConfig
 from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineStepArguments
+from cognite.client.data_classes.simulators.runs import SimulationRunWrite
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationWrite
 from cognite.client.data_classes.transformations.schedules import TransformationScheduleWrite
 from cognite.client.data_classes.transformations.schema import TransformationSchemaUnknownType
@@ -485,6 +486,16 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments.pop("max_list_size", None)
         elif resource_cls is SimulatorRoutineStepArguments:
             keyword_arguments = {"data": {"reference_id": self._random_string(50), "arg2": self._random_string(50)}}
+        elif resource_cls is SimulationRunWrite:
+            # SimulationRunWrite requires either routine_external_id alone OR both routine_revision_external_id and model_revision_external_id
+            if self._random.choice([True, False]):
+                # Use routine_external_id only
+                keyword_arguments.pop("routine_revision_external_id", None)
+                keyword_arguments.pop("model_revision_external_id", None)
+                keyword_arguments["routine_external_id"] = self._random_string(50)
+            else:
+                # Use revision-based parameters
+                keyword_arguments.pop("routine_external_id", None)
 
         return resource_cls(*positional_arguments, **keyword_arguments)
 
@@ -542,7 +553,7 @@ class FakeCogniteResourceGenerator:
             return self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
         elif var_name == "id" and type_ is int:
             return self._random.choice(range(1, MAX_VALID_INTERNAL_ID + 1))
-        if type_ is str or type_ is Any:
+        if type_ is str or type_ is Any or type_ is object:
             return self._random_string()
         elif type_ is int:
             return self._random.randint(1, 100000)

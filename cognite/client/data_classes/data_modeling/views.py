@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
 
 from typing_extensions import Self
@@ -15,6 +15,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling.containers import PropertyConstraintState
 from cognite.client.data_classes.data_modeling.core import DataModelingSchemaResource
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelation,
@@ -23,7 +24,7 @@ from cognite.client.data_classes.data_modeling.data_types import (
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
 from cognite.client.data_classes.filters import Filter
-from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -441,13 +442,14 @@ class MappedProperty(ViewProperty):
     default_value: str | int | dict | None = None
     name: str | None = None
     description: str | None = None
+    constraint_state: PropertyConstraintState | None = field(default=None, init=False)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         type_ = resource["type"]
         source = type_.get("source", None) or resource.get("source")
 
-        return cls(
+        prop = cls(
             container=ContainerId.load(resource["container"]),
             container_property_identifier=resource["containerPropertyIdentifier"],
             type=PropertyType.load({k: v for k, v in type_.items() if k != "source"}),
@@ -459,14 +461,27 @@ class MappedProperty(ViewProperty):
             name=resource.get("name"),
             description=resource.get("description"),
         )
+        if (constraint_state := resource.get("constraintState")) is not None:
+            object.__setattr__(prop, "constraint_state", PropertyConstraintState._load(constraint_state))
+        return prop
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = asdict(self)
+        output: dict[str, Any] = {}
+        output["container"] = self.container.dump(camel_case, include_type=False)
+        output["containerPropertyIdentifier" if camel_case else "container_property_identifier"] = (
+            self.container_property_identifier
+        )
+        if self.source:
+            output["source"] = self.source.dump(camel_case, include_type=False)
         output["type"] = self.type.dump(camel_case)
+        output["immutable"] = self.immutable
+        for key in ["nullable", "auto_increment", "name", "default_value", "description"]:
+            if (value := getattr(self, key)) is not None:
+                output[to_camel_case(key) if camel_case else key] = value
+        if self.constraint_state is not None:
+            output["constraintState" if camel_case else "constraint_state"] = self.constraint_state.dump(camel_case)
         if self.source and isinstance(self.type, DirectRelation):
             output["type"]["source"] = output.pop("source", None)
-        if camel_case:
-            return convert_all_keys_to_camel_case_recursive(output)
         return output
 
     def as_apply(self) -> MappedPropertyApply:

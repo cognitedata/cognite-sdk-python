@@ -4,7 +4,7 @@ import re
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client._api.raw import RawRowsAPI
+from cognite.client._api.raw.rows import RawRowsAPI
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, RowWrite, RowWriteList, Table, TableList
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import assert_all_value_types_equal, jsgz_load
