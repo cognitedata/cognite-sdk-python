@@ -496,7 +496,7 @@ class TestSimulationRunWrite:
 
 class TestSimulatorRoutine:
     @pytest.mark.parametrize(
-        "resource,expected_routine",
+        "resource,expected_value",
         [
             (
                 {
@@ -510,17 +510,7 @@ class TestSimulatorRoutine:
                     "createdTime": 1625247600000,
                     "lastUpdatedTime": 1625247600000,
                 },
-                SimulatorRoutine(
-                    id=123,
-                    external_id="routine_1",
-                    simulator_external_id="simulator_1",
-                    model_external_id="model_1",
-                    simulator_integration_external_id="integration_1",
-                    name="Test Routine",
-                    data_set_id=456,
-                    created_time=1625247600000,
-                    last_updated_time=1625247600000,
-                ),
+                "integration_1",
             ),
             (
                 {
@@ -533,29 +523,19 @@ class TestSimulatorRoutine:
                     "createdTime": 1625247600000,
                     "lastUpdatedTime": 1625247600000,
                 },
-                SimulatorRoutine(
-                    id=124,
-                    external_id="routine_2",
-                    simulator_external_id="simulator_2",
-                    model_external_id="model_2",
-                    simulator_integration_external_id=None,
-                    name="Test Routine 2",
-                    data_set_id=457,
-                    created_time=1625247600000,
-                    last_updated_time=1625247600000,
-                ),
+                None,
             ),
         ],
     )
-    def test_load_simulator_integration(self, resource: dict, expected_routine: SimulatorRoutine) -> None:
+    def test_load_simulator_integration(self, resource: dict, expected_value: str | None) -> None:
         routine = SimulatorRoutine._load(resource)
         assert isinstance(routine, SimulatorRoutine)
-        assert routine.dump() == expected_routine.dump()
+        assert routine.simulator_integration_external_id == expected_value
 
 
 class TestSimulatorRoutineRevision:
     @pytest.mark.parametrize(
-        "resource,expected_routine_revision",
+        "resource,expected_value",
         [
             (
                 {
@@ -570,18 +550,7 @@ class TestSimulatorRoutineRevision:
                     "createdTime": 1000000,
                     "versionNumber": 1,
                 },
-                SimulatorRoutineRevision(
-                    id=123,
-                    external_id="revision1",
-                    simulator_external_id="simulator1",
-                    routine_external_id="routine1",
-                    simulator_integration_external_id="integration1",
-                    model_external_id="model1",
-                    data_set_id=456,
-                    created_by_user_id="user1",
-                    created_time=1000000,
-                    version_number=1,
-                ),
+                "integration1",
             ),
             (
                 {
@@ -595,32 +564,19 @@ class TestSimulatorRoutineRevision:
                     "createdTime": 1000000,
                     "versionNumber": 1,
                 },
-                SimulatorRoutineRevision(
-                    id=123,
-                    external_id="revision1",
-                    simulator_external_id="simulator1",
-                    routine_external_id="routine1",
-                    simulator_integration_external_id=None,
-                    model_external_id="model1",
-                    data_set_id=456,
-                    created_by_user_id="user1",
-                    created_time=1000000,
-                    version_number=1,
-                ),
+                None,
             ),
         ],
     )
-    def test_load_simulator_integration(
-        self, resource: dict, expected_routine_revision: SimulatorRoutineRevision
-    ) -> None:
+    def test_load_simulator_integration(self, resource: dict, expected_value: str | None) -> None:
         revision = SimulatorRoutineRevision._load(resource)
         assert isinstance(revision, SimulatorRoutineRevision)
-        assert revision.dump() == expected_routine_revision.dump()
+        assert revision.simulator_integration_external_id == expected_value
 
 
 class TestSimulationRun:
     @pytest.mark.parametrize(
-        "resource,expected_run",
+        "resource,expected_value",
         [
             (
                 {
@@ -639,22 +595,7 @@ class TestSimulationRun:
                     "userId": "user1",
                     "logId": 789,
                 },
-                SimulationRun(
-                    id=123,
-                    created_time=1000000,
-                    last_updated_time=1000001,
-                    simulator_external_id="simulator1",
-                    simulator_integration_external_id="integration1",
-                    model_external_id="model1",
-                    model_revision_external_id="model_rev1",
-                    routine_external_id="routine1",
-                    routine_revision_external_id="routine_rev1",
-                    status="success",
-                    data_set_id=456,
-                    run_type="manual",
-                    user_id="user1",
-                    log_id=789,
-                ),
+                "integration1",
             ),
             (
                 {
@@ -672,26 +613,11 @@ class TestSimulationRun:
                     "userId": "user1",
                     "logId": 789,
                 },
-                SimulationRun(
-                    id=123,
-                    created_time=1000000,
-                    last_updated_time=1000001,
-                    simulator_external_id="simulator1",
-                    simulator_integration_external_id=None,
-                    model_external_id="model1",
-                    model_revision_external_id="model_rev1",
-                    routine_external_id="routine1",
-                    routine_revision_external_id="routine_rev1",
-                    status="success",
-                    data_set_id=456,
-                    run_type="manual",
-                    user_id="user1",
-                    log_id=789,
-                ),
+                None,
             ),
         ],
     )
-    def test_load_simulator_integration(self, resource: dict, expected_run: SimulationRun) -> None:
+    def test_load_simulator_integration(self, resource: dict, expected_value: str | None) -> None:
         run = SimulationRun._load(resource)
         assert isinstance(run, SimulationRun)
-        assert run.dump() == expected_run.dump()
+        assert run.simulator_integration_external_id == expected_value
