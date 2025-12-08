@@ -14,17 +14,14 @@ from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineInputConstant,
     SimulatorRoutineInputTimeseries,
     SimulatorRoutineOutput,
-    SimulatorRoutineRevision,
     SimulatorRoutineRevisionWrite,
     SimulatorRoutineStage,
     SimulatorRoutineStep,
     SimulatorRoutineStepArguments,
 )
-from cognite.client.data_classes.simulators.routines import SimulatorRoutine
 from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
     SimulationOutput,
-    SimulationRun,
     SimulationRunDataItem,
     SimulationRunDataList,
     SimulationRunWrite,
