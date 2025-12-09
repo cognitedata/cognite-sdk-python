@@ -16,6 +16,7 @@ Changes are grouped as follows:
 ### Optional
 - **Async Support**: The SDK now provides full async support. The main client is now `AsyncCogniteClient`, but the synchronous `CogniteClient` is still available for backward compatibility. An important implementation detail is that it just wraps `AsyncCogniteClient`.
 - All helper/utility methods on data classes now have an async variant. A few examples: Class `Asset` has `children` and now also `children_async`, `subtree` and `subtree_async`, class `Function` now has `call` and `call_async`, class `TimeSeries` now has `latest` and `latest_async` etc.
+- Instantiating a client has gotten a tiny bit simpler, by allowing either `cluster` or `base_url` to be passed. When passing cluster, it is expected to be on the form 'https://{cluster}.cognitedata.com'
 - The context manager `FileMultipartUploadSession`, returned by a call to one of the Files API methods multipart_upload_content` or `multipart_upload_content_session`, now also supports async; you can enter with `async with`, and upload parts using `await upload_part_async`.
 - The SDK now ships with a new mock for the async client, namely `AsyncCogniteClientMock`. Both it and the previous `CogniteClientMock` are greatly improved and provide better type safety, checking of call signatures and spec_set=True is now enforced for all APIs (even the mocked client itself), through the use of `create_autospec` and bottom-up construction of nested APIs.
 - With the move to an async client, concurrency now works in Pyodide e.g. Jupyter-Lite in the browser. This also means that user interfaces like Streamlit won't freeze while resources from CDF are being fetched!
@@ -38,13 +39,13 @@ Changes are grouped as follows:
 - The `__iter__` method has been removed from all APIs. Use `__call__` instead: `for ts in client.time_series()`. This makes it seamless to pass one or more parameters.
 - All references to `legacy_name` on time series data classes and API have been removed.
 - The helper methods on `client.iam`, `compare_capabilities` and `verify_capabilities` no longer support the `ignore_allscope_meaning` parameter.
-- The Files API no longer accepts file handles opened in text mode.
 - The method `load_yaml` on the data class `Query` has been removed. Use `load` instead.
 - The Templates API has been completely removed from the SDK (the API service has already been shut off)
 - The separate beta `CogniteClient` has been removed. Note: APIs currently in alpha/beta are (already) implemented directly on the main client and throw warnings on use.
 
 ### Changed
 - Attributes on all "read" data classes now have the correct type (typically no longer `Optional[...]`), meaning type inference will be correct. If you try to instantiate these classes directly (*you shouldn't* - use the write versions instead!), you will see that all required parameters in the API response will also be required on the object. **What is a read class?** Any data class returned by the SDK from a call to the API to fetch a resource of some kind.
+- All (HTTP) responses from the SDK (returned by e.g. `client.post` or `client.get`) are now of type `CogniteSDKResponse` instead of the specific type from the underlying http library to support future http-client changes.
 - All typed instance apply classes, e.g. `CogniteAssetApply` from `cognite.client.data_classes.data_modeling.cdm.v1` (or `extractor_extensions.v1`) now work with patch updates (using `replace=False`). Previously, all unset fields would be dumped as `None` and thus cleared/nulled in the backend database. Now, any unset fields are not dumped and will not clear an existing value (unless used with `replace=True`).
 - When using the Datapoints API to ingest datapoints through `insert_dataframe`, the parameters `external_id_headers` and `instance_id_headers` have been removed. The new logic infers the kind of identifier from the type of the column: an integer is an ID, a string is an external ID and a NodeId (or 2-tuple of space and ext.id) is an instance ID. This also means you can pass more than one type of time series identifier in the same pandas DataFrame.
 - Datapoints API method `retrieve_dataframe` and all `to_pandas` methods on datapoints-container-like objects now accept a new parameter: `include_unit` (`bool`). Time series using physical units via `unit_external_id`, will end up as part of the pandas DataFrame columns (like aggregate info).
@@ -59,7 +60,6 @@ Changes are grouped as follows:
 - Parameter `partitions` has been removed from all `__call__` methods except for the Raw Rows API (which has special handling for it). It was previosuly being ignored with the added side effect of ignoring `chunk_size` stemming from a very early API design oversight.
 - The method `retrieve` on the Workflow Versions API no longer accepts `workflow_external_id` and `version` as separate arguments. Pass a single or a sequence of `WorkflowVersionId` (tuples also accepted).
 - When loading a `ViewProperty` or `ViewPropertyApply`, the resource dictionary must contain the `"connectionType"` key or an error is raised.
-- The Files API now expects `pathlib.Path` by default, but keeps the `str` support for now.
 - The specific exceptions `CogniteDuplicatedError` and `CogniteNotFoundError` should now always be used when appropriate (previously certain API endpoints always used `CogniteAPIError`)
 - `ModelFailedException` has changed name to `CogniteModelFailedError`.
 - For `class Transformation`, which used to have an async `run` method, this is now named `run_async` to unify the overall interface. The same applies to the `cancel` and `jobs` methods for the same class, and `update` and `wait` on `TransformationJob`.
