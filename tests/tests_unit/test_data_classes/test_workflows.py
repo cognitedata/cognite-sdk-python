@@ -254,13 +254,16 @@ class TestWorkflowTask:
 
 class TestWorkflowTrigger:
     @pytest.mark.parametrize(
-        ["is_paused", "should_contain_key"],
+        ["is_paused", "camel_case", "expected_key", "expected_value"],
         [
-            (True, True),
-            (None, False),
+            (True, True, "isPaused", True),
+            (True, False, "is_paused", True),
+            (None, True, "isPaused", None),
+            (None, False, "is_paused", None),
         ],
     )
-    def test_dump_is_paused(self, is_paused, should_contain_key):
+    def test_dump_is_paused(self, is_paused, camel_case, expected_key, expected_value):
+        # Test is_paused field appears in dump with correct value when passed to constructor
         trigger = WorkflowTrigger(
             external_id="test-trigger",
             trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
@@ -269,12 +272,22 @@ class TestWorkflowTrigger:
             is_paused=is_paused,
         )
         
-        dumped_camel_case_true = trigger.dump(camel_case=True)
-        dumped_camel_case_false = trigger.dump(camel_case=False)
+        assert trigger.dump(camel_case=camel_case).get(expected_key) == expected_value
+
+    @pytest.mark.parametrize(
+        ["camel_case", "expected_key"],
+        [
+            (True, "isPaused"),
+            (False, "is_paused"),
+        ],
+    )
+    def test_dump_without_is_paused_param(self, camel_case, expected_key):
+        # Test is_paused field is not included when not provided in constructor
+        trigger = WorkflowTrigger(
+            external_id="test-trigger",
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+            workflow_external_id="test-workflow",
+            workflow_version="1.0",
+        )
         
-        if should_contain_key:
-            assert dumped_camel_case_true["isPaused"] is True
-            assert dumped_camel_case_false["is_paused"] is True
-        else:
-            assert "isPaused" not in dumped_camel_case_true
-            assert "is_paused" not in dumped_camel_case_false
+        assert trigger.dump(camel_case=camel_case).get(expected_key) is None
