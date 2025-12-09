@@ -1343,10 +1343,11 @@ class InstancesAPI(APIClient):
             Get the average run time in minutes for pumps grouped by release year:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import ViewId, aggregations as aggs
+                >>> from cognite.client.data_classes.aggregations import Average
+                >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> avg_run_time = aggs.Avg("runTimeMinutes")
+                >>> avg_run_time = Average("runTimeMinutes")
                 >>> view_id = ViewId("mySpace", "PumpView", "v1")
                 >>> res = client.data_modeling.instances.aggregate(view_id, avg_run_time, group_by="releaseYear")
 
@@ -1450,10 +1451,11 @@ class InstancesAPI(APIClient):
             Find the number of people born per decade:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import aggregations as aggs, ViewId
+                >>> from cognite.client.data_classes.aggregations import Histogram
+                >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> birth_by_decade = aggs.Histogram("birthYear", interval=10.0)
+                >>> birth_by_decade = Histogram("birthYear", interval=10.0)
                 >>> view_id = ViewId("mySpace", "PersonView", "v1")
                 >>> res = client.data_modeling.instances.histogram(view_id, birth_by_decade)
         """
