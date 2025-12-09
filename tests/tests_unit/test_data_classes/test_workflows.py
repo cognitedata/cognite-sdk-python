@@ -265,8 +265,8 @@ class TestWorkflowTrigger:
         dumped = trigger.dump(camel_case=True)
         assert dumped["isPaused"] is True
         
-        snake_dumped = trigger.dump(camel_case=False)
-        assert snake_dumped["is_paused"] is True
+        underscore_dumped = trigger.dump(camel_case=False)
+        assert underscore_dumped["is_paused"] is True
 
     def test_dump_without_is_paused(self):
         trigger = WorkflowTrigger(
