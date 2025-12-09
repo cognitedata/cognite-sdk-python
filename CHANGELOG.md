@@ -13,6 +13,18 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.91.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.90.1...cognite-sdk-python-v7.91.0) (2025-12-09)
+
+
+### Features
+
+* **simint:** make `simulator_integration_external_id` optional on runs, routines and routine revisions ([#2420](https://github.com/cognitedata/cognite-sdk-python/issues/2420)) ([a18702b](https://github.com/cognitedata/cognite-sdk-python/commit/a18702b10e940bec9684589c86bd375a23613258))
+
+
+### Documentation
+
+* update styleguide.md with some prose on testing ([#2423](https://github.com/cognitedata/cognite-sdk-python/issues/2423)) ([a2cc565](https://github.com/cognitedata/cognite-sdk-python/commit/a2cc565d6abd2e2738eab1a548438da943f1f4df))
+
 ## [7.90.1](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.90.0...cognite-sdk-python-v7.90.1) (2025-11-27)
 
 
