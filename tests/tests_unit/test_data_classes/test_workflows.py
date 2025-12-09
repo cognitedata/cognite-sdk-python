@@ -18,8 +18,10 @@ from cognite.client.data_classes.workflows import (
     WorkflowDefinitionUpsert,
     WorkflowExecutionDetailed,
     WorkflowIds,
+    WorkflowScheduledTriggerRule,
     WorkflowTask,
     WorkflowTaskOutput,
+    WorkflowTrigger,
     WorkflowVersionId,
 )
 
@@ -248,3 +250,31 @@ class TestWorkflowTask:
     def test_serialization(self, raw: dict):
         loaded = WorkflowTask._load(raw)
         assert loaded.dump() == raw
+
+
+class TestWorkflowTrigger:
+    def test_dump_with_is_paused(self):
+        trigger = WorkflowTrigger(
+            external_id="test-trigger",
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+            workflow_external_id="test-workflow",
+            workflow_version="1.0",
+            is_paused=True,
+        )
+        
+        dumped = trigger.dump(camel_case=True)
+        assert dumped["isPaused"] is True
+        
+        dumped_snake_case = trigger.dump(camel_case=False)
+        assert dumped_snake_case["is_paused"] is True
+
+    def test_dump_without_is_paused(self):
+        trigger = WorkflowTrigger(
+            external_id="test-trigger",
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+            workflow_external_id="test-workflow",
+            workflow_version="1.0",
+        )
+        
+        dumped = trigger.dump(camel_case=True)
+        assert "isPaused" not in dumped

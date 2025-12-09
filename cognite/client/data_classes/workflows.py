@@ -1625,6 +1625,8 @@ class WorkflowTrigger(WorkflowTriggerCore):
             item["created_time"] = self.created_time
         if self.last_updated_time:
             item["last_updated_time"] = self.last_updated_time
+        if self.is_paused is not None:
+            item["is_paused"] = self.is_paused
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item
