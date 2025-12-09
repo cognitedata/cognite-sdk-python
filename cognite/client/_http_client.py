@@ -259,6 +259,9 @@ class AsyncHTTPClientWithRetry:
         while True:
             try:
                 async with semaphore:
+                    # Ensure our credentials are not about to expire right before making the request:
+                    if headers is not None:
+                        self.refresh_auth_header(headers)
                     response = await coro_factory()
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
@@ -288,7 +291,5 @@ class AsyncHTTPClientWithRetry:
                 # base class for all exceptions that can be raised during a request, so we use it here as a fallback.
                 raise CogniteRequestError from err
 
-            retry_tracker.back_off(url)
-            # During a backoff loop, our credentials might expire, so we check and maybe refresh:
-            if headers is not None:
-                self.refresh_auth_header(headers)  # TODO: Refactoring needed to make this "prettier"
+            # If we got here, it means we have decided to retry the request!
+            retry_tracker.back_off()

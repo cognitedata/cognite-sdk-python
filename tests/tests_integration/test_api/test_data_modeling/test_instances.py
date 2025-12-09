@@ -942,7 +942,7 @@ class TestInstancesAPI:
 
     def test_aggregate_with_grouping(self, cognite_client: CogniteClient, movie_view: View) -> None:
         view_id = movie_view.as_id()
-        avg_agg = aggregations.Avg("runTimeMinutes")
+        avg_agg = aggregations.Average("runTimeMinutes")
         max_agg = aggregations.Max("runTimeMinutes")
 
         result = cognite_client.data_modeling.instances.aggregate(
@@ -954,7 +954,7 @@ class TestInstancesAPI:
 
     def test_aggregate_multiple(self, cognite_client: CogniteClient, movie_view: View) -> None:
         view_id = movie_view.as_id()
-        avg_agg = aggregations.Avg("runTimeMinutes")
+        avg_agg = aggregations.Average("runTimeMinutes")
         max_agg = aggregations.Max("runTimeMinutes")
 
         result = cognite_client.data_modeling.instances.aggregate(
@@ -965,7 +965,7 @@ class TestInstancesAPI:
         assert result[0].property == "runTimeMinutes"
         assert result[1].property == "runTimeMinutes"
         max_value = next((item for item in result if isinstance(item, aggregations.MaxValue)), None)
-        avg_value = next((item for item in result if isinstance(item, aggregations.AvgValue)), None)
+        avg_value = next((item for item in result if isinstance(item, aggregations.AverageValue)), None)
         assert max_value is not None
         assert avg_value is not None
         assert isinstance(max_value.value, float)
@@ -1145,7 +1145,7 @@ class TestInstancesAPI:
 
         aggregated = cognite_client.data_modeling.instances.aggregate(
             view=unit_view.as_id(),
-            aggregates=[aggregations.Avg("pressure")],
+            aggregates=[aggregations.Average("pressure")],
             target_units=target_units,
             filter=is_node,
         )
