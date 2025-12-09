@@ -1735,7 +1735,9 @@ class TestConnectionPooling:
 
 
 async def test_worker_in_backoff_loop_gets_new_token(httpx_mock: HTTPXMock) -> None:
+    # Right before sending a request, we verify that our token is not about to expire.
     url = "https://foo.cognitedata.com/api/v1/projects/c/assets/byids"
+    httpx_mock.add_response(method="POST", url=url, status_code=429, json={"error": "Backoff plz"})
     httpx_mock.add_response(method="POST", url=url, status_code=429, json={"error": "Backoff plz"})
     httpx_mock.add_response(
         method="POST",
@@ -1748,16 +1750,20 @@ async def test_worker_in_backoff_loop_gets_new_token(httpx_mock: HTTPXMock) -> N
 
     def token_callable() -> str:
         nonlocal call_count
-        if call_count < 1:
-            call_count += 1
-            return "outdated-token"
-        return "valid-token"
+        call_count += 1
+        return f"valid-token-{call_count}"
 
     client = CogniteClient(ClientConfig(client_name="a", cluster="foo", credentials=Token(token_callable), project="c"))
+    get_wrapped_async_client(client).assets._http_client_with_retry.config.backoff_factor = 0.0  # speed up test retries
+
     assert get_or_raise(client.assets.retrieve(id=1)).id == 123
-    assert call_count > 0
-    assert httpx_mock.get_requests()[0].headers["Authorization"] == "Bearer outdated-token"
-    assert httpx_mock.get_requests()[1].headers["Authorization"] == "Bearer valid-token"
+    assert call_count == 4
+    requests = httpx_mock.get_requests()
+    # First request should be 'valid-token-2' (not -1) because the first check-in with the Credentials class on
+    # "get or maybe refresh token" happens in BasicAsyncAPIClient._configure_headers.
+    assert requests[0].headers["Authorization"] == "Bearer valid-token-2"
+    assert requests[1].headers["Authorization"] == "Bearer valid-token-3"
+    assert requests[2].headers["Authorization"] == "Bearer valid-token-4"
 
 
 @pytest.mark.parametrize("limit, expected_error", ((-2, ValueError), (0, ValueError), ("10", TypeError)))
