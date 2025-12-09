@@ -271,7 +271,7 @@ class TestWorkflowTrigger:
             workflow_version="1.0",
             is_paused=is_paused,
         )
-        
+
         assert trigger.dump(camel_case=camel_case).get(expected_key) == expected_value
 
     @pytest.mark.parametrize(
@@ -289,5 +289,5 @@ class TestWorkflowTrigger:
             workflow_external_id="test-workflow",
             workflow_version="1.0",
         )
-        
+
         assert trigger.dump(camel_case=camel_case).get(expected_key) is None
