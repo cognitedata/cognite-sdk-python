@@ -100,7 +100,7 @@ def count_indent(s):
 class DocstrFormatter:
     def __init__(self, doc, method):
         self.original_doc = doc
-        self.is_generator = inspect.isgeneratorfunction(method)
+        self.is_generator = inspect.isgeneratorfunction(method) or inspect.isasyncgenfunction(method)
         self.RETURN_STRING = "Yields:" if self.is_generator else "Returns:"
 
         self.lines_grouped, self.indentation = self._separate_docstring(doc)
@@ -117,12 +117,28 @@ class DocstrFormatter:
         # TODO: With 3.9 this gets much easier: get_args(get_type_hints(method)["return"])[0]
 
         if string.startswith("Iterator["):
-            if string.count("Iterator[") > 1:
-                raise ValueError(
-                    "pydoclint doesn't allow unions between Iterators in 'Yields:' annotation. Example: instead of "
-                    "`Iterator[int] | Iterator[str]`, use `Iterator[int | str]`. Please fix manually."
-                )
-            return string[9:-1]
+            c = string.count("Iterator[")
+            if c == 1:
+                return string[9:-1]
+            elif c == 2:
+                match = re.match(r"Iterator\[(\w+)\] \| Iterator\[(\w+)\]", string)
+                if not match:
+                    raise ValueError("Failed to parse union of 2 'Iterator's")
+                return " | ".join(match.groups())
+            else:
+                raise ValueError("Failed to parse union of more than 2 'Iterator's")
+
+        if string.startswith("AsyncIterator["):
+            c = string.count("AsyncIterator[")
+            if c == 1:
+                return string[14:-1]
+            elif c == 2:
+                match = re.match(r"AsyncIterator\[(\w+)\] \| AsyncIterator\[(\w+)\]", string)
+                if not match:
+                    raise ValueError("Failed to parse union of 2 'AsyncIterator's")
+                return " | ".join(match.groups())
+            else:
+                raise ValueError("Failed to parse union of more than 2 'AsyncIterator's")
 
         if not string.startswith("Generator["):
             raise ValueError("All generators must be annotated using 'Generator' or 'Iterator'")

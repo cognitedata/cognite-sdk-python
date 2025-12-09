@@ -52,8 +52,13 @@ class InstanceId:
     def load(cls, data: dict[str, str] | tuple[str, str] | Self) -> Self:
         if isinstance(data, cls):
             return data
-        elif isinstance(data, tuple) and len(data) == 2:
-            return cls(*data)
+        elif isinstance(data, tuple):
+            if len(data) == 2:
+                return cls(*data)
+            raise ValueError(
+                f"Cannot load {data} into {cls}, expected exactly two elements in the tuple, got {len(data)}"
+            )
+
         elif isinstance(data, dict):
             if "externalId" in data:
                 return cls(space=data["space"], external_id=data["externalId"])
@@ -542,8 +547,8 @@ class PrincipalIdentifierSequence(IdentifierSequenceCore[PrincipalIdentifier]):
     @classmethod
     def load(
         cls,
-        ids: str | Sequence[str] | SequenceNotStr[str] | None = None,
-        external_ids: str | Sequence[str] | SequenceNotStr[str] | None = None,
+        ids: str | SequenceNotStr[str] | None = None,
+        external_ids: str | SequenceNotStr[str] | None = None,
     ) -> PrincipalIdentifierSequence:
         return cls(
             identifiers=PrincipalIdentifierSequence._load_identifiers(ids, external_ids),
@@ -553,8 +558,8 @@ class PrincipalIdentifierSequence(IdentifierSequenceCore[PrincipalIdentifier]):
 
     @staticmethod
     def _load_identifiers(
-        ids: str | Sequence[str] | SequenceNotStr[str] | None,
-        external_ids: str | Sequence[str] | SequenceNotStr[str] | None,
+        ids: str | SequenceNotStr[str] | None,
+        external_ids: str | SequenceNotStr[str] | None,
     ) -> list[PrincipalIdentifier]:
         identifiers: list[PrincipalIdentifier] = []
         if ids is not None:
@@ -571,5 +576,5 @@ class PrincipalIdentifierSequence(IdentifierSequenceCore[PrincipalIdentifier]):
             elif isinstance(external_ids, Sequence):
                 identifiers.extend([PrincipalIdentifier(external_id=extid) for extid in external_ids])
             else:
-                raise TypeError(f"external_ids must be of type str or SequenceNotStr[str]. Found {type(external_ids)}")
+                raise TypeError(f"external_ids must be of type str or Sequence[str]. Found {type(external_ids)}")
         return identifiers

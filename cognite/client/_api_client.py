@@ -1,33 +1,21 @@
 from __future__ import annotations
 
-import functools
-import gzip
+import asyncio
 import itertools
 import logging
-import re
 import warnings
 from collections import UserList
-from collections.abc import Iterator, Mapping, MutableMapping, Sequence
-from re import Pattern
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from typing import (
-    TYPE_CHECKING,
     Any,
     ClassVar,
     Literal,
-    NoReturn,
     TypeVar,
     cast,
     overload,
 )
-from urllib.parse import urljoin
 
-import requests.utils
-from requests import Response
-from requests.exceptions import JSONDecodeError as RequestsJSONDecodeError
-from requests.structures import CaseInsensitiveDict
-
-from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
-from cognite.client.config import global_config
+from cognite.client._basic_api_client import BasicAsyncAPIClient
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
@@ -42,17 +30,14 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
-from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError, CogniteProjectAccessError
-from cognite.client.utils import _json
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import (
-    get_current_sdk_version,
-    get_user_agent,
-    interpolate_and_url_encode,
     is_unlimited,
     split_into_chunks,
+    unpack_items,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import TaskExecutor, execute_tasks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import (
     Identifier,
     IdentifierCore,
@@ -60,14 +45,10 @@ from cognite.client.utils._identifier import (
     IdentifierSequenceCore,
     SingletonIdentifierSequence,
 )
-from cognite.client.utils._json import JSONDecodeError
-from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type, verify_limit
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-    from cognite.client.config import ClientConfig
 
 logger = logging.getLogger(__name__)
 
@@ -76,252 +57,10 @@ T = TypeVar("T", bound=CogniteObject)
 VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"}
 
 
-class APIClient:
-    _RESOURCE_PATH: str
-    __NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS: ClassVar[list[str]] = [
-        "annotations",
-        "assets",
-        "context/entitymatching",
-        "datasets",
-        "documents",
-        "events",
-        "extpipes",
-        "extpipes/config",
-        "extpipes/runs",
-        "files",
-        "functions",
-        "functions/[^/]+/call",
-        "functions/schedules",
-        "geospatial",
-        "geospatial/crs",
-        "geospatial/featuretypes",
-        "geospatial/featuretypes/[^/]+/features",
-        "hostedextractors",
-        "labels",
-        "postgresgateway",
-        "profiles",
-        "raw/dbs$",
-        "raw/dbs/[^/]+/tables$",
-        "relationships",
-        "sequences",
-        "simulators",
-        "simulators/models",
-        "simulators/models/revisions",
-        "simulators/models/routines",
-        "simulators/models/routines/revisions",
-        "timeseries",
-        "transformations",
-        "transformations/schedules",
-        "3d/models",
-        "3d/models/[^/]+/revisions",
-        "3d/models/[^/]+/revisions/[^/]+/mappings",
-        "3d/models/[^/]+/revisions/[^/]+/nodes",
-    ]
+class APIClient(BasicAsyncAPIClient):
+    _RESOURCE_PATH: ClassVar[str]
 
-    _NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN: ClassVar[Pattern[str]] = re.compile(
-        r"|".join(
-            rf"^/{path}(\?.*)?$"
-            for path in (
-                f"({r'|'.join(__NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS)})(/delete)?$",
-                "ai/tools/documents/task",
-                "annotations/suggest",
-                "extpipes/config/revert",
-                "transformations/cancel",
-                "transformations/notifications",
-                "transformations/run",
-            )
-        )
-    )
-
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
-        self._config = config
-        self._api_version = api_version
-        self._api_subversion = config.api_subversion
-        self._cognite_client = cognite_client
-        self._init_http_clients()
-
-        self._CREATE_LIMIT = 1000
-        self._LIST_LIMIT = 1000
-        self._RETRIEVE_LIMIT = 1000
-        self._DELETE_LIMIT = 1000
-        self._UPDATE_LIMIT = 1000
-
-    def _init_http_clients(self) -> None:
-        session = get_global_requests_session()
-        self._http_client = HTTPClient(
-            config=HTTPClientConfig(
-                status_codes_to_retry={429},
-                backoff_factor=0.5,
-                max_backoff_seconds=global_config.max_retry_backoff,
-                max_retries_total=global_config.max_retries,
-                max_retries_read=0,
-                max_retries_connect=global_config.max_retries_connect,
-                max_retries_status=global_config.max_retries,
-            ),
-            session=session,
-            refresh_auth_header=self._refresh_auth_header,
-        )
-        self._http_client_with_retry = HTTPClient(
-            config=HTTPClientConfig(
-                status_codes_to_retry=global_config.status_forcelist,
-                backoff_factor=0.5,
-                max_backoff_seconds=global_config.max_retry_backoff,
-                max_retries_total=global_config.max_retries,
-                max_retries_read=global_config.max_retries,
-                max_retries_connect=global_config.max_retries_connect,
-                max_retries_status=global_config.max_retries,
-            ),
-            session=session,
-            refresh_auth_header=self._refresh_auth_header,
-        )
-
-    def _delete(
-        self, url_path: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> Response:
-        return self._do_request("DELETE", url_path, params=params, headers=headers, timeout=self._config.timeout)
-
-    def _get(
-        self, url_path: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> Response:
-        return self._do_request("GET", url_path, params=params, headers=headers, timeout=self._config.timeout)
-
-    def _post(
-        self,
-        url_path: str,
-        json: dict[str, Any] | None = None,
-        params: dict[str, Any] | None = None,
-        headers: dict[str, Any] | None = None,
-        api_subversion: str | None = None,
-    ) -> Response:
-        return self._do_request(
-            "POST",
-            url_path,
-            json=json,
-            headers=headers,
-            params=params,
-            timeout=self._config.timeout,
-            api_subversion=api_subversion,
-        )
-
-    def _put(
-        self, url_path: str, json: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> Response:
-        return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._config.timeout)
-
-    def _do_request(
-        self,
-        method: str,
-        url_path: str,
-        accept: str = "application/json",
-        api_subversion: str | None = None,
-        **kwargs: Any,
-    ) -> Response:
-        is_retryable, full_url = self._resolve_url(method, url_path)
-        json_payload = kwargs.pop("json", None)
-        headers = self._configure_headers(
-            accept,
-            additional_headers=self._config.headers.copy(),
-            api_subversion=api_subversion,
-        )
-        headers.update(kwargs.get("headers") or {})
-
-        if json_payload is not None:
-            try:
-                data = _json.dumps(json_payload, allow_nan=False)
-            except ValueError as e:
-                # A lot of work to give a more human friendly error message when nans and infs are present:
-                msg = "Out of range float values are not JSON compliant"
-                if msg in str(e):  # exc. might e.g. contain an extra ": nan", depending on build (_json.make_encoder)
-                    raise ValueError(f"{msg}. Make sure your data does not contain NaN(s) or +/- Inf!").with_traceback(
-                        e.__traceback__
-                    ) from None
-                raise
-            kwargs["data"] = data
-            if method in ["PUT", "POST"] and not global_config.disable_gzip:
-                kwargs["data"] = gzip.compress(data.encode())
-                headers["Content-Encoding"] = "gzip"
-
-        kwargs["headers"] = headers
-
-        # requests will by default follow redirects. This can be an SSRF-hazard if
-        # the client can be tricked to request something with an open redirect, in
-        # addition to leaking the token, as requests will send the headers to the
-        # redirected-to endpoint.
-        # If redirects are to be followed in a call, this should be opted into instead.
-        kwargs.setdefault("allow_redirects", False)
-
-        if is_retryable:
-            res = self._http_client_with_retry.request(method=method, url=full_url, **kwargs)
-        else:
-            res = self._http_client.request(method=method, url=full_url, **kwargs)
-
-        match res.status_code:
-            case 200 | 201 | 202 | 204:
-                pass
-            case 401:
-                self._raise_no_project_access_error(res)
-            case _:
-                self._raise_api_error(res, payload=json_payload)
-
-        stream = kwargs.get("stream")
-        self._log_request(res, payload=json_payload, stream=stream)
-        return res
-
-    def _configure_headers(
-        self, accept: str, additional_headers: dict[str, str], api_subversion: str | None = None
-    ) -> MutableMapping[str, Any]:
-        headers: MutableMapping[str, Any] = CaseInsensitiveDict()
-        headers.update(requests.utils.default_headers())
-        self._refresh_auth_header(headers)
-        headers["content-type"] = "application/json"
-        headers["accept"] = accept
-        headers["x-cdp-sdk"] = f"CognitePythonSDK:{get_current_sdk_version()}"
-        headers["x-cdp-app"] = self._config.client_name
-        headers["cdf-version"] = api_subversion or self._api_subversion
-        if "User-Agent" in headers:
-            headers["User-Agent"] += f" {get_user_agent()}"
-        else:
-            headers["User-Agent"] = get_user_agent()
-        headers.update(additional_headers)
-        return headers
-
-    def _refresh_auth_header(self, headers: MutableMapping[str, Any]) -> None:
-        auth_header_name, auth_header_value = self._config.credentials.authorization_header()
-        headers[auth_header_name] = auth_header_value
-
-    def _resolve_url(self, method: str, url_path: str) -> tuple[bool, str]:
-        if not url_path.startswith("/"):
-            raise ValueError("URL path must start with '/'")
-        base_url = self._get_base_url_with_base_path()
-        full_url = base_url + url_path
-        is_retryable = self._is_retryable(method, full_url)
-        return is_retryable, full_url
-
-    def _get_base_url_with_base_path(self) -> str:
-        base_path = ""
-        if self._api_version:
-            base_path = f"/api/{self._api_version}/projects/{self._config.project}"
-        return urljoin(self._config.base_url, base_path)
-
-    def _is_retryable(self, method: str, path: str) -> bool:
-        valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
-
-        if method not in valid_methods:
-            raise ValueError(f"Method {method} is not valid. Must be one of {valid_methods}")
-
-        return method in ["GET", "PUT", "PATCH"] or (method == "POST" and self._url_is_retryable(path))
-
-    @classmethod
-    @functools.lru_cache(64)
-    def _url_is_retryable(cls, url: str) -> bool:
-        valid_url_pattern = r"^https?://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
-        match = re.match(valid_url_pattern, url)
-        if not match:
-            raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
-        path = match.group(1)
-        return not cls._NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN.match(path)
-
-    def _retrieve(
+    async def _retrieve(
         self,
         identifier: IdentifierCore,
         cls: type[T_CogniteResource],
@@ -331,7 +70,7 @@ class APIClient:
     ) -> T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
-            res = self._get(
+            res = await self._get(
                 url_path=interpolate_and_url_encode(resource_path + "/{}", str(identifier.as_primitive())),
                 params=params,
                 headers=headers,
@@ -343,7 +82,7 @@ class APIClient:
         return None
 
     @overload
-    def _retrieve_multiple(
+    async def _retrieve_multiple(
         self,
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
@@ -353,13 +92,13 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResource | None: ...
 
     @overload
-    def _retrieve_multiple(
+    async def _retrieve_multiple(
         self,
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
@@ -369,12 +108,12 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList: ...
 
-    def _retrieve_multiple(
+    async def _retrieve_multiple(
         self,
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
@@ -384,33 +123,26 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
 
         ignore_unknown_obj = {} if ignore_unknown_ids is None else {"ignoreUnknownIds": ignore_unknown_ids}
-        tasks: list[dict[str, str | dict[str, Any] | None]] = [
-            {
-                "url_path": resource_path + "/byids",
-                "json": {
-                    "items": id_chunk.as_dicts(),
-                    **ignore_unknown_obj,
-                    **(other_params or {}),
-                },
-                "headers": headers,
-                "params": params,
-            }
+        tasks = [
+            AsyncSDKTask(
+                self._post,
+                url_path=resource_path + "/byids",
+                json={"items": id_chunk.as_dicts()} | ignore_unknown_obj | (other_params or {}),
+                headers=headers,
+                params=params,
+                api_subversion=api_subversion,
+                semaphore=semaphore,
+            )
             for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
-        tasks_summary = execute_tasks(
-            functools.partial(self._post, api_subversion=api_subversion),
-            tasks,
-            max_workers=self._config.max_workers,
-            fail_fast=True,
-            executor=executor,
-        )
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         try:
             tasks_summary.raise_compound_exception_if_failed_tasks(
                 task_unwrap_fn=unpack_items_in_payload,
@@ -428,7 +160,7 @@ class APIClient:
             )
             return (loaded[0] if loaded else None) if identifiers.is_singleton() else loaded
 
-        retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
+        retrieved_items = tasks_summary.joined_results(unpack_items)
 
         if identifiers.is_singleton():
             if retrieved_items:
@@ -439,7 +171,48 @@ class APIClient:
                 return None
         return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
 
+    @overload
     def _list_generator(
+        self,
+        method: Literal["GET", "POST"],
+        list_cls: type[T_CogniteResourceList],
+        resource_cls: type[T_CogniteResource],
+        resource_path: str | None = None,
+        url_path: str | None = None,
+        limit: int | None = None,
+        chunk_size: None = None,
+        filter: dict[str, Any] | None = None,
+        sort: SequenceNotStr | None = None,
+        other_params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        initial_cursor: str | None = None,
+        advanced_filter: dict | Filter | None = None,
+        api_subversion: str | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
+    ) -> AsyncIterator[T_CogniteResource]: ...
+
+    @overload
+    def _list_generator(
+        self,
+        method: Literal["GET", "POST"],
+        list_cls: type[T_CogniteResourceList],
+        resource_cls: type[T_CogniteResource],
+        resource_path: str | None = None,
+        url_path: str | None = None,
+        limit: int | None = None,
+        *,
+        chunk_size: int,
+        filter: dict[str, Any] | None = None,
+        sort: SequenceNotStr | None = None,
+        other_params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        initial_cursor: str | None = None,
+        advanced_filter: dict | Filter | None = None,
+        api_subversion: str | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
+    ) -> AsyncIterator[T_CogniteResourceList]: ...
+
+    async def _list_generator(
         self,
         method: Literal["GET", "POST"],
         list_cls: type[T_CogniteResourceList],
@@ -451,17 +224,12 @@ class APIClient:
         filter: dict[str, Any] | None = None,
         sort: SequenceNotStr[str | dict[str, Any]] | None = None,
         other_params: dict[str, Any] | None = None,
-        partitions: int | None = None,
         headers: dict[str, Any] | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
-    ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
-        if partitions:
-            warnings.warn("passing `partitions` to a generator method is not supported, so it's being ignored")
-            # set chunk_size to None in order to not break the existing API.
-            # TODO: Remove this and support for partitions (in combo with generator) in the next major version
-            chunk_size = None
+        semaphore: asyncio.BoundedSemaphore | None = None,
+    ) -> AsyncIterator[T_CogniteResourceList] | AsyncIterator[T_CogniteResource]:
         limit, url_path, params = self._prepare_params_for_list_generator(
             limit, method, filter, url_path, resource_path, sort, other_params, advanced_filter
         )
@@ -471,14 +239,20 @@ class APIClient:
             if limit and (n_remaining := limit - total_retrieved) < current_limit:
                 current_limit = n_remaining
 
-            params.update(limit=current_limit, cursor=next_cursor)
+            params["limit"] = current_limit
+            if next_cursor is not None:
+                params["cursor"] = next_cursor
+
             if method == "GET":
-                res = self._get(url_path=url_path, params=params, headers=headers)
+                res = await self._get(url_path=url_path, params=params, headers=headers, semaphore=semaphore)
             else:
-                res = self._post(url_path=url_path, json=params, headers=headers, api_subversion=api_subversion)
+                res = await self._post(
+                    url_path=url_path, json=params, headers=headers, api_subversion=api_subversion, semaphore=semaphore
+                )
 
             response = res.json()
-            yield from self._process_into_chunks(response, chunk_size, resource_cls, list_cls, unprocessed_items)
+            for chunk in self._process_into_chunks(response, chunk_size, resource_cls, list_cls, unprocessed_items):
+                yield chunk
 
             next_cursor = response.get("nextCursor")
             total_retrieved += len(response["items"])
@@ -487,7 +261,7 @@ class APIClient:
                     yield list_cls._load(unprocessed_items, cognite_client=self._cognite_client)
                 break
 
-    def _list_generator_raw_responses(
+    async def _list_generator_raw_responses(
         self,
         method: Literal["GET", "POST"],
         settings_forcing_raw_response_loading: list[str],
@@ -498,14 +272,12 @@ class APIClient:
         filter: dict[str, Any] | None = None,
         sort: SequenceNotStr[str | dict[str, Any]] | None = None,
         other_params: dict[str, Any] | None = None,
-        partitions: int | None = None,
         headers: dict[str, Any] | None = None,
         initial_cursor: str | None = None,
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
-    ) -> Iterator[dict[str, Any]]:
-        if partitions:
-            raise ValueError("When fetching additional data (besides items), using partitions is not supported")
+        semaphore: asyncio.BoundedSemaphore | None = None,
+    ) -> AsyncIterator[dict[str, Any]]:
         if not chunk_size:
             raise ValueError(
                 f"When fetching additional data (besides items), {chunk_size=} must match the "
@@ -528,9 +300,11 @@ class APIClient:
 
             params.update(limit=current_limit, cursor=next_cursor)
             if method == "GET":
-                res = self._get(url_path=url_path, params=params, headers=headers)
+                res = await self._get(url_path=url_path, params=params, headers=headers, semaphore=semaphore)
             else:
-                res = self._post(url_path=url_path, json=params, headers=headers, api_subversion=api_subversion)
+                res = await self._post(
+                    url_path=url_path, json=params, headers=headers, api_subversion=api_subversion, semaphore=semaphore
+                )
 
             yield (response := res.json())
             next_cursor = response.get("nextCursor")
@@ -577,6 +351,26 @@ class APIClient:
             return limit, url_path, body
         raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
 
+    @overload
+    def _process_into_chunks(
+        self,
+        response: dict[str, Any],
+        chunk_size: None,
+        resource_cls: type[T_CogniteResource],
+        list_cls: type[T_CogniteResourceList],
+        unprocessed_items: list[dict[str, Any]],
+    ) -> Iterator[T_CogniteResource]: ...
+
+    @overload
+    def _process_into_chunks(
+        self,
+        response: dict[str, Any],
+        chunk_size: int,
+        resource_cls: type[T_CogniteResource],
+        list_cls: type[T_CogniteResourceList],
+        unprocessed_items: list[dict[str, Any]],
+    ) -> Iterator[T_CogniteResourceList]: ...
+
     def _process_into_chunks(
         self,
         response: dict[str, Any],
@@ -585,7 +379,7 @@ class APIClient:
         list_cls: type[T_CogniteResourceList],
         unprocessed_items: list[dict[str, Any]],
     ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
-        if not chunk_size:
+        if chunk_size is None:
             for item in response["items"]:
                 yield resource_cls._load(item, cognite_client=self._cognite_client)
         else:
@@ -598,7 +392,7 @@ class APIClient:
                 for chunk in chunks:
                     yield list_cls._load(chunk, cognite_client=self._cognite_client)
 
-    def _list(
+    async def _list(
         self,
         method: Literal["POST", "GET"],
         list_cls: type[T_CogniteResourceList],
@@ -615,6 +409,7 @@ class APIClient:
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList:
         verify_limit(limit)
         if partitions:
@@ -630,7 +425,7 @@ class APIClient:
                     f"supported (yet): {settings_forcing_raw_response_loading}"
                 )
             assert initial_cursor is api_subversion is None
-            return self._list_partitioned(
+            return await self._list_partitioned(
                 partitions=partitions,
                 method=method,
                 list_cls=list_cls,
@@ -639,8 +434,35 @@ class APIClient:
                 advanced_filter=advanced_filter,
                 other_params=other_params,
                 headers=headers,
+                semaphore=semaphore,
             )
-        fetch_kwargs = dict(
+        if settings_forcing_raw_response_loading:
+            raw_response_fetcher = self._list_generator_raw_responses(
+                method,
+                settings_forcing_raw_response_loading,
+                resource_path=resource_path or self._RESOURCE_PATH,
+                url_path=url_path,
+                limit=limit,
+                chunk_size=self._LIST_LIMIT,
+                filter=filter,
+                sort=sort,
+                other_params=other_params,
+                headers=headers,
+                initial_cursor=initial_cursor,
+                advanced_filter=advanced_filter,
+                api_subversion=api_subversion,
+                semaphore=semaphore,
+            )
+            return list_cls._load_raw_api_response(
+                [r async for r in raw_response_fetcher],
+                cognite_client=self._cognite_client,
+            )
+        # TODO: List generator loads each chunk into 'list_cls', so kind of weird for us to chain
+        #       elements, then do it again. Perhaps a modified version of 'raw responses' should be used:
+        async_gen = self._list_generator(
+            method,
+            list_cls,
+            resource_cls,
             resource_path=resource_path or self._RESOURCE_PATH,
             url_path=url_path,
             limit=limit,
@@ -652,29 +474,54 @@ class APIClient:
             initial_cursor=initial_cursor,
             advanced_filter=advanced_filter,
             api_subversion=api_subversion,
+            semaphore=semaphore,
         )
-        if settings_forcing_raw_response_loading:
-            raw_response_fetcher = self._list_generator_raw_responses(
-                method,
-                settings_forcing_raw_response_loading,
-                **fetch_kwargs,  # type: ignore [arg-type]
-            )
-            return list_cls._load_raw_api_response(
-                list(raw_response_fetcher),
-                cognite_client=self._cognite_client,
-            )
-        # TODO: List generator loads each chunk into 'list_cls', so kind of weird for us to chain
-        #       elements, then do it again. Perhaps a modified version of 'raw responses' should be used:
-        resource_fetcher = cast(
-            Iterator[T_CogniteResourceList],
-            self._list_generator(method, list_cls, resource_cls, **fetch_kwargs),  # type: ignore [arg-type]
-        )
+        resource_lists = [rl async for rl in async_gen]
         return list_cls(
-            list(itertools.chain.from_iterable(resource_fetcher)),
+            list(itertools.chain.from_iterable(cast(T_CogniteResourceList, resource_lists))),
             cognite_client=self._cognite_client,
         )
 
-    def _list_partitioned(
+    async def _get_partition(
+        self,
+        method: Literal["POST", "GET"],
+        partition: int,
+        other_params: dict[str, Any],
+        advanced_filter: dict | None,
+        url_path: str,
+        headers: dict[str, Any] | None,
+        filter: dict[str, Any],
+        semaphore: asyncio.BoundedSemaphore | None,
+    ) -> list[dict[str, Any]]:
+        next_cursor = None
+        retrieved_items = []
+        while True:
+            if method == "POST":
+                body = {
+                    "filter": filter,
+                    "limit": self._LIST_LIMIT,
+                    "cursor": next_cursor,
+                    "partition": partition,
+                } | other_params
+                if advanced_filter is not None:
+                    body["advancedFilter"] = advanced_filter
+                res = await self._post(url_path=url_path + "/list", json=body, headers=headers, semaphore=semaphore)
+
+            elif method == "GET":
+                params = (
+                    filter | {"limit": self._LIST_LIMIT, "cursor": next_cursor, "partition": partition} | other_params
+                )
+                res = await self._get(url_path=url_path, params=params, headers=headers)
+            else:
+                raise ValueError(f"Unsupported method: {method}")
+
+            retrieved_items.extend(unpack_items(res))
+            next_cursor = res.json().get("nextCursor")
+            if next_cursor is None:
+                break
+        return retrieved_items
+
+    async def _list_partitioned(
         self,
         partitions: int,
         method: Literal["POST", "GET"],
@@ -684,82 +531,51 @@ class APIClient:
         other_params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
         advanced_filter: dict | Filter | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList:
-        def get_partition(partition: int) -> list[dict[str, Any]]:
-            next_cursor = None
-            retrieved_items = []
-            while True:
-                if method == "POST":
-                    body = {
-                        "filter": filter or {},
-                        "limit": self._LIST_LIMIT,
-                        "cursor": next_cursor,
-                        "partition": partition,
-                        **(other_params or {}),
-                    }
-                    if advanced_filter is not None:
-                        body["advancedFilter"] = (
-                            advanced_filter.dump(camel_case_property=True)
-                            if isinstance(advanced_filter, Filter)
-                            else advanced_filter
-                        )
-                    res = self._post(
-                        url_path=(resource_path or self._RESOURCE_PATH) + "/list", json=body, headers=headers
-                    )
-                elif method == "GET":
-                    params = {
-                        **(filter or {}),
-                        "limit": self._LIST_LIMIT,
-                        "cursor": next_cursor,
-                        "partition": partition,
-                        **(other_params or {}),
-                    }
-                    res = self._get(url_path=(resource_path or self._RESOURCE_PATH), params=params, headers=headers)
-                else:
-                    raise ValueError(f"Unsupported method: {method}")
-                retrieved_items.extend(res.json()["items"])
-                next_cursor = res.json().get("nextCursor")
-                if next_cursor is None:
-                    break
-            return retrieved_items
-
-        tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
-        tasks_summary = execute_tasks(get_partition, tasks, max_workers=self._config.max_workers, fail_fast=True)
+        if isinstance(advanced_filter, Filter):
+            advanced_filter = advanced_filter.dump(camel_case_property=True)
+        tasks = [
+            AsyncSDKTask(
+                self._get_partition,
+                method,
+                partition=f"{i}/{partitions}",
+                other_params=other_params or {},
+                advanced_filter=advanced_filter,
+                url_path=resource_path or self._RESOURCE_PATH,
+                headers=headers,
+                filter=filter or {},
+                semaphore=semaphore,
+            )
+            for i in range(1, partitions + 1)
+        ]
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
 
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
-    def _aggregate(
+    async def _aggregate_count(
         self,
-        cls: type[T],
         resource_path: str | None = None,
         filter: CogniteFilter | dict[str, Any] | None = None,
-        aggregate: str | None = None,
-        fields: SequenceNotStr[str] | None = None,
-        keys: SequenceNotStr[str] | None = None,
         headers: dict[str, Any] | None = None,
-    ) -> list[T]:
+    ) -> int:
         assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
-        assert_type(fields, "fields", [list], allow_none=True)
+
         if isinstance(filter, CogniteFilter):
             dumped_filter = filter.dump(camel_case=True)
         elif isinstance(filter, dict):
             dumped_filter = convert_all_keys_to_camel_case(filter)
         else:
             dumped_filter = {}
+
         resource_path = resource_path or self._RESOURCE_PATH
         body: dict[str, Any] = {"filter": dumped_filter}
-        if aggregate is not None:
-            body["aggregate"] = aggregate
-        if fields is not None:
-            body["fields"] = fields
-        if keys is not None:
-            body["keys"] = keys
-        res = self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
-        return [cls._load(agg) for agg in res.json()["items"]]
+        res = await self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
+        return unpack_items(res)[0]["count"]
 
     @overload
-    def _advanced_aggregate(
+    async def _advanced_aggregate(
         self,
         aggregate: Literal["count", "cardinalityValues", "cardinalityProperties"],
         properties: EnumProperty
@@ -777,7 +593,7 @@ class APIClient:
     ) -> int: ...
 
     @overload
-    def _advanced_aggregate(
+    async def _advanced_aggregate(
         self,
         aggregate: Literal["uniqueValues", "uniqueProperties"],
         properties: EnumProperty
@@ -794,7 +610,7 @@ class APIClient:
         api_subversion: str | None = None,
     ) -> UniqueResultList: ...
 
-    def _advanced_aggregate(
+    async def _advanced_aggregate(
         self,
         aggregate: Literal["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"],
         properties: EnumProperty
@@ -866,8 +682,8 @@ class APIClient:
         if limit is not None:
             body["limit"] = limit
 
-        res = self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body, api_subversion=api_subversion)
-        json_items = res.json()["items"]
+        res = await self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body, api_subversion=api_subversion)
+        json_items = unpack_items(res)
         if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
             return json_items[0]["count"]
         elif aggregate in {"uniqueValues", "uniqueProperties"}:
@@ -876,7 +692,7 @@ class APIClient:
             raise ValueError(f"Unknown aggregate: {aggregate}")
 
     @overload
-    def _create_multiple(
+    async def _create_multiple(
         self,
         items: Sequence[WriteableCogniteResource] | Sequence[dict[str, Any]],
         list_cls: type[T_CogniteResourceList],
@@ -887,12 +703,12 @@ class APIClient:
         extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList: ...
 
     @overload
-    def _create_multiple(
+    async def _create_multiple(
         self,
         items: WriteableCogniteResource | dict[str, Any],
         list_cls: type[T_CogniteResourceList],
@@ -903,11 +719,11 @@ class APIClient:
         extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_WritableCogniteResource: ...
 
-    def _create_multiple(
+    async def _create_multiple(
         self,
         items: Sequence[WriteableCogniteResource]
         | Sequence[dict[str, Any]]
@@ -921,8 +737,8 @@ class APIClient:
         extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList | T_WritableCogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         input_resource_cls = input_resource_cls or resource_cls
@@ -936,32 +752,38 @@ class APIClient:
         items = [item.as_write() if isinstance(item, WriteableCogniteResource) else item for item in items]
 
         tasks = [
-            (resource_path, task_items, params, headers)
+            AsyncSDKTask(
+                self._post,
+                resource_path,
+                task_items,
+                params,
+                headers,
+                api_subversion=api_subversion,
+                semaphore=semaphore,
+            )
             for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
         ]
-        summary = execute_tasks(
-            functools.partial(self._post, api_subversion=api_subversion),
-            tasks,
-            max_workers=self._config.max_workers,
-            executor=executor,
-        )
+        summary = await execute_async_tasks(tasks)
 
-        def unwrap_element(el: T) -> CogniteResource | T:
+        def task_unwrap_fn(task: AsyncSDKTask) -> Any:
+            return task[1]["items"]
+
+        def task_list_element_unwrap_fn(el: T) -> CogniteResource | T:
             if isinstance(el, dict):
                 return input_resource_cls._load(el, cognite_client=self._cognite_client)
-            else:
-                return el
+            return el
 
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task[1]["items"], task_list_element_unwrap_fn=unwrap_element
+            task_unwrap_fn=task_unwrap_fn,
+            task_list_element_unwrap_fn=task_list_element_unwrap_fn,
         )
-        created_resources = summary.joined_results(lambda res: res.json()["items"])
+        created_resources = summary.joined_results(unpack_items)
 
         if single_item:
             return resource_cls._load(created_resources[0], cognite_client=self._cognite_client)
         return list_cls._load(created_resources, cognite_client=self._cognite_client)
 
-    def _delete_multiple(
+    async def _delete_multiple(
         self,
         identifiers: IdentifierSequenceCore,
         wrap_ids: bool,
@@ -970,34 +792,33 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         extra_body_fields: dict[str, Any] | None = None,
         returns_items: bool = False,
-        executor: TaskExecutor | None = None,
         delete_endpoint: str = "/delete",
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> list | None:
         resource_path = (resource_path or self._RESOURCE_PATH) + delete_endpoint
+        extra_body_fields = extra_body_fields or {}
         tasks = [
-            {
-                "url_path": resource_path,
-                "json": {
-                    "items": chunk.as_dicts() if wrap_ids else chunk.as_primitives(),
-                    **(extra_body_fields or {}),
-                },
-                "params": params,
-                "headers": headers,
-            }
+            AsyncSDKTask(
+                self._post,
+                url_path=resource_path,
+                json={"items": chunk.as_dicts() if wrap_ids else chunk.as_primitives()} | extra_body_fields,
+                params=params,
+                headers=headers,
+                semaphore=semaphore,
+            )
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
-        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers, executor=executor)
+        summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=identifiers.unwrap_identifier,
         )
         if returns_items:
-            return summary.joined_results(lambda res: res.json()["items"])
-        else:
-            return None
+            return summary.joined_results(unpack_items)
+        return None
 
     @overload
-    def _update_multiple(
+    async def _update_multiple(
         self,
         items: CogniteResource | CogniteUpdate | WriteableCogniteResource,
         list_cls: type[T_CogniteResourceList],
@@ -1012,7 +833,7 @@ class APIClient:
     ) -> T_CogniteResource: ...
 
     @overload
-    def _update_multiple(
+    async def _update_multiple(
         self,
         items: Sequence[CogniteResource | CogniteUpdate | WriteableCogniteResource],
         list_cls: type[T_CogniteResourceList],
@@ -1026,7 +847,7 @@ class APIClient:
         cdf_item_by_id: Mapping[Any, T_CogniteResource] | None = None,
     ) -> T_CogniteResourceList: ...
 
-    def _update_multiple(
+    async def _update_multiple(
         self,
         items: Sequence[CogniteResource | CogniteUpdate | WriteableCogniteResource]
         | CogniteResource
@@ -1067,24 +888,28 @@ class APIClient:
         patch_object_chunks = split_into_chunks(patch_objects, self._UPDATE_LIMIT)
 
         tasks = [
-            {"url_path": resource_path + "/update", "json": {"items": chunk}, "params": params, "headers": headers}
+            AsyncSDKTask(
+                self._post,
+                url_path=resource_path + "/update",
+                json={"items": chunk},
+                params=params,
+                headers=headers,
+                api_subversion=api_subversion,
+            )
             for chunk in patch_object_chunks
         ]
-
-        tasks_summary = execute_tasks(
-            functools.partial(self._post, api_subversion=api_subversion), tasks, max_workers=self._config.max_workers
-        )
+        tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload,
-            task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
+            task_list_element_unwrap_fn=IdentifierSequenceCore.unwrap_identifier,
         )
-        updated_items = tasks_summary.joined_results(lambda res: res.json()["items"])
+        updated_items = tasks_summary.joined_results(unpack_items)
 
         if single_item:
             return resource_cls._load(updated_items[0], cognite_client=self._cognite_client)
         return list_cls._load(updated_items, cognite_client=self._cognite_client)
 
-    def _upsert_multiple(
+    async def _upsert_multiple(
         self,
         items: WriteableCogniteResource | Sequence[WriteableCogniteResource],
         list_cls: type[T_CogniteResourceList],
@@ -1100,7 +925,7 @@ class APIClient:
         is_single = isinstance(items, WriteableCogniteResource)
         items = cast(Sequence[T_WritableCogniteResource], [items] if is_single else items)
         try:
-            result = self._update_multiple(
+            result = await self._update_multiple(
                 items,
                 list_cls,
                 resource_cls,
@@ -1114,15 +939,11 @@ class APIClient:
             items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
             # Not found must have an external id as they do not exist in CDF:
             try:
-                missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
+                missing_external_ids = {entry["externalId"] for entry in not_found_error.missing}
             except KeyError:
                 # There is a not found internal id, which means we cannot identify it.
                 raise not_found_error
-            to_create = [
-                items_by_external_id[external_id]
-                for external_id in not_found_error.failed
-                if external_id in missing_external_ids
-            ]
+            to_create = [items_by_external_id[xid] for xid in not_found_error.failed if xid in missing_external_ids]
 
             # Updates can have either external id or id. If they have an id, they must exist in CDF.
             to_update = [
@@ -1135,7 +956,7 @@ class APIClient:
             updated: T_CogniteResourceList | None = None
             try:
                 if to_create:
-                    created = self._create_multiple(
+                    created = await self._create_multiple(
                         to_create,
                         list_cls=list_cls,
                         resource_cls=resource_cls,
@@ -1143,7 +964,7 @@ class APIClient:
                         api_subversion=api_subversion,
                     )
                 if to_update:
-                    updated = self._update_multiple(
+                    updated = await self._update_multiple(
                         to_update,
                         list_cls=list_cls,
                         resource_cls=resource_cls,
@@ -1178,7 +999,7 @@ class APIClient:
             successful_resources: T_CogniteResourceList | None = None
             if not_found_error.successful:
                 identifiers = IdentifierSequence.of(*not_found_error.successful)
-                successful_resources = self._retrieve_multiple(
+                successful_resources = await self._retrieve_multiple(
                     list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers, api_subversion=api_subversion
                 )
                 if isinstance(successful_resources, resource_cls):
@@ -1190,18 +1011,17 @@ class APIClient:
             # Reorder to match the order of the input items
             result.data = [
                 result.get(
-                    **Identifier.load(item.id if hasattr(item, "id") else None, item.external_id).as_dict(  # type: ignore [attr-defined]
+                    **Identifier.load(getattr(item, "id", None), item.external_id).as_dict(  # type: ignore [attr-defined]
                         camel_case=False
                     )
                 )
                 for item in items
             ]
-
         if is_single:
             return result[0]
         return result
 
-    def _search(
+    async def _search(
         self,
         list_cls: type[T_CogniteResourceList],
         search: dict,
@@ -1219,14 +1039,14 @@ class APIClient:
         elif isinstance(filter, dict):
             filter = convert_all_keys_to_camel_case(filter)
         resource_path = resource_path or self._RESOURCE_PATH
-        res = self._post(
+        res = await self._post(
             url_path=resource_path + "/search",
             json={"search": search, "filter": filter, "limit": limit},
             params=params,
             headers=headers,
             api_subversion=api_subversion,
         )
-        return list_cls._load(res.json()["items"], cognite_client=self._cognite_client)
+        return list_cls._load(unpack_items(res), cognite_client=self._cognite_client)
 
     @staticmethod
     def _prepare_item_chunks(
@@ -1294,110 +1114,3 @@ class APIClient:
                 continue
             cleared[to_camel_case(prop.name)] = clear_with
         return cleared
-
-    def _raise_no_project_access_error(self, res: Response) -> NoReturn:
-        raise CogniteProjectAccessError(
-            client=self._cognite_client,
-            project=self._cognite_client._config.project,
-            x_request_id=res.headers.get("X-Request-Id"),
-            cluster=self._config.cdf_cluster,
-        )
-
-    def _raise_api_error(self, res: Response, payload: dict) -> NoReturn:
-        x_request_id = res.headers.get("X-Request-Id")
-        code = res.status_code
-        missing = None
-        duplicated = None
-        extra = {}
-        try:
-            error = res.json()["error"]
-            if isinstance(error, str):
-                msg = error
-            elif isinstance(error, dict):
-                msg = error["message"]
-                missing = error.get("missing")
-                duplicated = error.get("duplicated")
-                for k, v in error.items():
-                    if k not in ["message", "missing", "duplicated", "code"]:
-                        extra[k] = v
-            else:
-                msg = res.content.decode()
-        except Exception:
-            msg = res.content.decode()
-
-        error_details: dict[str, Any] = {"X-Request-ID": x_request_id}
-        if payload:
-            error_details["payload"] = payload
-        if missing:
-            error_details["missing"] = missing
-        if duplicated:
-            error_details["duplicated"] = duplicated
-        error_details["headers"] = res.request.headers.copy()
-        self._sanitize_headers(error_details["headers"])
-        error_details["response_payload"] = shorten(self._get_response_content_safe(res), 500)
-        error_details["response_headers"] = res.headers
-
-        if res.history:
-            for res_hist in res.history:
-                logger.debug(
-                    f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} {res_hist.request.url}: {res_hist.content.decode()}"
-                )
-        logger.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
-        # TODO: We should throw "CogniteNotFoundError" if missing is populated and CogniteDuplicatedError when duplicated...
-        raise CogniteAPIError(
-            message=msg,
-            code=code,
-            x_request_id=x_request_id,
-            missing=missing,
-            duplicated=duplicated,
-            extra=extra,
-            cluster=self._config.cdf_cluster,
-            project=self._config.project,
-        )
-
-    def _log_request(self, res: Response, **kwargs: Any) -> None:
-        method = res.request.method
-        url = res.request.url
-        status_code = res.status_code
-
-        extra = kwargs.copy()
-        extra["headers"] = res.request.headers.copy()
-        self._sanitize_headers(extra["headers"])
-        if extra["payload"] is None:
-            del extra["payload"]
-
-        stream = kwargs.get("stream")
-        if not stream and self._config.debug is True:
-            extra["response_payload"] = shorten(self._get_response_content_safe(res), 500)
-        extra["response_headers"] = res.headers
-
-        try:
-            http_protocol = f"HTTP/{'.'.join(str(res.raw.version))}"
-        except AttributeError:
-            # If this fails, it means we are running in a browser (pyodide) with patched requests package:
-            http_protocol = "XMLHTTP"
-
-        logger.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
-
-    @staticmethod
-    def _get_response_content_safe(res: Response) -> str:
-        try:
-            return _json.dumps(res.json())
-        except (JSONDecodeError, RequestsJSONDecodeError):
-            pass
-
-        try:
-            return res.content.decode()
-        except UnicodeDecodeError:
-            pass
-
-        return "<binary>"
-
-    @staticmethod
-    def _sanitize_headers(headers: dict[str, Any] | None) -> None:
-        if headers is None:
-            return None
-        if "api-key" in headers:
-            headers["api-key"] = "***"
-        if "Authorization" in headers:
-            headers["Authorization"] = "***"

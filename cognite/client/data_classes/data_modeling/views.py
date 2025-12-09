@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
@@ -27,7 +26,7 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class ViewCore(DataModelingSchemaResource["ViewApply"], ABC):
@@ -105,7 +104,7 @@ class ViewApply(ViewCore):
         self.properties = properties
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         properties = (
             {k: ViewPropertyApply.load(v) for k, v in resource["properties"].items()}
             if "properties" in resource
@@ -200,7 +199,7 @@ class View(ViewCore):
         self.created_time = created_time
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> View:
+    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> View:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -358,18 +357,13 @@ class ViewFilter(CogniteFilter):
 
 class ViewProperty(CogniteObject, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ViewProperty:
         if "connectionType" in resource:
-            return cast(Self, ConnectionDefinition.load(resource))
+            return ConnectionDefinition.load(resource)
         elif "direction" in resource:
-            warnings.warn(
-                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection. "
-                "This will be required in the next major version",
-                DeprecationWarning,
-            )
-            return cast(Self, MultiEdgeConnection.load(resource))
+            raise ValueError("Connection Definition is missing field 'connectionType'")
         else:
-            return cast(Self, MappedProperty.load(resource))
+            return MappedProperty.load(resource)
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -378,18 +372,13 @@ class ViewProperty(CogniteObject, ABC):
 
 class ViewPropertyApply(CogniteObject, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ViewPropertyApply:
         if "connectionType" in resource:
-            return cast(Self, ConnectionDefinitionApply.load(resource))
+            return ConnectionDefinitionApply.load(resource)
         elif "direction" in resource:
-            warnings.warn(
-                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection. "
-                "This will be required in the next major version",
-                DeprecationWarning,
-            )
-            return cast(Self, MultiEdgeConnectionApply.load(resource))
+            raise ValueError("Connection Definition is missing field 'connectionType'")
         else:
-            return cast(Self, MappedPropertyApply.load(resource))
+            return MappedPropertyApply.load(resource)
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -405,7 +394,7 @@ class MappedPropertyApply(ViewPropertyApply):
     source: ViewId | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             container=ContainerId.load(resource["container"]),
             container_property_identifier=resource["containerPropertyIdentifier"],
@@ -445,7 +434,7 @@ class MappedProperty(ViewProperty):
     constraint_state: PropertyConstraintState | None = field(default=None, init=False)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         type_ = resource["type"]
         source = type_.get("source", None) or resource.get("source")
 
@@ -497,19 +486,19 @@ class MappedProperty(ViewProperty):
 @dataclass
 class ConnectionDefinition(ViewProperty, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ConnectionDefinition:
         if "connectionType" not in resource:
             raise ValueError(f"{cls.__name__} must have a connectionType")
         connection_type = to_snake_case(resource["connectionType"])
 
         if connection_type == "single_edge_connection":
-            return cast(Self, SingleEdgeConnection.load(resource))
+            return SingleEdgeConnection.load(resource)
         if connection_type == "multi_edge_connection":
-            return cast(Self, MultiEdgeConnection.load(resource))
+            return MultiEdgeConnection.load(resource)
         if connection_type == "single_reverse_direct_relation":
-            return cast(Self, SingleReverseDirectRelation.load(resource))
+            return SingleReverseDirectRelation.load(resource)
         if connection_type == "multi_reverse_direct_relation":
-            return cast(Self, MultiReverseDirectRelation.load(resource))
+            return MultiReverseDirectRelation.load(resource)
 
         return cast(Self, UnknownCogniteObject(resource))
 
@@ -545,7 +534,7 @@ class EdgeConnection(ConnectionDefinition, ABC):
     direction: Literal["outwards", "inwards"]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         instance = cls(
             type=DirectRelationReference.load(resource["type"]),
             source=ViewId.load(resource["source"]),
@@ -639,7 +628,7 @@ class ReverseDirectRelation(ConnectionDefinition, ABC):
     description: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             source=ViewId.load(resource["source"]),
             through=PropertyId.load(resource["through"]),
@@ -700,7 +689,7 @@ class MultiReverseDirectRelation(ReverseDirectRelation):
 @dataclass
 class ConnectionDefinitionApply(ViewPropertyApply, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         if "connectionType" not in resource:
             raise ValueError(f"{cls.__name__} must have a connectionType")
         connection_type = to_snake_case(resource["connectionType"])
@@ -752,7 +741,7 @@ class EdgeConnectionApply(ConnectionDefinitionApply, ABC):
     direction: Literal["outwards", "inwards"] = "outwards"
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         instance = cls(
             type=DirectRelationReference.load(resource["type"]),
             source=ViewId.load(resource["source"]),
@@ -832,7 +821,7 @@ class ReverseDirectRelationApply(ConnectionDefinitionApply, ABC):
     description: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         instance = cls(
             source=ViewId.load(resource["source"]),
             through=PropertyId.load(resource["through"]),

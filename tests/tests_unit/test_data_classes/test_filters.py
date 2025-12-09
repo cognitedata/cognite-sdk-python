@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 
 import pytest
@@ -12,16 +14,16 @@ def test_filters_warn_in_boolean_contexts() -> None:
     # which is not recommended. The proper way to combine filters is using & and | operators.
     fcrg = FakeCogniteResourceGenerator()
     # Create two random filters:
-    flt1 = fcrg.create_instance(Filter)
-    flt2 = fcrg.create_instance(Filter)
+    flt1 = fcrg.create_instance(Filter)  # type: ignore[type-abstract]
+    flt2 = fcrg.create_instance(Filter)  # type: ignore[type-abstract]
 
     # Test that warnings are issued when using filters in boolean contexts
     match_str = "^" + re.escape("You may be trying to combine two (or more) filters using 'and' or 'or'")
     with pytest.warns(UserWarning, match=match_str):
-        flt1 and flt2  # type: ignore[operator]
+        flt1 and flt2
 
     with pytest.warns(UserWarning, match=match_str):
-        flt1 or flt2  # type: ignore[operator]
+        flt1 or flt2
 
     # Test that the proper filter combination operators still work correctly
     assert type(flt1 & flt2) is And

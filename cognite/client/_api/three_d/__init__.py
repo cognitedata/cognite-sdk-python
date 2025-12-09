@@ -9,12 +9,12 @@ from cognite.client._api.three_d.revisions import ThreeDRevisionsAPI
 from cognite.client._api_client import APIClient
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class ThreeDAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.models = ThreeDModelsAPI(config, api_version, cognite_client)
         self.revisions = ThreeDRevisionsAPI(config, api_version, cognite_client)

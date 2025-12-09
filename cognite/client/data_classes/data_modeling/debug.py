@@ -13,7 +13,7 @@ from cognite.client.data_classes.data_modeling.instances import InstanceSort
 from cognite.client.utils._auxiliary import all_concrete_subclasses
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 @dataclass
@@ -35,7 +35,7 @@ class DebugInfo(CogniteResource):
     plan: ExecutionPlan | None = None
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> DebugInfo:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> DebugInfo:
         return cls(
             notices=DebugNoticeList._load(data["notices"], cognite_client) if "notices" in data else None,
             translated_query=TranslatedQuery._load(data["translatedQuery"]) if "translatedQuery" in data else None,
@@ -68,7 +68,7 @@ class TranslatedQuery(CogniteResource):
     parameters: dict[str, Any]
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> TranslatedQuery:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> TranslatedQuery:
         return cls(query=data["query"], parameters=data["parameters"])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -91,7 +91,7 @@ class ExecutionPlan(CogniteResource):
     by_identifier: dict[str, Any]
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ExecutionPlan:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ExecutionPlan:
         return cls(
             full_plan=data["fullPlan"],
             profiled=data["profiled"],
@@ -159,7 +159,7 @@ class DebugNotice(CogniteResource, ABC):
     level: str
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> DebugNotice:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> DebugNotice:
         subclass_lookup = _create_debug_notice_subclass_map()
         try:
             key = (data["code"], data["category"])
@@ -189,7 +189,7 @@ class ExcessiveTimeoutNotice(InvalidDebugOptionsNotice):
     timeout: int
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -211,7 +211,7 @@ class NoTimeoutWithResultsNotice(InvalidDebugOptionsNotice):
     level: Literal["warning"]
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -234,7 +234,7 @@ class IntractableDirectRelationsCursorNotice(CursoringNotice):
     result_expression: str
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -266,7 +266,7 @@ class UnindexedThroughNotice(IndexingNotice):
     property: list[str]
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -299,7 +299,7 @@ class ContainersWithoutIndexesInvolvedNotice(IndexingNotice):
     containers: list[ContainerId]
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -337,7 +337,7 @@ class SelectiveExternalIDFilterNotice(FilteringNotice):
     via_from: str | None
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -370,7 +370,7 @@ class SignificantHasDataFiltersNotice(FilteringNotice):
     containers: list[ContainerId]
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -404,7 +404,7 @@ class SignificantPostFilteringNotice(FilteringNotice):
     max_involved_rows: int
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -444,7 +444,7 @@ class SortNotBackedByIndexNotice(SortingNotice):
     sort: list[InstanceSort]
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -477,7 +477,7 @@ class FilterMatchesCursorableSortNotice(SortingNotice):
     sort: list[InstanceSort]
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -506,7 +506,7 @@ class UnknownDebugNotice(DebugNotice):
     data: dict[str, Any]
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         data = data.copy()
         category = data.pop("category", cls._MISSING)
         code = data.pop("code", cls._MISSING)
@@ -540,14 +540,16 @@ class DebugNoticeList(CogniteResourceList[DebugNotice]):
 
 @cache
 def _create_debug_notice_subclass_map() -> dict[tuple[str, str], type[DebugNotice]]:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient, CogniteClient
+
+    additional_refs = {"CogniteClient": CogniteClient, "AsyncCogniteClient": AsyncCogniteClient}
 
     lookup = {}
     subclasses: set[type[DebugNotice]] = all_concrete_subclasses(DebugNotice, exclude={UnknownDebugNotice})
     for sub_cls in subclasses:
         # When we do 'get_type_hints', we evaluate forward refs., and we reference InstanceSort in a file
         # that only imports CogniteClient while TYPE_CHECKING, so it is not available at runtime which we need:
-        annots = get_type_hints(sub_cls, globalns=globals() | {"CogniteClient": CogniteClient})
+        annots = get_type_hints(sub_cls, globalns=globals() | additional_refs)
         code = get_args(annots["code"])[0]
         category = get_args(annots["category"])[0]
         lookup[code, category] = sub_cls

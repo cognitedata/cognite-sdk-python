@@ -3,7 +3,7 @@ from __future__ import annotations
 import collections
 import typing
 import warnings
-from collections.abc import Iterator, Mapping
+from collections.abc import AsyncIterator, Mapping
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
 
 from cognite.client._api.sequence_data import SequencesDataAPI
@@ -17,7 +17,7 @@ from cognite.client.data_classes import (
     filters,
 )
 from cognite.client.data_classes._base import CogniteResource, PropertySpec
-from cognite.client.data_classes.aggregations import AggregationFilter, CountAggregate, UniqueResultList
+from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.data_classes.sequences import (
     SequenceColumnUpdate,
@@ -39,7 +39,7 @@ from cognite.client.utils._validation import (
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 SortSpec: TypeAlias = (
@@ -56,10 +56,18 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 class SequencesAPI(APIClient):
     _RESOURCE_PATH = "/sequences"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self.rows = SequencesDataAPI(config, api_version, cognite_client)
-        self.data = self.rows
+        self.data = SequencesDataAPI(config, api_version, cognite_client)
+
+    @property
+    def rows(self) -> SequencesDataAPI:
+        warnings.warn(
+            "The 'sequences.rows' property is deprecated and may be removed in the future. "
+            "Use 'client.sequences.data' to future-proof your code.",
+            DeprecationWarning,
+        )
+        return self.data
 
     @overload
     def __call__(
@@ -76,10 +84,9 @@ class SequencesAPI(APIClient):
         created_time: dict[str, Any] | None = None,
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[Sequence]: ...
+    ) -> AsyncIterator[Sequence]: ...
 
     @overload
     def __call__(
@@ -96,12 +103,11 @@ class SequencesAPI(APIClient):
         created_time: dict[str, Any] | None = None,
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[SequenceList]: ...
+    ) -> AsyncIterator[SequenceList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         name: str | None = None,
@@ -115,10 +121,9 @@ class SequencesAPI(APIClient):
         created_time: dict[str, Any] | None = None,
         last_updated_time: dict[str, Any] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[Sequence] | Iterator[SequenceList]:
+    ) -> AsyncIterator[Sequence] | AsyncIterator[SequenceList]:
         """Iterate over sequences
 
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
@@ -136,13 +141,12 @@ class SequencesAPI(APIClient):
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int | None): Max number of sequences to return. Defaults to return all items.
-            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
-        Returns:
-            Iterator[Sequence] | Iterator[SequenceList]: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
-        """
+        Yields:
+            Sequence | SequenceList: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
+        """  # noqa: DOC404
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -160,7 +164,7 @@ class SequencesAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, SequenceSort)
         self._validate_filter(advanced_filter)
 
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=SequenceList,
             resource_cls=Sequence,
             method="POST",
@@ -169,20 +173,10 @@ class SequencesAPI(APIClient):
             advanced_filter=advanced_filter,
             limit=limit,
             sort=prep_sort,
-            partitions=partitions,
-        )
+        ):
+            yield item
 
-    def __iter__(self) -> Iterator[Sequence]:
-        """Iterate over sequences
-
-        Fetches sequences as they are iterated over, so you keep a limited number of metadata objects in memory.
-
-        Returns:
-            Iterator[Sequence]: yields Sequence one by one.
-        """
-        return self()
-
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
+    async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
         """`Retrieve a single sequence by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
 
         Args:
@@ -196,8 +190,9 @@ class SequencesAPI(APIClient):
 
             Get sequence by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.retrieve(id=1)
 
             Get sequence by external id:
@@ -205,9 +200,9 @@ class SequencesAPI(APIClient):
                 >>> res = client.sequences.retrieve()
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
+        return await self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: typing.Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
@@ -227,8 +222,9 @@ class SequencesAPI(APIClient):
 
             Get sequences by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.retrieve_multiple(ids=[1, 2, 3])
 
             Get sequences by external id:
@@ -236,33 +232,11 @@ class SequencesAPI(APIClient):
                 >>> res = client.sequences.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: SequenceFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
-        """`Aggregate sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
-
-        Args:
-            filter (SequenceFilter | dict[str, Any] | None): Filter on sequence filter with exact match
-
-        Returns:
-            list[CountAggregate]: List of sequence aggregates
-
-        Examples:
-
-            Aggregate sequences:
-
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> res = client.sequences.aggregate(filter={"external_id_prefix": "prefix"})
-        """
-        warnings.warn(
-            "This method will be deprecated in the next major release. Use aggregate_count instead.", DeprecationWarning
-        )
-        return self._aggregate(filter=filter, cls=CountAggregate)
-
-    def aggregate_count(
+    async def aggregate_count(
         self,
         advanced_filter: Filter | dict[str, Any] | None = None,
         filter: SequenceFilter | dict[str, Any] | None = None,
@@ -280,8 +254,9 @@ class SequencesAPI(APIClient):
 
             Count the number of time series in your CDF project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.sequences.aggregate_count()
 
             Count the number of sequences with external id prefixed with "mapping:" in your CDF project:
@@ -293,14 +268,14 @@ class SequencesAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "count",
             filter=filter,
             advanced_filter=advanced_filter,
             api_subversion="beta",
         )
 
-    def aggregate_cardinality_values(
+    async def aggregate_cardinality_values(
         self,
         property: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -325,6 +300,7 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.sequences.aggregate_cardinality_values(SequenceProperty.metadata_key("efficiency"))
 
             Count the number of timezones (metadata key) for sequences with the word "critical" in the description
@@ -340,7 +316,7 @@ class SequencesAPI(APIClient):
                 ...     aggregate_filter=not_america)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityValues",
             properties=property,
             filter=filter,
@@ -349,7 +325,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def aggregate_cardinality_properties(
+    async def aggregate_cardinality_properties(
         self,
         path: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -374,10 +350,11 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityProperties",
             path=path,
             filter=filter,
@@ -386,7 +363,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def aggregate_unique_values(
+    async def aggregate_unique_values(
         self,
         property: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -411,6 +388,7 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.sequences.aggregate_unique_values(SequenceProperty.metadata_key("timezone"))
                 >>> print(result.unique)
 
@@ -436,7 +414,7 @@ class SequencesAPI(APIClient):
         """
         self._validate_filter(advanced_filter)
         if property == ["metadata"] or property is SequenceProperty.metadata:
-            return self._advanced_aggregate(
+            return await self._advanced_aggregate(
                 aggregate="uniqueProperties",
                 path=property,
                 filter=filter,
@@ -444,7 +422,7 @@ class SequencesAPI(APIClient):
                 aggregate_filter=aggregate_filter,
                 api_subversion="beta",
             )
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueValues",
             properties=property,
             filter=filter,
@@ -453,7 +431,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def aggregate_unique_properties(
+    async def aggregate_unique_properties(
         self,
         path: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -478,10 +456,11 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.sequences.aggregate_unique_properties(SequenceProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueProperties",
             path=path,
             filter=filter,
@@ -491,12 +470,12 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def create(self, sequence: Sequence | SequenceWrite) -> Sequence: ...
+    async def create(self, sequence: Sequence | SequenceWrite) -> Sequence: ...
 
     @overload
-    def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList: ...
+    async def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList: ...
 
-    def create(
+    async def create(
         self, sequence: Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]
     ) -> Sequence | SequenceList:
         """`Create one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/createSequence>`_
@@ -514,9 +493,10 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> column_def = [
-                ...     SequenceColumnWrite(value_type="String", external_id="user", description="some description"),
-                ...     SequenceColumnWrite(value_type="Double", external_id="amount")
+                ...     SequenceColumnWrite(value_type="STRING", external_id="user", description="some description"),
+                ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount")
                 ... ]
                 >>> seq = client.sequences.create(SequenceWrite(external_id="my_sequence", columns=column_def))
 
@@ -527,11 +507,11 @@ class SequencesAPI(APIClient):
         """
         assert_type(sequence, "sequences", [typing.Sequence, SequenceCore])
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SequenceList, resource_cls=Sequence, items=sequence, input_resource_cls=SequenceWrite
         )
 
-    def delete(
+    async def delete(
         self,
         id: int | typing.Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -548,31 +528,32 @@ class SequencesAPI(APIClient):
 
             Delete sequences by id or external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
     @overload
-    def update(
+    async def update(
         self,
         item: Sequence | SequenceWrite | SequenceUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Sequence: ...
 
     @overload
-    def update(
+    async def update(
         self,
         item: typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> SequenceList: ...
 
-    def update(
+    async def update(
         self,
         item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
@@ -590,8 +571,9 @@ class SequencesAPI(APIClient):
 
             Update a sequence that you have fetched. This will perform a full update of the sequences:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.retrieve(id=1)
                 >>> res.description = "New description"
                 >>> res = client.sequences.update(res)
@@ -608,18 +590,21 @@ class SequencesAPI(APIClient):
 
             Add a single new column:
 
-                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnWrite
                 >>>
-                >>> my_update = SequenceUpdate(id=1).columns.add(SequenceColumn(value_type ="String",external_id="user", description ="some description"))
+                >>> my_update = SequenceUpdate(id=1).columns.add(
+                ...     SequenceColumnWrite(value_type ="STRING",external_id="user", description ="some description")
+                ... )
                 >>> res = client.sequences.update(my_update)
 
             Add multiple new columns:
 
-                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnWrite
                 >>>
                 >>> column_def = [
-                ...     SequenceColumn(value_type ="String",external_id="user", description ="some description"),
-                ...     SequenceColumn(value_type="Double", external_id="amount")]
+                ...     SequenceColumnWrite(value_type ="STRING",external_id="user", description ="some description"),
+                ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount")
+                ... ]
                 >>> my_update = SequenceUpdate(id=1).columns.add(column_def)
                 >>> res = client.sequences.update(my_update)
 
@@ -648,8 +633,8 @@ class SequencesAPI(APIClient):
                 >>> my_update = SequenceUpdate(id=1).columns.modify(column_updates)
                 >>> res = client.sequences.update(my_update)
         """
-        cdf_item_by_id = self._get_cdf_item_by_id(item, "updating")
-        return self._update_multiple(
+        cdf_item_by_id = await self._get_cdf_item_by_id(item, "updating")
+        return await self._update_multiple(
             list_cls=SequenceList,
             resource_cls=Sequence,
             update_cls=SequenceUpdate,
@@ -659,14 +644,14 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def upsert(
+    async def upsert(
         self, item: typing.Sequence[Sequence | SequenceWrite], mode: Literal["patch", "replace"] = "patch"
     ) -> SequenceList: ...
 
     @overload
-    def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence: ...
+    async def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence: ...
 
-    def upsert(
+    async def upsert(
         self,
         item: Sequence | SequenceWrite | typing.Sequence[Sequence | SequenceWrite],
         mode: Literal["patch", "replace"] = "patch",
@@ -691,18 +676,19 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_sequence = client.sequences.retrieve(id=1)
                 >>> existing_sequence.description = "New description"
                 >>> new_sequence = SequenceWrite(
                 ...     external_id="new_sequence",
                 ...     description="New sequence",
-                ...     columns=[SequenceColumnWrite(external_id="col1", value_type="String")]
+                ...     columns=[SequenceColumnWrite(external_id="col1", value_type="STRING")]
                 ... )
                 >>> res = client.sequences.upsert([existing_sequence, new_sequence], mode="replace")
         """
 
-        cdf_item_by_id = self._get_cdf_item_by_id(item, "upserting")
-        return self._upsert_multiple(
+        cdf_item_by_id = await self._get_cdf_item_by_id(item, "upserting")
+        return await self._upsert_multiple(
             item,
             list_cls=SequenceList,
             resource_cls=Sequence,
@@ -712,7 +698,7 @@ class SequencesAPI(APIClient):
             cdf_item_by_id=cdf_item_by_id,
         )
 
-    def _get_cdf_item_by_id(
+    async def _get_cdf_item_by_id(
         self,
         item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
         operation: Literal["updating", "upserting"],
@@ -720,16 +706,16 @@ class SequencesAPI(APIClient):
         if isinstance(item, SequenceWrite):
             if item.external_id is None:
                 raise ValueError(f"External ID must be set when {operation} a SequenceWrite object.")
-            cdf_item = self.retrieve(external_id=item.external_id)
+            cdf_item = await self.retrieve(external_id=item.external_id)
             if cdf_item and cdf_item.external_id:
                 return {cdf_item.external_id: cdf_item}
         elif isinstance(item, Sequence):
             if item.external_id:
-                cdf_item = self.retrieve(external_id=item.external_id)
+                cdf_item = await self.retrieve(external_id=item.external_id)
                 if cdf_item and cdf_item.external_id:
                     return {cdf_item.external_id: cdf_item}
             else:
-                cdf_item = self.retrieve(id=item.id)
+                cdf_item = await self.retrieve(id=item.id)
                 if cdf_item and cdf_item.id:
                     return {cdf_item.id: cdf_item}
         elif isinstance(item, collections.abc.Sequence):
@@ -738,7 +724,7 @@ class SequencesAPI(APIClient):
                 raise ValueError(f"External ID must be set when {operation} using one or more SequenceWrite object(s).")
             external_ids.extend(i.external_id for i in item if isinstance(i, Sequence) and i.external_id)
             internal_ids = [i.id for i in item if isinstance(i, Sequence) and not i.external_id]
-            cdf_items = self.retrieve_multiple(
+            cdf_items = await self.retrieve_multiple(
                 ids=internal_ids, external_ids=typing.cast(list[str], external_ids), ignore_unknown_ids=True
             )
             return {item.external_id if item.external_id is not None else item.id: item for item in cdf_items}
@@ -798,7 +784,7 @@ class SequencesAPI(APIClient):
             update_obj["update"]["columns"]["modify"] = modify_list
         return update_obj
 
-    def search(
+    async def search(
         self,
         name: str | None = None,
         description: str | None = None,
@@ -823,84 +809,22 @@ class SequencesAPI(APIClient):
 
             Search for a sequence:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.search(name="some name")
         """
-        return self._search(
+        return await self._search(
             list_cls=SequenceList,
             search={"name": name, "description": description, "query": query},
             filter=filter or {},
             limit=limit,
         )
 
-    def filter(
-        self,
-        filter: Filter | dict,
-        sort: SortSpec | list[SortSpec] | None = None,
-        limit: int | None = DEFAULT_LIMIT_READ,
-    ) -> SequenceList:
-        """`Advanced filter sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
-
-        Advanced filter lets you create complex filtering expressions that combine simple operations,
-        such as equals, prefix, exists, etc., using boolean operators and, or, and not.
-        It applies to basic fields as well as metadata.
-
-        Args:
-            filter (Filter | dict): Filter to apply.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            SequenceList: List of sequences that match the filter criteria.
-
-        Examples:
-
-            Find all sequences with asset id '123' and metadata key 'type' equals 'efficiency' and
-            return them sorted by created time:
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
-                >>> client = CogniteClient()
-                >>> asset_filter = filters.Equals("asset_id", 123)
-                >>> is_efficiency = filters.Equals(["metadata", "type"], "efficiency")
-                >>> res = client.sequences.filter(filter=filters.And(asset_filter, is_efficiency), sort="created_time")
-
-            Note that you can check the API documentation above to see which properties you can filter on
-            with which filters.
-
-            To make it easier to avoid spelling mistakes and easier to look up available properties
-            for filtering and sorting, you can also use the `SequenceProperty` and `SortableSequenceProperty` enums.
-
-                >>> from cognite.client.data_classes import filters
-                >>> from cognite.client.data_classes.sequences import SequenceProperty, SortableSequenceProperty
-                >>> asset_filter = filters.Equals(SequenceProperty.asset_id, 123)
-                >>> is_efficiency = filters.Equals(SequenceProperty.metadata_key("type"), "efficiency")
-                >>> res = client.sequences.filter(
-                ...     filter=filters.And(asset_filter, is_efficiency),
-                ...     sort=SortableSequenceProperty.created_time)
-
-        """
-        warnings.warn(
-            f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Please use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
-            DeprecationWarning,
-        )
-        self._validate_filter(filter)
-
-        return self._list(
-            list_cls=SequenceList,
-            resource_cls=Sequence,
-            method="POST",
-            limit=limit,
-            advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
-            sort=prepare_filter_sort(sort, SequenceSort),
-            api_subversion="beta",
-        )
-
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         external_id_prefix: str | None = None,
@@ -949,14 +873,15 @@ class SequencesAPI(APIClient):
 
             List sequences:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.list(limit=5)
 
-            Iterate over sequences:
+            Iterate over sequences, one-by-one:
 
-                >>> for seq in client.sequences:
-                ...     seq # do something with the sequence
+                >>> for seq in client.sequences():
+                ...     seq  # do something with the sequence
 
             Iterate over chunks of sequences to reduce memory load:
 
@@ -1010,7 +935,7 @@ class SequencesAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, SequenceSort)
         self._validate_filter(advanced_filter)
 
-        return self._list(
+        return await self._list(
             list_cls=SequenceList,
             resource_cls=Sequence,
             method="POST",

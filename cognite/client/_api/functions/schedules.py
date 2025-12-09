@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, overload
+from collections.abc import AsyncIterator, Sequence
+from typing import overload
 
+from cognite.client._api.functions.utils import (
+    _ensure_at_most_one_id_given,
+    _get_function_identifier,
+    _get_function_internal_id,
+)
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -14,38 +19,9 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.functions import FunctionScheduleWrite
-from cognite.client.utils._auxiliary import at_most_one_is_not_none, is_unlimited, split_into_chunks
-from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
+from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._session import create_session_and_return_nonce
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-
-
-def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identifier) -> int:
-    primitive = identifier.as_primitive()
-    if identifier.is_id:
-        return primitive
-
-    if identifier.is_external_id:
-        function = cognite_client.functions.retrieve(external_id=primitive)
-        if function:
-            return function.id
-
-    raise ValueError(f'Function with external ID "{primitive}" is not found')
-
-
-def _get_function_identifier(function_id: int | None, function_external_id: str | None) -> Identifier:
-    identifier = IdentifierSequence.load(function_id, function_external_id, id_name="function")
-    if identifier.is_singleton():
-        return identifier[0]
-    raise ValueError("Exactly one of function_id and function_external_id must be specified")
-
-
-def _ensure_at_most_one_id_given(function_id: int | None, function_external_id: str | None) -> None:
-    if at_most_one_is_not_none(function_id, function_external_id):
-        return
-    raise ValueError("Both 'function_id' and 'function_external_id' were supplied, pass exactly one or neither.")
 
 
 class FunctionSchedulesAPI(APIClient):
@@ -61,7 +37,7 @@ class FunctionSchedulesAPI(APIClient):
         created_time: dict[str, int] | TimestampRange | None = None,
         cron_expression: str | None = None,
         limit: int | None = None,
-    ) -> Iterator[FunctionSchedule]: ...
+    ) -> AsyncIterator[FunctionSchedule]: ...
 
     @overload
     def __call__(
@@ -73,9 +49,9 @@ class FunctionSchedulesAPI(APIClient):
         created_time: dict[str, int] | TimestampRange | None = None,
         cron_expression: str | None = None,
         limit: int | None = None,
-    ) -> Iterator[FunctionSchedulesList]: ...
+    ) -> AsyncIterator[FunctionSchedulesList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         name: str | None = None,
@@ -84,7 +60,7 @@ class FunctionSchedulesAPI(APIClient):
         created_time: dict[str, int] | TimestampRange | None = None,
         cron_expression: str | None = None,
         limit: int | None = None,
-    ) -> Iterator[FunctionSchedule] | Iterator[FunctionSchedulesList]:
+    ) -> AsyncIterator[FunctionSchedule] | AsyncIterator[FunctionSchedulesList]:
         """Iterate over function schedules
 
         Args:
@@ -96,13 +72,12 @@ class FunctionSchedulesAPI(APIClient):
             cron_expression (str | None): Cron expression.
             limit (int | None): Maximum schedules to return. Defaults to return all schedules.
 
-        Returns:
-            Iterator[FunctionSchedule] | Iterator[FunctionSchedulesList]: yields function schedules.
-
-        """
+        Yields:
+            FunctionSchedule | FunctionSchedulesList: Function schedules.
+        """  # noqa: DOC404
         _ensure_at_most_one_id_given(function_id, function_external_id)
 
-        schedules = self.list(
+        schedules = await self.list(
             name=name,
             function_id=function_id,
             function_external_id=function_external_id,
@@ -110,25 +85,20 @@ class FunctionSchedulesAPI(APIClient):
             cron_expression=cron_expression,
             limit=limit,
         )
-
         if chunk_size is None:
-            return iter(schedules)
-        return (
-            FunctionSchedulesList(chunk, cognite_client=self._cognite_client)
-            for chunk in split_into_chunks(schedules.data, chunk_size)
-        )
-
-    def __iter__(self) -> Iterator[FunctionSchedule]:
-        """Iterate over all function schedules"""
-        return self()
+            for s in schedules:
+                yield s
+        else:
+            for chunk in split_into_chunks(schedules.data, chunk_size):
+                yield FunctionSchedulesList(chunk, cognite_client=self._cognite_client)
 
     @overload
-    def retrieve(self, id: int, ignore_unknown_ids: bool = False) -> FunctionSchedule | None: ...
+    async def retrieve(self, id: int, ignore_unknown_ids: bool = False) -> FunctionSchedule | None: ...
 
     @overload
-    def retrieve(self, id: Sequence[int], ignore_unknown_ids: bool = False) -> FunctionSchedulesList: ...
+    async def retrieve(self, id: Sequence[int], ignore_unknown_ids: bool = False) -> FunctionSchedulesList: ...
 
-    def retrieve(
+    async def retrieve(
         self, id: int | Sequence[int], ignore_unknown_ids: bool = False
     ) -> FunctionSchedule | None | FunctionSchedulesList:
         """`Retrieve a single function schedule by id. <https://developer.cognite.com/api#tag/Function-schedules/operation/byIdsFunctionSchedules>`_
@@ -144,20 +114,21 @@ class FunctionSchedulesAPI(APIClient):
 
             Get function schedule by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.functions.schedules.retrieve(id=1)
 
         """
         identifiers = IdentifierSequence.load(ids=id)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             identifiers=identifiers,
             resource_cls=FunctionSchedule,
             list_cls=FunctionSchedulesList,
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         function_id: int | None = None,
@@ -183,8 +154,9 @@ class FunctionSchedulesAPI(APIClient):
 
             List function schedules:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> schedules = client.functions.schedules.list()
 
             List schedules directly on a function object to get only schedules associated with this particular function:
@@ -205,14 +177,14 @@ class FunctionSchedulesAPI(APIClient):
             created_time=created_time,
             cron_expression=cron_expression,
         ).dump(camel_case=True)
-        res = self._post(
+        res = await self._post(
             url_path=f"{self._RESOURCE_PATH}/list",
             json={"filter": filter, "limit": limit},
         )
 
         return FunctionSchedulesList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def create(
+    async def create(
         self,
         name: str | FunctionScheduleWrite,
         cron_expression: str | None = None,
@@ -242,7 +214,7 @@ class FunctionSchedulesAPI(APIClient):
             There are several ways to authenticate the function schedule — the order of priority is as follows:
                 1. ``nonce`` (if provided in the ``FunctionScheduleWrite`` object)
                 2. ``client_credentials`` (if provided)
-                3. The credentials of *this* CogniteClient.
+                3. The credentials of *this* AsyncCogniteClient.
 
         Warning:
             Do not pass secrets or other confidential information via the ``data`` argument. There is a dedicated
@@ -260,6 +232,7 @@ class FunctionSchedulesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> schedule = client.functions.schedules.create(
                 ...     name="My schedule",
                 ...     function_id=123,
@@ -270,7 +243,7 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
             You may also create a schedule that runs with your -current- credentials, i.e. the same credentials you used
-            to instantiate the ``CogniteClient`` (that you're using right now). **Note**: Unless you happen to already use
+            to instantiate the ``AsyncCogniteClient`` (that you're using right now). **Note**: Unless you happen to already use
             client credentials, *this is not a recommended way to create schedules*, as it will create an explicit dependency
             on your user account, which it will run the function "on behalf of" (until the schedule is eventually removed):
 
@@ -310,6 +283,7 @@ class FunctionSchedulesAPI(APIClient):
         else:
             # We serialize the object as we mutate `item` using the result from _get_function_internal_id.
             item = FunctionScheduleWrite._load(name.dump())
+
         identifier = _get_function_identifier(item.function_id, item.function_external_id)
         if item.function_external_id is not None:
             warnings.warn(
@@ -318,25 +292,25 @@ class FunctionSchedulesAPI(APIClient):
                 stacklevel=2,
             )
         if item.function_id is None:
-            item.function_id = _get_function_internal_id(self._cognite_client, identifier)
+            item.function_id = await _get_function_internal_id(self._cognite_client, identifier)
             # API requires 'function_id' set and not 'function_external_id'.
             item.function_external_id = None
 
         dumped = item.dump()
         if "nonce" not in dumped:
-            dumped["nonce"] = create_session_and_return_nonce(
+            dumped["nonce"] = await create_session_and_return_nonce(
                 self._cognite_client,
                 api_name="Functions API",
                 client_credentials=client_credentials,
             )
-        return self._create_multiple(
+        return await self._create_multiple(
             items=dumped,
             resource_cls=FunctionSchedule,
             input_resource_cls=FunctionScheduleWrite,
             list_cls=FunctionSchedulesList,
         )
 
-    def delete(self, id: int) -> None:
+    async def delete(self, id: int) -> None:
         """`Delete a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/deleteFunctionSchedules>`_
 
         Args:
@@ -346,15 +320,16 @@ class FunctionSchedulesAPI(APIClient):
 
             Delete function schedule:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.functions.schedules.delete(id = 123)
 
         """
         url = f"{self._RESOURCE_PATH}/delete"
-        self._post(url, json={"items": [{"id": id}]})
+        await self._post(url, json={"items": [{"id": id}]})
 
-    def get_input_data(self, id: int) -> dict[str, object] | None:
+    async def get_input_data(self, id: int) -> dict[str, object] | None:
         """`Retrieve the input data to the associated function. <https://developer.cognite.com/api#tag/Function-schedules/operation/getFunctionScheduleInputData>`_
 
         Args:
@@ -367,11 +342,12 @@ class FunctionSchedulesAPI(APIClient):
 
             Get schedule input data:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.functions.schedules.get_input_data(id=123)
         """
         url = f"{self._RESOURCE_PATH}/{id}/input_data"
-        res = self._get(url)
+        res = await self._get(url)
 
         return res.json().get("data")

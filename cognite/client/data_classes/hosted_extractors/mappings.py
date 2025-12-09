@@ -20,7 +20,7 @@ from cognite.client.data_classes._base import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 @dataclass
@@ -28,7 +28,7 @@ class CustomMapping(CogniteObject):
     expression: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(expression=resource["expression"])
 
 
@@ -42,7 +42,7 @@ class InputMapping(CogniteObject, ABC):
         raise NotImplementedError()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -65,7 +65,7 @@ class ProtoBufFile(CogniteObject):
     content: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             file_name=resource["fileName"],
             content=resource["content"],
@@ -168,7 +168,7 @@ class MappingWrite(_MappingCore):
             raise TypeError(f"Invalid input type: {input}")
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             mapping=CustomMapping._load(resource["mapping"]),
@@ -216,7 +216,7 @@ class Mapping(_MappingCore):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             mapping=CustomMapping._load(resource["mapping"]),
