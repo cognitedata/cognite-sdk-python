@@ -21,6 +21,7 @@ from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
     ALL_SORTED_DP_AGGS,
+    Aggregate,
 )
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import find_duplicates
@@ -54,7 +55,6 @@ if TYPE_CHECKING:
 
     from cognite.client import AsyncCogniteClient
     from cognite.client._api.datapoint_tasks import BaseTaskOrchestrator
-    from cognite.client.data_classes.datapoint_aggregates import Aggregate
 
     NumpyDatetime64NSArray: TypeAlias = npt.NDArray[np.datetime64]
     NumpyUInt32Array: TypeAlias = npt.NDArray[np.uint32]
