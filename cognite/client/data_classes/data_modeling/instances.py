@@ -718,13 +718,16 @@ class Node(Instance[NodeApply]):
 
     def as_apply(self) -> NodeApply:
         """
-        This is a convenience function for converting the read to a write node.
+        This is a convenience method for converting from the read version of the ``Node`` to the
+        write version (``NodeApply``).
 
-        It makes the simplifying assumption that all properties are from the same view. Note that this
-        is not true in general.
+        Warning:
+            Properties can be read-only and then the converted write node will fail on ingestion.
+            Examples are auto-increment properties, or system-controlled ones like ``path`` or ``root``
+            (CogniteAsset), or ``isUploaded`` (CogniteFile).
 
         Returns:
-            NodeApply: A write node, NodeApply
+            NodeApply: A write node, NodeApply, with all properties (even read-only) copied over.
 
         """
         return NodeApply(
@@ -902,13 +905,16 @@ class Edge(Instance[EdgeApply]):
 
     def as_apply(self) -> EdgeApply:
         """
-        This is a convenience function for converting the read to a write edge.
+        This is a convenience method for converting from the read version of the ``Edge`` to the
+        write version (``EdgeApply``).
 
-        It makes the simplifying assumption that all properties are from the same view. Note that this
-        is not true in general.
+        Warning:
+            Properties can be read-only (e.g. if using auto-increment) and then the converted write
+            edge will fail on ingestion.
 
         Returns:
-            EdgeApply: A write edge, EdgeApply
+            EdgeApply: A write edge, EdgeApply, with all properties (even read-only) copied over.
+
         """
         return EdgeApply(
             space=self.space,
