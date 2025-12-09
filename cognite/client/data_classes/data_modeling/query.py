@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from abc import ABC
 from collections import UserDict
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, MutableMapping, Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
 from typing_extensions import Never, Self, assert_never
 
@@ -125,12 +125,16 @@ class Select(SelectBase):
         )
 
 
+_T_ResultSetExpression = TypeVar("_T_ResultSetExpression", bound="ResultSetExpressionBase")
+_T_Select = TypeVar("_T_Select", bound=SelectBase)
+
+
 @dataclass
-class QueryBase(CogniteObject, ABC):
+class QueryBase(CogniteObject, ABC, Generic[_T_ResultSetExpression, _T_Select]):
     """Abstract base class for normal queries and sync queries"""
 
-    with_: Mapping[str, ResultSetExpressionBase]
-    select: Mapping[str, SelectBase]
+    with_: MutableMapping[str, _T_ResultSetExpression]
+    select: MutableMapping[str, _T_Select]
     parameters: Mapping[str, PropertyValue] = field(default_factory=dict)
     cursors: Mapping[str, str | None] = field(default_factory=dict)
 
@@ -163,7 +167,10 @@ class QueryBase(CogniteObject, ABC):
 
     @classmethod
     def _load_base(
-        cls, resource: dict[str, Any], result_set_class: type[ResultSetExpressionBase], select_class: type[SelectBase]
+        cls,
+        resource: dict[str, Any],
+        result_set_class: type[_T_ResultSetExpression],
+        select_class: type[_T_Select],
     ) -> Self:
         parameters = dict(resource["parameters"].items()) if "parameters" in resource else {}
         cursors = dict(resource["cursors"].items()) if "cursors" in resource else {}
@@ -176,7 +183,7 @@ class QueryBase(CogniteObject, ABC):
 
 
 @dataclass
-class Query(QueryBase):
+class Query(QueryBase["ResultSetExpression", Select]):
     r"""Query allows you to do advanced queries on the data model.
 
     Args:
@@ -186,16 +193,13 @@ class Query(QueryBase):
         cursors (Mapping[str, str | None] | None): A dictionary of cursors to use in the query. These allow for pagination.
     """
 
-    with_: Mapping[str, ResultSetExpression]
-    select: Mapping[str, Select]
-
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls._load_base(resource, ResultSetExpression, Select)
 
 
 @dataclass
-class QuerySync(QueryBase):
+class QuerySync(QueryBase["ResultSetExpressionSync", SelectSync]):
     r"""Sync allows you to do subscribe to changes in instances.
 
     Args:
@@ -204,9 +208,6 @@ class QuerySync(QueryBase):
         parameters (Mapping[str, PropertyValue] | None): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
         cursors (Mapping[str, str | None] | None): A dictionary of cursors to use in the query. These allow for pagination.
     """
-
-    with_: Mapping[str, ResultSetExpressionSync]
-    select: Mapping[str, SelectSync]
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
