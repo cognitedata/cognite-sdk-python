@@ -333,7 +333,7 @@ class TestOAuthDeviceCode:
 
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
 
-        with pytest.raises(CogniteAuthError, match=r"Error initiating device flow.*invalid_client"):
+        with pytest.raises(CogniteAuthError, match=r"Error generating access token: 'invalid_client'"):
             creds._refresh_access_token()
 
     @patch("cognite.client.credentials.PublicClientApplication")
