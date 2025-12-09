@@ -33,7 +33,7 @@ class Aggregation(CogniteObject, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Aggregation:
         if "avg" in resource:
-            return Avg(property=resource["avg"]["property"])
+            return Average(property=resource["avg"]["property"])
         elif "count" in resource:
             return Count(property=resource["count"]["property"])
         elif "max" in resource:
@@ -59,8 +59,11 @@ class MetricAggregation(Aggregation, ABC): ...
 
 @final
 @dataclass
-class Avg(MetricAggregation):
+class Average(MetricAggregation):
     _aggregation_name = "avg"
+
+
+Avg = Average  # Backwards-compatible alias
 
 
 @final
@@ -113,7 +116,7 @@ class AggregatedValue(CogniteObject, ABC):
 
         match aggregate:
             case "avg":
-                return AvgValue(resource["property"], resource.get("value"))
+                return AverageValue(resource["property"], resource.get("value"))
             case "count":
                 return CountValue(resource["property"], resource.get("value"))
             case "max":
@@ -150,8 +153,11 @@ class AggregatedNumberedValue(AggregatedValue, ABC):
 
 @final
 @dataclass
-class AvgValue(AggregatedNumberedValue):
+class AverageValue(AggregatedNumberedValue):
     _aggregate: ClassVar[str] = "avg"
+
+
+AvgValue = AverageValue  # Backwards-compatible alias
 
 
 @final
