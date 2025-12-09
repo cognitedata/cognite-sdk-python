@@ -262,8 +262,8 @@ class TestWorkflowTrigger:
             is_paused=True,
         )
         
-        dumped = trigger.dump(camel_case=True)
-        assert dumped["isPaused"] is True
+        dumped_camel_case_true = trigger.dump(camel_case=True)
+        assert dumped_camel_case_true["isPaused"] is True
         
         dumped_camel_case_false = trigger.dump(camel_case=False)
         assert dumped_camel_case_false["is_paused"] is True
@@ -276,5 +276,5 @@ class TestWorkflowTrigger:
             workflow_version="1.0",
         )
         
-        dumped = trigger.dump(camel_case=True)
-        assert "isPaused" not in dumped
+        dumped_camel_case_true = trigger.dump(camel_case=True)
+        assert "isPaused" not in dumped_camel_case_true
