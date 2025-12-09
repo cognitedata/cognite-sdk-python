@@ -253,31 +253,28 @@ class TestWorkflowTask:
 
 
 class TestWorkflowTrigger:
-    def test_dump_with_is_paused(self):
+    @pytest.mark.parametrize(
+        ["is_paused", "should_contain_key"],
+        [
+            (True, True),
+            (None, False),
+        ],
+    )
+    def test_dump_is_paused(self, is_paused, should_contain_key):
         trigger = WorkflowTrigger(
             external_id="test-trigger",
             trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
             workflow_external_id="test-workflow",
             workflow_version="1.0",
-            is_paused=True,
+            is_paused=is_paused,
         )
         
         dumped_camel_case_true = trigger.dump(camel_case=True)
-        assert dumped_camel_case_true["isPaused"] is True
-        
         dumped_camel_case_false = trigger.dump(camel_case=False)
-        assert dumped_camel_case_false["is_paused"] is True
-
-    def test_dump_without_is_paused(self):
-        trigger = WorkflowTrigger(
-            external_id="test-trigger",
-            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
-            workflow_external_id="test-workflow",
-            workflow_version="1.0",
-        )
         
-        dumped_camel_case_true = trigger.dump(camel_case=True)
-        assert "isPaused" not in dumped_camel_case_true
-        
-        dumped_camel_case_false = trigger.dump(camel_case=False)
-        assert "is_paused" not in dumped_camel_case_false
+        if should_contain_key:
+            assert dumped_camel_case_true["isPaused"] is True
+            assert dumped_camel_case_false["is_paused"] is True
+        else:
+            assert "isPaused" not in dumped_camel_case_true
+            assert "is_paused" not in dumped_camel_case_false
