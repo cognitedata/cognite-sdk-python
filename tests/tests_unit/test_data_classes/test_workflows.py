@@ -271,6 +271,4 @@ class TestWorkflowTrigger:
             workflow_version="1.0",
             is_paused=is_paused,
         )
-
         assert trigger.dump(camel_case=camel_case).get(expected_key) == expected_value
-
