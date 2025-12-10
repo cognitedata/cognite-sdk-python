@@ -258,8 +258,8 @@ class TestWorkflowTrigger:
         [
             (True, True, "isPaused", True),
             (True, False, "is_paused", True),
-            (None, True, "isPaused", None),
-            (None, False, "is_paused", None),
+            (False, True, "isPaused", False),
+            (False, False, "is_paused", False),
         ],
     )
     def test_dump_is_paused(self, is_paused, camel_case, expected_key, expected_value):
@@ -273,3 +273,24 @@ class TestWorkflowTrigger:
         )
 
         assert trigger.dump(camel_case=camel_case).get(expected_key) == expected_value
+
+    @pytest.mark.parametrize(
+        ["camel_case", "expected_key"],
+        [
+            (True, "isPaused"),
+            (False, "is_paused"),
+        ],
+    )
+    def test_dump_always_includes_is_paused_mandatory(self, camel_case, expected_key):
+        # Test is_paused field is always included as it's mandatory
+        trigger = WorkflowTrigger(
+            external_id="test-trigger",
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+            workflow_external_id="test-workflow",
+            workflow_version="1.0",
+            is_paused=True,  # Now mandatory parameter
+        )
+
+        dumped = trigger.dump(camel_case=camel_case)
+        assert expected_key in dumped
+        assert dumped[expected_key] is True

@@ -1579,11 +1579,11 @@ class WorkflowTrigger(WorkflowTriggerCore):
         trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
+        is_paused (bool): Whether the trigger is paused.
         input (dict | None): The input data passed to the workflow when an execution is started. Defaults to None.
         metadata (dict | None): Application specific metadata. Defaults to None.
         created_time (int | None): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
         last_updated_time (int | None): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
-        is_paused (bool | None): Whether the trigger is paused. Defaults to None.
     """
 
     def __init__(
@@ -1592,11 +1592,11 @@ class WorkflowTrigger(WorkflowTriggerCore):
         trigger_rule: WorkflowTriggerRule,
         workflow_external_id: str,
         workflow_version: str,
+        is_paused: bool,
         input: dict | None = None,
         metadata: dict | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
-        is_paused: bool | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -1625,8 +1625,7 @@ class WorkflowTrigger(WorkflowTriggerCore):
             item["created_time"] = self.created_time
         if self.last_updated_time:
             item["last_updated_time"] = self.last_updated_time
-        if self.is_paused is not None:
-            item["is_paused"] = self.is_paused
+        item["is_paused"] = self.is_paused
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item
@@ -1642,7 +1641,7 @@ class WorkflowTrigger(WorkflowTriggerCore):
             metadata=resource.get("metadata"),
             created_time=resource.get("createdTime"),
             last_updated_time=resource.get("lastUpdatedTime"),
-            is_paused=resource.get("isPaused"),
+            is_paused=resource["isPaused"],
         )
 
     def as_write(self) -> WorkflowTriggerUpsert:
