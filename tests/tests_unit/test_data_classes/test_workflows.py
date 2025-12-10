@@ -273,4 +273,3 @@ class TestWorkflowTrigger:
         )
 
         assert trigger.dump(camel_case=camel_case).get(expected_key) == expected_value
-
