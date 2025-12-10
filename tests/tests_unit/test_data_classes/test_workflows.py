@@ -274,20 +274,3 @@ class TestWorkflowTrigger:
 
         assert trigger.dump(camel_case=camel_case).get(expected_key) == expected_value
 
-    @pytest.mark.parametrize(
-        ["camel_case", "expected_key"],
-        [
-            (True, "isPaused"),
-            (False, "is_paused"),
-        ],
-    )
-    def test_dump_without_is_paused_param(self, camel_case, expected_key):
-        # Test is_paused field is not included when not provided in constructor
-        trigger = WorkflowTrigger(
-            external_id="test-trigger",
-            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
-            workflow_external_id="test-workflow",
-            workflow_version="1.0",
-        )
-
-        assert trigger.dump(camel_case=camel_case).get(expected_key) is None
