@@ -18,10 +18,8 @@ from cognite.client.data_classes.workflows import (
     WorkflowDefinitionUpsert,
     WorkflowExecutionDetailed,
     WorkflowIds,
-    WorkflowScheduledTriggerRule,
     WorkflowTask,
     WorkflowTaskOutput,
-    WorkflowTrigger,
     WorkflowVersionId,
 )
 
