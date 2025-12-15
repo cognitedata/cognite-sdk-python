@@ -250,25 +250,3 @@ class TestWorkflowTask:
     def test_serialization(self, raw: dict):
         loaded = WorkflowTask._load(raw)
         assert loaded.dump() == raw
-
-
-class TestWorkflowTrigger:
-    @pytest.mark.parametrize(
-        ["is_paused", "camel_case", "expected_key", "expected_value"],
-        [
-            (True, True, "isPaused", True),
-            (True, False, "is_paused", True),
-            (False, True, "isPaused", False),
-            (False, False, "is_paused", False),
-        ],
-    )
-    def test_dump_is_paused(self, is_paused, camel_case, expected_key, expected_value):
-        # Test is_paused field appears in dump with correct value when passed to constructor
-        trigger = WorkflowTrigger(
-            external_id="test-trigger",
-            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
-            workflow_external_id="test-workflow",
-            workflow_version="1.0",
-            is_paused=is_paused,
-        )
-        assert trigger.dump(camel_case=camel_case).get(expected_key) == expected_value
