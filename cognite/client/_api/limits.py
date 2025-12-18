@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import Any, Literal, overload
+from typing import Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.limits import LimitValue, LimitValueFilter, LimitValueList
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import is_unlimited
-from cognite.client.utils._validation import verify_limit
 
 # API version header for limits endpoints
 _LIMITS_API_VERSION = "20230101-alpha"
@@ -150,25 +148,16 @@ class LimitsAPI(APIClient):
                 >>> filter_obj = LimitValueFilter(prefix=prefix_filter)
                 >>> limit_list = client.limits.list_advanced(filter=filter_obj, limit=100)
         """
-        verify_limit(limit)
-        # Convert unlimited limits (-1, float("inf")) to None for API
-        if is_unlimited(limit):
-            limit = None
-
-        filter_dict = filter.dump(camel_case=True) if filter is not None else {}
-
-        body: dict[str, Any] = {}
-        if filter_dict:
-            body["filter"] = filter_dict
-        if limit is not None:
-            body["limit"] = limit
-        if cursor is not None:
-            body["cursor"] = cursor
-
-        url_path = f"{self._RESOURCE_PATH}/list"
-        res = self._post(url_path=url_path, json=body, api_subversion=_LIMITS_API_VERSION)
-        response = res.json()
-        return LimitValueList._load(response, cognite_client=self._cognite_client)
+        return self._list(
+            method="POST",
+            list_cls=LimitValueList,
+            resource_cls=LimitValue,
+            limit=limit,
+            filter=filter.dump(camel_case=True) if filter else {},
+            initial_cursor=cursor,
+            url_path=f"{self._RESOURCE_PATH}/list",
+            api_subversion=_LIMITS_API_VERSION,
+        )
 
     @overload
     def retrieve(self, limit_id: str, ignore_unknown_ids: Literal[True]) -> LimitValue | None: ...
