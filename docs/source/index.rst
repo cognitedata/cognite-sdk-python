@@ -42,6 +42,7 @@ Contents
    data_modeling
    agents
    ai
+   limits
    assets
    events
    files
