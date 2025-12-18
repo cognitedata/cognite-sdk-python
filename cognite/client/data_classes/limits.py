@@ -35,8 +35,8 @@ class LimitValue(CogniteResource):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> LimitValue:
         return cls(
-            limit_id=resource["limitId"],
-            value=resource["value"],
+            limit_id=resource.get("limitId"),
+            value=resource.get("value"),
             cognite_client=cognite_client,
         )
 
@@ -45,7 +45,7 @@ class LimitValueList(CogniteResourceList[LimitValue]):
     """A list of flattened limit items.
 
     Args:
-        resources (Sequence[LimitValue] | Sequence[dict[str, Any]]): List of limit values.
+        resources (Sequence[LimitValue]): List of limit values.
         next_cursor (str | None): Cursor to get the next page of results (if available).
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
@@ -54,12 +54,10 @@ class LimitValueList(CogniteResourceList[LimitValue]):
 
     def __init__(
         self,
-        resources: Sequence[LimitValue] | Sequence[dict[str, Any]],
+        resources: Sequence[LimitValue],
         next_cursor: str | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        if resources and isinstance(resources[0], dict):
-            resources = [LimitValue._load(cast(dict[str, Any], resource), cognite_client) for resource in resources]
         super().__init__(resources, cognite_client=cognite_client)
         self.next_cursor = next_cursor
 
@@ -127,8 +125,25 @@ class LimitValueFilter(CogniteObject):
     def __init__(self, prefix: LimitValuePrefixFilter | None = None) -> None:
         self.prefix = prefix
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> LimitValueFilter:
+        instance = super()._load(resource, cognite_client)
+        if instance.prefix is not None and isinstance(instance.prefix, dict):
+            instance.prefix = LimitValuePrefixFilter(
+                property=instance.prefix.get("property"),
+                value=instance.prefix.get("value"),
+            )
+        return instance
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = {}
         if self.prefix is not None:
-            result["prefix"] = self.prefix.dump(camel_case)
+            if isinstance(self.prefix, dict):
+                prefix_obj = LimitValuePrefixFilter(
+                    property=self.prefix.get("property"),
+                    value=self.prefix.get("value"),
+                )
+                result["prefix"] = prefix_obj.dump(camel_case)
+            else:
+                result["prefix"] = self.prefix.dump(camel_case)
         return result

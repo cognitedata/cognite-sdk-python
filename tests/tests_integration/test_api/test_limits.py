@@ -72,8 +72,8 @@ class TestLimitsAPI:
             assert isinstance(res, LimitValue)
             assert res.limit_id == limit_id
             assert res.value == limits[0].value
-            # Verify GET was called
-            assert cognite_client.limits._get.call_count == 1
+            # Verify GET was called for list (1 call) and retrieve (1 call) = 2 total
+            assert cognite_client.limits._get.call_count == 2
 
     def test_retrieve_non_existing_limit(self, cognite_client: CogniteClient):
         """Test retrieving a non-existent limit."""
