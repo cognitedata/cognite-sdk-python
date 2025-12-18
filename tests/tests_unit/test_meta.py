@@ -94,6 +94,7 @@ def test_POST_endpoint_idempotency_vs_retries(api: str, apis_matching_non_idempo
     # ... but always(!): add tests to TestRetryableEndpoints!
     idempotent_api_allow_list = {
         "groups",
+        "limits",
         "models",
         "principals",
         "securitycategories",
