@@ -90,6 +90,27 @@ class TestLimits:
         assert "filter" not in body
         assert body["limit"] == 25
 
+    def test_list_advanced_with_unlimited_limit(self, cognite_client, mock_limits_response):
+        """Test that unlimited limits (-1, float('inf')) are converted to None and not sent to API."""
+        # Test with -1
+        res1 = cognite_client.limits.list_advanced(limit=-1)
+        assert isinstance(res1, LimitValueList)
+        calls = mock_limits_response.calls
+        body1 = jsgz_load(calls[-1].request.body)
+        assert "limit" not in body1, "Unlimited limit (-1) should not be included in request body"
+
+        # Test with float('inf')
+        res2 = cognite_client.limits.list_advanced(limit=float("inf"))
+        assert isinstance(res2, LimitValueList)
+        body2 = jsgz_load(calls[-1].request.body)
+        assert "limit" not in body2, "Unlimited limit (inf) should not be included in request body"
+
+        # Test with None
+        res3 = cognite_client.limits.list_advanced(limit=None)
+        assert isinstance(res3, LimitValueList)
+        body3 = jsgz_load(calls[-1].request.body)
+        assert "limit" not in body3, "Unlimited limit (None) should not be included in request body"
+
     def test_retrieve_single(self, cognite_client, mock_limit_single_response):
         res = cognite_client.limits.retrieve(limit_id="atlas.monthly_ai_tokens")
 

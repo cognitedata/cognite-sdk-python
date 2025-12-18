@@ -7,6 +7,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.limits import LimitValue, LimitValueFilter, LimitValueList
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._validation import verify_limit
 
 # API version header for limits endpoints
@@ -147,6 +148,9 @@ class LimitsAPI(APIClient):
                 >>> limit_list = client.limits.list_advanced(filter=filter_obj, limit=100)
         """
         verify_limit(limit)
+        # Convert unlimited limits (-1, float("inf")) to None for API
+        if is_unlimited(limit):
+            limit = None
 
         filter_dict = filter.dump(camel_case=True) if filter is not None else {}
 

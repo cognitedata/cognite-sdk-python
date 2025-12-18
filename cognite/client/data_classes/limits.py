@@ -106,10 +106,12 @@ class LimitValuePrefixFilter(CogniteObject):
         self.value = value
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "property": self.property,
-            "value": self.value,
-        }
+        result: dict[str, Any] = {}
+        if self.property is not None:
+            result["property"] = self.property
+        if self.value is not None:
+            result["value"] = self.value
+        return result
 
 
 class LimitValueFilter(CogniteObject):
