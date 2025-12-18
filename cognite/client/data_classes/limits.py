@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
 
@@ -30,7 +30,7 @@ class LimitValue(CogniteResource):
     ) -> None:
         self.limit_id = limit_id
         self.value = value
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> LimitValue:
@@ -121,11 +121,19 @@ class LimitValueFilter(CogniteObject):
     is the limit's key, e.g., `{"prefix": {"property": ["limitId"], "value": "atlas."}}`
 
     Args:
-        prefix (LimitValuePrefixFilter | None): Prefix filter object.
+        prefix (LimitValuePrefixFilter | dict[str, Any] | None): Prefix filter object or dict.
     """
 
-    def __init__(self, prefix: LimitValuePrefixFilter | None = None) -> None:
-        self.prefix = prefix
+    prefix: LimitValuePrefixFilter | None
+
+    def __init__(self, prefix: LimitValuePrefixFilter | dict[str, Any] | None = None) -> None:
+        if isinstance(prefix, dict):
+            self.prefix = LimitValuePrefixFilter(
+                property=prefix.get("property"),
+                value=prefix.get("value"),
+            )
+        else:
+            self.prefix = prefix
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> LimitValueFilter:
@@ -138,14 +146,6 @@ class LimitValueFilter(CogniteObject):
         return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result = {}
-        if self.prefix is not None:
-            if isinstance(self.prefix, dict):
-                prefix_obj = LimitValuePrefixFilter(
-                    property=self.prefix.get("property"),
-                    value=self.prefix.get("value"),
-                )
-                result["prefix"] = prefix_obj.dump(camel_case)
-            else:
-                result["prefix"] = self.prefix.dump(camel_case)
-        return result
+        if self.prefix is None:
+            return {}
+        return {"prefix": self.prefix.dump(camel_case)}
