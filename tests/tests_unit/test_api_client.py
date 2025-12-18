@@ -1362,6 +1362,10 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/ai/tools/documents/summarize", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/ai/tools/documents/ask", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/ai/tools/documents/task", False),
+                # Limits API
+                ("GET", "https://api.cognitedata.com/api/v1/projects/bla/limits/values", True),
+                ("GET", "https://api.cognitedata.com/api/v1/projects/bla/limits/values/atlas.monthly_ai_tokens", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/limits/values/list", True),
             ]
         ),
     )

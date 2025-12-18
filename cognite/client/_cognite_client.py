@@ -21,6 +21,7 @@ from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.hosted_extractors import HostedExtractorsAPI
 from cognite.client._api.iam import IAMAPI
 from cognite.client._api.labels import LabelsAPI
+from cognite.client._api.limits import LimitsAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
@@ -73,6 +74,7 @@ class CogniteClient:
         self.raw = RawAPI(self._config, self._API_VERSION, self)
         self.three_d = ThreeDAPI(self._config, self._API_VERSION, self)
         self.labels = LabelsAPI(self._config, self._API_VERSION, self)
+        self.limits = LimitsAPI(self._config, self._API_VERSION, self)
         self.relationships = RelationshipsAPI(self._config, self._API_VERSION, self)
         self.entity_matching = EntityMatchingAPI(self._config, self._API_VERSION, self)
         self.templates = TemplatesAPI(self._config, self._API_VERSION, self)
