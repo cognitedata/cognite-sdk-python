@@ -6,6 +6,7 @@ from typing import Any, Literal, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.limits import LimitValue, LimitValueFilter, LimitValueList
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._validation import verify_limit
 
 # API version header for limits endpoints
@@ -194,9 +195,8 @@ class LimitsAPI(APIClient):
         url_path = f"{self._RESOURCE_PATH}/{limit_id}"
         try:
             res = self._get(url_path=url_path, headers={"cdf-version": _LIMITS_API_VERSION})
-            response = res.json()
-            return LimitValue._load(response, cognite_client=self._cognite_client)
-        except Exception:
-            if ignore_unknown_ids:
+            return LimitValue._load(res.json(), cognite_client=self._cognite_client)
+        except CogniteAPIError as e:
+            if e.code == 404 and ignore_unknown_ids:
                 return None
             raise

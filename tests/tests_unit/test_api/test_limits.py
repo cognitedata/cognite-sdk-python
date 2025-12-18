@@ -105,6 +105,8 @@ class TestLimits:
         assert calls[0].request.headers["cdf-version"] == "20230101-alpha"
 
     def test_retrieve_with_ignore_unknown_ids(self, cognite_client, rsps):
+        from cognite.client.exceptions import CogniteAPIError
+
         rsps.add(
             rsps.GET,
             re.compile(r".*/limits/values/nonexistent"),
@@ -112,13 +114,14 @@ class TestLimits:
             json={"error": {"code": 404, "message": "Not found"}},
         )
 
-        # With ignore_unknown_ids=True, should return None
+        # With ignore_unknown_ids=True, should return None for 404
         res = cognite_client.limits.retrieve(limit_id="nonexistent", ignore_unknown_ids=True)
         assert res is None
 
-        # With ignore_unknown_ids=False, should raise exception
-        with pytest.raises(Exception):
+        # With ignore_unknown_ids=False, should raise CogniteAPIError
+        with pytest.raises(CogniteAPIError) as exc_info:
             cognite_client.limits.retrieve(limit_id="nonexistent", ignore_unknown_ids=False)
+        assert exc_info.value.code == 404
 
     def test_call_iterator(self, cognite_client, mock_limits_response):
         results = list(cognite_client.limits(limit=2))
