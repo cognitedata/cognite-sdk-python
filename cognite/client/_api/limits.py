@@ -54,7 +54,8 @@ class LimitsAPI(APIClient):
         Fetches limit values as they are iterated over, so you keep a limited number of limit values in memory.
 
         Args:
-            chunk_size (int | None): Number of limit values to return in each chunk. Defaults to yielding one limit value a time.
+            chunk_size (int | None): Number of limit values to return in each chunk.
+                Defaults to yielding one limit value a time.
             limit (int | None): Maximum number of limit values to return. Defaults to return all items.
             cursor (str | None): Cursor to use for paging through results.
 
@@ -82,7 +83,8 @@ class LimitsAPI(APIClient):
         Retrieves all limit values for a specific project.
 
         Args:
-            limit (int | None): Maximum number of limit values to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of limit values to return. Defaults to 25.
+                Set to -1, float("inf") or None to return all items.
             cursor (str | None): Cursor to use for paging through results.
 
         Returns:
@@ -130,7 +132,8 @@ class LimitsAPI(APIClient):
             filter (LimitValueFilter | None): Filter to apply to the list operation.
                 To retrieve all limits for a specific service, use the "prefix" operator where the property
                 is the limit's key.
-            limit (int | None): Maximum number of limit values to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of limit values to return. Defaults to 25.
+                Set to -1, float("inf") or None to return all items.
             cursor (str | None): Cursor to use for paging through results.
 
         Returns:
