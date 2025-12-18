@@ -154,6 +154,12 @@ from cognite.client.data_classes.labels import (
     LabelDefinitionWrite,
     LabelFilter,
 )
+from cognite.client.data_classes.limits import (
+    LimitValue,
+    LimitValueFilter,
+    LimitValueList,
+    LimitValuePrefixFilter,
+)
 from cognite.client.data_classes.raw import (
     Database,
     DatabaseList,
@@ -441,6 +447,10 @@ __all__ = [
     "LabelDefinitionWrite",
     "LabelFilter",
     "LatestDatapointQuery",
+    "LimitValue",
+    "LimitValueFilter",
+    "LimitValueList",
+    "LimitValuePrefixFilter",
     "OidcCredentials",
     "RawTable",
     "Relationship",
