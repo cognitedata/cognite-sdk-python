@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class LimitValue(CogniteResource):
@@ -19,21 +19,21 @@ class LimitValue(CogniteResource):
     Args:
         limit_id (str | None): Limits are identified by an id containing the service name and a service-scoped limit name.
         value (float | int | None): The numeric value of the limit.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
         limit_id: str | None = None,
         value: float | int | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.limit_id = limit_id
         self.value = value
         self._cognite_client = cognite_client
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> LimitValue:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> LimitValue:
         return cls(
             limit_id=resource.get("limitId"),
             value=resource.get("value"),
@@ -47,7 +47,7 @@ class LimitValueList(CogniteResourceList[LimitValue]):
     Args:
         resources (Sequence[LimitValue]): List of limit values.
         next_cursor (str | None): Cursor to get the next page of results (if available).
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     _RESOURCE = LimitValue
@@ -56,7 +56,7 @@ class LimitValueList(CogniteResourceList[LimitValue]):
         self,
         resources: Sequence[LimitValue],
         next_cursor: str | None = None,
-        cognite_client: CogniteClient | None = None,
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(resources, cognite_client=cognite_client)
         self.next_cursor = next_cursor
@@ -64,8 +64,8 @@ class LimitValueList(CogniteResourceList[LimitValue]):
     @classmethod
     def _load(
         cls,
-        resource_list: Iterable[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
+        resource_list: dict[str, Any] | Iterable[dict[str, Any]],
+        cognite_client: AsyncCogniteClient | None = None,
     ) -> LimitValueList:
         # Handle case where we get a dict with items and nextCursor (from API response)
         if isinstance(resource_list, dict):
@@ -136,7 +136,7 @@ class LimitValueFilter(CogniteObject):
             self.prefix = prefix
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> LimitValueFilter:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> LimitValueFilter:
         instance = super()._load(resource, cognite_client)
         if instance.prefix is not None and isinstance(instance.prefix, dict):
             instance.prefix = LimitValuePrefixFilter(

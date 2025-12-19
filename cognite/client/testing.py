@@ -48,7 +48,6 @@ from cognite.client._api.iam.security_categories import SecurityCategoriesAPI
 from cognite.client._api.iam.sessions import SessionsAPI
 from cognite.client._api.iam.token import TokenAPI
 from cognite.client._api.labels import LabelsAPI
-from cognite.client._api.limits import LimitsAPI
 from cognite.client._api.org_apis.principals import PrincipalsAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.postgres_gateway.tables import TablesAPI as PostgresTablesAPI
