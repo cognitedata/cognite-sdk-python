@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import os
 import string
+from collections.abc import Iterator
 
 import pytest
 
@@ -11,16 +14,19 @@ from cognite.client.data_classes import (
     TransformationDestination,
     TransformationSchedule,
     TransformationScheduleUpdate,
+    TransformationScheduleWrite,
+    TransformationWrite,
 )
 from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def new_transformation(cognite_client: CogniteClient) -> Transformation:
+def new_transformation(cognite_client: CogniteClient) -> Iterator[Transformation]:
     prefix = random_string(6, string.ascii_letters)
     creds = cognite_client.config.credentials
     assert isinstance(creds, OAuthClientCredentials)
-    transform = Transformation(
+    assert creds.scopes is not None
+    transform = TransformationWrite(
         name="any",
         external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
@@ -53,8 +59,8 @@ other_transformation = new_transformation
 
 def schedule_from_transformation(
     cognite_client: CogniteClient, transformation: Transformation
-) -> TransformationSchedule:
-    schedule = TransformationSchedule(id=transformation.id, interval="0 * * * *")
+) -> Iterator[TransformationSchedule]:
+    schedule = TransformationScheduleWrite(id=transformation.id, interval="0 * * * *")
     tsc = cognite_client.transformations.schedules.create(schedule)
 
     yield tsc
@@ -65,12 +71,14 @@ def schedule_from_transformation(
 
 
 @pytest.fixture
-def new_schedule(cognite_client: CogniteClient, new_transformation: Transformation) -> TransformationSchedule:
+def new_schedule(cognite_client: CogniteClient, new_transformation: Transformation) -> Iterator[TransformationSchedule]:
     yield from schedule_from_transformation(cognite_client, new_transformation)
 
 
 @pytest.fixture
-def other_schedule(cognite_client: CogniteClient, other_transformation: Transformation) -> TransformationSchedule:
+def other_schedule(
+    cognite_client: CogniteClient, other_transformation: Transformation
+) -> Iterator[TransformationSchedule]:
     yield from schedule_from_transformation(cognite_client, other_transformation)
 
 
@@ -78,7 +86,7 @@ def other_schedule(cognite_client: CogniteClient, other_transformation: Transfor
     os.getenv("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
 )
 class TestTransformationSchedulesAPI:
-    def test_create(self, new_schedule: TransformationSchedule):
+    def test_create(self, new_schedule: TransformationSchedule) -> None:
         assert (
             new_schedule.interval == "0 * * * *"
             and new_schedule.is_paused is False
@@ -86,24 +94,30 @@ class TestTransformationSchedulesAPI:
             and new_schedule.last_updated_time is not None
         )
 
-    def test_schedule_member(self, cognite_client, new_schedule: TransformationSchedule):
+    def test_schedule_member(self, cognite_client: CogniteClient, new_schedule: TransformationSchedule) -> None:
         retrieved_transformation = cognite_client.transformations.retrieve(id=new_schedule.id)
         assert (
-            retrieved_transformation.schedule.interval == "0 * * * *"
+            retrieved_transformation
+            and retrieved_transformation.schedule
+            and retrieved_transformation.schedule.interval == "0 * * * *"
             and retrieved_transformation.schedule.is_paused is False
         )
 
-    def test_retrieve(self, cognite_client, new_schedule: TransformationSchedule):
+    def test_retrieve(self, cognite_client: CogniteClient, new_schedule: TransformationSchedule) -> None:
         retrieved_schedule = cognite_client.transformations.schedules.retrieve(new_schedule.id)
         assert (
-            new_schedule.id == retrieved_schedule.id
+            retrieved_schedule
+            and new_schedule.id == retrieved_schedule.id
             and new_schedule.interval == retrieved_schedule.interval
             and new_schedule.is_paused == retrieved_schedule.is_paused
         )
 
     def test_retrieve_multiple(
-        self, cognite_client, new_schedule: TransformationSchedule, other_schedule: TransformationSchedule
-    ):
+        self,
+        cognite_client: CogniteClient,
+        new_schedule: TransformationSchedule,
+        other_schedule: TransformationSchedule,
+    ) -> None:
         assert new_schedule.id != other_schedule.id
         ids = [new_schedule.id, other_schedule.id]
         retrieved_schedules = cognite_client.transformations.schedules.retrieve_multiple(ids=ids)
@@ -119,23 +133,25 @@ class TestTransformationSchedulesAPI:
                 and other_schedule.is_paused == retrieved_schedule.is_paused
             )
 
-    def test_update_full(self, cognite_client, new_schedule):
+    def test_update_full(self, cognite_client: CogniteClient, new_schedule: TransformationSchedule) -> None:
         new_schedule.interval = "5 * * * *"
         new_schedule.is_paused = True
         updated_schedule = cognite_client.transformations.schedules.update(new_schedule)
         retrieved_schedule = cognite_client.transformations.schedules.retrieve(new_schedule.id)
+        assert retrieved_schedule
         assert updated_schedule.interval == retrieved_schedule.interval == "5 * * * *"
         assert updated_schedule.is_paused is True
         assert retrieved_schedule.is_paused is True
 
-    def test_update_partial(self, cognite_client, new_schedule):
+    def test_update_partial(self, cognite_client: CogniteClient, new_schedule: TransformationSchedule) -> None:
         update_schedule = TransformationScheduleUpdate(id=new_schedule.id).interval.set("5 * * * *").is_paused.set(True)
         updated_schedule = cognite_client.transformations.schedules.update(update_schedule)
         retrieved_schedule = cognite_client.transformations.schedules.retrieve(new_schedule.id)
+        assert retrieved_schedule
         assert updated_schedule.interval == retrieved_schedule.interval == "5 * * * *"
         assert updated_schedule.is_paused is True
         assert retrieved_schedule.is_paused is True
 
-    def test_list(self, cognite_client, new_schedule):
+    def test_list(self, cognite_client: CogniteClient, new_schedule: TransformationSchedule) -> None:
         retrieved_schedules = cognite_client.transformations.schedules.list()
         assert new_schedule.id in [schedule.id for schedule in retrieved_schedules]

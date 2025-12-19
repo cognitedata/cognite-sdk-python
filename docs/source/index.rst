@@ -62,7 +62,6 @@ Contents
    data_workflows
    unit_catalog
    filters
-   deprecated
    base_data_classes
    exceptions
    utils

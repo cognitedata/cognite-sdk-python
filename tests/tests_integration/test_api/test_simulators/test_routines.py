@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from itertools import pairwise
 
 import pytest
 
-from cognite.client._cognite_client import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.data_classes.simulators import (
     PropertySort,
     SimulatorRoutine,

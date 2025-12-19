@@ -1,28 +1,23 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.hosted_extractors import (
-    Mapping,
-    MappingList,
-    MappingUpdate,
-    MappingWrite,
-)
+from cognite.client.data_classes.hosted_extractors import Mapping, MappingList, MappingUpdate, MappingWrite
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class MappingsAPI(APIClient):
     _RESOURCE_PATH = "/hostedextractors/mappings"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
@@ -34,24 +29,14 @@ class MappingsAPI(APIClient):
         self._UPDATE_LIMIT = 10
 
     @overload
-    def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-    ) -> Iterator[Mapping]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Mapping]: ...
 
     @overload
-    def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-    ) -> Iterator[Mapping]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[Mapping]: ...
 
-    def __call__(
-        self,
-        chunk_size: int | None = None,
-        limit: int | None = None,
-    ) -> Iterator[Mapping] | Iterator[MappingList]:
+    async def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> AsyncIterator[Mapping] | AsyncIterator[MappingList]:
         """Iterate over mappings
 
         Fetches Mapping as they are iterated over, so you keep a limited number of mappings in memory.
@@ -60,37 +45,28 @@ class MappingsAPI(APIClient):
             chunk_size (int | None): Number of Mappings to return in each chunk. Defaults to yielding one mapping at a time.
             limit (int | None): Maximum number of mappings to return. Defaults to returning all items.
 
-        Returns:
-            Iterator[Mapping] | Iterator[MappingList]: yields Mapping one by one if chunk_size is not specified, else MappingList objects.
-        """
+        Yields:
+            Mapping | MappingList: yields Mapping one by one if chunk_size is not specified, else MappingList objects.
+        """  # noqa: DOC404
         self._warning.warn()
 
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=MappingList,
             resource_cls=Mapping,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             headers={"cdf-version": "beta"},
-        )
-
-    def __iter__(self) -> Iterator[Mapping]:
-        """Iterate over mappings
-
-        Fetches mappings as they are iterated over, so you keep a limited number of mappings in memory.
-
-        Returns:
-            Iterator[Mapping]: yields Mapping one by one.
-        """
-        return self()
+        ):
+            yield item
 
     @overload
-    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Mapping: ...
+    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Mapping: ...
 
     @overload
-    def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> MappingList: ...
+    async def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> MappingList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Mapping | MappingList:
         """`Retrieve one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/retrieve_mappings>`_
@@ -105,8 +81,9 @@ class MappingsAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.hosted_extractors.mappings.retrieve('myMapping')
 
             Get multiple mappings by id:
@@ -115,7 +92,7 @@ class MappingsAPI(APIClient):
 
         """
         self._warning.warn()
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=MappingList,
             resource_cls=Mapping,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
@@ -123,7 +100,7 @@ class MappingsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def delete(
+    async def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
         """`Delete one or more mappings  <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/delete_mappings>`_
@@ -137,8 +114,9 @@ class MappingsAPI(APIClient):
 
             Delete mappings by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.hosted_extractors.mappings.delete(["myMapping", "MyMapping2"])
         """
         self._warning.warn()
@@ -147,7 +125,7 @@ class MappingsAPI(APIClient):
             "force": force,
         }
 
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
             returns_items=False,
@@ -156,12 +134,12 @@ class MappingsAPI(APIClient):
         )
 
     @overload
-    def create(self, items: MappingWrite) -> Mapping: ...
+    async def create(self, items: MappingWrite) -> Mapping: ...
 
     @overload
-    def create(self, items: Sequence[MappingWrite]) -> MappingList: ...
+    async def create(self, items: Sequence[MappingWrite]) -> MappingList: ...
 
-    def create(self, items: MappingWrite | Sequence[MappingWrite]) -> Mapping | MappingList:
+    async def create(self, items: MappingWrite | Sequence[MappingWrite]) -> Mapping | MappingList:
         """`Create one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/create_mappings>`_
 
         Args:
@@ -177,11 +155,12 @@ class MappingsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import MappingWrite, CustomMapping
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping = MappingWrite(external_id="my_mapping", mapping=CustomMapping("some expression"), published=True, input="json")
                 >>> res = client.hosted_extractors.mappings.create(mapping)
         """
         self._warning.warn()
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=MappingList,
             resource_cls=Mapping,
             items=items,
@@ -190,12 +169,12 @@ class MappingsAPI(APIClient):
         )
 
     @overload
-    def update(self, items: MappingWrite | MappingUpdate) -> Mapping: ...
+    async def update(self, items: MappingWrite | MappingUpdate) -> Mapping: ...
 
     @overload
-    def update(self, items: Sequence[MappingWrite | MappingUpdate]) -> MappingList: ...
+    async def update(self, items: Sequence[MappingWrite | MappingUpdate]) -> MappingList: ...
 
-    def update(
+    async def update(
         self, items: MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]
     ) -> Mapping | MappingList:
         """`Update one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/update_mappings>`_
@@ -213,11 +192,12 @@ class MappingsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import MappingUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping = MappingUpdate('my_mapping').published.set(False)
                 >>> res = client.hosted_extractors.mappings.update(mapping)
         """
         self._warning.warn()
-        return self._update_multiple(
+        return await self._update_multiple(
             items=items,
             list_cls=MappingList,
             resource_cls=Mapping,
@@ -225,7 +205,7 @@ class MappingsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def list(
+    async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> MappingList:
@@ -241,14 +221,15 @@ class MappingsAPI(APIClient):
 
             List mappings:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping_list = client.hosted_extractors.mappings.list(limit=5)
 
-            Iterate over mappings:
+            Iterate over mappings, one-by-one:
 
-                >>> for mapping in client.hosted_extractors.mappings:
-                ...     mapping # do something with the mapping
+                >>> for mapping in client.hosted_extractors.mappings():
+                ...     mapping  # do something with the mapping
 
             Iterate over chunks of mappings to reduce memory load:
 
@@ -256,7 +237,7 @@ class MappingsAPI(APIClient):
                 ...     mapping_list # do something with the mappings
         """
         self._warning.warn()
-        return self._list(
+        return await self._list(
             list_cls=MappingList,
             resource_cls=Mapping,
             method="GET",

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from cognite.client._api_client import APIClient
-from cognite.client.utils._auxiliary import interpolate_and_url_encode
+from cognite.client.utils._url import interpolate_and_url_encode
 
 
 class ThreeDFilesAPI(APIClient):
     _RESOURCE_PATH = "/3d/files"
 
-    def retrieve(self, id: int) -> bytes:
+    async def retrieve(self, id: int) -> bytes:
         """`Retrieve the contents of a 3d file by id. <https://developer.cognite.com/api#tag/3D-Files/operation/get3DFile>`_
 
         Args:
@@ -18,11 +18,12 @@ class ThreeDFilesAPI(APIClient):
 
         Example:
 
-            Retrieve the contents of a 3d file by id::
+            Retrieve the contents of a 3d file by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.three_d.files.retrieve(1)
         """
         path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", id)
-        return self._get(path).content
+        return (await self._get(path)).content

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 import uuid
 
@@ -5,12 +7,13 @@ import pytest
 
 from cognite.client.data_classes.geospatial import Feature, FeatureList, FeatureType
 from cognite.client.utils._importing import local_import
+from tests.utils import get_or_raise
 
 
 @pytest.fixture()
-def test_feature_type():
+def test_feature_type() -> FeatureType:
     external_id = f"FT_{uuid.uuid4().hex[:10]}"
-    yield FeatureType(
+    return FeatureType(
         external_id=external_id,
         properties={
             "position": {"type": "GEOMETRY", "srid": "4326", "optional": "true"},
@@ -23,13 +26,16 @@ def test_feature_type():
             "assetIds": {"type": "LONGARRAY", "optional": "true"},
         },
         search_spec={"vol_press_idx": {"properties": ["volume", "pressure"]}},
+        data_set_id=None,
+        created_time=123,
+        last_updated_time=123,
     )
 
 
 @pytest.fixture
-def test_features(test_feature_type):
+def test_features(test_feature_type: FeatureType) -> FeatureList:
     external_ids = [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)]
-    yield FeatureList(
+    return FeatureList(
         [
             Feature(
                 external_id=external_ids[0],
@@ -38,6 +44,9 @@ def test_features(test_feature_type):
                 volume=1212.0,
                 pressure=2121.0,
                 assetIds=[1, 2],
+                created_time=123,
+                last_updated_time=123,
+                data_set_id=None,
             ),
             Feature(
                 external_id=external_ids[1],
@@ -45,6 +54,9 @@ def test_features(test_feature_type):
                 temperature=13.4,
                 volume=1212.0,
                 pressure=2121.0,
+                created_time=123,
+                last_updated_time=123,
+                data_set_id=None,
             ),
             Feature(
                 external_id=external_ids[2],
@@ -53,6 +65,8 @@ def test_features(test_feature_type):
                 volume=1212.0,
                 pressure=2121.0,
                 data_set_id=12,
+                created_time=123,
+                last_updated_time=123,
             ),
             Feature(
                 external_id=external_ids[3],
@@ -61,6 +75,8 @@ def test_features(test_feature_type):
                 volume=1212.0,
                 pressure=2121.0,
                 data_set_id=12,
+                created_time=123,
+                last_updated_time=123,
             ),
         ]
     )
@@ -68,25 +84,45 @@ def test_features(test_feature_type):
 
 class TestGeospatialAPI:
     @pytest.mark.dsl
-    def test_to_pandas(self, test_feature_type, test_features):
+    def test_to_pandas(self, test_feature_type: FeatureType, test_features: FeatureList) -> None:
         df = test_features.to_pandas(camel_case=True)
-        assert set(list(df)) == {"externalId", "dataSetId", "position", "volume", "temperature", "pressure", "assetIds"}
+        assert set(list(df)) == {
+            "externalId",
+            "dataSetId",
+            "position",
+            "volume",
+            "temperature",
+            "pressure",
+            "assetIds",
+            "createdTime",
+            "lastUpdatedTime",
+        }
 
     @pytest.mark.dsl
-    def test_to_geopandas(self, test_feature_type, test_features):
+    def test_to_geopandas(self, test_feature_type: FeatureType, test_features: FeatureList) -> None:
         gdf = test_features.to_geopandas(geometry="position", camel_case=True)
-        assert set(gdf) == {"externalId", "dataSetId", "position", "volume", "temperature", "pressure", "assetIds"}
+        assert set(gdf) == {
+            "externalId",
+            "dataSetId",
+            "position",
+            "volume",
+            "temperature",
+            "pressure",
+            "assetIds",
+            "createdTime",
+            "lastUpdatedTime",
+        }
         geopandas = local_import("geopandas")
         assert type(gdf.dtypes["position"]) is geopandas.array.GeometryDtype
 
     @pytest.mark.dsl
-    def test_from_geopandas(self, test_feature_type, test_features):
+    def test_from_geopandas(self, test_feature_type: FeatureType, test_features: FeatureList) -> None:
         gdf = test_features.to_geopandas(geometry="position", camel_case=True)
         fl = FeatureList.from_geopandas(test_feature_type, gdf)
         assert type(fl) is FeatureList
         assert len(fl) == 4
         for idx, f in enumerate(fl):
-            for attr_name in test_feature_type.properties:
+            for attr_name in get_or_raise(test_feature_type.properties):
                 if attr_name.startswith("_") or attr_name in ["description", "dataSetId", "assetIds", "weight"]:
                     continue
                 assert hasattr(f, attr_name)
@@ -98,7 +134,7 @@ class TestGeospatialAPI:
                 assert hasattr(f, "data_set_id")
 
     @pytest.mark.dsl
-    def test_from_geopandas_missing_column(self, test_feature_type):
+    def test_from_geopandas_missing_column(self, test_feature_type: FeatureType) -> None:
         pd = local_import("pandas")
         df = pd.DataFrame([{"externalId": "12", "volume": 12.0}])
         geopandas = local_import("geopandas")
@@ -108,7 +144,7 @@ class TestGeospatialAPI:
         assert str(error.value) == "Missing value for property temperature"
 
     @pytest.mark.dsl
-    def test_from_geopandas_nan_values(self, test_feature_type):
+    def test_from_geopandas_nan_values(self, test_feature_type: FeatureType) -> None:
         pd = local_import("pandas")
         df = pd.DataFrame(
             [
@@ -127,7 +163,7 @@ class TestGeospatialAPI:
         geopandas = local_import("geopandas")
         gdf = geopandas.GeoDataFrame(df)
         features = FeatureList.from_geopandas(test_feature_type, gdf)
-        assert features[0].weight == 10.0
+        assert features[0].weight == 10.0  # type: ignore[attr-defined]
         assert not hasattr(features[1], "weight")
-        assert features[1].description == "string"
-        assert features[1].asset_ids == [1, 2]
+        assert features[1].description == "string"  # type: ignore[attr-defined]
+        assert features[1].asset_ids == [1, 2]  # type: ignore[attr-defined]

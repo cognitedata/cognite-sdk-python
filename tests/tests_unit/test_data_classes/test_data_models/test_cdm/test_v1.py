@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 
 import pytest
@@ -78,13 +80,12 @@ class TestModel3D:
                         "type": "PointCloud",
                         "aliases": ["alias1", "alias2"],
                         "tags": ["tag1", "tag2"],
-                        "thumbnail": None,
                     },
                 }
             ],
         }
-        dumped_and_loaded = Cognite3DModelApply.load(dumped)
-        assert dumped_and_loaded == my_model
+        dumped_and_loaded = Cognite3DModelApply._load(dumped)
+        assert dumped == dumped_and_loaded.dump()
 
 
 def test_extractor_file_apply_warns_on_system_managed_fields() -> None:

@@ -2,27 +2,24 @@ from __future__ import annotations
 
 import difflib
 from collections import defaultdict
-from functools import cache
 from itertools import chain
 from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api.unit_system import UnitSystemAPI
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.units import (
-    Unit,
-    UnitList,
-)
+from cognite.client.data_classes.units import Unit, UnitList
+from cognite.client.utils._async_helpers import async_cache
 from cognite.client.utils._auxiliary import remove_duplicates_keep_order
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
-@cache
-def _create_unit_lookups(unit_client: UnitAPI) -> tuple[dict[str, dict[str, Unit]], dict[str, list[Unit]]]:
-    units = unit_client.list()
+@async_cache
+async def _create_unit_lookups(unit_client: UnitAPI) -> tuple[dict[str, dict[str, Unit]], dict[str, list[Unit]]]:
+    units = await unit_client.list()
     alias_by_quantity: defaultdict[str, dict[str, Unit]] = defaultdict(dict)
     for unit in units:
         dct = alias_by_quantity[unit.quantity]
@@ -41,22 +38,17 @@ def _create_unit_lookups(unit_client: UnitAPI) -> tuple[dict[str, dict[str, Unit
 class UnitAPI(APIClient):
     _RESOURCE_PATH = "/units"
 
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: str | None,
-        cognite_client: CogniteClient,
-    ) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.systems = UnitSystemAPI(config, api_version, cognite_client)
 
     @overload
-    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | Unit: ...
+    async def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | Unit: ...
 
     @overload
-    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UnitList: ...
+    async def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UnitList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Unit | UnitList | None:
         """`Retrieve one or more unit <https://developer.cognite.com/api#tag/Units/operation/byIdsUnits>`_
@@ -72,8 +64,9 @@ class UnitAPI(APIClient):
 
             Retrive unit 'temperature:deg_c':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.units.retrieve('temperature:deg_c')
 
             Retrive units 'temperature:deg_c' and 'pressure:bar':
@@ -82,7 +75,7 @@ class UnitAPI(APIClient):
 
         """
         identifier = IdentifierSequence.load(external_ids=external_id)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             identifiers=identifier,
             list_cls=UnitList,
             resource_cls=Unit,
@@ -90,27 +83,30 @@ class UnitAPI(APIClient):
         )
 
     @overload
-    def from_alias(
-        self,
-        alias: str,
-        quantity: str | None,
-        return_ambiguous: Literal[False],
-        return_closest_matches: Literal[False],
-    ) -> Unit: ...
-
-    @overload
-    def from_alias(
-        self,
-        alias: str,
-        quantity: str | None,
-        return_ambiguous: bool,
-        return_closest_matches: bool,
-    ) -> Unit | UnitList: ...
-
-    def from_alias(
+    async def from_alias(
         self,
         alias: str,
         quantity: str | None = None,
+        *,
+        return_ambiguous: Literal[False] = False,
+        return_closest_matches: Literal[False] = False,
+    ) -> Unit: ...
+
+    @overload
+    async def from_alias(
+        self,
+        alias: str,
+        quantity: str | None = None,
+        *,
+        return_ambiguous: bool = False,
+        return_closest_matches: bool = False,
+    ) -> UnitList: ...
+
+    async def from_alias(
+        self,
+        alias: str,
+        quantity: str | None = None,
+        *,
         return_ambiguous: bool = False,
         return_closest_matches: bool = False,
     ) -> Unit | UnitList:
@@ -138,8 +134,9 @@ class UnitAPI(APIClient):
 
                 Look up a unit by alias only:
 
-                    >>> from cognite.client import CogniteClient
+                    >>> from cognite.client import CogniteClient, AsyncCogniteClient
                     >>> client = CogniteClient()
+                    >>> # async_client = AsyncCogniteClient()  # another option
                     >>> unit = client.units.from_alias('cmol / L')
 
                 Look up ambiguous alias 'F' by passing quantity 'Temperature':
@@ -150,7 +147,7 @@ class UnitAPI(APIClient):
 
                     >>> unit_matches = client.units.from_alias("kilo watt", return_closest_matches=True)
         """
-        alias_by_quantity, alias_lookup = _create_unit_lookups(self)
+        alias_by_quantity, alias_lookup = await _create_unit_lookups(self)
         if quantity is None:
             return self._lookup_unit_by_alias(alias, alias_lookup, return_ambiguous, return_closest_matches)
         else:
@@ -204,7 +201,7 @@ class UnitAPI(APIClient):
                 err_msg += f" Did you mean one of: {close_matches}?"
             raise ValueError(err_msg) from None
 
-    def list(self) -> UnitList:
+    async def list(self) -> UnitList:
         """`List all supported units <https://developer.cognite.com/api#tag/Units/operation/listUnits>`_
 
         Returns:
@@ -214,8 +211,9 @@ class UnitAPI(APIClient):
 
             List all supported units in CDF:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.units.list()
         """
-        return self._list(method="GET", list_cls=UnitList, resource_cls=Unit)
+        return await self._list(method="GET", list_cls=UnitList, resource_cls=Unit)

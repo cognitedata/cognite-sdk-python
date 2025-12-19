@@ -15,6 +15,7 @@ To initialise a ``CogniteClient``, simply pass this configuration object, (an in
     my_config = ClientConfig(
         client_name="my-client",
         project="myproj",
+        cluster="api",  # or pass the full 'base_url'
         credentials=Token("verysecret"),
     )
     client = CogniteClient(my_config)
@@ -28,7 +29,10 @@ You can set global configuration options like this:
     from cognite.client import global_config, ClientConfig
     from cognite.client.credentials import Token
     global_config.default_client_config = ClientConfig(
-        client_name="my-client", project="myproj", credentials=Token("verysecret")
+        client_name="my-client",
+        project="myproj",
+        cluster="api",  # or pass the full 'base_url'
+        credentials=Token("verysecret"),
     )
     global_config.disable_pypi_version_check = True
     global_config.disable_gzip = False
@@ -38,14 +42,13 @@ You can set global configuration options like this:
     global_config.max_connection_pool_size = 10
     global_config.status_forcelist = {429, 502, 503, 504}
 
-These must be set prior to instantiating a ``CogniteClient`` in order for them to take effect.
+You should assume that these must be set prior to instantiating a ``CogniteClient`` in order for them to take effect.
 
 Concurrency and connection pooling
 ----------------------------------
 This library does not expose API limits to the user. If your request exceeds API limits, the SDK splits your
-request into chunks and performs the sub-requests in parallel. To control how many concurrent requests you send
-to the API, you can either pass the :code:`max_workers` attribute to :ref:`ClientConfig <class_client_ClientConfig>` before
-you instantiate the :ref:`cognite_client:CogniteClient` from it, or set the global :code:`max_workers` config option.
+request into chunks and performs the sub-requests in parallel when possible. To control how many concurrent requests you send
+to the API, you can set the global :code:`max_workers` config option. *This must be set prior to the first request you make.*
 
 If you are working with multiple instances of :ref:`cognite_client:CogniteClient`, all instances will share the same connection pool.
 If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests.
@@ -65,6 +68,7 @@ logging on and off by setting the :code:`debug` attribute on the :ref:`ClientCon
         ClientConfig(
             client_name="my-client",
             project="myproj",
+            cluster="api",  # or pass the full 'base_url'
             credentials=Token("verysecret"),
             debug=True,
         )
@@ -75,10 +79,10 @@ logging on and off by setting the :code:`debug` attribute on the :ref:`ClientCon
 
 HTTP Request logging
 --------------------
-Internally this library uses the `requests <https://pypi.org/project/requests/>`_ library to perform network calls to the Cognite API service endpoints.
-The ``requests`` library is in turn built on `urllib3 <https://pypi.org/project/urllib3/>`_, which means that you can enable DEBUG level logging for
-the ``urllib3`` module to log HTTP requests to and from the Cognite API.
+Internally this library uses the ``httpx`` library to perform network calls to the Cognite API service endpoints. For authentication and
+token management we depend on ``authlib`` and ``msal``. ``msal`` uses the `requests <https://pypi.org/project/requests/>`_ library under
+the hood, which in turn is built on `urllib3 <https://pypi.org/project/urllib3/>`_.
 
-Please be advised that doing so may cause sensitive information such as authentication credentials and sensitive
-data to be logged, and this is not recommended in production environments, or where credentials cannot be easily disabled or rotated, or where
-log data may be accessed by others.
+If you are enabling DEBUG level logging, please be advised that requests going through ``urllib3`` will not be sanitized at all, meaning
+sensitive information such as authentication credentials and sensitive data may be logged. Thus, it is not recommended in production
+environments, or where credentials cannot be easily disabled or rotated, or where log data may be accessed by others.

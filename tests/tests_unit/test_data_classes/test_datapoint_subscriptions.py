@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from cognite.client.data_classes import filters
@@ -5,7 +7,7 @@ from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscr
 
 
 class TestDataPointSubscription:
-    def test_raises_value_error_on_invalid_filter(self):
+    def test_raises_value_error_on_invalid_filter(self) -> None:
         f = filters
         nested_filter = f.Nested(
             scope=("some", "direct_relation", "property"), filter=f.Equals(property=["node", "name"], value="ACME")

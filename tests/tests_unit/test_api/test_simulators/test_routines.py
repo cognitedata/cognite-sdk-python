@@ -1,11 +1,9 @@
-import re
-
 import pytest
-from responses import RequestsMock
+from pytest_httpx import HTTPXMock
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.simulators import SimulatorRoutine, SimulatorRoutineWrite
-from tests.utils import jsgz_load
+from tests.utils import get_url, jsgz_load
 
 TEST_ROUTINE_ITEM_RESPONSE_FIELDS = {
     "id": 1,
@@ -58,15 +56,15 @@ class TestRoutines:
     def test_create_routine(
         self,
         cognite_client: CogniteClient,
-        rsps: RequestsMock,
+        async_client: AsyncCogniteClient,
+        httpx_mock: HTTPXMock,
         write_input: SimulatorRoutineWrite,
         expected_routine: SimulatorRoutine,
         expected_request_body: dict,
     ) -> None:
-        # Arrange
-        rsps.add(
-            "POST",
-            url=re.compile(re.escape(cognite_client.simulators.routines._get_base_url_with_base_path())),
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.simulators.routines, "/simulators/routines"),
             json={
                 "items": [
                     {
@@ -75,15 +73,13 @@ class TestRoutines:
                     }
                 ]
             },
-            status=201,
+            status_code=201,
         )
 
-        # Act
         created_routine = cognite_client.simulators.routines.create(write_input)
 
-        # Assert
         assert created_routine == expected_routine
-        assert expected_request_body == jsgz_load(rsps.calls[0].request.body)
+        assert expected_request_body == jsgz_load(httpx_mock.get_requests()[0].content)
 
     @pytest.mark.parametrize(
         "list_params,mock_response_fields,expected_routine,expected_request_body",
@@ -112,7 +108,7 @@ class TestRoutines:
                     created_time=1,
                     last_updated_time=1,
                 ),
-                {"filter": {"modelExternalIds": ["sdk-test-model"], "kind": "long"}, "limit": 25, "cursor": None},
+                {"filter": {"modelExternalIds": ["sdk-test-model"], "kind": "long"}, "limit": 25},
                 id="list routines (long)",
             ),
         ],
@@ -120,16 +116,16 @@ class TestRoutines:
     def test_list_routines(
         self,
         cognite_client: CogniteClient,
-        rsps: RequestsMock,
+        async_client: AsyncCogniteClient,
+        httpx_mock: HTTPXMock,
         list_params: dict,
         mock_response_fields: dict,
         expected_routine: SimulatorRoutine,
         expected_request_body: dict,
     ) -> None:
-        # Arrange
-        rsps.add(
-            "POST",
-            url=re.compile(re.escape(cognite_client.simulators.routines._get_base_url_with_base_path())),
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.simulators.routines, "/simulators/routines/list"),
             json={
                 "items": [
                     {
@@ -138,13 +134,11 @@ class TestRoutines:
                     }
                 ]
             },
-            status=200,
+            status_code=200,
         )
 
-        # Act
         listed_routines = cognite_client.simulators.routines.list(**list_params)
 
-        # Assert
         assert len(listed_routines) == 1
         assert listed_routines[0] == expected_routine
-        assert expected_request_body == jsgz_load(rsps.calls[0].request.body)
+        assert expected_request_body == jsgz_load(httpx_mock.get_requests()[0].content)

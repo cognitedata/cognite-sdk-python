@@ -73,7 +73,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from requests import Response
+from httpx import Response
 
 from cognite.client.data_classes import Asset
 

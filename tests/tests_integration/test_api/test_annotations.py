@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterator
 from copy import deepcopy
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate, FileMetadata
+from cognite.client.data_classes import (
+    Annotation,
+    AnnotationFilter,
+    AnnotationList,
+    AnnotationUpdate,
+    AnnotationWrite,
+    FileMetadataWrite,
+)
 from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import is_unlimited
@@ -38,8 +46,8 @@ def remove_none_from_nested_dict(d: dict[str, Any]) -> dict[str, Any]:
 
 
 @pytest.fixture
-def annotation() -> Annotation:
-    return Annotation(
+def annotation() -> AnnotationWrite:
+    return AnnotationWrite(
         annotation_type="diagrams.FileLink",
         data={
             "fileRef": {"id": 1, "externalId": None},
@@ -49,18 +57,18 @@ def annotation() -> Annotation:
         status="approved",
         creating_app="UnitTest",
         creating_app_version="0.0.1",
-        creating_user=None,
+        creating_user="sdk-tests",
         annotated_resource_type="file",
         annotated_resource_id=1,
     )
 
 
 @pytest.fixture
-def file_id(cognite_client: CogniteClient) -> int:
+def file_id(cognite_client: CogniteClient) -> Iterator[int]:
     # Create a test file
     random_id = uuid.uuid4()
     name = f"annotation_unit_test_file_{random_id}"
-    file = cognite_client.files.create(FileMetadata(external_id=name, name=name), overwrite=True)[0]
+    file = cognite_client.files.create(FileMetadataWrite(external_id=name, name=name), overwrite=True)[0]
     yield file.id
     # Teardown all annotations to the file
     filter = AnnotationFilter(
@@ -83,7 +91,7 @@ def permanent_file_id(cognite_client: CogniteClient) -> int:
     file = cognite_client.files.retrieve(external_id=external_id)
     if file is None:
         file = cognite_client.files.create(
-            FileMetadata(external_id=external_id, name=name),
+            FileMetadataWrite(external_id=external_id, name=name),
             overwrite=True,
         )[0]
         cognite_client.files.upload_bytes(
@@ -100,13 +108,13 @@ def permanent_file_id(cognite_client: CogniteClient) -> int:
 
 
 @pytest.fixture
-def base_annotation(annotation: Annotation, file_id: int) -> Annotation:
+def base_annotation(annotation: AnnotationWrite, file_id: int) -> AnnotationWrite:
     annotation.annotated_resource_id = file_id
     return annotation
 
 
 @pytest.fixture
-def base_suggest_annotation(base_annotation: Annotation) -> Annotation:
+def base_suggest_annotation(base_annotation: AnnotationWrite) -> AnnotationWrite:
     ann = deepcopy(base_annotation)
     ann.status = "suggested"
     return ann
@@ -114,7 +122,7 @@ def base_suggest_annotation(base_annotation: Annotation) -> Annotation:
 
 @pytest.fixture(scope="session")
 def asset_link_annotation(permanent_file_id: int, cognite_client: CogniteClient) -> Annotation:
-    annotation = Annotation(
+    annotation = AnnotationWrite(
         annotation_type="diagrams.AssetLink",
         data={
             "pageNumber": 1,
@@ -129,7 +137,7 @@ def asset_link_annotation(permanent_file_id: int, cognite_client: CogniteClient)
         creating_app_version="0.2.3",
         annotated_resource_id=permanent_file_id,
         annotated_resource_type="file",
-        creating_user=None,
+        creating_user="sdk-tests",
     )
     return cognite_client.annotations.create(annotation)
 
@@ -148,7 +156,7 @@ def assert_payload_dict(local: dict[str, Any], remote: dict[str, Any]) -> None:
             assert local_v == remote_v
 
 
-def check_created_vs_base(base_annotation: Annotation, created_annotation: Annotation) -> None:
+def check_created_vs_base(base_annotation: AnnotationWrite | Annotation, created_annotation: Annotation) -> None:
     base_dump = base_annotation.dump(camel_case=False)
     created_dump = created_annotation.dump(camel_case=False)
     special_keys = ["id", "created_time", "last_updated_time", "data"]
@@ -167,8 +175,8 @@ def check_created_vs_base(base_annotation: Annotation, created_annotation: Annot
 
 
 def _test_list_on_created_annotations(
-    cognite_client: CogniteClient, annotations: AnnotationList, limit: int = DEFAULT_LIMIT_READ
-):
+    cognite_client: CogniteClient, annotations: AnnotationList, limit: int | None = DEFAULT_LIMIT_READ
+) -> None:
     annotation = annotations[0]
     filter = AnnotationFilter(
         annotated_resource_type=annotation.annotated_resource_type,
@@ -180,7 +188,7 @@ def _test_list_on_created_annotations(
     )
     annotations_list = cognite_client.annotations.list(filter=filter, limit=limit)
     assert isinstance(annotations_list, AnnotationList)
-    if is_unlimited(limit) or limit > len(annotations):
+    if is_unlimited(limit) or (limit is not None and limit > len(annotations)):
         assert len(annotations_list) == len(annotations)
     else:
         assert len(annotations_list) == limit
@@ -190,13 +198,13 @@ def _test_list_on_created_annotations(
 
 
 class TestAnnotationsIntegration:
-    def test_create_single_annotation(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
+    def test_create_single_annotation(self, cognite_client: CogniteClient, base_annotation: AnnotationWrite) -> None:
         created_annotation = cognite_client.annotations.create(base_annotation)
         assert isinstance(created_annotation, Annotation)
         check_created_vs_base(base_annotation, created_annotation)
-        assert created_annotation.creating_user is None
+        assert created_annotation.creating_user == "sdk-tests"
 
-    def test_create_single_annotation2(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
+    def test_create_single_annotation2(self, cognite_client: CogniteClient, base_annotation: AnnotationWrite) -> None:
         base_annotation.status = "rejected"
         base_annotation.creating_user = "unit.test@cognite.com"
         created_annotation = cognite_client.annotations.create(base_annotation)
@@ -204,35 +212,37 @@ class TestAnnotationsIntegration:
         check_created_vs_base(base_annotation, created_annotation)
         assert created_annotation.creating_user == "unit.test@cognite.com"
 
-    def test_create_annotations(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
+    def test_create_annotations(self, cognite_client: CogniteClient, base_annotation: AnnotationWrite) -> None:
         created_annotations = cognite_client.annotations.create([base_annotation] * 30)
         assert isinstance(created_annotations, AnnotationList)
         for a in created_annotations:
             check_created_vs_base(base_annotation, a)
 
     def test_suggest_single_annotation(
-        self, cognite_client: CogniteClient, base_suggest_annotation: Annotation
+        self, cognite_client: CogniteClient, base_suggest_annotation: AnnotationWrite
     ) -> None:
         suggested_annotation = cognite_client.annotations.suggest(base_suggest_annotation)
         assert isinstance(suggested_annotation, Annotation)
         check_created_vs_base(base_suggest_annotation, suggested_annotation)
-        assert suggested_annotation.creating_user is None
+        assert suggested_annotation.creating_user == "sdk-tests"
 
-    def test_suggest_annotations(self, cognite_client: CogniteClient, base_suggest_annotation: Annotation) -> None:
+    def test_suggest_annotations(self, cognite_client: CogniteClient, base_suggest_annotation: AnnotationWrite) -> None:
         suggested_annotations = cognite_client.annotations.suggest([base_suggest_annotation] * 30)
         assert isinstance(suggested_annotations, AnnotationList)
         for a in suggested_annotations:
             check_created_vs_base(base_suggest_annotation, a)
 
-    def test_invalid_suggest_annotations(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
+    def test_invalid_suggest_annotations(self, cognite_client: CogniteClient, base_annotation: AnnotationWrite) -> None:
         with pytest.raises(ValueError, match="status field for Annotation suggestions must be set to 'suggested'"):
             _ = cognite_client.annotations.suggest([base_annotation] * 30)
 
-    def test_delete_annotations(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
+    def test_delete_annotations(self, cognite_client: CogniteClient, base_annotation: AnnotationWrite) -> None:
         created_annotations = cognite_client.annotations.create([base_annotation] * 30)
         delete_with_check(cognite_client, [a.id for a in created_annotations])
 
-    def test_update_annotation_by_annotation(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
+    def test_update_annotation_by_annotation(
+        self, cognite_client: CogniteClient, base_annotation: AnnotationWrite
+    ) -> None:
         # Create annotation, make some local changes and cache a dump
         annotation = cognite_client.annotations.create(base_annotation)
         local_dump = annotation.dump(camel_case=False)
@@ -250,7 +260,7 @@ class TestAnnotationsIntegration:
                 assert v == local_dump[k]
 
     def test_update_annotation_by_annotation_update(
-        self, cognite_client: CogniteClient, base_annotation: Annotation
+        self, cognite_client: CogniteClient, base_annotation: AnnotationWrite
     ) -> None:
         update = {
             "data": {
@@ -270,23 +280,23 @@ class TestAnnotationsIntegration:
         for k, v in update.items():
             getattr(annotation_update, k).set(v)
 
-        updated = cognite_client.annotations.update([annotation_update])
-        assert isinstance(updated, AnnotationList)
-        updated = updated[0]
+        updated_list = cognite_client.annotations.update([annotation_update])
+        assert isinstance(updated_list, AnnotationList)
+        updated = updated_list[0]
         for k, v in update.items():
             if k == "data":
-                assert_payload_dict(update["data"], updated.data)
+                assert_payload_dict(cast(dict, update["data"]), updated.data)
             else:
                 assert getattr(updated, k) == v
 
-    def test_list(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
+    def test_list(self, cognite_client: CogniteClient, base_annotation: AnnotationWrite) -> None:
         created_annotations_1 = cognite_client.annotations.create([base_annotation] * 30)
         base_annotation.status = "rejected"
         created_annotations_2 = cognite_client.annotations.create([base_annotation] * 30)
         _test_list_on_created_annotations(cognite_client, created_annotations_1, limit=-1)
         _test_list_on_created_annotations(cognite_client, created_annotations_2, limit=-1)
 
-    def test_list_with_data_filter(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
+    def test_list_with_data_filter(self, cognite_client: CogniteClient, base_annotation: AnnotationWrite) -> None:
         base_annotation.annotation_type = "images.Classification"
         base_annotation.data = {"label": "test_0"}
         cognite_client.annotations.create(base_annotation)
@@ -304,22 +314,22 @@ class TestAnnotationsIntegration:
         assert len(filtered_annotations) == 1
         assert created_annotation_1.dump() == filtered_annotations[0].dump()
 
-    def test_list_limit(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
+    def test_list_limit(self, cognite_client: CogniteClient, base_annotation: AnnotationWrite) -> None:
         created_annotations = cognite_client.annotations.create([base_annotation] * 30)
         _test_list_on_created_annotations(cognite_client, created_annotations, limit=5)
         _test_list_on_created_annotations(cognite_client, created_annotations)
         _test_list_on_created_annotations(cognite_client, created_annotations, limit=30)
         _test_list_on_created_annotations(cognite_client, created_annotations, limit=-1)
         _test_list_on_created_annotations(cognite_client, created_annotations, limit=None)
-        _test_list_on_created_annotations(cognite_client, created_annotations, limit=float("inf"))
+        _test_list_on_created_annotations(cognite_client, created_annotations, limit=float("inf"))  # type: ignore[arg-type]
 
-    def test_retrieve(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
+    def test_retrieve(self, cognite_client: CogniteClient, base_annotation: AnnotationWrite) -> None:
         created_annotation = cognite_client.annotations.create(base_annotation)
         retrieved_annotation = cognite_client.annotations.retrieve(created_annotation.id)
         assert isinstance(retrieved_annotation, Annotation)
         assert created_annotation.dump() == retrieved_annotation.dump()
 
-    def test_retrieve_multiple(self, cognite_client: CogniteClient, base_annotation: AnnotationList) -> None:
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, base_annotation: AnnotationWrite) -> None:
         created_annotations = cognite_client.annotations.create([base_annotation] * 30)
         ids = [c.id for c in created_annotations]
         retrieved_annotations = cognite_client.annotations.retrieve_multiple(ids)
@@ -333,7 +343,7 @@ class TestAnnotationsIntegration:
             filter=AnnotationReverseLookupFilter(
                 data={"assetRef": {"id": asset_link_annotation.data["assetRef"]["id"]}},
                 annotated_resource_type="file",
-                creating_user=None,
+                creating_user="sdk-tests",
                 annotation_type="diagrams.AssetLink",
                 status="approved",
             )

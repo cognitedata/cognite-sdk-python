@@ -4,7 +4,6 @@ name: build
 on:
   merge_group:
   pull_request:
-    branches: [master]
 
 concurrency:
   group: pr-${{ github.workflow }}-${{ github.head_ref }}
@@ -14,17 +13,27 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
         with:
           extras: "-E pandas"
       - name: Linting and static code checks
         run: pre-commit run --all-files --show-diff-on-failure
 
+  verify-sync-codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+        with:
+          extras: "-E pandas"
+      - name: Ensures sync code is up-to-date, with no stale files
+        run: python scripts/sync_client_codegen/main.py verify
+
   build_docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
       - name: Build docs
         run: cd docs && make html SPHINXOPTS="-W --keep-going"
@@ -32,7 +41,7 @@ jobs:
   build_package:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
       - name: Build package
         run: poetry build
@@ -40,10 +49,10 @@ jobs:
   test_core:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
       - name: Test core
-        run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
+        run: pytest tests/tests_unit -n6 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
 
   test_full:
     runs-on: ${{ matrix.os }}
@@ -53,7 +62,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
         with:
           python_version: ${{ matrix.python-version }}
@@ -73,6 +82,7 @@ jobs:
         run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
       - uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
+        # Report code coverage from windows runner; xdist + ubuntu gives incorrect results
         if: matrix.os == 'windows-latest' && matrix.python-version == '3.10'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

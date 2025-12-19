@@ -14,7 +14,7 @@ from cognite.client.data_classes._base import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], ABC):
@@ -53,7 +53,7 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
         self.kind = kind
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             model_external_id=resource["modelExternalId"],
@@ -142,7 +142,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
         self.data_set_id = data_set_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
             simulator_external_id=resource["simulatorExternalId"],

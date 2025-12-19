@@ -14,7 +14,7 @@ from cognite.client.data_classes._base import (
 )
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 Severity = Literal["Debug", "Information", "Warning", "Error"]
 
@@ -35,7 +35,7 @@ class SimulatorLogData(CogniteObject):
     severity: Severity
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             timestamp=resource["timestamp"],
             message=resource["message"],
@@ -77,7 +77,7 @@ class SimulatorLog(CogniteResource):
         self.severity = severity
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],

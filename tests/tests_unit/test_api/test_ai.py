@@ -1,14 +1,23 @@
 from __future__ import annotations
 
 import re
+from typing import TYPE_CHECKING
 
 import pytest
+from pytest_httpx import HTTPXMock
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes.ai import AnswerContent, AnswerLocation, AnswerReference, Summary
+from tests.utils import get_url
+
+if TYPE_CHECKING:
+    from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
-def mock_summarize_response(rsps, cognite_client):
+def mock_summarize_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     response_body = {
         "items": [
             {
@@ -18,15 +27,17 @@ def mock_summarize_response(rsps, cognite_client):
         ]
     }
 
-    url_pattern = re.compile(re.escape(cognite_client.ai.tools.documents._get_base_url_with_base_path()) + "/.+")
-    rsps.assert_all_requests_are_fired = False
+    url_pattern = re.compile(re.escape(get_url(async_client.ai.tools.documents)) + "/.+")
+    # ....assert_all_requests_are_fired = False  # TODO
 
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    yield rsps
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_ask_response(rsps, cognite_client):
+def mock_ask_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     response_body = {
         "content": [
             {
@@ -81,23 +92,23 @@ def mock_ask_response(rsps, cognite_client):
         ]
     }
 
-    url_pattern = re.compile(re.escape(cognite_client.ai.tools.documents._get_base_url_with_base_path()) + "/.+")
-    rsps.assert_all_requests_are_fired = False
+    url_pattern = re.compile(re.escape(get_url(async_client.ai.tools.documents)) + "/.+")
+    # ....assert_all_requests_are_fired = False  # TODO
 
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    yield rsps
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
+    return httpx_mock
 
 
 class TestAIAPI:
     @pytest.mark.usefixtures("mock_summarize_response")
-    def test_summarize(self, cognite_client):
+    def test_summarize(self, cognite_client: CogniteClient) -> None:
         summary = cognite_client.ai.tools.documents.summarize(id=1234)
         assert isinstance(summary, Summary)
         assert summary.id == 1234
         assert summary.summary == "Summary"
 
     @pytest.mark.usefixtures("mock_ask_response")
-    def test_ask_question(self, cognite_client):
+    def test_ask_question(self, cognite_client: CogniteClient) -> None:
         answer = cognite_client.ai.tools.documents.ask_question(question="How is the weather?", id=[1234, 2345])
         assert len(answer.content) == 2
         content = answer.content[0]
@@ -117,7 +128,7 @@ class TestAIAPI:
         assert location.bottom == 1.0
 
     @pytest.mark.usefixtures("mock_ask_response")
-    def test_answer_methods(self, cognite_client):
+    def test_answer_methods(self, cognite_client: CogniteClient) -> None:
         answer = cognite_client.ai.tools.documents.ask_question(question="How is the weather?", id=[1234, 2345])
         assert answer.full_answer == "This is the answer."
         all_refs = answer.all_references

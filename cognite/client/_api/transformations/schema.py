@@ -6,13 +6,13 @@ from cognite.client.data_classes import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
-from cognite.client.utils._auxiliary import interpolate_and_url_encode
+from cognite.client.utils._url import interpolate_and_url_encode
 
 
 class TransformationSchemaAPI(APIClient):
     _RESOURCE_PATH = "/transformations/schema"
 
-    def retrieve(
+    async def retrieve(
         self, destination: TransformationDestination, conflict_mode: str | None = None
     ) -> TransformationSchemaColumnList:
         """`Get expected schema for a transformation destination. <https://developer.cognite.com/api#tag/Schema/operation/getTransformationSchema>`_
@@ -31,6 +31,7 @@ class TransformationSchemaAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationDestination
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> columns = client.transformations.schema.retrieve(destination = TransformationDestination.assets())
         """
 
@@ -39,7 +40,7 @@ class TransformationSchemaAPI(APIClient):
         filter.pop("type")
         other_params = {"conflictMode": conflict_mode} if conflict_mode else None
 
-        return self._list(
+        return await self._list(
             list_cls=TransformationSchemaColumnList,
             resource_cls=TransformationSchemaColumn,
             method="GET",

@@ -1,26 +1,24 @@
 from __future__ import annotations
 
+import asyncio
 import functools
 import heapq
 import itertools
 import math
-import threading
-import warnings
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import (
-    TYPE_CHECKING,
     Any,
     Literal,
     NamedTuple,
-    NoReturn,
     TypeAlias,
     cast,
     overload,
 )
 
 from cognite.client._api_client import APIClient
+from cognite.client._basic_api_client import FailedRequestHandler
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Asset,
@@ -28,7 +26,6 @@ from cognite.client.data_classes import (
     AssetHierarchy,
     AssetList,
     AssetUpdate,
-    CountAggregate,
     GeoLocationFilter,
     LabelFilter,
     TimestampRange,
@@ -45,9 +42,11 @@ from cognite.client.data_classes.assets import (
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.exceptions import CogniteAPIError, CogniteMultiException
 from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
-from cognite.client.utils._concurrency import ConcurrencySettings, classify_error, execute_tasks
+from cognite.client.utils._concurrency import (
+    AsyncSDKTask,
+    execute_async_tasks,
+)
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._importing import import_as_completed
 from cognite.client.utils._text import to_camel_case
 from cognite.client.utils._validation import (
     assert_type,
@@ -56,11 +55,6 @@ from cognite.client.utils._validation import (
     process_data_set_ids,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from concurrent.futures import Future, ThreadPoolExecutor
-
-as_completed = import_as_completed()
 
 AggregateAssetProperty: TypeAlias = Literal["child_count", "path", "depth"]
 
@@ -99,10 +93,9 @@ class AssetsAPI(APIClient):
         external_id_prefix: str | None = None,
         aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[Asset]: ...
+    ) -> AsyncIterator[Asset]: ...
 
     @overload
     def __call__(
@@ -125,12 +118,11 @@ class AssetsAPI(APIClient):
         external_id_prefix: str | None = None,
         aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[AssetList]: ...
+    ) -> AsyncIterator[AssetList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         name: str | None = None,
@@ -150,10 +142,9 @@ class AssetsAPI(APIClient):
         external_id_prefix: str | None = None,
         aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
         limit: int | None = None,
-        partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
-    ) -> Iterator[Asset] | Iterator[AssetList]:
+    ) -> AsyncIterator[Asset] | AsyncIterator[AssetList]:
         """Iterate over assets
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
@@ -177,13 +168,12 @@ class AssetsAPI(APIClient):
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
             limit (int | None): Maximum number of assets to return. Defaults to return all items.
-            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
-        Returns:
-            Iterator[Asset] | Iterator[AssetList]: yields Asset one by one if chunk_size is not specified, else AssetList objects.
-        """
+        Yields:
+            Asset | AssetList: yields Asset one by one if chunk_size is not specified, else AssetList objects.
+        """  # noqa: DOC404
         agg_props = self._process_aggregated_props(aggregated_properties)
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -207,7 +197,7 @@ class AssetsAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, AssetSort)
         self._validate_filter(advanced_filter)
 
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=AssetList,
             resource_cls=Asset,
             method="POST",
@@ -216,21 +206,11 @@ class AssetsAPI(APIClient):
             advanced_filter=advanced_filter,
             sort=prep_sort,
             limit=limit,
-            partitions=partitions,
             other_params=agg_props,
-        )
+        ):
+            yield item
 
-    def __iter__(self) -> Iterator[Asset]:
-        """Iterate over assets
-
-        Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
-
-        Returns:
-            Iterator[Asset]: yields Assets one by one.
-        """
-        return self()
-
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Asset | None:
+    async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Asset | None:
         """`Retrieve a single asset by id. <https://developer.cognite.com/api#tag/Assets/operation/getAsset>`_
 
         Args:
@@ -244,8 +224,9 @@ class AssetsAPI(APIClient):
 
             Get asset by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.assets.retrieve(id=1)
 
             Get asset by external id:
@@ -253,9 +234,9 @@ class AssetsAPI(APIClient):
                 >>> res = client.assets.retrieve(external_id="1")
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(list_cls=AssetList, resource_cls=Asset, identifiers=identifier)
+        return await self._retrieve_multiple(list_cls=AssetList, resource_cls=Asset, identifiers=identifier)
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
@@ -275,8 +256,9 @@ class AssetsAPI(APIClient):
 
             Get assets by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.assets.retrieve_multiple(ids=[1, 2, 3])
 
             Get assets by external id:
@@ -284,33 +266,11 @@ class AssetsAPI(APIClient):
                 >>> res = client.assets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=AssetList, resource_cls=Asset, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: AssetFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
-        """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
-
-        Args:
-            filter (AssetFilter | dict[str, Any] | None): Filter on assets with strict matching.
-
-        Returns:
-            list[CountAggregate]: List of asset aggregates
-
-        Examples:
-
-            Aggregate assets:
-
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> aggregate_by_prefix = client.assets.aggregate(filter={"external_id_prefix": "prefix"})
-        """
-        warnings.warn(
-            f"This method is deprecated. Use {self.__class__.__name__}.aggregate_count instead.", DeprecationWarning
-        )
-        return self._aggregate(filter=filter, cls=CountAggregate)
-
-    def aggregate_count(
+    async def aggregate_count(
         self,
         property: AssetPropertyLike | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -330,8 +290,9 @@ class AssetsAPI(APIClient):
 
         Count the number of assets in your CDF project:
 
-            >>> from cognite.client import CogniteClient
+            >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> count = client.assets.aggregate_count()
 
         Count the number of assets with the metadata key "timezone" in your CDF project:
@@ -343,14 +304,14 @@ class AssetsAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "count",
             properties=property,
             filter=filter,
             advanced_filter=advanced_filter,
         )
 
-    def aggregate_cardinality_values(
+    async def aggregate_cardinality_values(
         self,
         property: AssetPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -374,6 +335,7 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.assets import AssetProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> label_count = client.assets.aggregate_cardinality_values(AssetProperty.labels)
 
             Count the number of timezones (metadata key) for assets with the word "critical" in the description in your CDF project:
@@ -386,7 +348,7 @@ class AssetsAPI(APIClient):
                 ...     advanced_filter=is_critical)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityValues",
             properties=property,
             filter=filter,
@@ -394,7 +356,7 @@ class AssetsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_cardinality_properties(
+    async def aggregate_cardinality_properties(
         self,
         path: AssetPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -419,10 +381,11 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.assets import AssetProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> key_count = client.assets.aggregate_cardinality_properties(AssetProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityProperties",
             path=path,
             filter=filter,
@@ -430,7 +393,7 @@ class AssetsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_unique_values(
+    async def aggregate_unique_values(
         self,
         property: AssetPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -458,6 +421,7 @@ class AssetsAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> client = CogniteClient()
+            >>> # async_client = AsyncCogniteClient()  # another option
             >>> result = client.assets.aggregate_unique_values(AssetProperty.metadata_key("timezone"))
             >>> print(result.unique)
 
@@ -484,7 +448,7 @@ class AssetsAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueValues",
             properties=property,
             filter=filter,
@@ -492,7 +456,7 @@ class AssetsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_unique_properties(
+    async def aggregate_unique_properties(
         self,
         path: AssetPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -521,10 +485,11 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.assets import AssetProperty
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.assets.aggregate_unique_properties(AssetProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueProperties",
             path=path,
             filter=filter,
@@ -533,12 +498,12 @@ class AssetsAPI(APIClient):
         )
 
     @overload
-    def create(self, asset: Sequence[Asset] | Sequence[AssetWrite]) -> AssetList: ...
+    async def create(self, asset: Sequence[Asset] | Sequence[AssetWrite]) -> AssetList: ...
 
     @overload
-    def create(self, asset: Asset | AssetWrite) -> Asset: ...
+    async def create(self, asset: Asset | AssetWrite) -> Asset: ...
 
-    def create(self, asset: Asset | AssetWrite | Sequence[Asset] | Sequence[AssetWrite]) -> Asset | AssetList:
+    async def create(self, asset: Asset | AssetWrite | Sequence[Asset] | Sequence[AssetWrite]) -> Asset | AssetList:
         """`Create one or more assets. <https://developer.cognite.com/api#tag/Assets/operation/createAssets>`_
 
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
@@ -557,6 +522,7 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> assets = [AssetWrite(name="asset1"), AssetWrite(name="asset2")]
                 >>> res = client.assets.create(assets)
 
@@ -568,11 +534,13 @@ class AssetsAPI(APIClient):
         """
         assert_type(asset, "asset", [AssetCore, Sequence])
 
-        return self._create_multiple(list_cls=AssetList, resource_cls=Asset, items=asset, input_resource_cls=AssetWrite)
+        return await self._create_multiple(
+            list_cls=AssetList, resource_cls=Asset, items=asset, input_resource_cls=AssetWrite
+        )
 
-    def create_hierarchy(
+    async def create_hierarchy(
         self,
-        assets: Sequence[Asset | AssetWrite] | AssetHierarchy,
+        assets: Sequence[AssetWrite] | AssetHierarchy,
         *,
         upsert: bool = False,
         upsert_mode: Literal["patch", "replace"] = "patch",
@@ -585,7 +553,7 @@ class AssetsAPI(APIClient):
         assets, so you may pass zero, one or many (same goes for the non-root assets).
 
         Args:
-            assets (Sequence[Asset | AssetWrite] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
+            assets (Sequence[AssetWrite] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
             upsert (bool): If used, already existing assets will be updated instead of an exception being raised. You may control how updates are applied with the 'upsert_mode' argument.
             upsert_mode (Literal['patch', 'replace']): Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
 
@@ -599,7 +567,7 @@ class AssetsAPI(APIClient):
 
                 - Missing external ID.
                 - Missing a valid name.
-                - Has an ID set.
+                - Has an ID set (note: you may not pass Asset, use AssetWrite)
             2. Any asset duplicates exist (category: ``duplicates``)
             3. Any assets have an ambiguous parent link (category: ``unsure_parents``)
             4. Any group of assets form a cycle, e.g. A->B->A (category: ``cycles``)
@@ -627,12 +595,13 @@ class AssetsAPI(APIClient):
             Create an asset hierarchy:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Asset
+                >>> from cognite.client.data_classes import AssetWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> assets = [
-                ...     Asset(external_id="root", name="root"),
-                ...     Asset(external_id="child1", parent_external_id="root", name="child1"),
-                ...     Asset(external_id="child2", parent_external_id="root", name="child2")]
+                ...     AssetWrite(external_id="root", name="root"),
+                ...     AssetWrite(external_id="child1", parent_external_id="root", name="child1"),
+                ...     AssetWrite(external_id="child2", parent_external_id="root", name="child2")]
                 >>> res = client.assets.create_hierarchy(assets)
 
             Create an asset hierarchy, but run update for existing assets:
@@ -700,9 +669,9 @@ class AssetsAPI(APIClient):
             assert_type(assets, "assets", [Sequence])
             assets = AssetHierarchy(assets, ignore_orphans=True)
 
-        return _AssetHierarchyCreator(assets, assets_api=self).create(upsert, upsert_mode)
+        return await _AssetHierarchyCreator(assets, assets_api=self).create(upsert, upsert_mode)
 
-    def delete(
+    async def delete(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -721,31 +690,32 @@ class AssetsAPI(APIClient):
 
             Delete assets by id or external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.assets.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"recursive": recursive, "ignoreUnknownIds": ignore_unknown_ids},
         )
 
     @overload
-    def update(
+    async def update(
         self,
         item: Sequence[Asset | AssetWrite | AssetUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> AssetList: ...
 
     @overload
-    def update(
+    async def update(
         self,
         item: Asset | AssetWrite | AssetUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Asset: ...
 
-    def update(
+    async def update(
         self,
         item: Asset | AssetWrite | AssetUpdate | Sequence[Asset | AssetWrite | AssetUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
@@ -765,6 +735,7 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res1 = client.assets.update(my_update)
                 >>> # Remove an already set field like so
@@ -799,17 +770,19 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).labels.set("PUMP")
                 >>> res = client.assets.update(my_update)
         """
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item, mode=mode
         )
 
     @overload
-    def upsert(self, item: Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch") -> AssetList: ...
+    async def upsert(
+        self, item: Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch"
+    ) -> AssetList: ...
 
     @overload
-    def upsert(self, item: Asset | AssetWrite, mode: Literal["patch", "replace"] = "patch") -> Asset: ...
+    async def upsert(self, item: Asset | AssetWrite, mode: Literal["patch", "replace"] = "patch") -> Asset: ...
 
-    def upsert(
+    async def upsert(
         self, item: Asset | AssetWrite | Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch"
     ) -> Asset | AssetList:
         """Upsert assets, i.e., update if it exists, and create if it does not exist.
@@ -830,14 +803,15 @@ class AssetsAPI(APIClient):
             Upsert for assets:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Asset
+                >>> from cognite.client.data_classes import AssetWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_asset = client.assets.retrieve(id=1)
                 >>> existing_asset.description = "New description"
-                >>> new_asset = Asset(external_id="new_asset", description="New asset")
+                >>> new_asset = AssetWrite(external_id="new_asset", name="my asset", description="New asset")
                 >>> res = client.assets.upsert([existing_asset, new_asset], mode="replace")
         """
-        return self._upsert_multiple(
+        return await self._upsert_multiple(
             item,
             list_cls=AssetList,
             resource_cls=Asset,
@@ -846,73 +820,10 @@ class AssetsAPI(APIClient):
             mode=mode,
         )
 
-    def filter(
-        self,
-        filter: Filter | dict,
-        sort: SortSpec | list[SortSpec] | None = None,
-        aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
-        limit: int | None = DEFAULT_LIMIT_READ,
-    ) -> AssetList:
-        """`Advanced filter assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
-
-        Advanced filter lets you create complex filtering expressions that combine simple operations,
-        such as equals, prefix, exists, etc., using boolean operators and, or, and not.
-        It applies to basic fields as well as metadata.
-
-        Args:
-            filter (Filter | dict): Filter to apply.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            AssetList: List of assets that match the filter criteria.
-
-        Examples:
-
-            Find all assets that have a metadata key 'timezone' starting with 'Europe',
-            and sort by external id ascending:
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import filters
-                >>> client = CogniteClient()
-                >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
-                >>> res = client.assets.filter(filter=in_timezone, sort=("external_id", "asc"))
-
-            Note that you can check the API documentation above to see which properties you can filter on
-            with which filters.
-
-            To make it easier to avoid spelling mistakes and easier to look up available properties
-            for filtering and sorting, you can also use the `AssetProperty` and `SortableAssetProperty` Enums.
-
-                >>> from cognite.client.data_classes import filters
-                >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
-                >>> in_timezone = filters.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
-                >>> res = client.assets.filter(
-                ...     filter=in_timezone,
-                ...     sort=(SortableAssetProperty.external_id, "asc"))
-
-        """
-        warnings.warn(
-            f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Please use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
-            DeprecationWarning,
-        )
-        self._validate_filter(filter)
-        agg_props = self._process_aggregated_props(aggregated_properties)
-        return self._list(
-            list_cls=AssetList,
-            resource_cls=Asset,
-            method="POST",
-            limit=limit,
-            advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
-            sort=prepare_filter_sort(sort, AssetSort),
-            other_params=agg_props,
-        )
-
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
-    def search(
+    async def search(
         self,
         name: str | None = None,
         description: str | None = None,
@@ -937,8 +848,9 @@ class AssetsAPI(APIClient):
 
             Search for assets by fuzzy search on name:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.assets.search(name="some name")
 
             Search for assets by exact search on name:
@@ -958,14 +870,14 @@ class AssetsAPI(APIClient):
                 >>> my_label_filter = LabelFilter(contains_all=["PUMP"])
                 >>> res = client.assets.search(name="xyz",filter=AssetFilter(labels=my_label_filter))
         """
-        return self._search(
+        return await self._search(
             list_cls=AssetList,
             search={"name": name, "description": description, "query": query},
             filter=filter or {},
             limit=limit,
         )
 
-    def retrieve_subtree(
+    async def retrieve_subtree(
         self, id: int | None = None, external_id: str | None = None, depth: int | None = None
     ) -> AssetList:
         """Retrieve the subtree for this asset up to a specified depth.
@@ -978,29 +890,25 @@ class AssetsAPI(APIClient):
         Returns:
             AssetList: The requested assets or empty AssetList if asset does not exist.
         """
-        asset = self.retrieve(id=id, external_id=external_id)
+        asset = await self.retrieve(id=id, external_id=external_id)
         if asset is None:
             return AssetList([], self._cognite_client)
-        subtree = self._get_asset_subtree([asset], current_depth=0, depth=depth)
+        subtree = await self._get_asset_subtree([asset], current_depth=0, depth=depth)
         return AssetList(subtree, self._cognite_client)
 
-    def _get_asset_subtree(self, assets: list, current_depth: int, depth: int | None) -> list:
+    async def _get_asset_subtree(self, assets: list, current_depth: int, depth: int | None) -> list:
         subtree = assets
         if depth is None or current_depth < depth:
-            if children := self._get_children(subtree):
-                subtree.extend(self._get_asset_subtree(children, current_depth + 1, depth))
+            if children := await self._get_children(subtree):
+                subtree.extend(await self._get_asset_subtree(children, current_depth + 1, depth))
         return subtree
 
-    def _get_children(self, assets: list) -> list:
+    async def _get_children(self, assets: list) -> list:
         ids = [a.id for a in assets]
-        tasks = [{"parent_ids": chunk, "limit": -1} for chunk in split_into_chunks(ids, 100)]
-        tasks_summary = execute_tasks(self.list, tasks=tasks, max_workers=self._config.max_workers)
+        tasks = [AsyncSDKTask(self.list, parent_ids=chunk, limit=-1) for chunk in split_into_chunks(ids, 100)]
+        tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks()
-        res_list = tasks_summary.results
-        children = []
-        for res in res_list:
-            children.extend(res)
-        return children
+        return list(itertools.chain.from_iterable(tasks_summary.results))
 
     @staticmethod
     def _process_aggregated_props(agg_props: Sequence[AggregateAssetProperty] | None) -> dict[str, list[str]]:
@@ -1008,7 +916,7 @@ class AssetsAPI(APIClient):
             return {}
         return {"aggregatedProperties": [to_camel_case(prop) for prop in agg_props]}
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         parent_ids: Sequence[int] | None = None,
@@ -1068,14 +976,15 @@ class AssetsAPI(APIClient):
 
             List assets:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> asset_list = client.assets.list(limit=5)
 
-            Iterate over assets:
+            Iterate over assets, one-by-one:
 
-                >>> for asset in client.assets:
-                ...     asset # do something with the asset
+                >>> for asset in client.assets():
+                ...     asset  # do something with the asset
 
             Iterate over chunks of assets to reduce memory load:
 
@@ -1141,7 +1050,7 @@ class AssetsAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, AssetSort)
         self._validate_filter(advanced_filter)
 
-        return self._list(
+        return await self._list(
             list_cls=AssetList,
             resource_cls=Asset,
             method="POST",
@@ -1156,48 +1065,46 @@ class AssetsAPI(APIClient):
 
 class _TaskResult(NamedTuple):
     successful: list[Asset]
-    failed: list[Asset]
-    unknown: list[Asset]
+    failed: list[AssetWrite]
+    unknown: list[AssetWrite]
+    exception: Exception | None = None
 
 
 class _AssetHierarchyCreator:
     def __init__(self, hierarchy: AssetHierarchy, assets_api: AssetsAPI) -> None:
+        from cognite.client import global_config
+
         hierarchy.is_valid(on_error="raise")
         self.hierarchy = hierarchy
         self.n_assets = len(hierarchy)
         self.assets_api = assets_api
         self.create_limit = assets_api._CREATE_LIMIT
         self.resource_path = assets_api._RESOURCE_PATH
-        self.max_workers = assets_api._config.max_workers
-        self.failed: list[Asset] = []
-        self.unknown: list[Asset] = []
-        # Each thread needs to store its latest exception:
-        self.latest_exception: dict[int, Exception | None] = {}
+        self.max_workers = global_config.max_workers
+        self.failed: list[AssetWrite] = []
+        self.unknown: list[AssetWrite] = []
+        self.latest_exception: Exception | None = None
 
         self._counter = itertools.count().__next__
 
-    def create(self, upsert: bool, upsert_mode: Literal["patch", "replace"]) -> AssetList:
+    async def create(self, upsert: bool, upsert_mode: Literal["patch", "replace"]) -> AssetList:
         insert_fn = functools.partial(self._insert, upsert=upsert, upsert_mode=upsert_mode)
         insert_dct = self.hierarchy.groupby_parent_xid()
         subtree_count = self.hierarchy.count_subtree(insert_dct)
 
-        pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
-        created_assets = self._create(pool, insert_fn, insert_dct, subtree_count)  # type: ignore [arg-type]
+        created_assets = await self._create(insert_fn, insert_dct, subtree_count)
 
-        if all_exceptions := [exc for exc in self.latest_exception.values() if exc is not None]:
-            self._raise_latest_exception(all_exceptions, created_assets)
+        self._raise_if_exception(created_assets)
         return AssetList(created_assets, cognite_client=self.assets_api._cognite_client)
 
-    def _create(
+    async def _create(
         self,
-        pool: ThreadPoolExecutor,
-        insert_fn: Callable[[list[Asset]], _TaskResult],
-        insert_dct: dict[str | None, list[Asset]],
+        insert_fn: Callable[[list[AssetWrite]], Awaitable[_TaskResult]],
+        insert_dct: dict[str | None, list[AssetWrite]],
         subtree_count: dict[str, int],
     ) -> list[Asset]:
         queue_fn = functools.partial(
             self._queue_tasks,
-            pool=pool,
             insert_fn=insert_fn,
             insert_dct=insert_dct,
             subtree_count=subtree_count,
@@ -1210,66 +1117,78 @@ class _AssetHierarchyCreator:
         futures = queue_fn(insert_dct.pop(None))
 
         while futures:
-            futures.remove(fut := next(as_completed(futures)))
-            new_assets, failed, unknown = fut.result()
-            created_assets.extend(new_assets)
-            if unknown or failed:
-                self.failed.extend(failed)
-                self.unknown.extend(unknown)
-                self._skip_all_descendants(unknown, failed, insert_dct)
+            done, _ = await asyncio.wait(futures, return_when=asyncio.FIRST_COMPLETED)
+            to_create: list[AssetWrite] = []
+            # Note on FIRST_COMPLETED: We may get more than one task 'done':
+            for fut in done:
+                futures.remove(fut)
+                new_assets, failed, unknown, exception = fut.result()
+                created_assets.extend(new_assets)
+                if unknown or failed:
+                    self.failed.extend(failed)
+                    self.unknown.extend(unknown)
+                    self._skip_all_descendants(unknown, failed, insert_dct)
+                if exception:
+                    self.latest_exception = exception
 
-            # Newly created assets are now unblocked as parents for the next iteration:
-            to_create = list(self._pop_child_assets(new_assets, insert_dct))
+                # Newly created assets are now unblocked as parents for the next iteration:
+                to_create.extend(self._pop_child_assets(new_assets, insert_dct))
+
+            # The queue function is clever so if we have multiple done tasks we want to call
+            # it as late as possible:
             futures |= queue_fn(to_create)
         return created_assets
 
     def _queue_tasks(
         self,
-        assets: list[Asset],
+        assets: list[AssetWrite],
         *,
-        pool: ThreadPoolExecutor,
         insert_fn: Callable,
-        insert_dct: dict[str | None, list[Asset]],
+        insert_dct: dict[str | None, list[AssetWrite]],
         subtree_count: dict[str, int],
-    ) -> set[Future]:
+    ) -> set[asyncio.Task]:
         if not assets:
             return set()
         return {
-            pool.submit(insert_fn, task)
+            asyncio.create_task(insert_fn(task))
             for task in self._split_and_prioritise_assets(assets, insert_dct, subtree_count)
         }
 
-    def _insert(
+    async def _insert(
         self,
-        assets: list[Asset],
+        assets: list[AssetWrite],
         *,
         upsert: bool,
         upsert_mode: Literal["patch", "replace"],
         no_recursion: bool = False,
     ) -> _TaskResult:
         try:
-            resp = self.assets_api._post(self.resource_path, self._dump_assets(assets))
+            # Here we do a single batch insert. If one element fails, the entire batch fails:
+            resp = await self.assets_api._post(self.resource_path, self._dump_assets(assets))
             successful = [Asset._load(item) for item in resp.json()["items"]]
             return _TaskResult(successful, failed=[], unknown=[])
         except Exception as err:
-            self._set_latest_exception(err)
+            # Storing the latest exception requires some more thought when using asyncio:
             successful = []
-            failed: list[Asset] = []
-            unknown: list[Asset] = []
+            failed: list[AssetWrite] = []
+            unknown: list[AssetWrite] = []
             # Store to 'failed' or 'unknown':
-            err_status = classify_error(err)
-            bad_assets = {"failed": failed, "unknown": unknown}[err_status]
-            bad_assets.extend(assets)
+            err_status = FailedRequestHandler.classify_error(err)
+            bad_assets = failed if err_status == "failed" else unknown
+            bad_assets.extend(assets)  # One batch - all are in the same category
 
             # Note the last cond.: we got CogniteAPIError and are running with upsert, but no duplicates gotten:
             if no_recursion or not isinstance(err, CogniteAPIError) or err.duplicated is None:
-                return _TaskResult(successful, failed, unknown)
+                return _TaskResult(successful, failed, unknown, exception=err)
 
             # Split assets based on their is-duplicated status:
             non_dupes, dupe_assets = self._split_out_duplicated(cast(list[dict], err.duplicated), assets)
             # We should try to create the non-duplicated assets before running update (as these might be dependent):
+            non_dupe_insert_error = None
             if non_dupes:
-                result = self._insert(non_dupes, no_recursion=True, upsert=False, upsert_mode=upsert_mode)
+                result = await self._insert(non_dupes, no_recursion=True, upsert=False, upsert_mode=upsert_mode)
+                if result.exception:
+                    non_dupe_insert_error = result.exception
                 if result.successful:
                     successful.extend(result.successful)
                     # The assets that were not duplicated should be removed from "bad":
@@ -1277,8 +1196,9 @@ class _AssetHierarchyCreator:
                     bad_assets.extend(dupe_assets)
 
             # If upsert=True, run update on any existing assets:
+            dupe_upsert_error: Exception | None = err  # Only clear this if upsert=True -and- update works
             if upsert and dupe_assets:
-                updated = self._update(dupe_assets, upsert_mode)
+                updated, dupe_upsert_error = await self._update(dupe_assets, upsert_mode)
                 # If update went well: Add to list of successful assets and remove from "bad":
                 if updated is not None:
                     successful.extend(updated)
@@ -1287,26 +1207,36 @@ class _AssetHierarchyCreator:
                     bad_assets.clear()
                     bad_assets.extend(still_bad)
 
-            return _TaskResult(successful, failed, unknown)
+            # Note on exceptions: This is more of a "best-effort" and in the case when we eventually raise, we just want
+            # one of the recent exc. to show up (all its info however match ALL the failed+unknown), see _raise_if_exception
+            match non_dupe_insert_error, dupe_upsert_error:
+                case None, None:
+                    maybe_error = None  # We recovered successfully
+                case Exception(), None:
+                    maybe_error = non_dupe_insert_error
+                case _:
+                    maybe_error = err
 
-    def _update(self, to_update: list[Asset], upsert_mode: Literal["patch", "replace"]) -> list[Asset] | None:
+            return _TaskResult(successful, failed, unknown, maybe_error)
+
+    async def _update(
+        self, to_update: list[AssetWrite], upsert_mode: Literal["patch", "replace"]
+    ) -> tuple[list[Asset] | None, Exception | None]:
         is_patch = upsert_mode == "patch"
         updates = [self._make_asset_updates(asset, patch=is_patch) for asset in to_update]
-        return self._update_post(updates)
+        return await self._update_post(updates)
 
-    def _update_post(self, items: list[AssetUpdate]) -> list[Asset] | None:
+    async def _update_post(self, items: list[AssetUpdate]) -> tuple[list[Asset] | None, Exception | None]:
         try:
-            resp = self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
+            resp = await self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
             updated = [Asset._load(item) for item in resp.json()["items"]]
-            self._set_latest_exception(None)  # Update worked, so we hide exception
-            return updated
+            return updated, None  # Update worked, so we hide exception
         except Exception as err:
             # At this point, we don't care what caused the failure (well, we store error to show the user):
             # All assets that failed the update are already marked as either failed or unknown.
-            self._set_latest_exception(err)
-            return None
+            return None, err
 
-    def _make_asset_updates(self, asset: Asset, patch: bool) -> AssetUpdate:
+    def _make_asset_updates(self, asset: AssetWrite, patch: bool) -> AssetUpdate:
         # Note: The SDK makes it very hard to do full updates... we also rely on the update-object to
         # have an updated list of all "updateable" parameters...
         dumped = asset.dump(camel_case=True)
@@ -1324,10 +1254,6 @@ class _AssetHierarchyCreator:
         upd._update_object = dct_update
         return upd
 
-    def _set_latest_exception(self, err: Exception | None) -> None:
-        thread_id = threading.get_ident()
-        self.latest_exception[thread_id] = err
-
     @cached_property
     def clear_all_update(self) -> MappingProxyType[str, dict[str, Any]]:
         props = {to_camel_case(prop.name) for prop in AssetUpdate._get_update_properties()}
@@ -1341,29 +1267,29 @@ class _AssetHierarchyCreator:
 
     def _split_and_prioritise_assets(
         self,
-        to_create: list[Asset],
-        insert_dct: dict[str | None, list[Asset]],
+        to_create: list[AssetWrite],
+        insert_dct: dict[str | None, list[AssetWrite]],
         subtree_count: dict[str, int],
-    ) -> Iterator[set[Asset]]:
+    ) -> Iterator[set[AssetWrite]]:
         # We want to dive as deep down the hierarchy as possible while prioritising assets with the biggest
         # subtree, that way we more quickly get into a state with enough unblocked parents to always keep
-        # our worker threads fed with create-requests.
+        # up the concurrency budget with create-requests.
         n = len(to_create)
         n_parts = min(n, max(self.max_workers, math.ceil(n / self.create_limit)))
         tasks = [
             self._extend_with_unblocked_from_subtree(set(chunk), insert_dct, subtree_count)
             for chunk in split_into_n_parts(to_create, n=n_parts)
         ]
-        # Also, to not waste worker threads on tiny requests, we might recombine:
+        # Also, to not waste concurrency budget on tiny requests, we might recombine:
         tasks.sort(key=len)
         yield from self._recombine_chunks(tasks, limit=self.create_limit)
 
     @staticmethod
-    def _dump_assets(assets: Sequence[Asset] | Sequence[AssetUpdate]) -> dict[str, list[dict]]:
+    def _dump_assets(assets: Sequence[AssetWrite] | Sequence[AssetUpdate]) -> dict[str, list[dict]]:
         return {"items": [asset.dump(camel_case=True) for asset in assets]}
 
     @staticmethod
-    def _recombine_chunks(lst: list[set[Asset]], limit: int) -> Iterator[set[Asset]]:
+    def _recombine_chunks(lst: list[set[AssetWrite]], limit: int) -> Iterator[set[AssetWrite]]:
         task = lst[0]
         for next_task in lst[1:]:
             if len(task) + len(next_task) > limit:
@@ -1375,10 +1301,10 @@ class _AssetHierarchyCreator:
 
     def _extend_with_unblocked_from_subtree(
         self,
-        to_create: set[Asset],
-        insert_dct: dict[str | None, list[Asset]],
+        to_create: set[AssetWrite],
+        insert_dct: dict[str | None, list[AssetWrite]],
         subtree_count: dict[str, int],
-    ) -> set[Asset]:
+    ) -> set[AssetWrite]:
         pri_q = [(-subtree_count[cast(str, asset.external_id)], self._counter(), asset) for asset in to_create]
         heapq.heapify(pri_q)
 
@@ -1395,49 +1321,55 @@ class _AssetHierarchyCreator:
         return to_create
 
     @staticmethod
-    def _pop_child_assets(assets: Iterable[Asset], insert_dct: dict[str | None, list[Asset]]) -> Iterator[Asset]:
+    def _pop_child_assets(
+        assets: Iterable[AssetWrite], insert_dct: dict[str | None, list[AssetWrite]]
+    ) -> Iterator[AssetWrite]:
         return itertools.chain.from_iterable(insert_dct.pop(asset.external_id, []) for asset in assets)
 
     @staticmethod
-    def _split_out_duplicated(subset: list[dict[str, str]], assets: list[Asset]) -> tuple[list[Asset], list[Asset]]:
+    def _split_out_duplicated(
+        subset: list[dict[str, str]], assets: list[AssetWrite]
+    ) -> tuple[list[AssetWrite], list[AssetWrite]]:
         # Avoids repeated list-lookups (O(N^2))
         duplicated = {asset["externalId"] for asset in subset}
-        split_assets: tuple[list[Asset], list[Asset]] = [], []
+        split_assets: tuple[list[AssetWrite], list[AssetWrite]] = [], []
         for a in assets:
             split_assets[a.external_id in duplicated].append(a)
         return split_assets
 
     def _skip_all_descendants(
         self,
-        unknown: list[Asset],
-        failed: list[Asset],
-        insert_dct: dict[str | None, list[Asset]],
+        unknown: list[AssetWrite],
+        failed: list[AssetWrite],
+        insert_dct: dict[str | None, list[AssetWrite]],
     ) -> None:
         skip_assets = [*unknown, *failed]
         while skip_assets:
             skip_assets = list(self._pop_child_assets(skip_assets, insert_dct))
             self.failed.extend(skip_assets)
 
-    def _raise_latest_exception(self, exceptions: list[Exception], successful: list[Asset]) -> NoReturn:
-        *_, latest_exception = exceptions
+    def _raise_if_exception(self, successful: list[Asset]) -> None:
+        if self.latest_exception is None:
+            return
+
         err_message = "One or more errors happened during asset creation. Latest error:"
-        if isinstance(latest_exception, CogniteAPIError):
+        if isinstance(self.latest_exception, CogniteAPIError):
             raise CogniteAPIError(
-                message=f"{err_message} {latest_exception.message}",
-                x_request_id=latest_exception.x_request_id,
-                code=latest_exception.code,
+                message=f"{err_message} {self.latest_exception.message}",
+                x_request_id=self.latest_exception.x_request_id,
+                code=self.latest_exception.code,
                 cluster=self.assets_api._config.cdf_cluster,
                 project=self.assets_api._config.project,
-                extra=latest_exception.extra,
-                successful=AssetList(successful),
-                unknown=AssetList(self.unknown),
-                failed=AssetList(self.failed),
+                extra=self.latest_exception.extra,
+                successful=successful,
+                unknown=self.unknown,
+                failed=self.failed,
             )
         # If a non-Cognite-exception was raised, we still raise CogniteAPIError, but use 'from' to not hide
         # the underlying reason from the user. We do this because we promise that 'successful', 'unknown'
         # and 'failed' can be inspected:
         raise CogniteMultiException(
-            successful=AssetList(successful),
-            unknown=AssetList(self.unknown),
-            failed=AssetList(self.failed),
-        ) from latest_exception
+            successful=successful,
+            unknown=self.unknown,
+            failed=self.failed,
+        ) from self.latest_exception

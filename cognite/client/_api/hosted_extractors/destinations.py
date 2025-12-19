@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -16,13 +16,13 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class DestinationsAPI(APIClient):
     _RESOURCE_PATH = "/hostedextractors/destinations"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="beta", sdk_maturity="alpha", feature_name="Hosted Extractors"
@@ -34,24 +34,14 @@ class DestinationsAPI(APIClient):
         self._UPDATE_LIMIT = 10
 
     @overload
-    def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-    ) -> Iterator[Destination]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Destination]: ...
 
     @overload
-    def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-    ) -> Iterator[Destination]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[Destination]: ...
 
-    def __call__(
-        self,
-        chunk_size: int | None = None,
-        limit: int | None = None,
-    ) -> Iterator[Destination] | Iterator[DestinationList]:
+    async def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> AsyncIterator[Destination] | AsyncIterator[DestinationList]:
         """Iterate over destinations
 
         Fetches Destination as they are iterated over, so you keep a limited number of destinations in memory.
@@ -60,37 +50,30 @@ class DestinationsAPI(APIClient):
             chunk_size (int | None): Number of Destinations to return in each chunk. Defaults to yielding one Destination a time.
             limit (int | None): Maximum number of Destination to return. Defaults to returning all items.
 
-        Returns:
-            Iterator[Destination] | Iterator[DestinationList]: yields Destination one by one if chunk_size is not specified, else DestinationList objects.
-        """
+        Yields:
+            Destination | DestinationList: yields Destination one by one if chunk_size is not specified, else DestinationList objects.
+        """  # noqa: DOC404
         self._warning.warn()
 
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=DestinationList,
             resource_cls=Destination,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             headers={"cdf-version": "beta"},
-        )
-
-    def __iter__(self) -> Iterator[Destination]:
-        """Iterate over destinations
-
-        Fetches destinations as they are iterated over, so you keep a limited number of destinations in memory.
-
-        Returns:
-            Iterator[Destination]: yields Destination one by one.
-        """
-        return self()
+        ):
+            yield item
 
     @overload
-    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Destination: ...
+    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Destination: ...
 
     @overload
-    def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> DestinationList: ...
+    async def retrieve(
+        self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> DestinationList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Destination | DestinationList:
         """`Retrieve one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/retrieve_destinations>`_
@@ -105,8 +88,9 @@ class DestinationsAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.hosted_extractors.destinations.retrieve('myDestination')
 
             Get multiple destinations by id:
@@ -115,7 +99,7 @@ class DestinationsAPI(APIClient):
 
         """
         self._warning.warn()
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=DestinationList,
             resource_cls=Destination,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
@@ -123,7 +107,7 @@ class DestinationsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def delete(
+    async def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
         """`Delete one or more destsinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/delete_destinations>`_
@@ -137,8 +121,9 @@ class DestinationsAPI(APIClient):
 
             Delete destinations by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.hosted_extractors.destinations.delete(["myDest", "MyDest2"])
         """
         self._warning.warn()
@@ -148,7 +133,7 @@ class DestinationsAPI(APIClient):
         if force:
             extra_body_fields["force"] = True
 
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
             returns_items=False,
@@ -157,12 +142,12 @@ class DestinationsAPI(APIClient):
         )
 
     @overload
-    def create(self, items: DestinationWrite) -> Destination: ...
+    async def create(self, items: DestinationWrite) -> Destination: ...
 
     @overload
-    def create(self, items: Sequence[DestinationWrite]) -> DestinationList: ...
+    async def create(self, items: Sequence[DestinationWrite]) -> DestinationList: ...
 
-    def create(self, items: DestinationWrite | Sequence[DestinationWrite]) -> Destination | DestinationList:
+    async def create(self, items: DestinationWrite | Sequence[DestinationWrite]) -> Destination | DestinationList:
         """`Create one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/create_destinations>`_
 
         Args:
@@ -178,11 +163,12 @@ class DestinationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import DestinationWrite, SessionWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> destination = DestinationWrite(external_id='my_dest', credentials=SessionWrite("my_nonce"), target_data_set_id=123)
                 >>> res = client.hosted_extractors.destinations.create(destination)
         """
         self._warning.warn()
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=DestinationList,
             resource_cls=Destination,
             items=items,
@@ -191,20 +177,20 @@ class DestinationsAPI(APIClient):
         )
 
     @overload
-    def update(
+    async def update(
         self,
         items: DestinationWrite | DestinationUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Destination: ...
 
     @overload
-    def update(
+    async def update(
         self,
         items: Sequence[DestinationWrite | DestinationUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> DestinationList: ...
 
-    def update(
+    async def update(
         self,
         items: DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
@@ -225,11 +211,12 @@ class DestinationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import DestinationUpdate
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> destination = DestinationUpdate('my_dest').target_data_set_id.set(123)
                 >>> res = client.hosted_extractors.destinations.update(destination)
         """
         self._warning.warn()
-        return self._update_multiple(
+        return await self._update_multiple(
             items=items,
             list_cls=DestinationList,
             resource_cls=Destination,
@@ -238,7 +225,7 @@ class DestinationsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def list(
+    async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> DestinationList:
@@ -254,14 +241,15 @@ class DestinationsAPI(APIClient):
 
             List destinations:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> destination_list = client.hosted_extractors.destinations.list(limit=5)
 
-            Iterate over destinations:
+            Iterate over destinations, one-by-one:
 
-                >>> for destination in client.hosted_extractors.destinations:
-                ...     destination # do something with the destination
+                >>> for destination in client.hosted_extractors.destinations():
+                ...     destination  # do something with the destination
 
             Iterate over chunks of destinations to reduce memory load:
 
@@ -269,7 +257,7 @@ class DestinationsAPI(APIClient):
                 ...     destination_list # do something with the destinationss
         """
         self._warning.warn()
-        return self._list(
+        return await self._list(
             list_cls=DestinationList,
             resource_cls=Destination,
             method="GET",
