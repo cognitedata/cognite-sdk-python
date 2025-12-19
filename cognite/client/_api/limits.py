@@ -185,7 +185,7 @@ class LimitsAPI(APIClient):
         url_path = f"{self._RESOURCE_PATH}/{limit_id}"
         try:
             res = await self._get(url_path=url_path, headers={"cdf-version": _LIMITS_API_VERSION})
-            return LimitValue._load(res.json(), cognite_client=None)
+            return LimitValue._load(res.json(), cognite_client=self._cognite_client)
         except CogniteAPIError as e:
             if e.code == 404 and ignore_unknown_ids:
                 return None
