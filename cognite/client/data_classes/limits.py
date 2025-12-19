@@ -137,13 +137,7 @@ class LimitValueFilter(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> LimitValueFilter:
-        instance = super()._load(resource, cognite_client)
-        if instance.prefix is not None and isinstance(instance.prefix, dict):
-            instance.prefix = LimitValuePrefixFilter(
-                property=instance.prefix.get("property"),
-                value=instance.prefix.get("value"),
-            )
-        return instance
+        return cls(prefix=resource.get("prefix"))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if self.prefix is None:
