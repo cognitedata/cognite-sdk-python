@@ -28,6 +28,7 @@ from cognite.client._sync_api.geospatial import SyncGeospatialAPI
 from cognite.client._sync_api.hosted_extractors import SyncHostedExtractorsAPI
 from cognite.client._sync_api.iam import SyncIAMAPI
 from cognite.client._sync_api.labels import SyncLabelsAPI
+from cognite.client._sync_api.limits import SyncLimitsAPI
 from cognite.client._sync_api.postgres_gateway import SyncPostgresGatewaysAPI
 from cognite.client._sync_api.raw import SyncRawAPI
 from cognite.client._sync_api.relationships import SyncRelationshipsAPI
@@ -78,6 +79,7 @@ class CogniteClient:
         self.hosted_extractors = SyncHostedExtractorsAPI(async_client)
         self.iam = SyncIAMAPI(async_client)
         self.labels = SyncLabelsAPI(async_client)
+        self.limits = SyncLimitsAPI(async_client)
         self.postgres_gateway = SyncPostgresGatewaysAPI(async_client)
         self.raw = SyncRawAPI(async_client)
         self.relationships = SyncRelationshipsAPI(async_client)

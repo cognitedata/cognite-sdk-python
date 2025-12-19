@@ -1,43 +1,43 @@
+"""
+===============================================================================
+ee61fc6ba4c4aad5633908ab22d98ae5
+This file is auto-generated from the Async API modules, - do not edit manually!
+===============================================================================
+"""
+
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import Iterator
 from typing import Literal, overload
 
-from cognite.client._api_client import APIClient
+from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.limits import LimitValue, LimitValueFilter, LimitValueList
-from cognite.client.exceptions import CogniteAPIError
-
-# API version header for limits endpoints
-_LIMITS_API_VERSION = "20230101-alpha"
+from cognite.client.utils._async_helpers import SyncIterator, run_sync
 
 
-class LimitsAPI(APIClient):
-    _RESOURCE_PATH = "/limits/values"
+class SyncLimitsAPI(SyncAPIClient):
+    """Auto-generated, do not modify manually."""
 
-    @overload
-    def __call__(
-        self,
-        chunk_size: None = None,
-        limit: int | None = None,
-        cursor: str | None = None,
-    ) -> AsyncIterator[LimitValue]: ...
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
+        self.__async_client = async_client
 
     @overload
     def __call__(
-        self,
-        chunk_size: int,
-        limit: int | None = None,
-        cursor: str | None = None,
-    ) -> AsyncIterator[LimitValueList]: ...
+        self, chunk_size: None = None, limit: int | None = None, cursor: str | None = None
+    ) -> Iterator[LimitValue]: ...
 
-    async def __call__(
-        self,
-        chunk_size: int | None = None,
-        limit: int | None = None,
-        cursor: str | None = None,
-    ) -> AsyncIterator[LimitValue] | AsyncIterator[LimitValueList]:
-        """Iterate over limit values.
+    @overload
+    def __call__(
+        self, chunk_size: int, limit: int | None = None, cursor: str | None = None
+    ) -> Iterator[LimitValueList]: ...
+
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None, cursor: str | None = None
+    ) -> Iterator[LimitValue] | Iterator[LimitValueList]:
+        """
+        Iterate over limit values.
 
         Fetches limit values as they are iterated over, so you keep a limited number of limit values in memory.
 
@@ -50,24 +50,11 @@ class LimitsAPI(APIClient):
         Yields:
             LimitValue | LimitValueList: yields LimitValue one by one or in chunks.
         """  # noqa: DOC404
-        async for item in self._list_generator(
-            list_cls=LimitValueList,
-            resource_cls=LimitValue,
-            method="GET",
-            limit=limit,
-            chunk_size=chunk_size,
-            initial_cursor=cursor,
-            url_path=self._RESOURCE_PATH,
-            headers={"cdf-version": _LIMITS_API_VERSION},
-        ):
-            yield item
+        yield from SyncIterator(self.__async_client.limits(chunk_size=chunk_size, limit=limit, cursor=cursor))  # type: ignore [misc]
 
-    async def list(
-        self,
-        limit: int | None = DEFAULT_LIMIT_READ,
-        cursor: str | None = None,
-    ) -> LimitValueList:
-        """List all limit values.
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ, cursor: str | None = None) -> LimitValueList:
+        """
+        List all limit values.
 
         Retrieves all limit values for a specific project.
 
@@ -98,23 +85,13 @@ class LimitsAPI(APIClient):
                 >>> for limit_list in client.limits(chunk_size=2500):
                 ...     limit_list  # do something with the list
         """
-        return await self._list(
-            list_cls=LimitValueList,
-            resource_cls=LimitValue,
-            method="GET",
-            limit=limit,
-            initial_cursor=cursor,
-            url_path=self._RESOURCE_PATH,
-            headers={"cdf-version": _LIMITS_API_VERSION},
-        )
+        return run_sync(self.__async_client.limits.list(limit=limit, cursor=cursor))
 
-    async def list_advanced(
-        self,
-        filter: LimitValueFilter | None = None,
-        limit: int | None = DEFAULT_LIMIT_READ,
-        cursor: str | None = None,
+    def list_advanced(
+        self, filter: LimitValueFilter | None = None, limit: int | None = DEFAULT_LIMIT_READ, cursor: str | None = None
     ) -> LimitValueList:
-        """Advanced list of limit values.
+        """
+        Advanced list of limit values.
 
         Retrieves limit values using a filter. Only the `prefix` operator is supported.
 
@@ -141,25 +118,17 @@ class LimitsAPI(APIClient):
                 >>> filter_obj = LimitValueFilter(prefix=prefix_filter)
                 >>> limit_list = client.limits.list_advanced(filter=filter_obj, limit=100)
         """
-        return await self._list(
-            method="POST",
-            list_cls=LimitValueList,
-            resource_cls=LimitValue,
-            limit=limit,
-            filter=filter.dump(camel_case=True) if filter else {},
-            initial_cursor=cursor,
-            url_path=f"{self._RESOURCE_PATH}/list",
-            api_subversion=_LIMITS_API_VERSION,
-        )
+        return run_sync(self.__async_client.limits.list_advanced(filter=filter, limit=limit, cursor=cursor))
 
     @overload
-    async def retrieve(self, limit_id: str, ignore_unknown_ids: Literal[True]) -> LimitValue | None: ...
+    def retrieve(self, limit_id: str, ignore_unknown_ids: Literal[True]) -> LimitValue | None: ...
 
     @overload
-    async def retrieve(self, limit_id: str, ignore_unknown_ids: Literal[False] = False) -> LimitValue: ...
+    def retrieve(self, limit_id: str, ignore_unknown_ids: Literal[False] = False) -> LimitValue: ...
 
-    async def retrieve(self, limit_id: str, ignore_unknown_ids: bool = False) -> LimitValue | None:
-        """Retrieve a limit value by its id.
+    def retrieve(self, limit_id: str, ignore_unknown_ids: bool = False) -> LimitValue | None:
+        """
+        Retrieve a limit value by its id.
 
         Retrieves a limit value by its `limitId`.
 
@@ -182,11 +151,6 @@ class LimitsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.limits.retrieve(limit_id="atlas.monthly_ai_tokens", ignore_unknown_ids=True)
         """
-        url_path = f"{self._RESOURCE_PATH}/{limit_id}"
-        try:
-            res = await self._get(url_path=url_path, headers={"cdf-version": _LIMITS_API_VERSION})
-            return LimitValue._load(res.json(), cognite_client=None)
-        except CogniteAPIError as e:
-            if e.code == 404 and ignore_unknown_ids:
-                return None
-            raise
+        if ignore_unknown_ids:
+            return run_sync(self.__async_client.limits.retrieve(limit_id=limit_id, ignore_unknown_ids=True))
+        return run_sync(self.__async_client.limits.retrieve(limit_id=limit_id, ignore_unknown_ids=False))
