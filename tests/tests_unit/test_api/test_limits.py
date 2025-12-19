@@ -30,10 +30,16 @@ def mock_limits_response(
     get_url_pattern = re.compile(re.escape(base_url) + r"/limits/values(?:\?.+|$)")
     post_url_pattern = re.compile(re.escape(base_url) + r"/limits/values/list")
 
-    httpx_mock.add_response(method="GET", url=get_url_pattern, status_code=200, json=response_body_with_cursor)
+    httpx_mock.add_response(
+        method="GET", url=get_url_pattern, status_code=200, json=response_body_with_cursor, is_optional=True
+    )
     # For POST requests, return cursor on first call, then no cursor to stop pagination
-    httpx_mock.add_response(method="POST", url=post_url_pattern, status_code=200, json=response_body_with_cursor)
-    httpx_mock.add_response(method="POST", url=post_url_pattern, status_code=200, json=response_body_no_cursor)
+    httpx_mock.add_response(
+        method="POST", url=post_url_pattern, status_code=200, json=response_body_with_cursor, is_optional=True
+    )
+    httpx_mock.add_response(
+        method="POST", url=post_url_pattern, status_code=200, json=response_body_no_cursor, is_optional=True
+    )
     return httpx_mock
 
 
@@ -124,9 +130,11 @@ class TestLimits:
         # Mock pagination responses: 3 calls x 2 responses each (with cursor, then without to stop)
         for _ in range(3):
             httpx_mock.add_response(
-                method="POST", url=post_url_pattern, status_code=200, json=response_body_with_cursor
+                method="POST", url=post_url_pattern, status_code=200, json=response_body_with_cursor, is_optional=True
             )
-            httpx_mock.add_response(method="POST", url=post_url_pattern, status_code=200, json=response_body_no_cursor)
+            httpx_mock.add_response(
+                method="POST", url=post_url_pattern, status_code=200, json=response_body_no_cursor, is_optional=True
+            )
 
         res1 = cognite_client.limits.list_advanced(limit=-1)
         assert isinstance(res1, LimitValueList)
