@@ -1,14 +1,11 @@
 import re
-from typing import TYPE_CHECKING
 
 import pytest
 from pytest_httpx import HTTPXMock
 
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import LimitValue, LimitValueFilter, LimitValueList, LimitValuePrefixFilter
 from tests.utils import get_url, jsgz_load
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
