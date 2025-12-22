@@ -3,33 +3,18 @@ from __future__ import annotations
 import logging
 
 _COGNITE_LOGGER_NAME = "cognite.client"
+_DEBUG_HANDLER_NAME = "cognite_client_debug_handler"
 
 
 class DebugLogFormatter(logging.Formatter):
-    RESERVED_ATTRS = (
-        "args",
-        "asctime",
-        "created",
-        "exc_info",
-        "exc_text",
-        "filename",
-        "funcName",
-        "levelname",
-        "levelno",
-        "lineno",
-        "module",
-        "msecs",
-        "message",
-        "msg",
-        "name",
-        "pathname",
-        "process",
-        "processName",
-        "relativeCreated",
-        "stack_info",
-        "thread",
-        "threadName",
-    )
+    # fmt: off
+    RESERVED_ATTRS = frozenset((
+        "args", "asctime", "created", "exc_info", "exc_text", "filename",
+        "funcName", "levelname", "levelno", "lineno", "module", "msecs",
+        "message", "msg", "name", "pathname", "process", "processName",
+        "relativeCreated", "stack_info", "thread", "threadName", "taskName"
+    ))
+    # fmt: on
 
     def __init__(self) -> None:
         fmt = "%(asctime)s.%(msecs)03d [%(levelname)-8s] %(threadName)s. %(message)s (%(filename)s:%(lineno)s)"
@@ -37,39 +22,34 @@ class DebugLogFormatter(logging.Formatter):
         super().__init__(fmt, datefmt)
 
     def format(self, record: logging.LogRecord) -> str:
-        record.message = record.getMessage()
-        if self.usesTime():
-            record.asctime = self.formatTime(record, self.datefmt)
-        s = self.formatMessage(record)
-        s_extra_objs = []
+        # Let standard library handle the main message + exception + stack traces:
+        log_str = super().format(record)
+
+        # Append custom 'extra' fields
+        extra_output = []
         for attr, value in record.__dict__.items():
             if attr not in self.RESERVED_ATTRS:
-                s_extra_objs.append(f"\n    - {attr}: {value}")
-        for s_extra in s_extra_objs:
-            s += s_extra
-        if record.exc_info:
-            # Cache the traceback text to avoid converting it multiple times
-            # (it's constant anyway)
-            if not record.exc_text:
-                record.exc_text = self.formatException(record.exc_info)
-        if record.exc_text:
-            if s[-1:] != "\n":
-                s = s + "\n"
-            s = s + record.exc_text
-        if record.stack_info:
-            if s[-1:] != "\n":
-                s = s + "\n"
-            s = s + self.formatStack(record.stack_info)
-        return s
+                extra_output.append(f"\n    - {attr}: {value}")
+
+        if extra_output:
+            log_str += "".join(extra_output)
+
+        return log_str
 
 
 def _configure_logger_for_debug_mode() -> None:
     logger = logging.getLogger(_COGNITE_LOGGER_NAME)
     logger.setLevel(logging.DEBUG)
+
+    if _is_debug_logging_enabled():
+        return
+
     log_handler = logging.StreamHandler()
-    formatter = DebugLogFormatter()
-    log_handler.setFormatter(formatter)
-    logger.handlers = []
+    log_handler.setFormatter(DebugLogFormatter())
+
+    # Tag the handler so we can find it later
+    log_handler.set_name(_DEBUG_HANDLER_NAME)
+
     logger.propagate = False
     logger.addHandler(log_handler)
 
@@ -77,9 +57,19 @@ def _configure_logger_for_debug_mode() -> None:
 def _disable_debug_logging() -> None:
     logger = logging.getLogger(_COGNITE_LOGGER_NAME)
     logger.setLevel(logging.INFO)
-    logger.handlers = []
+
+    # Find and remove ONLY our specific debug handler
+    handlers_to_remove = [h for h in logger.handlers if h.get_name() == _DEBUG_HANDLER_NAME]
+
+    for handler in handlers_to_remove:
+        logger.removeHandler(handler)
+
+    # Restore propagation so logs flow to the root logger again
+    logger.propagate = True
 
 
 def _is_debug_logging_enabled() -> bool:
     logger = logging.getLogger(_COGNITE_LOGGER_NAME)
-    return logger.isEnabledFor(logging.DEBUG) and logger.hasHandlers()
+    # Check if level is DEBUG and if our specific handler is present
+    has_debug_handler = any(h.get_name() == _DEBUG_HANDLER_NAME for h in logger.handlers)
+    return logger.isEnabledFor(logging.DEBUG) and has_debug_handler
