@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from httpx import Request as HttpxRequest
+
 from cognite.client._constants import _RUNNING_IN_BROWSER
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._async_helpers import async_timed_cache
@@ -11,6 +13,7 @@ from cognite.client.utils._url import resolve_url
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes import AssetHierarchy
+    from cognite.client.data_classes._response import CogniteSDKResponse
 
 
 class CogniteException(Exception):
@@ -101,6 +104,32 @@ class CogniteRequestError(CogniteException):
     pass
 
 
+class CogniteHTTPStatusError(CogniteRequestError):
+    """Raised when an HTTP status code indicates an error (4xx or 5xx)."""
+
+    def __init__(self, status_code: int, *, request: HttpxRequest, response: CogniteSDKResponse) -> None:
+        super().__init__(f"HTTP {status_code} Error")
+        self.status_code = status_code
+        self.request = request
+        self.response = response
+
+    @staticmethod
+    def get_error_type(status_code: int) -> str:
+        # Shamelessly stolen from httpx (we don't use their message directly as it is way too long)
+        return {
+            1: "Informational response",
+            3: "Redirect response",
+            4: "Client error",
+            5: "Server error",
+        }.get(status_code // 100, "Invalid status code")
+
+    def __str__(self) -> str:
+        return (
+            f"{self.get_error_type(self.status_code)} '{self.status_code} {self.response.reason_phrase}' "
+            f"for url '{self.request.url}'"
+        )
+
+
 class CogniteConnectionError(CogniteRequestError):
     pass
 
@@ -115,11 +144,7 @@ class CogniteReadTimeout(CogniteRequestError):
 
 
 class CogniteFileUploadError(CogniteException):
-    def __init__(
-        self,
-        message: str,
-        code: int,
-    ) -> None:
+    def __init__(self, message: str, code: int) -> None:
         self.message = message
         self.code = code
 
