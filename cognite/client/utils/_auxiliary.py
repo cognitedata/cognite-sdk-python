@@ -23,9 +23,8 @@ from cognite.client.utils._text import (
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    import httpx
-
     from cognite.client.data_classes._base import T_CogniteResource
+    from cognite.client.response import CogniteHTTPResponse
 
 T = TypeVar("T")
 K = TypeVar("K")
@@ -200,7 +199,7 @@ def flatten_dict(d: dict[str, Any], parent_keys: tuple[str, ...], sep: str = "."
     return dict(items)
 
 
-def unpack_items(res: httpx.Response) -> list[Any]:
+def unpack_items(res: CogniteHTTPResponse) -> list[Any]:
     return res.json()["items"]
 
 

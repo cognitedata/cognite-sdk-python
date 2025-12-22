@@ -30,6 +30,7 @@ from cognite.client.utils._url import resolve_url
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
+    from cognite.client.response import CogniteHTTPResponse
 
 
 logger = logging.getLogger(__name__)
@@ -230,7 +231,7 @@ class BasicAsyncAPIClient:
         timeout: float | None = None,
         include_cdf_headers: bool = False,
         api_subversion: str | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         """
         Make a request to something that is outside Cognite Data Fusion, with retry enabled.
         Requires the caller to handle errors coming from non-2xx response status codes.
@@ -245,7 +246,7 @@ class BasicAsyncAPIClient:
             api_subversion (str | None): When include_cdf_headers=True, override the API subversion to use for the request. Has no effect otherwise.
 
         Returns:
-            httpx.Response: The response from the server.
+            CogniteHTTPResponse: The response from the server.
 
         Raises:
             httpx.HTTPStatusError: If the response status code is 4xx or 5xx.
@@ -278,7 +279,7 @@ class BasicAsyncAPIClient:
         full_headers: dict[str, Any] | None = None,
         timeout: float | None = None,
         api_subversion: str | None = None,
-    ) -> AsyncIterator[httpx.Response]:
+    ) -> AsyncIterator[CogniteHTTPResponse]:
         assert url_path or full_url, "Either url_path or full_url must be provided"
         full_url = full_url or resolve_url(self, method, cast(str, url_path))[1]
         if full_headers is None:
@@ -304,7 +305,7 @@ class BasicAsyncAPIClient:
         follow_redirects: bool = False,
         api_subversion: str | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         _, full_url = resolve_url(self, "GET", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         try:
@@ -332,7 +333,7 @@ class BasicAsyncAPIClient:
         follow_redirects: bool = False,
         api_subversion: str | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         is_retryable, full_url = resolve_url(self, "POST", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         # We want to control json dumping, so we pass it along to httpx.Client.post as 'content'
@@ -367,7 +368,7 @@ class BasicAsyncAPIClient:
         api_subversion: str | None = None,
         timeout: float | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         _, full_url = resolve_url(self, "PUT", url_path)
 
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
@@ -425,7 +426,7 @@ class BasicAsyncAPIClient:
         await handler.raise_api_error(self._cognite_client)
 
     def _log_successful_request(
-        self, res: httpx.Response, payload: dict[str, Any] | None = None, stream: bool = False
+        self, res: CogniteHTTPResponse, payload: dict[str, Any] | None = None, stream: bool = False
     ) -> None:
         extra: dict[str, Any] = {
             "headers": self._sanitize_headers(res.request.headers),
