@@ -199,7 +199,7 @@ class AsyncHTTPClientWithRetry:
         follow_redirects: bool = False,
         timeout: float | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteSDKResponse:
         def coro_factory() -> HTTPResponseCoro:
             return self.httpx_async_client.request(
                 method,
@@ -225,7 +225,7 @@ class AsyncHTTPClientWithRetry:
         json: Any = None,
         headers: MutableMapping[str, str] | None = None,
         timeout: float | None = None,
-    ) -> AsyncIterator[httpx.Response]:
+    ) -> AsyncIterator[CogniteSDKResponse]:
         # This method is basically a clone of httpx.AsyncClient.stream() so that we may add our own retry logic.
         def coro_factory() -> HTTPResponseCoro:
             request = self.httpx_async_client.build_request(
@@ -233,7 +233,7 @@ class AsyncHTTPClientWithRetry:
             )
             return self.httpx_async_client.send(request, stream=True)
 
-        response: httpx.Response | None = None
+        response: CogniteSDKResponse | None = None
         try:
             yield (response := await self._with_retry(coro_factory, url=url, headers=headers))
         finally:
@@ -247,7 +247,7 @@ class AsyncHTTPClientWithRetry:
         url: str,
         headers: MutableMapping[str, str] | None,
         semaphore: asyncio.BoundedSemaphore | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteSDKResponse:
         if semaphore is None:
             # By default, we run with a semaphore decided by user settings of 'max_workers' in 'global_config'.
             # Since the user can run any number of SDK tasks concurrently, this needs to be global:
@@ -266,7 +266,7 @@ class AsyncHTTPClientWithRetry:
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
                     response.json = functools.cache(response.json)  # type: ignore [method-assign]
-                return response.raise_for_status()
+                return CogniteSDKResponse(response.raise_for_status())
 
             except httpx.HTTPStatusError as err:
                 response = err.response
