@@ -19,6 +19,7 @@ from cognite.client.config import global_config
 from cognite.client.exceptions import (
     CogniteAPIError,
     CogniteDuplicatedError,
+    CogniteHTTPStatusError,
     CogniteNotFoundError,
     CogniteProjectAccessError,
 )
@@ -46,7 +47,7 @@ class FailedRequestHandler:
     headers: dict[str, str] | httpx.Headers
     response_headers: dict[str, str] | httpx.Headers
     extra: dict[str, Any]
-    cause: httpx.HTTPStatusError
+    cause: CogniteHTTPStatusError
     stream: bool
 
     def __post_init__(self) -> None:
@@ -54,7 +55,7 @@ class FailedRequestHandler:
         self.response_headers = BasicAsyncAPIClient._sanitize_headers(self.response_headers)
 
     @classmethod
-    async def from_status_error(cls, err: httpx.HTTPStatusError, stream: bool) -> Self:
+    async def from_status_error(cls, err: CogniteHTTPStatusError, stream: bool) -> Self:
         response = err.response
         error, missing, duplicated = {}, None, None
 
@@ -135,7 +136,7 @@ class FailedRequestHandler:
             x_request_id=self.x_request_id,
             maybe_projects=maybe_projects,
             cluster=cluster,
-        ) from None  # we don't surface the underlying httpx.HTTPStatusError
+        ) from None  # we don't surface the underlying CogniteHTTPStatusError
 
     def _raise_api_error(self, err_type: type[CogniteAPIError], cluster: str | None, project: str) -> NoReturn:
         raise err_type(
@@ -249,7 +250,7 @@ class BasicAsyncAPIClient:
             CogniteHTTPResponse: The response from the server.
 
         Raises:
-            httpx.HTTPStatusError: If the response status code is 4xx or 5xx.
+            CogniteHTTPStatusError: If the response status code is 4xx or 5xx.
         """
         http_client = self._select_async_http_client(method in {"GET", "PUT", "HEAD"})
         if include_cdf_headers:
@@ -261,7 +262,7 @@ class BasicAsyncAPIClient:
             self._log_successful_request(res)
             return res
 
-        except httpx.HTTPStatusError as err:
+        except CogniteHTTPStatusError as err:
             handler = await FailedRequestHandler.from_status_error(err, stream=False)
             handler.log_failed_request()
             raise
@@ -294,7 +295,7 @@ class BasicAsyncAPIClient:
                 self._log_successful_request(resp, payload=json, stream=True)
                 yield resp
 
-        except httpx.HTTPStatusError as err:
+        except CogniteHTTPStatusError as err:
             await self._handle_status_error(err, payload=json, stream=True)
 
     async def _get(
@@ -318,7 +319,7 @@ class BasicAsyncAPIClient:
                 timeout=self._config.timeout,
                 semaphore=semaphore,
             )
-        except httpx.HTTPStatusError as err:
+        except CogniteHTTPStatusError as err:
             await self._handle_status_error(err)
 
         self._log_successful_request(res)
@@ -351,7 +352,7 @@ class BasicAsyncAPIClient:
                 timeout=self._config.timeout,
                 semaphore=semaphore,
             )
-        except httpx.HTTPStatusError as err:
+        except CogniteHTTPStatusError as err:
             await self._handle_status_error(err, payload=json)
 
         self._log_successful_request(res, payload=json)
@@ -385,7 +386,7 @@ class BasicAsyncAPIClient:
                 timeout=timeout or self._config.timeout,
                 semaphore=semaphore,
             )
-        except httpx.HTTPStatusError as err:
+        except CogniteHTTPStatusError as err:
             await self._handle_status_error(err, payload=json)
 
         self._log_successful_request(res, payload=json)
@@ -418,7 +419,7 @@ class BasicAsyncAPIClient:
         headers[auth_header_name] = auth_header_value
 
     async def _handle_status_error(
-        self, error: httpx.HTTPStatusError, payload: dict[str, Any] | None = None, stream: bool = False
+        self, error: CogniteHTTPStatusError, payload: dict[str, Any] | None = None, stream: bool = False
     ) -> NoReturn:
         """The response had an HTTP status code of 4xx or 5xx"""
         handler = await FailedRequestHandler.from_status_error(error, stream=stream)

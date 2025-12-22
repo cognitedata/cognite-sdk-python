@@ -24,6 +24,7 @@ from cognite.client.config import global_config
 from cognite.client.exceptions import (
     CogniteConnectionError,
     CogniteConnectionRefused,
+    CogniteHTTPStatusError,
     CogniteReadTimeout,
     CogniteRequestError,
 )
@@ -264,6 +265,7 @@ class AsyncHTTPClientWithRetry:
                     if headers is not None:
                         self.refresh_auth_header(headers)
                     response = await coro_factory()
+
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
                     response.json = functools.cache(response.json)  # type: ignore [method-assign]
@@ -272,8 +274,12 @@ class AsyncHTTPClientWithRetry:
             except httpx.HTTPStatusError as err:
                 response = err.response
                 is_auto_retryable = response.headers.get("cdf-is-auto-retryable", False)
-                if not retry_tracker.should_retry_status_code(response.status_code, is_auto_retryable):
-                    raise
+                if not retry_tracker.should_retry_status_code(err, is_auto_retryable):
+                    raise CogniteHTTPStatusError(
+                        response.status_code,
+                        request=err.request,
+                        response=CogniteHTTPResponse(response),
+                    ) from None
 
             except httpx.ConnectError as err:
                 if not retry_tracker.should_retry_connect_error(err):
