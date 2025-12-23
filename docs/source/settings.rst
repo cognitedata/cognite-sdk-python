@@ -56,9 +56,12 @@ You can increase the max connection pool size by setting the :code:`max_connecti
 
 Debug logging
 -------------
-If you need to know the details of the http requests the SDK sends under the hood, you can enable debug logging. One way
-is to pass :code:`debug=True` argument to :ref:`ClientConfig <class_client_ClientConfig>`. Alternatively, you can toggle debug
-logging on and off by setting the :code:`debug` attribute on the :ref:`ClientConfig <class_client_ClientConfig>` object.
+If you need to inspect the details of the HTTP requests and responses, or monitor the SDK's retry behavior (e.g. during throttling),
+you can enable debug logging.
+
+One way is to pass the :code:`debug=True` argument to :ref:`ClientConfig <class_client_ClientConfig>` when you instantiate your client.
+Alternatively, you can toggle debug logging on or off dynamically by setting the :code:`debug` attribute on the
+:ref:`ClientConfig <class_client_ClientConfig>` object.
 
 .. code:: python
 
@@ -73,9 +76,11 @@ logging on and off by setting the :code:`debug` attribute on the :ref:`ClientCon
             debug=True,
         )
     )
-    print(client.config.debug)   # True, all http request details will be logged
+    print(client.config.debug)   # True, requests, responses, and retries are logged to stderr
     client.config.debug = False  # disable debug logging
     client.config.debug = True   # enable debug logging again
+
+Note: Large outgoing or incoming payloads will be truncated to 1000 characters in the logs to avoid overwhelming the log output.
 
 HTTP Request logging
 --------------------
