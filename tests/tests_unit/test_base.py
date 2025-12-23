@@ -412,6 +412,8 @@ class TestCogniteResource:
                 self.prim = prim
                 self.prim_ignore = prim_ignore
 
+            _load = None  # type: ignore [assignment]
+
         expected_df = pd.DataFrame(
             {"value": ["abc", [1, 2, 3], {"x": "y"}, "md_value"]},
             index=["prim", "aList", "ob", "md_key"],
@@ -429,6 +431,8 @@ class TestCogniteResource:
         class SomeResource(CogniteResource):
             def __init__(self) -> None:
                 self.snakes_are_better_anyway = 42
+
+            _load = None  # type: ignore [assignment]
 
         expected_df = pd.DataFrame(columns=["value"])
         expected_df.loc["snakes_are_better_anyway"] = [42]

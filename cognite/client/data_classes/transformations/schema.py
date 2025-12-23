@@ -68,7 +68,7 @@ class TransformationSchemaMapType(TransformationSchemaType):
             type=resource["type"],
             key_type=resource.get("keyType"),
             value_type=resource.get("valueType"),
-            value_contains_null=resource.get("valueContainsNull"),  # type: ignore[arg-type]
+            value_contains_null=resource.get("valueContainsNull", False),
         )
 
 
@@ -127,9 +127,7 @@ class TransformationSchemaColumn(CogniteResource):
                     "map": TransformationSchemaMapType,
                     "struct": TransformationSchemaStructType,
                 }
-                type_ = type_classes.get(resource_type["type"], TransformationSchemaUnknownType).load(resource_type)
-            case str():
-                type_ = TransformationSchemaType(type=resource_type)
+                type_ = type_classes.get(resource_type["type"], TransformationSchemaUnknownType)._load(resource_type)
             case _:
                 raise ValueError(f"Unknown type for TransformationSchemaColumn: {resource_type}")
 

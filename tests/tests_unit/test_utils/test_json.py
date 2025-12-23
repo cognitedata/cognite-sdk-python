@@ -43,4 +43,6 @@ class TestJsonDumpDefault:
             def __init__(self, foo: int) -> None:
                 self.foo = foo
 
+            _load = None  # type: ignore [assignment]
+
         assert '{"foo":1}' == _json.dumps(Obj(1))
