@@ -281,10 +281,16 @@ class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(instance.camera, dict):
-            instance.camera = RevisionCameraProperties._load(instance.camera)
-        return instance
+        camera = resource.get("camera")
+        return cls(
+            file_id=resource.get("fileId"),
+            published=resource.get("published"),
+            rotation=resource.get("rotation"),
+            scale=resource.get("scale"),
+            translation=resource.get("translation"),
+            camera=RevisionCameraProperties._load(camera) if camera else None,
+            metadata=resource.get("metadata"),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)

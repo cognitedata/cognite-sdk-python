@@ -87,13 +87,6 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
             )
         return output
 
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(instance.instance_id, dict):
-            instance.instance_id = NodeId.load(instance.instance_id)
-        return instance
-
 
 class TimeSeries(TimeSeriesCore):
     """This represents a sequence of data points. The TimeSeries object is the metadata about
