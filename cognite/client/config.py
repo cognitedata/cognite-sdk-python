@@ -140,7 +140,8 @@ class ClientConfig:
         headers (dict[str, str] | None): Additional headers to add to all requests.
         timeout (int | None): Timeout on requests sent to the api. Defaults to 60 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
-        debug (bool): Configures logger to log extra request details to stderr.
+        debug (bool): Enables debug logging to stderr. This includes full request/response details and logs regarding retry
+            attempts (e.g., on 429 throttling or 5xx errors).
     """
 
     def __init__(
