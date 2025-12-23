@@ -147,16 +147,13 @@ class CogniteObject(ABC):
         return cls._load(loaded, cognite_client=cognite_client)
 
     @classmethod
+    @abstractmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
         """
-        This is the internal load method that is called by the public load method.
-        It has a default implementation that can be overridden by subclasses.
+        This is the internal load method that is called by the public load method or directly from
+        within the SDK when loading resources from the API.
 
-        The typical use case for overriding this method is to handle nested resources,
-        or to handle resources that have required fields as the default implementation assumes
-        all fields are optional.
-
-        Note that the base class takes care of loading from YAML/JSON strings and error handling.
+        Subclasses must implement this method to handle their specific resource loading logic.
 
         Args:
             resource (dict[str, Any]): The resource to load.
