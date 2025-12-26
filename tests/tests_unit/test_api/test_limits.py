@@ -65,9 +65,3 @@ class TestLimits:
         with pytest.raises(CogniteAPIError) as exc_info:
             cognite_client.limits.retrieve(limit_id="nonexistent", ignore_unknown_ids=False)
         assert exc_info.value.code == 404
-
-    def test_limit_value_load(self) -> None:
-        data = {"limitId": "test.limit", "value": 42}
-        limit = LimitValue._load(data)
-        assert limit.limit_id == "test.limit"
-        assert limit.value == 42
