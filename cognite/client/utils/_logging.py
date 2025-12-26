@@ -59,7 +59,7 @@ def _disable_debug_logging() -> None:
     logger.setLevel(logging.INFO)
 
     # Find and remove ONLY our specific debug handler
-    handlers_to_remove = [h for h in logger.handlers if h.get_name() == _DEBUG_HANDLER_NAME]
+    handlers_to_remove = [h for h in list(logger.handlers) if h.get_name() == _DEBUG_HANDLER_NAME]
 
     for handler in handlers_to_remove:
         logger.removeHandler(handler)
@@ -71,5 +71,5 @@ def _disable_debug_logging() -> None:
 def _is_debug_logging_enabled() -> bool:
     logger = logging.getLogger(_COGNITE_LOGGER_NAME)
     # Check if level is DEBUG and if our specific handler is present
-    has_debug_handler = any(h.get_name() == _DEBUG_HANDLER_NAME for h in logger.handlers)
+    has_debug_handler = any(h.get_name() == _DEBUG_HANDLER_NAME for h in list(logger.handlers))
     return logger.isEnabledFor(logging.DEBUG) and has_debug_handler
