@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
 from typing import TYPE_CHECKING, Any
 
-from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteResource
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -39,107 +38,3 @@ class LimitValue(CogniteResource):
             value=resource.get("value"),
             cognite_client=cognite_client,
         )
-
-
-class LimitValueList(CogniteResourceList[LimitValue]):
-    """A list of flattened limit items.
-
-    Args:
-        resources (Sequence[LimitValue]): List of limit values.
-        next_cursor (str | None): Cursor to get the next page of results (if available).
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
-    """
-
-    _RESOURCE = LimitValue
-
-    def __init__(
-        self,
-        resources: Sequence[LimitValue],
-        next_cursor: str | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
-    ) -> None:
-        super().__init__(resources, cognite_client=cognite_client)
-        self.next_cursor = next_cursor
-
-    @classmethod
-    def _load(
-        cls,
-        resource_list: dict[str, Any] | Iterable[dict[str, Any]],
-        cognite_client: AsyncCogniteClient | None = None,
-    ) -> LimitValueList:
-        # Handle case where we get a dict with items and nextCursor (from API response)
-        if isinstance(resource_list, dict):
-            items = resource_list.get("items", [])
-            next_cursor = resource_list.get("nextCursor")
-            resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in items]
-            return cls(resources=resources, next_cursor=next_cursor, cognite_client=cognite_client)
-
-        # Handle case where we get a list/iterable of items directly
-        resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
-        return cls(resources=resources, cognite_client=cognite_client)
-
-    def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dump the list with nextCursor in addition to items.
-
-        Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the list with items and nextCursor.
-        """
-        output: dict[str, Any] = {"items": self.dump(camel_case)}
-        if self.next_cursor is not None:
-            output["nextCursor"] = self.next_cursor
-        return output
-
-
-class LimitValuePrefixFilter(CogniteObject):
-    """Prefix filter for limit values.
-
-    Args:
-        property (list[str] | None): List of properties to filter on.
-        value (str | None): The prefix value to filter by.
-    """
-
-    def __init__(self, property: list[str] | None = None, value: str | None = None) -> None:
-        self.property = property
-        self.value = value
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result: dict[str, Any] = {}
-        if self.property is not None:
-            result["property"] = self.property
-        if self.value is not None:
-            result["value"] = self.value
-        return result
-
-
-class LimitValueFilter(CogniteObject):
-    """Filter to apply to the list operation.
-
-    To retrieve all limits for a specific service, use the "prefix" operator where the property
-    is the limit's key, e.g., `{"prefix": {"property": ["limitId"], "value": "atlas."}}`
-
-    Args:
-        prefix (LimitValuePrefixFilter | dict[str, Any] | None): Prefix filter object or dict.
-    """
-
-    prefix: LimitValuePrefixFilter | None
-
-    def __init__(self, prefix: LimitValuePrefixFilter | dict[str, Any] | None = None) -> None:
-        if isinstance(prefix, dict):
-            self.prefix = LimitValuePrefixFilter(
-                property=prefix.get("property"),
-                value=prefix.get("value"),
-            )
-        else:
-            self.prefix = prefix
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> LimitValueFilter:
-        return cls(prefix=resource.get("prefix"))
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        if self.prefix is None:
-            return {}
-        return {"prefix": self.prefix.dump(camel_case)}
