@@ -19,9 +19,7 @@ def get_spy(async_client: AsyncCogniteClient) -> Iterator[AsyncMock]:
 class TestLimitsAPI:
     def test_retrieve_existing_limit(self, cognite_client: CogniteClient, get_spy: AsyncMock) -> None:
         """Test retrieving a specific limit by ID."""
-        # Use a known limit ID that should exist in the test environment
-        # If this doesn't exist, the test will fail appropriately
-        limit_id = "atlas.monthly_ai_tokens"
+        limit_id = "streams.streams"
         res = cognite_client.limits.retrieve(limit_id=limit_id)
         assert isinstance(res, LimitValue)
         assert res.limit_id == limit_id
