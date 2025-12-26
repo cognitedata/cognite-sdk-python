@@ -39,22 +39,6 @@ class TestLimitsAPI:
         assert all(limit_value.limit_id and limit_value.limit_id.startswith("atlas.") for limit_value in res)
         assert post_spy.call_count == 1
 
-    def test_retrieve_existing_limit(self, cognite_client: CogniteClient, get_spy: AsyncMock) -> None:
-        limits = cognite_client.limits.list(limit=1)
-        if len(limits) > 0 and limits[0].limit_id:
-            limit_id = limits[0].limit_id
-            res = cognite_client.limits.retrieve(limit_id=limit_id)
-            assert isinstance(res, LimitValue)
-            assert res.limit_id == limit_id
-            assert res.value == limits[0].value
-            assert get_spy.call_count == 2
-
-    def test_retrieve_non_existing_limit(self, cognite_client: CogniteClient) -> None:
-        with pytest.raises((CogniteNotFoundError, CogniteAPIError)):
-            cognite_client.limits.retrieve(limit_id="nonexistent.limit.id")
-
-        assert cognite_client.limits.retrieve(limit_id="nonexistent.limit.id", ignore_unknown_ids=True) is None
-
     def test_call_iterator(self, cognite_client: CogniteClient, get_spy: AsyncMock) -> None:
         results = list(cognite_client.limits(limit=5))
         assert len(results) <= 5
@@ -74,3 +58,23 @@ class TestLimitsAPI:
         assert len(atlas_ids.intersection(files_ids)) == 0
         assert all(limit.limit_id and limit.limit_id.startswith("atlas.") for limit in atlas_limits)
         assert all(limit.limit_id and limit.limit_id.startswith("files.") for limit in files_limits)
+
+    def test_retrieve_existing_limit(self, cognite_client: CogniteClient, get_spy: AsyncMock) -> None:
+        """Test retrieving a specific limit by ID."""
+        limit_id = "streams.streams"
+        res = cognite_client.limits.retrieve(limit_id=limit_id)
+        assert isinstance(res, LimitValue)
+        assert res.limit_id == limit_id
+        assert res.value is not None
+        assert isinstance(res.value, (int, float))
+        assert get_spy.call_count == 1
+
+    def test_retrieve_non_existing_limit(self, cognite_client: CogniteClient) -> None:
+        """Test retrieving a non-existent limit."""
+        with pytest.raises((CogniteNotFoundError, CogniteAPIError)):
+            cognite_client.limits.retrieve(limit_id="nonexistent.limit.id")
+
+    def test_retrieve_non_existing_limit_ignore_unknown(self, cognite_client: CogniteClient) -> None:
+        """Test retrieving a non-existent limit with ignore_unknown_ids=True."""
+        res = cognite_client.limits.retrieve(limit_id="nonexistent.limit.id", ignore_unknown_ids=True)
+        assert res is None

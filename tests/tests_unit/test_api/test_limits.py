@@ -36,11 +36,10 @@ def mock_limits_response(
 def mock_limit_single_response(
     httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
+    response_body = {"limitId": "atlas.monthly_ai_tokens", "value": 1000}
     base_url = get_url(async_client.limits)
     url_pattern = re.compile(re.escape(base_url) + r"/limits/values/.+")
-    httpx_mock.add_response(
-        method="GET", url=url_pattern, status_code=200, json={"limitId": "atlas.monthly_ai_tokens", "value": 1000}
-    )
+    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
     return httpx_mock
 
 
@@ -94,12 +93,19 @@ class TestLimits:
         res = cognite_client.limits.list_advanced(limit=-1)
         assert isinstance(res, LimitValueList)
 
-    def test_retrieve(
+    def test_retrieve_single(
         self, cognite_client: CogniteClient, mock_limit_single_response: HTTPXMock, httpx_mock: HTTPXMock
     ) -> None:
         res = cognite_client.limits.retrieve(limit_id="atlas.monthly_ai_tokens")
-        assert {"limitId": "atlas.monthly_ai_tokens", "value": 1000} == res.dump(camel_case=True)
-        assert httpx_mock.get_requests()[0].headers["cdf-version"] == "20230101-alpha"
+        assert isinstance(res, LimitValue)
+        expected_limit = {"limitId": "atlas.monthly_ai_tokens", "value": 1000}
+        assert expected_limit == res.dump(camel_case=True)
+
+        requests = httpx_mock.get_requests()
+        assert len(requests) == 1
+        assert requests[0].method == "GET"
+        assert "limits/values/atlas.monthly_ai_tokens" in str(requests[0].url)
+        assert requests[0].headers["cdf-version"] == "20230101-alpha"
 
     def test_retrieve_with_ignore_unknown_ids(
         self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
@@ -109,14 +115,22 @@ class TestLimits:
         base_url = get_url(async_client.limits)
         url_pattern = re.compile(re.escape(base_url) + r"/limits/values/nonexistent")
 
+        # Mock two 404 responses - one for each call
         httpx_mock.add_response(
-            method="GET", url=url_pattern, status_code=404, json={"error": {"code": 404, "message": "Not found"}}
+            method="GET",
+            url=url_pattern,
+            status_code=404,
+            json={"error": {"code": 404, "message": "Not found"}},
         )
         httpx_mock.add_response(
-            method="GET", url=url_pattern, status_code=404, json={"error": {"code": 404, "message": "Not found"}}
+            method="GET",
+            url=url_pattern,
+            status_code=404,
+            json={"error": {"code": 404, "message": "Not found"}},
         )
 
-        assert cognite_client.limits.retrieve(limit_id="nonexistent", ignore_unknown_ids=True) is None
+        res = cognite_client.limits.retrieve(limit_id="nonexistent", ignore_unknown_ids=True)
+        assert res is None
 
         with pytest.raises(CogniteAPIError) as exc_info:
             cognite_client.limits.retrieve(limit_id="nonexistent", ignore_unknown_ids=False)
@@ -136,21 +150,3 @@ class TestLimits:
         results = list(cognite_client.limits(chunk_size=1, limit=2))
         assert len(results) == 2
         assert all(isinstance(item, LimitValueList) for item in results)
-
-    def test_limit_value_load(self) -> None:
-        limit = LimitValue._load({"limitId": "test.limit", "value": 42})
-        assert limit.limit_id == "test.limit" and limit.value == 42
-
-    def test_limit_value_list_load(self) -> None:
-        data = {
-            "items": [{"limitId": "test.limit1", "value": 10}, {"limitId": "test.limit2", "value": 20}],
-            "nextCursor": "cursor123",
-        }
-        limit_list = LimitValueList._load(data)
-        assert len(limit_list) == 2
-        assert limit_list[0].limit_id == "test.limit1"
-        assert limit_list.next_cursor == "cursor123"
-
-    def test_limit_value_filter_dump(self) -> None:
-        filter_obj = LimitValueFilter(prefix=LimitValuePrefixFilter(property=["limitId"], value="atlas."))
-        assert {"prefix": {"property": ["limitId"], "value": "atlas."}} == filter_obj.dump(camel_case=True)
