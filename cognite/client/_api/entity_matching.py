@@ -22,6 +22,7 @@ T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=Contextualizati
 
 
 class EntityMatchingAPI(APIClient):
+    # TODO: The API class should specify the resource path, not the data class:
     _RESOURCE_PATH = EntityMatchingModel._RESOURCE_PATH
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> EntityMatchingModel | None:
@@ -272,8 +273,8 @@ class EntityMatchingAPI(APIClient):
             targets (Sequence[dict] | None): entities to match to, does not need an 'id' field. Tolerant to passing more than is needed or used. If omitted, will use data from fit.
             num_matches (int): number of matches to return for each item.
             score_threshold (float | None): only return matches with a score above this threshold
-            id (int | None): ids of the model to use.
-            external_id (str | None): external ids of the model to use.
+            id (int | None): id of the model to use.
+            external_id (str | None): external id of the model to use.
 
         Returns:
             EntityMatchingPredictionResult: object which can be used to wait for and retrieve results.
@@ -293,16 +294,22 @@ class EntityMatchingAPI(APIClient):
             ...     id=1
             ... )
         """
-
-        model = await self.retrieve(id=id, external_id=external_id)
-        # TODO: Change assert to proper error
-        assert model
-        return await model.predict_async(  # could call predict directly but this is friendlier
+        model = await self._get_model_or_raise(id, external_id)
+        # TODO: The data class should call the API class 'predict' method, not the other way around:
+        return await model.predict_async(
             sources=EntityMatchingModel._dump_entities(sources),
             targets=EntityMatchingModel._dump_entities(targets),
             num_matches=num_matches,
             score_threshold=score_threshold,
         )
+
+    async def _get_model_or_raise(self, id: int | None, external_id: str | None) -> EntityMatchingModel:
+        if id is external_id is None:
+            raise ValueError("Either id or external_id must be provided.")
+        model = await self.retrieve(id=id, external_id=external_id)
+        if model is None:
+            raise ValueError("No model found with the given identifier(s).")
+        return model
 
     async def refit(
         self,
@@ -332,7 +339,5 @@ class EntityMatchingAPI(APIClient):
             >>> true_matches = [(1, 101)]
             >>> model = client.entity_matching.refit(true_matches=true_matches, id=1)
         """
-        model = await self.retrieve(id=id, external_id=external_id)
-        # TODO: Change assert to proper error
-        assert model
+        model = await self._get_model_or_raise(id, external_id)
         return await model.refit_async(true_matches=true_matches)
