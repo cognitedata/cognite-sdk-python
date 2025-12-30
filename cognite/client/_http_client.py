@@ -4,7 +4,6 @@ import asyncio
 import functools
 import logging
 import random
-import time
 from collections.abc import (
     AsyncIterable,
     AsyncIterator,
@@ -151,7 +150,7 @@ class RetryTracker:
         cap = min(base, self.config.max_backoff_seconds)
         return 0.1 + random.uniform(0, cap)
 
-    def back_off(self) -> None:
+    async def back_off(self) -> None:
         backoff_time = self.get_backoff_time()
         self.total_time_in_backoff += backoff_time
         # We put logging here, since this is always called before retrying
@@ -159,7 +158,7 @@ class RetryTracker:
             f"Retrying failed request, attempt #{self.total}, backoff wait: {backoff_time:.4f} sec "
             f"(total: {self.total_time_in_backoff:.4f} sec), reason: {self.last_failed_reason!r}, url: {self.url}"
         )
-        time.sleep(backoff_time)
+        await asyncio.sleep(backoff_time)
 
     @property
     def should_retry_total(self) -> bool:
@@ -312,4 +311,4 @@ class AsyncHTTPClientWithRetry:
                 raise CogniteRequestError from err
 
             # If we got here, it means we have decided to retry the request!
-            retry_tracker.back_off()
+            await retry_tracker.back_off()
