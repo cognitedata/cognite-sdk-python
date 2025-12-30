@@ -964,12 +964,12 @@ class DetectJobBundle:
     def __str__(self) -> str:
         return f"DetectJobBundle({self.job_ids=}, {self.jobs=}, {self._result=}, {self._remaining_job_ids=})"
 
-    def _back_off(self) -> None:
+    async def _back_off(self) -> None:
         """
         Linear back off, in order to limit load on our API.
         Starts at _WAIT_TIME and goes to 10 seconds.
         """
-        time.sleep(self._WAIT_TIME)
+        await asyncio.sleep(self._WAIT_TIME)
         if self._WAIT_TIME < 10:
             self._WAIT_TIME += 2
 
@@ -987,7 +987,7 @@ class DetectJobBundle:
                     self._STATUS_PATH, json={"items": self._remaining_job_ids}
                 )
             except CogniteAPIError:
-                self._back_off()
+                await self._back_off()
                 continue
             if res.json().get("error"):
                 break
@@ -997,7 +997,7 @@ class DetectJobBundle:
             self._remaining_job_ids = [j["jobId"] for j in self.jobs if JobStatus(j["status"]).is_not_finished()]
 
             if self._remaining_job_ids:
-                self._back_off()
+                await self._back_off()
             else:
                 self._WAIT_TIME = 2
                 break
