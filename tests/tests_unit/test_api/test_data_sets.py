@@ -1,7 +1,10 @@
 import re
+from datetime import datetime
 
 import pytest
+from responses import RequestsMock
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSet, DataSetList, DataSetUpdate, TimestampRange
 from tests.utils import jsgz_load
 
@@ -49,8 +52,11 @@ class TestDataset:
         assert isinstance(res, DataSetList)
         assert mock_ds_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_list_with_timestamp_range(self, cognite_client, mock_ds_response):
-        cognite_client.data_sets.list(created_time=TimestampRange(min=20))
+    @pytest.mark.parametrize("min_time", [20, datetime.fromtimestamp(20 / 1000)])
+    def test_list_with_timestamp_range(
+        self, cognite_client: CogniteClient, mock_ds_response: RequestsMock, min_time: int | datetime
+    ):
+        cognite_client.data_sets.list(created_time=TimestampRange(min=min_time))
         assert 20 == jsgz_load(mock_ds_response.calls[0].request.body)["filter"]["createdTime"]["min"]
         assert "max" not in jsgz_load(mock_ds_response.calls[0].request.body)["filter"]["createdTime"]
 

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from cognite.client.data_classes import AggregateResultItem, TimestampRange
 
 
@@ -25,3 +27,11 @@ class TestGenerated:
         ag = AggregateResultItem(child_count=23)
         assert 23 == ag.child_count
         assert {"childCount": 23} == ag.dump(camel_case=True)
+
+    def test_datetime(self):
+        min_time = datetime.fromtimestamp(1767222000)  # 2026-01-01 00:00:00 GMT+01
+        max_time = datetime.fromtimestamp(1767308400)  # 2026-01-02 00:00:00 GMT+01
+        tsr = TimestampRange(min=min_time, max=max_time)
+        assert tsr.min == 1767222000000
+        assert tsr.max == 1767308400000
+        assert {"min": 1767222000000, "max": 1767308400000} == tsr.dump()

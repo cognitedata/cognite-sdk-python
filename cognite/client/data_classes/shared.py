@@ -9,20 +9,21 @@ from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geom
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+from datetime import datetime
 
 
 class TimestampRange(CogniteObject):
     """Range between two timestamps.
 
     Args:
-        max (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        min (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        max (int | datetime | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds, or a datetime object.
+        min (int | datetime | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds, or a datetime object.
         **_ (Any): No description.
     """
 
-    def __init__(self, max: int | None = None, min: int | None = None, **_: Any) -> None:
-        self.max = max
-        self.min = min
+    def __init__(self, max: int | datetime | None = None, min: int | datetime | None = None, **_: Any) -> None:
+        self.max = int(max.timestamp() * 1000) if isinstance(max, datetime) else max
+        self.min = int(min.timestamp() * 1000) if isinstance(min, datetime) else min
 
 
 class AggregateResult(CogniteObject):
