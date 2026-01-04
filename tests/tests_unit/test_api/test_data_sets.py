@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from typing import TYPE_CHECKING, Any
+from datetime import datetime
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -65,10 +66,13 @@ class TestDataset:
         assert isinstance(res, DataSetList)
         assert [example_data_set] == res.dump(camel_case=True)
 
-    def test_list_with_timestamp_range(self, cognite_client: CogniteClient, mock_ds_response: HTTPXMock) -> None:
-        cognite_client.data_sets.list(created_time=TimestampRange(min=20))
-        assert 20 == jsgz_load(mock_ds_response.get_requests()[0].content)["filter"]["createdTime"]["min"]
-        assert "max" not in jsgz_load(mock_ds_response.get_requests()[0].content)["filter"]["createdTime"]
+    @pytest.mark.parametrize("min_time", [20, datetime.fromtimestamp(20 / 1000)])
+    def test_list_with_timestamp_range(
+        self, cognite_client: CogniteClient, mock_ds_response: HTTPXMock, min_time: int | datetime
+    ) -> None:
+        cognite_client.data_sets.list(created_time=TimestampRange(min=min_time))
+        assert 20 == jsgz_load(mock_ds_response.calls[0].request.body)["filter"]["createdTime"]["min"]
+        assert "max" not in jsgz_load(mock_ds_response.calls[0].request.body)["filter"]["createdTime"]
 
     def test_list_with_time_dict(self, cognite_client: CogniteClient, mock_ds_response: HTTPXMock) -> None:
         cognite_client.data_sets.list(last_updated_time={"max": 20})
