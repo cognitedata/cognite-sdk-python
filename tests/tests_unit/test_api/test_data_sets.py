@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from typing import TYPE_CHECKING, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -66,7 +66,8 @@ class TestDataset:
         assert isinstance(res, DataSetList)
         assert [example_data_set] == res.dump(camel_case=True)
 
-    @pytest.mark.parametrize("min_time", [20, datetime.fromtimestamp(20 / 1000)])
+    # NOTE: Have to set timezeon in order to avoid OSError on Windows: https://stackoverflow.com/a/65564765/5753974
+    @pytest.mark.parametrize("min_time", [20, datetime.fromtimestamp(20 / 1000, timezone.utc)])
     def test_list_with_timestamp_range(
         self, cognite_client: CogniteClient, mock_ds_response: HTTPXMock, min_time: int | datetime
     ) -> None:
