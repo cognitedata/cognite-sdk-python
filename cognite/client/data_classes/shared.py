@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
@@ -9,7 +10,6 @@ from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geom
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-from datetime import datetime
 
 
 class TimestampRange(CogniteObject):
