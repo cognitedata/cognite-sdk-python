@@ -69,7 +69,7 @@ keypoint_collection_with_object_detection_sample = KeypointCollectionWithObjectD
     object_detection=object_detection_sample,
 )
 
-keypoint_collection_with_object_detection_dict_sample = {
+keypoint_collection_with_object_detection_dict_sample: dict[str, dict[str, Any]] = {
     "keypointCollection": {
         "label": "foo",
         "confidence": 0.2,
@@ -537,7 +537,7 @@ class TestVisionExtractJob:
                             to_snake_case(k): (convert_all_keys_to_snake_case(v) if isinstance(v, dict) else v)
                             for k, v in keypoint_collection_with_object_detection_dict_sample[
                                 "keypointCollection"
-                            ].items()  # type: ignore [attr-defined]
+                            ].items()
                         },
                         annotated_resource_type="file",
                         status="suggested",
@@ -550,7 +550,7 @@ class TestVisionExtractJob:
                         annotation_type="images.ObjectDetection",
                         data={
                             to_snake_case(k): (convert_all_keys_to_snake_case(v) if isinstance(v, dict) else v)
-                            for k, v in keypoint_collection_with_object_detection_dict_sample["objectDetection"].items()  # type: ignore[attr-defined]
+                            for k, v in keypoint_collection_with_object_detection_dict_sample["objectDetection"].items()
                         },
                         annotated_resource_type="file",
                         status="suggested",
