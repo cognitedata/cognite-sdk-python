@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
+import pytest
+
 from cognite.client.data_classes.data_modeling.cdm.v1 import Cognite3DModelApply, CogniteSourceableNodeApply
+from cognite.client.data_classes.data_modeling.extractor_extensions.v1 import CogniteExtractorFileApply
 
 
 class TestSourceable:
@@ -82,5 +85,37 @@ class TestModel3D:
             ],
         }
         dumped_and_loaded = Cognite3DModelApply._load(dumped)
-        # assert dumped_and_loaded == my_model
         assert dumped == dumped_and_loaded.dump()
+
+
+def test_extractor_file_apply_warns_on_system_managed_fields() -> None:
+    file_apply = CogniteExtractorFileApply(
+        space="sp_data_space",
+        external_id="my_file",
+        is_uploaded=True,
+        uploaded_time=datetime.now(),
+    )
+    with pytest.warns(UserWarning, match="system-managed and cannot be modified"):
+        dumped = file_apply.dump()
+
+    sources = dumped["sources"]
+    assert len(sources) == 1
+    properties = sources[0]["properties"]
+    assert properties["isUploaded"] is True
+    assert isinstance(properties["uploadedTime"], str)
+
+
+def test_extractor_file_apply_skips_nulls() -> None:
+    file_apply = CogniteExtractorFileApply(
+        space="sp_data_space",
+        external_id="my_file",
+        is_uploaded=None,
+        uploaded_time=None,
+    )
+    dumped = file_apply.dump()
+
+    sources = dumped["sources"]
+    assert len(sources) == 1
+    properties = sources[0]["properties"]
+    assert "isUploaded" not in properties
+    assert "uploadedTime" not in properties

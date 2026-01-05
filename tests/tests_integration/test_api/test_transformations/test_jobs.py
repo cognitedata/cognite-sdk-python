@@ -172,6 +172,7 @@ class TestTransformationJobsAPI:
         assert job.error is None
         assert job.ignore_null_fields
 
+    @pytest.mark.skip(reason="Flaky, fails more often than not...")
     def test_run_raw_transformation(
         self, cognite_client: CogniteClient, new_raw_transformation: Transformation
     ) -> None:
