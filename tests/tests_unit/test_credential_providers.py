@@ -91,7 +91,7 @@ class TestToken:
 
 
 class TestOAuthDeviceCode:
-    DEFAULT_PROVIDER_ARGS: ClassVar = MappingProxyType(
+    DEFAULT_PROVIDER_ARGS: ClassVar[MappingProxyType[str, Any]] = MappingProxyType(
         {
             "authority_url": "https://login.microsoftonline.com/xyz",
             "client_id": "azure-client-id",
@@ -379,7 +379,7 @@ class TestOAuthDeviceCode:
 
 
 class TestOAuthInteractive:
-    DEFAULT_PROVIDER_ARGS: ClassVar = MappingProxyType(
+    DEFAULT_PROVIDER_ARGS: ClassVar[MappingProxyType[str, Any]] = MappingProxyType(
         {
             "authority_url": "https://login.microsoftonline.com/xyz",
             "client_id": "azure-client-id",
@@ -413,7 +413,7 @@ class TestOAuthInteractive:
 
 
 class TestOauthClientCredentials:
-    DEFAULT_PROVIDER_ARGS: ClassVar = MappingProxyType(
+    DEFAULT_PROVIDER_ARGS: ClassVar[MappingProxyType[str, Any]] = MappingProxyType(
         {
             "client_id": "azure-client-id",
             "client_secret": "azure-client-secret",
@@ -466,7 +466,7 @@ class TestOauthClientCredentials:
 
 
 class TestOAuthClientCertificate:
-    DEFAULT_PROVIDER_ARGS: ClassVar = MappingProxyType(
+    DEFAULT_PROVIDER_ARGS: ClassVar[MappingProxyType[str, Any]] = MappingProxyType(
         {
             "authority_url": "https://login.microsoftonline.com/xyz",
             "client_id": "azure-client-id",
