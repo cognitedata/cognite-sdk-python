@@ -15,10 +15,6 @@ List sequences
 ^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.list
 
-Aggregate sequences
-^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate
-
 Aggregate Sequences Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_count
@@ -51,11 +47,6 @@ Delete sequences
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.delete
 
-Filter sequences
-^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesAPI.filter
-
-
 Update sequences
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.update
@@ -63,7 +54,6 @@ Update sequences
 Upsert sequences
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.upsert
-
 
 Rows
 ----

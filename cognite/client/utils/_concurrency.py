@@ -1,43 +1,127 @@
 from __future__ import annotations
 
-import functools
+import asyncio
+import threading
 import warnings
 from collections import UserList
-from collections.abc import Callable, Sequence
-from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, as_completed
+from collections.abc import Callable, Coroutine
+from functools import cache
 from typing import (
     Any,
-    Literal,
     NoReturn,
-    Protocol,
     TypeVar,
+    cast,
 )
 
 from cognite.client._constants import _RUNNING_IN_BROWSER
-from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteImportError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import no_op
+
+
+@cache
+def get_global_semaphore() -> asyncio.BoundedSemaphore:
+    from cognite.client import global_config
+
+    return asyncio.BoundedSemaphore(global_config.max_workers)
+
+
+@cache
+def get_global_datapoints_semaphore() -> asyncio.BoundedSemaphore:
+    from cognite.client import global_config
+
+    return asyncio.BoundedSemaphore(global_config.max_workers)
+
+
+@cache
+def get_global_data_modeling_semaphore() -> asyncio.BoundedSemaphore:
+    return asyncio.BoundedSemaphore(2)
+
+
+class AsyncSDKTask:
+    """
+    This class stores info about a task that should be run asynchronously (like what function to call,
+    and with what arguments). This is quite useful when we later need to map e.g. which input arguments
+    (typically, which identifiers) resulted in some failed API request.
+
+    It has a special ``__getitem__`` method for easy argument access:
+
+        >>> task = AsyncSDKTask(some_fn, 123, payload={"a": 1, "b": 2})
+        >>> task[0]  # gets the first positional argument
+        123
+        >>> task["payload"]  # gets the "payload" keyword argument
+        {"a": 1, "b": 2}
+    """
+
+    def __init__(self, fn: Callable[..., Coroutine], /, *args: Any, **kwargs: Any) -> None:
+        self.fn = fn
+        self._args = args
+        self._kwargs = kwargs
+        self._async_task: asyncio.Task | None = None
+
+    def __getitem__(self, item: int | str) -> Any:
+        match item:
+            case int():
+                return self._args[item]
+            case str():
+                return self._kwargs[item]
+            case _:
+                raise TypeError("Use int to get 'args' and str to get 'kwargs', e.g. task[0], task['payload']")
+
+    def schedule(self) -> asyncio.Task:
+        """Schedule the task for execution. Can only be called once."""
+        if self._async_task is not None:
+            raise RuntimeError("Task has already been scheduled")
+
+        self._async_task = asyncio.create_task(self.fn(*self._args, **self._kwargs))
+        return self._async_task
+
+    @property
+    def async_task(self) -> asyncio.Task:
+        if self._async_task is None:
+            raise RuntimeError("Task has not been scheduled yet")
+        return self._async_task
+
+    def exception(self) -> BaseException | None:
+        return self.async_task.exception()
+
+    def result(self) -> Any:
+        return self.async_task.result()
+
+    def cancelled(self) -> bool:
+        return self.async_task.cancelled()
 
 
 class TasksSummary:
     def __init__(
         self,
-        successful_tasks: list,
-        unknown_tasks: list,
-        failed_tasks: list,
-        skipped_tasks: list,
-        results: list,
-        exceptions: list,
+        results: list[Any],
+        successful_tasks: list[AsyncSDKTask],
+        unsuccessful_tasks: list[AsyncSDKTask] | None = None,
+        skipped_tasks: list[AsyncSDKTask] | None = None,
+        exceptions: list[BaseException] | None = None,
     ) -> None:
-        self.successful_tasks = successful_tasks
-        self.unknown_tasks = unknown_tasks
-        self.failed_tasks = failed_tasks
-        self.skipped_tasks = skipped_tasks
         self.results = results
+        self.successful_tasks = successful_tasks
+        self.unknown_tasks, self.failed_tasks = self._categorize_failed_vs_unknown(unsuccessful_tasks or [])
+        self.skipped_tasks = skipped_tasks or []
 
-        self.not_found_error: Exception | None = None
-        self.duplicated_error: Exception | None = None
-        self.unknown_error: Exception | None = None
-        self.missing, self.duplicated, self.cluster, self.project = self._inspect_exceptions(exceptions)
+        self.not_found_error: CogniteNotFoundError | None = None
+        self.duplicated_error: CogniteDuplicatedError | None = None
+        self.unknown_error: BaseException | None = None
+        self.missing, self.duplicated, self.cluster, self.project = self._inspect_exceptions(exceptions or [])
+
+    @staticmethod
+    def _categorize_failed_vs_unknown(
+        unsuccessful_tasks: list[AsyncSDKTask],
+    ) -> tuple[list[AsyncSDKTask], list[AsyncSDKTask]]:
+        from cognite.client._basic_api_client import FailedRequestHandler
+
+        unknown_and_failed: tuple[list[AsyncSDKTask], list[AsyncSDKTask]] = [], []
+        for task in unsuccessful_tasks:
+            err = cast(BaseException, task.exception())  # Task is unsuccessful exactly because this is set
+            is_failed = FailedRequestHandler.classify_error(err) == "failed"
+            unknown_and_failed[is_failed].append(task)
+        return unknown_and_failed
 
     def joined_results(self, unwrap_fn: Callable = no_op) -> list:
         joined_results: list = []
@@ -72,37 +156,51 @@ class TasksSummary:
 
         if self.unknown_error:
             self._raise_basic_api_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
-        if self.not_found_error:
-            self._raise_not_found_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
-        if self.duplicated_error:
-            self._raise_duplicated_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
 
-    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[Sequence, Sequence, str | None, str | None]:
+        if self.not_found_error:
+            self._raise_specific_error(
+                cause=self.not_found_error,
+                error=CogniteNotFoundError,
+                successful=successful,
+                failed=failed,
+                unknown=unknown,
+                skipped=skipped,
+            )
+        if self.duplicated_error:
+            self._raise_specific_error(
+                cause=self.duplicated_error,
+                error=CogniteDuplicatedError,
+                successful=successful,
+                failed=failed,
+                unknown=unknown,
+                skipped=skipped,
+            )
+
+    def _inspect_exceptions(self, exceptions: list[BaseException]) -> tuple[list, list, str | None, str | None]:
         cluster = None
         project = None
         missing: list[dict] = []
         duplicated: list[dict] = []
         for exc in exceptions:
-            if not isinstance(exc, CogniteAPIError):
-                self.unknown_error = exc
-                continue
+            match exc:
+                case CogniteNotFoundError():
+                    missing.extend(exc.missing)
+                    self.not_found_error = exc
+                case CogniteDuplicatedError():
+                    duplicated.extend(exc.duplicated)
+                    self.duplicated_error = exc
+                case CogniteAPIError():
+                    self.unknown_error = exc
+                case _:
+                    self.unknown_error = exc
+                    continue
 
             cluster = cluster or exc.cluster
             project = project or exc.project
-            if exc.code in (400, 422) and exc.missing is not None:
-                missing.extend(exc.missing)
-                self.not_found_error = exc
 
-            elif exc.code == 409 and exc.duplicated is not None:
-                duplicated.extend(exc.duplicated)
-                self.duplicated_error = exc
-            else:
-                self.unknown_error = exc
         return missing, duplicated, cluster, project
 
-    def _raise_basic_api_error(
-        self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
-    ) -> NoReturn:
+    def _raise_basic_api_error(self, successful: list, failed: list, unknown: list, skipped: list) -> NoReturn:
         if isinstance(self.unknown_error, CogniteAPIError) and (failed or unknown):
             raise CogniteAPIError(
                 message=self.unknown_error.message,
@@ -120,250 +218,207 @@ class TasksSummary:
             )
         raise self.unknown_error  # type: ignore [misc]
 
-    def _raise_not_found_error(
-        self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
+    def _raise_specific_error(
+        self,
+        cause: CogniteAPIError,
+        error: type[CogniteNotFoundError | CogniteDuplicatedError],
+        successful: list,
+        failed: list,
+        unknown: list,
+        skipped: list,
     ) -> NoReturn:
-        raise CogniteNotFoundError(
-            self.missing, successful=successful, failed=failed, unknown=unknown, skipped=skipped
-        ) from self.not_found_error
-
-    def _raise_duplicated_error(
-        self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
-    ) -> NoReturn:
-        raise CogniteDuplicatedError(
-            self.duplicated, successful=successful, failed=failed, unknown=unknown, skipped=skipped
-        ) from self.duplicated_error
-
-
-T_Result = TypeVar("T_Result", covariant=True)
-
-
-class TaskExecutor(Protocol):
-    def submit(self, fn: Callable[..., T_Result], /, *args: Any, **kwargs: Any) -> TaskFuture[T_Result]: ...
+        raise error(
+            message=cause.message,
+            code=cause.code,
+            x_request_id=cause.x_request_id,
+            missing=self.missing,
+            duplicated=self.duplicated,
+            extra=cause.extra,
+            cluster=self.cluster,
+            project=self.project,
+            successful=successful,
+            failed=failed,
+            unknown=unknown,
+            skipped=skipped,
+        ) from cause
 
 
-class TaskFuture(Protocol[T_Result]):
-    def result(self) -> T_Result: ...
+_T = TypeVar("_T")
 
 
-class SyncFuture(TaskFuture[T_Result]):
-    def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> None:
-        self._task = functools.partial(fn, *args, **kwargs)
-        self._result: T_Result | None = None
+class EventLoopThreadExecutor(threading.Thread):
+    def __init__(self, loop: asyncio.AbstractEventLoop | None = None, daemon: bool = True) -> None:
+        super().__init__(name=type(self).__name__, daemon=daemon)
+        self._inside_jupyter = self._detect_jupyter()
+        self._event_loop = self._patch_loop_for_jupyter(loop) or asyncio.new_event_loop()
 
-    def result(self) -> T_Result:
-        if self._result is None:
-            self._result = self._task()
-        return self._result
+    @staticmethod
+    def _detect_jupyter() -> bool:
+        try:
+            from IPython import get_ipython  # type: ignore [attr-defined]
+
+            return "IPKernelApp" in get_ipython().config
+        except Exception:
+            return False
+
+    def _patch_loop_for_jupyter(self, loop: asyncio.AbstractEventLoop | None) -> asyncio.AbstractEventLoop | None:
+        """
+        From the 'nest_asyncio' package: By design asyncio does not allow its event loop to be nested. This presents a
+        practical problem: When in an environment where the event loop is already running it's impossible to run
+        tasks and wait for the result.
+        """
+        if not self._inside_jupyter:
+            return loop
+
+        if loop is None:
+            try:
+                import nest_asyncio  # type: ignore [import-not-found]
+            except ImportError:
+                raise CogniteImportError(
+                    module="nest_asyncio",
+                    message="Inside Jupyter notebooks, the 'nest_asyncio' package is required if you want to use the "
+                    '"non-async" CogniteClient. This is because Jupyter already runs an event loop that we need '
+                    "to patch (`pip install nest_asyncio`). Alternatively, you can use the AsyncCogniteClient "
+                    "which does not require any extra packages, but requires the use of 'await', e.g.: "
+                    "`dps = await async_client.time_series.data.retrieve(...)`",
+                ) from None
+            try:
+                # Jupyter: reuse the already running loop but patch it:
+                loop = asyncio.get_running_loop()
+                nest_asyncio.apply(loop)
+                return loop
+            except RuntimeError:
+                return None  # this would be very unexpected
+        else:
+            warnings.warn(
+                RuntimeWarning(
+                    "Overriding the event loop is not recommended inside Jupyter notebooks "
+                    "since Jupyter already runs an event loop. Proceeding with the provided loop anyway, "
+                    "beware of potential issues."
+                )
+            )
+            return loop
+
+    def run(self) -> None:
+        if not self._inside_jupyter:
+            asyncio.set_event_loop(self._event_loop)
+            self._event_loop.run_forever()
+
+    def stop(self) -> None:
+        if not self._inside_jupyter:
+            self._event_loop.call_soon_threadsafe(self._event_loop.stop)
+            self.join()
+
+    def run_coro(self, coro: Coroutine[_T, Any, _T], timeout: float | None = None) -> _T:
+        if self._inside_jupyter:
+            return asyncio.get_event_loop().run_until_complete(coro)
+        else:
+            return asyncio.run_coroutine_threadsafe(coro, self._event_loop).result(timeout)
 
 
-class MainThreadExecutor(TaskExecutor):
-    """
-    In order to support executing sdk methods in the browser using pyodide (a port of CPython to webassembly),
-    we need to be able to turn off the usage of threading. So we have this executor which implements the Executor
-    protocol but just executes everything serially in the main thread.
-    """
+class _PyodideEventLoopExecutor:
+    def __init__(self, loop: asyncio.AbstractEventLoop | None = None) -> None:
+        import pyodide  # type: ignore [import-not-found]
 
-    def __init__(self) -> None:
-        # This "queue" is not used, but currently needed because of the datapoints logic that
-        # decides when to add new tasks to the task executor task pool.
-        class AlwaysEmpty:
-            def empty(self) -> Literal[True]:
-                return True
+        if loop is not None:
+            raise RuntimeError("Overriding the event loop is not possible in the browser")
 
-        self._work_queue = AlwaysEmpty()
+        elif not pyodide.ffi.can_run_sync():
+            warnings.warn(
+                RuntimeWarning(
+                    "Browser most likely not supported, please use a Chromium-based browser like Chrome or Microsoft "
+                    "Edge. Reason: WebAssembly stack switching is not supported in this JavaScript runtime. "
+                    "Note: You can always use the AsyncCogniteClient, but it requires the use of 'await', e.g.: "
+                    "`dps = await client.time_series.data.retrieve(...)`"
+                )
+            )
+        self.run_coro = pyodide.ffi.run_sync
 
-    def submit(self, fn: Callable[..., T_Result], /, *args: Any, **kwargs: Any) -> SyncFuture:
-        return SyncFuture(fn, *args, **kwargs)
+    def start(self) -> None:
+        pass
 
 
-_DATA_MODELING_MAX_WORKERS = 1
-_THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
-_MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
-_DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
+# We need this in order to support a synchronous Cognite client.
+_INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON: EventLoopThreadExecutor
 
 
 class ConcurrencySettings:
-    executor_type: Literal["threadpool", "mainthread"] = "threadpool"
-
     @classmethod
-    def uses_threadpool(cls) -> bool:
-        return cls.executor_type == "threadpool"
-
-    @classmethod
-    def uses_mainthread(cls) -> bool:
-        return cls.executor_type == "mainthread"
-
-    @classmethod
-    def get_executor(cls, max_workers: int) -> TaskExecutor:
-        if cls.uses_threadpool():
-            return cls.get_thread_pool_executor(max_workers)
-        elif cls.uses_mainthread():
-            return cls.get_mainthread_executor()
-        raise RuntimeError(f"Invalid executor type '{cls.executor_type}'")
-
-    @classmethod
-    def get_mainthread_executor(cls) -> TaskExecutor:
-        return _MAIN_THREAD_EXECUTOR_SINGLETON
-
-    @classmethod
-    def get_thread_pool_executor(cls, max_workers: int) -> ThreadPoolExecutor:
-        assert cls.uses_threadpool(), "use get_executor instead"
-        global _THREAD_POOL_EXECUTOR_SINGLETON
-
-        if max_workers < 1:
-            raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
+    def _get_event_loop_executor(cls) -> EventLoopThreadExecutor:
+        global _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
         try:
-            executor = _THREAD_POOL_EXECUTOR_SINGLETON
-            # Users often want to test performance with different 'max_workers' settings. Since we use a singleton for
-            # the thread pool executor, the setting can not be changed after initialization, which again leads to users
-            # not seeing any performance difference -> hence we throw a warning:
-            if max_workers != executor._max_workers:
-                warnings.warn(
-                    f"Unable to change `max_workers` after the first API call has been made."
-                    f"(current: {executor._max_workers}, requested {max_workers})",
-                    RuntimeWarning,
-                )
+            return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
         except NameError:
-            # TPE has not been initialized
-            executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
-        return executor
+            # First time we need to initialize:
+            from cognite.client import global_config
 
-    @classmethod
-    def get_thread_pool_executor_or_raise(cls, max_workers: int) -> ThreadPoolExecutor:
-        if cls.uses_threadpool():
-            return cls.get_thread_pool_executor(max_workers)
+            ex_cls = EventLoopThreadExecutor
+            if _RUNNING_IN_BROWSER:
+                ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
 
-        if _RUNNING_IN_BROWSER:
-            raise RuntimeError("The method you tried to use is not available in Pyodide/WASM")
-        raise RuntimeError(
-            "The method you tried to use requires a version of Python with a working implementation of threads."
-        )
-
-    @classmethod
-    def get_data_modeling_executor(cls) -> TaskExecutor:
-        """
-        The data modeling backend has different concurrency limits compared with the rest of CDF.
-        Thus, we use a dedicated executor for these endpoints to match the backend requirements.
-
-        Returns:
-            TaskExecutor: The data modeling executor.
-        """
-        if cls.uses_mainthread():
-            return cls.get_mainthread_executor()
-
-        global _DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON
-        try:
-            executor = _DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON
-        except NameError:
-            # TPE has not been initialized
-            executor = _DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(_DATA_MODELING_MAX_WORKERS)
-        return executor
+            executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls(global_config.event_loop)
+            executor.start()
+            return executor
 
 
-def execute_tasks_serially(
-    func: Callable[..., T_Result],
-    tasks: Sequence[tuple | dict],
-    fail_fast: bool = False,
-) -> TasksSummary:
-    results, exceptions = [], []
-    successful_tasks, failed_tasks, unknown_result_tasks, skipped_tasks = [], [], [], []
+async def execute_async_tasks_with_fail_fast(tasks: list[AsyncSDKTask]) -> TasksSummary:
+    # If no future raises an exception then this is equivalent to asyncio.ALL_COMPLETED:
+    done, pending = await asyncio.wait(
+        [task.schedule() for task in tasks],
+        return_when=asyncio.FIRST_EXCEPTION,
+    )
+    if all(task.exception() is None for task in done):
+        return TasksSummary([task.result() for task in done], successful_tasks=tasks)
 
-    for i, task in enumerate(tasks):
-        try:
-            if isinstance(task, dict):
-                results.append(func(**task))
-            elif isinstance(task, tuple):
-                results.append(func(*task))
-            else:
-                raise TypeError(f"invalid task type: {type(task)}")
-            successful_tasks.append(task)
+    # Something failed, and because of fail-fast, we (attempt to) cancel all pending tasks:
+    if pending:  # while we are waiting on 3.11 and asyncio.TaskGroup...
+        for unfinished in pending:
+            unfinished.cancel()
 
-        except Exception as err:
-            exceptions.append(err)
-            if classify_error(err) == "failed":
-                failed_tasks.append(task)
-            else:
-                unknown_result_tasks.append(task)
+        # Wait for all cancellations to be processed:
+        await asyncio.gather(*pending, return_exceptions=True)
 
-            if fail_fast:
-                skipped_tasks = list(tasks[i + 1 :])
-                break
-
-    return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, skipped_tasks, results, exceptions)
-
-
-def execute_tasks(
-    func: Callable[..., T_Result],
-    tasks: Sequence[tuple | dict],
-    max_workers: int,
-    fail_fast: bool = False,
-    executor: TaskExecutor | None = None,
-) -> TasksSummary:
-    """
-    Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
-    be changed using ConcurrencySettings.executor_type.
-
-    Results are returned in the same order as that given by tasks.
-    """
-    if ConcurrencySettings.uses_mainthread() or isinstance(executor, MainThreadExecutor):
-        return execute_tasks_serially(func, tasks, fail_fast)
-    elif isinstance(executor, ThreadPoolExecutor) or executor is None:
-        pass
-    else:
-        raise TypeError("executor must be a ThreadPoolExecutor or MainThreadExecutor")
-
-    executor = executor or ConcurrencySettings.get_thread_pool_executor(max_workers)
-    task_order = [id(task) for task in tasks]
-
-    futures_dct: dict[Future, tuple | dict] = {}
+    result, successful, unsuccessful, skipped, exceptions = [], [], [], [], []
     for task in tasks:
-        if isinstance(task, dict):
-            futures_dct[executor.submit(func, **task)] = task
-        elif isinstance(task, tuple):
-            futures_dct[executor.submit(func, *task)] = task
-        else:
-            raise TypeError(f"invalid task type: {type(task)}")
-
-    results: dict[int, tuple | dict] = {}
-    successful_tasks: dict[int, tuple | dict] = {}
-    failed_tasks, unknown_result_tasks, skipped_tasks, exceptions = [], [], [], []
-
-    for fut in as_completed(futures_dct):
-        task = futures_dct[fut]
-        try:
-            res = fut.result()
-            results[id(task)] = task
-            successful_tasks[id(task)] = res
-        except CancelledError:
-            # In fail-fast mode, after an error has been raised, we attempt to cancel and skip tasks:
-            skipped_tasks.append(task)
-            continue
-
-        except Exception as err:
+        if task.cancelled():
+            skipped.append(task)
+        elif err := task.exception():
             exceptions.append(err)
-            if classify_error(err) == "failed":
-                failed_tasks.append(task)
-            else:
-                unknown_result_tasks.append(task)
+            unsuccessful.append(task)
+        else:
+            result.append(task.result())
+            successful.append(task)
 
-            if fail_fast:
-                for fut in futures_dct:
-                    fut.cancel()
-
-    ordered_successful_tasks = [results[task_id] for task_id in task_order if task_id in results]
-    ordered_results = [successful_tasks[task_id] for task_id in task_order if task_id in successful_tasks]
     return TasksSummary(
-        ordered_successful_tasks,
-        unknown_result_tasks,
-        failed_tasks,
-        skipped_tasks,
-        ordered_results,
-        exceptions,
+        result,
+        successful_tasks=successful,
+        unsuccessful_tasks=unsuccessful,
+        skipped_tasks=skipped,
+        exceptions=exceptions,
     )
 
 
-def classify_error(err: Exception) -> Literal["failed", "unknown"]:
-    if isinstance(err, CogniteAPIError) and err.code and err.code >= 500:
-        return "unknown"
-    return "failed"
+async def execute_async_tasks(tasks: list[AsyncSDKTask], fail_fast: bool = False) -> TasksSummary:
+    if not tasks:
+        return TasksSummary([], successful_tasks=[], unsuccessful_tasks=[], exceptions=[])
+
+    elif fail_fast:
+        return await execute_async_tasks_with_fail_fast(tasks)
+
+    await asyncio.wait([task.schedule() for task in tasks], return_when=asyncio.ALL_COMPLETED)
+
+    results, successful, unsuccessful, exceptions = [], [], [], []
+    for task in tasks:
+        if err := task.exception():
+            exceptions.append(err)
+            unsuccessful.append(task)
+        else:
+            results.append(task.result())
+            successful.append(task)
+
+    return TasksSummary(
+        results,
+        successful_tasks=successful,
+        unsuccessful_tasks=unsuccessful,
+        exceptions=exceptions,
+    )

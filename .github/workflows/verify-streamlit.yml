@@ -29,5 +29,5 @@ jobs:
           whl_file=$(find dist -name "*.whl" | sed 's|^dist/||') # Find the built wheel file, remove dist/ prefix
           echo "Found built wheel file: $whl_file"
           SDK_FILE_PATH=$whl_file \
-          PACKAGES="[\"pyodide-http\", \"http://localhost:3000/dist/$whl_file\"]" \
+          PACKAGES="[\"ssl\", \"anyio\", \"http://localhost:3000/dist/$whl_file\"]" \
           node scripts/test-pyodide.js

@@ -7,12 +7,13 @@ from cognite.client.data_classes.hosted_extractors import (
     EventHubSource,
     EventHubSourceUpdate,
     EventHubSourceWrite,
+    MQTT5Source,
     MQTT5SourceWrite,
-    Source,
     SourceList,
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
+from tests.utils import get_or_raise
 
 
 @pytest.fixture(scope="session")
@@ -39,15 +40,18 @@ class TestSources:
             key_value="myKey",
             event_hub_name="myEventHub",
         )
-        created: EventHubSource | None = None
+        created = cognite_client.hosted_extractors.sources.create(my_hub)
         try:
-            created = cognite_client.hosted_extractors.sources.create(my_hub)
             assert isinstance(created, EventHubSource)
+
             update = EventHubSourceUpdate(external_id=my_hub.external_id).event_hub_name.set("myNewEventHub")
             updated = cognite_client.hosted_extractors.sources.update(update)
+            assert isinstance(updated, EventHubSource)
             assert updated.event_hub_name == "myNewEventHub"
+
             retrieved = cognite_client.hosted_extractors.sources.retrieve(created.external_id)
             assert retrieved is not None
+            assert isinstance(retrieved, EventHubSource)
             assert retrieved.external_id == created.external_id
             assert retrieved.event_hub_name == "myNewEventHub"
 
@@ -59,8 +63,7 @@ class TestSources:
             cognite_client.hosted_extractors.sources.retrieve(created.external_id, ignore_unknown_ids=True)
 
         finally:
-            if created:
-                cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
+            cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
 
     def test_create_update_replace_retrieve(self, cognite_client: CogniteClient) -> None:
         original = MQTT5SourceWrite(
@@ -69,24 +72,22 @@ class TestSources:
             port=1883,
         )
 
-        created: Source | None = None
+        created = cognite_client.hosted_extractors.sources.create(original)
         try:
-            created = cognite_client.hosted_extractors.sources.create(original)
-
             update = MQTT5SourceWrite(original.external_id, host="mqtt.hsl.fi", port=1884)
 
             updated = cognite_client.hosted_extractors.sources.update(update, mode="replace")
-
+            assert isinstance(updated, MQTT5Source)
             assert updated.port == 1884
 
             retrieved = cognite_client.hosted_extractors.sources.retrieve(created.external_id)
 
             assert retrieved is not None
+            assert isinstance(retrieved, MQTT5Source)
             assert retrieved.external_id == created.external_id
             assert retrieved.port == 1884
         finally:
-            if created:
-                cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
+            cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
 
     @pytest.mark.usefixtures("one_event_hub_source")
     def test_list(self, cognite_client: CogniteClient) -> None:
@@ -102,12 +103,10 @@ class TestSources:
             key_value="myKey",
             event_hub_name="myEventHub",
         )
-        created: EventHubSource | None = None
+        created = cognite_client.hosted_extractors.sources.create(my_hub)
         try:
-            created = cognite_client.hosted_extractors.sources.create(my_hub)
-
             my_new_hub = EventHubSourceWrite(
-                external_id=created.external_id,
+                external_id=get_or_raise(created.external_id),
                 host="updatedHost",
                 key_name="updatedKeyName",
                 key_value="updatedKey",
@@ -115,8 +114,7 @@ class TestSources:
             )
 
             updated = cognite_client.hosted_extractors.sources.update(my_new_hub)
-
+            assert isinstance(updated, EventHubSource)
             assert updated.host == my_new_hub.host
         finally:
-            if created:
-                cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
+            cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)

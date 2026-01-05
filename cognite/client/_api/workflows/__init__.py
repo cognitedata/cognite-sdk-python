@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Literal, overload
+from collections.abc import AsyncIterator, Sequence
+from typing import TYPE_CHECKING, Literal, TypeAlias, overload
 
 from cognite.client._api.workflows.executions import WorkflowExecutionAPI
 from cognite.client._api.workflows.tasks import WorkflowTaskAPI
@@ -13,16 +13,21 @@ from cognite.client.data_classes.workflows import (
     Workflow,
     WorkflowList,
     WorkflowUpsert,
+    WorkflowVersionId,
 )
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks
-from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._auxiliary import split_into_chunks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
+
+WorkflowIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str] | str
+WorkflowVersionIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str]
 
 
 class WorkflowAPI(APIClient):
@@ -32,7 +37,7 @@ class WorkflowAPI(APIClient):
         self,
         config: ClientConfig,
         api_version: str | None,
-        cognite_client: CogniteClient,
+        cognite_client: AsyncCogniteClient,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self.versions = WorkflowVersionAPI(config, api_version, cognite_client)
@@ -44,39 +49,37 @@ class WorkflowAPI(APIClient):
         self._DELETE_LIMIT = 100
 
     @overload
-    def __call__(self, chunk_size: None = None, limit: None = None) -> Iterator[Workflow]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Workflow]: ...
 
     @overload
-    def __call__(self, chunk_size: int, limit: None) -> Iterator[Workflow]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[WorkflowList]: ...
 
-    def __call__(
+    async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[Workflow] | Iterator[WorkflowList]:
+    ) -> AsyncIterator[Workflow] | AsyncIterator[WorkflowList]:
         """Iterate over workflows
 
         Args:
             chunk_size (int | None): The number of workflows to return in each chunk. Defaults to yielding one workflow at a time.
             limit (int | None): Maximum number of workflows to return. Defaults to returning all items.
 
-        Returns:
-            Iterator[Workflow] | Iterator[WorkflowList]: Yields Workflow one by one if chunk_size is None, otherwise yields WorkflowList objects.
-
-        """
-        return self._list_generator(
+        Yields:
+            Workflow | WorkflowList: Yields Workflow one by one if chunk_size is None, otherwise yields WorkflowList objects.
+        """  # noqa: DOC404
+        async for item in self._list_generator(
             method="GET", resource_cls=Workflow, list_cls=WorkflowList, limit=limit, chunk_size=chunk_size
-        )
-
-    def __iter__(self) -> Iterator[Workflow]:
-        """Iterate all over workflows"""
-        return self()
+        ):
+            yield item
 
     @overload
-    def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow: ...
+    async def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow: ...
 
     @overload
-    def upsert(self, workflow: Sequence[WorkflowUpsert], mode: Literal["replace"] = "replace") -> WorkflowList: ...
+    async def upsert(
+        self, workflow: Sequence[WorkflowUpsert], mode: Literal["replace"] = "replace"
+    ) -> WorkflowList: ...
 
-    def upsert(
+    async def upsert(
         self, workflow: WorkflowUpsert | Sequence[WorkflowUpsert], mode: Literal["replace"] = "replace"
     ) -> Workflow | WorkflowList:
         """`Create one or more workflow(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
@@ -97,6 +100,7 @@ class WorkflowAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowUpsert
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> wf = WorkflowUpsert(external_id="my_workflow", description="my workflow description")
                 >>> res = client.workflows.upsert(wf)
 
@@ -110,7 +114,7 @@ class WorkflowAPI(APIClient):
 
         assert_type(workflow, "workflow", [WorkflowUpsert, Sequence])
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=WorkflowList,
             resource_cls=Workflow,
             items=workflow,
@@ -118,12 +122,12 @@ class WorkflowAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> Workflow | None: ...
+    async def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> Workflow | None: ...
 
     @overload
-    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> WorkflowList: ...
+    async def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> WorkflowList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Workflow | WorkflowList | None:
         """`Retrieve one or more workflows. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/fetchWorkflowDetails>`_
@@ -139,8 +143,9 @@ class WorkflowAPI(APIClient):
 
             Retrieve workflow with external ID "my_workflow":
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> workflow = client.workflows.retrieve("my_workflow")
 
             Retrieve multiple workflows:
@@ -149,9 +154,9 @@ class WorkflowAPI(APIClient):
         """
 
         # We can not use _retrieve_multiple as the backend doesn't support 'ignore_unknown_ids':
-        def get_single(xid: str, ignore_missing: bool = ignore_unknown_ids) -> Workflow | None:
+        async def get_single(xid: str, ignore_missing: bool = ignore_unknown_ids) -> Workflow | None:
             try:
-                response = self._get(url_path=interpolate_and_url_encode("/workflows/{}", xid))
+                response = await self._get(url_path=interpolate_and_url_encode("/workflows/{}", xid))
                 return Workflow._load(response.json())
             except CogniteAPIError as e:
                 if ignore_missing and e.code == 404:
@@ -159,15 +164,15 @@ class WorkflowAPI(APIClient):
                 raise
 
         if isinstance(external_id, str):
-            return get_single(external_id, ignore_missing=True)
+            return await get_single(external_id, ignore_missing=True)
 
         # Not really a point in splitting into chunks when chunk_size is 1, but...
-        tasks = list(map(tuple, split_into_chunks(external_id, self._RETRIEVE_LIMIT)))
-        tasks_summary = execute_tasks(get_single, tasks=tasks, max_workers=self._config.max_workers, fail_fast=True)
+        tasks = [AsyncSDKTask(get_single, xid) for xid in split_into_chunks(external_id, self._RETRIEVE_LIMIT)]
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         return WorkflowList(list(filter(None, tasks_summary.results)), cognite_client=self._cognite_client)
 
-    def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
+    async def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more workflows with versions. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/DeleteWorkflows>`_
 
         Args:
@@ -178,17 +183,18 @@ class WorkflowAPI(APIClient):
 
             Delete workflow with external_id "my_workflow":
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.delete("my_workflow")
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             params={"ignoreUnknownIds": ignore_unknown_ids},
             wrap_ids=True,
         )
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowList:
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowList:
         """`List workflows in the project. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/FetchAllWorkflows>`_
 
         Args:
@@ -201,11 +207,12 @@ class WorkflowAPI(APIClient):
 
             List all workflows:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.list(limit=None)
         """
-        return self._list(
+        return await self._list(
             method="GET",
             resource_cls=Workflow,
             list_cls=WorkflowList,

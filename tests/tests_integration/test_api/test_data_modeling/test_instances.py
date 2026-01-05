@@ -8,12 +8,12 @@ from typing import Any, ClassVar, Literal, cast
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling import (
     Container,
     ContainerApply,
-    ContainerProperty,
+    ContainerPropertyApply,
     DataModel,
     DirectRelationReference,
     Edge,
@@ -70,13 +70,14 @@ from cognite.client.data_classes.data_modeling.instances import (
     TargetUnit,
 )
 from cognite.client.data_classes.data_modeling.query import (
-    EdgeResultSetExpression,
     Intersection,
     NodeResultSetExpression,
+    NodeResultSetExpressionSync,
     Query,
     QueryResult,
-    ResultSetExpression,
+    QuerySync,
     Select,
+    SelectSync,
     SourceSelector,
     SyncMode,
     Union,
@@ -123,7 +124,7 @@ def unit_view(cognite_client: CogniteClient, integration_test_space: Space) -> V
     container = ContainerApply(
         space=integration_test_space.space,
         external_id="integration_test_unit_container",
-        properties={"pressure": ContainerProperty(type=Float64(unit=UnitReference("pressure:bar")))},
+        properties={"pressure": ContainerPropertyApply(type=Float64(unit=UnitReference("pressure:bar")))},
     )
     view = ViewApply(
         space=integration_test_space.space,
@@ -463,8 +464,8 @@ def container_with_all_the_types(cognite_client: CogniteClient, integration_test
         space=integration_test_space.space,
         external_id="test_container_all_the_types",
         properties={
-            "int_array": ContainerProperty(type=Int64(is_list=True)),
-            "direct_relation_array": ContainerProperty(type=DirectRelation(is_list=True)),
+            "int_array": ContainerPropertyApply(type=Int64(is_list=True)),
+            "direct_relation_array": ContainerPropertyApply(type=DirectRelation(is_list=True)),
         },
         used_for="all",
     )
@@ -834,7 +835,7 @@ class TestInstancesAPI:
         assert "invalidProperty" in error.value.message
 
     def test_apply_failed_and_successful_task(
-        self, cognite_client: CogniteClient, person_view: View, monkeypatch: Any
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, person_view: View, monkeypatch: Any
     ) -> None:
         space = person_view.space
         valid_person = NodeApply(
@@ -864,7 +865,7 @@ class TestInstancesAPI:
                 ),
             ],
         )
-        monkeypatch.setattr(cognite_client.data_modeling.instances, "_CREATE_LIMIT", 1)
+        monkeypatch.setattr(async_client.data_modeling.instances, "_CREATE_LIMIT", 1)
         try:
             with pytest.raises(CogniteAPIError) as error:
                 cognite_client.data_modeling.instances.apply(nodes=[valid_person, invalid_person])
@@ -941,7 +942,7 @@ class TestInstancesAPI:
 
     def test_aggregate_with_grouping(self, cognite_client: CogniteClient, movie_view: View) -> None:
         view_id = movie_view.as_id()
-        avg_agg = aggregations.Avg("runTimeMinutes")
+        avg_agg = aggregations.Average("runTimeMinutes")
         max_agg = aggregations.Max("runTimeMinutes")
 
         result = cognite_client.data_modeling.instances.aggregate(
@@ -953,7 +954,7 @@ class TestInstancesAPI:
 
     def test_aggregate_multiple(self, cognite_client: CogniteClient, movie_view: View) -> None:
         view_id = movie_view.as_id()
-        avg_agg = aggregations.Avg("runTimeMinutes")
+        avg_agg = aggregations.Average("runTimeMinutes")
         max_agg = aggregations.Max("runTimeMinutes")
 
         result = cognite_client.data_modeling.instances.aggregate(
@@ -964,7 +965,7 @@ class TestInstancesAPI:
         assert result[0].property == "runTimeMinutes"
         assert result[1].property == "runTimeMinutes"
         max_value = next((item for item in result if isinstance(item, aggregations.MaxValue)), None)
-        avg_value = next((item for item in result if isinstance(item, aggregations.AvgValue)), None)
+        avg_value = next((item for item in result if isinstance(item, aggregations.AverageValue)), None)
         assert max_value is not None
         assert avg_value is not None
         assert isinstance(max_value.value, float)
@@ -1144,7 +1145,7 @@ class TestInstancesAPI:
 
         aggregated = cognite_client.data_modeling.instances.aggregate(
             view=unit_view.as_id(),
-            aggregates=[aggregations.Avg("pressure")],
+            aggregates=[aggregations.Average("pressure")],
             target_units=target_units,
             filter=is_node,
         )
@@ -1432,34 +1433,6 @@ class TestInstancesAPI:
         finally:
             cognite_client.data_modeling.instances.delete([node.as_id() for node in nodes])
 
-    @pytest.mark.parametrize(
-        "sync_fields, message",
-        [
-            *[
-                (
-                    {"sync_mode": mode},
-                    "Result set expression 'result' has sync_mode set, which is not allowed for the query endpoint",
-                )
-                for mode in ["one_phase", "two_phase", "no_backfill"]
-            ],
-            (
-                {"backfill_sort": [InstanceSort(["node", "externalId"])]},
-                "Result set expression 'result' has backfill_sort set, which is not allowed for the query endpoint",
-            ),
-            (
-                {"skip_already_deleted": False},
-                "Result set expression 'result' has skip_already_deleted set, which is not allowed for the query endpoint",
-            ),
-        ],
-    )
-    def test_fail_with_sync_fields_in_query(
-        self, cognite_client: CogniteClient, sync_fields: dict, message: str
-    ) -> None:
-        with pytest.raises(ValueError, match=message):
-            cognite_client.data_modeling.instances.query(
-                Query(with_={"result": NodeResultSetExpression(**sync_fields)}, select={"result": Select()}),
-            )
-
     @pytest.mark.parametrize("include_typing", [True, False])
     @pytest.mark.usefixtures("cognite_asset_nodes")
     def test_instance_list__and___call___debug_info(self, cognite_client: CogniteClient, include_typing: bool) -> None:
@@ -1522,9 +1495,11 @@ class TestInstancesAPI:
         rse_with_sort = NodeResultSetExpression(
             sort=[InstanceSort(CogniteAsset.get_source().as_property_ref("sourceCreatedTime"))],
         )
-        select = Select([SourceSelector(source=CogniteAsset.get_source(), properties=["name", "parent"])])
-        query_query = Query(with_={"result": rse_with_sort}, select={"result": select})
-        query_sync = Query(with_={"result": NodeResultSetExpression()}, select={"result": select})
+        selectors = [SourceSelector(source=CogniteAsset.get_source(), properties=["name", "parent"])]
+        query_query = Query(with_={"result": rse_with_sort}, select={"result": Select(selectors)})
+        query_sync = QuerySync(
+            with_={"result": NodeResultSetExpressionSync()}, select={"result": SelectSync(selectors)}
+        )
 
         res_query = cognite_client.data_modeling.instances.query(query_query, debug=debug_params)
         res_sync = cognite_client.data_modeling.instances.sync(query_sync, debug=debug_params)
@@ -1549,80 +1524,19 @@ class TestInstancesAPI:
 
 
 class TestInstancesSync:
-    @pytest.mark.parametrize(
-        "result_set, select, message",
-        [
-            (
-                NodeResultSetExpression(sort=[InstanceSort(["node", "externalId"])]),
-                Select(),
-                r"Result set expression 'result' has sort set, which is not allowed for the sync endpoint.",
-            ),
-            (
-                EdgeResultSetExpression(sort=[InstanceSort(["edge", "externalId"])]),
-                Select(),
-                r"Result set expression 'result' has sort set, which is not allowed for the sync endpoint\.",
-            ),
-            (
-                EdgeResultSetExpression(post_sort=[InstanceSort(["edge", "externalId"])]),
-                Select(),
-                r"Result set expression 'result' has post_sort set, which is not allowed for the sync endpoint\.",
-            ),
-            (
-                EdgeResultSetExpression(limit_each=10),
-                Select(),
-                r"Result set expression 'result' has limit_each set, which is not allowed for the sync endpoint\.",
-            ),
-            (
-                Union(["a"]),
-                Select(),
-                r"Result set expression 'result' uses a set operation, which is not allowed in sync queries\.",
-            ),
-            (
-                UnionAll(["a"]),
-                Select(),
-                r"Result set expression 'result' uses a set operation, which is not allowed in sync queries\.",
-            ),
-            (
-                Intersection(["a"]),
-                Select(),
-                r"Result set expression 'result' uses a set operation, which is not allowed in sync queries\.",
-            ),
-            (
-                NodeResultSetExpression(),
-                Select(sort=[InstanceSort(["node", "externalId"])]),
-                r"Select expression 'result' has sort set, which is not allowed for the sync endpoint\.",
-            ),
-            (
-                NodeResultSetExpression(),
-                Select(limit=10),
-                r"Select expression 'result' has limit set, which is not allowed for the sync endpoint\.",
-            ),
-        ],
-    )
-    def test_fail_with_query_fields_in_sync(
-        self, cognite_client: CogniteClient, result_set: ResultSetExpression, select: Select, message: str
-    ) -> None:
-        with pytest.raises(ValueError, match=message):
-            cognite_client.data_modeling.instances.sync(
-                Query(
-                    with_={"result": result_set},
-                    select={"result": select},
-                )
-            )
-
     @pytest.mark.parametrize("sync_mode", ("one_phase", "no_backfill"))
     def test_fail_with_backfill_sort_without_two_phase(
         self, cognite_client: CogniteClient, sync_mode: SyncMode
     ) -> None:
         with pytest.raises(CogniteAPIError, match=r"Backfill sort can only be used with two-phase sync\."):
             cognite_client.data_modeling.instances.sync(
-                Query(
+                QuerySync(
                     with_={
-                        "result": NodeResultSetExpression(
+                        "result": NodeResultSetExpressionSync(
                             sync_mode=sync_mode, backfill_sort=[InstanceSort(["node", "externalId"])]
                         )
                     },
-                    select={"result": Select()},
+                    select={"result": SelectSync()},
                 )
             )
 
@@ -1631,13 +1545,13 @@ class TestInstancesSync:
         self, cognite_client: CogniteClient, movie_view: View, sync_mode: SyncMode
     ) -> None:
         movie_id = movie_view.as_id()
-        movies_released_1994 = NodeResultSetExpression(
+        movies_released_1994 = NodeResultSetExpressionSync(
             filter=filters.Equals(movie_id.as_property_ref("releaseYear"), 1994),
             sync_mode=sync_mode,
         )
-        my_query = Query(
+        my_query = QuerySync(
             with_={"movies": movies_released_1994},
-            select={"movies": Select([SourceSelector(movie_id, ["title", "releaseYear"])])},
+            select={"movies": SelectSync([SourceSelector(movie_id, ["title", "releaseYear"])])},
         )
         result = cognite_client.data_modeling.instances.sync(my_query)
         assert len(result["movies"]) > 0, "Add at least one movie released in 1994"
@@ -1670,13 +1584,13 @@ class TestInstancesSync:
         self, cognite_client: CogniteClient, movie_view: View, sync_mode: SyncMode
     ) -> None:
         movie_id = movie_view.as_id()
-        movies_released_1994 = NodeResultSetExpression(
+        movies_released_1994 = NodeResultSetExpressionSync(
             filter=filters.Equals(movie_id.as_property_ref("releaseYear"), 1994),
             sync_mode=sync_mode,
         )
-        my_query = Query(
+        my_query = QuerySync(
             with_={"movies": movies_released_1994},
-            select={"movies": Select([SourceSelector(movie_id, [".*"])])},
+            select={"movies": SelectSync([SourceSelector(movie_id, [".*"])])},
         )
 
         class State:

@@ -11,14 +11,14 @@ from cognite.client.data_classes import (
     TransformationJobMetric,
     TransformationJobMetricList,
 )
-from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._url import interpolate_and_url_encode
 
 
 class TransformationJobsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/jobs"
 
-    def list(
+    async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
         transformation_id: int | None = None,
@@ -38,14 +38,16 @@ class TransformationJobsAPI(APIClient):
 
             List transformation jobs::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> transformation_jobs_list = client.transformations.jobs.list()
 
             List transformation jobs of a single transformation::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> transformation_jobs_list = client.transformations.jobs.list(transformation_id=1)
         """
 
@@ -53,11 +55,11 @@ class TransformationJobsAPI(APIClient):
             transformation_id=transformation_id, transformation_external_id=transformation_external_id
         ).dump(camel_case=True)
 
-        return self._list(
+        return await self._list(
             list_cls=TransformationJobList, resource_cls=TransformationJob, method="GET", limit=limit, filter=filter
         )
 
-    def retrieve(self, id: int) -> TransformationJob | None:
+    async def retrieve(self, id: int) -> TransformationJob | None:
         """`Retrieve a single transformation job by id. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsByIds>`_
 
         Args:
@@ -70,16 +72,17 @@ class TransformationJobsAPI(APIClient):
 
             Get transformation job by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.transformations.jobs.retrieve(id=1)
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=TransformationJobList, resource_cls=TransformationJob, identifiers=identifiers
         )
 
-    def list_metrics(self, id: int) -> TransformationJobMetricList:
+    async def list_metrics(self, id: int) -> TransformationJobMetricList:
         """`List the metrics of a single transformation job. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsMetrics>`_
 
         Args:
@@ -92,13 +95,14 @@ class TransformationJobsAPI(APIClient):
 
             Get metrics by transformation job id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.transformations.jobs.list_metrics(id=1)
         """
         url_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/metrics", str(id))
 
-        return self._list(
+        return await self._list(
             list_cls=TransformationJobMetricList,
             resource_cls=TransformationJobMetric,
             method="GET",
@@ -106,7 +110,7 @@ class TransformationJobsAPI(APIClient):
             resource_path=url_path,
         )
 
-    def retrieve_multiple(self, ids: Sequence[int], ignore_unknown_ids: bool = False) -> TransformationJobList:
+    async def retrieve_multiple(self, ids: Sequence[int], ignore_unknown_ids: bool = False) -> TransformationJobList:
         """`Retrieve multiple transformation jobs by id. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsByIds>`_
 
         Args:
@@ -120,12 +124,13 @@ class TransformationJobsAPI(APIClient):
 
             Get jobs by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.transformations.jobs.retrieve_multiple(ids=[1, 2, 3])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=None)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=TransformationJobList,
             resource_cls=TransformationJob,
             identifiers=identifiers,

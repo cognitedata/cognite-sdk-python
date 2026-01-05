@@ -11,24 +11,24 @@ from cognite.client.data_classes.data_modeling.statistics import (
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client._cognite_client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class SpaceStatisticsAPI(APIClient):
     _RESOURCE_PATH = "/models/statistics/spaces"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._RETRIEVE_LIMIT = 100
 
     @overload
-    def retrieve(self, space: str) -> SpaceStatistics | None: ...
+    async def retrieve(self, space: str) -> SpaceStatistics | None: ...
 
     @overload
-    def retrieve(self, space: SequenceNotStr[str]) -> SpaceStatisticsList: ...
+    async def retrieve(self, space: SequenceNotStr[str]) -> SpaceStatisticsList: ...
 
-    def retrieve(
+    async def retrieve(
         self,
         space: str | SequenceNotStr[str],
     ) -> SpaceStatistics | SpaceStatisticsList | None:
@@ -44,8 +44,9 @@ class SpaceStatisticsAPI(APIClient):
 
             Fetch statistics for a single space:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.data_modeling.statistics.spaces.retrieve("my-space")
 
             Fetch statistics for multiple spaces:
@@ -54,14 +55,14 @@ class SpaceStatisticsAPI(APIClient):
                 ... )
 
         """
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             SpaceStatisticsList,
             SpaceStatistics,
             identifiers=_load_space_identifier(space),
             resource_path=self._RESOURCE_PATH,
         )
 
-    def list(self) -> SpaceStatisticsList:
+    async def list(self) -> SpaceStatisticsList:
         """`Retrieve usage for all spaces <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatistics>`_
 
         Returns statistics for data modeling resources grouped by each space in the project.
@@ -73,13 +74,13 @@ class SpaceStatisticsAPI(APIClient):
 
             Fetch statistics for all spaces in the project:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> stats = client.data_modeling.statistics.spaces.list()
                 >>> for space_stats in stats:
                 ...     print(f"Space: {space_stats.space}, Nodes: {space_stats.nodes}")
 
         """
-        # None 2xx responses are handled by the _get method.
-        response = self._get(self._RESOURCE_PATH)
+        response = await self._get(self._RESOURCE_PATH)
         return SpaceStatisticsList._load(response.json()["items"], self._cognite_client)

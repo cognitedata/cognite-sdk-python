@@ -13,7 +13,7 @@ from cognite.client.utils._identifier import IdentifierSequence
 class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SecurityCategoryList:
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SecurityCategoryList:
         """`List security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:
@@ -26,21 +26,22 @@ class SecurityCategoriesAPI(APIClient):
 
             List security categories::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.security_categories.list()
         """
-        return self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
+        return await self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
 
     @overload
-    def create(self, security_category: SecurityCategory | SecurityCategoryWrite) -> SecurityCategory: ...
+    async def create(self, security_category: SecurityCategory | SecurityCategoryWrite) -> SecurityCategory: ...
 
     @overload
-    def create(
+    async def create(
         self, security_category: Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]
     ) -> SecurityCategoryList: ...
 
-    def create(
+    async def create(
         self,
         security_category: SecurityCategory
         | SecurityCategoryWrite
@@ -62,17 +63,18 @@ class SecurityCategoriesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SecurityCategoryWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_category = SecurityCategoryWrite(name="My Category")
                 >>> res = client.iam.security_categories.create(my_category)
         """
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SecurityCategoryList,
             resource_cls=SecurityCategory,
             items=security_category,
             input_resource_cls=SecurityCategoryWrite,
         )
 
-    def delete(self, id: int | Sequence[int]) -> None:
+    async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/deleteSecurityCategories>`_
 
         Args:
@@ -82,8 +84,9 @@ class SecurityCategoriesAPI(APIClient):
 
             Delete security category::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.iam.security_categories.delete(1)
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
+        await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)

@@ -1,15 +1,13 @@
-import re
-
 import pytest
-from responses import RequestsMock
+from pytest_httpx import HTTPXMock
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.simulators import (
     SimulatorRoutineConfiguration,
     SimulatorRoutineRevision,
     SimulatorRoutineRevisionWrite,
 )
-from tests.utils import jsgz_load
+from tests.utils import get_url, jsgz_load
 
 TEST_ROUTINE_REV_ITEM_RESPONSE_FIELDS = {
     "id": 1,
@@ -69,7 +67,6 @@ class TestRoutineRevisions:
                     "filter": {"allVersions": False, "kind": "long", "routineExternalIds": ["sdk-test-routine"]},
                     "includeAllFields": False,
                     "limit": 20,
-                    "cursor": None,
                 },
                 id="list by routine_external_ids and kind",
             ),
@@ -78,34 +75,24 @@ class TestRoutineRevisions:
     def test_list_routine_revisions(
         self,
         cognite_client: CogniteClient,
-        rsps: RequestsMock,
+        async_client: AsyncCogniteClient,
+        httpx_mock: HTTPXMock,
         list_params: dict,
         mock_response_fields: dict,
         expected_revision: SimulatorRoutineRevision,
         expected_request_body: dict,
     ) -> None:
-        # Arrange
-        rsps.add(
-            "POST",
-            url=re.compile(re.escape(cognite_client.simulators.routines.revisions._get_base_url_with_base_path())),
-            json={
-                "items": [
-                    {
-                        **TEST_ROUTINE_REV_ITEM_RESPONSE_FIELDS,
-                        **mock_response_fields,
-                    }
-                ]
-            },
-            status=200,
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.simulators.routines.revisions, "/simulators/routines/revisions/list"),
+            json={"items": [TEST_ROUTINE_REV_ITEM_RESPONSE_FIELDS | mock_response_fields]},
+            status_code=200,
         )
-
-        # Act
         listed_revisions = cognite_client.simulators.routines.revisions.list(**list_params)
 
-        # Assert
         assert len(listed_revisions) == 1
         assert listed_revisions[0].dump() == expected_revision.dump()
-        assert expected_request_body == jsgz_load(rsps.calls[0].request.body)
+        assert expected_request_body == jsgz_load(httpx_mock.get_requests()[0].content)
 
     @pytest.mark.parametrize(
         "retrieve_params,mock_response_fields,expected_revision,expected_request_body",
@@ -153,34 +140,24 @@ class TestRoutineRevisions:
     def test_retrieve_routine_revisions(
         self,
         cognite_client: CogniteClient,
-        rsps: RequestsMock,
+        async_client: AsyncCogniteClient,
+        httpx_mock: HTTPXMock,
         retrieve_params: dict,
         mock_response_fields: dict,
         expected_revision: SimulatorRoutineRevision,
         expected_request_body: dict,
     ) -> None:
-        # Arrange
-        rsps.add(
-            "POST",
-            url=re.compile(re.escape(cognite_client.simulators.routines.revisions._get_base_url_with_base_path())),
-            json={
-                "items": [
-                    {
-                        **TEST_ROUTINE_REV_ITEM_RESPONSE_FIELDS,
-                        **mock_response_fields,
-                    }
-                ]
-            },
-            status=200,
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.simulators.routines.revisions, "/simulators/routines/revisions/byids"),
+            json={"items": [TEST_ROUTINE_REV_ITEM_RESPONSE_FIELDS | mock_response_fields]},
+            status_code=200,
         )
-
-        # Act
         retrieved_revisions = cognite_client.simulators.routines.revisions.retrieve(**retrieve_params)
 
-        # Assert
         assert len(retrieved_revisions) == 1
         assert retrieved_revisions[0].dump() == expected_revision.dump()
-        assert expected_request_body == jsgz_load(rsps.calls[0].request.body)
+        assert expected_request_body == jsgz_load(httpx_mock.get_requests()[0].content)
 
     @pytest.mark.parametrize(
         "write_input,mock_response_fields,expected_revision,expected_request_body",
@@ -243,30 +220,20 @@ class TestRoutineRevisions:
     def test_create_routine_revision(
         self,
         cognite_client: CogniteClient,
-        rsps: RequestsMock,
+        async_client: AsyncCogniteClient,
+        httpx_mock: HTTPXMock,
         write_input: SimulatorRoutineRevisionWrite,
         mock_response_fields: dict,
         expected_revision: SimulatorRoutineRevision,
         expected_request_body: dict,
     ) -> None:
-        # Arrange
-        rsps.add(
-            "POST",
-            url=re.compile(re.escape(cognite_client.simulators.routines.revisions._get_base_url_with_base_path())),
-            json={
-                "items": [
-                    {
-                        **mock_response_fields,
-                        **write_input.dump(),
-                    }
-                ]
-            },
-            status=201,
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.simulators.routines.revisions, "/simulators/routines/revisions"),
+            json={"items": [mock_response_fields | write_input.dump()]},
+            status_code=201,
         )
-
-        # Act
         created_revision = cognite_client.simulators.routines.revisions.create(write_input)
 
-        # Assert
         assert created_revision.dump() == expected_revision.dump()
-        assert expected_request_body == jsgz_load(rsps.calls[0].request.body)
+        assert expected_request_body == jsgz_load(httpx_mock.get_requests()[0].content)
