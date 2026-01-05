@@ -761,3 +761,78 @@ class TestWorkflowTriggers:
             cognite_client.workflows.triggers.get_trigger_run_history(
                 external_id="integration_test-non_existing_trigger"
             )
+
+    def test_pause_resume_trigger(self, cognite_client: CogniteClient) -> None:
+        workflow_external_id = f"integration_test-pause_resume_workflow-{int(time.time())}"
+        workflow = WorkflowUpsert(external_id=workflow_external_id)
+        created_workflow = cognite_client.workflows.upsert(workflow)
+        version = WorkflowVersionUpsert(
+            workflow_external_id=created_workflow.external_id,
+            version="1",
+            workflow_definition=WorkflowDefinitionUpsert(
+                tasks=[
+                    WorkflowTask(
+                        external_id=f"{created_workflow.external_id}-task1",
+                        parameters=CDFTaskParameters(
+                            resource_path="/timeseries",
+                            method="GET",
+                        ),
+                    ),
+                ],
+            ),
+        )
+        cognite_client.workflows.versions.upsert(version)
+
+        trigger_external_id = f"integration_test-pause_resume_trigger-{int(time.time())}"
+        trigger_upsert = WorkflowTriggerUpsert(
+            external_id=trigger_external_id,
+            workflow_external_id=created_workflow.external_id,
+            workflow_version="1",
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+        )
+
+        try:
+            created_trigger = cognite_client.workflows.triggers.upsert(trigger_upsert)
+            assert created_trigger.external_id == trigger_external_id
+
+            cognite_client.workflows.triggers.pause(trigger_external_id)
+
+            all_triggers = cognite_client.workflows.triggers.list(limit=-1)
+            trigger_after_pause = next((t for t in all_triggers if t.external_id == trigger_external_id), None)
+            assert trigger_after_pause is not None
+            assert trigger_after_pause.is_paused is True
+
+            cognite_client.workflows.triggers.pause(trigger_external_id)
+
+            all_triggers = cognite_client.workflows.triggers.list(limit=-1)
+            trigger_still_paused = next((t for t in all_triggers if t.external_id == trigger_external_id), None)
+            assert trigger_still_paused.is_paused is True
+
+            cognite_client.workflows.triggers.resume(trigger_external_id)
+
+            all_triggers = cognite_client.workflows.triggers.list(limit=-1)
+            trigger_after_resume = next((t for t in all_triggers if t.external_id == trigger_external_id), None)
+            assert trigger_after_resume is not None
+            assert trigger_after_resume.is_paused is False
+
+            cognite_client.workflows.triggers.resume(trigger_external_id)
+
+            all_triggers = cognite_client.workflows.triggers.list(limit=-1)
+            trigger_still_resumed = next((t for t in all_triggers if t.external_id == trigger_external_id), None)
+            assert trigger_still_resumed.is_paused is False
+        finally:
+            try:
+                cognite_client.workflows.triggers.delete(trigger_external_id)
+            except Exception:
+                pass
+            try:
+                cognite_client.workflows.delete(workflow_external_id)
+            except Exception:
+                pass
+
+    def test_pause_resume_nonexistent_trigger(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(CogniteAPIError, match=r"Trigger not found\."):
+            cognite_client.workflows.triggers.pause("integration_test-non_existing_trigger")
+
+        with pytest.raises(CogniteAPIError, match=r"Trigger not found\."):
+            cognite_client.workflows.triggers.resume("integration_test-non_existing_trigger")
