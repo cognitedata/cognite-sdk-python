@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, timezone
 
 from cognite.client.data_classes import AggregateResultItem, TimestampRange
 
@@ -29,9 +29,9 @@ class TestTimestampRange:
         assert 23 == ag.child_count
         assert {"childCount": 23, "depth": 1, "path": []} == ag.dump(camel_case=True)
 
-    def test_datetime(self) -> None:
-        min_time = datetime.fromtimestamp(1767222000)  # 2026-01-01 00:00:00 GMT+01
-        max_time = datetime.fromtimestamp(1767308400)  # 2026-01-02 00:00:00 GMT+01
+    def test_datetime(self):
+        min_time = datetime.fromtimestamp(1767222000, timezone.utc)  # 2026-01-01 00:00:00 GMT+01
+        max_time = datetime.fromtimestamp(1767308400, timezone.utc)  # 2026-01-02 00:00:00 GMT+01
         tsr = TimestampRange(min=min_time, max=max_time)
         assert tsr.min == 1767222000000
         assert tsr.max == 1767308400000
