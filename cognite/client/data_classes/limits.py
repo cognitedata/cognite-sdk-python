@@ -17,14 +17,14 @@ class Limit(CogniteResource):
 
     Args:
         limit_id (str): Limits are identified by an id containing the service name and a service-scoped limit name.
-        value (float | int | None): The numeric value of the limit.
+        value (float | int): The numeric value of the limit.
         cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
         limit_id: str,
-        value: float | int | None = None,
+        value: float | int,
         cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.limit_id = limit_id
@@ -35,7 +35,7 @@ class Limit(CogniteResource):
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Limit:
         return cls(
             limit_id=resource["limitId"],
-            value=resource.get("value"),
+            value=resource["value"],
             cognite_client=cognite_client,
         )
 
