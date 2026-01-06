@@ -214,7 +214,7 @@ class SimulationRun(SimulationRunCore):
     Args:
         id (int): The id of the simulation run
         simulator_external_id (str): External id of the associated simulator
-        simulator_integration_external_id (str): External id of the associated simulator integration
+        simulator_integration_external_id (str | None): External id of the associated simulator integration
         model_external_id (str): External id of the associated simulator model
         model_revision_external_id (str): External id of the associated simulator model revision
         routine_revision_external_id (str): External id of the associated simulator routine revision
@@ -237,7 +237,7 @@ class SimulationRun(SimulationRunCore):
         self,
         id: int,
         simulator_external_id: str,
-        simulator_integration_external_id: str,
+        simulator_integration_external_id: str | None,
         model_external_id: str,
         model_revision_external_id: str,
         routine_revision_external_id: str,
@@ -353,7 +353,7 @@ class SimulationRun(SimulationRunCore):
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             simulator_external_id=resource["simulatorExternalId"],
-            simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
+            simulator_integration_external_id=resource.get("simulatorIntegrationExternalId"),
             model_external_id=resource["modelExternalId"],
             model_revision_external_id=resource["modelRevisionExternalId"],
             routine_external_id=resource["routineExternalId"],

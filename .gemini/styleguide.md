@@ -182,3 +182,16 @@ error_data = {"function_name": "foo", "message": "bar"}
 ## Breaking Changes
 - Breaking changes must be clearly indicated in the PR title and description.
 - PRs with breaking changes should be labeled with the next major version label (e.g., `v8` if current version is 7.x.x).
+
+
+## Testing
+
+- Most changes require an accompanying test (or tests), depending on PR
+  severity, especially when new code or a new API is added.
+- Bugfixes should always include a test that would previously fail to
+  guarantee against regression.
+- Counter-intuitively, for data classes in the SDK, testing their load/dump
+  methods should not be done as this is done automatically
+  (see `tests/tests_unit/test_base.py`). This rule applies to any subclass of
+  `CogniteObject`, `CogniteResource`, `CogniteUpdate`,
+   `WriteableCogniteResource` or `WriteableCogniteResourceList`.

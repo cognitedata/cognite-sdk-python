@@ -55,7 +55,7 @@ repos:
         require_serial: true
 
   - repo: https://github.com/jsh9/pydoclint  # Run after 'custom-checks' as these may auto-fix
-    rev: 0.8.1
+    rev: 0.8.3
     hooks:
       - id: pydoclint
         require_serial: true  # Spammy in run-all scenarios (more than fast enough already)

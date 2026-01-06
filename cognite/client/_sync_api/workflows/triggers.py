@@ -1,6 +1,6 @@
 """
 ===============================================================================
-48fbc59a82746fe76a6788a84599cf0c
+e91ad89e2d9162ad9db8cdf19d8d646a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -158,3 +158,45 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
                 >>> res = client.workflows.triggers.list_runs("my_trigger", limit=None)
         """
         return run_sync(self.__async_client.workflows.triggers.list_runs(external_id=external_id, limit=limit))
+
+    def pause(self, external_id: str) -> None:
+        """
+        `Pause a workflow trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/pauseTrigger>`_
+
+        When a trigger is paused, it will not trigger new workflow executions.
+        This operation is idempotent - pausing an already paused trigger has no effect.
+
+        Args:
+            external_id (str): The external id of the trigger to pause.
+
+        Examples:
+
+            Pause a trigger:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> client.workflows.triggers.pause("my_trigger")
+        """
+        return run_sync(self.__async_client.workflows.triggers.pause(external_id=external_id))
+
+    def resume(self, external_id: str) -> None:
+        """
+        `Resume a paused workflow trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/resumeTrigger>`_
+
+        When a trigger is resumed, it will start triggering workflow executions again according to its trigger rule.
+        This operation is idempotent - resuming an already active trigger has no effect.
+
+        Args:
+            external_id (str): The external id of the trigger to resume.
+
+        Examples:
+
+            Resume a trigger:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> client.workflows.triggers.resume("my_trigger")
+        """
+        return run_sync(self.__async_client.workflows.triggers.resume(external_id=external_id))
