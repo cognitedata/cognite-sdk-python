@@ -1178,28 +1178,32 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Search for 'Arnold Schwarzenegger' in the person view in the name property:
+            Search for equipment containing both 'centrifugal' and 'pump' in the description:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> client = CogniteClient()
+                >>> view = ViewId("assetSpace", "EquipmentView", "v1")
                 >>> res = client.data_modeling.instances.search(
-                ...     ViewId("mySpace", "PersonView", "v1"),
-                ...     query="Arnold Schwarzenegger",
-                ...     properties=["name"],
+                ...     view,
+                ...     query="centrifugal pump",
+                ...     properties=["description"],
                 ...     operator="AND"
                 ... )
 
-            Search for 'Tarantino', 'Ritchie' or 'Scorsese', but filter on those born after 1942:
+            Search for 'pump', 'valve' or 'compressor', but filter on those installed after 2015:
 
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes import filters
-                >>> born_after_1942 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1942)
+                >>> installed_after_2015 = filters.Range(
+                ...     ["assetSpace", "EquipmentView/v1", "installationYear"],
+                ...     gt=2015,
+                ... )
                 >>> res = client.data_modeling.instances.search(
-                ...     ViewId("mySpace", "PersonView", "v1"),
-                ...     query="Tarantino Ritchie Scorsese",
-                ...     properties=["name"],
-                ...     filter=born_after_1942,
+                ...     view,
+                ...     query="pump valve compressor",
+                ...     properties=["name", "description"],
+                ...     filter=installed_after_2015,
                 ...     operator="OR"
                 ... )
         """
