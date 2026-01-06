@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a3abd0bae6fd944ab2d8f771c1d0af64
+29b6218c7c4bfc937a1c502859e9c407
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -16,6 +16,7 @@ from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
+from cognite.client.data_classes.filters import Filter
 
 
 class SyncLimitsAPI(SyncAPIClient):
@@ -50,13 +51,16 @@ class SyncLimitsAPI(SyncAPIClient):
         """
         return run_sync(self.__async_client.limits.retrieve(id=id))
 
-    def list(self, limit: int | None = 1000) -> LimitList:
+    def list(self, filter: Filter | None = None, limit: int | None = 1000) -> LimitList:
         """
         `List all limit values <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/listLimits/>`_
 
-        Retrieves all limit values for a specific project.
+        Retrieves all limit values for a specific project. Optionally filter by limit ID prefix using a `Prefix` filter.
 
         Args:
+            filter (Filter | None): Optional `Prefix` filter to apply on the `limitId` property.
+                When a filter is provided, the method uses POST to `/limits/values/list` endpoint.
+                Only `Prefix` filters are supported for filtering limits by `limitId`.
             limit (int | None): Maximum number of limits to return. Defaults to 1000. Set to None or -1 to return all limits.
 
         Returns:
@@ -74,5 +78,11 @@ class SyncLimitsAPI(SyncAPIClient):
             List all limits with a specific limit:
 
                 >>> limits = client.limits.list(limit=100)
+
+            List limits filtered by prefix (e.g., all limits for the 'atlas' service):
+
+                >>> from cognite.client.data_classes import filters
+                >>> prefix_filter = filters.Prefix(["limitId"], "atlas.")
+                >>> limits = client.limits.list(filter=prefix_filter)
         """
-        return run_sync(self.__async_client.limits.list(limit=limit))
+        return run_sync(self.__async_client.limits.list(filter=filter, limit=limit))
