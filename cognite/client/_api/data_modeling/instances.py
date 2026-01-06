@@ -1167,25 +1167,30 @@ class InstancesAPI(APIClient):
             limit (int | None): Maximum number of instances to return. Defaults to 25. Will return the maximum number
                 of results (1000) if set to None, -1, or math.inf.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
-            operator (Literal['AND', 'OR'] | None): Controls how multiple search terms are combined when matching documents. OR (default): A document matches if it contains any of the query terms in the searchable fields. This typically returns more results but with lower precision. AND: A document matches only if it contains all of the query terms across the searchable fields. This typically returns fewer results but with higher relevance.
+            operator (Literal['AND', 'OR'] | None): Controls how multiple search terms are combined when matching documents.
+                AND: A document matches only if it contains all of the query terms across the searchable fields. This typically
+                returns fewer results but with higher relevance. OR: A document matches if it contains any of the query terms in the searchable fields.
+                This typically returns more results but with lower precision. Note: If not specified, will default to the API default, which will change from
+                'OR' to 'AND' sometime in Q1 2027.
 
         Returns:
             NodeList[T_Node] | EdgeList[T_Edge]: Search result with matching nodes or edges.
 
         Examples:
 
-            Search for Arnold in the person view in the name property:
+            Search for 'Arnold Schwarzenegger' in the person view in the name property:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> client = CogniteClient()
                 >>> res = client.data_modeling.instances.search(
                 ...     ViewId("mySpace", "PersonView", "v1"),
-                ...     query="Arnold",
+                ...     query="Arnold Schwarzenegger",
                 ...     properties=["name"],
+                ...     operator="AND"
                 ... )
 
-            Search for Tarantino, Ritchie or Scorsese in the person view in the name property, but only born after 1942:
+            Search for 'Tarantino', 'Ritchie' or 'Scorsese', but filter on those born after 1942:
 
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes import filters
@@ -1223,8 +1228,9 @@ class InstancesAPI(APIClient):
         }
         if operator is None:
             warnings.warn(
-                "The default operator for instance search will change from 'OR' to 'AND' sometime in Q1 2026. "
-                "Please explicitly set the operator to avoid this warning.",
+                "The default operator for instance search will change from 'OR' to 'AND' sometime in Q1 2027. In the "
+                "next major version release (v8), the default will be changed to 'AND', which is the recommended "
+                "setting for most use cases. Please explicitly pass the operator to avoid this warning.",
                 UserWarning,  # FutureWarning is more correct, but is ignored by default and we want users to see this
             )
         else:
