@@ -41,7 +41,14 @@ from cognite.client.data_classes.capabilities import Capability, LegacyCapabilit
 from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNode, TypedNodeApply
 from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType
 from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
-from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query, QuerySync
+from cognite.client.data_classes.data_modeling.query import (
+    NodeResultSetExpression,
+    NodeResultSetExpressionSync,
+    Query,
+    QuerySync,
+    Select,
+    SelectSync,
+)
 from cognite.client.data_classes.datapoint_aggregates import (
     ALL_SORTED_DP_AGGS,
     INT_AGGREGATES,
@@ -368,13 +375,17 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments["time_series_ids"] = ["my_timeseries1", "my_timeseries2"]
             else:
                 keyword_arguments.pop("filter", None)
-        elif issubclass(resource_cls, Query | QuerySync):
-            # The fake generator makes all dicts from 1-3 values, we need to make sure that the query is valid
-            # by making sure that the list of equal length, so we make both to length 1.
-            with_key, with_value = next(iter(keyword_arguments["with_"].items()))
-            select_value = next(iter(keyword_arguments["select"].values()))
-            keyword_arguments["with_"] = {with_key: with_value}
-            keyword_arguments["select"] = {with_key: select_value}
+        elif issubclass(resource_cls, Query) and not issubclass(resource_cls, QuerySync):
+            # Query (and subclasses) needs ResultSetExpression (not Sync), and Select (not SelectSync)
+            # The fake generator picks from all subclasses of the TypeVar bound which includes sync classes
+            key = self._random_string(15)
+            keyword_arguments["with_"] = {key: self.create_instance(NodeResultSetExpression)}
+            keyword_arguments["select"] = {key: self.create_instance(Select)}
+        elif issubclass(resource_cls, QuerySync):
+            # QuerySync (and subclasses) needs ResultSetExpressionSync and SelectSync
+            key = self._random_string(15)
+            keyword_arguments["with_"] = {key: self.create_instance(NodeResultSetExpressionSync)}
+            keyword_arguments["select"] = {key: self.create_instance(SelectSync)}
         elif resource_cls is Relationship and not skip_defaulted_args:
             # Relationship must set the source and target type consistently with the source and target
             keyword_arguments["source_type"] = type(keyword_arguments["source"]).__name__
@@ -430,6 +441,9 @@ class FakeCogniteResourceGenerator:
         elif resource_cls is NodeResultSetExpression and not skip_defaulted_args:
             # Through has a special format.
             keyword_arguments["through"] = [keyword_arguments["through"][0], "my_view/v1", "a_property"]
+        elif resource_cls is NodeResultSetExpressionSync and not skip_defaulted_args:
+            # Through has a special format.
+            keyword_arguments["through"] = [keyword_arguments["through"][0], "my_view/v1", "a_property"]
         elif resource_cls is Buckets:
             keyword_arguments = {"items": [{"start": 1, "count": 1}]}
         elif resource_cls is timezone:
@@ -461,7 +475,7 @@ class FakeCogniteResourceGenerator:
         import numpy as np
 
         if isinstance(type_, typing.ForwardRef):
-            type_ = type_._evaluate(globals(), self._type_checking())  # type: ignore[call-arg]
+            type_ = type_._evaluate(globals(), self._type_checking(), recursive_guard=frozenset())
 
         container_type = get_origin(type_)
         is_container = container_type is not None
@@ -558,7 +572,12 @@ class FakeCogniteResourceGenerator:
         elif isinstance(type_, enum.EnumMeta):
             return self._random.choice(list(type_))
         elif isinstance(type_, TypeVar):
-            return self.create_value(type_.__bound__)
+            bound = type_.__bound__
+            if isinstance(bound, typing.ForwardRef):
+                # Resolve the ForwardRef using the TypeVar's module namespace
+                module = importlib.import_module(type_.__module__)
+                bound = bound._evaluate(vars(module), self._type_checking(), recursive_guard=frozenset())
+            return self.create_value(bound)
         elif inspect.isclass(type_) and issubclass(type_, CogniteResourceList):
             return type_([self.create_value(type_._RESOURCE) for _ in range(self._random.randint(1, 3))])
         elif inspect.isclass(type_):

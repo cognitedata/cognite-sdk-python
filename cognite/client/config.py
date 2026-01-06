@@ -5,15 +5,12 @@ import getpass
 import pprint
 import re
 import warnings
-from typing import TYPE_CHECKING, Any, NoReturn, overload
+from typing import Any, NoReturn, overload
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
 from cognite.client.utils._auxiliary import load_resource_to_dict
 from cognite.client.utils._importing import local_import
-
-if TYPE_CHECKING:
-    import httpx
 
 
 class GlobalConfig:
@@ -33,8 +30,9 @@ class GlobalConfig:
         max_connection_pool_size (int): The maximum number of connections which will be kept in the SDKs connection pool.
             Defaults to 20.
         disable_ssl (bool): Whether or not to disable SSL. Defaults to False
-        proxy (str | httpx.Proxy | None): Route all traffic (HTTP and HTTPS) via this proxy, e.g. "http://localhost:8030" (or httpx.Proxy). Default: None,
-            meaning no proxy.
+        proxy (str | None): Route all traffic (HTTP and HTTPS) via this proxy, e.g. "http://localhost:8030".
+            For proxy authentication, embed credentials in the URL: "http://user:pass@localhost:8030".
+            Defaults to None (no proxy).
         max_workers (int | None): Maximum number of concurrent API calls. Defaults to 5. Note that certain APIs have
             overrides which comes in addition to this limit.
         follow_redirects (bool): Whether or not to follow redirects. Defaults to False.
@@ -69,7 +67,7 @@ class GlobalConfig:
         self.max_retry_backoff: int = 60
         self.max_connection_pool_size: int = 20
         self.disable_ssl: bool = False
-        self.proxy: str | httpx.Proxy | None = None
+        self.proxy: str | None = None
         self.max_workers: int = 5
         self.follow_redirects: bool = False
         self.file_download_chunk_size: int | None = None
@@ -140,7 +138,8 @@ class ClientConfig:
         headers (dict[str, str] | None): Additional headers to add to all requests.
         timeout (int | None): Timeout on requests sent to the api. Defaults to 60 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
-        debug (bool): Configures logger to log extra request details to stderr.
+        debug (bool): Enables debug logging to stderr. This includes full request/response details and logs regarding retry
+            attempts (e.g., on 429 throttling or 5xx errors).
     """
 
     def __init__(

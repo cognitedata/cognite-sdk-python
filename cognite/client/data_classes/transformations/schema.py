@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import Self
@@ -12,9 +11,13 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
 
 
-class TransformationSchemaType(CogniteObject, ABC):
+class TransformationSchemaType(CogniteObject):
     def __init__(self, type: str) -> None:
         self.type = type
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+        return cls(type=resource["type"])
 
 
 class TransformationSchemaArrayType(TransformationSchemaType):
@@ -68,7 +71,7 @@ class TransformationSchemaMapType(TransformationSchemaType):
             type=resource["type"],
             key_type=resource.get("keyType"),
             value_type=resource.get("valueType"),
-            value_contains_null=resource.get("valueContainsNull"),  # type: ignore[arg-type]
+            value_contains_null=resource.get("valueContainsNull", False),
         )
 
 
@@ -127,9 +130,10 @@ class TransformationSchemaColumn(CogniteResource):
                     "map": TransformationSchemaMapType,
                     "struct": TransformationSchemaStructType,
                 }
-                type_ = type_classes.get(resource_type["type"], TransformationSchemaUnknownType).load(resource_type)
+                type_ = type_classes.get(resource_type["type"], TransformationSchemaUnknownType)._load(resource_type)
             case str():
-                type_ = TransformationSchemaType(type=resource_type)
+                # Basic types like 'integer', 'long' or 'string'
+                type_ = TransformationSchemaType._load(resource)
             case _:
                 raise ValueError(f"Unknown type for TransformationSchemaColumn: {resource_type}")
 

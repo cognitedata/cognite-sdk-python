@@ -36,7 +36,7 @@ from cognite.client.credentials import CredentialProvider, OAuthClientCredential
 from cognite.client.utils._auxiliary import load_resource_to_dict
 
 if TYPE_CHECKING:
-    import httpx
+    from cognite.client.response import CogniteHTTPResponse
 
 
 class AsyncCogniteClient:
@@ -94,7 +94,7 @@ class AsyncCogniteClient:
 
     async def get(
         self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         """Perform a GET request to an arbitrary path in the API."""
         return await self._api_client._get(url, params=params, headers=headers)
 
@@ -104,7 +104,7 @@ class AsyncCogniteClient:
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         """Perform a POST request to an arbitrary path in the API."""
         return await self._api_client._post(url, json=json, params=params, headers=headers)
 
@@ -114,7 +114,7 @@ class AsyncCogniteClient:
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         """Perform a PUT request to an arbitrary path in the API."""
         return await self._api_client._put(url, json=json, params=params, headers=headers)
 

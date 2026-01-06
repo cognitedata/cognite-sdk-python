@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from cognite.client.data_classes import aggregations, filters
 from cognite.client.data_classes.aggregations import AggregatedValue, Aggregation
+from cognite.client.data_classes.data_modeling import query
 from cognite.client.data_classes.data_modeling.containers import (
     BTreeIndex,
     BTreeIndexApply,
@@ -255,4 +256,5 @@ __all__ = [
     "ViewList",
     "aggregations",
     "filters",
+    "query",
 ]

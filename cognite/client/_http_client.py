@@ -4,7 +4,6 @@ import asyncio
 import functools
 import logging
 import random
-import time
 from collections.abc import (
     AsyncIterable,
     AsyncIterator,
@@ -24,9 +23,11 @@ from cognite.client.config import global_config
 from cognite.client.exceptions import (
     CogniteConnectionError,
     CogniteConnectionRefused,
+    CogniteHTTPStatusError,
     CogniteReadTimeout,
     CogniteRequestError,
 )
+from cognite.client.response import CogniteHTTPResponse
 from cognite.client.utils._concurrency import get_global_semaphore
 
 logger = logging.getLogger(__name__)
@@ -127,26 +128,37 @@ class AsyncHTTPClientWithRetryConfig:
 
 
 class RetryTracker:
-    def __init__(self, config: AsyncHTTPClientWithRetryConfig) -> None:
+    def __init__(self, url: str, config: AsyncHTTPClientWithRetryConfig) -> None:
+        self.url = url
         self.config = config
         self.status = self.read = self.connect = 0
         self.last_failed_reason = ""
+        self.total_time_in_backoff = 0.0
 
     @property
     def total(self) -> int:
         return self.status + self.read + self.connect
 
     def get_backoff_time(self) -> float:
-        backoff_time = self.config.backoff_factor * 2**self.total
-        return random.random() * min(backoff_time, self.config.max_backoff_seconds)
+        """
+        Computes the randomized delay (backoff time) before the next retry attempt.
 
-    def back_off(self, url: str) -> None:
+        This method implements the **Exponential Backoff with Full Jitter** strategy,
+        with one addition, a small "initial floor" to avoid immediate retries.
+        """
+        base = self.config.backoff_factor * 2**self.total
+        cap = min(base, self.config.max_backoff_seconds)
+        return 0.1 + random.uniform(0, cap)
+
+    async def back_off(self) -> None:
         backoff_time = self.get_backoff_time()
+        self.total_time_in_backoff += backoff_time
+        # We put logging here, since this is always called before retrying
         logger.debug(
-            f"Retrying failed request, attempt #{self.total}, backoff time: {backoff_time=:.4f} sec, "
-            f"reason: {self.last_failed_reason!r}, url: {url}"
+            f"Retrying failed request, attempt #{self.total}, backoff wait: {backoff_time:.4f} sec "
+            f"(total: {self.total_time_in_backoff:.4f} sec), reason: {self.last_failed_reason!r}, url: {self.url}"
         )
-        time.sleep(backoff_time)
+        await asyncio.sleep(backoff_time)
 
     @property
     def should_retry_total(self) -> bool:
@@ -154,23 +166,25 @@ class RetryTracker:
         # one of [status, read, connect] += 1. Said differently, do last retry when 'total = max':
         return self.total <= self.config.max_retries_total
 
-    def should_retry_status_code(self, status_code: int, is_auto_retryable: bool = False) -> bool:
+    def should_retry_status_code(self, err: httpx.HTTPStatusError, is_auto_retryable: bool = False) -> bool:
         self.status += 1
-        self.last_failed_reason = f"{status_code=}"
+        status_code = err.response.status_code
+        error_type = CogniteHTTPStatusError.get_error_type(status_code)
+        self.last_failed_reason = f"HTTPStatusError({status_code} - {error_type}: {err.response.reason_phrase})"
         return (
             self.should_retry_total
             and self.status <= self.config.max_retries_status
             and (is_auto_retryable or status_code in self.config.status_codes_to_retry)
         )
 
-    def should_retry_connect_error(self, error: httpx.RequestError) -> bool:
+    def should_retry_connect_error(self, error: httpx.TransportError | httpx.DecodingError) -> bool:
         self.connect += 1
-        self.last_failed_reason = type(error).__name__
+        self.last_failed_reason = f"{type(error).__name__}({error!s})"
         return self.should_retry_total and self.connect <= self.config.max_retries_connect
 
-    def should_retry_timeout(self, error: httpx.RequestError) -> bool:
+    def should_retry_timeout(self, error: httpx.TimeoutException) -> bool:
         self.read += 1
-        self.last_failed_reason = type(error).__name__
+        self.last_failed_reason = f"{type(error).__name__}({error!s})"
         return self.should_retry_total and self.read <= self.config.max_retries_read
 
 
@@ -199,7 +213,7 @@ class AsyncHTTPClientWithRetry:
         follow_redirects: bool = False,
         timeout: float | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         def coro_factory() -> HTTPResponseCoro:
             return self.httpx_async_client.request(
                 method,
@@ -225,7 +239,7 @@ class AsyncHTTPClientWithRetry:
         json: Any = None,
         headers: MutableMapping[str, str] | None = None,
         timeout: float | None = None,
-    ) -> AsyncIterator[httpx.Response]:
+    ) -> AsyncIterator[CogniteHTTPResponse]:
         # This method is basically a clone of httpx.AsyncClient.stream() so that we may add our own retry logic.
         def coro_factory() -> HTTPResponseCoro:
             request = self.httpx_async_client.build_request(
@@ -233,7 +247,7 @@ class AsyncHTTPClientWithRetry:
             )
             return self.httpx_async_client.send(request, stream=True)
 
-        response: httpx.Response | None = None
+        response: CogniteHTTPResponse | None = None
         try:
             yield (response := await self._with_retry(coro_factory, url=url, headers=headers))
         finally:
@@ -247,29 +261,37 @@ class AsyncHTTPClientWithRetry:
         url: str,
         headers: MutableMapping[str, str] | None,
         semaphore: asyncio.BoundedSemaphore | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         if semaphore is None:
             # By default, we run with a semaphore decided by user settings of 'max_workers' in 'global_config'.
             # Since the user can run any number of SDK tasks concurrently, this needs to be global:
             semaphore = get_global_semaphore()
 
         is_auto_retryable = False
-        retry_tracker = RetryTracker(self.config)
+        retry_tracker = RetryTracker(url, self.config)
         accepts_json = (headers or {}).get("accept") == "application/json"
         while True:
             try:
                 async with semaphore:
+                    # Ensure our credentials are not about to expire right before making the request:
+                    if headers is not None:
+                        self.refresh_auth_header(headers)
                     response = await coro_factory()
+
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
                     response.json = functools.cache(response.json)  # type: ignore [method-assign]
-                return response.raise_for_status()
+                return CogniteHTTPResponse(response.raise_for_status())
 
             except httpx.HTTPStatusError as err:
                 response = err.response
                 is_auto_retryable = response.headers.get("cdf-is-auto-retryable", False)
-                if not retry_tracker.should_retry_status_code(response.status_code, is_auto_retryable):
-                    raise
+                if not retry_tracker.should_retry_status_code(err, is_auto_retryable):
+                    raise CogniteHTTPStatusError(
+                        response.status_code,
+                        request=err.request,
+                        response=CogniteHTTPResponse(response),
+                    ) from None
 
             except httpx.ConnectError as err:
                 if not retry_tracker.should_retry_connect_error(err):
@@ -288,7 +310,5 @@ class AsyncHTTPClientWithRetry:
                 # base class for all exceptions that can be raised during a request, so we use it here as a fallback.
                 raise CogniteRequestError from err
 
-            retry_tracker.back_off(url)
-            # During a backoff loop, our credentials might expire, so we check and maybe refresh:
-            if headers is not None:
-                self.refresh_auth_header(headers)  # TODO: Refactoring needed to make this "prettier"
+            # If we got here, it means we have decided to retry the request!
+            await retry_tracker.back_off()
