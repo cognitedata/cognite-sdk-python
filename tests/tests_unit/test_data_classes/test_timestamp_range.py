@@ -1,5 +1,7 @@
 from __future__ import annotations
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+import pytest
 
 from cognite.client.data_classes import AggregateResultItem, TimestampRange
 
@@ -36,3 +38,11 @@ class TestTimestampRange:
         assert tsr.min == 1767222000000
         assert tsr.max == 1767308400000
         assert {"min": 1767222000000, "max": 1767308400000} == tsr.dump()
+
+    def test_time_shift_string(self):
+        now_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        day_ago_time = now_time - timedelta(days=1) // timedelta(milliseconds=1)
+        tsr = TimestampRange(min="1d-ago", max="now")
+        # NOTE: Using approx because of the small time difference between calls
+        assert tsr.min == pytest.approx(day_ago_time, 100)
+        assert tsr.max == pytest.approx(now_time, 100)

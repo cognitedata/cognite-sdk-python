@@ -11,7 +11,12 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
+<<<<<<< HEAD
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, UnknownCogniteResource
+=======
+from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geometry, UnknownCogniteObject
+from cognite.client.utils._time import timestamp_to_ms
+>>>>>>> 392bd57c (feat: Add support for time-shift strings in TimestampRange)
 
 <<<<<<< HEAD
 from datetime import datetime
@@ -24,14 +29,16 @@ class TimestampRange(CogniteResource):
     """Range between two timestamps.
 
     Args:
-        max (int | datetime | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds, or a datetime object.
-        min (int | datetime | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds, or a datetime object.
+        max (int | float | str | datetime | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds, a string in time-shift format or a datetime object.
+        min (int | float | str | datetime | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds, a string in time-shift format or a datetime object.
         **_ (Any): No description.
     """
 
-    def __init__(self, max: int | datetime | None = None, min: int | datetime | None = None, **_: Any) -> None:
-        self.max = int(max.timestamp() * 1000) if isinstance(max, datetime) else max
-        self.min = int(min.timestamp() * 1000) if isinstance(min, datetime) else min
+    def __init__(
+        self, max: int | float | str | datetime | None = None, min: int | float | str | datetime | None = None, **_: Any
+    ) -> None:
+        self.max = timestamp_to_ms(max) if max is not None else None
+        self.min = timestamp_to_ms(min) if min is not None else None
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
