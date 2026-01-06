@@ -1,53 +1,63 @@
 from __future__ import annotations
 
-from typing import Literal, overload
+from typing import TYPE_CHECKING
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.limits import LimitValue
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.data_classes.filters import In
+from cognite.client.data_classes.limits import Limit, LimitList
+from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils.useful_types import SequenceNotStr
 
-# API version header for limits endpoints
-_LIMITS_API_VERSION = "20230101-alpha"
+if TYPE_CHECKING:
+    from cognite.client import AsyncCogniteClient
+    from cognite.client.config import ClientConfig
 
 
 class LimitsAPI(APIClient):
     _RESOURCE_PATH = "/limits/values"
 
-    @overload
-    async def retrieve(self, limit_id: str, ignore_unknown_ids: Literal[True]) -> LimitValue | None: ...
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._warning = FeaturePreviewWarning(
+            api_maturity="alpha",
+            sdk_maturity="alpha",
+            feature_name="Limits API",
+        )
 
-    @overload
-    async def retrieve(self, limit_id: str, ignore_unknown_ids: Literal[False] = False) -> LimitValue: ...
+    async def retrieve_multiple(
+        self,
+        ids: SequenceNotStr[str],
+    ) -> LimitList:
+        """`Retrieve multiple limit values by their ids. <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/listLimitsAdvanced/>`_
 
-    async def retrieve(self, limit_id: str, ignore_unknown_ids: bool = False) -> LimitValue | None:
-        """Retrieve a limit value by its id.
-
-        Retrieves a limit value by its `limitId`.
+        Retrieves multiple limit values by their `limitId`s.
 
         Args:
-            limit_id (str): Limit ID.
+            ids (SequenceNotStr[str]): List of limit IDs to retrieve.
                 Limits are identified by an id containing the service name and a service-scoped limit name.
                 For instance `atlas.monthly_ai_tokens` is the id of the `atlas` service limit `monthly_ai_tokens`.
                 Service and limit names are always in `lower_snake_case`.
-            ignore_unknown_ids (bool): If True, ignore IDs that are not found rather than throw an exception.
 
         Returns:
-            LimitValue | None: The requested limit value, or None if not found and ignore_unknown_ids is True.
+            LimitList: List of requested limit values. Only limits that exist will be returned.
 
         Examples:
 
-            Get limit by id:
+            Retrieve multiple limits by id:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.limits.retrieve(limit_id="atlas.monthly_ai_tokens", ignore_unknown_ids=True)
+                >>> res = client.limits.retrieve_multiple(ids=["atlas.monthly_ai_tokens", "files.storage_bytes"])
         """
-        url_path = f"{self._RESOURCE_PATH}/{limit_id}"
-        try:
-            res = await self._get(url_path=url_path, headers={"cdf-version": _LIMITS_API_VERSION})
-            return LimitValue._load(res.json(), cognite_client=self._cognite_client)
-        except CogniteAPIError as e:
-            if e.code == 404 and ignore_unknown_ids:
-                return None
-            raise
+        self._warning.warn()
+
+        advanced_filter = In(property=["limitId"], values=list(ids))
+
+        return await self._list(
+            method="POST",
+            list_cls=LimitList,
+            resource_cls=Limit,
+            advanced_filter=advanced_filter,
+            headers={"cdf-version": f"{self._config.api_subversion}-alpha"},
+        )
