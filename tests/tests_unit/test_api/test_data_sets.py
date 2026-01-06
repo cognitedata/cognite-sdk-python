@@ -52,7 +52,6 @@ class TestDataset:
         assert isinstance(res, DataSetList)
         assert mock_ds_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    # NOTE: Have to set timezeon in order to avoid OSError on Windows: https://stackoverflow.com/a/65564765/5753974
     @pytest.mark.parametrize("min_time", [20, datetime.fromtimestamp(20 / 1000, timezone.utc)])
     def test_list_with_timestamp_range(
         self, cognite_client: CogniteClient, mock_ds_response: RequestsMock, min_time: int | datetime
