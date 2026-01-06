@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from cognite.client.data_classes._base import CogniteResource
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
 
 
-class LimitValue(CogniteResource):
+class Limit(CogniteResource):
     """A singular representation of a Limit.
 
     Limits are identified by an id containing the service name and a service-scoped limit name.
@@ -16,14 +16,14 @@ class LimitValue(CogniteResource):
     Service and limit names are always in `lower_snake_case`.
 
     Args:
-        limit_id (str | None): Limits are identified by an id containing the service name and a service-scoped limit name.
+        limit_id (str): Limits are identified by an id containing the service name and a service-scoped limit name.
         value (float | int | None): The numeric value of the limit.
         cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        limit_id: str | None = None,
+        limit_id: str,
         value: float | int | None = None,
         cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
@@ -32,9 +32,13 @@ class LimitValue(CogniteResource):
         self._cognite_client = cognite_client
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> LimitValue:
+    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Limit:
         return cls(
-            limit_id=resource.get("limitId"),
+            limit_id=resource["limitId"],
             value=resource.get("value"),
             cognite_client=cognite_client,
         )
+
+
+class LimitList(CogniteResourceList[Limit]):
+    _RESOURCE = Limit
