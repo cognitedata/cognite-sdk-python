@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.limits import Limit
+from cognite.client.data_classes.limits import Limit, LimitList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier
 
@@ -53,5 +53,41 @@ class LimitsAPI(APIClient):
         return await self._retrieve(
             identifier=Identifier(id),
             cls=Limit,
+            headers=headers,
+        )
+
+    async def list(self, limit: int | None = 1000) -> LimitList:
+        """`List all limit values <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/listLimits/>`_
+
+        Retrieves all limit values for a specific project.
+
+        Args:
+            limit (int | None): Maximum number of limits to return. Defaults to 1000. Set to None or -1 to return all limits.
+
+        Returns:
+            LimitList: List of all limit values in the project.
+
+        Examples:
+
+            List all limits:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> limits = client.limits.list()
+
+            List all limits with a specific limit:
+
+                >>> limits = client.limits.list(limit=100)
+        """
+        self._warning.warn()
+
+        headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
+
+        return await self._list(
+            method="GET",
+            list_cls=LimitList,
+            resource_cls=Limit,
+            limit=limit,
             headers=headers,
         )

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-88cee191bc62e71aa597f61192fdab2f
+a3abd0bae6fd944ab2d8f771c1d0af64
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes.limits import Limit
+from cognite.client.data_classes.limits import Limit, LimitList
 from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
@@ -49,3 +49,30 @@ class SyncLimitsAPI(SyncAPIClient):
                 >>> res = client.limits.retrieve(id="atlas.monthly_ai_tokens")
         """
         return run_sync(self.__async_client.limits.retrieve(id=id))
+
+    def list(self, limit: int | None = 1000) -> LimitList:
+        """
+        `List all limit values <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/listLimits/>`_
+
+        Retrieves all limit values for a specific project.
+
+        Args:
+            limit (int | None): Maximum number of limits to return. Defaults to 1000. Set to None or -1 to return all limits.
+
+        Returns:
+            LimitList: List of all limit values in the project.
+
+        Examples:
+
+            List all limits:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> limits = client.limits.list()
+
+            List all limits with a specific limit:
+
+                >>> limits = client.limits.list(limit=100)
+        """
+        return run_sync(self.__async_client.limits.list(limit=limit))
