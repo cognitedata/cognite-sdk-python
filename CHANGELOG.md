@@ -26,11 +26,6 @@ As of 2025-08-29, changes are grouped as follows
 
 * add warning when operator is not passed to instances/search ([#2390](https://github.com/cognitedata/cognite-sdk-python/issues/2390)) ([8f8af02](https://github.com/cognitedata/cognite-sdk-python/commit/8f8af0283f61015f40723e91a1a7bc13b58e861a))
 
-
-### Documentation
-
-* update styleguide.md with some prose on testing ([#2423](https://github.com/cognitedata/cognite-sdk-python/issues/2423)) ([a2cc565](https://github.com/cognitedata/cognite-sdk-python/commit/a2cc565d6abd2e2738eab1a548438da943f1f4df))
-
 ## [7.90.1](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.90.0...cognite-sdk-python-v7.90.1) (2025-11-27)
 
 
