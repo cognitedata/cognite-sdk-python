@@ -19,6 +19,7 @@ from cognite.client.config import global_config
 from cognite.client.exceptions import (
     CogniteAPIError,
     CogniteDuplicatedError,
+    CogniteHTTPStatusError,
     CogniteNotFoundError,
     CogniteProjectAccessError,
 )
@@ -30,6 +31,7 @@ from cognite.client.utils._url import resolve_url
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
+    from cognite.client.response import CogniteHTTPResponse
 
 
 logger = logging.getLogger(__name__)
@@ -45,7 +47,7 @@ class FailedRequestHandler:
     headers: dict[str, str] | httpx.Headers
     response_headers: dict[str, str] | httpx.Headers
     extra: dict[str, Any]
-    cause: httpx.HTTPStatusError
+    cause: CogniteHTTPStatusError
     stream: bool
 
     def __post_init__(self) -> None:
@@ -53,7 +55,7 @@ class FailedRequestHandler:
         self.response_headers = BasicAsyncAPIClient._sanitize_headers(self.response_headers)
 
     @classmethod
-    async def from_status_error(cls, err: httpx.HTTPStatusError, stream: bool) -> Self:
+    async def from_status_error(cls, err: CogniteHTTPStatusError, stream: bool) -> Self:
         response = err.response
         error, missing, duplicated = {}, None, None
 
@@ -134,7 +136,7 @@ class FailedRequestHandler:
             x_request_id=self.x_request_id,
             maybe_projects=maybe_projects,
             cluster=cluster,
-        ) from None  # we don't surface the underlying httpx.HTTPStatusError
+        ) from None  # we don't surface the underlying CogniteHTTPStatusError
 
     def _raise_api_error(self, err_type: type[CogniteAPIError], cluster: str | None, project: str) -> NoReturn:
         raise err_type(
@@ -230,7 +232,7 @@ class BasicAsyncAPIClient:
         timeout: float | None = None,
         include_cdf_headers: bool = False,
         api_subversion: str | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         """
         Make a request to something that is outside Cognite Data Fusion, with retry enabled.
         Requires the caller to handle errors coming from non-2xx response status codes.
@@ -245,10 +247,10 @@ class BasicAsyncAPIClient:
             api_subversion (str | None): When include_cdf_headers=True, override the API subversion to use for the request. Has no effect otherwise.
 
         Returns:
-            httpx.Response: The response from the server.
+            CogniteHTTPResponse: The response from the server.
 
         Raises:
-            httpx.HTTPStatusError: If the response status code is 4xx or 5xx.
+            CogniteHTTPStatusError: If the response status code is 4xx or 5xx.
         """
         http_client = self._select_async_http_client(method in {"GET", "PUT", "HEAD"})
         if include_cdf_headers:
@@ -260,7 +262,7 @@ class BasicAsyncAPIClient:
             self._log_successful_request(res)
             return res
 
-        except httpx.HTTPStatusError as err:
+        except CogniteHTTPStatusError as err:
             handler = await FailedRequestHandler.from_status_error(err, stream=False)
             handler.log_failed_request()
             raise
@@ -278,7 +280,7 @@ class BasicAsyncAPIClient:
         full_headers: dict[str, Any] | None = None,
         timeout: float | None = None,
         api_subversion: str | None = None,
-    ) -> AsyncIterator[httpx.Response]:
+    ) -> AsyncIterator[CogniteHTTPResponse]:
         assert url_path or full_url, "Either url_path or full_url must be provided"
         full_url = full_url or resolve_url(self, method, cast(str, url_path))[1]
         if full_headers is None:
@@ -293,7 +295,7 @@ class BasicAsyncAPIClient:
                 self._log_successful_request(resp, payload=json, stream=True)
                 yield resp
 
-        except httpx.HTTPStatusError as err:
+        except CogniteHTTPStatusError as err:
             await self._handle_status_error(err, payload=json, stream=True)
 
     async def _get(
@@ -304,7 +306,7 @@ class BasicAsyncAPIClient:
         follow_redirects: bool = False,
         api_subversion: str | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         _, full_url = resolve_url(self, "GET", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         try:
@@ -317,7 +319,7 @@ class BasicAsyncAPIClient:
                 timeout=self._config.timeout,
                 semaphore=semaphore,
             )
-        except httpx.HTTPStatusError as err:
+        except CogniteHTTPStatusError as err:
             await self._handle_status_error(err)
 
         self._log_successful_request(res)
@@ -332,7 +334,7 @@ class BasicAsyncAPIClient:
         follow_redirects: bool = False,
         api_subversion: str | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         is_retryable, full_url = resolve_url(self, "POST", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         # We want to control json dumping, so we pass it along to httpx.Client.post as 'content'
@@ -350,7 +352,7 @@ class BasicAsyncAPIClient:
                 timeout=self._config.timeout,
                 semaphore=semaphore,
             )
-        except httpx.HTTPStatusError as err:
+        except CogniteHTTPStatusError as err:
             await self._handle_status_error(err, payload=json)
 
         self._log_successful_request(res, payload=json)
@@ -367,7 +369,7 @@ class BasicAsyncAPIClient:
         api_subversion: str | None = None,
         timeout: float | None = None,
         semaphore: asyncio.BoundedSemaphore | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         _, full_url = resolve_url(self, "PUT", url_path)
 
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
@@ -384,7 +386,7 @@ class BasicAsyncAPIClient:
                 timeout=timeout or self._config.timeout,
                 semaphore=semaphore,
             )
-        except httpx.HTTPStatusError as err:
+        except CogniteHTTPStatusError as err:
             await self._handle_status_error(err, payload=json)
 
         self._log_successful_request(res, payload=json)
@@ -417,7 +419,7 @@ class BasicAsyncAPIClient:
         headers[auth_header_name] = auth_header_value
 
     async def _handle_status_error(
-        self, error: httpx.HTTPStatusError, payload: dict[str, Any] | None = None, stream: bool = False
+        self, error: CogniteHTTPStatusError, payload: dict[str, Any] | None = None, stream: bool = False
     ) -> NoReturn:
         """The response had an HTTP status code of 4xx or 5xx"""
         handler = await FailedRequestHandler.from_status_error(error, stream=stream)
@@ -425,7 +427,7 @@ class BasicAsyncAPIClient:
         await handler.raise_api_error(self._cognite_client)
 
     def _log_successful_request(
-        self, res: httpx.Response, payload: dict[str, Any] | None = None, stream: bool = False
+        self, res: CogniteHTTPResponse, payload: dict[str, Any] | None = None, stream: bool = False
     ) -> None:
         extra: dict[str, Any] = {
             "headers": self._sanitize_headers(res.request.headers),

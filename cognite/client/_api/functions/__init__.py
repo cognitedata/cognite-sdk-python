@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import ast
+import asyncio
 import importlib
 import os
 import re
 import sys
 import textwrap
-import time
 from collections.abc import AsyncIterator, Callable, Sequence
 from inspect import getdoc, getsource, signature
 from multiprocessing import Process, Queue
@@ -310,7 +310,7 @@ class FunctionsAPI(APIClient):
             file = await self._cognite_client.files.retrieve(id=file_id)
             if file and file.uploaded:
                 break
-            time.sleep(sleep_time)
+            await asyncio.sleep(sleep_time)
             sleep_time *= 2
         else:
             raise RuntimeError("Could not retrieve file from files API")

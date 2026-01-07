@@ -31,7 +31,7 @@ from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._auxiliary import at_least_one_is_not_none
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import convert_all_keys_to_camel_case, copy_doc_from_async
+from cognite.client.utils._text import copy_doc_from_async
 
 if TYPE_CHECKING:
     import pandas
@@ -65,12 +65,6 @@ class SequenceColumnCore(WriteableCogniteResource["SequenceColumnWrite"], ABC):
         self.description = description
         self.value_type = value_type
         self.metadata = metadata
-
-    @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
-        # Snake case is supported for backwards compatibility
-        resource = convert_all_keys_to_camel_case(resource)
-        return super()._load(resource, cognite_client)
 
 
 class SequenceColumn(SequenceColumnCore):

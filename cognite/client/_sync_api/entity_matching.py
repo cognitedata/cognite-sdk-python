@@ -1,6 +1,6 @@
 """
 ===============================================================================
-547f2afb342b36199f74baa8a4115a2f
+b4fb75f75211aeb65ccb69bae0128cc6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -252,8 +252,8 @@ class SyncEntityMatchingAPI(SyncAPIClient):
             targets (Sequence[dict] | None): entities to match to, does not need an 'id' field. Tolerant to passing more than is needed or used. If omitted, will use data from fit.
             num_matches (int): number of matches to return for each item.
             score_threshold (float | None): only return matches with a score above this threshold
-            id (int | None): ids of the model to use.
-            external_id (str | None): external ids of the model to use.
+            id (int | None): id of the model to use.
+            external_id (str | None): external id of the model to use.
 
         Returns:
             EntityMatchingPredictionResult: object which can be used to wait for and retrieve results.

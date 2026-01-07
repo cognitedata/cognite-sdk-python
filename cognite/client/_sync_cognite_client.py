@@ -8,8 +8,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-import httpx
-
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api.agents.agents import SyncAgentsAPI
 from cognite.client._sync_api.ai import SyncAIAPI
@@ -46,6 +44,7 @@ from cognite.client.utils._auxiliary import load_resource_to_dict
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig
+    from cognite.client.response import CogniteHTTPResponse
 
 
 class CogniteClient:
@@ -94,7 +93,7 @@ class CogniteClient:
 
     def get(
         self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         """Perform a GET request to an arbitrary path in the API."""
         return run_sync(self.__async_client.get(url, params=params, headers=headers))
 
@@ -104,7 +103,7 @@ class CogniteClient:
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         """Perform a POST request to an arbitrary path in the API."""
         return run_sync(self.__async_client.post(url, json=json, params=params, headers=headers))
 
@@ -114,7 +113,7 @@ class CogniteClient:
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
-    ) -> httpx.Response:
+    ) -> CogniteHTTPResponse:
         """Perform a PUT request to an arbitrary path in the API."""
         return run_sync(self.__async_client.put(url, json=json, params=params, headers=headers))
 
