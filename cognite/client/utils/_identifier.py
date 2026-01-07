@@ -217,6 +217,22 @@ class Tablename:
         return self.__value
 
 
+class LimitId:
+    def __init__(self, value: str) -> None:
+        if not isinstance(value, str):
+            raise TypeError(f"Expected limitId to be of type str, got {value} of type {type(value)}")
+        self.__value: str = value
+
+    def name(self, camel_case: bool = False) -> str:
+        return "limitId" if camel_case else "limit_id"
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return {self.name(camel_case): self.__value}
+
+    def as_primitive(self) -> str:
+        return self.__value
+
+
 class WorkflowVersionIdentifier:
     def __init__(self, version: str, workflow_external_id: str) -> None:
         self.__version: str = version
