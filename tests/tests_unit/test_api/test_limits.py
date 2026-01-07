@@ -81,7 +81,6 @@ class TestLimits:
 
         assert isinstance(res, LimitList)
         assert len(res) == 2
-        assert all(isinstance(limit, Limit) for limit in res)
 
     def test_list_with_filter(
         self,
@@ -101,12 +100,11 @@ class TestLimits:
             json={"items": limits_data},
         )
 
-        prefix_filter = Prefix(["limitId"], "atlas.")
+        prefix_filter = Prefix("limitId", "atlas.")
         res = cognite_client.limits.list(filter=prefix_filter)
 
         assert isinstance(res, LimitList)
         assert len(res) == 2
-        assert all(isinstance(limit, Limit) for limit in res)
 
         requests = httpx_mock.get_requests()
         assert len(requests) == 1

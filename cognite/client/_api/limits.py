@@ -3,14 +3,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.limits import Limit, LimitList
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._identifier import LimitId
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
-    from cognite.client.data_classes.filters import Filter
+    from cognite.client.data_classes.filters import Prefix
 
 
 class LimitsAPI(APIClient):
@@ -52,21 +53,19 @@ class LimitsAPI(APIClient):
         headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
 
         return await self._retrieve(
-            identifier=Identifier(id),
+            identifier=LimitId(id),
             cls=Limit,
             headers=headers,
         )
 
-    async def list(self, filter: Filter | None = None, limit: int | None = 1000) -> LimitList:
+    async def list(self, filter: Prefix | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> LimitList:
         """`List all limit values <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/listLimits/>`_
 
         Retrieves all limit values for a specific project. Optionally filter by limit ID prefix using a `Prefix` filter.
 
         Args:
-            filter (Filter | None): Optional `Prefix` filter to apply on the `limitId` property.
-                When a filter is provided, the method uses POST to `/limits/values/list` endpoint.
-                Only `Prefix` filters are supported for filtering limits by `limitId`.
-            limit (int | None): Maximum number of limits to return. Defaults to 1000. Set to None or -1 to return all limits.
+            filter (Prefix | None): Optional `Prefix` filter to apply on the `limitId` property (only `Prefix` filters are supported).
+            limit (int | None): Maximum number of limits to return. Defaults to 25. Set to None or -1 to return all limits
 
         Returns:
             LimitList: List of all limit values in the project.
@@ -78,36 +77,23 @@ class LimitsAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> limits = client.limits.list()
-
-            List all limits with a specific limit:
-
-                >>> limits = client.limits.list(limit=100)
+                >>> limits = client.limits.list(limit=None)
 
             List limits filtered by prefix (e.g., all limits for the 'atlas' service):
 
-                >>> from cognite.client.data_classes import filters
-                >>> prefix_filter = filters.Prefix(["limitId"], "atlas.")
+                >>> from cognite.client.data_classes.filters import Prefix
+                >>> prefix_filter = Prefix("limitId", "atlas.")
                 >>> limits = client.limits.list(filter=prefix_filter)
         """
         self._warning.warn()
 
         headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
 
-        if filter is not None:
-            return await self._list(
-                method="POST",
-                list_cls=LimitList,
-                resource_cls=Limit,
-                limit=limit,
-                filter=filter.dump(camel_case_property=True),
-                headers=headers,
-            )
-
         return await self._list(
-            method="GET",
+            method="GET" if filter is None else "POST",
             list_cls=LimitList,
             resource_cls=Limit,
             limit=limit,
+            filter=None if filter is None else filter.dump(camel_case_property=True),
             headers=headers,
         )

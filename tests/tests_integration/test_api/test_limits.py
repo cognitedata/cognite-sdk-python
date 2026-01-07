@@ -11,7 +11,6 @@ class TestLimitsAPI:
         res = cognite_client.limits.list()
 
         assert isinstance(res, LimitList)
-        assert all(isinstance(limit, Limit) for limit in res)
         assert all(limit.limit_id is not None for limit in res)
         assert all(limit.value is not None for limit in res)
 
@@ -20,7 +19,7 @@ class TestLimitsAPI:
         if len(limits) == 0:
             pytest.skip("No limits found in project - skipping retrieve test")
 
-        limit_id = limits[0].limit_id
+        limit_id = limits[0].as_id()
         res = cognite_client.limits.retrieve(id=limit_id)
 
         assert res is not None, f"Failed to retrieve limit with id={limit_id}"

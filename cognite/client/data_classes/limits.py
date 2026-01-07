@@ -31,6 +31,10 @@ class Limit(CogniteResource):
         self.value = value
         self._cognite_client = cognite_client
 
+    def as_id(self) -> str:
+        """Returns the limit ID."""
+        return self.limit_id
+
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Limit:
         return cls(
@@ -42,3 +46,7 @@ class Limit(CogniteResource):
 
 class LimitList(CogniteResourceList[Limit]):
     _RESOURCE = Limit
+
+    def as_ids(self) -> list[str]:
+        """Returns a list of limit IDs."""
+        return [limit.limit_id for limit in self]

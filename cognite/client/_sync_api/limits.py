@@ -1,6 +1,6 @@
 """
 ===============================================================================
-29b6218c7c4bfc937a1c502859e9c407
+6b64355411f69544440ffc5607c18fb1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -10,13 +10,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.limits import Limit, LimitList
 from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Prefix
 
 
 class SyncLimitsAPI(SyncAPIClient):
@@ -51,17 +52,15 @@ class SyncLimitsAPI(SyncAPIClient):
         """
         return run_sync(self.__async_client.limits.retrieve(id=id))
 
-    def list(self, filter: Filter | None = None, limit: int | None = 1000) -> LimitList:
+    def list(self, filter: Prefix | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> LimitList:
         """
         `List all limit values <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/listLimits/>`_
 
         Retrieves all limit values for a specific project. Optionally filter by limit ID prefix using a `Prefix` filter.
 
         Args:
-            filter (Filter | None): Optional `Prefix` filter to apply on the `limitId` property.
-                When a filter is provided, the method uses POST to `/limits/values/list` endpoint.
-                Only `Prefix` filters are supported for filtering limits by `limitId`.
-            limit (int | None): Maximum number of limits to return. Defaults to 1000. Set to None or -1 to return all limits.
+            filter (Prefix | None): Optional `Prefix` filter to apply on the `limitId` property (only `Prefix` filters are supported).
+            limit (int | None): Maximum number of limits to return. Defaults to 25. Set to None or -1 to return all limits
 
         Returns:
             LimitList: List of all limit values in the project.
@@ -73,16 +72,12 @@ class SyncLimitsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> limits = client.limits.list()
-
-            List all limits with a specific limit:
-
-                >>> limits = client.limits.list(limit=100)
+                >>> limits = client.limits.list(limit=None)
 
             List limits filtered by prefix (e.g., all limits for the 'atlas' service):
 
-                >>> from cognite.client.data_classes import filters
-                >>> prefix_filter = filters.Prefix(["limitId"], "atlas.")
+                >>> from cognite.client.data_classes.filters import Prefix
+                >>> prefix_filter = Prefix("limitId", "atlas.")
                 >>> limits = client.limits.list(filter=prefix_filter)
         """
         return run_sync(self.__async_client.limits.list(filter=filter, limit=limit))
