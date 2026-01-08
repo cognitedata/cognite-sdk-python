@@ -789,7 +789,7 @@ class TestWorkflowTriggers:
             cognite_client.workflows.triggers.list_runs(external_id="integration_test-non_existing_trigger")
 
     def test_pause_resume_trigger(self, cognite_client: CogniteClient) -> None:
-        workflow_external_id = f"integration_test-pause_resume_workflow-{int(time.time())}"
+        workflow_external_id = f"integration_test-pause_resume_workflow-{random_string(10)}"
         workflow = WorkflowUpsert(external_id=workflow_external_id)
         created_workflow = cognite_client.workflows.upsert(workflow)
         version = WorkflowVersionUpsert(
@@ -810,7 +810,7 @@ class TestWorkflowTriggers:
         )
         cognite_client.workflows.versions.upsert(version)
 
-        trigger_external_id = f"integration_test-pause_resume_trigger-{int(time.time())}"
+        trigger_external_id = f"integration_test-pause_resume_trigger-{random_string(10)}"
         trigger_upsert = WorkflowTriggerUpsert(
             external_id=trigger_external_id,
             workflow_external_id=created_workflow.external_id,

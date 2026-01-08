@@ -23,17 +23,20 @@ from cognite.client.data_classes import (
     LabelDefinitionWrite,
 )
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFileApply
-from cognite.client.utils._retry import Backoff
 from cognite.client.utils._text import random_string
 from tests.utils import get_or_raise
 
 
-def await_file_upload(client: CogniteClient, file_id: int) -> None:
-    for i in range(50):
-        if get_or_raise(client.files.retrieve(id=file_id)).uploaded:
+def await_file_upload(client: CogniteClient, file_id: int | list[int]) -> None:
+    if isinstance(file_id, int):
+        file_id = [file_id]
+
+    for i in range(10):
+        files = client.files.retrieve_multiple(ids=file_id)
+        if all(f.uploaded for f in files):
             return
-        time.sleep(0.5 + i / 10)
-    raise RuntimeError(f"Test file id={file_id} never changed status to 'uploaded=True'")
+        time.sleep(min(10, 1.5**i))
+    raise RuntimeError(f"One ore more test file id(s)={file_id} never changed status to 'uploaded=True'")
 
 
 @pytest.fixture(scope="class")
@@ -170,7 +173,7 @@ class TestFilesAPI:
         try:
             f1 = cognite_client.files.upload_bytes(b"f1", external_id=random_string(10), name="bla")
             f2 = cognite_client.files.upload_bytes(b"f2", external_id=random_string(10), name="bla")
-            time.sleep(0.5)
+            await_file_upload(cognite_client, [f1.id, f2.id])
             download_links = cognite_client.files.retrieve_download_urls(id=f1.id, external_id=f2.external_id)
             assert len(download_links.values()) == 2
             assert download_links[f1.id].startswith("http")
@@ -182,7 +185,7 @@ class TestFilesAPI:
         try:
             f1 = cognite_client.files.upload_bytes(b"f1", external_id=random_string(10), name="bla")
             f2 = cognite_client.files.upload_bytes(b"f2", external_id=random_string(10), name="bla")
-            time.sleep(0.5)
+            await_file_upload(cognite_client, [f1.id, f2.id])
             download_links = cognite_client.files.retrieve_download_urls(
                 id=f1.id, external_id=f2.external_id, extended_expiration=True
             )
@@ -262,15 +265,16 @@ class TestFilesAPI:
         assert (res.labels or [])[0].external_id == label_external_id
 
     def test_filter_file_on_geo_location(
-        self, cognite_client: CogniteClient, new_file_with_geo_location: FileMetadata, mock_geo_location: GeoLocation
+        self, cognite_client: CogniteClient, new_file_with_geo_location: FileMetadata
     ) -> None:
         geometry_filter = GeometryFilter(type="Point", coordinates=[30, 10])
         geo_location_filter = GeoLocationFilter(relation="intersects", shape=geometry_filter)
-        for _ in range(10):
+        await_file_upload(cognite_client, new_file_with_geo_location.id)
+        for _ in range(3):
             res = cognite_client.files.list(geo_location=geo_location_filter)
             if len(res) > 0:
                 break
-            time.sleep(0.5)
+            time.sleep(2)
         assert res[0].geo_location == new_file_with_geo_location.geo_location
 
     def test_upload_bytes_with_nordic_characters(self, cognite_client: CogniteClient) -> None:
@@ -304,12 +308,7 @@ class TestFilesAPI:
             session.upload_part(0, content_1)
             session.upload_part(1, content_2)
 
-        backoff = Backoff()
-        for _ in range(10):
-            file = get_or_raise(cognite_client.files.retrieve(session.file_metadata.id))
-            if file.uploaded:
-                break
-            time.sleep(next(backoff))
+        await_file_upload(cognite_client, session.file_metadata.id)
 
         retrieved_content = cognite_client.files.download_bytes(external_id=external_id)
         assert len(retrieved_content) == 6000005
@@ -344,12 +343,7 @@ class TestFilesAPI:
             assert created.nodes[0].as_id() == instance_id
 
             f1 = cognite_client.files.upload_content_bytes(b"f1", instance_id=instance_id)
-            backoff = Backoff()
-            for i in range(10):
-                file_metadata = get_or_raise(cognite_client.files.retrieve(instance_id=instance_id))
-                if file_metadata.uploaded:
-                    break
-                time.sleep(next(backoff))
+            await_file_upload(cognite_client, f1.id)
             download_links = cognite_client.files.retrieve_download_urls(instance_id=instance_id)
             assert len(download_links.values()) == 1
             assert download_links[get_or_raise(f1.instance_id)].startswith("http")

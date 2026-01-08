@@ -13,6 +13,19 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.91.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.90.1...cognite-sdk-python-v7.91.0) (2026-01-06)
+
+
+### Features
+
+* **simint:** make `simulator_integration_external_id` optional on runs, routines and routine revisions ([#2420](https://github.com/cognitedata/cognite-sdk-python/issues/2420)) ([a18702b](https://github.com/cognitedata/cognite-sdk-python/commit/a18702b10e940bec9684589c86bd375a23613258))
+* **workflow-triggers:** add pause and resume functionality ([#2413](https://github.com/cognitedata/cognite-sdk-python/issues/2413)) ([1afc695](https://github.com/cognitedata/cognite-sdk-python/commit/1afc6951e26c9b1c59a63aca5a0b69fd19d6473e))
+
+
+### Bug Fixes
+
+* add warning when operator is not passed to instances/search ([#2390](https://github.com/cognitedata/cognite-sdk-python/issues/2390)) ([8f8af02](https://github.com/cognitedata/cognite-sdk-python/commit/8f8af0283f61015f40723e91a1a7bc13b58e861a))
+
 ## [7.90.1](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.90.0...cognite-sdk-python-v7.90.1) (2025-11-27)
 
 

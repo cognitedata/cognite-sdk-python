@@ -1573,10 +1573,10 @@ class WorkflowTrigger(WorkflowTriggerCore):
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
         is_paused (bool): Whether the trigger is paused.
-        input (dict | None): The input data passed to the workflow when an execution is started. Defaults to None.
-        metadata (dict | None): Application specific metadata. Defaults to None.
-        created_time (int): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
-        last_updated_time (int): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
+        input (dict | None): The input data passed to the workflow when an execution is started.
+        metadata (dict | None): Application specific metadata.
+        created_time (int): The time when the workflow version trigger was created. Unix timestamp in milliseconds.
+        last_updated_time (int): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds.
     """
 
     def __init__(
