@@ -28,6 +28,7 @@ Changes are grouped as follows:
 - The aggregation data class `CountAggregate` has been removed. Methods now return the count (`int`) directly.
 - The generic `filter` method on classic CDF APIs has been removed (Assets, Events, Sequences and Time Series). Use the normal `list` method instead and pass filters as `advanved_filters=...` instead.
 - Datapoints API method `retrieve_dataframe_in_tz` has been removed. Use `retrieve`, `retrieve_arrays` or `retrieve_dataframe` and specify `timezone` instead.
+- System-managed, read-only properties for `CogniteFile` in `../cdm/v1.py`, `is_uploaded` and `uploaded_time`, have been removed from the `CogniteFileApply` class.
 - The method `trigger` on the Workflow Executions API has been removed. Use `run` instead.
 - The method `create` on the Workflow Triggers API has been removed. Use `upsert` instead.
 - The method `get_triggers` on the Workflow Triggers API has been removed. Use `list` instead.
