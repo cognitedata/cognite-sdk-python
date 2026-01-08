@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import warnings
 from datetime import datetime
-from typing import Any, Literal
+from typing import Literal
 
 from cognite.client._constants import OMITTED, Omitted
 from cognite.client.data_classes.data_modeling import DirectRelationReference
@@ -97,8 +96,6 @@ class _CogniteExtractorFileProperties:
     source_created_user = PropertyOptions("sourceCreatedUser")
     source_updated_user = PropertyOptions("sourceUpdatedUser")
     mime_type = PropertyOptions("mimeType")
-    is_uploaded = PropertyOptions("isUploaded")
-    uploaded_time = PropertyOptions("uploadedTime")
     extracted_data = PropertyOptions("extractedData")
 
     @classmethod
@@ -128,8 +125,6 @@ class CogniteExtractorFileApply(_CogniteExtractorFileProperties, TypedNodeApply)
         assets (list[DirectRelationReference | tuple[str, str]] | None | Omitted): List of assets this file relates to
         mime_type (str | None | Omitted): MIME type of the file
         directory (str | None | Omitted): Contains the path elements from the source (for when the source system has a file system hierarchy or similar)
-        is_uploaded (bool | None | Omitted): Whether the file content has been uploaded to Cognite Data Fusion
-        uploaded_time (datetime | None | Omitted): Point in time when the file upload was completed and the file was made available
         category (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to an instance of CogniteFileCategory representing the detected categorization/class for the file
         extracted_data (dict | None | Omitted): Unstructured information extracted from source system
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -155,8 +150,6 @@ class CogniteExtractorFileApply(_CogniteExtractorFileProperties, TypedNodeApply)
         assets: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
         mime_type: str | None | Omitted = OMITTED,
         directory: str | None | Omitted = OMITTED,
-        is_uploaded: bool | None | Omitted = OMITTED,
-        uploaded_time: datetime | None | Omitted = OMITTED,
         category: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
         extracted_data: dict | None | Omitted = OMITTED,
         existing_version: int | None = None,
@@ -177,28 +170,8 @@ class CogniteExtractorFileApply(_CogniteExtractorFileProperties, TypedNodeApply)
         self.assets = [DirectRelationReference.load(a) for a in assets] if assets else assets
         self.mime_type = mime_type
         self.directory = directory
-        self.is_uploaded = is_uploaded
-        self.uploaded_time = uploaded_time
         self.category = DirectRelationReference.load(category) if category else category
         self.extracted_data = extracted_data
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        data = super().dump()
-        properties = data["sources"][0]["properties"]
-
-        # TODO: Remove attributes entirely in v8
-        system_managed_props = ("isUploaded", "uploadedTime") if camel_case else ("is_uploaded", "uploaded_time")
-        for prop in system_managed_props:
-            if properties.get(prop) is None:
-                properties.pop(prop)
-            else:
-                warnings.warn(
-                    f"The property '{prop}' is system-managed and cannot be modified (but the non-null value set will "
-                    "be included in the request). In next major version (v8), CogniteExtractorFileApply won't have "
-                    "this property at all.",
-                    UserWarning,
-                )
-        return data
 
 
 class CogniteExtractorFile(_CogniteExtractorFileProperties, TypedNode):
@@ -233,6 +206,9 @@ class CogniteExtractorFile(_CogniteExtractorFileProperties, TypedNode):
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
+
+    is_uploaded = PropertyOptions("isUploaded")
+    uploaded_time = PropertyOptions("uploadedTime")
 
     def __init__(
         self,
@@ -301,8 +277,6 @@ class CogniteExtractorFile(_CogniteExtractorFileProperties, TypedNode):
             assets=self.assets,  # type: ignore[arg-type]
             mime_type=self.mime_type,
             directory=self.directory,
-            is_uploaded=self.is_uploaded,
-            uploaded_time=self.uploaded_time,
             category=self.category,
             extracted_data=self.extracted_data,
             existing_version=self.version,
