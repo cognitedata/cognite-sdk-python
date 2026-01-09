@@ -4,6 +4,7 @@ import asyncio
 import inspect
 import logging
 import random
+import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Sequence
 from datetime import datetime, timezone
 from typing import (
@@ -1098,7 +1099,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        operator: Literal["AND", "OR"] = "OR",
+        operator: Literal["AND", "OR"] | None = None,
     ) -> NodeList[Node]: ...
 
     @overload
@@ -1115,7 +1116,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        operator: Literal["AND", "OR"] = "OR",
+        operator: Literal["AND", "OR"] | None = None,
     ) -> EdgeList[Edge]: ...
 
     @overload
@@ -1132,7 +1133,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        operator: Literal["AND", "OR"] = "OR",
+        operator: Literal["AND", "OR"] | None = None,
     ) -> NodeList[T_Node]: ...
 
     @overload
@@ -1149,7 +1150,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        operator: Literal["AND", "OR"] = "OR",
+        operator: Literal["AND", "OR"] | None = None,
     ) -> EdgeList[T_Edge]: ...
 
     async def search(
@@ -1165,7 +1166,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        operator: Literal["AND", "OR"] = "OR",
+        operator: Literal["AND", "OR"] | None = None,
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
         """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
@@ -1181,35 +1182,44 @@ class InstancesAPI(APIClient):
             limit (int | None): Maximum number of instances to return. Defaults to 25. Will return the maximum number
                 of results (1000) if set to None, -1, or math.inf.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
-            operator (Literal['AND', 'OR']): Controls how multiple search terms are combined when matching documents. OR (default): A document matches if it contains any of the query terms in the searchable fields. This typically returns more results but with lower precision. AND: A document matches only if it contains all of the query terms across the searchable fields. This typically returns fewer results but with higher relevance.
+            operator (Literal['AND', 'OR'] | None): Controls how multiple search terms are combined when matching documents.
+                AND: A document matches only if it contains all of the query terms across the searchable fields. This typically
+                returns fewer results but with higher relevance. OR: A document matches if it contains any of the query terms in the searchable fields.
+                This typically returns more results but with lower precision. Note: If not specified, will default to the API default, which will change from
+                'OR' to 'AND' sometime in Q1 2027.
 
         Returns:
             NodeList[T_Node] | EdgeList[T_Edge]: Search result with matching nodes or edges.
 
         Examples:
 
-            Search for Arnold in the person view in the name property:
+            Search for equipment containing both 'centrifugal' and 'pump' in the description:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
+                >>> view = ViewId("assetSpace", "EquipmentView", "v1")
                 >>> res = client.data_modeling.instances.search(
-                ...     ViewId("mySpace", "PersonView", "v1"),
-                ...     query="Arnold",
-                ...     properties=["name"],
+                ...     view,
+                ...     query="centrifugal pump",
+                ...     properties=["description"],
+                ...     operator="AND"
                 ... )
 
-            Search for Tarantino, Ritchie or Scorsese in the person view in the name property, but only born after 1942:
+            Search for 'pump', 'valve' or 'compressor', but filter on those installed after 2015:
 
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes import filters
-                >>> born_after_1942 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1942)
+                >>> installed_after_2015 = filters.Range(
+                ...     ["assetSpace", "EquipmentView/v1", "installationYear"],
+                ...     gt=2015,
+                ... )
                 >>> res = client.data_modeling.instances.search(
-                ...     ViewId("mySpace", "PersonView", "v1"),
-                ...     query="Tarantino Ritchie Scorsese",
-                ...     properties=["name"],
-                ...     filter=born_after_1942,
+                ...     view,
+                ...     query="pump valve compressor",
+                ...     properties=["name", "description"],
+                ...     filter=installed_after_2015,
                 ...     operator="OR"
                 ... )
         """
@@ -1235,10 +1245,20 @@ class InstancesAPI(APIClient):
             "view": view.dump(camel_case=True),
             "instanceType": instance_type_str,
             "limit": self._SEARCH_LIMIT if is_unlimited(limit) else limit,
-            "operator": operator.upper(),
         }
-        if body["operator"] not in ["AND", "OR"]:
-            raise ValueError(f"Invalid {operator=}. Must be 'AND' or 'OR'.")
+        if operator is None:
+            warnings.warn(
+                "The default operator for instance search will change from 'OR' to 'AND' sometime in Q1 2027. In the "
+                "next major version release (v8), the default will be changed to 'AND', which is the recommended "
+                "setting for most use cases. Please explicitly pass the operator to avoid this warning.",
+                UserWarning,  # FutureWarning is more correct, but is ignored by default and we want users to see this
+            )
+        else:
+            op_up = operator.upper()
+            if op_up not in ("AND", "OR"):
+                raise ValueError(f"Invalid {operator=}. Must be 'AND' or 'OR'.")
+            body["operator"] = op_up
+
         if query:
             body["query"] = query
         if properties:

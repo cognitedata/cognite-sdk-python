@@ -853,7 +853,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
 
     def __getstate__(self) -> dict[str, Any]:
         # OAuth2Client is not picklable, temporarily remove:
-        oauth_session_tmp, self.__oauth = self.__oauth, None
+        oauth_session_tmp, self.__oauth = self.__oauth, None  # type: ignore [assignment]
         state = super().__getstate__()
         self.__oauth = oauth_session_tmp
         return state

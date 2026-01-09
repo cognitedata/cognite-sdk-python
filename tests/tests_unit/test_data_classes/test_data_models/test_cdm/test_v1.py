@@ -84,8 +84,8 @@ class TestModel3D:
                 }
             ],
         }
-        dumped_and_loaded = Cognite3DModelApply._load(dumped)
-        assert dumped == dumped_and_loaded.dump()
+        dumped_and_loaded = Cognite3DModelApply.load(dumped)
+        assert dumped_and_loaded == my_model
 
 
 def test_extractor_file_apply_warns_on_system_managed_fields() -> None:
