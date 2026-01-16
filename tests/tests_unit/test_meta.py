@@ -9,6 +9,7 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
+    CogniteResourceListWithClientRef,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
     InternalIdTransformerMixin,
@@ -45,7 +46,9 @@ def test_ensure_all_to_pandas_methods_use_snake_case(cls: type) -> None:
         list_cls
         # Principal list .as_ids() returns a list of strings and not integers,
         # so we skip the check for it.
-        for list_cls in all_concrete_subclasses(CogniteResourceList, exclude={PrincipalList})
+        for list_cls in all_concrete_subclasses(
+            CogniteResourceList, exclude={PrincipalList, CogniteResourceListWithClientRef}
+        )
     ],
 )
 def test_ensure_identifier_mixins(lst_cls: type[CogniteResourceList]) -> None:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from cognite.client.data_classes._base import UnknownCogniteObject
+from cognite.client.data_classes._base import UnknownCogniteResource
 from cognite.client.data_classes.data_modeling import View, ViewApply, ViewId
 from cognite.client.data_classes.data_modeling.containers import PropertyConstraintState
 from cognite.client.data_classes.data_modeling.views import MappedProperty, ViewProperty, ViewPropertyApply
@@ -214,7 +214,7 @@ class TestViewPropertyDefinition:
         }
 
         actual = ViewProperty.load(input)
-        assert isinstance(actual, UnknownCogniteObject)
+        assert isinstance(actual, UnknownCogniteResource)
         assert actual.dump() == input
 
     def test_load_unknown_connection_type_apply(self) -> None:
@@ -226,5 +226,5 @@ class TestViewPropertyDefinition:
         }
 
         actual = ViewPropertyApply.load(input)
-        assert isinstance(actual, UnknownCogniteObject)
+        assert isinstance(actual, UnknownCogniteResource)
         assert actual.dump() == input

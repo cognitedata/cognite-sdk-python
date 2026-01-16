@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from cognite.client.data_classes._base import CogniteObject
+from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._importing import local_import
 
@@ -34,12 +34,12 @@ class TestJsonDumpDefault:
         import numpy as np
 
         inputs = [np.int32(1), np.int64(1)]
-        for input in inputs:
-            assert _json.dumps(input)
+        for inp in inputs:
+            assert _json.dumps(inp)
 
     @pytest.mark.dsl
     def test_json_dump_cognite_object(self) -> None:
-        class Obj(CogniteObject):
+        class Obj(CogniteResource):
             def __init__(self, foo: int) -> None:
                 self.foo = foo
 
