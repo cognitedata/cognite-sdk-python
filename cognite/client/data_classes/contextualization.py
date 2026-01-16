@@ -14,10 +14,11 @@ from typing_extensions import Self
 
 from cognite.client.data_classes import Annotation, AnnotationWrite
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
+    CogniteResourceListWithClientRef,
+    CogniteResourceWithClientRef,
     CogniteUpdate,
     IdTransformerMixin,
     PropertySpec,
@@ -72,7 +73,7 @@ class ContextualizationJobType(Enum):
     VISION = "vision"
 
 
-class ContextualizationJob(CogniteResource, ABC):
+class ContextualizationJob(CogniteResourceWithClientRef, ABC):
     """Data class for the result of a contextualization job."""
 
     _COMMON_FIELDS = frozenset(
@@ -96,14 +97,13 @@ class ContextualizationJob(CogniteResource, ABC):
         status_time: int,
         created_time: int,
         error_message: str | None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.job_id = job_id
         self.status = status
         self.created_time = created_time
         self.status_time = status_time
         self.error_message = error_message
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+
         self._result: dict[str, Any] | None = None
         self.job_token: str | None = None
 
@@ -163,9 +163,8 @@ class ContextualizationJob(CogniteResource, ABC):
         data: dict[str, Any],
         *,
         headers: MutableMapping[str, str],
-        cognite_client: Any,
     ) -> T_ContextualizationJob:
-        obj = cls._load(data, cognite_client=cognite_client)
+        obj = cls._load(data)
         obj.job_token = headers.get("X-Job-Token")
         return obj
 
@@ -173,11 +172,11 @@ class ContextualizationJob(CogniteResource, ABC):
 T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
 
 
-class ContextualizationJobList(CogniteResourceList[ContextualizationJob]):
+class ContextualizationJobList(CogniteResourceListWithClientRef[ContextualizationJob]):
     _RESOURCE = ContextualizationJob
 
 
-class EntityMatchingModel(CogniteResource):
+class EntityMatchingModel(CogniteResourceWithClientRef):
     """Entity matching model. See the `fit` method for the meaning of these fields."""
 
     _RESOURCE_PATH = "/context/entitymatching"
@@ -198,7 +197,6 @@ class EntityMatchingModel(CogniteResource):
         name: str | None = None,
         description: str | None = None,
         external_id: str | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.id = id
         self.created_time = created_time
@@ -213,10 +211,9 @@ class EntityMatchingModel(CogniteResource):
         self.name = name
         self.description = description
         self.external_id = external_id
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             status=resource.get("status"),
@@ -231,7 +228,6 @@ class EntityMatchingModel(CogniteResource):
             name=resource.get("name"),
             description=resource.get("description"),
             external_id=resource.get("externalId"),
-            cognite_client=cognite_client,
         )
 
     def __str__(self) -> str:
@@ -310,8 +306,7 @@ class EntityMatchingModel(CogniteResource):
         return EntityMatchingPredictionResult._load_with_job_token(
             data=response.json(),
             headers=response.headers,
-            cognite_client=self._cognite_client,
-        )
+        ).set_client_ref(self._cognite_client)
 
     @copy_doc_from_async(predict_async)
     def predict(
@@ -339,7 +334,7 @@ class EntityMatchingModel(CogniteResource):
         response = await self._cognite_client.entity_matching._post(
             self._RESOURCE_PATH + "/refit", json={"trueMatches": true_matches, "id": self.id}
         )
-        return self._load(response.json(), cognite_client=self._cognite_client)
+        return self._load(response.json()).set_client_ref(self._cognite_client)
 
     @copy_doc_from_async(refit_async)
     def refit(self, true_matches: Sequence[dict | tuple[int | str, int | str]]) -> EntityMatchingModel:
@@ -389,7 +384,7 @@ class EntityMatchingModelUpdate(CogniteUpdate):
         ]
 
 
-class EntityMatchingModelList(CogniteResourceList[EntityMatchingModel], IdTransformerMixin):
+class EntityMatchingModelList(CogniteResourceListWithClientRef[EntityMatchingModel], IdTransformerMixin):
     _RESOURCE = EntityMatchingModel
 
 
@@ -432,20 +427,17 @@ class DiagramConvertPage(CogniteResource):
         page: int,
         png_url: str,
         svg_url: str,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.page = page
         self.png_url = png_url
         self.svg_url = svg_url
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             page=resource["page"],
             png_url=resource["pngUrl"],
             svg_url=resource["svgUrl"],
-            cognite_client=cognite_client,
         )
 
 
@@ -459,20 +451,17 @@ class DiagramConvertItem(CogniteResource):
         file_id: int,
         file_external_id: str | None,
         results: list[dict[str, Any]],
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.results = results
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             file_id=resource["fileId"],
             file_external_id=resource.get("fileExternalId"),
             results=resource["results"],
-            cognite_client=cognite_client,
         )
 
     def __len__(self) -> int:
@@ -481,7 +470,7 @@ class DiagramConvertItem(CogniteResource):
 
     @property
     def pages(self) -> DiagramConvertPageList:
-        return DiagramConvertPageList._load(self.results, cognite_client=self._cognite_client)
+        return DiagramConvertPageList._load(self.results)
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -508,7 +497,6 @@ class DiagramConvertResults(ContextualizationJob):
         items: list[DiagramConvertItem],
         start_time: int,
         error_message: str | None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             job_id=job_id,
@@ -516,7 +504,6 @@ class DiagramConvertResults(ContextualizationJob):
             status_time=status_time,
             created_time=created_time,
             error_message=error_message,
-            cognite_client=cognite_client,
         )
         self.items = items
         self.start_time = start_time
@@ -527,7 +514,7 @@ class DiagramConvertResults(ContextualizationJob):
         return self.get_result()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -535,8 +522,7 @@ class DiagramConvertResults(ContextualizationJob):
             start_time=resource["startTime"],
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
-            items=[DiagramConvertItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
-            cognite_client=cognite_client,
+            items=[DiagramConvertItem._load(item) for item in resource["items"]],
         )
 
     def _status_path(self) -> str:
@@ -554,10 +540,9 @@ class DiagramConvertResults(ContextualizationJob):
             start_time=resource["startTime"],
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
-            items=[DiagramConvertItem._load(item, cognite_client=self._cognite_client) for item in resource["items"]],
-            cognite_client=self._cognite_client,
+            items=[DiagramConvertItem._load(item) for item in resource["items"]],
         )
-        self.job_token = job_token
+        self.job_token = job_token  # TODO: does this accomplish anything?
         self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
         return self.status
 
@@ -589,7 +574,6 @@ class DiagramDetectItem(CogniteResource):
         annotations: list[dict[str, Any]] | None,
         page_range: dict[str, int] | None,
         page_count: int | None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -597,16 +581,14 @@ class DiagramDetectItem(CogniteResource):
         self.annotations = annotations or []
         self.page_range = page_range
         self.page_count = page_count
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             file_id=resource["fileId"],
             file_external_id=resource.get("fileExternalId"),
             file_instance_id=resource.get("fileInstanceId"),
             annotations=resource.get("annotations"),
-            cognite_client=cognite_client,
             page_range=resource.get("pageRange"),
             page_count=resource.get("pageCount"),
         )
@@ -636,7 +618,6 @@ class DiagramDetectResults(ContextualizationJob):
         items: list[DiagramDetectItem],
         start_time: int,
         error_message: str | None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             job_id=job_id,
@@ -644,7 +625,6 @@ class DiagramDetectResults(ContextualizationJob):
             status_time=status_time,
             created_time=created_time,
             error_message=error_message,
-            cognite_client=cognite_client,
         )
         self.items: list[DiagramDetectItem] = items
         self.start_time = start_time
@@ -660,7 +640,7 @@ class DiagramDetectResults(ContextualizationJob):
         return self.error_message.split(";") if self.error_message else []
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -668,8 +648,7 @@ class DiagramDetectResults(ContextualizationJob):
             start_time=resource["startTime"],
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
-            items=[DiagramDetectItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
-            cognite_client=cognite_client,
+            items=[DiagramDetectItem._load(item) for item in resource["items"]],
         )
 
     def _status_path(self) -> str:
@@ -686,10 +665,7 @@ class DiagramDetectResults(ContextualizationJob):
             start_time=resource["startTime"],
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
-            items=[
-                DiagramDetectItem._load(item, cognite_client=self._cognite_client) for item in resource.get("items", [])
-            ],
-            cognite_client=self._cognite_client,
+            items=[DiagramDetectItem._load(item) for item in resource.get("items", [])],
         )
         self.job_token = job_token
         self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
@@ -849,7 +825,7 @@ class AssetTagDetectionParameters(VisionResource, ThresholdParameter):
     asset_subtree_ids: list[int] | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             threshold=resource.get("threshold"),
             partial_match=resource.get("partialMatch"),
@@ -860,28 +836,28 @@ class AssetTagDetectionParameters(VisionResource, ThresholdParameter):
 @dataclass
 class TextDetectionParameters(VisionResource, ThresholdParameter):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
 class PeopleDetectionParameters(VisionResource, ThresholdParameter):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
 class IndustrialObjectDetectionParameters(VisionResource, ThresholdParameter):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
 class PersonalProtectiveEquipmentDetectionParameters(VisionResource, ThresholdParameter):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(threshold=resource.get("threshold"))
 
 
@@ -893,7 +869,7 @@ class DialGaugeDetection(VisionResource, ThresholdParameter):
     non_linear_angle: float | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             threshold=resource.get("threshold"),
             min_level=resource.get("minLevel"),
@@ -909,7 +885,7 @@ class LevelGaugeDetection(VisionResource, ThresholdParameter):
     max_level: float | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             threshold=resource.get("threshold"),
             min_level=resource.get("minLevel"),
@@ -924,7 +900,7 @@ class DigitalGaugeDetection(VisionResource, ThresholdParameter):
     max_num_digits: int | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             threshold=resource.get("threshold"),
             comma_position=resource.get("commaPosition"),
@@ -936,7 +912,7 @@ class DigitalGaugeDetection(VisionResource, ThresholdParameter):
 @dataclass
 class ValveDetection(VisionResource, ThresholdParameter):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(threshold=resource.get("threshold"))
 
 
@@ -945,13 +921,12 @@ class DetectJobBundle:
     _STATUS_PATH = "/context/diagram/detect/status"
     _WAIT_TIME = 2
 
-    def __init__(self, job_ids: list[int], cognite_client: AsyncCogniteClient | None = None) -> None:
+    def __init__(self, job_ids: list[int], client: AsyncCogniteClient) -> None:
         warnings.warn(
             "DetectJobBundle.result is calling a beta endpoint which is still in development. "
             "Breaking changes can happen in between patch versions."
         )
-
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+        self._cognite_client = client
         if not job_ids:
             raise ValueError("You need to specify job_ids")
         self.job_ids = job_ids
@@ -1089,7 +1064,6 @@ class VisionExtractItem(CogniteResource):
         predictions: VisionExtractPredictions,
         file_external_id: str | None,
         error_message: str | None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -1097,18 +1071,16 @@ class VisionExtractItem(CogniteResource):
         self.predictions = predictions
 
         self._predictions_dict = predictions  # The "raw" predictions dict returned by the endpoint
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> VisionExtractItem:
+    def _load(cls, resource: dict) -> VisionExtractItem:
         return cls(
             file_id=resource["fileId"],
-            predictions=VisionExtractPredictions._load(resource["predictions"], cognite_client=cognite_client)
+            predictions=VisionExtractPredictions._load(resource["predictions"])
             if "predictions" in resource
             else VisionExtractPredictions(),
             file_external_id=resource.get("fileExternalId"),
             error_message=resource.get("errorMessage"),
-            cognite_client=cognite_client,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -1131,7 +1103,6 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
         items: list[VisionExtractItem],
         start_time: int | None,
         error_message: str | None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             job_id=job_id,
@@ -1139,7 +1110,6 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             status_time=status_time,
             created_time=created_time,
             error_message=error_message,
-            cognite_client=cognite_client,
         )
         self.items = items
         self.start_time = start_time
@@ -1148,7 +1118,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
         return f"/context/vision/extract/{self.job_id}"
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> VisionExtractJob:
+    def _load(cls, resource: dict[str, Any]) -> VisionExtractJob:
         return cls(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -1156,8 +1126,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             start_time=resource.get("startTime"),
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
-            items=[VisionExtractItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
-            cognite_client=cognite_client,
+            items=[VisionExtractItem._load(item) for item in resource["items"]],
         )
 
     async def update_status_async(self) -> str:
@@ -1169,10 +1138,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             start_time=resource.get("startTime"),
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
-            items=[
-                VisionExtractItem._load(item, cognite_client=self._cognite_client) for item in resource.get("items", [])
-            ],
-            cognite_client=self._cognite_client,
+            items=[VisionExtractItem._load(item) for item in resource.get("items", [])],
         )
         self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
         return self.status
@@ -1294,7 +1260,6 @@ class EntityMatchingPredictionResult(ContextualizationJob):
         created_time: int,
         start_time: int,
         error_message: str | None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             job_id=job_id,
@@ -1302,12 +1267,11 @@ class EntityMatchingPredictionResult(ContextualizationJob):
             status_time=status_time,
             created_time=created_time,
             error_message=error_message,
-            cognite_client=cognite_client,
         )
         self.start_time = start_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -1315,7 +1279,6 @@ class EntityMatchingPredictionResult(ContextualizationJob):
             start_time=resource["startTime"],
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
-            cognite_client=cognite_client,
         )
 
     def _status_path(self) -> str:
@@ -1333,7 +1296,6 @@ class EntityMatchingPredictionResult(ContextualizationJob):
             start_time=resource["startTime"],
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
-            cognite_client=self._cognite_client,
         )
         self.job_token = job_token
         self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
@@ -1353,11 +1315,10 @@ class ResourceReference(CogniteResource):
         self._cognite_client = None  # Read only
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource.get("id"),
             external_id=resource.get("externalId"),
-            cognite_client=cognite_client,
         )
 
 
@@ -1365,7 +1326,7 @@ class ResourceReferenceList(CogniteResourceList[ResourceReference], IdTransforme
     _RESOURCE = ResourceReference
 
 
-class DirectionWeights(CogniteObject):
+class DirectionWeights(CogniteResource):
     """Direction weights for the text graph that control how far text boxes can be one from another
     in a particular direction before they are no longer connected in the same graph. Lower value means
     larger distance is allowed.
@@ -1390,7 +1351,7 @@ class DirectionWeights(CogniteObject):
         self.down = down
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             left=resource.get("left"),
             right=resource.get("right"),
@@ -1399,7 +1360,7 @@ class DirectionWeights(CogniteObject):
         )
 
 
-class CustomizeFuzziness(CogniteObject):
+class CustomizeFuzziness(CogniteResource):
     """Additional requirements for the fuzzy matching algorithm. The fuzzy match is allowed if any of these are true for each match candidate. The overall minFuzzyScore still applies, but a stricter fuzzyScore can be set here, which would not be enforced if either the minChars or maxBoxes conditions are met, making it possible to exclude detections using replacements if they are either short, or combined from many boxes.
 
     Args:
@@ -1419,7 +1380,7 @@ class CustomizeFuzziness(CogniteObject):
         self.min_chars = min_chars
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             fuzzy_score=resource.get("fuzzyScore"),
             max_boxes=resource.get("maxBoxes"),
@@ -1452,11 +1413,11 @@ class ConnectionFlags:
         return [k for k, v in self._flags.items() if v]
 
     @classmethod
-    def load(cls, resource: list[str], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def load(cls, resource: list[str]) -> Self:
         return cls(**{flag: True for flag in resource})
 
 
-class DiagramDetectConfig(CogniteObject):
+class DiagramDetectConfig(CogniteResource):
     """`Configuration options for the diagrams/detect endpoint <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
 
     Args:
@@ -1523,10 +1484,10 @@ class DiagramDetectConfig(CogniteObject):
         self.remove_leading_zeros = remove_leading_zeros
         self.substitutions = substitutions
 
-        _known_params = {to_camel_case(k): k for k in vars(self)}
+        known_params = {to_camel_case(k): k for k in vars(self)}
         self._extra_params = {}
         for param_name, value in params.items():
-            if known := _known_params.get(to_camel_case(param_name)):
+            if known := known_params.get(to_camel_case(param_name)):
                 raise ValueError(f"Provided parameter name `{param_name}` collides with a known parameter `{known}`.")
             self._extra_params[param_name] = value
 
@@ -1538,7 +1499,7 @@ class DiagramDetectConfig(CogniteObject):
 
         remove_keys: list[str] = []
         for param_name, v in dumped.items():
-            if isinstance(v, CogniteObject):
+            if isinstance(v, CogniteResource):
                 dumped[param_name] = v.dump(camel_case=camel_case)
             elif isinstance(v, ConnectionFlags):
                 cf = v.dump()
@@ -1553,7 +1514,7 @@ class DiagramDetectConfig(CogniteObject):
         return dumped
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         resource_copy = resource.copy()
 
         if con_flg := resource_copy.pop("connectionFlags", None):

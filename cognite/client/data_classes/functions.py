@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias
 
 from typing_extensions import Self
 
@@ -11,12 +11,12 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
     CogniteResourceList,
-    CogniteResponse,
+    CogniteResourceWithClientRef,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
     InternalIdTransformerMixin,
-    WriteableCogniteResource,
     WriteableCogniteResourceList,
+    WriteableCogniteResourceWithClientRef,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._async_helpers import run_sync
@@ -25,7 +25,7 @@ from cognite.client.utils._text import copy_doc_from_async
 from cognite.client.utils._time import ms_to_datetime
 
 if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient, CogniteClient
+    from cognite.client import CogniteClient
 
 RunTime: TypeAlias = Literal["py310", "py311", "py312"]
 FunctionStatus: TypeAlias = Literal["Queued", "Deploying", "Ready", "Failed"]
@@ -39,7 +39,7 @@ class FunctionHandle(Protocol):
     must be named "handle" and can take any of the following named only arguments:
 
     Args:
-        client (AsyncCogniteClient | None): Cognite client.
+        client (CogniteClient | None): Cognite client.
         data (dict[str, object] | None): Input data to the function.
         secrets (dict[str, str] | None): Secrets passed to the function.
         function_call_info (dict[str, object] | None): Function call information.
@@ -48,7 +48,7 @@ class FunctionHandle(Protocol):
         .. code-block:: python
 
             def handle(
-                client: AsyncCogniteClient | None = None,
+                client: CogniteClient | None = None,
                 data: dict[str, object] | None = None,
             ) -> object:
                 # Do something with the data
@@ -81,7 +81,7 @@ class FunctionHandle(Protocol):
         ...
 
 
-class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
+class FunctionCore(WriteableCogniteResourceWithClientRef["FunctionWrite"], ABC):
     """A representation of a Cognite Function.
 
     Args:
@@ -114,8 +114,8 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
         runtime: RunTime | None,
         metadata: dict[str, str] | None,
     ) -> None:
-        self.name: str = name
-        self.file_id: int = file_id
+        self.name = name
+        self.file_id = file_id
         self.external_id = external_id
         self.description = description
         self.owner = owner
@@ -124,13 +124,13 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
         self.env_vars = env_vars
         self.cpu = cpu
         self.memory = memory
-        self.runtime: RunTime | None = runtime
+        self.runtime = runtime
         self.metadata = metadata
 
 
 class Function(FunctionCore):
     """A representation of a Cognite Function.
-    This is the reading version, which is used when retrieving a function.
+    This is the read version, which is used when retrieving a function.
 
     Args:
         id (int): ID of the function.
@@ -151,7 +151,6 @@ class Function(FunctionCore):
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
         error (dict | None): Dictionary with keys "message" and "trace", which is populated if deployment fails.
         last_called (int | None): Last time the function was called, in UNIX timestamp milliseconds.
-        cognite_client (AsyncCogniteClient | None): An optional CogniteClient to associate with this data class.
     """
 
     def __init__(
@@ -174,7 +173,6 @@ class Function(FunctionCore):
         metadata: dict[str, str] | None,
         error: dict | None,
         last_called: int | None,
-        cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
             name=name,
@@ -196,10 +194,9 @@ class Function(FunctionCore):
         self.runtime_version = runtime_version
         self.error = error
         self.last_called = last_called
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -219,7 +216,6 @@ class Function(FunctionCore):
             metadata=resource.get("metadata"),
             error=resource.get("error"),
             last_called=resource.get("lastCalled"),
-            cognite_client=cognite_client,
         )
 
     def as_write(self) -> FunctionWrite:
@@ -354,7 +350,7 @@ class Function(FunctionCore):
 
 class FunctionWrite(FunctionCore):
     """A representation of a Cognite Function.
-    This is the writing version, which is used when creating a function.
+    This is the write version, which is used when creating a function.
 
     Args:
         name (str): Name of the function.
@@ -408,7 +404,7 @@ class FunctionWrite(FunctionCore):
         self.extra_index_urls = extra_index_urls
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> FunctionWrite:
+    def _load(cls, resource: dict[str, Any]) -> FunctionWrite:
         return cls(
             name=resource["name"],
             external_id=resource.get("externalId"),
@@ -465,7 +461,7 @@ class FunctionCallsFilter(CogniteFilter):
         self.end_time = end_time
 
 
-class FunctionScheduleCore(WriteableCogniteResource["FunctionScheduleWrite"], ABC):
+class FunctionScheduleCore(WriteableCogniteResourceWithClientRef["FunctionScheduleWrite"], ABC):
     """A representation of a Cognite Function Schedule.
 
     Args:
@@ -484,16 +480,16 @@ class FunctionScheduleCore(WriteableCogniteResource["FunctionScheduleWrite"], AB
         description: str | None,
         cron_expression: str,
     ) -> None:
-        self.name: str = name
+        self.name = name
         self.function_id = function_id
         self.function_external_id = function_external_id
         self.description = description
-        self.cron_expression: str = cron_expression
+        self.cron_expression = cron_expression
 
 
 class FunctionSchedule(FunctionScheduleCore):
     """A representation of a Cognite Function Schedule.
-    This is the reading version, which is used when retrieving a function schedule.
+    This is the read version, which is used when retrieving a function schedule.
 
     Args:
         id (int): ID of the schedule.
@@ -505,7 +501,6 @@ class FunctionSchedule(FunctionScheduleCore):
         cron_expression (str): Cron expression
         session_id (int): ID of the session running with the schedule.
         when (str): When the schedule will trigger, in human readable text (server generated from cron_expression).
-        cognite_client (AsyncCogniteClient | None): An optional AsyncCogniteClient to associate with this data class.
     """
 
     def __init__(
@@ -519,7 +514,6 @@ class FunctionSchedule(FunctionScheduleCore):
         cron_expression: str,
         session_id: int,
         when: str,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -528,14 +522,13 @@ class FunctionSchedule(FunctionScheduleCore):
             description=description,
             cron_expression=cron_expression,
         )
-        self.id: int = id
-        self.created_time: int = created_time
+        self.id = id
+        self.created_time = created_time
         self.session_id = session_id
-        self.when: str = when
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+        self.when = when
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             name=resource["name"],
@@ -546,7 +539,6 @@ class FunctionSchedule(FunctionScheduleCore):
             cron_expression=resource["cronExpression"],
             session_id=resource["sessionId"],
             when=resource["when"],
-            cognite_client=cognite_client,
         )
 
     def as_write(self) -> FunctionScheduleWrite:
@@ -617,7 +609,7 @@ class FunctionScheduleWrite(FunctionScheduleCore):
         self.nonce = nonce
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> FunctionScheduleWrite:
+    def _load(cls, resource: dict[str, Any]) -> FunctionScheduleWrite:
         return cls(
             name=resource["name"],
             function_id=resource.get("functionId"),
@@ -661,7 +653,7 @@ class FunctionSchedulesList(
 
     def as_write(self) -> FunctionScheduleWriteList:
         """Returns a writeable version of this function schedule."""
-        return FunctionScheduleWriteList([f.as_write() for f in self.data], cognite_client=self._get_cognite_client())
+        return FunctionScheduleWriteList([f.as_write() for f in self.data])
 
 
 class FunctionWriteList(CogniteResourceList[FunctionWrite], ExternalIDTransformerMixin):
@@ -673,10 +665,10 @@ class FunctionList(WriteableCogniteResourceList[FunctionWrite, Function], IdTran
 
     def as_write(self) -> FunctionWriteList:
         """Returns a writeable version of this function."""
-        return FunctionWriteList([f.as_write() for f in self.data], cognite_client=self._get_cognite_client())
+        return FunctionWriteList([f.as_write() for f in self.data])
 
 
-class FunctionCall(CogniteResource):
+class FunctionCall(CogniteResourceWithClientRef):
     """A representation of a Cognite Function call.
 
     Args:
@@ -688,7 +680,6 @@ class FunctionCall(CogniteResource):
         schedule_id (int | None): The schedule id belonging to the call.
         error (dict | None): Error from the function call. It contains an error message and the stack trace.
         function_id (int): No description.
-        cognite_client (AsyncCogniteClient | None): An optional AsyncCogniteClient to associate with this data class.
     """
 
     def __init__(
@@ -701,20 +692,18 @@ class FunctionCall(CogniteResource):
         schedule_id: int | None,
         error: dict | None,
         function_id: int,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
-        self.id: int = id
-        self.start_time: int = start_time
+        self.id = id
+        self.start_time = start_time
         self.end_time = end_time
         self.scheduled_time = scheduled_time
-        self.status: str = status
+        self.status = status
         self.schedule_id = schedule_id
         self.error = error
-        self.function_id: int = function_id
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+        self.function_id = function_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             start_time=resource["startTime"],
@@ -724,7 +713,6 @@ class FunctionCall(CogniteResource):
             schedule_id=resource.get("scheduleId"),
             error=resource.get("error"),
             function_id=resource["functionId"],
-            cognite_client=cognite_client,
         )
 
     async def get_response_async(self) -> dict[str, object] | None:
@@ -796,26 +784,19 @@ class FunctionCallLogEntry(CogniteResource):
     Args:
         timestamp (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         message (str): Single line from stdout / stderr.
-        cognite_client (AsyncCogniteClient | None): No description.
     """
 
     def __init__(
         self,
         timestamp: int | None,
         message: str,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.message = message
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
-        return cls(
-            timestamp=resource.get("timestamp"),
-            message=resource["message"],
-            cognite_client=cognite_client,
-        )
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(timestamp=resource.get("timestamp"), message=resource["message"])
 
     def _format(self, with_timestamps: bool = False) -> str:
         ts = ""
@@ -840,7 +821,7 @@ class FunctionCallLog(CogniteResourceList[FunctionCallLogEntry]):
         return "\n".join(entry._format(with_timestamps) for entry in self)
 
 
-class FunctionsLimits(CogniteResponse):
+class FunctionsLimits(CogniteResource):
     """Service limits for the associated project.
 
     Args:
@@ -866,7 +847,7 @@ class FunctionsLimits(CogniteResponse):
         self.response_size_mb = response_size_mb
 
     @classmethod
-    def load(cls, api_response: dict) -> FunctionsLimits:
+    def _load(cls, api_response: dict) -> FunctionsLimits:
         return cls(
             timeout_minutes=api_response["timeoutMinutes"],
             cpu_cores=api_response["cpuCores"],
@@ -876,7 +857,7 @@ class FunctionsLimits(CogniteResponse):
         )
 
 
-class FunctionsStatus(CogniteResponse):
+class FunctionsStatus(CogniteResource):
     """Activation Status for the associated project.
 
     Args:
@@ -887,5 +868,5 @@ class FunctionsStatus(CogniteResponse):
         self.status = status
 
     @classmethod
-    def load(cls, api_response: dict) -> FunctionsStatus:
+    def _load(cls, api_response: dict) -> FunctionsStatus:
         return cls(status=api_response["status"])

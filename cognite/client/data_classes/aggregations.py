@@ -5,7 +5,6 @@ from collections import UserList
 from collections.abc import Collection, Iterator, MutableSequence, Sequence
 from dataclasses import dataclass, field
 from typing import (
-    TYPE_CHECKING,
     Any,
     ClassVar,
     SupportsIndex,
@@ -16,22 +15,19 @@ from typing import (
     overload,
 )
 
-from cognite.client.data_classes._base import CogniteObject, CogniteResourceList, UnknownCogniteObject
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, UnknownCogniteResource
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._text import convert_all_keys_recursive
 
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
 
 @dataclass
-class Aggregation(CogniteObject, ABC):
+class Aggregation(CogniteResource, ABC):
     _aggregation_name: ClassVar[str]
 
     property: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Aggregation:
+    def _load(cls, resource: dict[str, Any]) -> Aggregation:
         if "avg" in resource:
             return Average(property=resource["avg"]["property"])
         elif "count" in resource:
@@ -44,7 +40,7 @@ class Aggregation(CogniteObject, ABC):
             return Sum(property=resource["sum"]["property"])
         elif "histogram" in resource:
             return Histogram(property=resource["histogram"]["property"], interval=resource["histogram"]["interval"])
-        return cast(Aggregation, UnknownCogniteObject(resource))
+        return cast(Aggregation, UnknownCogniteResource(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = {self._aggregation_name: {"property": self.property}}
@@ -104,12 +100,12 @@ class Histogram(Aggregation):
 
 
 @dataclass
-class AggregatedValue(CogniteObject, ABC):
+class AggregatedValue(CogniteResource, ABC):
     _aggregate: ClassVar[str] = field(init=False)
     property: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> AggregatedValue:
+    def _load(cls, resource: dict[str, Any]) -> AggregatedValue:
         aggregate = resource.get("aggregate")
         if not aggregate:
             raise ValueError("Missing aggregate, this is required")
@@ -132,7 +128,7 @@ class AggregatedValue(CogniteObject, ABC):
                     buckets=resource["buckets"],
                 )
             case _:
-                return cast(AggregatedValue, UnknownCogniteObject(resource))
+                return cast(AggregatedValue, UnknownCogniteResource(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"aggregate": self._aggregate, "property": self.property}
@@ -364,7 +360,7 @@ class Range(AggregationFilter):
 
 
 @dataclass
-class UniqueResult(CogniteObject):
+class UniqueResult(CogniteResource):
     count: int
     values: list[str | int | float | Label]
 
@@ -373,7 +369,7 @@ class UniqueResult(CogniteObject):
         return self.values[0]
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> UniqueResult:
+    def _load(cls, resource: dict) -> UniqueResult:
         return cls(
             count=resource["count"],
             values=resource["values"],

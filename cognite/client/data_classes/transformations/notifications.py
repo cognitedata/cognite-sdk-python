@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any
 
 from typing_extensions import Self
 
@@ -13,9 +13,6 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class TransformationNotificationCore(WriteableCogniteResource["TransformationNotificationWrite"], ABC):
@@ -43,7 +40,6 @@ class TransformationNotification(TransformationNotificationCore):
         destination (str): Email address where notifications should be sent.
         created_time (int): Time when the notification was created.
         last_updated_time (int): Time when the notification was last updated.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -54,21 +50,19 @@ class TransformationNotification(TransformationNotificationCore):
         destination: str,
         created_time: int,
         last_updated_time: int,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(destination)
-        self.id: int = id
-        self.transformation_id: int = transformation_id
-        self.transformation_external_id: str = transformation_external_id
-        self.created_time: int = created_time
-        self.last_updated_time: int = last_updated_time
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+        self.id = id
+        self.transformation_id = transformation_id
+        self.transformation_external_id = transformation_external_id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
 
     def __hash__(self) -> int:
         return hash(self.id)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             transformation_id=resource["transformationId"],
@@ -76,7 +70,6 @@ class TransformationNotification(TransformationNotificationCore):
             destination=resource["destination"],
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
-            cognite_client=cognite_client,
         )
 
     def as_write(self) -> TransformationNotificationWrite:
@@ -116,9 +109,7 @@ class TransformationNotificationWrite(TransformationNotificationCore):
         return self
 
     @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
-    ) -> TransformationNotificationWrite:
+    def _load(cls, resource: dict[str, Any]) -> TransformationNotificationWrite:
         return cls(
             destination=resource["destination"],
             transformation_id=resource.get("transformationId"),
@@ -138,9 +129,7 @@ class TransformationNotificationList(
 
     def as_write(self) -> TransformationNotificationWriteList:
         """Returns this TransformationNotificationList instance"""
-        return TransformationNotificationWriteList(
-            [item.as_write() for item in self.data], cognite_client=self._get_cognite_client()
-        )
+        return TransformationNotificationWriteList([item.as_write() for item in self.data])
 
 
 class TransformationNotificationFilter(CogniteFilter):

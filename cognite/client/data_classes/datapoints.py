@@ -5,7 +5,7 @@ import datetime
 import json
 from abc import abstractmethod
 from collections import ChainMap, defaultdict
-from collections.abc import Collection, Iterator
+from collections.abc import Iterator, Sequence
 from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
 from functools import cached_property, partial
@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 from typing_extensions import Self
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceListWithClientRef
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
@@ -53,7 +53,6 @@ if TYPE_CHECKING:
     import numpy.typing as npt
     import pandas
 
-    from cognite.client import AsyncCogniteClient
     from cognite.client._api.datapoint_tasks import BaseTaskOrchestrator
 
     NumpyDatetime64NSArray: TypeAlias = npt.NDArray[np.datetime64]
@@ -470,7 +469,7 @@ class Datapoint(CogniteResource):
         status_symbol: str | None = None,
         timezone: datetime.timezone | ZoneInfo | None = None,
     ) -> None:
-        self.timestamp: int = timestamp
+        self.timestamp = timestamp
         self.value = value
         self.average = average
         self.max = max
@@ -520,7 +519,7 @@ class Datapoint(CogniteResource):
         return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms", tz=tz)])
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         match max_dp_raw := resource.get("maxDatapoint"):
             case dict():
                 max_datapoint: MaxDatapoint | None = _max_dp_class(max_dp_raw)._load(max_dp_raw)
@@ -675,7 +674,6 @@ class DatapointsArray(CogniteResource):
     def _load_from_arrays(
         cls,
         dps_dct: dict[str, Any],
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> DatapointsArray:
         assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
         # We store datetime using nanosecond resolution to future-proof the SDK in case it is ever added:
@@ -686,7 +684,6 @@ class DatapointsArray(CogniteResource):
     def _load(
         cls,
         dps_dct: dict[str, Any],
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> DatapointsArray:
         array_by_attr = {}
         if "datapoints" in dps_dct:
@@ -1118,15 +1115,14 @@ class Datapoints(CogniteResource):
     def _load_from_synthetic(
         cls,
         dps_object: dict[str, Any],
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> Datapoints:
         if dps := dps_object["datapoints"]:
             for dp in dps:
                 dp.setdefault("error", None)
                 dp.setdefault("value", None)
-            return cls._load(dps_object, cognite_client=cognite_client)
+            return cls._load(dps_object)
 
-        instance = cls._load(dps_object, cognite_client=cognite_client)
+        instance = cls._load(dps_object)
         instance.error, instance.value = [], []
         return instance
 
@@ -1134,9 +1130,7 @@ class Datapoints(CogniteResource):
     def _load(
         cls,
         dps_object: dict[str, Any],
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> Datapoints:
-        del cognite_client  # just needed for signature
         instance = cls(
             id=dps_object.get("id"),
             external_id=dps_object.get("externalId"),
@@ -1239,11 +1233,11 @@ class Datapoints(CogniteResource):
         return notebook_display_with_fallback(self, include_errors=is_synthetic_dps)
 
 
-class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
+class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
     _RESOURCE = DatapointsArray
 
-    def __init__(self, resources: Collection[Any], cognite_client: AsyncCogniteClient | None = None) -> None:
-        super().__init__(resources, cognite_client)
+    def __init__(self, resources: Sequence[DatapointsArray]) -> None:
+        super().__init__(resources)
 
         # Fix what happens for duplicated identifiers:
         ids = [dps.id for dps in self if dps.id is not None]
@@ -1330,11 +1324,11 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         return [dps.dump(camel_case, convert_timestamps) for dps in self]
 
 
-class DatapointsList(CogniteResourceList[Datapoints]):
+class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
     _RESOURCE = Datapoints
 
-    def __init__(self, resources: Collection[Any], cognite_client: AsyncCogniteClient | None = None) -> None:
-        super().__init__(resources, cognite_client)
+    def __init__(self, resources: Sequence[Datapoints]) -> None:
+        super().__init__(resources)
 
         # Fix what happens for duplicated identifiers:
         ids = [dps.id for dps in self if dps.id is not None]

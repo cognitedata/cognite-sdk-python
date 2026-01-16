@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from typing_extensions import Self
 
@@ -12,9 +12,6 @@ from cognite.client.data_classes._base import (
     NameTransformerMixin,
 )
 from cognite.client.utils._text import convert_dict_to_case
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 @dataclass
@@ -58,7 +55,7 @@ class UnitID(CogniteResource):
         self.name = name
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             unit_external_id=resource["unitExternalId"],
             name=resource["name"],
@@ -112,7 +109,7 @@ class Unit(CogniteResource):
         return UnitID(unit_external_id=self.external_id, name=self.name)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -152,7 +149,7 @@ class UnitSystem(CogniteResource):
         self.quantities = quantities
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
             name=resource["name"],
             quantities=[UnitID._load(quantity) for quantity in resource["quantities"]],

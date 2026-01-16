@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC
 from collections.abc import Sequence
 from datetime import datetime
 from enum import auto
@@ -24,6 +23,7 @@ from cognite.client.data_classes._base import (
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
+    WriteableCogniteResourceWithClientRef,
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.shared import TimestampRange
@@ -34,63 +34,12 @@ from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes import Asset, Datapoint
 
 
-class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
-    """No description.
-
-    Args:
-        external_id (str | None): The externally supplied ID for the time series.
-        instance_id (NodeId | None): The Instance ID for the time series. (Only applicable for time series created in DMS)
-        name (str | None): The display short name of the time series.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        unit (str | None): The physical unit of the time series.
-        unit_external_id (str | None): The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
-        asset_id (int | None): Asset ID of equipment linked to this time series.
-        description (str | None): Description of the time series.
-        security_categories (Sequence[int] | None): The required security categories to access this time series.
-        data_set_id (int | None): The dataSet ID for the item.
-    """
-
-    def __init__(
-        self,
-        external_id: str | None = None,
-        instance_id: NodeId | None = None,
-        name: str | None = None,
-        metadata: dict[str, str] | None = None,
-        unit: str | None = None,
-        unit_external_id: str | None = None,
-        asset_id: int | None = None,
-        description: str | None = None,
-        security_categories: Sequence[int] | None = None,
-        data_set_id: int | None = None,
-    ) -> None:
-        self.external_id = external_id
-        self.instance_id = instance_id
-        self.name = name
-        self.metadata = metadata
-        self.unit = unit
-        self.unit_external_id = unit_external_id
-        self.asset_id = asset_id
-        self.description = description
-        self.security_categories = security_categories
-        self.data_set_id = data_set_id
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dump the object to a dictionary"""
-        output = super().dump(camel_case=camel_case)
-        if self.instance_id is not None:
-            output["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
-                camel_case=camel_case, include_instance_type=False
-            )
-        return output
-
-
-class TimeSeries(TimeSeriesCore):
+class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
     """This represents a sequence of data points. The TimeSeries object is the metadata about
-    the datapoints, and the Datapoint object is the actual data points. This is the reading version
+    the datapoints, and the Datapoint object is the actual data points. This is the read version
     of TimesSeries, which is used when retrieving from CDF.
 
     Args:
@@ -109,7 +58,6 @@ class TimeSeries(TimeSeriesCore):
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -129,29 +77,25 @@ class TimeSeries(TimeSeriesCore):
         description: str | None,
         security_categories: Sequence[int] | None,
         data_set_id: int | None,
-        cognite_client: AsyncCogniteClient | None,
     ) -> None:
-        super().__init__(
-            external_id=external_id,
-            instance_id=instance_id,
-            name=name,
-            metadata=metadata,
-            unit=unit,
-            unit_external_id=unit_external_id,
-            asset_id=asset_id,
-            description=description,
-            security_categories=security_categories,
-            data_set_id=data_set_id,
-        )
-        self.id: int = id
-        self.created_time: int = created_time
-        self.last_updated_time: int = last_updated_time
-        self.is_string = is_string
+        self.id = id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
         self.is_step = is_step
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+        self.is_string = is_string
+        self.external_id = external_id
+        self.instance_id = instance_id
+        self.name = name
+        self.metadata = metadata
+        self.unit = unit
+        self.unit_external_id = unit_external_id
+        self.asset_id = asset_id
+        self.description = description
+        self.security_categories = security_categories
+        self.data_set_id = data_set_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -168,8 +112,15 @@ class TimeSeries(TimeSeriesCore):
             description=resource.get("description"),
             security_categories=resource.get("securityCategories"),
             data_set_id=resource.get("dataSetId"),
-            cognite_client=cognite_client,
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if self.instance_id is not None:
+            output["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
+                camel_case=camel_case, include_instance_type=False
+            )
+        return output
 
     def as_write(self) -> TimeSeriesWrite:
         """Returns a TimeSeriesWrite object with the same properties as this TimeSeries."""
@@ -268,7 +219,7 @@ class TimeSeries(TimeSeriesCore):
         return run_sync(self.asset_async())
 
 
-class TimeSeriesWrite(TimeSeriesCore):
+class TimeSeriesWrite(WriteableCogniteResource["TimeSeriesWrite"]):
     """This is the write version of TimeSeries, which is used when writing to CDF.
 
     Args:
@@ -301,23 +252,21 @@ class TimeSeriesWrite(TimeSeriesCore):
         security_categories: Sequence[int] | None = None,
         data_set_id: int | None = None,
     ) -> None:
-        super().__init__(
-            external_id=external_id,
-            instance_id=instance_id,
-            name=name,
-            metadata=metadata,
-            unit=unit,
-            unit_external_id=unit_external_id,
-            asset_id=asset_id,
-            description=description,
-            security_categories=security_categories,
-            data_set_id=data_set_id,
-        )
+        self.external_id = external_id
+        self.instance_id = instance_id
+        self.name = name
         self.is_string = is_string
+        self.metadata = metadata
+        self.unit = unit
+        self.unit_external_id = unit_external_id
+        self.asset_id = asset_id
         self.is_step = is_step
+        self.description = description
+        self.security_categories = security_categories
+        self.data_set_id = data_set_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource.get("externalId"),
             instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
@@ -332,6 +281,14 @@ class TimeSeriesWrite(TimeSeriesCore):
             security_categories=resource.get("securityCategories"),
             data_set_id=resource.get("dataSetId"),
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if self.instance_id is not None:
+            output["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
+                camel_case=camel_case, include_instance_type=False
+            )
+        return output
 
     def as_write(self) -> TimeSeriesWrite:
         """Returns this TimeSeriesWrite object."""
@@ -524,7 +481,7 @@ class TimeSeriesList(WriteableCogniteResourceList[TimeSeriesWrite, TimeSeries], 
     _RESOURCE = TimeSeries
 
     def as_write(self) -> TimeSeriesWriteList:
-        return TimeSeriesWriteList([ts.as_write() for ts in self.data], cognite_client=self._get_cognite_client())
+        return TimeSeriesWriteList([ts.as_write() for ts in self.data])
 
 
 class TimeSeriesProperty(EnumProperty):

@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NoReturn
+from typing import Any, Literal, NoReturn
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
@@ -17,19 +16,14 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
 
 @dataclass
-class SessionCredentials(CogniteObject):
+class SessionCredentials(CogniteResource):
     nonce: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
-        return cls(
-            nonce=resource["nonce"],
-        )
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(nonce=resource["nonce"])
 
 
 class _UserCore(WriteableCogniteResource["UserWrite"], ABC): ...
@@ -52,11 +46,9 @@ class UserWrite(_UserCore):
         self.credentials = credentials
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
-            credentials=SessionCredentials._load(resource["credentials"], cognite_client)
-            if "credentials" in resource
-            else None,
+            credentials=SessionCredentials._load(resource["credentials"]) if "credentials" in resource else None,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -96,7 +88,7 @@ class User(_UserCore):
         self.session_id = session_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             username=resource["username"],
             created_time=resource["createdTime"],
@@ -137,7 +129,7 @@ class UserCreated(User):
         self.password = password
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             host=resource["host"],
             username=resource["username"],

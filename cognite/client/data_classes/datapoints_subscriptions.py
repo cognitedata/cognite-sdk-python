@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from dataclasses import dataclass
 from enum import auto
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import Any, TypeAlias
 
 from typing_extensions import Self
 
@@ -26,9 +26,6 @@ from cognite.client.data_classes.filters import _BASIC_FILTERS as _FILTERS_SUPPO
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 ExternalId: TypeAlias = str
 
@@ -91,7 +88,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
             external_id=resource["externalId"],
             partition_count=resource["partitionCount"],
@@ -152,7 +149,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
         self.instance_ids = instance_ids
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         filter = Filter.load(resource["filter"]) if "filter" in resource else None
         return cls(
             external_id=resource["externalId"],
@@ -288,7 +285,7 @@ class TimeSeriesID(CogniteResource):
         return f"TimeSeriesID({', '.join(parts)})"
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TimeSeriesID:
+    def _load(cls, resource: dict) -> TimeSeriesID:
         return cls(
             id=resource.get("id"),
             external_id=resource.get("externalId"),
@@ -454,9 +451,7 @@ class DatapointSubscriptionList(
 
     def as_write(self) -> DatapointSubscriptionWriteList:
         """Returns this DatapointSubscriptionList as a DatapointSubscriptionWriteList"""
-        return DatapointSubscriptionWriteList(
-            [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
-        )
+        return DatapointSubscriptionWriteList([x.as_write() for x in self.data])
 
 
 class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):

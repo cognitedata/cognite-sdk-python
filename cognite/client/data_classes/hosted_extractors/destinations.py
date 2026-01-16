@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import Any, NoReturn
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
@@ -18,16 +17,13 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
 
 @dataclass
-class SessionWrite(CogniteObject):
+class SessionWrite(CogniteResource):
     nonce: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(nonce=resource["nonce"])
 
 
@@ -59,7 +55,7 @@ class DestinationWrite(_DestinationCore):
         self.credentials = credentials
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> DestinationWrite:
+    def _load(cls, resource: dict[str, Any]) -> DestinationWrite:
         return cls(
             external_id=resource["externalId"],
             credentials=SessionWrite._load(resource["credentials"]),
@@ -110,7 +106,7 @@ class Destination(_DestinationCore):
         self.session_id = session_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Destination:
+    def _load(cls, resource: dict[str, Any]) -> Destination:
         return cls(
             external_id=resource["externalId"],
             created_time=resource["createdTime"],
