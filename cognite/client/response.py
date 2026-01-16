@@ -37,6 +37,10 @@ class CogniteHTTPResponse:
         return self._response.status_code
 
     @property
+    def reason(self) -> str:
+        return self.reason_phrase  # requests backwards compatibility that we keep
+
+    @property
     def reason_phrase(self) -> str:
         return self._response.reason_phrase
 

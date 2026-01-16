@@ -64,7 +64,7 @@ def parse_str_timezone_offset(tz: str) -> timezone:
     added restrictions on ambiguous names/ids.
     """
     prefix, tz = "", tz.replace(" ", "")
-    if match := re.match("^(UTC?|GMT)?", tz):
+    if match := re.match(r"^(UTC?|GMT)?", tz):
         tz = tz.replace(prefix := match.group(), "")
     if prefix and not tz:
         return timezone.utc

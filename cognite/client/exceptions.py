@@ -326,7 +326,7 @@ class CogniteMissingClientError(CogniteException):
     def __str__(self) -> str:
         return (
             f"An AsyncCogniteClient has not been set on this object ({self.type}), did you create it yourself? "
-            "Hint: You can pass an instantiated client along when you initialise the object."
+            "You can set the client by calling '.set_client_ref(my_client)'"
         )
 
 
