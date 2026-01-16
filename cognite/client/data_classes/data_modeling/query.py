@@ -207,11 +207,29 @@ class QuerySync(QueryBase["ResultSetExpressionSync", SelectSync]):
         select (Mapping[str, SelectSync]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
         parameters (Mapping[str, PropertyValue] | None): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
         cursors (Mapping[str, str | None] | None): A dictionary of cursors to use in the query. These allow for pagination.
+        allow_expired_cursors_and_accept_missed_deletes (bool): Sync cursors expire after 3 days because soft-deleted instances are cleaned up after this grace period, so a client using a cursor older than that risks missing deletes. If set to True, the API will allow the use of expired cursors.
     """
+
+    allow_expired_cursors_and_accept_missed_deletes: bool = False
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.allow_expired_cursors_and_accept_missed_deletes:
+            key = (
+                "allowExpiredCursorsAndAcceptMissedDeletes"
+                if camel_case
+                else "allow_expired_cursors_and_accept_missed_deletes"
+            )
+            output[key] = self.allow_expired_cursors_and_accept_missed_deletes
+        return output
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
-        return cls._load_base(resource, ResultSetExpressionSync, SelectSync)
+        base = cls._load_base(resource, ResultSetExpressionSync, SelectSync)
+        base.allow_expired_cursors_and_accept_missed_deletes = resource.get(
+            "allowExpiredCursorsAndAcceptMissedDeletes", False
+        )
+        return base
 
 
 @dataclass
