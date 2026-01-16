@@ -16,6 +16,7 @@ from typing import (
     NoReturn,
     TypeVar,
     cast,
+    final,
     overload,
 )
 from zoneinfo import ZoneInfo
@@ -622,12 +623,24 @@ class BaseTaskOrchestrator(ABC):
             except AttributeError:
                 pass
 
+    @final
     def finalize_datapoints(self) -> None:
         if self._final_result is None:
-            self._final_result = self.get_result()
+            self._final_result = self.get_result(self.use_numpy)
             self._clear_data_containers()
 
-    def get_result(self) -> Datapoints | DatapointsArray:
+    @overload
+    def get_result(self, use_numpy: Literal[True]) -> DatapointsArray: ...
+
+    @overload
+    def get_result(self, use_numpy: Literal[False]) -> Datapoints: ...
+
+    @overload
+    def get_result(self, use_numpy: bool) -> Datapoints | DatapointsArray: ...
+
+    def get_result(self, use_numpy: bool) -> Datapoints | DatapointsArray:
+        assert use_numpy is self.use_numpy
+
         if self._final_result is not None:
             return self._final_result
         return self._get_result()
@@ -768,15 +781,15 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 value = np.array(value, dtype=self.raw_dtype_numpy)
                 if dp[1] is None:  # Only None if self.query.ignore_bad_datapoints=False
                     self.null_timestamps.add(dp[0])
-            self.ts_data[(idx,)].append(ts)
-            self.dps_data[(idx,)].append(value)
+            self.ts_data[idx,].append(ts)
+            self.dps_data[idx,].append(value)
 
             if self.query.include_status:
                 if self.use_numpy:
                     status_code = np.array(status_code, dtype=np.uint32)  # type: ignore [assignment]
                     status_symbol = np.array(status_symbol, dtype=np.object_)  # type: ignore [assignment]
-                self.status_code[(idx,)].append(status_code)
-                self.status_symbol[(idx,)].append(status_symbol)
+                self.status_code[idx,].append(status_code)
+                self.status_symbol[idx,].append(status_symbol)
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:  # type: ignore [override]
         if self.use_numpy:

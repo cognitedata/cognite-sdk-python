@@ -97,15 +97,13 @@ class DpsFetchStrategy(ABC):
 
     async def fetch_all_datapoints(self) -> DatapointsList:
         return DatapointsList(
-            [ts_task.get_result() async for ts_task in self._fetch_all(use_numpy=False)],
-            cognite_client=self.dps_client._cognite_client,
-        )
+            [ts_task.get_result(use_numpy=False) async for ts_task in self._fetch_all(use_numpy=False)],
+        ).set_client_ref(self.dps_client._cognite_client)
 
     async def fetch_all_datapoints_numpy(self) -> DatapointsArrayList:
         return DatapointsArrayList(
-            [ts_task.get_result() async for ts_task in self._fetch_all(use_numpy=True)],
-            cognite_client=self.dps_client._cognite_client,
-        )
+            [ts_task.get_result(use_numpy=True) async for ts_task in self._fetch_all(use_numpy=True)],
+        ).set_client_ref(self.dps_client._cognite_client)
 
     async def _request_datapoints(self, payload: dict[str, Any]) -> Sequence[DataPointListItem]:
         (res := DataPointListResponse()).MergeFromString(
@@ -713,7 +711,7 @@ class DatapointsAPI(APIClient):
 
             # We should never yield an empty chunk, so we filter out empty or exhausted time series from result
             # (need to rebuild to not keep references to those empty in various private "id lookups")
-            dps_lst = dps_lst_cls(list(filter(None, dps_lst)), cognite_client=self._cognite_client)
+            dps_lst = dps_lst_cls(list(filter(None, dps_lst)))
             if not any(dps_lst):
                 if alive_queries:
                     continue
@@ -727,7 +725,7 @@ class DatapointsAPI(APIClient):
             else:
                 for all_chunks in itertools.zip_longest(*map(chunk_fn, dps_lst)):
                     # Filter out dps as ts get exhausted, then rebuild the Dps(Array)List container and yield chunk:
-                    yield dps_lst_cls(list(filter(None, all_chunks)), cognite_client=self._cognite_client)
+                    yield dps_lst_cls(list(filter(None, all_chunks)))  # type: ignore [arg-type]
 
     @staticmethod
     def _update_alive_queries_and_do_manual_cursoring(
@@ -1906,10 +1904,10 @@ class DatapointsAPI(APIClient):
         )
         res = await fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
-            return DatapointsList._load(res, cognite_client=self._cognite_client)
+            return DatapointsList._load(res)
         elif not res:
             return None
-        return Datapoints._load(res[0], cognite_client=self._cognite_client)
+        return Datapoints._load(res[0])
 
     async def insert(
         self,

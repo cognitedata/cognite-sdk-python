@@ -33,7 +33,6 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.assets import (
-    AssetCore,
     AssetPropertyLike,
     AssetSort,
     AssetWrite,
@@ -532,7 +531,7 @@ class AssetsAPI(APIClient):
                 >>> asset = AssetWrite(name="my_pump", labels=[Label(external_id="PUMP")])
                 >>> res = client.assets.create(asset)
         """
-        assert_type(asset, "asset", [AssetCore, Sequence])
+        assert_type(asset, "asset", [Asset, AssetWrite, Sequence])
 
         return await self._create_multiple(
             list_cls=AssetList, resource_cls=Asset, items=asset, input_resource_cls=AssetWrite
@@ -892,9 +891,9 @@ class AssetsAPI(APIClient):
         """
         asset = await self.retrieve(id=id, external_id=external_id)
         if asset is None:
-            return AssetList([], self._cognite_client)
+            return AssetList([])
         subtree = await self._get_asset_subtree([asset], current_depth=0, depth=depth)
-        return AssetList(subtree, self._cognite_client)
+        return AssetList(subtree)
 
     async def _get_asset_subtree(self, assets: list, current_depth: int, depth: int | None) -> list:
         subtree = assets
@@ -1095,7 +1094,7 @@ class _AssetHierarchyCreator:
         created_assets = await self._create(insert_fn, insert_dct, subtree_count)
 
         self._raise_if_exception(created_assets)
-        return AssetList(created_assets, cognite_client=self.assets_api._cognite_client)
+        return AssetList(created_assets).set_client_ref(self.assets_api._cognite_client)
 
     async def _create(
         self,

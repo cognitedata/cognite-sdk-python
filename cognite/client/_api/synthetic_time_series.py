@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, Union, cast, overload
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite
 from cognite.client.data_classes.data_modeling.ids import NodeId
-from cognite.client.data_classes.time_series import TimeSeriesCore
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, InstanceId
@@ -163,11 +162,7 @@ class SyntheticDatapointsAPI(APIClient):
 
         datapoints_summary = await execute_async_tasks(tasks)
         datapoints_summary.raise_compound_exception_if_failed_tasks()
-        return (
-            DatapointsList(datapoints_summary.results, cognite_client=self._cognite_client)
-            if not single_expr
-            else datapoints_summary.results[0]
-        )
+        return DatapointsList(datapoints_summary.results) if not single_expr else datapoints_summary.results[0]
 
     async def _fetch_datapoints(self, query: dict[str, Any], limit: int, short_expression: str) -> Datapoints:
         datapoints = None
@@ -231,7 +226,7 @@ class SyntheticDatapointsAPI(APIClient):
 
         to_substitute = {}
         for k, v in variables.items():
-            if isinstance(v, TimeSeriesCore):
+            if isinstance(v, TimeSeries | TimeSeriesWrite):
                 try:
                     v = Identifier.load(external_id=v.external_id, instance_id=v.instance_id).as_primitive()
                 except ValueError:

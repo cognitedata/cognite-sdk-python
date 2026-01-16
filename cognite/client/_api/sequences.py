@@ -22,7 +22,6 @@ from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validat
 from cognite.client.data_classes.sequences import (
     SequenceColumnUpdate,
     SequenceColumnWriteList,
-    SequenceCore,
     SequenceProperty,
     SequenceSort,
     SequenceWrite,
@@ -505,7 +504,7 @@ class SequencesAPI(APIClient):
                 >>> seq2 = client.sequences.create(SequenceWrite(external_id="my_copied_sequence", columns=column_def))
 
         """
-        assert_type(sequence, "sequences", [typing.Sequence, SequenceCore])
+        assert_type(sequence, "sequences", [typing.Sequence, Sequence, SequenceWrite])
 
         return await self._create_multiple(
             list_cls=SequenceList, resource_cls=Sequence, items=sequence, input_resource_cls=SequenceWrite

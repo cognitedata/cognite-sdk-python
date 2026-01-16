@@ -259,7 +259,7 @@ class DiagramsAPI(APIClient):
             except CogniteAPIError as exc:
                 unposted_files.append({"error": str(exc), "files": batch})
 
-        res = DetectJobBundle(cognite_client=self._cognite_client, job_ids=[j.job_id for j in jobs])
+        res = DetectJobBundle(job_ids=[j.job_id for j in jobs], client=self._cognite_client)
         return res, unposted_files
 
     async def __run_detect_job(
@@ -297,17 +297,15 @@ class DiagramsAPI(APIClient):
             json=body,
             api_subversion=api_subversion,
         )
-        return DiagramDetectResults._load_with_job_token(
-            data=response.json(),
-            headers=response.headers,
-            cognite_client=self._cognite_client,
+        return DiagramDetectResults._load_with_job_token(data=response.json(), headers=response.headers).set_client_ref(
+            self._cognite_client
         )
 
     async def get_detect_jobs(self, job_ids: list[int]) -> list[DiagramDetectResults]:
         res = await self._cognite_client.diagrams._post("/context/diagram/detect/status", json={"items": job_ids})
         jobs = res.json()["items"]
         return [
-            DiagramDetectResults._load_with_job_token(job, headers=res.headers, cognite_client=self._cognite_client)
+            DiagramDetectResults._load_with_job_token(job, headers=res.headers).set_client_ref(self._cognite_client)
             for job in jobs
         ]
 
@@ -340,7 +338,5 @@ class DiagramsAPI(APIClient):
         items = [{"annotations": item.get("annotations"), "fileId": item.get("fileId")} for item in result["items"]]
         response = await self._post(f"{self._RESOURCE_PATH}/convert", json={"items": items})
         return DiagramConvertResults._load_with_job_token(
-            data=response.json(),
-            headers=response.headers,
-            cognite_client=self._cognite_client,
-        )
+            data=response.json(), headers=response.headers
+        ).set_client_ref(self._cognite_client)

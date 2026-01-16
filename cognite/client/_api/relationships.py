@@ -335,7 +335,7 @@ class RelationshipsAPI(APIClient):
         ]
         tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks()
-        return RelationshipList(tasks_summary.joined_results(), cognite_client=self._cognite_client)
+        return RelationshipList(tasks_summary.joined_results())
 
     @overload
     async def create(self, relationship: Relationship | RelationshipWrite) -> Relationship: ...
