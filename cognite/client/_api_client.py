@@ -10,7 +10,6 @@ from typing import (
     Any,
     ClassVar,
     Literal,
-    TypeVar,
     cast,
     overload,
 )
@@ -18,15 +17,14 @@ from typing import (
 from cognite.client._basic_api_client import BasicAsyncAPIClient
 from cognite.client.data_classes._base import (
     CogniteFilter,
-    CogniteObject,
     CogniteResource,
     CogniteUpdate,
     EnumProperty,
     PropertySpec,
+    SupportsAsWrite,
     T_CogniteResource,
     T_CogniteResourceList,
     T_WritableCogniteResource,
-    WriteableCogniteResource,
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
@@ -52,8 +50,6 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T", bound=CogniteObject)
-
 VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"}
 
 
@@ -75,7 +71,7 @@ class APIClient(BasicAsyncAPIClient):
                 params=params,
                 headers=headers,
             )
-            return cls._load(res.json(), cognite_client=self._cognite_client)
+            return cls._load(res.json())._maybe_set_client_ref(self._cognite_client)
         except CogniteAPIError as e:
             if e.code != 404:
                 raise
@@ -155,8 +151,8 @@ class APIClient(BasicAsyncAPIClient):
 
         if settings_forcing_raw_response_loading:
             # The API response include one or more top-level keys than items we care about:
-            loaded = list_cls._load_raw_api_response(
-                tasks_summary.raw_api_responses, cognite_client=self._cognite_client
+            loaded = list_cls._load_raw_api_response(tasks_summary.raw_api_responses)._maybe_set_client_ref(
+                self._cognite_client
             )
             return (loaded[0] if loaded else None) if identifiers.is_singleton() else loaded
 
@@ -164,12 +160,12 @@ class APIClient(BasicAsyncAPIClient):
 
         if identifiers.is_singleton():
             if retrieved_items:
-                return resource_cls._load(retrieved_items[0], cognite_client=self._cognite_client)
+                return resource_cls._load(retrieved_items[0])._maybe_set_client_ref(self._cognite_client)
             else:
                 # Not all APIs (such as the Data Modeling API) return an error when unknown ids are provided,
                 # so we need to handle the unknown singleton identifier case here as well.
                 return None
-        return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
+        return list_cls._load(retrieved_items)._maybe_set_client_ref(self._cognite_client)
 
     @overload
     def _list_generator(
@@ -258,7 +254,7 @@ class APIClient(BasicAsyncAPIClient):
             total_retrieved += len(response["items"])
             if total_retrieved == limit or next_cursor is None:
                 if unprocessed_items:  # may only happen when -not- yielding one-by-one
-                    yield list_cls._load(unprocessed_items, cognite_client=self._cognite_client)
+                    yield list_cls._load(unprocessed_items)._maybe_set_client_ref(self._cognite_client)
                 break
 
     async def _list_generator_raw_responses(
@@ -381,7 +377,7 @@ class APIClient(BasicAsyncAPIClient):
     ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
         if chunk_size is None:
             for item in response["items"]:
-                yield resource_cls._load(item, cognite_client=self._cognite_client)
+                yield resource_cls._load(item)._maybe_set_client_ref(self._cognite_client)
         else:
             unprocessed_items.extend(response["items"])
             if len(unprocessed_items) >= chunk_size:
@@ -390,7 +386,7 @@ class APIClient(BasicAsyncAPIClient):
                 if chunks and len(chunks[-1]) < chunk_size:
                     unprocessed_items.extend(chunks.pop(-1))
                 for chunk in chunks:
-                    yield list_cls._load(chunk, cognite_client=self._cognite_client)
+                    yield list_cls._load(chunk)._maybe_set_client_ref(self._cognite_client)
 
     async def _list(
         self,
@@ -453,10 +449,10 @@ class APIClient(BasicAsyncAPIClient):
                 api_subversion=api_subversion,
                 semaphore=semaphore,
             )
-            return list_cls._load_raw_api_response(
-                [r async for r in raw_response_fetcher],
-                cognite_client=self._cognite_client,
+            return list_cls._load_raw_api_response([r async for r in raw_response_fetcher])._maybe_set_client_ref(
+                self._cognite_client
             )
+
         # TODO: List generator loads each chunk into 'list_cls', so kind of weird for us to chain
         #       elements, then do it again. Perhaps a modified version of 'raw responses' should be used:
         async_gen = self._list_generator(
@@ -478,9 +474,8 @@ class APIClient(BasicAsyncAPIClient):
         )
         resource_lists = [rl async for rl in async_gen]
         return list_cls(
-            list(itertools.chain.from_iterable(cast(T_CogniteResourceList, resource_lists))),
-            cognite_client=self._cognite_client,
-        )
+            list(itertools.chain.from_iterable(cast(T_CogniteResourceList, resource_lists)))
+        )._maybe_set_client_ref(self._cognite_client)
 
     async def _get_partition(
         self,
@@ -552,7 +547,7 @@ class APIClient(BasicAsyncAPIClient):
         tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
 
-        return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
+        return list_cls._load(tasks_summary.joined_results())._maybe_set_client_ref(self._cognite_client)
 
     async def _aggregate_count(
         self,
@@ -687,14 +682,14 @@ class APIClient(BasicAsyncAPIClient):
         if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
             return json_items[0]["count"]
         elif aggregate in {"uniqueValues", "uniqueProperties"}:
-            return UniqueResultList._load(json_items, cognite_client=self._cognite_client)
+            return UniqueResultList._load(json_items)
         else:
             raise ValueError(f"Unknown aggregate: {aggregate}")
 
     @overload
     async def _create_multiple(
         self,
-        items: Sequence[WriteableCogniteResource] | Sequence[dict[str, Any]],
+        items: Sequence[SupportsAsWrite] | Sequence[dict[str, Any]],
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_WritableCogniteResource],
         resource_path: str | None = None,
@@ -710,7 +705,7 @@ class APIClient(BasicAsyncAPIClient):
     @overload
     async def _create_multiple(
         self,
-        items: WriteableCogniteResource | dict[str, Any],
+        items: SupportsAsWrite | dict[str, Any],
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_WritableCogniteResource],
         resource_path: str | None = None,
@@ -725,10 +720,7 @@ class APIClient(BasicAsyncAPIClient):
 
     async def _create_multiple(
         self,
-        items: Sequence[WriteableCogniteResource]
-        | Sequence[dict[str, Any]]
-        | WriteableCogniteResource
-        | dict[str, Any],
+        items: Sequence[SupportsAsWrite] | Sequence[dict[str, Any]] | SupportsAsWrite | dict[str, Any],
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_WritableCogniteResource],
         resource_path: str | None = None,
@@ -749,8 +741,7 @@ class APIClient(BasicAsyncAPIClient):
         else:
             items = cast(Sequence[T_WritableCogniteResource] | Sequence[dict[str, Any]], items)
 
-        items = [item.as_write() if isinstance(item, WriteableCogniteResource) else item for item in items]
-
+        items = [item.as_write() if isinstance(item, SupportsAsWrite) else item for item in items]
         tasks = [
             AsyncSDKTask(
                 self._post,
@@ -768,9 +759,9 @@ class APIClient(BasicAsyncAPIClient):
         def task_unwrap_fn(task: AsyncSDKTask) -> Any:
             return task[1]["items"]
 
-        def task_list_element_unwrap_fn(el: T) -> CogniteResource | T:
+        def task_list_element_unwrap_fn(el: dict | CogniteResource) -> CogniteResource:
             if isinstance(el, dict):
-                return input_resource_cls._load(el, cognite_client=self._cognite_client)
+                return input_resource_cls._load(el)._maybe_set_client_ref(self._cognite_client)
             return el
 
         summary.raise_compound_exception_if_failed_tasks(
@@ -780,8 +771,9 @@ class APIClient(BasicAsyncAPIClient):
         created_resources = summary.joined_results(unpack_items)
 
         if single_item:
-            return resource_cls._load(created_resources[0], cognite_client=self._cognite_client)
-        return list_cls._load(created_resources, cognite_client=self._cognite_client)
+            return resource_cls._load(created_resources[0])._maybe_set_client_ref(self._cognite_client)
+
+        return list_cls._load(created_resources)._maybe_set_client_ref(self._cognite_client)
 
     async def _delete_multiple(
         self,
@@ -820,7 +812,7 @@ class APIClient(BasicAsyncAPIClient):
     @overload
     async def _update_multiple(
         self,
-        items: CogniteResource | CogniteUpdate | WriteableCogniteResource,
+        items: CogniteResource | CogniteUpdate | SupportsAsWrite,
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
         update_cls: type[CogniteUpdate],
@@ -835,7 +827,7 @@ class APIClient(BasicAsyncAPIClient):
     @overload
     async def _update_multiple(
         self,
-        items: Sequence[CogniteResource | CogniteUpdate | WriteableCogniteResource],
+        items: Sequence[CogniteResource | CogniteUpdate | SupportsAsWrite],
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
         update_cls: type[CogniteUpdate],
@@ -849,10 +841,10 @@ class APIClient(BasicAsyncAPIClient):
 
     async def _update_multiple(
         self,
-        items: Sequence[CogniteResource | CogniteUpdate | WriteableCogniteResource]
+        items: Sequence[CogniteResource | CogniteUpdate | SupportsAsWrite]
         | CogniteResource
         | CogniteUpdate
-        | WriteableCogniteResource,
+        | SupportsAsWrite,
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
         update_cls: type[CogniteUpdate],
@@ -885,7 +877,6 @@ class APIClient(BasicAsyncAPIClient):
                     patch_object_update["metadata"] = {"set": {}}
             else:
                 raise ValueError("update item must be of type CogniteResource or CogniteUpdate")
-        patch_object_chunks = split_into_chunks(patch_objects, self._UPDATE_LIMIT)
 
         tasks = [
             AsyncSDKTask(
@@ -896,7 +887,7 @@ class APIClient(BasicAsyncAPIClient):
                 headers=headers,
                 api_subversion=api_subversion,
             )
-            for chunk in patch_object_chunks
+            for chunk in split_into_chunks(patch_objects, self._UPDATE_LIMIT)
         ]
         tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
@@ -906,12 +897,12 @@ class APIClient(BasicAsyncAPIClient):
         updated_items = tasks_summary.joined_results(unpack_items)
 
         if single_item:
-            return resource_cls._load(updated_items[0], cognite_client=self._cognite_client)
-        return list_cls._load(updated_items, cognite_client=self._cognite_client)
+            return resource_cls._load(updated_items[0])._maybe_set_client_ref(self._cognite_client)
+        return list_cls._load(updated_items)._maybe_set_client_ref(self._cognite_client)
 
     async def _upsert_multiple(
         self,
-        items: WriteableCogniteResource | Sequence[WriteableCogniteResource],
+        items: SupportsAsWrite | Sequence[SupportsAsWrite],
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_WritableCogniteResource],
         update_cls: type[CogniteUpdate],
@@ -922,7 +913,7 @@ class APIClient(BasicAsyncAPIClient):
     ) -> T_WritableCogniteResource | T_CogniteResourceList:
         if mode not in ["patch", "replace"]:
             raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
-        is_single = isinstance(items, WriteableCogniteResource)
+        is_single = isinstance(items, SupportsAsWrite)  # WriteableCogniteResource (optionally with client ref)
         items = cast(Sequence[T_WritableCogniteResource], [items] if is_single else items)
         try:
             result = await self._update_multiple(
@@ -1003,10 +994,10 @@ class APIClient(BasicAsyncAPIClient):
                     list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers, api_subversion=api_subversion
                 )
                 if isinstance(successful_resources, resource_cls):
-                    successful_resources = list_cls([successful_resources], cognite_client=self._cognite_client)
+                    successful_resources = list_cls([successful_resources])._maybe_set_client_ref(self._cognite_client)
 
-            result = list_cls(
-                (successful_resources or []) + (created or []) + (updated or []), cognite_client=self._cognite_client
+            result = list_cls((successful_resources or []) + (created or []) + (updated or []))._maybe_set_client_ref(
+                self._cognite_client
             )
             # Reorder to match the order of the input items
             result.data = [
@@ -1046,7 +1037,7 @@ class APIClient(BasicAsyncAPIClient):
             headers=headers,
             api_subversion=api_subversion,
         )
-        return list_cls._load(unpack_items(res), cognite_client=self._cognite_client)
+        return list_cls._load(unpack_items(res))._maybe_set_client_ref(self._cognite_client)
 
     @staticmethod
     def _prepare_item_chunks(
