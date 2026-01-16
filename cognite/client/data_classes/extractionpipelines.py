@@ -241,8 +241,9 @@ class ExtractionPipeline(ExtractionPipelineCore):
             metadata=resource.get("metadata"),
             source=resource.get("source"),
             documentation=resource.get("documentation"),
-            notification_config=(config := resource.get("notificationConfig"))
-            and ExtractionPipelineNotificationConfiguration._load(config),
+            notification_config=ExtractionPipelineNotificationConfiguration._load_if(
+                resource.get("notificationConfig")
+            ),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             created_by=resource.get("createdBy"),
@@ -314,9 +315,9 @@ class ExtractionPipelineWrite(ExtractionPipelineCore):
             metadata=resource.get("metadata"),
             source=resource.get("source"),
             documentation=resource.get("documentation"),
-            notification_config=ExtractionPipelineNotificationConfiguration._load(resource["notificationConfig"])
-            if "notificationConfig" in resource
-            else None,
+            notification_config=ExtractionPipelineNotificationConfiguration._load_if(
+                resource.get("notificationConfig")
+            ),
             created_by=resource.get("createdBy"),
         )
 

@@ -143,6 +143,12 @@ class Filter(ABC):
                 )
 
     @classmethod
+    def _load_if(cls, flt: dict[str, Any] | None) -> Filter | None:
+        if flt is None:
+            return None
+        return cls.load(flt)
+
+    @classmethod
     @abstractmethod
     def _load(cls, resource: Any) -> Self: ...
 

@@ -370,10 +370,7 @@ class UniqueResult(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict) -> UniqueResult:
-        return cls(
-            count=resource["count"],
-            values=resource["values"],
-        )
+        return cls(count=resource["count"], values=resource["values"])
 
 
 T_UniqueResult = TypeVar("T_UniqueResult", bound="UniqueResult")

@@ -131,7 +131,7 @@ class SimulatorRoutineInputTimeseries(SimulatorRoutineInput):
             source_external_id=resource["sourceExternalId"],
             aggregate=resource.get("aggregate"),
             save_timeseries_external_id=resource.get("saveTimeseriesExternalId"),
-            unit=SimulationValueUnitInput._load(resource["unit"]) if "unit" in resource else None,
+            unit=SimulationValueUnitInput._load_if(resource.get("unit")),
         )
 
 
@@ -171,7 +171,7 @@ class SimulatorRoutineInputConstant(SimulatorRoutineInput):
             reference_id=resource["referenceId"],
             value=resource["value"],
             value_type=resource["valueType"],
-            unit=SimulationValueUnitInput._load(resource["unit"]) if "unit" in resource else None,
+            unit=SimulationValueUnitInput._load_if(resource.get("unit")),
             save_timeseries_external_id=resource.get("saveTimeseriesExternalId"),
         )
 
@@ -204,7 +204,7 @@ class SimulatorRoutineOutput(CogniteResource):
             name=resource["name"],
             reference_id=resource["referenceId"],
             value_type=resource["valueType"],
-            unit=SimulationValueUnitInput._load(resource["unit"]) if "unit" in resource else None,
+            unit=SimulationValueUnitInput._load_if(resource.get("unit")),
             save_timeseries_external_id=resource.get("saveTimeseriesExternalId"),
         )
 
@@ -229,9 +229,7 @@ class SimulatorRoutineSchedule(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> SimulatorRoutineSchedule:
-        return cls(
-            cron_expression=resource["cronExpression"],
-        )
+        return cls(cron_expression=resource["cronExpression"])
 
 
 @dataclass
@@ -385,8 +383,8 @@ class SimulatorRoutineConfiguration(CogniteResource):
         )
 
         return cls(
-            schedule=SimulatorRoutineSchedule.load(schedule) if schedule else None,
-            data_sampling=SimulatorRoutineDataSampling._load(data_sampling) if data_sampling else None,
+            schedule=SimulatorRoutineSchedule._load_if(schedule),
+            data_sampling=SimulatorRoutineDataSampling._load_if(data_sampling),
             logical_check=[SimulatorRoutineLogicalCheck._load(check) for check in resource["logicalCheck"]],
             steady_state_detection=[
                 SimulatorRoutineSteadyStateDetection._load(detection) for detection in resource["steadyStateDetection"]

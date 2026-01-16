@@ -92,7 +92,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         return cls(
             external_id=resource["externalId"],
             partition_count=resource["partitionCount"],
-            filter=Filter.load(resource["filter"]) if "filter" in resource else None,
+            filter=Filter._load_if(resource.get("filter")),
             name=resource.get("name"),
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
@@ -150,13 +150,12 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
 
     @classmethod
     def _load(cls, resource: dict) -> Self:
-        filter = Filter.load(resource["filter"]) if "filter" in resource else None
         return cls(
             external_id=resource["externalId"],
             partition_count=resource["partitionCount"],
             time_series_ids=resource.get("timeSeriesIds"),
             instance_ids=[NodeId.load(item) for item in resource["instanceIds"]] if "instanceIds" in resource else None,
-            filter=filter,
+            filter=Filter._load_if(resource.get("filter")),
             name=resource.get("name"),
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
@@ -289,7 +288,7 @@ class TimeSeriesID(CogniteResource):
         return cls(
             id=resource.get("id"),
             external_id=resource.get("externalId"),
-            instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
+            instance_id=NodeId._load_if(resource.get("instanceId")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

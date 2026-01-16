@@ -128,6 +128,13 @@ class CogniteResource(ABC):
         """
         raise NotImplementedError
 
+    @final
+    @classmethod
+    def _load_if(cls, resource: dict[str, Any] | None) -> Self | None:
+        if resource is None:
+            return None
+        return cls._load(resource)
+
     def to_pandas(
         self,
         expand_metadata: bool = False,
@@ -386,6 +393,13 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     @classmethod
     def _load(cls, resource: Sequence[dict[str, Any]]) -> Self:
         return cls(list(map(cls._RESOURCE._load, resource)))
+
+    @final
+    @classmethod
+    def _load_if(cls, resource: Sequence[dict[str, Any]] | None) -> Self | None:
+        if resource is None:
+            return None
+        return cls._load(resource)
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:

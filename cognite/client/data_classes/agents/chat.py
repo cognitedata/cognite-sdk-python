@@ -24,7 +24,6 @@ class MessageContent(CogniteResource, ABC):
         return content_class._load_content(data)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dump the content to a dictionary."""
         output = super().dump(camel_case=camel_case)
         output["type"] = self._type
         return output
@@ -510,15 +509,14 @@ class AgentMessage(CogniteResource):
 
     @classmethod
     def _load(cls, data: dict[str, Any]) -> AgentMessage:
-        content = MessageContent._load(data["content"]) if "content" in data else None
         data_items = [AgentDataItem._load(item) for item in data.get("data", [])]
         reasoning_items = [AgentReasoningItem._load(item) for item in data.get("reasoning", [])]
         action_calls = [ActionCall._load(item) for item in data.get("actions", [])]
         return cls(
-            content=content,
-            data=data_items if data_items else None,
-            reasoning=reasoning_items if reasoning_items else None,
-            actions=action_calls if action_calls else None,
+            content=MessageContent._load_if(data.get("content")),
+            data=data_items or None,
+            reasoning=reasoning_items or None,
+            actions=action_calls or None,
             role=data["role"],
         )
 

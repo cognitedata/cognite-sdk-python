@@ -64,6 +64,10 @@ class SessionDetails:
             project_name=resource.get("projectName"),
         )
 
+    @classmethod
+    def _load_if(cls, data: dict[str, Any] | None) -> SessionDetails | None:
+        return cls.load(data) if data is not None else None
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
@@ -383,24 +387,21 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
             conflict_mode=resource["conflictMode"],
             is_public=resource["isPublic"],
             ignore_null_fields=resource["ignoreNullFields"],
-            source_oidc_credentials=(creds := resource.get("sourceOidcCredentials")) and OidcCredentials.load(creds),
-            destination_oidc_credentials=(creds := resource.get("destinationOidcCredentials"))
-            and OidcCredentials.load(creds),
+            source_oidc_credentials=OidcCredentials._load_if(resource.get("sourceOidcCredentials")),
+            destination_oidc_credentials=OidcCredentials._load_if(resource.get("destinationOidcCredentials")),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             owner=resource["owner"],
             owner_is_current_user=resource["ownerIsCurrentUser"],
-            running_job=(job := resource.get("runningJob")) and TransformationJob._load(job),
-            last_finished_job=(job := resource.get("lastFinishedJob")) and TransformationJob._load(job),
-            blocked=(info := resource.get("blocked")) and TransformationBlockedInfo.load(info),
-            schedule=(sched := resource.get("schedule"))
-            and TransformationSchedule._load(sched)
-            and TransformationSchedule._load(sched),
+            running_job=TransformationJob._load_if(resource.get("runningJob")),
+            last_finished_job=TransformationJob._load_if(resource.get("lastFinishedJob")),
+            blocked=TransformationBlockedInfo._load_if(resource.get("blocked")),
+            schedule=TransformationSchedule._load_if(resource.get("schedule")),
             data_set_id=resource.get("dataSetId"),
-            source_nonce=(nonce := resource.get("sourceNonce")) and NonceCredentials.load(nonce),
-            destination_nonce=(nonce := resource.get("destinationNonce")) and NonceCredentials.load(nonce),
-            source_session=(sess := resource.get("sourceSession")) and SessionDetails.load(sess),
-            destination_session=(sess := resource.get("destinationSession")) and SessionDetails.load(sess),
+            source_nonce=NonceCredentials._load_if(resource.get("sourceNonce")),
+            destination_nonce=NonceCredentials._load_if(resource.get("destinationNonce")),
+            source_session=SessionDetails._load_if(resource.get("sourceSession")),
+            destination_session=SessionDetails._load_if(resource.get("destinationSession")),
             tags=resource.get("tags"),
         )
 
@@ -464,15 +465,14 @@ class TransformationWrite(WriteableCogniteResource["TransformationWrite"], _Tran
             name=resource["name"],
             ignore_null_fields=resource["ignoreNullFields"],
             query=resource.get("query"),
-            destination=TransformationDestination._load(resource["destination"]) if "destination" in resource else None,
+            destination=TransformationDestination._load_if(resource.get("destination")),
             conflict_mode=resource.get("conflictMode"),
             is_public=resource.get("isPublic", True),
-            source_oidc_credentials=(creds := resource.get("sourceOidcCredentials")) and OidcCredentials.load(creds),
-            destination_oidc_credentials=(creds := resource.get("destinationOidcCredentials"))
-            and OidcCredentials.load(creds),
+            source_oidc_credentials=OidcCredentials._load_if(resource.get("sourceOidcCredentials")),
+            destination_oidc_credentials=OidcCredentials._load_if(resource.get("destinationOidcCredentials")),
             data_set_id=resource.get("dataSetId"),
-            source_nonce=(nonce := resource.get("sourceNonce")) and NonceCredentials.load(nonce),
-            destination_nonce=(nonce := resource.get("destinationNonce")) and NonceCredentials.load(nonce),
+            source_nonce=NonceCredentials._load_if(resource.get("sourceNonce")),
+            destination_nonce=NonceCredentials._load_if(resource.get("destinationNonce")),
             tags=resource.get("tags"),
         )
 
@@ -726,7 +726,7 @@ class TransformationPreviewResult(CogniteResource):
     @classmethod
     def _load(cls, resource: dict) -> TransformationPreviewResult:
         return cls(
-            schema=(items := resource["schema"].get("items")) and TransformationSchemaColumnList._load(items),
+            schema=TransformationSchemaColumnList._load(resource["schema"]["items"]),
             results=resource["results"].get("items", []),
         )
 

@@ -199,13 +199,11 @@ class FeatureTypePatch(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        property_patches = (
-            Patches.load(resource["propertyPatches"]) if resource.get("propertyPatches") is not None else None
+        return cls(
+            external_id=resource.get("externalId"),
+            property_patches=Patches._load_if(resource.get("propertyPatches")),
+            search_spec_patches=Patches._load_if(resource.get("searchSpecPatches")),
         )
-        search_spec_patches = (
-            Patches.load(resource["searchSpecPatches"]) if resource.get("searchSpecPatches") is not None else None
-        )
-        return cls(resource.get("externalId"), property_patches, search_spec_patches)
 
 
 class FeatureCore(WriteableCogniteResource["FeatureWrite"], ABC):
@@ -683,8 +681,7 @@ class GeospatialComputedResponse(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> GeospatialComputedResponse:
-        item_list = GeospatialComputedItemList._load(resource.get("items", []))
-        return cls(item_list)
+        return cls(GeospatialComputedItemList._load(resource.get("items", [])))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"items": self.items.dump(camel_case=camel_case)}

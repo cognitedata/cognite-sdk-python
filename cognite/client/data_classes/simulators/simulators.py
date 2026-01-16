@@ -140,10 +140,7 @@ class SimulatorUnitEntry(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(
-            label=resource["label"],
-            name=resource["name"],
-        )
+        return cls(label=resource["label"], name=resource["name"])
 
 
 @dataclass
@@ -153,10 +150,7 @@ class SimulatorStepOption(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(
-            label=resource["label"],
-            value=resource["value"],
-        )
+        return cls(label=resource["label"], value=resource["value"])
 
 
 @dataclass
@@ -166,10 +160,7 @@ class SimulatorModelType(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(
-            name=resource["name"],
-            key=resource["key"],
-        )
+        return cls(name=resource["name"], key=resource["key"])
 
     @classmethod
     def _load_list(

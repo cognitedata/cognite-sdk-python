@@ -162,13 +162,9 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
             metadata=resource.get("metadata"),
             source=resource.get("source"),
             labels=Label._load_list(resource.get("labels")),
-            geo_location=GeoLocation._load(resource["geoLocation"])
-            if resource.get("geoLocation") is not None
-            else None,
+            geo_location=GeoLocation._load_if(resource.get("geoLocation")),
             root_id=resource.get("rootId"),
-            aggregates=AggregateResultItem._load(resource["aggregates"])
-            if resource.get("aggregates") is not None
-            else None,
+            aggregates=AggregateResultItem._load_if(resource.get("aggregates")),
         )
 
     def as_write(self) -> AssetWrite:
@@ -405,9 +401,7 @@ class AssetWrite(WriteableCogniteResource["AssetWrite"]):
             metadata=resource.get("metadata"),
             source=resource.get("source"),
             labels=Label._load_list(resource.get("labels")),  # type: ignore [arg-type]
-            geo_location=GeoLocation._load(resource["geoLocation"])
-            if resource.get("geoLocation") is not None
-            else None,
+            geo_location=GeoLocation._load_if(resource.get("geoLocation")),
         )
 
     def as_write(self) -> AssetWrite:

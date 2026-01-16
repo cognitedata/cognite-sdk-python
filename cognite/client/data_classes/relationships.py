@@ -192,21 +192,24 @@ class Relationship(RelationshipCore):
 
     @classmethod
     def _load(cls, resource: dict) -> Relationship:
+        source = resource.get("source")
+        target = resource.get("target")
+        labels = resource.get("labels")
         return cls(
             external_id=resource["externalId"],
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             source_external_id=resource["sourceExternalId"],
             source_type=resource["sourceType"],
-            source=(source := resource.get("source")) and cls._convert_resource(source, resource["sourceType"]),
+            source=cls._convert_resource(source, resource["sourceType"]) if source else None,
             target_external_id=resource["targetExternalId"],
             target_type=resource["targetType"],
-            target=(target := resource.get("target")) and cls._convert_resource(target, resource["targetType"]),
+            target=cls._convert_resource(target, resource["targetType"]) if target else None,
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
             confidence=resource.get("confidence"),
             data_set_id=resource.get("dataSetId"),
-            labels=(labels := resource.get("labels")) and Label._load_list(labels),
+            labels=Label._load_list(labels) if labels else None,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -280,6 +283,7 @@ class RelationshipWrite(RelationshipCore):
 
     @classmethod
     def _load(cls, resource: dict) -> RelationshipWrite:
+        labels = resource.get("labels")
         return cls(
             external_id=resource["externalId"],
             source_external_id=resource["sourceExternalId"],
@@ -290,7 +294,7 @@ class RelationshipWrite(RelationshipCore):
             end_time=resource.get("endTime"),
             confidence=resource.get("confidence"),
             data_set_id=resource.get("dataSetId"),
-            labels=(labels := resource.get("labels")) and Label._load_list(labels),
+            labels=Label._load_list(labels) if labels else None,
         )
 
     def as_write(self) -> RelationshipWrite:

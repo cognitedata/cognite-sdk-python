@@ -180,12 +180,6 @@ def rename_and_exclude_keys(
     return {aliases.get(k, k): v for k, v in dct.items() if k not in exclude}
 
 
-def load_resource(dct: dict[str, Any], cls: type[T_CogniteResource], key: str) -> T_CogniteResource | None:
-    if (res := dct.get(key)) is not None:
-        return cls._load(res)
-    return None
-
-
 def unpack_items_in_payload(payload: dict[str, dict[str, Any]]) -> list:
     return payload["json"]["items"]
 

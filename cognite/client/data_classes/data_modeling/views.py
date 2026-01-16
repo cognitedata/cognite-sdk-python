@@ -108,7 +108,7 @@ class ViewApply(ViewCore):
             else None
         )
         implements = [ViewId.load(v) for v in resource["implements"]] if "implements" in resource else None
-        filter = Filter.load(resource["filter"]) if "filter" in resource else None
+        filter = Filter._load_if(resource.get("filter"))
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -205,7 +205,7 @@ class View(ViewCore):
             name=resource.get("name"),
             last_updated_time=resource["lastUpdatedTime"],
             created_time=resource["createdTime"],
-            filter=Filter.load(resource["filter"]) if "filter" in resource else None,
+            filter=Filter._load_if(resource.get("filter")),
             implements=[ViewId.load(v) for v in resource["implements"]] if "implements" in resource else None,
             writable=resource["writable"],
             used_for=resource["usedFor"],
@@ -397,7 +397,7 @@ class MappedPropertyApply(ViewPropertyApply):
             container_property_identifier=resource["containerPropertyIdentifier"],
             name=resource.get("name"),
             description=resource.get("description"),
-            source=ViewId.load(resource["source"]) if "source" in resource else None,
+            source=ViewId._load_if(resource.get("source")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -537,7 +537,7 @@ class EdgeConnection(ConnectionDefinition, ABC):
             source=ViewId.load(resource["source"]),
             name=resource.get("name"),
             description=resource.get("description"),
-            edge_source=(edge_source := resource.get("edgeSource")) and ViewId.load(edge_source),
+            edge_source=ViewId._load_if(resource.get("edgeSource")),
             direction=resource["direction"],
         )
 
@@ -744,7 +744,7 @@ class EdgeConnectionApply(ConnectionDefinitionApply, ABC):
             source=ViewId.load(resource["source"]),
             name=resource.get("name"),
             description=resource.get("description"),
-            edge_source=(edge_source := resource.get("edgeSource")) and ViewId.load(edge_source),
+            edge_source=ViewId._load_if(resource.get("edgeSource")),
         )
         if "direction" in resource:
             instance.direction = resource["direction"]

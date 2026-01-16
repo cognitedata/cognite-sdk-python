@@ -103,7 +103,7 @@ class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
             is_step=resource["isStep"],
             is_string=resource["isString"],
             external_id=resource.get("externalId"),
-            instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
+            instance_id=NodeId._load_if(resource.get("instanceId")),
             name=resource.get("name"),
             metadata=resource.get("metadata"),
             unit=resource.get("unit"),
@@ -269,7 +269,7 @@ class TimeSeriesWrite(WriteableCogniteResource["TimeSeriesWrite"]):
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource.get("externalId"),
-            instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
+            instance_id=NodeId._load_if(resource.get("instanceId")),
             name=resource.get("name"),
             is_string=resource.get("isString"),
             metadata=resource.get("metadata"),
