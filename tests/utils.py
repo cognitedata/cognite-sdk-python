@@ -469,7 +469,12 @@ class FakeCogniteResourceGenerator:
                 # Use revision-based parameters
                 keyword_arguments.pop("routine_external_id", None)
 
-        return resource_cls(*positional_arguments, **keyword_arguments)
+        instance = resource_cls(*positional_arguments, **keyword_arguments)
+
+        # Set client reference on resources that use it:
+        if hasattr(instance, "set_client_ref"):
+            instance.set_client_ref(self._async_client)
+        return instance
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
         import numpy as np

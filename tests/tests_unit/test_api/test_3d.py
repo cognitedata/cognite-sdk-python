@@ -106,7 +106,7 @@ class Test3DModels:
         self, cognite_client: CogniteClient, mock_3d_model_response: HTTPXMock, expected_items: list[dict[str, Any]]
     ) -> None:
         res = cognite_client.three_d.models.update(
-            ThreeDModel(id=1, name="bla", created_time=123, data_set_id=None, metadata=None, cognite_client=None)
+            ThreeDModel(id=1, name="bla", created_time=123, data_set_id=None, metadata=None)
         )
         assert {"id": 1, "update": {"name": {"set": "bla"}}} == jsgz_load(
             mock_3d_model_response.get_requests()[0].content
@@ -477,7 +477,7 @@ class Test3DAssetMappings:
         res = cognite_client.three_d.asset_mappings.delete(
             model_id=1,
             revision_id=1,
-            asset_mapping=ThreeDAssetMapping(1, 1, tree_index=None, subtree_size=None, cognite_client=None),
+            asset_mapping=ThreeDAssetMapping(1, 1, tree_index=None, subtree_size=None),
         )
         assert res is None
         assert [{"nodeId": 1, "assetId": 1}] == jsgz_load(mock_3d_asset_mappings_response.get_requests()[0].content)[
@@ -488,7 +488,7 @@ class Test3DAssetMappings:
         res = cognite_client.three_d.asset_mappings.delete(
             model_id=1,
             revision_id=1,
-            asset_mapping=[ThreeDAssetMapping(1, 1, tree_index=None, subtree_size=None, cognite_client=None)],
+            asset_mapping=[ThreeDAssetMapping(1, 1, tree_index=None, subtree_size=None)],
         )
         assert res is None
         assert [{"nodeId": 1, "assetId": 1}] == jsgz_load(mock_3d_asset_mappings_response.get_requests()[0].content)[
@@ -508,6 +508,6 @@ class Test3DAssetMappings:
             cognite_client.three_d.asset_mappings.delete(
                 model_id=1,
                 revision_id=1,
-                asset_mapping=[ThreeDAssetMapping(1, 1, tree_index=None, subtree_size=None, cognite_client=None)],
+                asset_mapping=[ThreeDAssetMapping(1, 1, tree_index=None, subtree_size=None)],
             )
         assert e.value.unknown == [ThreeDAssetMapping.load({"assetId": 1, "nodeId": 1})]

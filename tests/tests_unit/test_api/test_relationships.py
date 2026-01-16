@@ -214,7 +214,6 @@ class TestRelationships:
                 confidence=None,
                 data_set_id=None,
                 labels=[Label(external_id="Pump")],
-                cognite_client=None,
             )
         )
         assert isinstance(res, Relationship)
@@ -281,7 +280,6 @@ class TestRelationships:
                 confidence=None,
                 data_set_id=None,
                 labels=[Label(external_id="Pump")],
-                cognite_client=None,
             )
         )
         expected = {

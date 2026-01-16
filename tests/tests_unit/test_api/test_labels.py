@@ -102,7 +102,7 @@ class TestLabels:
             {"externalId": "a"},
             "b",
             Label("c"),
-            LabelDefinition("d", name="bla", created_time=123, description=None, data_set_id=None, cognite_client=None),
+            LabelDefinition("d", name="bla", created_time=123, description=None, data_set_id=None),
         ]
         assert Label._load_list(labels) == [Label("a"), Label("b"), Label("c"), Label("d")]
 
