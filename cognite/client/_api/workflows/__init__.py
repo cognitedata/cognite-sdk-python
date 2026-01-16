@@ -170,7 +170,7 @@ class WorkflowAPI(APIClient):
         tasks = [AsyncSDKTask(get_single, xid) for xid in split_into_chunks(external_id, self._RETRIEVE_LIMIT)]
         tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
-        return WorkflowList(list(filter(None, tasks_summary.results)), cognite_client=self._cognite_client)
+        return WorkflowList(list(filter(None, tasks_summary.results)))
 
     async def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more workflows with versions. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/DeleteWorkflows>`_

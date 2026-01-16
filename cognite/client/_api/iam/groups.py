@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Any, overload
+from typing import Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Group, GroupList
 from cognite.client.data_classes.iam import GroupWrite
 from cognite.client.utils._identifier import IdentifierSequence
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class _GroupListAdapter(GroupList):
@@ -17,10 +14,9 @@ class _GroupListAdapter(GroupList):
     def _load(  # type: ignore[override]
         cls,
         resource_list: Iterable[dict[str, Any]],
-        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> GroupList:
-        return GroupList._load(resource_list, cognite_client=cognite_client, allow_unknown=True)
+        return GroupList._load(resource_list, allow_unknown=True)
 
 
 class _GroupAdapter(Group):
@@ -28,10 +24,9 @@ class _GroupAdapter(Group):
     def _load(  # type: ignore[override]
         cls,
         resource: dict[str, Any],
-        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> Group:
-        return Group._load(resource, cognite_client=cognite_client, allow_unknown=True)
+        return Group._load(resource, allow_unknown=True)
 
 
 # We need an adapter for GroupWrite in case the API returns a non 200-status code.
@@ -42,10 +37,9 @@ class _GroupWriteAdapter(GroupWrite):
     def _load(  # type: ignore[override]
         cls,
         resource: dict[str, Any],
-        cognite_client: AsyncCogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> GroupWrite:
-        return GroupWrite._load(resource, cognite_client=cognite_client, allow_unknown=True)
+        return GroupWrite._load(resource, allow_unknown=True)
 
 
 class GroupsAPI(APIClient):
@@ -76,7 +70,7 @@ class GroupsAPI(APIClient):
         res = await self._get(self._RESOURCE_PATH, params={"all": all})
         # Dev.note: We don't use public load method here (it is final) and we need to pass a magic keyword arg. to
         # not raise whenever new Acls/actions/scopes are added to the API. So we specifically allow the 'unknown':
-        return GroupList._load(res.json()["items"], cognite_client=self._cognite_client, allow_unknown=True)
+        return GroupList._load(res.json()["items"], allow_unknown=True)
 
     @overload
     async def create(self, group: Group | GroupWrite) -> Group: ...

@@ -505,10 +505,9 @@ class DocumentsAPI(APIClient):
 
         if highlight:
             return DocumentHighlightList._load(
-                ({"highlight": item["highlight"], "document": item["item"]} for item in json_content["items"]),
-                cognite_client=self._cognite_client,
+                [{"highlight": item["highlight"], "document": item["item"]} for item in json_content["items"]],
             )
-        return DocumentList._load((item["item"] for item in results), cognite_client=self._cognite_client)
+        return DocumentList._load([item["item"] for item in results])
 
     async def list(
         self,

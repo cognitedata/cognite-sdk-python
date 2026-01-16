@@ -98,7 +98,7 @@ class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
         self._node_cls = node_cls
         self._edge_cls = edge_cls
 
-    def _load(self, data: str | dict, cognite_client: AsyncCogniteClient | None = None) -> T_Node | T_Edge:
+    def _load(self, data: str | dict) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return self._node_cls._load(data)  # type: ignore[return-value]
@@ -110,41 +110,37 @@ class _TypedNodeOrEdgeListAdapter:
         self._instance_cls = instance_cls
         self._list_cls = NodeList if issubclass(instance_cls, TypedNode) else EdgeList
 
-    def __call__(self, items: Any, cognite_client: AsyncCogniteClient | None = None) -> Any:
-        return self._list_cls(items, cognite_client=cognite_client)
+    def __call__(self, items: Any) -> Any:
+        return self._list_cls(items)
 
-    def _load(self, data: str | dict, cognite_client: AsyncCogniteClient | None = None) -> T_Node | T_Edge:
+    def _load(self, data: str | dict) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
-        return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client=cognite_client)  # type: ignore[return-value, attr-defined]
+        return self._list_cls([self._instance_cls._load(item) for item in data])  # type: ignore[return-value, attr-defined]
 
-    def _load_raw_api_response(
-        self, responses: list[dict[str, Any]], cognite_client: AsyncCogniteClient
-    ) -> T_Node | T_Edge:
+    def _load_raw_api_response(self, responses: list[dict[str, Any]]) -> T_Node | T_Edge:
         from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         debug = next((DebugInfo._load(r["debug"]) for r in responses if "debug" in r), None)
         resources = [
-            self._instance_cls._load(item, cognite_client=cognite_client)  # type: ignore[attr-defined]
+            self._instance_cls._load(item)  # type: ignore[attr-defined]
             for response in responses
             for item in response["items"]
         ]
-        return self._list_cls(resources, typing, debug, cognite_client=cognite_client)  # type: ignore[return-value]
+        return self._list_cls(resources, typing, debug)  # type: ignore[return-value]
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
     _RESOURCE = (NodeApplyResult, EdgeApplyResult)  # type: ignore[assignment]
 
     @classmethod
-    def _load(
-        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: AsyncCogniteClient | None = None
-    ) -> _NodeOrEdgeApplyResultList:
+    def _load(cls, resource_list: Iterable[dict[str, Any]] | str) -> _NodeOrEdgeApplyResultList:
         resource_list = load_yaml_or_json(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[NodeApplyResult | EdgeApplyResult] = [
             NodeApplyResult._load(data) if data["instanceType"] == "node" else EdgeApplyResult._load(data)
             for data in resource_list
         ]
-        return cls(resources, None)
+        return cls(resources)
 
     def as_ids(self) -> list[NodeId | EdgeId]:
         return [result.as_id() for result in self]
@@ -152,7 +148,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
 class _NodeOrEdgeApplyResultAdapter:
     @staticmethod
-    def load(data: str | dict, cognite_client: AsyncCogniteClient | None = None) -> NodeApplyResult | EdgeApplyResult:
+    def load(data: str | dict) -> NodeApplyResult | EdgeApplyResult:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApplyResult._load(data)
@@ -161,7 +157,7 @@ class _NodeOrEdgeApplyResultAdapter:
 
 class _NodeOrEdgeApplyAdapter:
     @staticmethod
-    def _load(data: dict, cognite_client: AsyncCogniteClient | None = None) -> NodeApply | EdgeApply:
+    def _load(data: dict) -> NodeApply | EdgeApply:
         if data["instanceType"] == "node":
             return NodeApply._load(data)
         return EdgeApply._load(data)
@@ -317,7 +313,7 @@ class InstancesAPI(APIClient):
             headers=headers,
             semaphore=self.__dm_semaphore,
         ):
-            yield list_cls._load_raw_api_response([raw], self._cognite_client)
+            yield list_cls._load_raw_api_response([raw])
 
     @overload
     async def retrieve_edges(
@@ -611,32 +607,27 @@ class InstancesAPI(APIClient):
                 self,
                 resources: list[Node | Edge],
                 typing: TypeInformation | None,
-                cognite_client: AsyncCogniteClient | None,
             ):
-                super().__init__(resources, cognite_client)
+                super().__init__(resources)
                 self.typing = typing
 
             @classmethod
-            def _load(
-                cls, resource_list: Iterable[dict[str, Any]], cognite_client: AsyncCogniteClient | None = None
-            ) -> _NodeOrEdgeList:
+            def _load(cls, resource_list: Iterable[dict[str, Any]]) -> _NodeOrEdgeList:
                 resources: list[Node | Edge] = [
                     node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)
                     for data in resource_list
                 ]
-                return cls(resources, None, None)
+                return cls(resources, typing=None)
 
             @classmethod
-            def _load_raw_api_response(
-                cls, responses: list[dict[str, Any]], cognite_client: AsyncCogniteClient
-            ) -> _NodeOrEdgeList:
+            def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> _NodeOrEdgeList:
                 typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
                 resources = [
                     node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)
                     for response in responses
                     for data in response["items"]
                 ]
-                return cls(resources, typing, cognite_client)  # type: ignore[arg-type]
+                return cls(resources, typing)  # type: ignore[arg-type]
 
         res = await self._retrieve_multiple(  # type: ignore[call-overload]
             list_cls=_NodeOrEdgeList,
@@ -648,8 +639,8 @@ class InstancesAPI(APIClient):
         )
 
         return InstancesResult[T_Node, T_Edge](
-            nodes=NodeList([node for node in res if isinstance(node, Node)], typing=res.typing),
-            edges=EdgeList([edge for edge in res if isinstance(edge, Edge)], typing=res.typing),
+            nodes=NodeList([node for node in res if isinstance(node, node_cls)], typing=res.typing),
+            edges=EdgeList([edge for edge in res if isinstance(edge, edge_cls)], typing=res.typing),
         )
 
     @staticmethod
@@ -1269,8 +1260,10 @@ class InstancesAPI(APIClient):
 
         res = await self._post(url_path=self._RESOURCE_PATH + "/search", json=body, semaphore=self.__dm_semaphore)
         result = res.json()
-        typing = TypeInformation._load(result["typing"]) if "typing" in result else None
-        return list_cls([resource_cls._load(item) for item in result["items"]], typing, cognite_client=None)
+        return list_cls(
+            [resource_cls._load(item) for item in result["items"]],  # type: ignore [misc]
+            typing=TypeInformation._load(result["typing"]) if "typing" in result else None,
+        )
 
     @overload
     async def aggregate(
@@ -1391,7 +1384,7 @@ class InstancesAPI(APIClient):
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
         res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=self.__dm_semaphore)
-        result_list = InstanceAggregationResultList._load(res.json()["items"], cognite_client=None)
+        result_list = InstanceAggregationResultList._load(res.json()["items"])
         if group_by is not None:
             return result_list
 

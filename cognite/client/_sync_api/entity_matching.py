@@ -1,6 +1,6 @@
 """
 ===============================================================================
-b4fb75f75211aeb65ccb69bae0128cc6
+90118a596b86ba25244d0e65e320ab77
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -140,6 +140,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
     def list_jobs(self) -> ContextualizationJobList:
         """
         List jobs, typically model fit and predict runs.
+
         Returns:
             ContextualizationJobList: List of jobs.
         """

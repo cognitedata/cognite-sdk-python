@@ -335,4 +335,4 @@ class SimulatorRunsAPI(APIClient):
         )
 
         items = req.json().get("items", [])
-        return SimulationRunDataList._load(items, cognite_client=self._cognite_client)
+        return SimulationRunDataList._load(items)

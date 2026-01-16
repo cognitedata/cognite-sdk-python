@@ -299,4 +299,4 @@ class SimulatorModelRevisionsAPI(APIClient):
             json={"items": [{"modelRevisionExternalId": model_revision_external_id}]},
         )
         items = response.json()["items"]
-        return SimulatorModelRevisionDataList._load(items, cognite_client=self._cognite_client)
+        return SimulatorModelRevisionDataList._load(items)
