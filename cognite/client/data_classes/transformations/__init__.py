@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -17,6 +17,7 @@ from cognite.client.data_classes._base import (
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
+    WriteableCogniteResourceWithClientRef,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations.common import (
@@ -79,56 +80,11 @@ class SessionDetails:
         return ret
 
 
-class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
-    """The transformation resource allows transforming data in CDF.
-
-    Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the Transformation.
-        ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
-        source_nonce (NonceCredentials | None): No description.
-        source_oidc_credentials (OidcCredentials | None): No description.
-        destination_nonce (NonceCredentials | None): No description.
-        destination_oidc_credentials (OidcCredentials | None): No description.
-        data_set_id (int | None): No description.
-    """
-
-    def __init__(
-        self,
-        external_id: str,
-        name: str,
-        ignore_null_fields: bool,
-        source_nonce: NonceCredentials | None,
-        source_oidc_credentials: OidcCredentials | None,
-        destination_nonce: NonceCredentials | None,
-        destination_oidc_credentials: OidcCredentials | None,
-        data_set_id: int | None = None,
-    ) -> None:
-        self.external_id = external_id
-        self.name = name
-        self.ignore_null_fields = ignore_null_fields
-        self.source_nonce = source_nonce
-        self.source_oidc_credentials = source_oidc_credentials
-        self.destination_nonce = destination_nonce
-        self.destination_oidc_credentials = destination_oidc_credentials
-        self.data_set_id = data_set_id
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dump the instance into a json serializable Python data type.
-
-        Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the instance.
-        """
-
-        ret = super().dump(camel_case=camel_case)
-
-        for name, prop in ret.items():
-            if hasattr(prop, "dump"):
-                ret[name] = prop.dump(camel_case=camel_case)
-        return ret
+class _TransformationsCredentialsMixin:
+    source_nonce: NonceCredentials | None
+    source_oidc_credentials: OidcCredentials | None
+    destination_nonce: NonceCredentials | None
+    destination_oidc_credentials: OidcCredentials | None
 
     async def _process_credentials(
         self,
@@ -213,7 +169,7 @@ class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
         return ret
 
 
-class Transformation(TransformationCore):
+class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"], _TransformationsCredentialsMixin):
     """The transformation resource allows transforming data in CDF.
 
     Args:
@@ -241,7 +197,6 @@ class Transformation(TransformationCore):
         source_session (SessionDetails | None): Details for the session used to read from the source project.
         destination_session (SessionDetails | None): Details for the session used to write to the destination project.
         tags (list[str] | None): No description.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -270,18 +225,15 @@ class Transformation(TransformationCore):
         source_session: SessionDetails | None,
         destination_session: SessionDetails | None,
         tags: list[str] | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
-        super().__init__(
-            external_id=external_id,
-            name=name,
-            ignore_null_fields=ignore_null_fields,
-            source_oidc_credentials=source_oidc_credentials,
-            destination_oidc_credentials=destination_oidc_credentials,
-            source_nonce=source_nonce,
-            destination_nonce=destination_nonce,
-            data_set_id=data_set_id,
-        )
+        self.external_id = external_id
+        self.name = name
+        self.ignore_null_fields = ignore_null_fields
+        self.source_oidc_credentials = source_oidc_credentials
+        self.destination_oidc_credentials = destination_oidc_credentials
+        self.source_nonce = source_nonce
+        self.destination_nonce = destination_nonce
+        self.data_set_id = data_set_id
         self.id = id
         self.query = query
         self.destination = destination
@@ -298,7 +250,6 @@ class Transformation(TransformationCore):
         self.source_session = source_session
         self.destination_session = destination_session
         self.tags = tags or []
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
         if self.schedule:
             self.schedule.id = self.schedule.id or self.id
@@ -370,13 +321,23 @@ class Transformation(TransformationCore):
             source_session=self.source_session,
             destination_session=self.destination_session,
             tags=self.tags,
-            cognite_client=None,  # skip cognite client
         )
 
-    async def _process_credentials(  # type: ignore[override]
-        self, sessions_cache: dict[str, NonceCredentials] | None = None, keep_none: bool = False
-    ) -> None:
-        await super()._process_credentials(self._cognite_client, sessions_cache=sessions_cache, keep_none=keep_none)
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+
+        Returns:
+            dict[str, Any]: A dictionary representation of the instance.
+        """
+        ret = super().dump(camel_case=camel_case)
+
+        for name, prop in ret.items():
+            if hasattr(prop, "dump"):
+                ret[name] = prop.dump(camel_case=camel_case)
+        return ret
 
     async def run_async(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
         """Run this transformation.
@@ -412,7 +373,7 @@ class Transformation(TransformationCore):
         return run_sync(self.jobs_async())
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Transformation:
+    def _load(cls, resource: dict) -> Transformation:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -429,28 +390,25 @@ class Transformation(TransformationCore):
             last_updated_time=resource["lastUpdatedTime"],
             owner=resource["owner"],
             owner_is_current_user=resource["ownerIsCurrentUser"],
-            running_job=(job := resource.get("runningJob"))
-            and TransformationJob._load(job, cognite_client=cognite_client),
-            last_finished_job=(job := resource.get("lastFinishedJob"))
-            and TransformationJob._load(job, cognite_client=cognite_client),
+            running_job=(job := resource.get("runningJob")) and TransformationJob._load(job),
+            last_finished_job=(job := resource.get("lastFinishedJob")) and TransformationJob._load(job),
             blocked=(info := resource.get("blocked")) and TransformationBlockedInfo.load(info),
             schedule=(sched := resource.get("schedule"))
             and TransformationSchedule._load(sched)
-            and TransformationSchedule._load(sched, cognite_client=cognite_client),
+            and TransformationSchedule._load(sched),
             data_set_id=resource.get("dataSetId"),
             source_nonce=(nonce := resource.get("sourceNonce")) and NonceCredentials.load(nonce),
             destination_nonce=(nonce := resource.get("destinationNonce")) and NonceCredentials.load(nonce),
             source_session=(sess := resource.get("sourceSession")) and SessionDetails.load(sess),
             destination_session=(sess := resource.get("destinationSession")) and SessionDetails.load(sess),
             tags=resource.get("tags"),
-            cognite_client=cognite_client,
         )
 
     def __hash__(self) -> int:
         return hash(self.external_id)
 
 
-class TransformationWrite(TransformationCore):
+class TransformationWrite(WriteableCogniteResource["TransformationWrite"], _TransformationsCredentialsMixin):
     """The transformation resource allows transforming data in CDF.
 
     Args:
@@ -485,16 +443,14 @@ class TransformationWrite(TransformationCore):
         destination_nonce: NonceCredentials | None = None,
         tags: list[str] | None = None,
     ) -> None:
-        super().__init__(
-            external_id=external_id,
-            name=name,
-            ignore_null_fields=ignore_null_fields,
-            source_oidc_credentials=source_oidc_credentials,
-            destination_oidc_credentials=destination_oidc_credentials,
-            source_nonce=source_nonce,
-            destination_nonce=destination_nonce,
-            data_set_id=data_set_id,
-        )
+        self.external_id = external_id
+        self.name = name
+        self.ignore_null_fields = ignore_null_fields
+        self.source_oidc_credentials = source_oidc_credentials
+        self.destination_oidc_credentials = destination_oidc_credentials
+        self.source_nonce = source_nonce
+        self.destination_nonce = destination_nonce
+        self.data_set_id = data_set_id
         self.query = query
         self.destination = destination
         self.conflict_mode = conflict_mode
@@ -502,7 +458,7 @@ class TransformationWrite(TransformationCore):
         self.tags = tags
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TransformationWrite:
+    def _load(cls, resource: dict) -> TransformationWrite:
         return cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -536,6 +492,22 @@ class TransformationWrite(TransformationCore):
             self.destination_nonce,
             self.tags,
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+
+        Returns:
+            dict[str, Any]: A dictionary representation of the instance.
+        """
+        ret = super().dump(camel_case=camel_case)
+
+        for name, prop in ret.items():
+            if hasattr(prop, "dump"):
+                ret[name] = prop.dump(camel_case=camel_case)
+        return ret
 
     def as_write(self) -> TransformationWrite:
         """Returns this TransformationWrite instance."""
@@ -652,9 +624,7 @@ class TransformationList(WriteableCogniteResourceList[TransformationWrite, Trans
     _RESOURCE = Transformation
 
     def as_write(self) -> TransformationWriteList:
-        return TransformationWriteList(
-            [transformation.as_write() for transformation in self.data], cognite_client=self._get_cognite_client()
-        )
+        return TransformationWriteList([transformation.as_write() for transformation in self.data])
 
 
 class TagsFilter:
@@ -670,7 +640,7 @@ class ContainsAny(TagsFilter):
 
     Examples:
 
-            List only resources marked as a PUMP or as a VALVE::
+            List only resources marked as a PUMP or as a VALVE:
 
                 >>> from cognite.client.data_classes.transformations import ContainsAny
                 >>> my_tag_filter = ContainsAny(tags=["PUMP", "VALVE"])
@@ -743,26 +713,21 @@ class TransformationPreviewResult(CogniteResource):
     Args:
         schema (TransformationSchemaColumnList): List of column descriptions.
         results (list[dict]): List of resulting rows. Each row is a dictionary where the key is the column name and the value is the entry.
-        cognite_client (AsyncCogniteClient | None): No description.
     """
 
     def __init__(
         self,
         schema: TransformationSchemaColumnList,
         results: list[dict],
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.schema = schema
         self.results = results
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TransformationPreviewResult:
+    def _load(cls, resource: dict) -> TransformationPreviewResult:
         return cls(
-            schema=(items := resource["schema"].get("items"))
-            and TransformationSchemaColumnList._load(items, cognite_client=cognite_client),
+            schema=(items := resource["schema"].get("items")) and TransformationSchemaColumnList._load(items),
             results=resource["results"].get("items", []),
-            cognite_client=cognite_client,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

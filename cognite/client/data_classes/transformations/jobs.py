@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from enum import Enum
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any
 
 from typing_extensions import Self
 
@@ -10,14 +10,12 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
     CogniteResourceList,
+    CogniteResourceWithClientRef,
     InternalIdTransformerMixin,
 )
 from cognite.client.data_classes.transformations.common import TransformationDestination
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._text import copy_doc_from_async
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class TransformationJobStatus(str, Enum):
@@ -34,7 +32,6 @@ class TransformationJobMetric(CogniteResource):
         timestamp (int): Time of the last metric update.
         name (str): Name of the metric.
         count (int): Value of the metric.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -42,20 +39,17 @@ class TransformationJobMetric(CogniteResource):
         timestamp: int,
         name: str,
         count: int,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.name = name
         self.count = count
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             timestamp=resource["timestamp"],
             name=resource["name"],
             count=resource["count"],
-            cognite_client=cognite_client,
         )
 
 
@@ -63,7 +57,7 @@ class TransformationJobMetricList(CogniteResourceList[TransformationJobMetric], 
     _RESOURCE = TransformationJobMetric
 
 
-class TransformationJob(CogniteResource):
+class TransformationJob(CogniteResourceWithClientRef):
     """The transformation job resource allows following the status of execution of a transformation run.
 
     Args:
@@ -82,7 +76,6 @@ class TransformationJob(CogniteResource):
         started_time (int | None): Time when the job started running.
         finished_time (int | None): Time when the job finished running.
         last_seen_time (int | None): Time of the last status update from the job.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -102,7 +95,6 @@ class TransformationJob(CogniteResource):
         started_time: int | None,
         finished_time: int | None,
         last_seen_time: int | None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.id = id
         self.status = status
@@ -119,7 +111,6 @@ class TransformationJob(CogniteResource):
         self.started_time = started_time
         self.finished_time = finished_time
         self.last_seen_time = last_seen_time
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     async def update_async(self) -> None:
         """`Get updated job status.`"""
@@ -225,7 +216,7 @@ class TransformationJob(CogniteResource):
         return output
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TransformationJob:
+    def _load(cls, resource: dict) -> TransformationJob:
         return cls(
             id=resource["id"],
             status=TransformationJobStatus(resource["status"]),
@@ -244,7 +235,6 @@ class TransformationJob(CogniteResource):
             started_time=resource.get("startedTime"),
             finished_time=resource.get("finishedTime"),
             last_seen_time=resource.get("lastSeenTime"),
-            cognite_client=cognite_client,
         )
 
     def __hash__(self) -> int:

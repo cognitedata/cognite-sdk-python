@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC
-from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any
+from collections.abc import Iterable, Sequence
+from typing import Any, cast
 
 from typing_extensions import Self
 
@@ -12,9 +12,6 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import WritableDataModelingResource
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SpaceCore(WritableDataModelingResource["SpaceApply"], ABC):
@@ -49,7 +46,7 @@ class SpaceApply(SpaceCore):
         super().__init__(space, description, name)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             space=resource["space"],
             description=resource.get("description"),
@@ -98,7 +95,7 @@ class Space(SpaceCore):
         return self.as_apply()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             space=resource["space"],
             is_global=resource["isGlobal"],
@@ -140,7 +137,7 @@ class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
         return self._space_to_item.get(space)
 
     def extend(self, other: Iterable[Any]) -> None:
-        other_res_list = type(self)(other)  # See if we can accept the types
+        other_res_list = type(self)(cast(Sequence, other))  # See if we can accept the types
         if self._space_to_item.keys().isdisjoint(other_res_list._space_to_item):
             self.data.extend(other_res_list.data)
             self._space_to_item.update(other_res_list._space_to_item)
@@ -163,10 +160,7 @@ class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
         Returns:
             SpaceApplyList: A list of space applies.
         """
-        return SpaceApplyList(
-            resources=[item.as_apply() for item in self],
-            cognite_client=self._get_cognite_client(),
-        )
+        return SpaceApplyList([item.as_apply() for item in self])
 
     def as_write(self) -> SpaceApplyList:
         return self.as_apply()

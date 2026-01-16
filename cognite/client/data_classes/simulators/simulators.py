@@ -2,19 +2,15 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     IdTransformerMixin,
 )
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class Simulator(CogniteResource):
@@ -60,22 +56,18 @@ class Simulator(CogniteResource):
         self.id = id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
             name=resource["name"],
             file_extension_types=resource["fileExtensionTypes"],
-            model_types=SimulatorModelType._load_list(resource["modelTypes"], cognite_client)
-            if "modelTypes" in resource
-            else None,
-            step_fields=SimulatorStep._load_list(resource["stepFields"], cognite_client)
-            if "stepFields" in resource
-            else None,
-            unit_quantities=SimulatorQuantity._load_list(resource["unitQuantities"], cognite_client)
+            model_types=SimulatorModelType._load_list(resource["modelTypes"]) if "modelTypes" in resource else None,
+            step_fields=SimulatorStep._load_list(resource["stepFields"]) if "stepFields" in resource else None,
+            unit_quantities=SimulatorQuantity._load_list(resource["unitQuantities"])
             if "unitQuantities" in resource
             else None,
-            model_dependencies=SimulatorModelDependency._load_list(resource["modelDependencies"], cognite_client)
+            model_dependencies=SimulatorModelDependency._load_list(resource["modelDependencies"])
             if "modelDependencies" in resource
             else None,
         )
@@ -142,12 +134,12 @@ class Simulator(CogniteResource):
 
 
 @dataclass
-class SimulatorUnitEntry(CogniteObject):
+class SimulatorUnitEntry(CogniteResource):
     label: str
     name: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             label=resource["label"],
             name=resource["name"],
@@ -155,12 +147,12 @@ class SimulatorUnitEntry(CogniteObject):
 
 
 @dataclass
-class SimulatorStepOption(CogniteObject):
+class SimulatorStepOption(CogniteResource):
     label: str
     value: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             label=resource["label"],
             value=resource["value"],
@@ -168,12 +160,12 @@ class SimulatorStepOption(CogniteObject):
 
 
 @dataclass
-class SimulatorModelType(CogniteObject):
+class SimulatorModelType(CogniteResource):
     name: str
     key: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             name=resource["name"],
             key=resource["key"],
@@ -183,64 +175,62 @@ class SimulatorModelType(CogniteObject):
     def _load_list(
         cls,
         resource: dict[str, Any] | list[dict[str, Any]],
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> list[SimulatorModelType]:
         if isinstance(resource, dict):
-            return [cls._load(resource, cognite_client)]
+            return [cls._load(resource)]
         elif isinstance(resource, list):
-            return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
+            return [cls._load(res) for res in resource if isinstance(res, dict)]
         else:
             raise TypeError("Expected a dict or a list of dicts.")
 
 
 @dataclass
-class SimulatorQuantity(CogniteObject):
+class SimulatorQuantity(CogniteResource):
     name: str
     label: str
     units: Sequence[SimulatorUnitEntry]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             name=resource["name"],
             label=resource["label"],
-            units=[SimulatorUnitEntry._load(unit_, cognite_client) for unit_ in resource["units"]],
+            units=[SimulatorUnitEntry._load(unit) for unit in resource["units"]],
         )
 
     @classmethod
     def _load_list(
         cls,
         resource: dict[str, Any] | list[dict[str, Any]],
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> list[SimulatorQuantity]:
         if isinstance(resource, dict):
-            return [cls._load(resource, cognite_client)]
+            return [cls._load(resource)]
         elif isinstance(resource, list):
-            return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
+            return [cls._load(res) for res in resource if isinstance(res, dict)]
         else:
             raise TypeError("Expected a dict or a list of dicts.")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
-        output["units"] = [unit_.dump(camel_case=camel_case) for unit_ in self.units]
+        output["units"] = [unit.dump(camel_case=camel_case) for unit in self.units]
 
         return output
 
 
 @dataclass
-class SimulatorStepField(CogniteObject):
+class SimulatorStepField(CogniteResource):
     name: str
     label: str
     info: str
     options: Sequence[SimulatorStepOption] | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             name=resource["name"],
             label=resource["label"],
             info=resource["info"],
-            options=[SimulatorStepOption._load(option_, cognite_client) for option_ in resource["options"]]
+            options=[SimulatorStepOption._load(option_) for option_ in resource["options"]]
             if "options" in resource
             else None,
         )
@@ -254,7 +244,7 @@ class SimulatorStepField(CogniteObject):
 
 
 @dataclass
-class SimulatorModelDependencyFields(CogniteObject):
+class SimulatorModelDependencyFields(CogniteResource):
     """
     Represents the fields supported by the simulator for external dependencies.
     Args:
@@ -268,7 +258,7 @@ class SimulatorModelDependencyFields(CogniteObject):
     info: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             name=resource["name"],
             label=resource["label"],
@@ -277,7 +267,7 @@ class SimulatorModelDependencyFields(CogniteObject):
 
 
 @dataclass
-class SimulatorModelDependency(CogniteObject):
+class SimulatorModelDependency(CogniteResource):
     """
     Defines the simulator model dependency, specifying the supported fields and file extension types compatible with the simulator.
     Args:
@@ -289,22 +279,21 @@ class SimulatorModelDependency(CogniteObject):
     fields: Sequence[SimulatorModelDependencyFields]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             file_extension_types=resource["fileExtensionTypes"],
-            fields=[SimulatorModelDependencyFields._load(field_, cognite_client) for field_ in resource["fields"]],
+            fields=[SimulatorModelDependencyFields._load(field) for field in resource["fields"]],
         )
 
     @classmethod
     def _load_list(
         cls,
         resource: dict[str, Any] | list[dict[str, Any]],
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> list[SimulatorModelDependency]:
         if isinstance(resource, dict):
-            return [cls._load(resource, cognite_client)]
+            return [cls._load(resource)]
         elif isinstance(resource, list):
-            return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
+            return [cls._load(res) for res in resource if isinstance(res, dict)]
         else:
             raise TypeError("Expected a dict or a list of dicts.")
 
@@ -316,27 +305,26 @@ class SimulatorModelDependency(CogniteObject):
 
 
 @dataclass
-class SimulatorStep(CogniteObject):
+class SimulatorStep(CogniteResource):
     step_type: str
     fields: Sequence[SimulatorStepField]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             step_type=resource["stepType"],
-            fields=[SimulatorStepField._load(field_, cognite_client) for field_ in resource["fields"]],
+            fields=[SimulatorStepField._load(field_) for field_ in resource["fields"]],
         )
 
     @classmethod
     def _load_list(
         cls,
         resource: dict[str, Any] | list[dict[str, Any]],
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> list[SimulatorStep]:
         if isinstance(resource, dict):
-            return [cls._load(resource, cognite_client)]
+            return [cls._load(resource)]
         elif isinstance(resource, list):
-            return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
+            return [cls._load(res) for res in resource if isinstance(res, dict)]
         else:
             raise TypeError("Expected a dict or a list of dicts.")
 
@@ -414,7 +402,7 @@ class SimulatorIntegration(CogniteResource):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             active=resource["active"],

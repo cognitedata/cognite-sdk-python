@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import Any, Literal
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
@@ -17,15 +16,13 @@ from cognite.client.data_classes._base import (
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
+    WriteableCogniteResourceWithClientRef,
 )
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._text import copy_doc_from_async
 
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
-
-class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisionWrite"], ABC):
+class SimulatorModelRevisionWrite(WriteableCogniteResource["SimulatorModelRevisionWrite"]):
     def __init__(
         self,
         external_id: str,
@@ -47,30 +44,23 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
 
         return output
 
-
-class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
     def as_write(self) -> SimulatorModelRevisionWrite:
-        """Returns a writeable version of this resource"""
         return self
 
     @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
-    ) -> SimulatorModelRevisionWrite:
+    def _load(cls, resource: dict[str, Any]) -> SimulatorModelRevisionWrite:
         return cls(
             external_id=resource["externalId"],
             model_external_id=resource["modelExternalId"],
             file_id=resource["fileId"],
             description=resource.get("description"),
-            external_dependencies=SimulatorModelRevisionDependency._load_list(
-                resource["externalDependencies"], cognite_client
-            )
+            external_dependencies=SimulatorModelRevisionDependency._load_list(resource["externalDependencies"])
             if "externalDependencies" in resource
             else None,
         )
 
 
-class SimulatorModelRevision(SimulatorModelRevisionCore):
+class SimulatorModelRevision(WriteableCogniteResourceWithClientRef["SimulatorModelRevisionWrite"]):
     """
     Simulator model revisions track changes and updates to a simulator model over time.
 
@@ -92,7 +82,6 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         description (str | None): The description of the simulator model revision
         status_message (str | None): The current status message of the simulator model revision
         external_dependencies (list[SimulatorModelRevisionDependency] | None): A list of external dependencies for the simulator model revision
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -112,15 +101,12 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         description: str | None = None,
         status_message: str | None = None,
         external_dependencies: list[SimulatorModelRevisionDependency] | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
-        super().__init__(
-            external_id=external_id,
-            model_external_id=model_external_id,
-            file_id=file_id,
-            description=description,
-            external_dependencies=external_dependencies,
-        )
+        self.external_id = external_id
+        self.model_external_id = model_external_id
+        self.file_id = file_id
+        self.description = description
+        self.external_dependencies = external_dependencies
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -131,10 +117,9 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         self.log_id = log_id
         self.status_message = status_message
         self.simulator_external_id = simulator_external_id
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -150,16 +135,20 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
             log_id=resource["logId"],
             description=resource.get("description"),
             status_message=resource.get("statusMessage"),
-            external_dependencies=SimulatorModelRevisionDependency._load_list(
-                resource["externalDependencies"], cognite_client
-            )
+            external_dependencies=SimulatorModelRevisionDependency._load_list(resource["externalDependencies"])
             if "externalDependencies" in resource
             else None,
-            cognite_client=cognite_client,
         )
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if self.external_dependencies is not None:
+            output["externalDependencies"] = [item.dump(camel_case=camel_case) for item in self.external_dependencies]
+
+        return output
+
     def as_write(self) -> SimulatorModelRevisionWrite:
-        """Returns this SimulatorModelRevision in its writing version."""
+        """Returns this SimulatorModelRevision in its write version."""
         return SimulatorModelRevisionWrite(
             external_id=self.external_id,
             model_external_id=self.model_external_id,
@@ -224,7 +213,7 @@ class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
         self.description = description
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
             simulator_external_id=resource["simulatorExternalId"],
@@ -291,7 +280,7 @@ class SimulatorModel(SimulatorModelCore):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -305,7 +294,7 @@ class SimulatorModel(SimulatorModelCore):
         )
 
     def as_write(self) -> SimulatorModelWrite:
-        """Returns this SimulatorModel in its writing version."""
+        """Returns this SimulatorModel in its write version."""
         return SimulatorModelWrite(
             external_id=self.external_id,
             simulator_external_id=self.simulator_external_id,
@@ -324,7 +313,7 @@ class SimulatorModelList(WriteableCogniteResourceList[SimulatorModelWrite, Simul
     _RESOURCE = SimulatorModel
 
     def as_write(self) -> SimulatorModelWriteList:
-        return SimulatorModelWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
+        return SimulatorModelWriteList([a.as_write() for a in self.data])
 
 
 class SimulatorModelRevisionWriteList(CogniteResourceList[SimulatorModelRevisionWrite], ExternalIDTransformerMixin):
@@ -337,9 +326,7 @@ class SimulatorModelRevisionList(
     _RESOURCE = SimulatorModelRevision
 
     def as_write(self) -> SimulatorModelRevisionWriteList:
-        return SimulatorModelRevisionWriteList(
-            [a.as_write() for a in self.data], cognite_client=self._get_cognite_client()
-        )
+        return SimulatorModelRevisionWriteList([a.as_write() for a in self.data])
 
 
 class SimulatorModelUpdate(CogniteUpdate):
@@ -364,7 +351,7 @@ class SimulatorModelUpdate(CogniteUpdate):
 
 
 @dataclass
-class SimulatorModelDependencyFileReference(CogniteObject, ABC): ...
+class SimulatorModelDependencyFileReference(CogniteResource, ABC): ...
 
 
 @dataclass
@@ -372,12 +359,12 @@ class SimulatorModelDependencyFileId(SimulatorModelDependencyFileReference):
     id: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(id=resource["id"])
 
 
 @dataclass
-class SimulatorModelRevisionDependency(CogniteObject):
+class SimulatorModelRevisionDependency(CogniteResource):
     """
     Represents an external dependency for a simulator model revision.
     Args:
@@ -389,7 +376,7 @@ class SimulatorModelRevisionDependency(CogniteObject):
     arguments: dict[str, str]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             file=SimulatorModelDependencyFileId.load(resource["file"])
             if "id" in resource["file"]
@@ -407,14 +394,12 @@ class SimulatorModelRevisionDependency(CogniteObject):
         return output
 
     @classmethod
-    def _load_list(
-        cls, resource: list[dict[str, Any]], cognite_client: AsyncCogniteClient | None = None
-    ) -> list[SimulatorModelRevisionDependency]:
-        return [cls._load(item, cognite_client) for item in resource]
+    def _load_list(cls, resource: list[dict[str, Any]]) -> list[SimulatorModelRevisionDependency]:
+        return [cls._load(item) for item in resource]
 
 
 @dataclass
-class SimulatorFlowsheetObjectEdge(CogniteObject):
+class SimulatorFlowsheetObjectEdge(CogniteResource):
     id: str
     name: str | None
     source_id: str
@@ -422,7 +407,7 @@ class SimulatorFlowsheetObjectEdge(CogniteObject):
     connection_type: Literal["Material", "Energy", "Information"]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             name=resource.get("name"),
@@ -432,19 +417,17 @@ class SimulatorFlowsheetObjectEdge(CogniteObject):
         )
 
     @classmethod
-    def _load_list(
-        cls, resource: list[dict[str, Any]], cognite_client: AsyncCogniteClient | None = None
-    ) -> list[SimulatorFlowsheetObjectEdge]:
-        return [cls._load(item, cognite_client) for item in resource]
+    def _load_list(cls, resource: list[dict[str, Any]]) -> list[SimulatorFlowsheetObjectEdge]:
+        return [cls._load(item) for item in resource]
 
 
 @dataclass
-class SimulatorFlowsheetThermodynamic(CogniteObject):
+class SimulatorFlowsheetThermodynamic(CogniteResource):
     property_packages: list[str]
     components: list[str]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             property_packages=resource["propertyPackages"],
             components=resource["components"],
@@ -452,13 +435,13 @@ class SimulatorFlowsheetThermodynamic(CogniteObject):
 
 
 @dataclass
-class SimulationValueUnitReference(CogniteObject):
+class SimulationValueUnitReference(CogniteResource):
     name: str
     quantity: str | None = None
     external_id: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             name=resource["name"],
             quantity=resource.get("quantity"),
@@ -467,7 +450,7 @@ class SimulationValueUnitReference(CogniteObject):
 
 
 @dataclass
-class SimulatorFlowsheetProperty(CogniteObject):
+class SimulatorFlowsheetProperty(CogniteResource):
     name: str
     reference_object: dict[str, str]
     value_type: Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"]
@@ -476,7 +459,7 @@ class SimulatorFlowsheetProperty(CogniteObject):
     read_only: bool | None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             name=resource["name"],
             reference_object=resource["referenceObject"],
@@ -487,10 +470,8 @@ class SimulatorFlowsheetProperty(CogniteObject):
         )
 
     @classmethod
-    def _load_list(
-        cls, resource: list[dict[str, Any]], cognite_client: AsyncCogniteClient | None = None
-    ) -> list[SimulatorFlowsheetProperty]:
-        return [cls._load(item, cognite_client) for item in resource]
+    def _load_list(cls, resource: list[dict[str, Any]]) -> list[SimulatorFlowsheetProperty]:
+        return [cls._load(item) for item in resource]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
@@ -501,12 +482,12 @@ class SimulatorFlowsheetProperty(CogniteObject):
 
 
 @dataclass
-class SimulatorFlowsheetPosition(CogniteObject):
+class SimulatorFlowsheetPosition(CogniteResource):
     x: float
     y: float
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             x=resource["x"],
             y=resource["y"],
@@ -514,7 +495,7 @@ class SimulatorFlowsheetPosition(CogniteObject):
 
 
 @dataclass
-class SimulatorFlowsheetGraphicalObject(CogniteObject):
+class SimulatorFlowsheetGraphicalObject(CogniteResource):
     position: SimulatorFlowsheetPosition | None
     height: float | None
     width: float | None
@@ -524,7 +505,7 @@ class SimulatorFlowsheetGraphicalObject(CogniteObject):
     active: bool | None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             position=SimulatorFlowsheetPosition._load(resource["position"]) if "position" in resource else None,
             height=resource.get("height"),
@@ -544,7 +525,7 @@ class SimulatorFlowsheetGraphicalObject(CogniteObject):
 
 
 @dataclass
-class SimulatorFlowsheetObjectNode(CogniteObject):
+class SimulatorFlowsheetObjectNode(CogniteResource):
     id: str
     name: str | None
     type: str
@@ -552,13 +533,11 @@ class SimulatorFlowsheetObjectNode(CogniteObject):
     properties: list[SimulatorFlowsheetProperty]
 
     @classmethod
-    def _load_list(
-        cls, resource: list[dict[str, Any]], cognite_client: AsyncCogniteClient | None = None
-    ) -> list[SimulatorFlowsheetObjectNode]:
-        return [cls._load(item, cognite_client) for item in resource]
+    def _load_list(cls, resource: list[dict[str, Any]]) -> list[SimulatorFlowsheetObjectNode]:
+        return [cls._load(item) for item in resource]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             name=resource.get("name"),
@@ -566,7 +545,7 @@ class SimulatorFlowsheetObjectNode(CogniteObject):
             graphical_object=SimulatorFlowsheetGraphicalObject._load(resource["graphicalObject"])
             if "graphicalObject" in resource
             else None,
-            properties=SimulatorFlowsheetProperty._load_list(resource["properties"], cognite_client),
+            properties=SimulatorFlowsheetProperty._load_list(resource["properties"]),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -579,28 +558,22 @@ class SimulatorFlowsheetObjectNode(CogniteObject):
 
 
 @dataclass
-class SimulatorFlowsheet(CogniteObject):
+class SimulatorFlowsheet(CogniteResource):
     simulator_object_nodes: list[SimulatorFlowsheetObjectNode]
     simulator_object_edges: list[SimulatorFlowsheetObjectEdge]
     thermodynamics: SimulatorFlowsheetThermodynamic
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
-            simulator_object_nodes=SimulatorFlowsheetObjectNode._load_list(
-                resource["simulatorObjectNodes"], cognite_client
-            ),
-            simulator_object_edges=SimulatorFlowsheetObjectEdge._load_list(
-                resource["simulatorObjectEdges"], cognite_client
-            ),
-            thermodynamics=SimulatorFlowsheetThermodynamic._load(resource["thermodynamics"], cognite_client),
+            simulator_object_nodes=SimulatorFlowsheetObjectNode._load_list(resource["simulatorObjectNodes"]),
+            simulator_object_edges=SimulatorFlowsheetObjectEdge._load_list(resource["simulatorObjectEdges"]),
+            thermodynamics=SimulatorFlowsheetThermodynamic._load(resource["thermodynamics"]),
         )
 
     @classmethod
-    def _load_list(
-        cls, resource: list[dict[str, Any]], cognite_client: AsyncCogniteClient | None = None
-    ) -> list[SimulatorFlowsheet]:
-        return [cls._load(item, cognite_client) for item in resource]
+    def _load_list(cls, resource: list[dict[str, Any]]) -> list[SimulatorFlowsheet]:
+        return [cls._load(item) for item in resource]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
@@ -656,12 +629,10 @@ class SimulatorModelRevisionData(CogniteResource):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             model_revision_external_id=resource["modelRevisionExternalId"],
-            flowsheets=SimulatorFlowsheet._load_list(resource["flowsheets"], cognite_client)
-            if resource.get("flowsheets")
-            else None,
+            flowsheets=SimulatorFlowsheet._load_list(resource["flowsheets"]) if resource.get("flowsheets") else None,
             info=resource.get("info"),
             data_set_id=resource["dataSetId"],
             created_time=resource["createdTime"],

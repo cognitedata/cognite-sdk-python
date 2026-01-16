@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any
 
 from typing_extensions import Self
 
@@ -16,9 +16,6 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class TransformationScheduleCore(WriteableCogniteResource["TransformationScheduleWrite"], ABC):
@@ -44,7 +41,6 @@ class TransformationSchedule(TransformationScheduleCore):
         last_updated_time (int): Time when the schedule was last updated.
         interval (str): Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
         is_paused (bool): If true, the transformation is not scheduled.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -55,7 +51,6 @@ class TransformationSchedule(TransformationScheduleCore):
         last_updated_time: int,
         interval: str,
         is_paused: bool,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(interval=interval, is_paused=is_paused)
         self.id = id
@@ -63,10 +58,9 @@ class TransformationSchedule(TransformationScheduleCore):
         self.is_paused = is_paused
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -74,7 +68,6 @@ class TransformationSchedule(TransformationScheduleCore):
             last_updated_time=resource["lastUpdatedTime"],
             interval=resource["interval"],
             is_paused=resource.get("isPaused", False),
-            cognite_client=cognite_client,
         )
 
     def as_write(self) -> TransformationScheduleWrite:
@@ -120,9 +113,7 @@ class TransformationScheduleWrite(TransformationScheduleCore):
             raise ValueError(f"Either id or external_id must be specified (but not both), got {id=} and {external_id=}")
 
     @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
-    ) -> TransformationScheduleWrite:
+    def _load(cls, resource: dict[str, Any]) -> TransformationScheduleWrite:
         return cls(
             interval=resource["interval"],
             id=resource.get("id"),
@@ -173,6 +164,4 @@ class TransformationScheduleList(
     _RESOURCE = TransformationSchedule
 
     def as_write(self) -> TransformationScheduleWriteList:
-        return TransformationScheduleWriteList(
-            [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
-        )
+        return TransformationScheduleWriteList([x.as_write() for x in self.data])

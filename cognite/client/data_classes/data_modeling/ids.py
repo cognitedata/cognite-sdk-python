@@ -3,11 +3,11 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, TypeVar, cast
+from typing import Any, ClassVar, Literal, Protocol, TypeVar, cast
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteObject
+from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._identifier import (
     DataModelingIdentifier,
     DataModelingIdentifierSequence,
@@ -15,9 +15,6 @@ from cognite.client.utils._identifier import (
 )
 from cognite.client.utils._text import convert_all_keys_recursive
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 @dataclass(frozen=True)
@@ -135,12 +132,12 @@ class ViewId(VersionedDataModelingId):
 
 
 @dataclass(frozen=True)
-class PropertyId(CogniteObject):
+class PropertyId(CogniteResource):
     source: ViewId | ContainerId
     property: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             source=cls.__load_view_or_container_id(resource["source"]),
             property=resource["identifier"],

@@ -2,25 +2,21 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, cast
+from typing import Any, ClassVar, Literal, TypeAlias, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     ExternalIDTransformerMixin,
     PropertySpec,
-    UnknownCogniteObject,
+    UnknownCogniteResource,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 TargetStatus: TypeAlias = Literal["running", "paused"]
 JobStatus: TypeAlias = Literal[
@@ -37,7 +33,7 @@ JobStatus: TypeAlias = Literal[
 
 
 @dataclass
-class JobFormat(CogniteObject, ABC):
+class JobFormat(CogniteResource, ABC):
     _type: ClassVar[str]
 
     @classmethod
@@ -46,7 +42,7 @@ class JobFormat(CogniteObject, ABC):
         raise NotImplementedError()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -54,7 +50,7 @@ class JobFormat(CogniteObject, ABC):
             raise KeyError("type")
         job_cls = _JOBFORMAT_CLASS_BY_TYPE.get(type_)
         if job_cls is None:
-            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+            return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, job_cls._load_job(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -64,12 +60,12 @@ class JobFormat(CogniteObject, ABC):
 
 
 @dataclass
-class Prefix(CogniteObject):
+class Prefix(CogniteResource):
     from_topic: bool | None = None
     prefix: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             from_topic=resource.get("fromTopic"),
             prefix=resource.get("prefix"),
@@ -159,14 +155,14 @@ class CogniteFormat(JobFormat):
 
 
 @dataclass
-class JobConfig(CogniteObject, ABC):
+class JobConfig(CogniteResource, ABC):
     @classmethod
     @abstractmethod
     def _load_config(cls, data: dict[str, Any]) -> Self:
         raise NotImplementedError()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         if "topicFilter" in resource:
             return cast(Self, MQTTConfig._load_config(resource))
         elif "topic" in resource:
@@ -174,7 +170,7 @@ class JobConfig(CogniteObject, ABC):
         elif "interval" in resource and "path" in resource:
             return cast(Self, RestConfig._load_config(resource))
         else:
-            return cast(Self, UnknownCogniteObject(resource))
+            return cast(Self, UnknownCogniteResource(resource))
 
 
 @dataclass
@@ -182,7 +178,7 @@ class MQTTConfig(JobConfig):
     topic_filter: str
 
     @classmethod
-    def _load_config(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load_config(cls, resource: dict[str, Any]) -> Self:
         return cls(topic_filter=resource["topicFilter"])
 
 
@@ -192,12 +188,12 @@ class KafkaConfig(JobConfig):
     partitions: int = 1
 
     @classmethod
-    def _load_config(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load_config(cls, resource: dict[str, Any]) -> Self:
         return cls(topic=resource["topic"], partitions=resource.get("partitions", 1))
 
 
 @dataclass
-class IncrementalLoad(CogniteObject, ABC):
+class IncrementalLoad(CogniteResource, ABC):
     _type: ClassVar[str]
 
     @classmethod
@@ -206,7 +202,7 @@ class IncrementalLoad(CogniteObject, ABC):
         raise NotImplementedError()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -214,7 +210,7 @@ class IncrementalLoad(CogniteObject, ABC):
             raise KeyError("type")
         incremental_load_cls = _INCREMENTALLOAD_CLASS_BY_TYPE.get(type_)
         if incremental_load_cls is None:
-            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+            return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, incremental_load_cls._load_incremental_load(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -344,7 +340,7 @@ class JobWrite(_JobCore):
         return self
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> JobWrite:
+    def _load(cls, resource: dict[str, Any]) -> JobWrite:
         return cls(
             external_id=resource["externalId"],
             destination_id=resource["destinationId"],
@@ -402,7 +398,7 @@ class Job(_JobCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Job:
+    def _load(cls, resource: dict[str, Any]) -> Job:
         return cls(
             external_id=resource["externalId"],
             destination_id=resource["destinationId"],
@@ -514,7 +510,7 @@ class JobLogs(CogniteResource):
         self.message = message
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> JobLogs:
+    def _load(cls, resource: dict[str, Any]) -> JobLogs:
         return cls(
             job_external_id=resource["jobExternalId"],
             type=resource["type"],
@@ -565,7 +561,7 @@ class JobMetrics(CogniteResource):
         self.cdf_uploaded_values = cdf_uploaded_values
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             job_external_id=resource["jobExternalId"],
             timestamp=resource["timestamp"],

@@ -7,6 +7,9 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 from typing_extensions import Self
 
+if TYPE_CHECKING:
+    from cognite.client import AsyncCogniteClient
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -27,9 +30,6 @@ from cognite.client.data_classes.sequences import Sequence
 from cognite.client.data_classes.time_series import TimeSeries
 from cognite.client.utils.useful_types import SequenceNotStr
 
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
 RelationshipType: TypeAlias = Literal["asset", "timeseries", "file", "event", "sequence"]
 
 
@@ -49,7 +49,13 @@ class RelationshipCore(WriteableCogniteResource["RelationshipWrite"], ABC):
         labels (list[Label] | None): A list of the labels associated with this resource item.
     """
 
-    _RESOURCE_TYPES = frozenset({"asset", "timeseries", "file", "event", "sequence"})
+    _RESOURCE_TYPE_MAP: typing.ClassVar[dict[str, type[Asset | TimeSeries | FileMetadata | Event | Sequence]]] = {
+        "asset": Asset,
+        "timeseries": TimeSeries,
+        "file": FileMetadata,
+        "event": Event,
+        "sequence": Sequence,
+    }
 
     def __init__(
         self,
@@ -88,13 +94,13 @@ class RelationshipCore(WriteableCogniteResource["RelationshipWrite"], ABC):
         return rel
 
     def _validate_resource_type(self, resource_type: str | None) -> None:
-        if resource_type is None or resource_type.lower() not in self._RESOURCE_TYPES:
+        if resource_type is None or resource_type.lower() not in self._RESOURCE_TYPE_MAP:
             raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
 
 class Relationship(RelationshipCore):
     """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
-    This is the reading version of the relationship class, it is used when retrieving from CDF.
+    This is the read version of the relationship class, it is used when retrieving from CDF.
 
     Args:
         external_id (str): External id of the relationship, must be unique within the project.
@@ -111,7 +117,6 @@ class Relationship(RelationshipCore):
         confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
         data_set_id (int | None): The id of the dataset this relationship belongs to.
         labels (SequenceNotStr[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -130,7 +135,6 @@ class Relationship(RelationshipCore):
         confidence: float | None,
         data_set_id: int | None,
         labels: SequenceNotStr[Label | str | LabelDefinition | dict] | None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -148,12 +152,11 @@ class Relationship(RelationshipCore):
         self.target = target
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     def as_write(self) -> RelationshipWrite:
-        """Returns this Relationship in its writing version."""
+        """Returns this Relationship in its write version."""
         if self.external_id is None:
-            raise ValueError("External ID is required for the writing version of a relationship.")
+            raise ValueError("External ID is required for the write version of a relationship.")
         source_external_id, source_type = self._get_external_id_and_type(
             self.source_external_id, self.source_type, self.source
         )
@@ -188,25 +191,22 @@ class Relationship(RelationshipCore):
         return external_id, cast(RelationshipType, resource_type)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Relationship:
+    def _load(cls, resource: dict) -> Relationship:
         return cls(
             external_id=resource["externalId"],
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             source_external_id=resource["sourceExternalId"],
             source_type=resource["sourceType"],
-            source=(source := resource.get("source"))
-            and cls._convert_resource(source, resource["sourceType"], cognite_client),
+            source=(source := resource.get("source")) and cls._convert_resource(source, resource["sourceType"]),
             target_external_id=resource["targetExternalId"],
             target_type=resource["targetType"],
-            target=(target := resource.get("target"))
-            and cls._convert_resource(target, resource["targetType"], cognite_client),
+            target=(target := resource.get("target")) and cls._convert_resource(target, resource["targetType"]),
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
             confidence=resource.get("confidence"),
             data_set_id=resource.get("dataSetId"),
             labels=(labels := resource.get("labels")) and Label._load_list(labels),
-            cognite_client=cognite_client,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -217,27 +217,27 @@ class Relationship(RelationshipCore):
             result["target"] = self.target.dump(camel_case)
         return result
 
-    @staticmethod
+    def _maybe_set_client_ref(self, client: AsyncCogniteClient) -> Self:
+        # We do not use the client ref, but our source and target resources most likely do, so we
+        # propagate the reference to them:
+        if self.source is not None and not isinstance(self.source, dict):
+            self.source._maybe_set_client_ref(client)
+        if self.target is not None and not isinstance(self.target, dict):
+            self.target._maybe_set_client_ref(client)
+        return self
+
+    @classmethod
     def _convert_resource(
-        resource: dict[str, Any], resource_type: str | None, cognite_client: AsyncCogniteClient | None = None
+        cls, resource: dict[str, Any], resource_type: str | None
     ) -> dict[str, Any] | TimeSeries | Asset | Sequence | FileMetadata | Event:
-        resource_type = resource_type.lower() if resource_type else resource_type
-        if resource_type == "timeseries":
-            return TimeSeries._load(resource, cognite_client=cognite_client)
-        if resource_type == "asset":
-            return Asset._load(resource, cognite_client=cognite_client)
-        if resource_type == "sequence":
-            return Sequence._load(resource, cognite_client=cognite_client)
-        if resource_type == "file":
-            return FileMetadata._load(resource, cognite_client=cognite_client)
-        if resource_type == "event":
-            return Event._load(resource, cognite_client=cognite_client)
+        if resource_type and (resource_cls := cls._RESOURCE_TYPE_MAP.get(resource_type.lower())):
+            return resource_cls._load(resource)
         return resource
 
 
 class RelationshipWrite(RelationshipCore):
     """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
-    This is the writing version of the relationship class, and is used when creating new relationships.
+    This is the write version of the relationship class, and is used when creating new relationships.
 
     Args:
         external_id (str): External id of the relationship, must be unique within the project.
@@ -279,7 +279,7 @@ class RelationshipWrite(RelationshipCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> RelationshipWrite:
+    def _load(cls, resource: dict) -> RelationshipWrite:
         return cls(
             external_id=resource["externalId"],
             source_external_id=resource["sourceExternalId"],
@@ -435,5 +435,5 @@ class RelationshipList(WriteableCogniteResourceList[RelationshipWrite, Relations
     _RESOURCE = Relationship
 
     def as_write(self) -> RelationshipWriteList:
-        """Returns this RelationshipList in its writing version."""
-        return RelationshipWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
+        """Returns this RelationshipList in its write version."""
+        return RelationshipWriteList([item.as_write() for item in self.data])

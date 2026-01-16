@@ -4,15 +4,15 @@ from abc import ABC, abstractmethod
 from builtins import type as type_
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
-    CogniteObject,
+    CogniteResource,
     CogniteResourceList,
-    UnknownCogniteObject,
+    UnknownCogniteResource,
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
@@ -23,9 +23,6 @@ from cognite.client.data_classes.data_modeling.data_types import (
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.utils._text import to_camel_case
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 _T_ContainerCore = TypeVar("_T_ContainerCore", bound="ContainerCore")
 _T_ContainerPropertyCore = TypeVar("_T_ContainerPropertyCore", bound="ContainerPropertyCore")
@@ -122,7 +119,7 @@ class ContainerApply(ContainerCore):
         validate_data_modeling_identifier(self.space, self.external_id)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> ContainerApply:
+    def _load(cls, resource: dict) -> ContainerApply:
         return cls._load_base(
             resource,
             container_class=cls,
@@ -164,7 +161,7 @@ class Container(ContainerCore):
     indexes: Mapping[str, Index] = field(default_factory=dict)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls._load_base(
             resource,
             container_class=cls,
@@ -214,7 +211,7 @@ class ContainerList(WriteableCogniteResourceList[ContainerApply, Container]):
         Returns:
             ContainerApplyList: The container apply list.
         """
-        return ContainerApplyList(resources=[v.as_apply() for v in self])
+        return ContainerApplyList([v.as_apply() for v in self])
 
     def as_ids(self) -> list[ContainerId]:
         """Convert to a container id list.
@@ -235,13 +232,13 @@ class _ContainerFilter(CogniteFilter):
 
 
 @dataclass(frozen=True)
-class PropertyConstraintState(CogniteObject):
+class PropertyConstraintState(CogniteResource):
     nullability: Literal["current", "failed", "pending"] | None = None
     max_list_size: Literal["current", "failed", "pending"] | None = None
     max_text_size: Literal["current", "failed", "pending"] | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             nullability=resource.get("nullability"),
             max_list_size=resource.get("maxListSize"),
@@ -257,7 +254,7 @@ class PropertyConstraintState(CogniteObject):
 
 
 @dataclass
-class ContainerPropertyCore(CogniteObject, ABC):
+class ContainerPropertyCore(CogniteResource, ABC):
     """Base class for container properties with shared functionality."""
 
     type: PropertyType
@@ -317,7 +314,7 @@ class ContainerPropertyApply(ContainerPropertyCore):
     """Write version of container property."""
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls._load_base(resource, property_class=cls)
 
     def as_apply(self) -> ContainerPropertyApply:
@@ -332,7 +329,7 @@ class ContainerProperty(ContainerPropertyCore):
     constraint_state: PropertyConstraintState = field(default_factory=PropertyConstraintState)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         constraint_state = PropertyConstraintState._load(resource["constraintState"])
         return cls._load_base(resource, property_class=cls, constraint_state=constraint_state)
 
@@ -354,7 +351,7 @@ class ContainerProperty(ContainerPropertyCore):
 
 
 @dataclass
-class ConstraintCore(CogniteObject, ABC):
+class ConstraintCore(CogniteResource, ABC):
     """Base class for constraints with shared functionality."""
 
     @abstractmethod
@@ -372,14 +369,14 @@ class ConstraintApply(ConstraintCore, ABC):
     """Write version of constraint without state information."""
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ConstraintApply:
+    def _load(cls, resource: dict[str, Any]) -> ConstraintApply:
         match resource["constraintType"]:
             case "requires":
                 return RequiresConstraintApply._load(resource)
             case "uniqueness":
                 return UniquenessConstraintApply._load(resource)
             case _:
-                return cast(ConstraintApply, UnknownCogniteObject(resource))
+                return cast(ConstraintApply, UnknownCogniteResource(resource))
 
     def as_apply(self) -> ConstraintApply:
         """Return this ConstraintApply instance."""
@@ -393,14 +390,14 @@ class Constraint(ConstraintCore, ABC):
     state: Literal["current", "failed", "pending"]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Constraint:
+    def _load(cls, resource: dict[str, Any]) -> Constraint:
         match resource["constraintType"]:
             case "requires":
-                return RequiresConstraint._load(resource, cognite_client)
+                return RequiresConstraint._load(resource)
             case "uniqueness":
-                return UniquenessConstraint._load(resource, cognite_client)
+                return UniquenessConstraint._load(resource)
             case _:
-                return cast(Constraint, UnknownCogniteObject(resource))
+                return cast(Constraint, UnknownCogniteResource(resource))
 
 
 @dataclass
@@ -410,7 +407,7 @@ class RequiresConstraintApply(ConstraintApply):
     require: ContainerId
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         require = ContainerId.load(resource["require"])
         return cls(require=require)
 
@@ -428,7 +425,7 @@ class RequiresConstraint(Constraint):
     require: ContainerId
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         require = ContainerId.load(resource["require"])
         state = resource["state"]
         return cls(require=require, state=state)
@@ -451,7 +448,7 @@ class UniquenessConstraintApply(ConstraintApply):
     properties: list[str]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         properties = resource["properties"]
         return cls(properties=properties)
 
@@ -469,7 +466,7 @@ class UniquenessConstraint(Constraint):
     properties: list[str]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         properties = resource["properties"]
         state = resource["state"]
         return cls(properties=properties, state=state)
@@ -486,7 +483,7 @@ class UniquenessConstraint(Constraint):
 
 
 @dataclass
-class IndexCore(CogniteObject, ABC):
+class IndexCore(CogniteResource, ABC):
     """Base class for indexes with shared functionality."""
 
     @abstractmethod
@@ -504,14 +501,14 @@ class IndexApply(IndexCore, ABC):
     """Write version of index without state information."""
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> IndexApply:
+    def _load(cls, resource: dict[str, Any]) -> IndexApply:
         match resource["indexType"]:
             case "btree":
                 return BTreeIndexApply._load(resource)
             case "inverted":
                 return InvertedIndexApply._load(resource)
             case _:
-                return cast(IndexApply, UnknownCogniteObject(resource))
+                return cast(IndexApply, UnknownCogniteResource(resource))
 
     def as_apply(self) -> IndexApply:
         """Return this IndexApply instance."""
@@ -525,14 +522,14 @@ class Index(IndexCore, ABC):
     state: Literal["current", "failed", "pending"]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Index:
+    def _load(cls, resource: dict[str, Any]) -> Index:
         match resource["indexType"]:
             case "btree":
-                return BTreeIndex._load(resource, cognite_client)
+                return BTreeIndex._load(resource)
             case "inverted":
-                return InvertedIndex._load(resource, cognite_client)
+                return InvertedIndex._load(resource)
             case _:
-                return cast(Index, UnknownCogniteObject(resource))
+                return cast(Index, UnknownCogniteResource(resource))
 
 
 @dataclass
@@ -543,7 +540,7 @@ class BTreeIndexApply(IndexApply):
     cursorable: bool = False
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         properties = resource["properties"]
         cursorable = resource.get("cursorable", False)
         return cls(properties=properties, cursorable=cursorable)
@@ -564,7 +561,7 @@ class BTreeIndex(Index):
     cursorable: bool
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         properties = resource["properties"]
         cursorable = resource.get("cursorable", False)
         state = resource["state"]
@@ -590,7 +587,7 @@ class InvertedIndexApply(IndexApply):
     properties: list[str]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         properties = resource["properties"]
         return cls(properties=properties)
 
@@ -607,7 +604,7 @@ class InvertedIndex(Index):
     properties: list[str]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         properties = resource["properties"]
         state = resource["state"]
         return cls(properties=properties, state=state)

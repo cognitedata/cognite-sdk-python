@@ -4,12 +4,11 @@ import itertools
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, cast
+from typing import Any, ClassVar, Literal, NoReturn, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
@@ -17,13 +16,10 @@ from cognite.client.data_classes._base import (
     ExternalIDTransformerMixin,
     PropertySpec,
     T_WriteClass,
-    UnknownCogniteObject,
+    UnknownCogniteResource,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SourceWrite(CogniteResource, ABC):
@@ -48,7 +44,7 @@ class SourceWrite(CogniteResource, ABC):
         raise NotImplementedError()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -88,7 +84,7 @@ class Source(WriteableCogniteResource[T_WriteClass], ABC):
         raise NotImplementedError()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -96,7 +92,7 @@ class Source(WriteableCogniteResource[T_WriteClass], ABC):
             raise KeyError("type")
         source_class = _SOURCE_CLASS_BY_TYPE.get(type_)
         if source_class is None:
-            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+            return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, source_class._load_source(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -469,12 +465,12 @@ class MQTT5SourceUpdate(_MQTTUpdate):
 
 
 @dataclass
-class KafkaBroker(CogniteObject):
+class KafkaBroker(CogniteResource):
     host: str
     port: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(host=resource["host"], port=resource["port"])
 
 
@@ -847,7 +843,7 @@ class RestSourceUpdate(SourceUpdate):
 
 
 @dataclass
-class AuthenticationWrite(CogniteObject, ABC):
+class AuthenticationWrite(CogniteResource, ABC):
     _type: ClassVar[str]
 
     @classmethod
@@ -856,7 +852,7 @@ class AuthenticationWrite(CogniteObject, ABC):
         raise NotImplementedError()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -934,24 +930,24 @@ class RESTClientCredentialsAuthenticationWrite(AuthenticationWrite):
 
 
 @dataclass
-class CACertificateWrite(CogniteObject):
+class CACertificateWrite(CogniteResource):
     type: Literal["der", "pem"]
     certificate: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(type=resource["type"], certificate=resource["certificate"])
 
 
 @dataclass
-class AuthCertificateWrite(CogniteObject):
+class AuthCertificateWrite(CogniteResource):
     type: Literal["der", "pem"]
     certificate: str
     key: str
     key_password: str | None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             type=resource["type"],
             certificate=resource["certificate"],
@@ -961,7 +957,7 @@ class AuthCertificateWrite(CogniteObject):
 
 
 @dataclass
-class Authentication(CogniteObject, ABC):
+class Authentication(CogniteResource, ABC):
     _type: ClassVar[str]
 
     @classmethod
@@ -970,7 +966,7 @@ class Authentication(CogniteObject, ABC):
         raise NotImplementedError()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -979,7 +975,7 @@ class Authentication(CogniteObject, ABC):
 
         authentication_class = _AUTHENTICATION_CLASS_BY_TYPE.get(type_)
         if authentication_class is None:
-            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+            return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, authentication_class._load_authentication(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -1037,22 +1033,22 @@ class RESTClientCredentialsAuthentication(Authentication):
 
 
 @dataclass
-class CACertificate(CogniteObject):
+class CACertificate(CogniteResource):
     thumbprint: str
     expires_at: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(thumbprint=resource["thumbprint"], expires_at=resource["expiresAt"])
 
 
 @dataclass
-class AuthCertificate(CogniteObject):
+class AuthCertificate(CogniteResource):
     thumbprint: str
     expires_at: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(thumbprint=resource["thumbprint"], expires_at=resource["expiresAt"])
 
 

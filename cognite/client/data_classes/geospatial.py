@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     ExternalIDTransformerMixin,
@@ -20,7 +19,6 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_
 if TYPE_CHECKING:
     import geopandas
 
-    from cognite.client import AsyncCogniteClient
 
 RESERVED_PROPERTIES = {"externalId", "dataSetId", "assetIds", "createdTime", "lastUpdatedTime"}
 
@@ -50,7 +48,7 @@ class FeatureTypeCore(WriteableCogniteResource["FeatureTypeWrite"], ABC):
 
 class FeatureType(FeatureTypeCore):
     """A representation of a feature type in the geospatial API.
-    This is the reading version of the FeatureType class, it is used when retrieving feature types from the api.
+    This is the read version of the FeatureType class, it is used when retrieving feature types from the api.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -59,7 +57,6 @@ class FeatureType(FeatureTypeCore):
         last_updated_time (int): The last updated time of the feature type.
         properties (dict[str, Any] | None): The properties of the feature type.
         search_spec (dict[str, Any] | None): The search spec of the feature type.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -70,7 +67,6 @@ class FeatureType(FeatureTypeCore):
         last_updated_time: int,
         properties: dict[str, Any] | None,
         search_spec: dict[str, Any] | None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -80,10 +76,9 @@ class FeatureType(FeatureTypeCore):
         )
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> FeatureType:
+    def _load(cls, resource: dict[str, Any]) -> FeatureType:
         return cls(
             external_id=resource["externalId"],
             data_set_id=resource.get("dataSetId"),
@@ -91,7 +86,6 @@ class FeatureType(FeatureTypeCore):
             last_updated_time=resource["lastUpdatedTime"],
             properties=resource.get("properties"),
             search_spec=resource.get("searchSpec"),
-            cognite_client=cognite_client,
         )
 
     def as_write(self) -> FeatureTypeWrite:
@@ -109,7 +103,7 @@ class FeatureType(FeatureTypeCore):
 
 class FeatureTypeWrite(FeatureTypeCore):
     """A representation of a feature type in the geospatial API.
-    This is the writing version of the FeatureType class, it is used when creating feature types in the api.
+    This is the write version of the FeatureType class, it is used when creating feature types in the api.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -133,7 +127,7 @@ class FeatureTypeWrite(FeatureTypeCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> FeatureTypeWrite:
+    def _load(cls, resource: dict[str, Any]) -> FeatureTypeWrite:
         return cls(
             external_id=resource["externalId"],
             properties=resource["properties"],
@@ -154,20 +148,18 @@ class FeatureTypeList(WriteableCogniteResourceList[FeatureTypeWrite, FeatureType
     _RESOURCE = FeatureType
 
     def as_write(self) -> FeatureTypeWriteList:
-        return FeatureTypeWriteList(
-            [feature_type.as_write() for feature_type in self], cognite_client=self._get_cognite_client()
-        )
+        return FeatureTypeWriteList([feature_type.as_write() for feature_type in self])
 
 
 @dataclass
-class PropertyAndSearchSpec(CogniteObject):
+class PropertyAndSearchSpec(CogniteResource):
     """A representation of a feature type property and search spec."""
 
     properties: dict[str, Any] | list[str] | None = None
     search_spec: dict[str, Any] | list[str] | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             properties=resource.get("properties"),
             search_spec=resource.get("searchSpec"),
@@ -175,12 +167,12 @@ class PropertyAndSearchSpec(CogniteObject):
 
 
 @dataclass
-class Patches(CogniteObject):
+class Patches(CogniteResource):
     add: dict[str, Any] | None = None
     remove: list[str] | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             add=resource.get("add"),
             remove=resource.get("remove"),
@@ -188,7 +180,7 @@ class Patches(CogniteObject):
 
 
 @dataclass
-class FeatureTypePatch(CogniteObject):
+class FeatureTypePatch(CogniteResource):
     external_id: str | None = None
     property_patches: Patches | None = None
     search_spec_patches: Patches | None = None
@@ -206,16 +198,12 @@ class FeatureTypePatch(CogniteObject):
         return item
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         property_patches = (
-            Patches.load(resource["propertyPatches"], cognite_client=cognite_client)
-            if resource.get("propertyPatches") is not None
-            else None
+            Patches.load(resource["propertyPatches"]) if resource.get("propertyPatches") is not None else None
         )
         search_spec_patches = (
-            Patches.load(resource["searchSpecPatches"], cognite_client=cognite_client)
-            if resource.get("searchSpecPatches") is not None
-            else None
+            Patches.load(resource["searchSpecPatches"]) if resource.get("searchSpecPatches") is not None else None
         )
         return cls(resource.get("externalId"), property_patches, search_spec_patches)
 
@@ -254,14 +242,13 @@ T_Feature = TypeVar("T_Feature", bound=FeatureCore)
 
 class Feature(FeatureCore):
     """A representation of a feature in the geospatial API.
-    This is the reading version of the Feature class, it is used when retrieving features from the api.
+    This is the read version of the Feature class, it is used when retrieving features from the api.
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         created_time (int | None): No description.
         last_updated_time (int | None): No description.
         data_set_id (int | None): No description.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
         **properties (Any): The properties of the feature.
     """
 
@@ -271,27 +258,22 @@ class Feature(FeatureCore):
         created_time: int | None,
         last_updated_time: int | None,
         data_set_id: int | None,
-        cognite_client: AsyncCogniteClient | None = None,
         **properties: Any,
     ) -> None:
         super().__init__(external_id=external_id, **properties)
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_id = data_set_id
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Feature:
-        _non_feature_keys = {"externalId", "createdTime", "lastUpdatedTime", "dataSetId"}
+    def _load(cls, resource: dict[str, Any]) -> Feature:
+        non_feature_keys = {"externalId", "createdTime", "lastUpdatedTime", "dataSetId"}
         return cls(
             external_id=resource.get("externalId"),
             created_time=resource.get("createdTime"),
             last_updated_time=resource.get("lastUpdatedTime"),
             data_set_id=resource.get("dataSetId"),
-            cognite_client=cognite_client,
-            **{
-                _to_feature_property_name(key): value for key, value in resource.items() if key not in _non_feature_keys
-            },
+            **{_to_feature_property_name(key): value for key, value in resource.items() if key not in non_feature_keys},
         )
 
     def as_write(self) -> FeatureWrite:
@@ -311,7 +293,7 @@ class Feature(FeatureCore):
 
 class FeatureWrite(FeatureCore):
     """A representation of a feature in the geospatial API.
-    This is the writing version of the Feature class, it is used when creating features in the api.
+    This is the write version of the Feature class, it is used when creating features in the api.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -322,7 +304,7 @@ class FeatureWrite(FeatureCore):
         super().__init__(external_id=external_id, **properties)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> FeatureWrite:
+    def _load(cls, resource: dict[str, Any]) -> FeatureWrite:
         return cls(
             external_id=resource["externalId"],
             **{_to_feature_property_name(key): value for key, value in resource.items() if key != "externalId"},
@@ -493,7 +475,7 @@ class FeatureList(FeatureListCore[Feature]):
     _RESOURCE = Feature
 
     def as_write(self) -> FeatureWriteList:
-        return FeatureWriteList([feature.as_write() for feature in self], cognite_client=self._get_cognite_client())
+        return FeatureWriteList([feature.as_write() for feature in self])
 
 
 def nan_to_none(column_value: Any) -> Any:
@@ -507,12 +489,9 @@ def nan_to_none(column_value: Any) -> Any:
 class FeatureAggregate(CogniteResource):
     """A result of aggregating features in geospatial API."""
 
-    def __init__(self, cognite_client: AsyncCogniteClient | None = None) -> None:
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
-
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> FeatureAggregate:
-        instance = cls(cognite_client=cognite_client)
+    def _load(cls, resource: dict[str, Any]) -> FeatureAggregate:
+        instance = cls()
         for key, value in resource.items():
             snake_case_key = to_snake_case(key)
             setattr(instance, snake_case_key, value)
@@ -540,13 +519,12 @@ class CoordinateReferenceSystemCore(WriteableCogniteResource["CoordinateReferenc
 
 class CoordinateReferenceSystem(CoordinateReferenceSystemCore):
     """A representation of a feature in the geospatial API.
-    This is the reading version of the CoordinateReferenceSystem class, it is used when retrieving from the CDF.
+    This is the read version of the CoordinateReferenceSystem class, it is used when retrieving from the CDF.
 
     Args:
         srid (int): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
         wkt (str): Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
         proj_string (str): The projection specification string as described in https://proj.org/usage/quickstart.html
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -554,20 +532,15 @@ class CoordinateReferenceSystem(CoordinateReferenceSystemCore):
         srid: int,
         wkt: str,
         proj_string: str,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(srid=srid, wkt=wkt, proj_string=proj_string)
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
-    ) -> CoordinateReferenceSystem:
+    def _load(cls, resource: dict[str, Any]) -> CoordinateReferenceSystem:
         return cls(
             srid=resource["srid"],
             wkt=resource["wkt"],
             proj_string=resource["projString"],
-            cognite_client=cognite_client,
         )
 
     def as_write(self) -> CoordinateReferenceSystemWrite:
@@ -591,9 +564,7 @@ class CoordinateReferenceSystemWrite(CoordinateReferenceSystemCore):
         super().__init__(srid=srid, wkt=wkt, proj_string=proj_string)
 
     @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
-    ) -> CoordinateReferenceSystemWrite:
+    def _load(cls, resource: dict[str, Any]) -> CoordinateReferenceSystemWrite:
         return cls(srid=resource["srid"], wkt=resource["wkt"], proj_string=resource["projString"])
 
     def as_write(self) -> CoordinateReferenceSystemWrite:
@@ -612,8 +583,7 @@ class CoordinateReferenceSystemList(
 
     def as_write(self) -> CoordinateReferenceSystemWriteList:
         return CoordinateReferenceSystemWriteList(
-            [coordinate_reference_system.as_write() for coordinate_reference_system in self],
-            cognite_client=self._get_cognite_client(),
+            [coordinate_reference_system.as_write() for coordinate_reference_system in self]
         )
 
 
@@ -633,8 +603,8 @@ class RasterMetadata:
             setattr(self, key, properties[key])
 
     @classmethod
-    def load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> RasterMetadata:
-        instance = cls(cognite_client=cognite_client)
+    def load(cls, resource: dict) -> RasterMetadata:
+        instance = cls()
         for key, value in resource.items():
             snake_case_key = to_snake_case(key)
             setattr(instance, snake_case_key, value)
@@ -687,15 +657,12 @@ class GeospatialGeometryValueComputeFunction(GeospatialGeometryComputeFunction):
 class GeospatialComputedItem(CogniteResource):
     """A representation of an item computed from geospatial."""
 
-    def __init__(self, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> None:
+    def __init__(self, resource: dict[str, Any]) -> None:
         self.resource = resource
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
-    ) -> GeospatialComputedItem:
-        instance = cls(resource=resource, cognite_client=cognite_client)
+    def _load(cls, resource: dict[str, Any]) -> GeospatialComputedItem:
+        instance = cls(resource=resource)
         for key, value in resource.items():
             snake_case_key = to_snake_case(key)
             setattr(instance, snake_case_key, value)
@@ -711,18 +678,13 @@ class GeospatialComputedItemList(CogniteResourceList[GeospatialComputedItem]):
 class GeospatialComputedResponse(CogniteResource):
     "The geospatial compute response."
 
-    def __init__(
-        self, computed_item_list: GeospatialComputedItemList, cognite_client: AsyncCogniteClient | None = None
-    ) -> None:
+    def __init__(self, computed_item_list: GeospatialComputedItemList) -> None:
         self.items = computed_item_list
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
-    ) -> GeospatialComputedResponse:
-        item_list = GeospatialComputedItemList._load(resource.get("items", []), cognite_client=cognite_client)
-        return cls(item_list, cognite_client=cognite_client)
+    def _load(cls, resource: dict[str, Any]) -> GeospatialComputedResponse:
+        item_list = GeospatialComputedItemList._load(resource.get("items", []))
+        return cls(item_list)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"items": self.items.dump(camel_case=camel_case)}

@@ -1,17 +1,14 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_camel_case
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 @dataclass
-class InstanceStatistics(CogniteObject):
+class InstanceStatistics(CogniteResource):
     """Statistics for instances in the data modeling API.
 
     Attributes:
@@ -35,7 +32,7 @@ class InstanceStatistics(CogniteObject):
     soft_deleted_instances_limit: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: "AsyncCogniteClient | None" = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             edges=resource["edges"],
             soft_deleted_edges=resource["softDeletedEdges"],
@@ -49,7 +46,7 @@ class InstanceStatistics(CogniteObject):
 
 
 @dataclass
-class CountLimit(CogniteObject):
+class CountLimit(CogniteResource):
     """Usage and limits for a specific resource in the data modeling API.
 
     Attributes:
@@ -62,7 +59,7 @@ class CountLimit(CogniteObject):
     limit: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: "AsyncCogniteClient | None" = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(count=resource["count"], limit=resource["limit"])
 
 
@@ -92,8 +89,8 @@ class SpaceStatistics(CogniteResource):
     soft_deleted_nodes: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: "AsyncCogniteClient | None" = None) -> Self:
-        instance = cls(
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
             space=resource["space"],
             containers=resource["containers"],
             views=resource["views"],
@@ -103,8 +100,6 @@ class SpaceStatistics(CogniteResource):
             nodes=resource["nodes"],
             soft_deleted_nodes=resource["softDeletedNodes"],
         )
-        instance._cognite_client = cognite_client
-        return instance
 
 
 @dataclass
@@ -135,12 +130,18 @@ class ProjectStatistics(CogniteResource):
 
     @property
     def project(self) -> str:
-        """The project name."""
-        return self._cognite_client.config.project
+        try:
+            return self._project
+        except AttributeError:
+            raise AttributeError("'project' not set on this ProjectStatistics, did you instantiate it yourself?")
+
+    @project.setter
+    def project(self, value: str) -> None:
+        self._project = value
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: "AsyncCogniteClient | None" = None) -> Self:
-        instance = cls(
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
             spaces=CountLimit._load(resource["spaces"]),
             containers=CountLimit._load(resource["containers"]),
             views=CountLimit._load(resource["views"]),
@@ -151,11 +152,14 @@ class ProjectStatistics(CogniteResource):
             concurrent_write_limit=resource["concurrentWriteLimit"],
             concurrent_delete_limit=resource["concurrentDeleteLimit"],
         )
-        instance._cognite_client = cognite_client
+
+    @classmethod
+    def _load_with_project(cls, resource: dict[str, Any], project: str) -> Self:
+        instance = cls._load(resource)
+        instance.project = project
         return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dump the object to a dictionary."""
         dumped = {
             "spaces": self.spaces.dump(camel_case),
             "containers": self.containers.dump(camel_case),
