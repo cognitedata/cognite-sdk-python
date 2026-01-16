@@ -2,25 +2,21 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     IdTransformerMixin,
 )
 
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
 Severity = Literal["Debug", "Information", "Warning", "Error"]
 
 
 @dataclass
-class SimulatorLogData(CogniteObject):
+class SimulatorLogData(CogniteResource):
     """
     Simulator log data represents a single log entry in a simulator log.
 
@@ -35,7 +31,7 @@ class SimulatorLogData(CogniteObject):
     severity: Severity
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             timestamp=resource["timestamp"],
             message=resource["message"],
@@ -77,13 +73,13 @@ class SimulatorLog(CogniteResource):
         self.severity = severity
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             data_set_id=resource["dataSetId"],
-            data=[SimulatorLogData._load(entry, cognite_client) for entry in resource["data"]],
+            data=[SimulatorLogData._load(entry) for entry in resource["data"]],
             severity=resource.get("severity"),
         )
 

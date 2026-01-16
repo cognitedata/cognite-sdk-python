@@ -221,22 +221,25 @@ class TransformationsAPI(APIClient):
                 >>> res = client.transformations.create(transformations)
 
         """
-        if isinstance(transformation, Sequence):
-            sessions: dict[str, NonceCredentials] = {}
-            # When calling as_write() the transformation is copied
-            transformation = [t.as_write() if isinstance(t, Transformation) else t.copy() for t in transformation]
-            for t in transformation:
-                await t._process_credentials(cognite_client=self._cognite_client, sessions_cache=sessions)
-        elif isinstance(transformation, Transformation):
-            transformation = transformation.as_write()
-            await transformation._process_credentials(self._cognite_client)
-        elif isinstance(transformation, TransformationWrite):
-            transformation = transformation.copy()
-            await transformation._process_credentials(self._cognite_client)
-        else:
-            raise TypeError(
-                "transformation must be Sequence[Transformation] or Sequence[TransformationWrite] or Transformation or TransformationWrite"
-            )
+        match transformation:
+            case Sequence():
+                sessions: dict[str, NonceCredentials] = {}
+                # When calling as_write() the transformation is copied
+                transformation = [t.as_write() if isinstance(t, Transformation) else t.copy() for t in transformation]
+                for t in transformation:
+                    await t._process_credentials(sessions_cache=sessions, cognite_client=self._cognite_client)
+
+            case Transformation():
+                transformation = transformation.as_write()
+                await transformation._process_credentials(self._cognite_client)
+
+            case TransformationWrite():
+                transformation = transformation.copy()
+                await transformation._process_credentials(self._cognite_client)
+            case _:
+                raise TypeError(
+                    "transformation must be Sequence[Transformation] or Sequence[TransformationWrite] or Transformation or TransformationWrite"
+                )
 
         return await self._create_multiple(
             list_cls=TransformationList,
@@ -470,24 +473,31 @@ class TransformationsAPI(APIClient):
                 ...     tr.destination_nonce = new_nonce
                 >>> res = client.transformations.update(to_update)
         """
-        if isinstance(item, Sequence):
-            item = list(item)
-            sessions: dict[str, NonceCredentials] = {}
-            for i, t in enumerate(item):
-                if isinstance(t, Transformation):
-                    t = t.copy()
-                    item[i] = t
-                    t._cognite_client = self._cognite_client
-                    await t._process_credentials(sessions_cache=sessions, keep_none=True)
-        elif isinstance(item, Transformation):
-            item = item.copy()
-            item._cognite_client = self._cognite_client
-            await item._process_credentials(keep_none=True)
-        elif not isinstance(item, TransformationUpdate):
-            raise TypeError(
-                "item must be one of: TransformationUpdate, Transformation, Sequence[TransformationUpdate | Transformation]."
-            )
+        match item:
+            case Sequence():
+                item = list(item)
+                sessions: dict[str, NonceCredentials] = {}
+                for i, t in enumerate(item):
+                    # TODO: What about TransformationWrite?
+                    if isinstance(t, Transformation):
+                        t = t.copy()
+                        item[i] = t
+                        t._cognite_client = self._cognite_client
+                        await t._process_credentials(
+                            sessions_cache=sessions, keep_none=True, cognite_client=self._cognite_client
+                        )
 
+            case Transformation():
+                item = item.copy()
+                item._cognite_client = self._cognite_client
+                await item._process_credentials(keep_none=True, cognite_client=self._cognite_client)
+
+            case TransformationUpdate():
+                pass
+            case _:
+                raise TypeError(
+                    "item must be one of: TransformationUpdate, Transformation, Sequence[TransformationUpdate | Transformation]."
+                )
         return await self._update_multiple(
             list_cls=TransformationList,
             resource_cls=Transformation,
@@ -533,7 +543,7 @@ class TransformationsAPI(APIClient):
         id_ = {"externalId": transformation_external_id, "id": transformation_id}
 
         response = await self._post(json=id_, url_path=self._RESOURCE_PATH + "/run")
-        job = TransformationJob._load(response.json(), cognite_client=self._cognite_client)
+        job = TransformationJob._load(response.json()).set_client_ref(self._cognite_client)
         if wait:
             return await job.wait_async(timeout=timeout)
         return job
@@ -620,5 +630,5 @@ class TransformationsAPI(APIClient):
             "timeout": timeout,
         }
         response = await self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body)
-        result = TransformationPreviewResult._load(response.json(), cognite_client=self._cognite_client)
+        result = TransformationPreviewResult._load(response.json())
         return result

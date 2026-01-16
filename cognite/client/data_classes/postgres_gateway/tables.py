@@ -1,24 +1,20 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+from typing import Any, Literal, TypeAlias, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CogniteResource,
     CogniteResourceList,
-    UnknownCogniteObject,
+    UnknownCogniteResource,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling.ids import ViewId
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 ColumnType: TypeAlias = Literal[
     "BIGINT",
@@ -41,13 +37,13 @@ ColumnType: TypeAlias = Literal[
 
 
 @dataclass
-class RawTableOptions(CogniteObject):
+class RawTableOptions(CogniteResource):
     database: str
     table: str
     primary_key: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             database=resource["database"],
             table=resource["table"],
@@ -61,7 +57,7 @@ class Column(CogniteResource):
     type: ColumnType
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             name=resource["propertyName"],
             type=resource["type"],
@@ -78,17 +74,12 @@ class ColumnList(CogniteResourceList[Column]):
     _RESOURCE = Column
 
     @classmethod
-    def _load_columns(cls, data: dict[str, Any] | Iterable[dict[str, Any]]) -> ColumnList:
+    def _load_columns(cls, data: dict[str, Any] | Sequence[dict[str, Any]]) -> ColumnList:
         if not isinstance(data, dict):
-            return cls._load(data, None)
-        columns = cls([], None)
+            return cls._load(data)
+        columns = cls([])
         for name, column_data in data.items():
-            columns.append(
-                Column(
-                    name=name,
-                    type=column_data["type"],
-                )
-            )
+            columns.append(Column(name=name, type=column_data["type"]))
         return columns
 
     def _dump_columns(self) -> dict[str, Any]:
@@ -115,7 +106,7 @@ class TableWrite(_TableCore, ABC):
         return self
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -149,7 +140,7 @@ class RawTableWrite(TableWrite):
     def __init__(self, tablename: str, options: RawTableOptions, columns: Sequence[Column] | ColumnList) -> None:
         super().__init__(tablename=tablename)
         self.options = options
-        self.columns: ColumnList = ColumnList(columns)
+        self.columns = ColumnList(columns)
 
     @classmethod
     def _load_table(cls, data: dict[str, Any]) -> Self:
@@ -211,7 +202,7 @@ class Table(_TableCore, ABC):
         self.created_time = created_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -219,7 +210,7 @@ class Table(_TableCore, ABC):
             raise KeyError("type")
         table_cls = _TABLE_CLASS_BY_TYPE.get(type_)
         if table_cls is None:
-            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+            return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, table_cls._load_table(resource))
 
     @classmethod

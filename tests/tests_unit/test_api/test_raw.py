@@ -191,7 +191,10 @@ class TestRawDatabases:
         assert isinstance(res_list, DatabaseList)
         for res in res_list:
             assert async_client == res._cognite_client
-        assert async_client == res_list._cognite_client
+
+        with pytest.raises(AttributeError):
+            # DatabaseList should not have a client reference:
+            assert async_client == res_list._cognite_client  # type: ignore [attr-defined]
         assert [{"name": "db1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
         assert mock_raw_db_response == res_list.dump(camel_case=True)
 
@@ -268,7 +271,9 @@ class TestRawTables:
         for res in res_list:
             assert async_client == res._cognite_client
             assert "db1" == res._db_name
-        assert async_client == res_list._cognite_client
+        with pytest.raises(AttributeError):
+            # TableList should not have a client reference:
+            assert async_client == res_list._cognite_client  # type: ignore [attr-defined]
         assert [{"name": "table1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
         assert mock_raw_table_response == res_list.dump(camel_case=True)
 

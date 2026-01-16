@@ -4,7 +4,6 @@ import asyncio
 import inspect
 import logging
 import random
-import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Sequence
 from datetime import datetime, timezone
 from typing import (
@@ -99,7 +98,7 @@ class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
         self._node_cls = node_cls
         self._edge_cls = edge_cls
 
-    def _load(self, data: str | dict, cognite_client: AsyncCogniteClient | None = None) -> T_Node | T_Edge:
+    def _load(self, data: str | dict) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return self._node_cls._load(data)  # type: ignore[return-value]
@@ -111,41 +110,37 @@ class _TypedNodeOrEdgeListAdapter:
         self._instance_cls = instance_cls
         self._list_cls = NodeList if issubclass(instance_cls, TypedNode) else EdgeList
 
-    def __call__(self, items: Any, cognite_client: AsyncCogniteClient | None = None) -> Any:
-        return self._list_cls(items, cognite_client=cognite_client)
+    def __call__(self, items: Any) -> Any:
+        return self._list_cls(items)
 
-    def _load(self, data: str | dict, cognite_client: AsyncCogniteClient | None = None) -> T_Node | T_Edge:
+    def _load(self, data: str | dict) -> T_Node | T_Edge:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
-        return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client=cognite_client)  # type: ignore[return-value, attr-defined]
+        return self._list_cls([self._instance_cls._load(item) for item in data])  # type: ignore[return-value, attr-defined]
 
-    def _load_raw_api_response(
-        self, responses: list[dict[str, Any]], cognite_client: AsyncCogniteClient
-    ) -> T_Node | T_Edge:
+    def _load_raw_api_response(self, responses: list[dict[str, Any]]) -> T_Node | T_Edge:
         from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         debug = next((DebugInfo._load(r["debug"]) for r in responses if "debug" in r), None)
         resources = [
-            self._instance_cls._load(item, cognite_client=cognite_client)  # type: ignore[attr-defined]
+            self._instance_cls._load(item)  # type: ignore[attr-defined]
             for response in responses
             for item in response["items"]
         ]
-        return self._list_cls(resources, typing, debug, cognite_client=cognite_client)  # type: ignore[return-value]
+        return self._list_cls(resources, typing, debug)  # type: ignore[return-value]
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
     _RESOURCE = (NodeApplyResult, EdgeApplyResult)  # type: ignore[assignment]
 
     @classmethod
-    def _load(
-        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: AsyncCogniteClient | None = None
-    ) -> _NodeOrEdgeApplyResultList:
+    def _load(cls, resource_list: Iterable[dict[str, Any]] | str) -> _NodeOrEdgeApplyResultList:
         resource_list = load_yaml_or_json(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[NodeApplyResult | EdgeApplyResult] = [
             NodeApplyResult._load(data) if data["instanceType"] == "node" else EdgeApplyResult._load(data)
             for data in resource_list
         ]
-        return cls(resources, None)
+        return cls(resources)
 
     def as_ids(self) -> list[NodeId | EdgeId]:
         return [result.as_id() for result in self]
@@ -153,7 +148,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
 class _NodeOrEdgeApplyResultAdapter:
     @staticmethod
-    def load(data: str | dict, cognite_client: AsyncCogniteClient | None = None) -> NodeApplyResult | EdgeApplyResult:
+    def load(data: str | dict) -> NodeApplyResult | EdgeApplyResult:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApplyResult._load(data)
@@ -162,7 +157,7 @@ class _NodeOrEdgeApplyResultAdapter:
 
 class _NodeOrEdgeApplyAdapter:
     @staticmethod
-    def _load(data: dict, cognite_client: AsyncCogniteClient | None = None) -> NodeApply | EdgeApply:
+    def _load(data: dict) -> NodeApply | EdgeApply:
         if data["instanceType"] == "node":
             return NodeApply._load(data)
         return EdgeApply._load(data)
@@ -318,7 +313,7 @@ class InstancesAPI(APIClient):
             headers=headers,
             semaphore=self.__dm_semaphore,
         ):
-            yield list_cls._load_raw_api_response([raw], self._cognite_client)
+            yield list_cls._load_raw_api_response([raw])
 
     @overload
     async def retrieve_edges(
@@ -612,32 +607,27 @@ class InstancesAPI(APIClient):
                 self,
                 resources: list[Node | Edge],
                 typing: TypeInformation | None,
-                cognite_client: AsyncCogniteClient | None,
             ):
-                super().__init__(resources, cognite_client)
+                super().__init__(resources)
                 self.typing = typing
 
             @classmethod
-            def _load(
-                cls, resource_list: Iterable[dict[str, Any]], cognite_client: AsyncCogniteClient | None = None
-            ) -> _NodeOrEdgeList:
+            def _load(cls, resource_list: Iterable[dict[str, Any]]) -> _NodeOrEdgeList:
                 resources: list[Node | Edge] = [
                     node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)
                     for data in resource_list
                 ]
-                return cls(resources, None, None)
+                return cls(resources, typing=None)
 
             @classmethod
-            def _load_raw_api_response(
-                cls, responses: list[dict[str, Any]], cognite_client: AsyncCogniteClient
-            ) -> _NodeOrEdgeList:
+            def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> _NodeOrEdgeList:
                 typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
                 resources = [
                     node_cls._load(data) if data["instanceType"] == "node" else edge_cls._load(data)
                     for response in responses
                     for data in response["items"]
                 ]
-                return cls(resources, typing, cognite_client)  # type: ignore[arg-type]
+                return cls(resources, typing)  # type: ignore[arg-type]
 
         res = await self._retrieve_multiple(  # type: ignore[call-overload]
             list_cls=_NodeOrEdgeList,
@@ -649,8 +639,8 @@ class InstancesAPI(APIClient):
         )
 
         return InstancesResult[T_Node, T_Edge](
-            nodes=NodeList([node for node in res if isinstance(node, Node)], typing=res.typing),
-            edges=EdgeList([edge for edge in res if isinstance(edge, Edge)], typing=res.typing),
+            nodes=NodeList([node for node in res if isinstance(node, node_cls)], typing=res.typing),
+            edges=EdgeList([edge for edge in res if isinstance(edge, edge_cls)], typing=res.typing),
         )
 
     @staticmethod
@@ -1099,7 +1089,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        operator: Literal["AND", "OR"] | None = None,
+        operator: Literal["AND", "OR"] = "AND",
     ) -> NodeList[Node]: ...
 
     @overload
@@ -1116,7 +1106,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        operator: Literal["AND", "OR"] | None = None,
+        operator: Literal["AND", "OR"] = "AND",
     ) -> EdgeList[Edge]: ...
 
     @overload
@@ -1133,7 +1123,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        operator: Literal["AND", "OR"] | None = None,
+        operator: Literal["AND", "OR"] = "AND",
     ) -> NodeList[T_Node]: ...
 
     @overload
@@ -1150,7 +1140,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        operator: Literal["AND", "OR"] | None = None,
+        operator: Literal["AND", "OR"] = "AND",
     ) -> EdgeList[T_Edge]: ...
 
     async def search(
@@ -1166,7 +1156,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
-        operator: Literal["AND", "OR"] | None = None,
+        operator: Literal["AND", "OR"] = "AND",
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
         """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
@@ -1182,11 +1172,10 @@ class InstancesAPI(APIClient):
             limit (int | None): Maximum number of instances to return. Defaults to 25. Will return the maximum number
                 of results (1000) if set to None, -1, or math.inf.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
-            operator (Literal['AND', 'OR'] | None): Controls how multiple search terms are combined when matching documents.
-                AND: A document matches only if it contains all of the query terms across the searchable fields. This typically
-                returns fewer results but with higher relevance. OR: A document matches if it contains any of the query terms in the searchable fields.
-                This typically returns more results but with lower precision. Note: If not specified, will default to the API default, which will change from
-                'OR' to 'AND' sometime in Q1 2027.
+            operator (Literal['AND', 'OR']): Controls how multiple search terms are combined when matching documents.
+                AND (default): A document matches only if it contains all of the query terms across the searchable fields.
+                This typically returns fewer results but with higher relevance. OR: A document matches if it contains any
+                of the query terms in the searchable fields. This typically returns more results but with lower precision.
 
         Returns:
             NodeList[T_Node] | EdgeList[T_Edge]: Search result with matching nodes or edges.
@@ -1246,18 +1235,10 @@ class InstancesAPI(APIClient):
             "instanceType": instance_type_str,
             "limit": self._SEARCH_LIMIT if is_unlimited(limit) else limit,
         }
-        if operator is None:
-            warnings.warn(
-                "The default operator for instance search will change from 'OR' to 'AND' sometime in Q1 2027. In the "
-                "next major version release (v8), the default will be changed to 'AND', which is the recommended "
-                "setting for most use cases. Please explicitly pass the operator to avoid this warning.",
-                UserWarning,  # FutureWarning is more correct, but is ignored by default and we want users to see this
-            )
-        else:
-            op_up = operator.upper()
-            if op_up not in ("AND", "OR"):
-                raise ValueError(f"Invalid {operator=}. Must be 'AND' or 'OR'.")
-            body["operator"] = op_up
+        op_up = operator.upper()
+        if op_up not in ("AND", "OR"):
+            raise ValueError(f"Invalid {operator=}. Must be 'AND' or 'OR'.")
+        body["operator"] = op_up
 
         if query:
             body["query"] = query
@@ -1279,8 +1260,10 @@ class InstancesAPI(APIClient):
 
         res = await self._post(url_path=self._RESOURCE_PATH + "/search", json=body, semaphore=self.__dm_semaphore)
         result = res.json()
-        typing = TypeInformation._load(result["typing"]) if "typing" in result else None
-        return list_cls([resource_cls._load(item) for item in result["items"]], typing, cognite_client=None)
+        return list_cls(
+            [resource_cls._load(item) for item in result["items"]],  # type: ignore [misc]
+            typing=TypeInformation._load(result["typing"]) if "typing" in result else None,
+        )
 
     @overload
     async def aggregate(
@@ -1401,7 +1384,7 @@ class InstancesAPI(APIClient):
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
         res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=self.__dm_semaphore)
-        result_list = InstanceAggregationResultList._load(res.json()["items"], cognite_client=None)
+        result_list = InstanceAggregationResultList._load(res.json()["items"])
         if group_by is not None:
             return result_list
 

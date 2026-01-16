@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from cognite.client.data_classes._base import UnknownCogniteObject
+from cognite.client.data_classes._base import UnknownCogniteResource
 from cognite.client.data_classes.data_modeling import data_types
 from cognite.client.data_classes.data_modeling.containers import (
     Constraint,
@@ -143,7 +143,7 @@ class TestConstraint:
     def test_load_unknown_type(self) -> None:
         data = {"someUnknownConstraint": {"wawa": "wiwa"}, "constraintType": "unknown", "state": "current"}
         obj = Constraint.load(data)
-        assert isinstance(obj, UnknownCogniteObject)
+        assert isinstance(obj, UnknownCogniteResource)
         assert obj.dump() == data
 
     @pytest.mark.parametrize("as_apply", [False, True])
@@ -243,7 +243,7 @@ class TestIndex:
     def test_load_unknown_type(self) -> None:
         data = {"someUnknownIndexType": {"wawa": "wiwa"}, "indexType": "someUnknownIndexType", "state": "current"}
         obj = Index.load(data)
-        assert isinstance(obj, UnknownCogniteObject)
+        assert isinstance(obj, UnknownCogniteResource)
         assert obj.dump() == data
 
 

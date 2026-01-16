@@ -6,7 +6,7 @@ from contextlib import suppress
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes._base import UnknownCogniteObject
+from cognite.client.data_classes._base import UnknownCogniteResource
 from cognite.client.data_classes.data_modeling import (
     Container,
     ContainerApply,
@@ -108,7 +108,7 @@ class TestTables:
         created: Table | None = None
         try:
             created = cognite_client.postgres_gateway.tables.create(username, my_table)
-            assert isinstance(created, Table | UnknownCogniteObject)
+            assert isinstance(created, Table | UnknownCogniteResource)
 
             retrieved = cognite_client.postgres_gateway.tables.retrieve(username, tablename)
             assert retrieved is not None

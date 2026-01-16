@@ -79,7 +79,6 @@ class TestRepr:
                         root_id=None,
                         aggregates=None,
                         labels=None,
-                        cognite_client=None,
                     )
                 ]
             ),

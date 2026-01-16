@@ -1,22 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import Any, Literal
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_recursive
 
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
-
-class TransformationSchemaType(CogniteObject):
+class TransformationSchemaType(CogniteResource):
     def __init__(self, type: str) -> None:
         self.type = type
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(type=resource["type"])
 
 
@@ -27,7 +24,7 @@ class TransformationSchemaArrayType(TransformationSchemaType):
         self.contains_null = contains_null
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             type=resource["type"],
             element_type=resource.get("elementType"),
@@ -46,7 +43,7 @@ class TransformationSchemaStructType(TransformationSchemaType):
         return convert_all_keys_recursive(dumped, camel_case=camel_case)  # <-- 'fields' is a nested object
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(type=resource["type"], fields=resource.get("fields"))
 
 
@@ -64,9 +61,7 @@ class TransformationSchemaMapType(TransformationSchemaType):
         self.value_contains_null = value_contains_null
 
     @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
-    ) -> TransformationSchemaMapType:
+    def _load(cls, resource: dict[str, Any]) -> TransformationSchemaMapType:
         return cls(
             type=resource["type"],
             key_type=resource.get("keyType"),
@@ -85,7 +80,7 @@ class TransformationSchemaUnknownType(TransformationSchemaType):
         return {"type": self.type, **self.__raw_schema}
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(raw_schema=resource)
 
 
@@ -97,7 +92,6 @@ class TransformationSchemaColumn(CogniteResource):
         sql_type (str): Type of the column in sql format.
         type (TransformationSchemaType): Type of the column in json format.
         nullable (bool): Values for the column can be null or not
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -106,13 +100,11 @@ class TransformationSchemaColumn(CogniteResource):
         sql_type: str,
         type: TransformationSchemaType,
         nullable: bool,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.name = name
         self.sql_type = sql_type
         self.type = type
         self.nullable = nullable
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -121,7 +113,7 @@ class TransformationSchemaColumn(CogniteResource):
         return output
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TransformationSchemaColumn:
+    def _load(cls, resource: dict) -> TransformationSchemaColumn:
         resource_type = resource["type"]
         match resource_type:
             case dict():
@@ -142,7 +134,6 @@ class TransformationSchemaColumn(CogniteResource):
             sql_type=resource["sqlType"],
             type=type_,
             nullable=resource["nullable"],
-            cognite_client=cognite_client,
         )
 
 

@@ -256,7 +256,7 @@ class AnnotationsAPI(APIClient):
         remaining_limit = limit
         is_finite_limit = not is_unlimited(limit)
 
-        all_annots = AnnotationList([], cognite_client=self._cognite_client)
+        all_annots = AnnotationList([])
         for id_chunk in split_into_chunks(res_ids, 1000):
             filter["annotatedResourceIds"] = id_chunk
             chunk_result = await self._list(

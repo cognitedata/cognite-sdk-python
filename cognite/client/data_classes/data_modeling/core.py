@@ -1,21 +1,17 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CogniteResource,
     T_CogniteResource,
     WriteableCogniteResource,
     basic_instance_dump,
 )
 from cognite.client.utils import _json_extended as _json
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class DataModelingResource(CogniteResource, ABC):
@@ -70,7 +66,7 @@ class DataModelingSchemaResource(WritableDataModelingResource[T_CogniteResource]
         self.description = description
 
 
-class DataModelingSort(CogniteObject):
+class DataModelingSort(CogniteResource):
     def __init__(
         self,
         property: str | list[str] | tuple[str, ...],
@@ -92,7 +88,7 @@ class DataModelingSort(CogniteObject):
         return str(self)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         if not isinstance(resource, dict):
             raise TypeError(f"Resource must be mapping, not {type(resource)}")
 

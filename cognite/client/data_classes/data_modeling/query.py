@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
 from typing_extensions import Never, Self, assert_never
 
-from cognite.client.data_classes._base import CogniteObject, UnknownCogniteObject
+from cognite.client.data_classes._base import CogniteResource, UnknownCogniteResource
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId, ViewIdentifier
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
@@ -25,12 +25,11 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
 
 @dataclass
-class SourceSelector(CogniteObject):
+class SourceSelector(CogniteResource):
     source: ViewId
     properties: list[str] | None = None
     target_units: list[TargetUnit] | None = None
@@ -49,7 +48,6 @@ class SourceSelector(CogniteObject):
     def _load(
         cls,
         resource: dict[str, Any] | SourceSelector | ViewIdentifier | View,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> Self:
         if isinstance(resource, cls):
             return resource
@@ -84,7 +82,7 @@ class SourceSelector(CogniteObject):
 
 
 @dataclass
-class SelectBase(CogniteObject, ABC):
+class SelectBase(CogniteResource, ABC):
     sources: list[SourceSelector] = field(default_factory=list)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -97,7 +95,7 @@ class SelectBase(CogniteObject, ABC):
 @dataclass
 class SelectSync(SelectBase):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             sources=[SourceSelector.load(source) for source in resource.get("sources", [])],
         )
@@ -117,7 +115,7 @@ class Select(SelectBase):
         return output
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             sources=[SourceSelector.load(source) for source in resource.get("sources", [])],
             sort=[InstanceSort.load(s) for s in resource.get("sort", [])],
@@ -130,7 +128,7 @@ _T_Select = TypeVar("_T_Select", bound=SelectBase)
 
 
 @dataclass
-class QueryBase(CogniteObject, ABC, Generic[_T_ResultSetExpression, _T_Select]):
+class QueryBase(CogniteResource, ABC, Generic[_T_ResultSetExpression, _T_Select]):
     """Abstract base class for normal queries and sync queries"""
 
     with_: MutableMapping[str, _T_ResultSetExpression]
@@ -194,7 +192,7 @@ class Query(QueryBase["ResultSetExpression", Select]):
     """
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls._load_base(resource, ResultSetExpression, Select)
 
 
@@ -207,15 +205,33 @@ class QuerySync(QueryBase["ResultSetExpressionSync", SelectSync]):
         select (Mapping[str, SelectSync]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
         parameters (Mapping[str, PropertyValue] | None): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
         cursors (Mapping[str, str | None] | None): A dictionary of cursors to use in the query. These allow for pagination.
+        allow_expired_cursors_and_accept_missed_deletes (bool): Sync cursors expire after 3 days because soft-deleted instances are cleaned up after this grace period, so a client using a cursor older than that risks missing deletes. If set to True, the API will allow the use of expired cursors.
     """
 
+    allow_expired_cursors_and_accept_missed_deletes: bool = False
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.allow_expired_cursors_and_accept_missed_deletes:
+            key = (
+                "allowExpiredCursorsAndAcceptMissedDeletes"
+                if camel_case
+                else "allow_expired_cursors_and_accept_missed_deletes"
+            )
+            output[key] = self.allow_expired_cursors_and_accept_missed_deletes
+        return output
+
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
-        return cls._load_base(resource, ResultSetExpressionSync, SelectSync)
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        base = cls._load_base(resource, ResultSetExpressionSync, SelectSync)
+        base.allow_expired_cursors_and_accept_missed_deletes = resource.get(
+            "allowExpiredCursorsAndAcceptMissedDeletes", False
+        )
+        return base
 
 
 @dataclass
-class ResultSetExpressionBase(CogniteObject, ABC):
+class ResultSetExpressionBase(CogniteResource, ABC):
     @staticmethod
     def _load_sort(resource: dict[str, Any], name: str) -> list[InstanceSort]:
         return [InstanceSort.load(sort) for sort in resource.get(name, [])]
@@ -250,15 +266,15 @@ class ResultSetExpressionBase(CogniteObject, ABC):
 @dataclass
 class ResultSetExpression(ResultSetExpressionBase, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ResultSetExpression:
+    def _load(cls, resource: dict[str, Any]) -> ResultSetExpression:
         if "nodes" in resource:
-            return NodeResultSetExpression._load(resource, cognite_client)
+            return NodeResultSetExpression._load(resource)
         elif "edges" in resource:
-            return EdgeResultSetExpression._load(resource, cognite_client)
+            return EdgeResultSetExpression._load(resource)
         elif "union" in resource or "unionAll" in resource or "intersection" in resource:
-            return SetOperation._load(resource, cognite_client)
+            return SetOperation._load(resource)
         else:
-            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
+            return UnknownCogniteResource.load(resource)  # type: ignore[return-value]
 
 
 @dataclass
@@ -304,12 +320,12 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
         self.through = self._init_through(through)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         query_node = resource["nodes"]
         through = query_node.get("through")
         return cls(
             from_=query_node.get("from"),
-            filter=Filter.load(query_node["filter"]) if "filter" in query_node else None,
+            filter=Filter._load_if(query_node.get("filter")),
             chain_to=query_node.get("chainTo"),
             direction=query_node.get("direction"),
             through=PropertyId.load(through) if through is not None else None,
@@ -364,16 +380,15 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
     post_sort: list[InstanceSort] = field(default_factory=list)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         query_edge = resource["edges"]
-        term_flt = Filter.load(query_edge["terminationFilter"]) if "terminationFilter" in query_edge else None
         return cls(
             from_=query_edge.get("from"),
             max_distance=query_edge.get("maxDistance"),
             direction=query_edge.get("direction"),
-            filter=Filter.load(query_edge["filter"]) if "filter" in query_edge else None,
-            node_filter=Filter.load(query_edge["nodeFilter"]) if "nodeFilter" in query_edge else None,
-            termination_filter=term_flt,
+            filter=Filter._load_if(query_edge.get("filter")),
+            node_filter=Filter._load_if(query_edge.get("nodeFilter")),
+            termination_filter=Filter._load_if(query_edge.get("terminationFilter")),
             limit_each=query_edge.get("limitEach"),
             chain_to=query_edge.get("chainTo"),
             sort=cls._load_sort(resource, "sort"),
@@ -425,15 +440,13 @@ class ResultSetExpressionSync(ResultSetExpressionBase, ABC):
     backfill_sort: list[InstanceSort] = field(default_factory=list)
 
     @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
-    ) -> ResultSetExpressionSync:
+    def _load(cls, resource: dict[str, Any]) -> ResultSetExpressionSync:
         if "nodes" in resource:
-            return NodeResultSetExpressionSync._load(resource, cognite_client)
+            return NodeResultSetExpressionSync._load(resource)
         elif "edges" in resource:
-            return EdgeResultSetExpressionSync._load(resource, cognite_client)
+            return EdgeResultSetExpressionSync._load(resource)
         else:
-            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
+            return UnknownCogniteResource.load(resource)  # type: ignore[return-value]
 
     @staticmethod
     def _load_sync_mode(sync_mode: str | None) -> SyncMode | None:
@@ -506,12 +519,12 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
         self.through = self._init_through(through)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         query_node = resource["nodes"]
         through = query_node.get("through")
         return cls(
             from_=query_node.get("from"),
-            filter=Filter.load(query_node["filter"]) if "filter" in query_node else None,
+            filter=Filter._load_if(query_node.get("filter")),
             chain_to=query_node.get("chainTo"),
             direction=query_node.get("direction"),
             through=PropertyId.load(through) if through is not None else None,
@@ -572,16 +585,15 @@ class EdgeResultSetExpressionSync(ResultSetExpressionSync):
     termination_filter: Filter | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         query_edge = resource["edges"]
-        term_flt = Filter.load(query_edge["terminationFilter"]) if "terminationFilter" in query_edge else None
         return cls(
             from_=query_edge.get("from"),
             max_distance=query_edge.get("maxDistance"),
             direction=query_edge.get("direction"),
-            filter=Filter.load(query_edge["filter"]) if "filter" in query_edge else None,
-            node_filter=Filter.load(query_edge["nodeFilter"]) if "nodeFilter" in query_edge else None,
-            termination_filter=term_flt,
+            filter=Filter._load_if(query_edge.get("filter")),
+            node_filter=Filter._load_if(query_edge.get("nodeFilter")),
+            termination_filter=Filter._load_if(query_edge.get("terminationFilter")),
             chain_to=query_edge.get("chainTo"),
             limit=resource.get("limit"),
             skip_already_deleted=resource.get("skipAlreadyDeleted", True),
@@ -702,13 +714,13 @@ class QueryResult(UserDict):
 @dataclass
 class SetOperation(ResultSetExpression, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> SetOperation:
+    def _load(cls, resource: dict[str, Any]) -> SetOperation:
         if "union" in resource:
-            return Union._load(resource, cognite_client)
+            return Union._load(resource)
         elif "unionAll" in resource:
-            return UnionAll._load(resource, cognite_client)
+            return UnionAll._load(resource)
         elif "intersection" in resource:
-            return Intersection._load(resource, cognite_client)
+            return Intersection._load(resource)
         else:
             raise ValueError(f"Unknown set operation {resource}")
 
@@ -720,7 +732,7 @@ class Union(SetOperation):
     limit: int | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Union:
+    def _load(cls, resource: dict[str, Any]) -> Union:
         union = resource["union"]
         except_ = resource.get("except")
         return cls(
@@ -747,7 +759,7 @@ class UnionAll(SetOperation):
     limit: int | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> UnionAll:
+    def _load(cls, resource: dict[str, Any]) -> UnionAll:
         union = resource["unionAll"]
         except_ = resource.get("except")
         return cls(
@@ -774,7 +786,7 @@ class Intersection(SetOperation):
     limit: int | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Intersection:
+    def _load(cls, resource: dict[str, Any]) -> Intersection:
         union = resource["intersection"]
         except_ = resource.get("except")
         return cls(

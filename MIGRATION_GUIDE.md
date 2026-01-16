@@ -28,6 +28,7 @@ Changes are grouped as follows:
 - The aggregation data class `CountAggregate` has been removed. Methods now return the count (`int`) directly.
 - The generic `filter` method on classic CDF APIs has been removed (Assets, Events, Sequences and Time Series). Use the normal `list` method instead and pass filters as `advanved_filters=...` instead.
 - Datapoints API method `retrieve_dataframe_in_tz` has been removed. Use `retrieve`, `retrieve_arrays` or `retrieve_dataframe` and specify `timezone` instead.
+- System-managed, read-only properties for `CogniteFile` in `../cdm/v1.py`, `is_uploaded` and `uploaded_time`, have been removed from the `CogniteFileApply` class.
 - The method `trigger` on the Workflow Executions API has been removed. Use `run` instead.
 - The method `create` on the Workflow Triggers API has been removed. Use `upsert` instead.
 - The method `get_triggers` on the Workflow Triggers API has been removed. Use `list` instead.
@@ -44,6 +45,7 @@ Changes are grouped as follows:
 - The separate beta `CogniteClient` has been removed. Note: APIs currently in alpha/beta are (already) implemented directly on the main client and throw warnings on use.
 
 ### Changed
+- The default value for the `operator` parameter in the `InstancesAPI.search` method has been changed to `AND` (which previously defaulted to 'OR' behavior). This change provides more precise search results by default, requiring all search terms to be present. If you need the previous behavior of matching any search term, explicitly pass `operator='OR'`.
 - Attributes on all "read" data classes now have the correct type (typically no longer `Optional[...]`), meaning type inference will be correct. If you try to instantiate these classes directly (*you shouldn't* - use the write versions instead!), you will see that all required parameters in the API response will also be required on the object. **What is a read class?** Any data class returned by the SDK from a call to the API to fetch a resource of some kind.
 - All (HTTP) responses from the SDK (returned by e.g. `client.post` or `client.get`) are now of type `CogniteHTTPResponse` (from `cognite.client.response`) instead of the specific type from the underlying http library to support future http-client changes.
 - All typed instance apply classes, e.g. `CogniteAssetApply` from `cognite.client.data_classes.data_modeling.cdm.v1` (or `extractor_extensions.v1`) now work with patch updates (using `replace=False`). Previously, all unset fields would be dumped as `None` and thus cleared/nulled in the backend database. Now, any unset fields are not dumped and will not clear an existing value (unless used with `replace=True`).

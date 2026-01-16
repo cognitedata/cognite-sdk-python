@@ -20,14 +20,14 @@ __all__ = ["JSONDecodeError", "convert_nonfinite_float_to_str", "convert_to_floa
 
 
 def _default_json_encoder(obj: Any) -> Any:
-    from cognite.client.data_classes._base import CogniteFilter, CogniteObject, CogniteResourceList
+    from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 
     match obj:
         case numbers.Integral():
             return int(obj)
         case Decimal() | numbers.Real():
             return float(obj)
-        case CogniteObject() | CogniteFilter() | CogniteResourceList():
+        case CogniteResource() | CogniteFilter() | CogniteResourceList():
             return obj.dump(camel_case=True)
         case _:
             raise TypeError(f"Object {obj} of type {obj.__class__} can't be serialized by the JSON encoder")

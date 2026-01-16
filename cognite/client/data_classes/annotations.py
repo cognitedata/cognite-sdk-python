@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+from typing import Any, Literal, TypeAlias, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -15,9 +15,6 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 AnnotationType: TypeAlias = Literal[
     "images.ObjectDetection",
@@ -84,7 +81,7 @@ class AnnotationCore(WriteableCogniteResource["AnnotationWrite"], ABC):
 
 class Annotation(AnnotationCore):
     """Representation of an annotation in CDF.
-    This is the reading version of the Annotation class. It is never to be used when creating new annotations.
+    This is the read version of the Annotation class. It is never to be used when creating new annotations.
 
     Args:
         id (int): A server-generated ID for the object.
@@ -98,7 +95,6 @@ class Annotation(AnnotationCore):
         creating_user (str): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
         annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
         annotated_resource_id (int): The internal ID of the annotated resource.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -114,7 +110,6 @@ class Annotation(AnnotationCore):
         creating_user: str,
         annotated_resource_type: str,
         annotated_resource_id: int,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         super().__init__(
             annotation_type=annotation_type,
@@ -126,13 +121,12 @@ class Annotation(AnnotationCore):
             annotated_resource_type=annotated_resource_type,
             annotated_resource_id=annotated_resource_id,
         )
-        self.id: int = id
-        self.created_time: int = created_time
-        self.last_updated_time: int = last_updated_time
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+        self.id = id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Annotation:
+    def _load(cls, resource: dict[str, Any]) -> Annotation:
         return cls(
             annotation_type=resource["annotationType"],
             data=resource["data"],
@@ -145,13 +139,12 @@ class Annotation(AnnotationCore):
             id=resource["id"],
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
-            cognite_client=cognite_client,
         )
 
     def as_write(self) -> AnnotationWrite:
-        """Returns this Annotation in its writing version."""
+        """Returns this Annotation in its write version."""
         if self.annotated_resource_id is None:
-            raise ValueError("Annotated resource ID is required for the writing version of an annotation.")
+            raise ValueError("Annotated resource ID is required for the write version of an annotation.")
         return AnnotationWrite(
             annotation_type=cast(AnnotationType, self.annotation_type),
             data=self.data,
@@ -166,7 +159,7 @@ class Annotation(AnnotationCore):
 
 class AnnotationWrite(AnnotationCore):
     """Representation of an annotation in CDF.
-    This is the writing version of the Annotation class. It is used when creating new annotations.
+    This is the write version of the Annotation class. It is used when creating new annotations.
 
     Args:
         annotation_type (AnnotationType): The type of the annotation. This uniquely decides what the structure of the 'data' block will be.
@@ -202,7 +195,7 @@ class AnnotationWrite(AnnotationCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> AnnotationWrite:
+    def _load(cls, resource: dict[str, Any]) -> AnnotationWrite:
         return cls(
             annotation_type=resource["annotationType"],
             data=resource["data"],
@@ -363,5 +356,5 @@ class AnnotationList(WriteableCogniteResourceList[AnnotationWrite, Annotation], 
     _RESOURCE = Annotation
 
     def as_write(self) -> AnnotationWriteList:
-        """Returns this AnnotationList in its writing version."""
-        return AnnotationWriteList([ann.as_write() for ann in self.data], cognite_client=self._get_cognite_client())
+        """Returns this AnnotationList in its write version."""
+        return AnnotationWriteList([ann.as_write() for ann in self.data])

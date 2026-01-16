@@ -4,7 +4,7 @@ from abc import ABC
 from collections.abc import Sequence
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, BinaryIO, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, Literal, TypeVar
 
 from typing_extensions import Self
 
@@ -110,7 +110,7 @@ T_FileMetadata = TypeVar("T_FileMetadata", bound=FileMetadataCore)
 
 class FileMetadata(FileMetadataCore):
     """This represents the metadata for a file. It does not contain the actual file itself.
-    This is the reading version of FileMetadata, and it is used when retrieving from CDF.
+    This is the read version of FileMetadata, and it is used when retrieving from CDF.
 
     Args:
         id (int): A server-generated ID for the object.
@@ -132,7 +132,6 @@ class FileMetadata(FileMetadataCore):
         source_created_time (int | None): The timestamp for when the file was originally created in the source system.
         source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
         security_categories (Sequence[int] | None): The security category IDs required to access this file.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -156,7 +155,6 @@ class FileMetadata(FileMetadataCore):
         source_created_time: int | None,
         source_modified_time: int | None,
         security_categories: Sequence[int] | None,
-        cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -174,15 +172,15 @@ class FileMetadata(FileMetadataCore):
             source_modified_time=source_modified_time,
             security_categories=security_categories,
         )
-        self.id: int = id
-        self.created_time: int = created_time
-        self.last_updated_time: int = last_updated_time
+        self.id = id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
         self.uploaded = uploaded
         self.uploaded_time = uploaded_time
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
+        labels = resource.get("labels")
         return cls(
             id=resource["id"],
             uploaded=resource["uploaded"],
@@ -190,7 +188,7 @@ class FileMetadata(FileMetadataCore):
             last_updated_time=resource["lastUpdatedTime"],
             uploaded_time=resource.get("uploadedTime"),
             external_id=resource.get("externalId"),
-            instance_id=(instance_id := resource.get("instanceId")) and NodeId.load(instance_id),
+            instance_id=NodeId._load_if(resource.get("instanceId")),
             name=resource["name"],
             directory=resource.get("directory"),
             source=resource.get("source"),
@@ -198,12 +196,11 @@ class FileMetadata(FileMetadataCore):
             metadata=resource.get("metadata"),
             asset_ids=resource.get("assetIds"),
             data_set_id=resource.get("dataSetId"),
-            labels=(labels := resource.get("labels")) and Label._load_list(labels),
-            geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
+            labels=Label._load_list(labels) if labels else None,
+            geo_location=GeoLocation._load_if(resource.get("geoLocation")),
             source_created_time=resource.get("sourceCreatedTime"),
             source_modified_time=resource.get("sourceModifiedTime"),
             security_categories=resource.get("securityCategories"),
-            cognite_client=cognite_client,
         )
 
     def as_write(self) -> FileMetadataWrite:
@@ -231,7 +228,7 @@ class FileMetadata(FileMetadataCore):
 
 class FileMetadataWrite(FileMetadataCore):
     """This represents the metadata for a file. It does not contain the actual file itself.
-    This is the writing version of FileMetadata, and it is used when inserting or updating files.
+    This is the write version of FileMetadata, and it is used when inserting or updating files.
 
     Args:
         name (str): Name of the file.
@@ -285,26 +282,26 @@ class FileMetadataWrite(FileMetadataCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> FileMetadataWrite:
+    def _load(cls, resource: dict) -> FileMetadataWrite:
+        labels = resource.get("labels")
         return cls(
             name=resource["name"],
             external_id=resource.get("externalId"),
-            instance_id=(instance_id := resource.get("instanceId")) and NodeId.load(instance_id),
+            instance_id=NodeId._load_if(resource.get("instanceId")),
             directory=resource.get("directory"),
             source=resource.get("source"),
             mime_type=resource.get("mimeType"),
             metadata=resource.get("metadata"),
             asset_ids=resource.get("assetIds"),
             data_set_id=resource.get("dataSetId"),
-            labels=(labels := resource.get("labels")) and Label._load_list(labels),
-            geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
+            labels=Label._load_list(labels) if labels else None,
+            geo_location=GeoLocation._load_if(resource.get("geoLocation")),
             source_created_time=resource.get("sourceCreatedTime"),
             source_modified_time=resource.get("sourceModifiedTime"),
             security_categories=resource.get("securityCategories"),
         )
 
     def as_write(self) -> FileMetadataWrite:
-        """Returns self."""
         return self
 
 
@@ -539,7 +536,7 @@ class FileMetadataList(WriteableCogniteResourceList[FileMetadataWrite, FileMetad
 
     def as_write(self) -> FileMetadataWriteList:
         """Returns this FileMetadataList in its writing format."""
-        return FileMetadataWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
+        return FileMetadataWriteList([item.as_write() for item in self.data])
 
 
 class FileMultipartUploadSession(

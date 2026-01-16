@@ -1291,7 +1291,6 @@ class _CogniteAssetProperties:
     source_updated_time = PropertyOptions("sourceUpdatedTime")
     source_created_user = PropertyOptions("sourceCreatedUser")
     source_updated_user = PropertyOptions("sourceUpdatedUser")
-    path_last_updated_time = PropertyOptions("pathLastUpdatedTime")
     asset_class = PropertyOptions("assetClass")
     asset_type = PropertyOptions("type")
 
@@ -1404,6 +1403,8 @@ class CogniteAsset(_CogniteAssetProperties, TypedNode):
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
+
+    path_last_updated_time = PropertyOptions("pathLastUpdatedTime")
 
     def __init__(
         self,
@@ -2614,8 +2615,6 @@ class _CogniteFileProperties:
     source_created_user = PropertyOptions("sourceCreatedUser")
     source_updated_user = PropertyOptions("sourceUpdatedUser")
     mime_type = PropertyOptions("mimeType")
-    is_uploaded = PropertyOptions("isUploaded")
-    uploaded_time = PropertyOptions("uploadedTime")
 
     @classmethod
     def get_source(cls) -> ViewId:
@@ -2725,6 +2724,9 @@ class CogniteFile(_CogniteFileProperties, TypedNode):
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
+
+    is_uploaded = PropertyOptions("isUploaded")
+    uploaded_time = PropertyOptions("uploadedTime")
 
     def __init__(
         self,

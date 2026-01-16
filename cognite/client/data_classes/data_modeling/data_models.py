@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Sequence
 from operator import attrgetter
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, cast
+from typing import Any, Generic, Literal, TypeVar, cast
 
 from typing_extensions import Self
 
@@ -16,9 +16,6 @@ from cognite.client.data_classes.data_modeling._validation import validate_data_
 from cognite.client.data_classes.data_modeling.core import DataModelingSchemaResource, DataModelingSort
 from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
 from cognite.client.data_classes.data_modeling.views import View, ViewApply
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class DataModelCore(DataModelingSchemaResource["DataModelApply"], ABC):
@@ -80,7 +77,7 @@ class DataModelApply(DataModelCore):
             return ViewApply._load(view_data)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> DataModelApply:
+    def _load(cls, resource: dict) -> DataModelApply:
         return DataModelApply(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -147,7 +144,7 @@ class DataModel(DataModelCore, Generic[T_View]):
             return cast(T_View, View._load(view_data))
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],

@@ -377,7 +377,6 @@ class TestSequences:
                 metadata=None,
                 columns=[],
                 data_set_id=None,
-                cognite_client=None,
             )
         )
         assert isinstance(res, Sequence)

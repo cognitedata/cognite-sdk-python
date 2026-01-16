@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from typing_extensions import Self
 
@@ -14,11 +14,7 @@ from cognite.client.data_classes.annotation_types.primitives import (
     Polyline,
     VisionResource,
 )
-from cognite.client.utils._auxiliary import load_resource
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 @dataclass
@@ -46,18 +42,15 @@ class ObjectDetection(VisionResource):
             }
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> ObjectDetection:
+    def _load(cls, resource: dict) -> ObjectDetection:
         return cls(
             label=resource["label"],
             confidence=resource.get("confidence"),
-            attributes={
-                key: Attribute._load(attribute, cognite_client)
-                for key, attribute in resource.get("attributes", {}).items()
-            }
+            attributes={key: Attribute._load(attribute) for key, attribute in resource.get("attributes", {}).items()}
             or None,
-            bounding_box=load_resource(resource, BoundingBox, "boundingBox"),
-            polygon=load_resource(resource, Polygon, "polygon"),
-            polyline=load_resource(resource, Polyline, "polyline"),
+            bounding_box=BoundingBox._load_if(resource.get("boundingBox")),
+            polygon=Polygon._load_if(resource.get("polygon")),
+            polyline=Polyline._load_if(resource.get("polyline")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -78,7 +71,7 @@ class TextRegion(VisionResource):
             self.text_region = BoundingBox._load(convert_all_keys_to_camel_case_recursive(self.text_region))
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TextRegion:
+    def _load(cls, resource: dict) -> TextRegion:
         return cls(
             text=resource["text"],
             text_region=BoundingBox._load(resource["textRegion"]),
@@ -100,7 +93,7 @@ class AssetLink(VisionResource):
             self.asset_ref = CdfResourceRef._load(convert_all_keys_to_camel_case_recursive(self.asset_ref))
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> AssetLink:
+    def _load(cls, resource: dict) -> AssetLink:
         return cls(
             text=resource["text"],
             text_region=BoundingBox._load(resource["textRegion"]),
@@ -117,7 +110,7 @@ class KeypointCollection(VisionResource):
     confidence: float | None = None
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
             label=resource["label"],
             keypoints={k: Keypoint._load(v) for k, v in resource["keypoints"].items()},
@@ -149,10 +142,10 @@ class KeypointCollectionWithObjectDetection(VisionResource):
             )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
-            object_detection=ObjectDetection._load(resource["objectDetection"], cognite_client),
-            keypoint_collection=KeypointCollection._load(resource["keypointCollection"], cognite_client),
+            object_detection=ObjectDetection._load(resource["objectDetection"]),
+            keypoint_collection=KeypointCollection._load(resource["keypointCollection"]),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Collection, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteFilter, CogniteObject, UnknownCogniteObject
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
+from cognite.client.data_classes._base import CogniteFilter, CogniteResource, UnknownCogniteResource
 
 
-class TimestampRange(CogniteObject):
+class TimestampRange(CogniteResource):
     """Range between two timestamps.
 
     Args:
@@ -25,11 +22,11 @@ class TimestampRange(CogniteObject):
         self.min = min
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(max=resource.get("max"), min=resource.get("min"))
 
 
-class AggregateResult(CogniteObject):
+class AggregateResult(CogniteResource):
     """Aggregation group
 
     Args:
@@ -40,7 +37,7 @@ class AggregateResult(CogniteObject):
         self.count = count
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(count=resource["count"])
 
 
@@ -57,11 +54,11 @@ class AggregateUniqueValuesResult(AggregateResult):
         self.value = value
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(count=resource["count"], value=resource.get("value"))
 
 
-class Geometry(CogniteObject):
+class Geometry(CogniteResource):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
@@ -124,7 +121,7 @@ class Geometry(CogniteObject):
         self.geometries = geometries and list(geometries)
 
     @classmethod
-    def _load(cls, raw_geometry: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Geometry:
+    def _load(cls, raw_geometry: dict[str, Any]) -> Geometry:
         return cls(
             type=raw_geometry["type"],
             coordinates=raw_geometry["coordinates"],
@@ -213,7 +210,7 @@ class GeometryFilter(CogniteFilter):
         return cls(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
 
 
-class GeoLocation(CogniteObject):
+class GeoLocation(CogniteResource):
     """A GeoLocation object conforming to the GeoJSON spec.
 
     Args:
@@ -232,15 +229,15 @@ class GeoLocation(CogniteObject):
         self.properties = properties
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> GeoLocation:
+    def _load(cls, resource: dict[str, Any]) -> GeoLocation:
         if "type" in resource:
             return cls(
                 type=resource["type"],
-                geometry=Geometry._load(resource["geometry"], cognite_client),
+                geometry=Geometry._load(resource["geometry"]),
                 properties=resource.get("properties"),
             )
         # Years ago, the API didn't enforce the current restriction on the type field:
-        return UnknownCogniteObject(resource)  # type: ignore[return-value]
+        return UnknownCogniteResource(resource)  # type: ignore[return-value]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
@@ -249,7 +246,7 @@ class GeoLocation(CogniteObject):
         return result
 
 
-class GeoLocationFilter(CogniteObject):
+class GeoLocationFilter(CogniteResource):
     """Return only the resource matching the specified geographic relation.
 
     Args:
@@ -262,7 +259,7 @@ class GeoLocationFilter(CogniteObject):
         self.shape = shape
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> GeoLocationFilter:
+    def _load(cls, resource: dict[str, Any]) -> GeoLocationFilter:
         return cls(relation=resource["relation"], shape=resource["shape"])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

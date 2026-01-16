@@ -86,7 +86,7 @@ class VisionAPI(APIClient):
             **({"parameters": parameters.dump(camel_case=True)} if parameters is not None else {}),
         }
         response = await self._post(f"{self._RESOURCE_PATH}/extract", json=body, headers=headers)
-        return VisionExtractJob._load(response.json(), cognite_client=self._cognite_client)
+        return VisionExtractJob._load(response.json()).set_client_ref(self._cognite_client)
 
     async def get_extract_job(self, job_id: int) -> VisionExtractJob:
         """`Retrieve an existing extract job by ID. <https://developer.cognite.com/api#tag/Vision/operation/getVisionExtract>`_
@@ -110,4 +110,4 @@ class VisionAPI(APIClient):
                 ...     # do something with the predictions
         """
         result = await self._get(f"{self._RESOURCE_PATH}/extract/{job_id}")
-        return VisionExtractJob._load(result.json(), cognite_client=self._cognite_client)
+        return VisionExtractJob._load(result.json()).set_client_ref(self._cognite_client)

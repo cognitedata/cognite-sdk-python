@@ -39,5 +39,4 @@ class StatisticsAPI(APIClient):
                 >>> available_count = stats.data_models.limit - data_model_count
         """
         response = await self._get(self._RESOURCE_PATH)
-
-        return ProjectStatistics._load(response.json(), self._cognite_client)
+        return ProjectStatistics._load_with_project(response.json(), self._cognite_client.config.project)

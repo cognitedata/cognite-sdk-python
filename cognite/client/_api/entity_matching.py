@@ -14,7 +14,7 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingModelUpdate,
     EntityMatchingPredictionResult,
 )
-from cognite.client.utils._auxiliary import convert_true_match, is_unlimited, unpack_items
+from cognite.client.utils._auxiliary import convert_true_match, drop_none_values, is_unlimited, unpack_items
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -132,26 +132,29 @@ class EntityMatchingAPI(APIClient):
         """
         if is_unlimited(limit):
             limit = 1_000_000_000  # currently no pagination
-        filter = {
-            "originalId": original_id,
-            "name": name,
-            "description": description,
-            "featureType": feature_type,
-            "classifier": classifier,
-        }
-        filter = {k: v for k, v in filter.items() if v is not None}
+        filter = drop_none_values(
+            {
+                "originalId": original_id,
+                "name": name,
+                "description": description,
+                "featureType": feature_type,
+                "classifier": classifier,
+            }
+        )
         # NB no pagination support yet
         models = unpack_items(await self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}))
-        return EntityMatchingModelList._load(models, cognite_client=self._cognite_client)
+        return EntityMatchingModelList._load(models).set_client_ref(self._cognite_client)
 
     async def list_jobs(self) -> ContextualizationJobList:
         # TODO: Not in service contract
         """List jobs, typically model fit and predict runs.
+
         Returns:
-            ContextualizationJobList: List of jobs."""
+            ContextualizationJobList: List of jobs.
+        """
         return ContextualizationJobList._load(
-            unpack_items(await self._get(self._RESOURCE_PATH + "/jobs")), cognite_client=self._cognite_client
-        )
+            unpack_items(await self._get(self._RESOURCE_PATH + "/jobs"))
+        ).set_client_ref(self._cognite_client)
 
     async def delete(
         self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
@@ -248,7 +251,7 @@ class EntityMatchingAPI(APIClient):
                 "ignoreMissingFields": ignore_missing_fields,
             },
         )
-        return EntityMatchingModel._load(response.json(), cognite_client=self._cognite_client)
+        return EntityMatchingModel._load(response.json()).set_client_ref(self._cognite_client)
 
     async def predict(
         self,

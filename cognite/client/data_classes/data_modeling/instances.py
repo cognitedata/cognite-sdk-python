@@ -5,7 +5,6 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import UserDict, defaultdict
 from collections.abc import (
-    Collection,
     ItemsView,
     Iterable,
     Iterator,
@@ -35,7 +34,6 @@ from typing_extensions import Self
 
 from cognite.client._constants import OMITTED, Omitted
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     T_CogniteResource,
@@ -72,7 +70,6 @@ from cognite.client.utils.useful_types import SequenceNotStr, is_sequence_not_st
 if TYPE_CHECKING:
     import pandas as pd
 
-    from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
 PropertyValue: TypeAlias = (
@@ -104,7 +101,7 @@ PropertyIdentifier: TypeAlias = str
 
 
 @dataclass
-class NodeOrEdgeData(CogniteObject):
+class NodeOrEdgeData(CogniteResource):
     """This represents the data values of a node or edge.
 
     Args:
@@ -116,7 +113,7 @@ class NodeOrEdgeData(CogniteObject):
     properties: Mapping[str, PropertyValueWrite]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         try:
             source_type = resource["source"]["type"]
         except KeyError as e:
@@ -211,7 +208,7 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         return output
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         resource = convert_all_keys_to_snake_case(resource)
         if resource["instance_type"] == "node":
             return cast(Self, NodeApply._load(resource))
@@ -244,6 +241,14 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
                 view_id = ViewId.load((space, *view_tuple))
                 props[view_id] = properties
         return cls(props)
+
+    @classmethod
+    def _load_if(
+        cls, data: MutableMapping[Space, MutableMapping[str, MutableMapping[PropertyIdentifier, PropertyValue]]] | None
+    ) -> Properties | None:
+        if data is None:
+            return None
+        return cls.load(data)
 
     def dump(self) -> dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]]:
         props: dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]] = defaultdict(dict)
@@ -518,13 +523,12 @@ class InstanceAggregationResult(DataModelingResource):
         self.group = group
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         """
         Loads an instance aggregation result from a json string or dictionary.
 
         Args:
             resource (dict): No description.
-            cognite_client (AsyncCogniteClient | None): No description.
 
         Returns:
             Self: An instance aggregation result.
@@ -561,7 +565,7 @@ class InspectionResults(CogniteResource):
         self.involved_containers = involved_containers
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         involved_views = (
             [ViewId.load(vid) for vid in resource["involvedViews"]] if "involvedViews" in resource else None
         )
@@ -615,7 +619,7 @@ class InstanceInspectResult(CogniteResource):
         self.inspection_results = inspection_results
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -665,13 +669,13 @@ class NodeApply(InstanceApply["NodeApply"]):
         self.type = DirectRelationReference.load(type) if type else type
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> NodeApply:
+    def _load(cls, resource: dict) -> NodeApply:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
             existing_version=resource.get("existingVersion"),
             sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])] or None,
-            type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
+            type=DirectRelationReference._load_if(resource.get("type")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -754,7 +758,7 @@ class Node(Instance[NodeApply]):
         return output
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Node:
+    def _load(cls, resource: dict) -> Node:
         return Node(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -762,8 +766,8 @@ class Node(Instance[NodeApply]):
             last_updated_time=resource["lastUpdatedTime"],
             created_time=resource["createdTime"],
             deleted_time=resource.get("deletedTime"),
-            properties=Properties.load(resource["properties"]) if "properties" in resource else None,
-            type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
+            properties=Properties._load_if(resource.get("properties")),
+            type=DirectRelationReference._load_if(resource.get("type")),
         )
 
 
@@ -793,7 +797,7 @@ class NodeApplyResult(InstanceApplyResult):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -853,7 +857,7 @@ class EdgeApply(InstanceApply["EdgeApply"]):
         return output
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -946,7 +950,7 @@ class Edge(Instance[EdgeApply]):
         return output
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -957,7 +961,7 @@ class Edge(Instance[EdgeApply]):
             start_node=DirectRelationReference.load(resource["startNode"]),
             end_node=DirectRelationReference.load(resource["endNode"]),
             deleted_time=resource.get("deletedTime"),
-            properties=Properties.load(resource["properties"]) if "properties" in resource else None,
+            properties=Properties._load_if(resource.get("properties")),
         )
 
 
@@ -987,7 +991,7 @@ class EdgeApplyResult(InstanceApplyResult):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -1068,7 +1072,7 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
         return self._instance_id_to_item.get(instance_id)
 
     def extend(self, other: Iterable[Any]) -> None:
-        other_res_list = type(self)(other)  # See if we can accept the types
+        other_res_list = type(self)(cast(Sequence, other))  # See if we can accept the types
         if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
             self.data.extend(other_res_list.data)
             self._build_id_mappings()
@@ -1135,12 +1139,11 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
 
     def __init__(
         self,
-        resources: Collection[Any],
+        resources: Sequence[T_Node],
         typing: TypeInformation | None = None,
         debug: DebugInfo | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
-        super().__init__(resources, cognite_client)
+        super().__init__(resources)
         self.typing = typing
         self.debug = debug
 
@@ -1158,17 +1161,17 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
         return NodeApplyList([node.as_write() for node in self])
 
     @classmethod
-    def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: AsyncCogniteClient) -> Self:
+    def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:
         from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         debug = next((DebugInfo._load(r["debug"]) for r in responses if "debug" in r), None)
-        resources = [
-            cls._RESOURCE._load(item, cognite_client=cognite_client)
+        resources: list[T_Node] = [
+            cls._RESOURCE._load(item)  # type: ignore [misc]
             for response in responses
             for item in response.get("items", [])
         ]
-        return cls(resources, typing, debug, cognite_client=cognite_client)
+        return cls(resources, typing, debug)
 
     def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
@@ -1184,13 +1187,12 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
 class NodeListWithCursor(NodeList[T_Node]):
     def __init__(
         self,
-        resources: Collection[Any],
+        resources: Sequence[T_Node],
         cursor: str | None,
         typing: TypeInformation | None = None,
         debug: DebugInfo | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
-        super().__init__(resources, typing, debug, cognite_client)
+        super().__init__(resources, typing, debug)
         self.cursor = cursor
 
     def extend(self, other: NodeListWithCursor) -> None:  # type: ignore[override]
@@ -1239,12 +1241,11 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
 
     def __init__(
         self,
-        resources: Collection[Any],
+        resources: Sequence[T_Edge],
         typing: TypeInformation | None = None,
         debug: DebugInfo | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
-        super().__init__(resources, cognite_client)
+        super().__init__(resources)
         self.typing = typing
         self.debug = debug
 
@@ -1259,20 +1260,20 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
 
     def as_write(self) -> EdgeApplyList:
         """Returns this EdgeList as a EdgeApplyList"""
-        return EdgeApplyList([edge.as_write() for edge in self], cognite_client=self._get_cognite_client())
+        return EdgeApplyList([edge.as_write() for edge in self])
 
     @classmethod
-    def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: AsyncCogniteClient) -> Self:
+    def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:
         from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         debug = next((DebugInfo._load(r["debug"]) for r in responses if "debug" in r), None)
-        resources = [
-            cls._RESOURCE._load(item, cognite_client=cognite_client)
+        resources: list[T_Edge] = [
+            cls._RESOURCE._load(item)  # type: ignore [misc]
             for response in responses
             for item in response.get("items", [])
         ]
-        return cls(resources, typing, debug, cognite_client=cognite_client)
+        return cls(resources, typing, debug)
 
     def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
@@ -1288,13 +1289,12 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
 class EdgeListWithCursor(EdgeList):
     def __init__(
         self,
-        resources: Collection[Any],
+        resources: Sequence[T_Edge],
         cursor: str | None,
         typing: TypeInformation | None = None,
         debug: DebugInfo | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
-        super().__init__(resources, typing, debug, cognite_client)
+        super().__init__(resources, typing, debug)
         self.cursor = cursor
 
     def extend(self, other: EdgeListWithCursor) -> None:  # type: ignore[override]
@@ -1377,7 +1377,7 @@ class InstancesDeleteResult:
 
 
 @dataclass
-class TargetUnit(CogniteObject):
+class TargetUnit(CogniteResource):
     property: str
     unit: UnitReference | UnitSystemReference
 
@@ -1385,7 +1385,7 @@ class TargetUnit(CogniteObject):
         return {"property": self.property, "unit": self.unit.dump(camel_case)}
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> TargetUnit:
+    def _load(cls, resource: dict[str, Any]) -> TargetUnit:
         return cls(
             property=resource["property"],
             unit=UnitReference.load(resource["unit"])
@@ -1395,7 +1395,7 @@ class TargetUnit(CogniteObject):
 
 
 @dataclass
-class TypePropertyDefinition(CogniteObject):
+class TypePropertyDefinition(CogniteResource):
     type: PropertyType
     nullable: bool = True
     auto_increment: bool = False
@@ -1424,9 +1424,7 @@ class TypePropertyDefinition(CogniteObject):
         return output
 
     @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None
-    ) -> TypePropertyDefinition:
+    def _load(cls, resource: dict[str, Any]) -> TypePropertyDefinition:
         return cls(
             type=PropertyType.load(resource["type"]),
             nullable=resource.get("nullable"),  # type: ignore[arg-type]
@@ -1438,7 +1436,7 @@ class TypePropertyDefinition(CogniteObject):
         )
 
 
-class TypeInformation(UserDict, CogniteObject):
+class TypeInformation(UserDict, CogniteResource):
     def __init__(self, data: dict[str, dict[str, dict[str, TypePropertyDefinition]]] | None = None) -> None:
         super().__init__(data or {})
 
@@ -1453,7 +1451,7 @@ class TypeInformation(UserDict, CogniteObject):
         return output
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> TypeInformation:
+    def _load(cls, resource: dict[str, Any]) -> TypeInformation:
         return cls(
             {
                 space_name: {
@@ -1470,7 +1468,7 @@ class TypeInformation(UserDict, CogniteObject):
             }
         )
 
-    def to_pandas(self) -> pd.DataFrame:
+    def to_pandas(self) -> pd.DataFrame:  # type: ignore [override]
         pd = local_import("pandas")
 
         index_names = "space_name", "view_or_container"
@@ -1723,7 +1721,7 @@ class TypedNodeApply(NodeApply, TypedInstance):
         return set(TypedNodeApply._get_constructor_parameters().keys())
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         resource = resource.copy()  # avoid mutating resource (when popping)
         sources = resource.pop("sources", [])
         properties = sources[0].get("properties", {}) if sources else {}
@@ -1759,7 +1757,7 @@ class TypedEdgeApply(EdgeApply, TypedInstance):
         return set(TypedEdgeApply._get_constructor_parameters().keys())
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         sources = resource.pop("sources", [])
         properties = sources[0].get("properties", {}) if sources else {}
         return cls._load_instance(resource, properties)
@@ -1790,7 +1788,7 @@ class TypedNode(Node, TypedInstance):
         return set(TypedNode._get_constructor_parameters().keys())
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         all_properties = resource.pop("properties", {})
         source = cls.get_source()
         properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
@@ -1833,7 +1831,7 @@ class TypedEdge(Edge, TypedInstance):
         return set(TypedEdge._get_constructor_parameters().keys())
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         all_properties = resource.pop("properties", {})
         source = cls.get_source()
         properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})

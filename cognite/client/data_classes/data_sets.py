@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any
 
 from typing_extensions import Self
 
@@ -20,9 +20,6 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class DataSetCore(WriteableCogniteResource["DataSetWrite"]):
@@ -65,7 +62,6 @@ class DataSet(DataSetCore):
         name (str | None): The name of the data set.
         description (str | None): The description of the data set.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -78,7 +74,6 @@ class DataSet(DataSetCore):
         name: str | None,
         description: str | None,
         metadata: dict[str, str] | None,
-        cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -87,13 +82,12 @@ class DataSet(DataSetCore):
             metadata=metadata,
             write_protected=write_protected,
         )
-        self.id: int = id
-        self.created_time: int = created_time
-        self.last_updated_time: int = last_updated_time
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
+        self.id = id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -103,7 +97,6 @@ class DataSet(DataSetCore):
             name=resource.get("name"),
             description=resource.get("description"),
             metadata=resource.get("metadata"),
-            cognite_client=cognite_client,
         )
 
     def as_write(self) -> DataSetWrite:
@@ -149,7 +142,7 @@ class DataSetWrite(DataSetCore):
         return self
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource.get("externalId"),
             name=resource.get("name"),
@@ -272,4 +265,4 @@ class DataSetList(WriteableCogniteResourceList[DataSetWrite, DataSet], IdTransfo
     _RESOURCE = DataSet
 
     def as_write(self) -> DataSetWriteList:
-        return DataSetWriteList([ds.as_write() for ds in self.data], cognite_client=self._get_cognite_client())
+        return DataSetWriteList([ds.as_write() for ds in self.data])

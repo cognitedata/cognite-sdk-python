@@ -145,7 +145,7 @@ class FunctionsAPI(APIClient):
                 yield fn
         else:
             for chunk in split_into_chunks(functions, chunk_size):
-                yield FunctionList(chunk, cognite_client=self._cognite_client)
+                yield FunctionList(chunk)
 
     async def create(
         self,
@@ -271,7 +271,7 @@ class FunctionsAPI(APIClient):
 
         # The exactly_one_is_not_none check ensures that function is not None
         res = await self._post(self._RESOURCE_PATH, json={"items": [function_input.dump(camel_case=True)]})
-        return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
+        return Function._load(res.json()["items"][0])
 
     async def _create_function_obj(
         self,
@@ -414,7 +414,7 @@ class FunctionsAPI(APIClient):
             json={"filter": filter, "limit": limit},
         )
 
-        return FunctionList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FunctionList._load(res.json()["items"])
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
         """`Retrieve a single function by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
@@ -526,7 +526,7 @@ class FunctionsAPI(APIClient):
         url = self._RESOURCE_PATH_CALL.format(id)
         res = await self._post(url, json={"data": data, "nonce": nonce})
 
-        function_call = FunctionCall._load(res.json(), cognite_client=self._cognite_client)
+        function_call = FunctionCall._load(res.json()).set_client_ref(self._cognite_client)
         if wait:
             await function_call.wait_async()
         return function_call

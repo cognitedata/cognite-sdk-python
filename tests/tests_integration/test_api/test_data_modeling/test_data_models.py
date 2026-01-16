@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -29,7 +29,10 @@ def cdf_data_models(
     movie_model: DataModel[View],
     empty_model: DataModel[ViewId],
 ) -> DataModelList[ViewId]:
-    return DataModelList[ViewId]([movie_model, empty_model])
+    # TODO(doctrino): Mypy correctly points out that movie_model has inline views, while fixture output says
+    # they are just (view) IDs. We do an incorrect cast here to silence mypy, but we should fix this properly.
+    movie_model2 = cast("DataModel[ViewId]", movie_model)
+    return DataModelList[ViewId]([movie_model2, empty_model])
 
 
 class TestDataModelsAPI:

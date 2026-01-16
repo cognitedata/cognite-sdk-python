@@ -120,7 +120,6 @@ class TestDataset:
                 external_id=None,
                 description=None,
                 metadata=None,
-                cognite_client=None,
             )
         )
         assert isinstance(res, DataSet)
