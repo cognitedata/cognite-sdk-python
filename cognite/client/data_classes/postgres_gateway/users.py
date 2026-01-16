@@ -48,7 +48,7 @@ class UserWrite(_UserCore):
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
-            credentials=SessionCredentials._load(resource["credentials"]) if "credentials" in resource else None,
+            credentials=SessionCredentials._load_if(resource.get("credentials")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

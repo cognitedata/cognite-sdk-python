@@ -173,14 +173,9 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> QueryKnowledgeGraphAgentToolConfiguration:
         data_models = [DataModelInfo._load(dm) for dm in resource["dataModels"]]
-
-        instance_spaces = None
-        if "instanceSpaces" in resource:
-            instance_spaces = InstanceSpaces._load(resource["instanceSpaces"])
-
         return cls(
             data_models=data_models,
-            instance_spaces=instance_spaces,
+            instance_spaces=InstanceSpaces._load_if(resource.get("instanceSpaces")),
             version=resource.get("version"),
         )
 
@@ -302,15 +297,10 @@ class QueryKnowledgeGraphAgentTool(AgentTool):
 
     @classmethod
     def _load_tool(cls, resource: dict[str, Any]) -> QueryKnowledgeGraphAgentTool:
-        # Parse the configuration specifically for this tool type
-        configuration = None
-        if resource.get("configuration"):
-            configuration = QueryKnowledgeGraphAgentToolConfiguration._load(resource["configuration"])
-
         return cls(
             name=resource["name"],
             description=resource["description"],
-            configuration=configuration,
+            configuration=QueryKnowledgeGraphAgentToolConfiguration._load_if(resource.get("configuration")),
         )
 
     def as_write(self) -> QueryKnowledgeGraphAgentToolUpsert:
@@ -348,14 +338,10 @@ class QueryKnowledgeGraphAgentToolUpsert(AgentToolUpsert):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> QueryKnowledgeGraphAgentToolUpsert:
-        configuration = None
-        if resource.get("configuration"):
-            configuration = QueryKnowledgeGraphAgentToolConfiguration._load(resource["configuration"])
-
         return cls(
             name=resource["name"],
             description=resource["description"],
-            configuration=configuration,
+            configuration=QueryKnowledgeGraphAgentToolConfiguration._load_if(resource.get("configuration")),
         )
 
 

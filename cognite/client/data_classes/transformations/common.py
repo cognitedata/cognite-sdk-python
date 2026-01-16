@@ -278,7 +278,7 @@ class Nodes(TransformationDestination):
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
-            view=ViewInfo._load(resource["view"]) if resource.get("view") is not None else None,
+            view=ViewInfo._load_if(resource.get("view")),
             instance_space=resource.get("instanceSpace"),
         )
 
@@ -298,9 +298,9 @@ class Edges(TransformationDestination):
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
-            view=ViewInfo._load(resource["view"]) if resource.get("view") is not None else None,
+            view=ViewInfo._load_if(resource.get("view")),
             instance_space=resource.get("instanceSpace"),
-            edge_type=EdgeType._load(resource["edgeType"]) if resource.get("edgeType") is not None else None,
+            edge_type=EdgeType._load_if(resource.get("edgeType")),
         )
 
 
@@ -317,7 +317,7 @@ class Instances(TransformationDestination):
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
-            data_model=DataModelInfo._load(resource["dataModel"]) if resource.get("dataModel") is not None else None,
+            data_model=DataModelInfo._load_if(resource.get("dataModel")),
             instance_space=resource.get("instanceSpace"),
         )
 
@@ -408,6 +408,10 @@ class OidcCredentials:
             audience=data.get("audience"),
         )
 
+    @classmethod
+    def _load_if(cls, data: dict[str, Any] | None) -> Self | None:
+        return cls.load(data) if data is not None else None
+
 
 class NonceCredentials:
     def __init__(
@@ -446,6 +450,10 @@ class NonceCredentials:
             cdf_project_name=data["cdfProjectName"],
         )
 
+    @classmethod
+    def _load_if(cls, data: dict[str, Any] | None) -> NonceCredentials | None:
+        return cls.load(data) if data is not None else None
+
 
 class TransformationBlockedInfo:
     """Information about the reason why and when a transformation is blocked.
@@ -462,6 +470,10 @@ class TransformationBlockedInfo:
     @classmethod
     def load(cls, resource: dict[str, Any]) -> TransformationBlockedInfo:
         return cls(reason=resource["reason"], created_time=resource["createdTime"])
+
+    @classmethod
+    def _load_if(cls, data: dict[str, Any] | None) -> TransformationBlockedInfo | None:
+        return cls.load(data) if data is not None else None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)

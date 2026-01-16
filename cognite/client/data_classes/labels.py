@@ -234,9 +234,11 @@ class LabelFilter(CogniteFilter):
 
     @classmethod
     def _load(cls, label_filter: dict[str, Any]) -> LabelFilter:
+        contains_any = label_filter.get("containsAny")
+        contains_all = label_filter.get("containsAll")
         return cls(
-            contains_any=(any_ := label_filter.get("containsAny")) and [item["externalId"] for item in any_],
-            contains_all=(all_ := label_filter.get("containsAll")) and [item["externalId"] for item in all_],
+            contains_any=[item["externalId"] for item in contains_any] if contains_any else None,
+            contains_all=[item["externalId"] for item in contains_all] if contains_all else None,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

@@ -34,16 +34,14 @@ class InstanceId:
 
     @overload
     @classmethod
-    def load_if(cls, data: None) -> None: ...
+    def _load_if(cls, data: None) -> None: ...
 
     @overload
     @classmethod
-    def load_if(cls, data: dict[str, str] | tuple[str, str] | Self) -> Self: ...
+    def _load_if(cls, data: dict[str, str] | tuple[str, str] | Self) -> Self: ...
 
     @classmethod
-    def load_if(cls, data: dict[str, str] | tuple[str, str] | Self | None) -> Self | None:
-        # Note: For experimentation - I'd like to add this as a universal method to all classes to avoid
-        # the endless spam of 'MyClass.load(foo["bar"]) if "bar" in foo else None' in the codebase!
+    def _load_if(cls, data: dict[str, str] | tuple[str, str] | Self | None) -> Self | None:
         if data is None:
             return None
         return cls.load(data)

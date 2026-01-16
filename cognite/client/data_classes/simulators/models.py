@@ -465,7 +465,7 @@ class SimulatorFlowsheetProperty(CogniteResource):
             reference_object=resource["referenceObject"],
             value_type=resource["valueType"],
             value=resource["value"],
-            unit=SimulationValueUnitReference._load(resource["unit"]) if "unit" in resource else None,
+            unit=SimulationValueUnitReference._load_if(resource.get("unit")),
             read_only=resource.get("readOnly"),
         )
 
@@ -488,10 +488,7 @@ class SimulatorFlowsheetPosition(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(
-            x=resource["x"],
-            y=resource["y"],
-        )
+        return cls(x=resource["x"], y=resource["y"])
 
 
 @dataclass
@@ -507,7 +504,7 @@ class SimulatorFlowsheetGraphicalObject(CogniteResource):
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
-            position=SimulatorFlowsheetPosition._load(resource["position"]) if "position" in resource else None,
+            position=SimulatorFlowsheetPosition._load_if(resource.get("position")),
             height=resource.get("height"),
             width=resource.get("width"),
             scale_x=resource.get("scaleX"),
@@ -542,9 +539,7 @@ class SimulatorFlowsheetObjectNode(CogniteResource):
             id=resource["id"],
             name=resource.get("name"),
             type=resource["type"],
-            graphical_object=SimulatorFlowsheetGraphicalObject._load(resource["graphicalObject"])
-            if "graphicalObject" in resource
-            else None,
+            graphical_object=SimulatorFlowsheetGraphicalObject._load_if(resource.get("graphicalObject")),
             properties=SimulatorFlowsheetProperty._load_list(resource["properties"]),
         )
 

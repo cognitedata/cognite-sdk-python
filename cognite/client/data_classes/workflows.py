@@ -416,7 +416,7 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
         self.tasks = tasks
 
     @classmethod
-    def _load(cls: type[Self], resource: dict) -> Self:
+    def _load(cls, resource: dict) -> Self:
         subworkflow: dict[str, Any] = resource[cls.task_type]
 
         return cls(
@@ -445,7 +445,7 @@ class SubworkflowReferenceParameters(WorkflowTaskParameters):
         self.version = version
 
     @classmethod
-    def _load(cls: type[Self], resource: dict) -> Self:
+    def _load(cls, resource: dict) -> Self:
         subworkflow: dict[str, Any] = resource[cls.task_type]
 
         return cls(workflow_external_id=subworkflow["workflowExternalId"], version=subworkflow["version"])
@@ -496,9 +496,7 @@ class DynamicTaskParameters(WorkflowTaskParameters):
             return cls(dynamic["tasks"])
 
         # or can be resolved to a list of Tasks (i.e., during or after execution)
-        return cls(
-            [WorkflowTask._load(task) for task in dynamic["tasks"]],
-        )
+        return cls([WorkflowTask._load(task) for task in dynamic["tasks"]])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
@@ -1001,11 +999,10 @@ class WorkflowVersionUpsert(WorkflowVersionCore):
 
     @classmethod
     def _load(cls, resource: dict) -> Self:
-        workflow_definition: dict[str, Any] = resource["workflowDefinition"]
         return cls(
             workflow_external_id=resource["workflowExternalId"],
             version=resource["version"],
-            workflow_definition=WorkflowDefinitionUpsert._load(workflow_definition),
+            workflow_definition=WorkflowDefinitionUpsert._load(resource["workflowDefinition"]),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -1047,11 +1044,10 @@ class WorkflowVersion(WorkflowVersionCore):
 
     @classmethod
     def _load(cls, resource: dict) -> WorkflowVersion:
-        workflow_definition: dict[str, Any] = resource["workflowDefinition"]
         return cls(
             workflow_external_id=resource["workflowExternalId"],
             version=resource["version"],
-            workflow_definition=WorkflowDefinition._load(workflow_definition),
+            workflow_definition=WorkflowDefinition._load(resource["workflowDefinition"]),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
         )
@@ -1147,10 +1143,7 @@ class WorkflowExecution(CogniteResource):
             id=resource["id"],
             workflow_external_id=resource["workflowExternalId"],
             version=resource.get("version"),
-            status=cast(
-                WorkflowStatus,
-                to_snake_case(resource["status"]),
-            ),
+            status=cast(WorkflowStatus, to_snake_case(resource["status"])),
             created_time=resource["createdTime"],
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
@@ -1218,10 +1211,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
             id=resource["id"],
             workflow_external_id=resource["workflowExternalId"],
             version=resource.get("version"),
-            status=cast(
-                WorkflowStatus,
-                to_snake_case(resource["status"]),
-            ),
+            status=cast(WorkflowStatus, to_snake_case(resource["status"])),
             created_time=resource["createdTime"],
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),

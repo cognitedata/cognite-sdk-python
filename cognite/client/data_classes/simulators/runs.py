@@ -36,9 +36,7 @@ class SimulationValueUnitName(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(
-            name=resource.get("name"),
-        )
+        return cls(name=resource.get("name"))
 
     def __post_init__(self) -> None:
         _WARNING.warn()
@@ -50,10 +48,7 @@ class SimulationValueUnit(SimulationValueUnitName):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(
-            external_id=resource.get("externalId"),
-            name=resource.get("name"),
-        )
+        return cls(external_id=resource.get("externalId"), name=resource.get("name"))
 
     def __post_init__(self) -> None:
         _WARNING.warn()
@@ -70,7 +65,7 @@ class SimulationInputOverride(CogniteResource):
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
-            unit=(SimulationValueUnitName._load(resource["unit"]) if resource.get("unit") else None),
+            unit=SimulationValueUnitName._load_if(resource.get("unit")),
         )
 
     def __post_init__(self) -> None:
@@ -373,7 +368,7 @@ class SimulationValueBase(CogniteResource):
             reference_id=resource["referenceId"],
             value=resource["value"],
             value_type=resource["valueType"],
-            unit=SimulationValueUnitName._load(resource["unit"]) if resource.get("unit") else None,
+            unit=SimulationValueUnitName._load_if(resource.get("unit")),
             simulator_object_reference=resource.get("simulatorObjectReference"),
             timeseries_external_id=resource.get("timeseriesExternalId"),
         )
@@ -421,7 +416,7 @@ class SimulationInput(SimulationValueBase):
             reference_id=resource["referenceId"],
             value=resource["value"],
             value_type=resource["valueType"],
-            unit=SimulationValueUnitName._load(resource["unit"]) if resource.get("unit") else None,
+            unit=SimulationValueUnitName._load_if(resource.get("unit")),
             simulator_object_reference=resource.get("simulatorObjectReference"),
             timeseries_external_id=resource.get("timeseriesExternalId"),
             overridden=resource.get("overridden"),

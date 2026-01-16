@@ -50,6 +50,14 @@ class DataModelingId(AbstractDataclass):
             return cls(space=data["space"], external_id=data["externalId"])
         raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
 
+    @classmethod
+    def _load_if(
+        cls: type[T_DataModelingId], data: dict | T_DataModelingId | tuple[str, str] | None
+    ) -> T_DataModelingId | None:
+        if data is None:
+            return None
+        return cls.load(data)
+
 
 T_DataModelingId = TypeVar("T_DataModelingId", bound=DataModelingId)
 
@@ -82,6 +90,15 @@ class VersionedDataModelingId(AbstractDataclass):
         elif isinstance(data, dict):
             return cls(space=data["space"], external_id=data["externalId"], version=data.get("version"))
         raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
+
+    @classmethod
+    def _load_if(
+        cls: type[T_Versioned_DataModeling_Id],
+        data: dict | T_Versioned_DataModeling_Id | tuple[str, str] | tuple[str, str, str] | None,
+    ) -> T_Versioned_DataModeling_Id | None:
+        if data is None:
+            return None
+        return cls.load(data)
 
 
 T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=VersionedDataModelingId)

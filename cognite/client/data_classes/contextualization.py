@@ -34,7 +34,7 @@ from cognite.client.data_classes.annotations import AnnotationList, AnnotationTy
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteModelFailedError
 from cognite.client.utils._async_helpers import run_sync
-from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
+from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none
 from cognite.client.utils._text import convert_all_keys_to_snake_case, copy_doc_from_async, to_camel_case
 
 if TYPE_CHECKING:
@@ -1027,31 +1027,25 @@ class FeatureParameters(VisionResource):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: Any = None) -> FeatureParameters:
         return cls(
-            text_detection_parameters=load_resource(resource, TextDetectionParameters, "textDetectionParameters"),
-            asset_tag_detection_parameters=load_resource(
-                resource, AssetTagDetectionParameters, "assetTagDetectionParameters"
+            text_detection_parameters=TextDetectionParameters._load_if(resource.get("textDetectionParameters")),
+            asset_tag_detection_parameters=AssetTagDetectionParameters._load_if(
+                resource.get("assetTagDetectionParameters")
             ),
-            people_detection_parameters=load_resource(resource, PeopleDetectionParameters, "peopleDetectionParameters"),
-            industrial_object_detection_parameters=load_resource(
-                resource, IndustrialObjectDetectionParameters, "industrialObjectDetectionParameters"
+            people_detection_parameters=PeopleDetectionParameters._load_if(resource.get("peopleDetectionParameters")),
+            industrial_object_detection_parameters=IndustrialObjectDetectionParameters._load_if(
+                resource.get("industrialObjectDetectionParameters")
             ),
-            personal_protective_equipment_detection_parameters=load_resource(
-                resource,
-                PersonalProtectiveEquipmentDetectionParameters,
-                "personalProtectiveEquipmentDetectionParameters",
+            personal_protective_equipment_detection_parameters=PersonalProtectiveEquipmentDetectionParameters._load_if(
+                resource.get("personalProtectiveEquipmentDetectionParameters")
             ),
-            digital_gauge_detection_parameters=load_resource(
-                resource, DigitalGaugeDetection, "digitalGaugeDetectionParameters"
+            digital_gauge_detection_parameters=DigitalGaugeDetection._load_if(
+                resource.get("digitalGaugeDetectionParameters")
             ),
-            dial_gauge_detection_parameters=load_resource(
-                resource,
-                DialGaugeDetection,
-                "dialGaugeDetectionParameters",
+            dial_gauge_detection_parameters=DialGaugeDetection._load_if(resource.get("dialGaugeDetectionParameters")),
+            level_gauge_detection_parameters=LevelGaugeDetection._load_if(
+                resource.get("levelGaugeDetectionParameters")
             ),
-            level_gauge_detection_parameters=load_resource(
-                resource, LevelGaugeDetection, "levelGaugeDetectionParameters"
-            ),
-            valve_detection_parameters=load_resource(resource, ValveDetection, "valveDetectionParameters"),
+            valve_detection_parameters=ValveDetection._load_if(resource.get("valveDetectionParameters")),
         )
 
 
@@ -1076,9 +1070,7 @@ class VisionExtractItem(CogniteResource):
     def _load(cls, resource: dict) -> VisionExtractItem:
         return cls(
             file_id=resource["fileId"],
-            predictions=VisionExtractPredictions._load(resource["predictions"])
-            if "predictions" in resource
-            else VisionExtractPredictions(),
+            predictions=VisionExtractPredictions._load(resource.get("predictions", {})),
             file_external_id=resource.get("fileExternalId"),
             error_message=resource.get("errorMessage"),
         )
@@ -1416,6 +1408,12 @@ class ConnectionFlags:
     def load(cls, resource: list[str]) -> Self:
         return cls(**{flag: True for flag in resource})
 
+    @classmethod
+    def _load_if(cls, resource: list[str] | None) -> Self | None:
+        if resource is None:
+            return None
+        return cls.load(resource)
+
 
 class DiagramDetectConfig(CogniteResource):
     """`Configuration options for the diagrams/detect endpoint <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
@@ -1516,19 +1514,9 @@ class DiagramDetectConfig(CogniteResource):
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         resource_copy = resource.copy()
-
-        if con_flg := resource_copy.pop("connectionFlags", None):
-            con_flg = ConnectionFlags.load(con_flg)
-        if cus_fuz := resource_copy.pop("customizeFuzziness", None):
-            cus_fuz = CustomizeFuzziness.load(cus_fuz)
-        if dir_wgt := resource_copy.pop("directionWeights", None):
-            dir_wgt = DirectionWeights.load(dir_wgt)
-
-        snake_cased = convert_all_keys_to_snake_case(resource_copy)
-
         return cls(
-            connection_flags=con_flg,
-            customize_fuzziness=cus_fuz,
-            direction_weights=dir_wgt,
-            **snake_cased,
+            connection_flags=ConnectionFlags._load_if(resource_copy.pop("connectionFlags", None)),
+            customize_fuzziness=CustomizeFuzziness._load_if(resource_copy.pop("customizeFuzziness", None)),
+            direction_weights=DirectionWeights._load_if(resource_copy.pop("directionWeights", None)),
+            **convert_all_keys_to_snake_case(resource_copy),
         )

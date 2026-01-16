@@ -242,6 +242,14 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
                 props[view_id] = properties
         return cls(props)
 
+    @classmethod
+    def _load_if(
+        cls, data: MutableMapping[Space, MutableMapping[str, MutableMapping[PropertyIdentifier, PropertyValue]]] | None
+    ) -> Properties | None:
+        if data is None:
+            return None
+        return cls.load(data)
+
     def dump(self) -> dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]]:
         props: dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]] = defaultdict(dict)
         for view_id, properties in self.data.items():
@@ -667,7 +675,7 @@ class NodeApply(InstanceApply["NodeApply"]):
             external_id=resource["externalId"],
             existing_version=resource.get("existingVersion"),
             sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])] or None,
-            type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
+            type=DirectRelationReference._load_if(resource.get("type")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -758,8 +766,8 @@ class Node(Instance[NodeApply]):
             last_updated_time=resource["lastUpdatedTime"],
             created_time=resource["createdTime"],
             deleted_time=resource.get("deletedTime"),
-            properties=Properties.load(resource["properties"]) if "properties" in resource else None,
-            type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
+            properties=Properties._load_if(resource.get("properties")),
+            type=DirectRelationReference._load_if(resource.get("type")),
         )
 
 
@@ -953,7 +961,7 @@ class Edge(Instance[EdgeApply]):
             start_node=DirectRelationReference.load(resource["startNode"]),
             end_node=DirectRelationReference.load(resource["endNode"]),
             deleted_time=resource.get("deletedTime"),
-            properties=Properties.load(resource["properties"]) if "properties" in resource else None,
+            properties=Properties._load_if(resource.get("properties")),
         )
 
 

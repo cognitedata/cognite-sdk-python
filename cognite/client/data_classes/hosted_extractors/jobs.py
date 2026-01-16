@@ -84,7 +84,7 @@ class ValueFormat(JobFormat):
         return cls(
             encoding=resource.get("encoding"),
             compression=resource.get("compression"),
-            prefix=Prefix._load(resource["prefix"]) if "prefix" in resource else None,
+            prefix=Prefix._load_if(resource.get("prefix")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -106,7 +106,7 @@ class RockwellFormat(JobFormat):
         return cls(
             encoding=resource.get("encoding"),
             compression=resource.get("compression"),
-            prefix=Prefix._load(resource["prefix"]) if "prefix" in resource else None,
+            prefix=Prefix._load_if(resource.get("prefix")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -144,7 +144,7 @@ class CogniteFormat(JobFormat):
         return cls(
             encoding=resource.get("encoding", None),
             compression=resource.get("compression"),
-            prefix=Prefix._load(resource["prefix"]) if "prefix" in resource else None,
+            prefix=Prefix._load_if(resource.get("prefix")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -285,10 +285,8 @@ class RestConfig(JobConfig):
             body=resource.get("body"),
             query=resource.get("query"),
             headers=resource.get("headers"),
-            incremental_load=IncrementalLoad._load(resource["incrementalLoad"])
-            if "incrementalLoad" in resource
-            else None,
-            pagination=IncrementalLoad._load(resource["pagination"]) if "pagination" in resource else None,
+            incremental_load=IncrementalLoad._load_if(resource.get("incrementalLoad")),
+            pagination=IncrementalLoad._load_if(resource.get("pagination")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -346,7 +344,7 @@ class JobWrite(_JobCore):
             destination_id=resource["destinationId"],
             source_id=resource["sourceId"],
             format=JobFormat._load(resource["format"]),
-            config=JobConfig._load(resource["config"]) if "config" in resource else None,
+            config=JobConfig._load_if(resource.get("config")),
         )
 
 
@@ -406,7 +404,7 @@ class Job(_JobCore):
             format=JobFormat._load(resource["format"]),
             target_status=resource["targetStatus"],
             status=resource["status"],
-            config=JobConfig._load(resource["config"]) if "config" in resource else None,
+            config=JobConfig._load_if(resource.get("config")),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
         )

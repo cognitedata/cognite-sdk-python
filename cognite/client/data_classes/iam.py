@@ -55,10 +55,7 @@ class GroupAttributes(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        token: GroupAttributesToken | None = None
-        if "token" in resource:
-            token = GroupAttributesToken._load(resource["token"])
-        instance = cls(token=token)
+        instance = cls(token=GroupAttributesToken._load_if(resource.get("token")))
         existing = {"token"}
         instance._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
         return instance
@@ -187,7 +184,7 @@ class Group(GroupCore):
             id=resource["id"],
             name=resource["name"],
             source_id=resource.get("sourceId"),
-            attributes=(attrs := resource.get("attributes")) and GroupAttributes._load(attrs),
+            attributes=GroupAttributes._load_if(resource.get("attributes")),
             capabilities=[Capability.load(c, allow_unknown) for c in resource.get("capabilities", [])] or None,
             is_deleted=resource.get("isDeleted"),
             deleted_time=resource.get("deletedTime"),

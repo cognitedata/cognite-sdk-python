@@ -273,14 +273,13 @@ class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite
 
     @classmethod
     def _load(cls, resource: dict) -> Self:
-        camera = resource.get("camera")
         return cls(
             file_id=resource.get("fileId"),
             published=resource.get("published"),
             rotation=resource.get("rotation"),
             scale=resource.get("scale"),
             translation=resource.get("translation"),
-            camera=RevisionCameraProperties._load(camera) if camera else None,
+            camera=RevisionCameraProperties._load_if(resource.get("camera")),
             metadata=resource.get("metadata"),
         )
 
@@ -352,7 +351,7 @@ class ThreeDModelRevision(ThreeDModelRevisionCore):
             rotation=resource.get("rotation"),
             scale=resource.get("scale"),
             translation=resource.get("translation"),
-            camera=(camera := resource.get("camera")) and RevisionCameraProperties._load(camera),
+            camera=RevisionCameraProperties._load_if(resource.get("camera")),
             status=resource["status"],
             metadata=resource.get("metadata"),
             thumbnail_threed_file_id=resource.get("thumbnailThreedFileId"),
@@ -418,7 +417,7 @@ class ThreeDModelRevisionWrite(ThreeDModelRevisionCore):
             rotation=resource.get("rotation"),
             scale=resource.get("scale"),
             translation=resource.get("translation"),
-            camera=(camera := resource.get("camera")) and RevisionCameraProperties._load(camera),
+            camera=RevisionCameraProperties._load_if(resource.get("camera")),
             metadata=resource.get("metadata"),
         )
 
@@ -559,7 +558,7 @@ class ThreeDNode(CogniteResource):
             name=resource["name"],
             subtree_size=resource["subtreeSize"],
             properties=resource.get("properties"),
-            bounding_box=(bbox := resource.get("boundingBox")) and BoundingBox3D._load(bbox),
+            bounding_box=BoundingBox3D._load_if(resource.get("boundingBox")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

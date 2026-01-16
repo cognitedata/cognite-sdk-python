@@ -48,7 +48,7 @@ class Summary:
             summary=data["summary"],
             id=data.get("id"),
             external_id=data.get("externalId"),
-            instance_id=NodeId.load(data["instanceId"]) if "instanceId" in data else None,
+            instance_id=NodeId._load_if(data.get("instanceId")),
         )
 
 
@@ -117,7 +117,7 @@ class AnswerReference:
         return cls(
             file_id=data["fileId"],
             external_id=data.get("externalId"),
-            instance_id=NodeId.load(data["instanceId"]) if "instanceId" in data else None,
+            instance_id=NodeId._load_if(data.get("instanceId")),
             file_name=data["fileName"],
             locations=[AnswerLocation._load(d) for d in data.get("locations", [])],
         )

@@ -14,7 +14,6 @@ from cognite.client.data_classes.annotation_types.primitives import (
     Polyline,
     VisionResource,
 )
-from cognite.client.utils._auxiliary import load_resource
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive
 
 
@@ -49,9 +48,9 @@ class ObjectDetection(VisionResource):
             confidence=resource.get("confidence"),
             attributes={key: Attribute._load(attribute) for key, attribute in resource.get("attributes", {}).items()}
             or None,
-            bounding_box=load_resource(resource, BoundingBox, "boundingBox"),
-            polygon=load_resource(resource, Polygon, "polygon"),
-            polyline=load_resource(resource, Polyline, "polyline"),
+            bounding_box=BoundingBox._load_if(resource.get("boundingBox")),
+            polygon=Polygon._load_if(resource.get("polygon")),
+            polyline=Polyline._load_if(resource.get("polyline")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

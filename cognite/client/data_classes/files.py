@@ -180,6 +180,7 @@ class FileMetadata(FileMetadataCore):
 
     @classmethod
     def _load(cls, resource: dict) -> Self:
+        labels = resource.get("labels")
         return cls(
             id=resource["id"],
             uploaded=resource["uploaded"],
@@ -187,7 +188,7 @@ class FileMetadata(FileMetadataCore):
             last_updated_time=resource["lastUpdatedTime"],
             uploaded_time=resource.get("uploadedTime"),
             external_id=resource.get("externalId"),
-            instance_id=(instance_id := resource.get("instanceId")) and NodeId.load(instance_id),
+            instance_id=NodeId._load_if(resource.get("instanceId")),
             name=resource["name"],
             directory=resource.get("directory"),
             source=resource.get("source"),
@@ -195,8 +196,8 @@ class FileMetadata(FileMetadataCore):
             metadata=resource.get("metadata"),
             asset_ids=resource.get("assetIds"),
             data_set_id=resource.get("dataSetId"),
-            labels=(labels := resource.get("labels")) and Label._load_list(labels),
-            geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
+            labels=Label._load_list(labels) if labels else None,
+            geo_location=GeoLocation._load_if(resource.get("geoLocation")),
             source_created_time=resource.get("sourceCreatedTime"),
             source_modified_time=resource.get("sourceModifiedTime"),
             security_categories=resource.get("securityCategories"),
@@ -282,18 +283,19 @@ class FileMetadataWrite(FileMetadataCore):
 
     @classmethod
     def _load(cls, resource: dict) -> FileMetadataWrite:
+        labels = resource.get("labels")
         return cls(
             name=resource["name"],
             external_id=resource.get("externalId"),
-            instance_id=(instance_id := resource.get("instanceId")) and NodeId.load(instance_id),
+            instance_id=NodeId._load_if(resource.get("instanceId")),
             directory=resource.get("directory"),
             source=resource.get("source"),
             mime_type=resource.get("mimeType"),
             metadata=resource.get("metadata"),
             asset_ids=resource.get("assetIds"),
             data_set_id=resource.get("dataSetId"),
-            labels=(labels := resource.get("labels")) and Label._load_list(labels),
-            geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
+            labels=Label._load_list(labels) if labels else None,
+            geo_location=GeoLocation._load_if(resource.get("geoLocation")),
             source_created_time=resource.get("sourceCreatedTime"),
             source_modified_time=resource.get("sourceModifiedTime"),
             security_categories=resource.get("securityCategories"),

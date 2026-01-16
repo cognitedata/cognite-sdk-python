@@ -325,7 +325,7 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
         through = query_node.get("through")
         return cls(
             from_=query_node.get("from"),
-            filter=Filter.load(query_node["filter"]) if "filter" in query_node else None,
+            filter=Filter._load_if(query_node.get("filter")),
             chain_to=query_node.get("chainTo"),
             direction=query_node.get("direction"),
             through=PropertyId.load(through) if through is not None else None,
@@ -382,14 +382,13 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         query_edge = resource["edges"]
-        term_flt = Filter.load(query_edge["terminationFilter"]) if "terminationFilter" in query_edge else None
         return cls(
             from_=query_edge.get("from"),
             max_distance=query_edge.get("maxDistance"),
             direction=query_edge.get("direction"),
-            filter=Filter.load(query_edge["filter"]) if "filter" in query_edge else None,
-            node_filter=Filter.load(query_edge["nodeFilter"]) if "nodeFilter" in query_edge else None,
-            termination_filter=term_flt,
+            filter=Filter._load_if(query_edge.get("filter")),
+            node_filter=Filter._load_if(query_edge.get("nodeFilter")),
+            termination_filter=Filter._load_if(query_edge.get("terminationFilter")),
             limit_each=query_edge.get("limitEach"),
             chain_to=query_edge.get("chainTo"),
             sort=cls._load_sort(resource, "sort"),
@@ -525,7 +524,7 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
         through = query_node.get("through")
         return cls(
             from_=query_node.get("from"),
-            filter=Filter.load(query_node["filter"]) if "filter" in query_node else None,
+            filter=Filter._load_if(query_node.get("filter")),
             chain_to=query_node.get("chainTo"),
             direction=query_node.get("direction"),
             through=PropertyId.load(through) if through is not None else None,
@@ -588,14 +587,13 @@ class EdgeResultSetExpressionSync(ResultSetExpressionSync):
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         query_edge = resource["edges"]
-        term_flt = Filter.load(query_edge["terminationFilter"]) if "terminationFilter" in query_edge else None
         return cls(
             from_=query_edge.get("from"),
             max_distance=query_edge.get("maxDistance"),
             direction=query_edge.get("direction"),
-            filter=Filter.load(query_edge["filter"]) if "filter" in query_edge else None,
-            node_filter=Filter.load(query_edge["nodeFilter"]) if "nodeFilter" in query_edge else None,
-            termination_filter=term_flt,
+            filter=Filter._load_if(query_edge.get("filter")),
+            node_filter=Filter._load_if(query_edge.get("nodeFilter")),
+            termination_filter=Filter._load_if(query_edge.get("terminationFilter")),
             chain_to=query_edge.get("chainTo"),
             limit=resource.get("limit"),
             skip_already_deleted=resource.get("skipAlreadyDeleted", True),
