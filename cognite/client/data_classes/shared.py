@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geometry, UnknownCogniteObject
+from cognite.client.utils._time import timestamp_to_ms
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -15,14 +17,16 @@ class TimestampRange(CogniteObject):
     """Range between two timestamps.
 
     Args:
-        max (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        min (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        max (int | float | str | datetime | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds, a string in time-shift format or a datetime object.
+        min (int | float | str | datetime | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds, a string in time-shift format or a datetime object.
         **_ (Any): No description.
     """
 
-    def __init__(self, max: int | None = None, min: int | None = None, **_: Any) -> None:
-        self.max = max
-        self.min = min
+    def __init__(
+        self, max: int | float | str | datetime | None = None, min: int | float | str | datetime | None = None, **_: Any
+    ) -> None:
+        self.max = timestamp_to_ms(max) if max is not None else None
+        self.min = timestamp_to_ms(min) if min is not None else None
 
 
 class AggregateResult(CogniteObject):
