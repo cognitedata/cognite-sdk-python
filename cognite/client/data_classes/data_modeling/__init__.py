@@ -91,6 +91,16 @@ from cognite.client.data_classes.data_modeling.instances import (
     TypedNodeApply,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
+from cognite.client.data_classes.data_modeling.streams import (
+    Stream,
+    StreamLifecycleSettings,
+    StreamLimit,
+    StreamLimitSettings,
+    StreamList,
+    StreamSettings,
+    StreamWrite,
+    StreamWriteSettings,
+)
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
     EdgeConnection,
@@ -191,6 +201,14 @@ __all__ = [
     "SpaceApply",
     "SpaceApplyList",
     "SpaceList",
+    "Stream",
+    "StreamLifecycleSettings",
+    "StreamLimit",
+    "StreamLimitSettings",
+    "StreamList",
+    "StreamSettings",
+    "StreamWrite",
+    "StreamWriteSettings",
     "Text",
     "TimeSeriesReference",
     "Timestamp",
