@@ -9,7 +9,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
-from cognite.client.utils._concurrency import ConcurrencySettings
+from cognite.client.utils._concurrency import _get_event_loop_executor
 from typing import Any, Iterator, TYPE_CHECKING, overload
 from collections.abc import Coroutine
 
