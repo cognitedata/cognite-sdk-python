@@ -342,23 +342,21 @@ class _PyodideEventLoopExecutor:
 _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON: EventLoopThreadExecutor
 
 
-class ConcurrencySettings:
-    @classmethod
-    def _get_event_loop_executor(cls) -> EventLoopThreadExecutor:
-        global _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
-        try:
-            return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
-        except NameError:
-            # First time we need to initialize:
-            from cognite.client import global_config
+def _get_event_loop_executor() -> EventLoopThreadExecutor:
+    global _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
+    try:
+        return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
+    except NameError:
+        # First time we need to initialize:
+        from cognite.client import global_config
 
-            ex_cls = EventLoopThreadExecutor
-            if _RUNNING_IN_BROWSER:
-                ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
+        ex_cls = EventLoopThreadExecutor
+        if _RUNNING_IN_BROWSER:
+            ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
 
-            executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls(global_config.event_loop)
-            executor.start()
-            return executor
+        executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls(global_config.event_loop)
+        executor.start()
+        return executor
 
 
 async def execute_async_tasks_with_fail_fast(tasks: list[AsyncSDKTask]) -> TasksSummary:

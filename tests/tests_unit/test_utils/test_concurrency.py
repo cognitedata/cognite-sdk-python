@@ -8,8 +8,8 @@ import pytest
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._concurrency import (
     AsyncSDKTask,
-    ConcurrencySettings,
     EventLoopThreadExecutor,
+    _get_event_loop_executor,
     execute_async_tasks,
 )
 
@@ -26,7 +26,7 @@ async def i_dont_like_5(i: int) -> int:
 
 class TestExecutor:
     def test_get_event_loop_executor(self) -> None:
-        executor = ConcurrencySettings._get_event_loop_executor()
+        executor = _get_event_loop_executor()
         assert isinstance(executor, EventLoopThreadExecutor)
 
     async def test_async_tasks__results_ordering_match_tasks(self) -> None:
