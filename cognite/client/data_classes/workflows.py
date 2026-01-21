@@ -70,10 +70,7 @@ class WorkflowUpsert(WorkflowCore):
                             If a dataSetId is provided, any operations on this workflow, or its versions, executions,
                             and triggers will require appropriate access to the data set. More information on data sets
                             and their configuration can be found here: https://docs.cognite.com/cdf/data_governance/concepts/datasets/
-        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow.
-                            When set to None, the workflow will use the project limit.
-                            limit if not specified or explicitly set to None. Values exceeding the project limit are
-                            dynamically capped at runtime. The typical project limit ranges from 50 to 200 concurrent executions.
+        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to None, which means the workflow will use the project limit.
     """
 
     @classmethod
@@ -100,9 +97,7 @@ class Workflow(WorkflowCore):
         last_updated_time (int): The time when the workflow was last updated. Unix timestamp in milliseconds.
         description (str | None): Description of the workflow. Defaults to None.
         data_set_id (int | None): The id of the data set this workflow belongs to.
-        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to the project
-                            limit if not specified or explicitly set to None. Values exceeding the project limit are
-                            dynamically capped at runtime. The typical project limit ranges from 50 to 200 concurrent executions.
+        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to None, which means the workflow will use the project limit.
     """
 
     def __init__(
