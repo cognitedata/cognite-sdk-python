@@ -395,11 +395,13 @@ def permanent_data_modeling_trigger(
 class TestWorkflows:
     def test_upsert_preexisting(self, cognite_client: CogniteClient, new_workflow: Workflow) -> None:
         new_workflow.description = "Updated description for testing purposes"
+        new_workflow.max_concurrent_executions = 10
         updated_workflow = cognite_client.workflows.upsert(new_workflow.as_write())
 
         assert updated_workflow.external_id == new_workflow.external_id
         assert updated_workflow.description == new_workflow.description
         assert updated_workflow.data_set_id == new_workflow.data_set_id
+        assert updated_workflow.max_concurrent_executions == new_workflow.max_concurrent_executions
 
     def test_delete_multiple_non_existing_raise(self, cognite_client: CogniteClient, new_workflow: Workflow) -> None:
         with pytest.raises(CogniteAPIError, match="workflows were not found"):
