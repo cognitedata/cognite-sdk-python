@@ -19,7 +19,6 @@ from typing import (
     cast,
     overload,
 )
-from urllib.parse import urljoin
 
 import requests.utils
 from requests import Response
@@ -301,7 +300,7 @@ class APIClient:
         base_path = ""
         if self._api_version:
             base_path = f"/api/{self._api_version}/projects/{self._config.project}"
-        return urljoin(self._config.base_url, base_path)
+        return f"{self._config.base_url.rstrip('/')}/{base_path.lstrip('/')}".rstrip("/")
 
     def _is_retryable(self, method: str, path: str) -> bool:
         valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
