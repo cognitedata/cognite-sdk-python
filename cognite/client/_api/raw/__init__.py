@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import asyncio
+from typing import TYPE_CHECKING, Literal
 
 from cognite.client._api.raw.databases import RawDatabasesAPI
 from cognite.client._api.raw.rows import RawRowsAPI
@@ -18,3 +19,6 @@ class RawAPI(APIClient):
         self.databases = RawDatabasesAPI(config, api_version, cognite_client)
         self.tables = RawTablesAPI(config, api_version, cognite_client)
         self.rows = RawRowsAPI(config, api_version, cognite_client)
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        raise NotImplementedError

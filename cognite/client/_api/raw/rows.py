@@ -4,7 +4,7 @@ import asyncio
 import math
 from collections import defaultdict
 from collections.abc import AsyncIterator, Sequence
-from typing import TYPE_CHECKING, Any, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
@@ -39,6 +39,13 @@ class RawRowsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 5000
         self._LIST_LIMIT = 10000
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        return global_config.concurrency_settings.raw._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
 
     @overload
     def __call__(
