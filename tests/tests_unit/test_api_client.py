@@ -116,11 +116,15 @@ class TestBasicRequests:
 
     request_cases: ClassVar = [
         lambda api_client: RequestCase(
-            name="post", method=api_client._post, kwargs={"url_path": URL_PATH, "json": {"any": "ok"}}
+            name="post",
+            method=api_client._post,
+            kwargs={"url_path": URL_PATH, "json": {"any": "ok"}, "semaphore": None},
         ),
-        lambda api_client: RequestCase(name="get", method=api_client._get, kwargs={"url_path": URL_PATH}),
         lambda api_client: RequestCase(
-            name="put", method=api_client._put, kwargs={"url_path": URL_PATH, "json": {"any": "ok"}}
+            name="get", method=api_client._get, kwargs={"url_path": URL_PATH, "semaphore": None}
+        ),
+        lambda api_client: RequestCase(
+            name="put", method=api_client._put, kwargs={"url_path": URL_PATH, "json": {"any": "ok"}, "semaphore": None}
         ),
     ]
 
@@ -171,8 +175,8 @@ class TestBasicRequests:
         for method in ["PUT", "POST"]:
             httpx_mock.add_callback(check_gzip_disabled, method=method, url=BASE_URL + URL_PATH)
 
-        await api_client_with_token._post(URL_PATH, json={"any": "OK"}, headers={})
-        await api_client_with_token._put(URL_PATH, json={"any": "OK"}, headers={})
+        await api_client_with_token._post(URL_PATH, json={"any": "OK"}, headers={}, semaphore=None)
+        await api_client_with_token._put(URL_PATH, json={"any": "OK"}, headers={}, semaphore=None)
 
     async def test_request_gzip_enabled(self, httpx_mock: HTTPXMock, api_client_with_token: APIClient) -> None:
         def check_gzip_enabled(request: Any) -> Response:
@@ -183,13 +187,13 @@ class TestBasicRequests:
         for method in ["PUT", "POST"]:
             httpx_mock.add_callback(check_gzip_enabled, method=method, url=BASE_URL + URL_PATH)
 
-        await api_client_with_token._post(URL_PATH, json={"any": "OK"}, headers={})
-        await api_client_with_token._put(URL_PATH, json={"any": "OK"}, headers={})
+        await api_client_with_token._post(URL_PATH, json={"any": "OK"}, headers={}, semaphore=None)
+        await api_client_with_token._put(URL_PATH, json={"any": "OK"}, headers={}, semaphore=None)
 
     async def test_headers_correct(self, mock_all_requests_ok: HTTPXMock, api_client_with_token: APIClient) -> None:
         from cognite.client import __version__
 
-        await api_client_with_token._post(URL_PATH, {"any": "OK"}, headers={"additional": "stuff"})
+        await api_client_with_token._post(URL_PATH, {"any": "OK"}, headers={"additional": "stuff"}, semaphore=None)
         headers = mock_all_requests_ok.get_requests()[0].headers
 
         assert {"gzip", "deflate"} <= set(headers["accept-encoding"].split(", "))
@@ -201,7 +205,7 @@ class TestBasicRequests:
     async def test_headers_correct_with_token_factory(
         self, mock_all_requests_ok: HTTPXMock, api_client_with_token_factory: APIClient
     ) -> None:
-        await api_client_with_token_factory._post(URL_PATH, {"any": "OK"})
+        await api_client_with_token_factory._post(URL_PATH, {"any": "OK"}, semaphore=None)
         headers = mock_all_requests_ok.get_requests()[0].headers
 
         assert "api-key" not in headers
@@ -210,7 +214,7 @@ class TestBasicRequests:
     async def test_headers_correct_with_token(
         self, mock_all_requests_ok: HTTPXMock, api_client_with_token: APIClient
     ) -> None:
-        await api_client_with_token._post(URL_PATH, {"any": "OK"})
+        await api_client_with_token._post(URL_PATH, {"any": "OK"}, semaphore=None)
         headers = mock_all_requests_ok.get_requests()[0].headers
 
         assert "api-key" not in headers
@@ -219,7 +223,7 @@ class TestBasicRequests:
     @pytest.mark.parametrize("payload", [math.nan, math.inf, -math.inf, {"foo": {"bar": {"baz": [[[math.nan]]]}}}])
     async def test__request_raises_more_verbose_exception(self, api_client_with_token: APIClient, payload: Any) -> None:
         with pytest.raises(ValueError, match=r"contain NaN\(s\) or \+/\- Inf\!"):
-            await api_client_with_token._post(URL_PATH, json=payload)
+            await api_client_with_token._post(URL_PATH, json=payload, semaphore=None)
 
     async def test__request_raises_unmodified_exception(self, api_client_with_token: APIClient) -> None:
         # Create circular ref in payload to raise an arbitrary ValueError
@@ -227,7 +231,7 @@ class TestBasicRequests:
         payload: list = []
         payload.append(payload)
         with pytest.raises(ValueError) as exc_info:
-            await api_client_with_token._post(URL_PATH, json=payload)  # type: ignore[arg-type]
+            await api_client_with_token._post(URL_PATH, json=payload, semaphore=None)  # type: ignore[arg-type]
         exc_msg = exc_info.value.args[0]
         assert "contain NaN(s) or +/- Inf!" not in exc_msg
 

@@ -31,10 +31,11 @@ class TestExecutor:
 
     async def test_async_tasks__results_ordering_match_tasks(self) -> None:
         async def async_task(i: int) -> int:
+            # Ensure tasks complete out of order:
             await asyncio.sleep(random.random() / 50)
             return i
 
-        # We use a task that yields control and use N tasks >> max_workers to really test ordering:
+        # We use a task that yields control and use N tasks >> concurrency_limit to really test ordering:
         tasks = [AsyncSDKTask(async_task, i) for i in range(50)]
         task_summary = await execute_async_tasks(tasks)
         task_summary.raise_compound_exception_if_failed_tasks()
@@ -43,6 +44,7 @@ class TestExecutor:
 
     async def test_async_tasks__results_ordering_match_tasks_even_with_failures(self) -> None:
         async def test_fn(i: int) -> int:
+            # Ensure tasks complete out of order:
             await asyncio.sleep(random.random() / 50)
             if i in range(20, 23):
                 raise ValueError
