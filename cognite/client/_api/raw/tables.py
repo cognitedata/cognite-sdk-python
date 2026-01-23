@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator, Sequence
-from typing import Any, overload
+from typing import Any, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import raw
 from cognite.client.utils._auxiliary import split_into_chunks, unpack_items_in_payload
-from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
+from cognite.client.utils._concurrency import AsyncSDKTask, ConcurrencySettings, execute_async_tasks
 from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -15,6 +16,10 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        factory = ConcurrencySettings._semaphore_factory("raw")
+        return factory(operation, self._cognite_client.config.project)
 
     @overload
     def __call__(self, db_name: str, chunk_size: None = None) -> AsyncIterator[raw.Table]: ...

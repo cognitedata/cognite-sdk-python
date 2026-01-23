@@ -4,7 +4,7 @@ import asyncio
 import math
 from collections import defaultdict
 from collections.abc import AsyncIterator, Sequence
-from typing import TYPE_CHECKING, Any, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
@@ -18,7 +18,7 @@ from cognite.client.utils._auxiliary import (
     unpack_items,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
+from cognite.client.utils._concurrency import AsyncSDKTask, ConcurrencySettings, execute_async_tasks
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._url import interpolate_and_url_encode
@@ -39,6 +39,10 @@ class RawRowsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 5000
         self._LIST_LIMIT = 10000
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        factory = ConcurrencySettings._semaphore_factory("raw")
+        return factory(operation, self._cognite_client.config.project)
 
     @overload
     def __call__(
