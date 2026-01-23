@@ -21,5 +21,5 @@ class TestOrganizationAPI:
             assert organization == "cog-python-sdk"
 
     async def test_get_request_org_endpoint(self, org_api: OrgAPIClient) -> None:
-        response = await org_api._get("/principals")
+        response = await org_api._get("/principals", semaphore=None)
         assert response.status_code == 200

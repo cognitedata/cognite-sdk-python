@@ -490,7 +490,7 @@ def create_hierarchy_with_cleanup(
 
 @pytest.fixture(scope="class")
 def set_create_lim(async_client: AsyncCogniteClient) -> Iterator[None]:
-    with override_semaphore(2, target="basic"), pytest.MonkeyPatch.context() as mp:
+    with override_semaphore(2, target="general"), pytest.MonkeyPatch.context() as mp:
         # We set a low limit to hopefully detect bugs in how resources are split
         # without unnecessarily overloading the API with many thousand assets/request:
         mp.setattr(async_client.assets, "_CREATE_LIMIT", 3)
