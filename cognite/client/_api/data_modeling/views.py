@@ -13,7 +13,6 @@ from cognite.client.data_classes.data_modeling.ids import (
     _load_identifier,
 )
 from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
-from cognite.client.utils._concurrency import ConcurrencySettings
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -29,9 +28,13 @@ class ViewsAPI(APIClient):
         self._RETRIEVE_LIMIT = 100
         self._CREATE_LIMIT = 100
 
-    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
-        factory = ConcurrencySettings._semaphore_factory("data_modeling")
-        return factory(operation, self._cognite_client.config.project)
+    def _get_semaphore(self, operation: Literal["read_schema", "write_schema"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        assert operation in ("read_schema", "write_schema"), "Views API should use schema semaphores"
+        return global_config.concurrency_settings.data_modeling._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
 
     @overload
     def __call__(
@@ -87,6 +90,7 @@ class ViewsAPI(APIClient):
             chunk_size=chunk_size,
             limit=limit,
             filter=filter_.dump(camel_case=True),
+            semaphore=self._get_semaphore("read_schema"),
         ):
             yield item
 
@@ -110,7 +114,7 @@ class ViewsAPI(APIClient):
                 or ViewId("my_space", "my_view", "my_version"). Note that version is optional, if not provided, all versions
                 will be returned.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
-            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned (based on created_time)
 
         Returns:
             ViewList: Requested view or None if it does not exist.
@@ -129,8 +133,9 @@ class ViewsAPI(APIClient):
             resource_cls=View,
             identifiers=identifier,
             params={"includeInheritedProperties": include_inherited_properties},
+            override_semaphore=self._get_semaphore("read_schema"),
         )
-        if all_versions is True:
+        if all_versions:
             return views
         else:
             return self._get_latest_views(views)
@@ -157,6 +162,7 @@ class ViewsAPI(APIClient):
                 identifiers=_load_identifier(ids, "view"),
                 wrap_ids=True,
                 returns_items=True,
+                override_semaphore=self._get_semaphore("write_schema"),
             ),
         )
         return [ViewId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
@@ -203,7 +209,12 @@ class ViewsAPI(APIClient):
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
 
         return await self._list(
-            list_cls=ViewList, resource_cls=View, method="GET", limit=limit, filter=filter_.dump(camel_case=True)
+            list_cls=ViewList,
+            resource_cls=View,
+            method="GET",
+            limit=limit,
+            filter=filter_.dump(camel_case=True),
+            override_semaphore=self._get_semaphore("read_schema"),
         )
 
     @overload
@@ -300,4 +311,5 @@ class ViewsAPI(APIClient):
             resource_cls=View,
             items=view,
             input_resource_cls=ViewApply,
+            override_semaphore=self._get_semaphore("write_schema"),
         )

@@ -9,7 +9,6 @@ from cognite.client.data_classes.data_modeling.statistics import (
     SpaceStatistics,
     SpaceStatisticsList,
 )
-from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -24,9 +23,13 @@ class SpaceStatisticsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._RETRIEVE_LIMIT = 100
 
-    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
-        factory = ConcurrencySettings._semaphore_factory("data_modeling")
-        return factory(operation, self._cognite_client.config.project)
+    def _get_semaphore(self, operation: Literal["read_schema"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        assert operation == "read_schema", "SpaceStatistics API should only use read_schema semaphore"
+        return global_config.concurrency_settings.data_modeling._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
 
     @overload
     async def retrieve(self, space: str) -> SpaceStatistics | None: ...
@@ -66,6 +69,7 @@ class SpaceStatisticsAPI(APIClient):
             SpaceStatistics,
             identifiers=_load_space_identifier(space),
             resource_path=self._RESOURCE_PATH,
+            override_semaphore=self._get_semaphore("read_schema"),
         )
 
     async def list(self) -> SpaceStatisticsList:
@@ -88,5 +92,5 @@ class SpaceStatisticsAPI(APIClient):
                 ...     print(f"Space: {space_stats.space}, Nodes: {space_stats.nodes}")
 
         """
-        response = await self._get(self._RESOURCE_PATH)
+        response = await self._get(self._RESOURCE_PATH, semaphore=self._get_semaphore("read_schema"))
         return SpaceStatisticsList._load(response.json()["items"])

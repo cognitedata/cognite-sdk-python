@@ -11,7 +11,6 @@ from cognite.client._api.data_modeling.spaces import SpacesAPI
 from cognite.client._api.data_modeling.statistics import StatisticsAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api_client import APIClient
-from cognite.client.utils._concurrency import ConcurrencySettings
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -29,6 +28,7 @@ class DataModelingAPI(APIClient):
         self.graphql = DataModelingGraphQLAPI(config, api_version, cognite_client)
         self.statistics = StatisticsAPI(config, api_version, cognite_client)
 
-    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
-        factory = ConcurrencySettings._semaphore_factory("data_modeling")
-        return factory(operation, self._cognite_client.config.project)
+    def _get_semaphore(
+        self, operation: Literal["read", "write", "delete", "search", "read_schema", "write_schema"]
+    ) -> asyncio.BoundedSemaphore:
+        raise NotImplementedError

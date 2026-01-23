@@ -14,7 +14,6 @@ from cognite.client.data_classes.data_modeling.data_models import (
 )
 from cognite.client.data_classes.data_modeling.ids import DataModelId, DataModelIdentifier, ViewId, _load_identifier
 from cognite.client.data_classes.data_modeling.views import View
-from cognite.client.utils._concurrency import ConcurrencySettings
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -30,9 +29,13 @@ class DataModelsAPI(APIClient):
         self._RETRIEVE_LIMIT = 100
         self._CREATE_LIMIT = 100
 
-    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
-        factory = ConcurrencySettings._semaphore_factory("data_modeling")
-        return factory(operation, self._cognite_client.config.project)
+    def _get_semaphore(self, operation: Literal["read_schema", "write_schema"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        assert operation in ("read_schema", "write_schema"), "DataModels API should use schema semaphores"
+        return global_config.concurrency_settings.data_modeling._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
 
     @overload
     def __call__(
@@ -89,6 +92,7 @@ class DataModelsAPI(APIClient):
             chunk_size=chunk_size,
             limit=limit,
             filter=filter.dump(camel_case=True),
+            semaphore=self._get_semaphore("read_schema"),
         ):
             yield item
 
@@ -127,6 +131,7 @@ class DataModelsAPI(APIClient):
             resource_cls=DataModel,
             identifiers=identifier,
             params={"inlineViews": inline_views},
+            override_semaphore=self._get_semaphore("read_schema"),
         )
 
     async def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
@@ -151,6 +156,7 @@ class DataModelsAPI(APIClient):
                 identifiers=_load_identifier(ids, "data_model"),
                 wrap_ids=True,
                 returns_items=True,
+                override_semaphore=self._get_semaphore("write_schema"),
             ),
         )
         return [DataModelId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models]
@@ -222,6 +228,7 @@ class DataModelsAPI(APIClient):
             method="GET",
             limit=limit,
             filter=filter.dump(camel_case=True),
+            override_semaphore=self._get_semaphore("read_schema"),
         )
 
     @overload
@@ -257,4 +264,5 @@ class DataModelsAPI(APIClient):
             resource_cls=DataModel,
             items=data_model,
             input_resource_cls=DataModelApply,
+            override_semaphore=self._get_semaphore("write_schema"),
         )
