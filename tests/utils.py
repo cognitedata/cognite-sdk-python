@@ -74,10 +74,7 @@ from cognite.client.data_classes.workflows import (
 )
 from cognite.client.testing import AsyncCogniteClientMock
 from cognite.client.utils import _json_extended as _json
-from cognite.client.utils._concurrency import (
-    get_global_datapoints_semaphore,
-    get_global_semaphore,
-)
+from cognite.client.utils._concurrency import ConcurrencySettings, CRUDConcurrency
 from cognite.client.utils._text import random_string
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -243,42 +240,38 @@ def random_gamma_dist_integer(inclusive_max: int, max_tries: int = 100) -> int:
 
 
 @contextmanager
-def override_semaphore(new: int, target: Literal["basic", "datapoints", "data_modeling"]) -> typing.Iterator[None]:
-    # After v8, the main SDK went async and now we have several bounded semaphores instead
-    # of a single max_workers parameter. The max_workers now only affects:
-    # 1) get_global_semaphore()
-    # 2) get_global_datapoints_semaphore()
-    # But we also have: (just uses a hardcoded constant for now)
-    # 3) get_global_data_modeling_semaphore()
+def override_semaphore(
+    new: int,
+    target: Literal["general", "datapoints", "data_modeling", "raw"],
+) -> typing.Iterator[None]:
+    # After v8, the main SDK went async and now we have -several- bounded semaphores instead
+    # of a single max_workers parameter. In order to run tests that require (or test) different levels
+    # of concurrency, we need a way to override these semaphores temporarily.
     from cognite.client import global_config
 
-    match target:
-        case "datapoints":
-            semaphore_get_fn = get_global_datapoints_semaphore
-        case "basic":
-            semaphore_get_fn = get_global_semaphore
-        case "data_modeling":
-            # semaphore_get_fn = get_global_data_modeling_semaphore
-            raise NotImplementedError(
-                "data_modeling semaphore override not implemented yet as it uses hard-coded constant, "
-                "not global_config.max_workers (which it arguably should not use)"
-            )
-        case _:
-            typing.assert_never(target)
+    conc_settings = global_config.concurrency_settings
+    settings: CRUDConcurrency = getattr(conc_settings, target)
+    old_read, old_write, old_delete = settings.read, settings.write, settings.delete
 
-    old_mw = global_config.max_workers
-    global_config.max_workers = new
+    semaphore_get_fn = ConcurrencySettings._semaphore_factory(target)
+    semaphore_get_fn.cache_clear()  # type: ignore [attr-defined]
 
-    # The new semaphore should now pick up the changed max_workers value:
-    semaphore_get_fn.cache_clear()
-    sem = semaphore_get_fn()
-    assert new == sem._value == sem._bound_value, "Semaphore didn't update according to overridden max_workers"  # type: ignore[attr-defined]
+    if frozen_status := conc_settings.is_frozen:
+        conc_settings._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
+
+    settings.read, settings.write, settings.delete = new, new, new
+
+    test_operation: Literal["read", "write", "delete"] = random.choice(("read", "write", "delete"))
+    sem = semaphore_get_fn(test_operation, "whatever-project")  # this also freezes the settings again
+    assert new == sem._value == sem._bound_value, f"Semaphore didn't update according to overridden {new=}"  # type: ignore[attr-defined]
 
     try:
         yield
     finally:
-        global_config.max_workers = old_mw
-        semaphore_get_fn.cache_clear()
+        conc_settings._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
+        settings.read, settings.write, settings.delete = old_read, old_write, old_delete
+        semaphore_get_fn.cache_clear()  # type: ignore [attr-defined]
+        conc_settings._ConcurrencySettings__frozen = frozen_status  # type: ignore[attr-defined]
 
 
 @contextmanager
