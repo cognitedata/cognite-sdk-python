@@ -7,7 +7,7 @@ from typing import overload
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._org_client import OrgAPIClient
 from cognite.client.data_classes.principals import Principal, PrincipalList
-from cognite.client.utils._auxiliary import concatenate_url_segments
+from cognite.client.utils._auxiliary import append_url_path
 from cognite.client.utils._identifier import PrincipalIdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -33,7 +33,7 @@ class PrincipalsAPI(OrgAPIClient):
         if self._api_version:
             path = f"/api/{self._api_version}{path}"
 
-        full_url = concatenate_url_segments(self._auth_url, path)
+        full_url = append_url_path(self._auth_url, path)
         headers = self._configure_headers(
             "application/json",
             additional_headers=self._config.headers.copy(),

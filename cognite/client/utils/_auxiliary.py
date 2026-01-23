@@ -14,7 +14,7 @@ from typing import (
     TypeVar,
     overload,
 )
-from urllib.parse import quote
+from urllib.parse import quote, urlparse, urlunparse
 
 from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
@@ -279,5 +279,7 @@ def flatten_dict(d: dict[str, Any], parent_keys: tuple[str, ...], sep: str = "."
     return dict(items)
 
 
-def concatenate_url_segments(*parts: str) -> str:
-    return "/".join(part.strip("/") for part in parts if part)
+def append_url_path(base_url: str, path: str) -> str:
+    parsed = urlparse(base_url)
+    new_path = f"{parsed.path.rstrip('/')}/{path.lstrip('/')}"
+    return urlunparse(parsed._replace(path=new_path)).rstrip("/")

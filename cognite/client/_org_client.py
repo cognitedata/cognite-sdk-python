@@ -5,7 +5,7 @@ from functools import cached_property
 
 from cognite.client._api_client import APIClient
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import concatenate_url_segments
+from cognite.client.utils._auxiliary import append_url_path
 
 
 class OrgAPIClient(APIClient, ABC):
@@ -18,7 +18,7 @@ class OrgAPIClient(APIClient, ABC):
             base_path = f"/api/{self._api_version}/orgs/{self._organization}"
         # The OrganizationAPi uses the auth_url as the base for these endpoints instead of the
         # base_url like the rest of the SDK.
-        return concatenate_url_segments(self._auth_url, base_path)
+        return append_url_path(self._auth_url, base_path)
 
     @cached_property
     def _organization(self) -> str:
@@ -28,7 +28,7 @@ class OrgAPIClient(APIClient, ABC):
             api_subversion=self._api_subversion,
         )
         # This is an internal endpoint, not part of the public API
-        full_url = concatenate_url_segments(self._config.base_url, f"/api/v1/projects/{self._config.project}")
+        full_url = append_url_path(self._config.base_url, f"/api/v1/projects/{self._config.project}")
         response = self._http_client_with_retry.request(method="GET", url=full_url, headers=headers)
         if response.status_code != 200:
             raise CogniteAPIError(

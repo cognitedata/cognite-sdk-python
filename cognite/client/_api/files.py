@@ -28,7 +28,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
-from cognite.client.utils._auxiliary import concatenate_url_segments, find_duplicates
+from cognite.client.utils._auxiliary import append_url_path, find_duplicates
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
@@ -646,7 +646,7 @@ class FilesAPI(APIClient):
         if urlparse(upload_url).netloc:
             full_upload_url = upload_url
         else:
-            full_upload_url = concatenate_url_segments(self._config.base_url, upload_url)
+            full_upload_url = append_url_path(self._config.base_url, upload_url)
         file_metadata = FileMetadata._load(returned_file_metadata)
         upload_response = self._http_client_with_retry.request(
             "PUT",
