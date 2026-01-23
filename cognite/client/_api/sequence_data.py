@@ -151,7 +151,7 @@ class SequencesDataAPI(APIClient):
         await self.insert(rows=data, columns=columns, id=id, external_id=external_id)
 
     async def _insert_data(self, task: dict[str, Any]) -> None:
-        await self._post(url_path=self._RESOURCE_PATH, json={"items": [task]})
+        await self._post(url_path=self._RESOURCE_PATH, json={"items": [task]}, semaphore=self._get_semaphore("write"))
 
     async def delete(self, rows: typing.Sequence[int], id: int | None = None, external_id: str | None = None) -> None:
         """`Delete rows from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_
@@ -173,7 +173,11 @@ class SequencesDataAPI(APIClient):
         post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj["rows"] = rows
 
-        await self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": [post_obj]})
+        await self._post(
+            url_path=self._RESOURCE_PATH + "/delete",
+            json={"items": [post_obj]},
+            semaphore=self._get_semaphore("delete"),
+        )
 
     async def delete_range(
         self, start: int, end: int | None, id: int | None = None, external_id: str | None = None
@@ -357,7 +361,9 @@ class SequencesDataAPI(APIClient):
         """
         identifier = Identifier.of_either(id, external_id).as_dict()
         res = await self._post(
-            self._RESOURCE_PATH + "/latest", json={**identifier, "before": before, "columns": columns}
+            self._RESOURCE_PATH + "/latest",
+            json={**identifier, "before": before, "columns": columns},
+            semaphore=self._get_semaphore("read"),
         )
         return SequenceRows._load(res.json())
 
@@ -413,10 +419,11 @@ class SequencesDataAPI(APIClient):
         cursor = None
         if task["end"] == -1:
             task["end"] = None
+        semaphore = self._get_semaphore("read")
         while True:
             task["limit"] = min(self._SEQ_RETRIEVE_LIMIT, remaining_limit or self._SEQ_RETRIEVE_LIMIT)
             task["cursor"] = cursor
-            resp = (await self._post(url_path=self._RESOURCE_PATH + "/list", json=task)).json()
+            resp = (await self._post(url_path=self._RESOURCE_PATH + "/list", json=task, semaphore=semaphore)).json()
             yield resp
             cursor = resp.get("nextCursor")
             if remaining_limit:

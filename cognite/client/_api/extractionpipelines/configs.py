@@ -39,6 +39,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
         response = await self._get(
             self._RESOURCE_PATH,
             params=drop_none_values({"externalId": external_id, "activeAtTime": active_at_time, "revision": revision}),
+            semaphore=self._get_semaphore("read"),
         )
         return ExtractionPipelineConfig._load(response.json())
 
@@ -60,7 +61,11 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.extraction_pipelines.config.list("extId")
         """
-        response = await self._get(f"{self._RESOURCE_PATH}/revisions", params={"externalId": external_id})
+        response = await self._get(
+            f"{self._RESOURCE_PATH}/revisions",
+            params={"externalId": external_id},
+            semaphore=self._get_semaphore("read"),
+        )
         return ExtractionPipelineConfigRevisionList._load(response.json()["items"])
 
     async def create(
@@ -85,7 +90,9 @@ class ExtractionPipelineConfigsAPI(APIClient):
         """
         if isinstance(config, ExtractionPipelineConfig):
             config = config.as_write()
-        response = await self._post(self._RESOURCE_PATH, json=config.dump(camel_case=True))
+        response = await self._post(
+            self._RESOURCE_PATH, json=config.dump(camel_case=True), semaphore=self._get_semaphore("write")
+        )
         return ExtractionPipelineConfig._load(response.json())
 
     async def revert(self, external_id: str, revision: int) -> ExtractionPipelineConfig:
@@ -108,6 +115,8 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> res = client.extraction_pipelines.config.revert("extId", 5)
         """
         response = await self._post(
-            f"{self._RESOURCE_PATH}/revert", json={"externalId": external_id, "revision": revision}
+            f"{self._RESOURCE_PATH}/revert",
+            json={"externalId": external_id, "revision": revision},
+            semaphore=self._get_semaphore("write"),
         )
         return ExtractionPipelineConfig._load(response.json())

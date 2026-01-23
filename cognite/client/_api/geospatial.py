@@ -229,7 +229,9 @@ class GeospatialAPI(APIClient):
                 for it in patch
             ]
         }
-        res = await self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=payload)
+        res = await self._post(
+            url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=payload, semaphore=self._get_semaphore("write")
+        )
         return FeatureTypeList._load(res.json()["items"])
 
     @overload
@@ -670,6 +672,7 @@ class GeospatialAPI(APIClient):
                 "allowCrsTransformation": allow_crs_transformation,
                 "allowDimensionalityMismatch": allow_dimensionality_mismatch,
             },
+            semaphore=self._get_semaphore("read"),
         )
         return FeatureList._load(res.json()["items"])
 
@@ -733,7 +736,7 @@ class GeospatialAPI(APIClient):
             "allowCrsTransformation": allow_crs_transformation,
             "allowDimensionalityMismatch": allow_dimensionality_mismatch,
         }
-        stream = self._stream("POST", url_path=resource_path, json=payload)
+        stream = self._stream("POST", url_path=resource_path, json=payload, semaphore=self._get_semaphore("read"))
         async with stream as response:
             async for line in response.aiter_lines():
                 yield Feature._load(_json.loads(line))
@@ -792,6 +795,7 @@ class GeospatialAPI(APIClient):
                 "sort": order,
                 "output": output,
             },
+            semaphore=self._get_semaphore("read"),
         )
         return FeatureAggregateList._load(res.json()["items"])
 
@@ -820,7 +824,9 @@ class GeospatialAPI(APIClient):
             srids_processed = srids
 
         res = await self._post(
-            url_path=f"{self._RESOURCE_PATH}/crs/byids", json={"items": [{"srid": srid} for srid in srids_processed]}
+            url_path=f"{self._RESOURCE_PATH}/crs/byids",
+            json={"items": [{"srid": srid} for srid in srids_processed]},
+            semaphore=self._get_semaphore("read"),
         )
         return CoordinateReferenceSystemList._load(res.json()["items"])
 
@@ -843,7 +849,11 @@ class GeospatialAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> crs = client.geospatial.list_coordinate_reference_systems(only_custom=True)
         """
-        res = await self._get(url_path=f"{self._RESOURCE_PATH}/crs", params={"filterCustom": only_custom})
+        res = await self._get(
+            url_path=f"{self._RESOURCE_PATH}/crs",
+            params={"filterCustom": only_custom},
+            semaphore=self._get_semaphore("read"),
+        )
         return CoordinateReferenceSystemList._load(res.json()["items"])
 
     async def create_coordinate_reference_systems(
@@ -913,7 +923,9 @@ class GeospatialAPI(APIClient):
             crs = [it.as_write() if isinstance(it, CoordinateReferenceSystem) else it for it in crs]
 
         res = await self._post(
-            url_path=f"{self._RESOURCE_PATH}/crs", json={"items": [it.dump(camel_case=True) for it in crs]}
+            url_path=f"{self._RESOURCE_PATH}/crs",
+            json={"items": [it.dump(camel_case=True) for it in crs]},
+            semaphore=self._get_semaphore("write"),
         )
         return CoordinateReferenceSystemList._load(res.json()["items"])
 
@@ -939,7 +951,9 @@ class GeospatialAPI(APIClient):
             srids_processed = srids
 
         await self._post(
-            url_path=f"{self._RESOURCE_PATH}/crs/delete", json={"items": [{"srid": srid} for srid in srids_processed]}
+            url_path=f"{self._RESOURCE_PATH}/crs/delete",
+            json={"items": [{"srid": srid} for srid in srids_processed]},
+            semaphore=self._get_semaphore("delete"),
         )
 
     async def put_raster(
@@ -996,7 +1010,12 @@ class GeospatialAPI(APIClient):
         )
         with open(file, "rb") as fh:
             data = fh.read()
-        res = await self._put(url_path, content=data, headers={"Content-Type": "application/binary"})
+        res = await self._put(
+            url_path,
+            content=data,
+            headers={"Content-Type": "application/binary"},
+            semaphore=self._get_semaphore("write"),
+        )
         return RasterMetadata.load(res.json())
 
     async def delete_raster(
@@ -1025,7 +1044,8 @@ class GeospatialAPI(APIClient):
                 >>> client.geospatial.delete_raster(feature_type.external_id, feature.external_id, raster_property_name)
         """
         await self._post(
-            self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name) + "/delete"
+            self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name) + "/delete",
+            semaphore=self._get_semaphore("delete"),
         )
 
     async def get_raster(
@@ -1080,6 +1100,7 @@ class GeospatialAPI(APIClient):
                 "scaleX": raster_scale_x,
                 "scaleY": raster_scale_y,
             },
+            semaphore=self._get_semaphore("read"),
         )
         return response.content
 
@@ -1109,5 +1130,6 @@ class GeospatialAPI(APIClient):
         res = await self._post(
             f"{GeospatialAPI._RESOURCE_PATH}/compute",
             json={"output": {k: v.to_json_payload() for k, v in output.items()}},
+            semaphore=self._get_semaphore("read"),
         )
         return GeospatialComputedResponse._load(res.json())
