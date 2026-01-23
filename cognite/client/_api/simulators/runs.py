@@ -332,6 +332,7 @@ class SimulatorRunsAPI(APIClient):
         req = await self._post(
             url_path=f"{self._RESOURCE_PATH}/data/list",
             json={"items": [{"runId": run_id}]},
+            semaphore=self._get_semaphore("read"),
         )
 
         items = req.json().get("items", [])
