@@ -362,7 +362,10 @@ class DocumentsAPI(APIClient):
         """
         ident = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()[0]
         response = await self._post(
-            f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json=ident.as_dict()
+            f"{self._RESOURCE_PATH}/content",
+            headers={"accept": "text/plain"},
+            json=ident.as_dict(),
+            semaphore=self._get_semaphore("read"),
         )
         return response.content
 
@@ -413,6 +416,7 @@ class DocumentsAPI(APIClient):
             headers={"accept": "text/plain"},
             timeout=self._config.file_transfer_timeout,
             json=ident.as_dict(),
+            semaphore=self._get_semaphore("read"),
         )
         async with stream as response:
             async for chunk in response.aiter_bytes(chunk_size=global_config.file_download_chunk_size):
@@ -499,7 +503,7 @@ class DocumentsAPI(APIClient):
         if highlight:
             body["highlight"] = highlight
 
-        response = await self._post(f"{self._RESOURCE_PATH}/search", json=body)
+        response = await self._post(f"{self._RESOURCE_PATH}/search", json=body, semaphore=self._get_semaphore("read"))
         json_content = response.json()
         results = json_content["items"]
 
