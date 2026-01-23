@@ -116,14 +116,17 @@ class RawRowsAPI(APIClient):
             by halting retrieval speed when the callers code can't keep up.
 
         Args:
-            db_name (str): Name of the database
-            table_name (str): Name of the table to iterate over rows for
-            chunk_size (int | None): Number of rows to return in each chunk (may be lower). Defaults to yielding one row at a time. Note: When used together with 'partitions' the default is 10000 (matching the API limit) and there's an implicit minimum of 1000 rows.
-            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to not use concurrency. The setting is capped at ``global_config.max_workers`` and _can_ be used with a finite limit. To prevent unexpected problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
+            db_name (str): Name of the database.
+            table_name (str): Name of the table.
+            chunk_size (int | None): Number of rows to return in each chunk (may be lower). Defaults to yielding one row at a time.
+                Note: When used together with 'partitions' the default is 10000 (matching the API limit) and there's an implicit minimum of 1000 rows.
+            partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to not use concurrency.
+                The setting is capped at ``global_config.concurrency_settings.raw.read`` and _can_ be used with a finite limit. To prevent unexpected problems
+                and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
             limit (int | None): Maximum number of rows to return. Can be used with partitions. Defaults to returning all items.
-            min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
-            max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
-            columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). Milliseconds since epoch.
+            max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). Milliseconds since epoch.
+            columns (list[str] | None): List of column keys. Set to `None` to retrieving all, use empty list, [], to retrieve only row keys.
 
         Yields:
             Row | RowList: An iterator yielding the requested row or rows.
@@ -171,9 +174,10 @@ class RawRowsAPI(APIClient):
     ) -> AsyncIterator[RowList]:
         from cognite.client import global_config
 
-        partitions = min(partitions, global_config.max_workers)
+        concurrency_limit = global_config.concurrency_settings.raw.read
+        partitions = min(partitions, concurrency_limit)
         if is_finite(limit):
-            partitions = min(partitions, global_config.max_workers, math.ceil(limit / 20_000))
+            partitions = min(partitions, concurrency_limit, math.ceil(limit / 20_000))
             if chunk_size is not None and limit < chunk_size:
                 raise ValueError(f"chunk_size ({chunk_size}) should be much smaller than limit ({limit})")
 
@@ -283,6 +287,7 @@ class RawRowsAPI(APIClient):
                 url_path=url_path,
                 json={"items": chunk},
                 params={"ensureParent": ensure_parent},
+                semaphore=self._get_semaphore("write"),
             )
             for chunk in self._process_row_input(row)
         ]
@@ -394,8 +399,14 @@ class RawRowsAPI(APIClient):
             key = [key]
 
         url_path = interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name) + "/delete"
+        semaphore = self._get_semaphore("delete")
         tasks = [
-            AsyncSDKTask(self._post, url_path=url_path, json={"items": [{"key": k} for k in chunk]})
+            AsyncSDKTask(
+                self._post,
+                url_path=url_path,
+                json={"items": [{"key": k} for k in chunk]},
+                semaphore=semaphore,
+            )
             for chunk in split_into_chunks(key, self._DELETE_LIMIT)
         ]
         summary = await execute_async_tasks(tasks)
@@ -465,13 +476,13 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            min_last_updated_time (int | None): Rows must have been last updated after this time. ms since epoch.
-            max_last_updated_time (int | None): Rows must have been last updated before this time. ms since epoch.
-            columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            min_last_updated_time (int | None): Rows must have been last updated after this time. Milliseconds since epoch.
+            max_last_updated_time (int | None): Rows must have been last updated before this time. Milliseconds since epoch.
+            columns (list[str] | None): List of column keys. Set to `None` to retrieving all, use empty list, [], to retrieve only row keys.
             limit (int | None): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
             partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used together with a (large) finite limit.
-                When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and ``global_config.max_workers`` for an unlimited query
-                (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
+                When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and ``global_config.concurrency_settings.raw.read``
+                for an unlimited query (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
                 `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
             last_updated_time_in_index (bool): Use a MultiIndex with row keys and last_updated_time as index.
             infer_dtypes (bool): If True, pandas will try to infer dtypes of the columns. Defaults to True.
@@ -510,15 +521,15 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None,
         n_cursors: int,
     ) -> list[str]:
+        params = {
+            "minLastUpdatedTime": min_last_updated_time,
+            "maxLastUpdatedTime": max_last_updated_time,
+            "numberOfCursors": n_cursors,
+        }
         response = await self._get(
             url_path=interpolate_and_url_encode("/raw/dbs/{}/tables/{}/cursors", db_name, table_name),
-            params=drop_none_values(
-                {
-                    "minLastUpdatedTime": min_last_updated_time,
-                    "maxLastUpdatedTime": max_last_updated_time,
-                    "numberOfCursors": n_cursors,
-                }
-            ),
+            params=drop_none_values(params),
+            semaphore=self._get_semaphore("read"),
         )
         return unpack_items(response)
 
@@ -537,13 +548,13 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
-            max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
-            columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). Milliseconds since epoch.
+            max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). Milliseconds since epoch.
+            columns (list[str] | None): List of column keys. Set to `None` to retrieving all, use empty list, [], to retrieve only row keys.
             limit (int | None): The number of rows to retrieve. Can be used with partitions. Defaults to 25. Set to -1, float("inf") or None to return all items.
             partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used together with a (large) finite limit.
-                When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and ``global_config.max_workers`` for an unlimited query
-                (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
+                When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and ``global_config.concurrency_settings.raw.read``
+                for an unlimited query (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
                 `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
@@ -589,11 +600,11 @@ class RawRowsAPI(APIClient):
             chunk_size = 10_000
         elif partitions is None:
             if is_unlimited(limit):
-                # TODO: Change this?
-                # Before 'partitions' was introduced, existing logic was that 'limit=None' meant 'partitions=max_workers'.
+                # TODO: Change this? Before 'partitions' was introduced, existing logic was that 'limit=None'
+                # meant 'partitions=max_workers' (after v8, this is now 'concurrency_settings.raw.read')
                 from cognite.client import global_config
 
-                partitions = global_config.max_workers
+                partitions = global_config.concurrency_settings.raw.read
             else:
                 chunk_size = limit  # We fetch serially, but don't want rows one-by-one
 
@@ -611,6 +622,4 @@ class RawRowsAPI(APIClient):
                 columns=columns,
             ),
         )
-        return RowList(
-            [row async for row_list in rows_iterator for row in row_list],
-        )
+        return RowList([row async for row_list in rows_iterator for row in row_list])

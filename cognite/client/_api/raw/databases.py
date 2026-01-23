@@ -95,11 +95,13 @@ class RawDatabasesAPI(APIClient):
         assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
             name = [name]
+        semaphore = self._get_semaphore("delete")
         tasks = [
             AsyncSDKTask(
                 self._post,
                 url_path=self._RESOURCE_PATH + "/delete",
                 json={"items": [{"name": n} for n in chunk], "recursive": recursive},
+                semaphore=semaphore,
             )
             for chunk in split_into_chunks(name, self._DELETE_LIMIT)
         ]
