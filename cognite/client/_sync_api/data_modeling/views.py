@@ -1,6 +1,6 @@
 """
 ===============================================================================
-312b951119b85a3e695b26db37e81ce2
+0a26300de7d736aa782c880e1002e02e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -100,7 +100,7 @@ class SyncViewsAPI(SyncAPIClient):
                 or ViewId("my_space", "my_view", "my_version"). Note that version is optional, if not provided, all versions
                 will be returned.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
-            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned (based on created_time)
 
         Returns:
             ViewList: Requested view or None if it does not exist.
