@@ -180,6 +180,7 @@ class FunctionSchedulesAPI(APIClient):
         res = await self._post(
             url_path=f"{self._RESOURCE_PATH}/list",
             json={"filter": filter, "limit": limit},
+            semaphore=self._get_semaphore("read"),
         )
 
         return FunctionSchedulesList._load(res.json()["items"])
@@ -327,7 +328,7 @@ class FunctionSchedulesAPI(APIClient):
 
         """
         url = f"{self._RESOURCE_PATH}/delete"
-        await self._post(url, json={"items": [{"id": id}]})
+        await self._post(url, json={"items": [{"id": id}]}, semaphore=self._get_semaphore("delete"))
 
     async def get_input_data(self, id: int) -> dict[str, object] | None:
         """`Retrieve the input data to the associated function. <https://developer.cognite.com/api#tag/Function-schedules/operation/getFunctionScheduleInputData>`_
@@ -348,6 +349,6 @@ class FunctionSchedulesAPI(APIClient):
                 >>> client.functions.schedules.get_input_data(id=123)
         """
         url = f"{self._RESOURCE_PATH}/{id}/input_data"
-        res = await self._get(url)
+        res = await self._get(url, semaphore=self._get_semaphore("read"))
 
         return res.json().get("data")

@@ -151,7 +151,7 @@ class FunctionCallsAPI(APIClient):
         function_id = await _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH_RESPONSE.format(function_id, call_id)
-        response = await self._get(resource_path)
+        response = await self._get(resource_path, semaphore=self._get_semaphore("read"))
         return response.json().get("response")
 
     async def get_logs(
@@ -189,5 +189,5 @@ class FunctionCallsAPI(APIClient):
         function_id = await _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH_LOGS.format(function_id, call_id)
-        response = await self._get(resource_path)
+        response = await self._get(resource_path, semaphore=self._get_semaphore("read"))
         return FunctionCallLog._load(response.json()["items"])

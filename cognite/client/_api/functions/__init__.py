@@ -270,7 +270,11 @@ class FunctionsAPI(APIClient):
             )
 
         # The exactly_one_is_not_none check ensures that function is not None
-        res = await self._post(self._RESOURCE_PATH, json={"items": [function_input.dump(camel_case=True)]})
+        res = await self._post(
+            self._RESOURCE_PATH,
+            json={"items": [function_input.dump(camel_case=True)]},
+            semaphore=self._get_semaphore("write"),
+        )
         return Function._load(res.json()["items"][0])
 
     async def _create_function_obj(
@@ -412,6 +416,7 @@ class FunctionsAPI(APIClient):
         res = await self._post(
             url_path=f"{self._RESOURCE_PATH}/list",
             json={"filter": filter, "limit": limit},
+            semaphore=self._get_semaphore("read"),
         )
 
         return FunctionList._load(res.json()["items"])
@@ -524,7 +529,7 @@ class FunctionsAPI(APIClient):
         if data is None:
             data = {}
         url = self._RESOURCE_PATH_CALL.format(id)
-        res = await self._post(url, json={"data": data, "nonce": nonce})
+        res = await self._post(url, json={"data": data, "nonce": nonce}, semaphore=self._get_semaphore("write"))
 
         function_call = FunctionCall._load(res.json()).set_client_ref(self._cognite_client)
         if wait:
@@ -546,7 +551,7 @@ class FunctionsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> limits = client.functions.limits()
         """
-        res = await self._get(self._RESOURCE_PATH + "/limits")
+        res = await self._get(self._RESOURCE_PATH + "/limits", semaphore=self._get_semaphore("read"))
         return FunctionsLimits.load(res.json())
 
     async def _zip_and_upload_folder(
@@ -658,7 +663,7 @@ class FunctionsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> status = client.functions.activate()
         """
-        res = await self._post(self._RESOURCE_PATH + "/status")
+        res = await self._post(self._RESOURCE_PATH + "/status", semaphore=self._get_semaphore("write"))
         return FunctionsStatus.load(res.json())
 
     async def status(self) -> FunctionsStatus:
@@ -676,7 +681,7 @@ class FunctionsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> status = client.functions.status()
         """
-        res = await self._get(self._RESOURCE_PATH + "/status")
+        res = await self._get(self._RESOURCE_PATH + "/status", semaphore=self._get_semaphore("read"))
         return FunctionsStatus.load(res.json())
 
 
