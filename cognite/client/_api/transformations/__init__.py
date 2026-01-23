@@ -532,17 +532,19 @@ class TransformationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>>
-                >>> res = client.transformations.run(transformation_id = 1)
+                >>> res = client.transformations.run(transformation_id=1)
 
             Start running transformation by id:
 
-                >>> res = client.transformations.run(transformation_id = 1, wait = False)
+                >>> res = client.transformations.run(transformation_id=1, wait=False)
         """
         IdentifierSequence.load(transformation_id, transformation_external_id).assert_singleton()
 
         id_ = {"externalId": transformation_external_id, "id": transformation_id}
 
-        response = await self._post(json=id_, url_path=self._RESOURCE_PATH + "/run")
+        response = await self._post(
+            json=id_, url_path=self._RESOURCE_PATH + "/run", semaphore=self._get_semaphore("write")
+        )
         job = TransformationJob._load(response.json()).set_client_ref(self._cognite_client)
         if wait:
             return await job.wait_async(timeout=timeout)
@@ -570,7 +572,7 @@ class TransformationsAPI(APIClient):
         IdentifierSequence.load(transformation_id, transformation_external_id).assert_singleton()
 
         body = {"externalId": transformation_external_id, "id": transformation_id}
-        await self._post(json=body, url_path=self._RESOURCE_PATH + "/cancel")
+        await self._post(json=body, url_path=self._RESOURCE_PATH + "/cancel", semaphore=self._get_semaphore("delete"))
 
     async def preview(
         self,
@@ -629,6 +631,8 @@ class TransformationsAPI(APIClient):
             "inferSchemaLimit": infer_schema_limit,
             "timeout": timeout,
         }
-        response = await self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body)
+        response = await self._post(
+            url_path=self._RESOURCE_PATH + "/query/run", json=request_body, semaphore=self._get_semaphore("write")
+        )
         result = TransformationPreviewResult._load(response.json())
         return result
