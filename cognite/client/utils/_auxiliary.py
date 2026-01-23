@@ -277,3 +277,7 @@ def flatten_dict(d: dict[str, Any], parent_keys: tuple[str, ...], sep: str = "."
         else:
             items.append((sep.join((*parent_keys, key)), value))
     return dict(items)
+
+
+def concatenate_url_segments(*parts: str) -> str:
+    return "/".join(part.strip("/") for part in parts if part)

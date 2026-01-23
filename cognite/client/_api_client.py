@@ -44,6 +44,7 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError, CogniteProjectAccessError
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import (
+    concatenate_url_segments,
     get_current_sdk_version,
     get_user_agent,
     interpolate_and_url_encode,
@@ -300,7 +301,7 @@ class APIClient:
         base_path = ""
         if self._api_version:
             base_path = f"/api/{self._api_version}/projects/{self._config.project}"
-        return f"{self._config.base_url.rstrip('/')}/{base_path.lstrip('/')}".rstrip("/")
+        return concatenate_url_segments(self._config.base_url, base_path)
 
     def _is_retryable(self, method: str, path: str) -> bool:
         valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
