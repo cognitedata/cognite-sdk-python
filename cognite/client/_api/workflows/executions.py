@@ -50,7 +50,7 @@ class WorkflowExecutionAPI(APIClient):
 
         """
         try:
-            response = await self._get(url_path=f"{self._RESOURCE_PATH}/{id}")
+            response = await self._get(url_path=f"{self._RESOURCE_PATH}/{id}", semaphore=self._get_semaphore("read"))
         except CogniteAPIError as e:
             if e.code == 400:
                 return None
@@ -125,6 +125,7 @@ class WorkflowExecutionAPI(APIClient):
         response = await self._post(
             url_path=interpolate_and_url_encode("/workflows/{}/versions/{}/run", workflow_external_id, version),
             json=body,
+            semaphore=self._get_semaphore("write"),
         )
         return WorkflowExecution._load(response.json())
 
@@ -221,6 +222,7 @@ class WorkflowExecutionAPI(APIClient):
         response = await self._post(
             url_path=f"{self._RESOURCE_PATH}/{id}/cancel",
             json={"reason": reason} if reason else {},
+            semaphore=self._get_semaphore("delete"),
         )
         return WorkflowExecution._load(response.json())
 
@@ -250,5 +252,6 @@ class WorkflowExecutionAPI(APIClient):
         response = await self._post(
             url_path=f"{self._RESOURCE_PATH}/{id}/retry",
             json={"authentication": {"nonce": nonce}},
+            semaphore=self._get_semaphore("write"),
         )
         return WorkflowExecution._load(response.json())

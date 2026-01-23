@@ -50,5 +50,7 @@ class WorkflowTaskAPI(APIClient):
         body: dict[str, Any] = {"status": status.upper()}
         if output is not None:
             body["output"] = output
-        response = await self._post(url_path=f"{self._RESOURCE_PATH}/{task_id}/update", json=body)
+        response = await self._post(
+            url_path=f"{self._RESOURCE_PATH}/{task_id}/update", json=body, semaphore=self._get_semaphore("write")
+        )
         return WorkflowTaskExecution.load(response.json())

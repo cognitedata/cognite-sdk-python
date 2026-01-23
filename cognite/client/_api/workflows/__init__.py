@@ -156,7 +156,9 @@ class WorkflowAPI(APIClient):
         # We can not use _retrieve_multiple as the backend doesn't support 'ignore_unknown_ids':
         async def get_single(xid: str, ignore_missing: bool = ignore_unknown_ids) -> Workflow | None:
             try:
-                response = await self._get(url_path=interpolate_and_url_encode("/workflows/{}", xid))
+                response = await self._get(
+                    url_path=interpolate_and_url_encode("/workflows/{}", xid), semaphore=self._get_semaphore("read")
+                )
                 return Workflow._load(response.json())
             except CogniteAPIError as e:
                 if ignore_missing and e.code == 404:

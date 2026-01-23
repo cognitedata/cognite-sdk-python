@@ -94,6 +94,7 @@ class WorkflowTriggerAPI(APIClient):
         response = await self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [dumped]},
+            semaphore=self._get_semaphore("write"),
         )
         return WorkflowTrigger._load(response.json().get("items")[0])
 
@@ -194,6 +195,7 @@ class WorkflowTriggerAPI(APIClient):
         """
         await self._post(
             url_path=interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/pause", external_id),
+            semaphore=self._get_semaphore("write"),
         )
 
     async def resume(self, external_id: str) -> None:
@@ -216,4 +218,5 @@ class WorkflowTriggerAPI(APIClient):
         """
         await self._post(
             url_path=interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/resume", external_id),
+            semaphore=self._get_semaphore("write"),
         )
