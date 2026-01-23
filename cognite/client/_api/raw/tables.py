@@ -116,8 +116,11 @@ class RawTablesAPI(APIClient):
             name = [name]
 
         url_path = interpolate_and_url_encode(self._RESOURCE_PATH, db_name) + "/delete"
+        semaphore = self._get_semaphore("delete")
         tasks = [
-            AsyncSDKTask(self._post, url_path=url_path, json={"items": [{"name": n} for n in chunk]})
+            AsyncSDKTask(
+                self._post, url_path=url_path, json={"items": [{"name": n} for n in chunk]}, semaphore=semaphore
+            )
             for chunk in split_into_chunks(name, self._DELETE_LIMIT)
         ]
         summary = await execute_async_tasks(tasks)
