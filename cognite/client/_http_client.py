@@ -13,7 +13,7 @@ from collections.abc import (
     Mapping,
     MutableMapping,
 )
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, nullcontext
 from http.cookiejar import Cookie, CookieJar
 from typing import Any, Literal, TypeAlias
 
@@ -28,7 +28,6 @@ from cognite.client.exceptions import (
     CogniteRequestError,
 )
 from cognite.client.response import CogniteHTTPResponse
-from cognite.client.utils._concurrency import get_global_semaphore
 
 logger = logging.getLogger(__name__)
 
@@ -212,7 +211,7 @@ class AsyncHTTPClientWithRetry:
         headers: MutableMapping[str, str] | None = None,
         follow_redirects: bool = False,
         timeout: float | None = None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
+        semaphore: asyncio.BoundedSemaphore | None,
     ) -> CogniteHTTPResponse:
         def coro_factory() -> HTTPResponseCoro:
             return self.httpx_async_client.request(
@@ -239,6 +238,7 @@ class AsyncHTTPClientWithRetry:
         json: Any = None,
         headers: MutableMapping[str, str] | None = None,
         timeout: float | None = None,
+        semaphore: asyncio.BoundedSemaphore | None,
     ) -> AsyncIterator[CogniteHTTPResponse]:
         # This method is basically a clone of httpx.AsyncClient.stream() so that we may add our own retry logic.
         def coro_factory() -> HTTPResponseCoro:
@@ -249,7 +249,7 @@ class AsyncHTTPClientWithRetry:
 
         response: CogniteHTTPResponse | None = None
         try:
-            yield (response := await self._with_retry(coro_factory, url=url, headers=headers))
+            yield (response := await self._with_retry(coro_factory, url=url, headers=headers, semaphore=semaphore))
         finally:
             if response:
                 await response.aclose()
@@ -260,19 +260,19 @@ class AsyncHTTPClientWithRetry:
         *,
         url: str,
         headers: MutableMapping[str, str] | None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
+        semaphore: asyncio.BoundedSemaphore | None,
     ) -> CogniteHTTPResponse:
-        if semaphore is None:
-            # By default, we run with a semaphore decided by user settings of 'max_workers' in 'global_config'.
-            # Since the user can run any number of SDK tasks concurrently, this needs to be global:
-            semaphore = get_global_semaphore()
+        # When no semaphore is passed, we use nullcontext to skip concurrency limiting. These come from
+        # custom top-level POST or GET calls directly on the (Async)Cogniteclient. All normal API calls
+        # will be assigned a semaphore in the APIClient layer.
+        concurrency_control = semaphore or nullcontext()
 
         is_auto_retryable = False
         retry_tracker = RetryTracker(url, self.config)
         accepts_json = (headers or {}).get("accept") == "application/json"
         while True:
             try:
-                async with semaphore:
+                async with concurrency_control:
                     # Ensure our credentials are not about to expire right before making the request:
                     if headers is not None:
                         self.refresh_auth_header(headers)
