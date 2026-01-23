@@ -314,6 +314,7 @@ class TestSimulatorModels:
                         }
                     ]
                 },
+                semaphore=None,
             )
         )
 
