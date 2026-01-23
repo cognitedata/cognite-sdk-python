@@ -46,7 +46,9 @@ class CogniteProjectAccessError(CogniteException):
         _, full_url = resolve_url(api_client, "GET", "/api/v1/token/inspect")
         full_headers = api_client._configure_headers(additional_headers=None, api_subversion=api_client._api_version)
         try:
-            token_inspect = await api_client._http_client.request("GET", full_url, headers=full_headers, timeout=5)
+            token_inspect = await api_client._http_client.request(
+                "GET", full_url, headers=full_headers, timeout=5, semaphore=None
+            )
             projects = {proj["projectUrlName"] for proj in token_inspect.json()["projects"]} - {current_project}
             return sorted(projects)
         except Exception:
