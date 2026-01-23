@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, cast, overload
 
@@ -18,6 +19,7 @@ from cognite.client.data_classes.data_modeling.ids import (
     IndexIdentifier,
     _load_identifier,
 )
+from cognite.client.utils._concurrency import ConcurrencySettings
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -32,6 +34,10 @@ class ContainersAPI(APIClient):
         self._DELETE_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
         self._CREATE_LIMIT = 100
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        factory = ConcurrencySettings._semaphore_factory("data_modeling")
+        return factory(operation, self._cognite_client.config.project)
 
     @overload
     def __call__(

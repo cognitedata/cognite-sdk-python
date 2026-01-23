@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, overload
+import asyncio
+from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
@@ -8,6 +9,7 @@ from cognite.client.data_classes.data_modeling.statistics import (
     SpaceStatistics,
     SpaceStatisticsList,
 )
+from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -21,6 +23,10 @@ class SpaceStatisticsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._RETRIEVE_LIMIT = 100
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        factory = ConcurrencySettings._semaphore_factory("data_modeling")
+        return factory(operation, self._cognite_client.config.project)
 
     @overload
     async def retrieve(self, space: str) -> SpaceStatistics | None: ...

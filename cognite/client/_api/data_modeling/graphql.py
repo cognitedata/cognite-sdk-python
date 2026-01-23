@@ -1,17 +1,23 @@
 from __future__ import annotations
 
+import asyncio
 import textwrap
-from typing import Any
+from typing import Any, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling import DataModelIdentifier
 from cognite.client.data_classes.data_modeling.graphql import DMLApplyResult
 from cognite.client.data_classes.data_modeling.ids import DataModelId
 from cognite.client.exceptions import CogniteGraphQLError, GraphQLErrorSpec
+from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._url import interpolate_and_url_encode
 
 
 class DataModelingGraphQLAPI(APIClient):
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        factory = ConcurrencySettings._semaphore_factory("data_modeling")
+        return factory(operation, self._cognite_client.config.project)
+
     async def _post_graphql(self, url_path: str, query_name: str, json: dict) -> dict[str, Any]:
         res = (await self._post(url_path=url_path, json=json)).json()
         # Errors can be passed both at top level and nested in the response:
