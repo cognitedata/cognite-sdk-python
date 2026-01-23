@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+import asyncio
 import re
 from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.utils._auxiliary import is_unlimited
-from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
+from cognite.client.utils._concurrency import AsyncSDKTask, ConcurrencySettings, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._time import timestamp_to_ms
@@ -45,6 +46,10 @@ class SyntheticDatapointsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DPS_LIMIT_SYNTH = 10_000
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        factory = ConcurrencySettings._semaphore_factory("datapoints")
+        return factory(operation, self._cognite_client.config.project)
 
     @overload
     async def query(

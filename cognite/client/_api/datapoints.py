@@ -57,7 +57,7 @@ from cognite.client.utils._auxiliary import (
     unpack_items,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks, get_global_datapoints_semaphore
+from cognite.client.utils._concurrency import AsyncSDKTask, ConcurrencySettings, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._time import (
@@ -532,6 +532,10 @@ class DatapointsAPI(APIClient):
         self._POST_DPS_OBJECTS_LIMIT = 10_000
 
         self.query_validator = _DpsQueryValidator(dps_limit_raw=self._DPS_LIMIT_RAW, dps_limit_agg=self._DPS_LIMIT_AGG)
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        factory = ConcurrencySettings._semaphore_factory("datapoints")
+        return factory(operation, self._cognite_client.config.project)
 
     @overload
     def __call__(

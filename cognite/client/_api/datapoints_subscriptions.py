@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Literal, cast, overload
 
@@ -16,6 +17,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     TimeSeriesIDList,
     _DatapointSubscriptionBatchWithPartitions,
 )
+from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -29,6 +31,10 @@ class DatapointsSubscriptionAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 1
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        factory = ConcurrencySettings._semaphore_factory("datapoints")
+        return factory(operation, self._cognite_client.config.project)
 
     @overload
     def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[DatapointSubscription]: ...
