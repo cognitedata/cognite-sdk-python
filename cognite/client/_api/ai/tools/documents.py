@@ -49,7 +49,9 @@ class AIDocumentsAPI(APIClient):
                 ... )
         """
         ident = IdentifierSequenceWithInstanceId.load(id, external_id, instance_id).as_singleton()
-        res = await self._post(self._RESOURCE_PATH + "/summarize", json={"items": ident.as_dicts()})
+        res = await self._post(
+            self._RESOURCE_PATH + "/summarize", json={"items": ident.as_dicts()}, semaphore=self._get_semaphore("write")
+        )
         return Summary._load(res.json()["items"][0])
 
     async def ask_question(
@@ -138,5 +140,5 @@ class AIDocumentsAPI(APIClient):
                     # Probably an unknown language, but we let the API handle it (future-proofing)
                     body["language"] = language
 
-        response = await self._post(self._RESOURCE_PATH + "/ask", json=body)
+        response = await self._post(self._RESOURCE_PATH + "/ask", json=body, semaphore=self._get_semaphore("write"))
         return Answer._load(response.json()["content"])
