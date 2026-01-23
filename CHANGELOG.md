@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.91.2](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.91.1...cognite-sdk-python-v7.91.2) (2026-01-23)
+
+
+### Bug Fixes
+
+* Fix how paths are concatenated in _get_base_url_with_base_path to handle urls with gateway ([#2448](https://github.com/cognitedata/cognite-sdk-python/issues/2448)) ([88c64f5](https://github.com/cognitedata/cognite-sdk-python/commit/88c64f5a69b7b7c232f82e3a10390561c295cb26))
+
 ## [7.91.1](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.91.0...cognite-sdk-python-v7.91.1) (2026-01-13)
 
 
