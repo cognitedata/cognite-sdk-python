@@ -220,6 +220,7 @@ class WorkflowVersionAPI(APIClient):
                 >>> # A sequence of tuples is also accepted:
                 >>> res = client.workflows.versions.retrieve([("my_workflow", "v1"), ("other", "v3.2")])
         """
+        semaphore = self._get_semaphore("read")
 
         # We can not use _retrieve_multiple as the backend doesn't support 'ignore_unknown_ids':
         async def get_single(
@@ -227,7 +228,8 @@ class WorkflowVersionAPI(APIClient):
         ) -> WorkflowVersion | None:
             try:
                 response = await self._get(
-                    url_path=interpolate_and_url_encode("/workflows/{}/versions/{}", *wf_xid.as_tuple())
+                    url_path=interpolate_and_url_encode("/workflows/{}/versions/{}", *wf_xid.as_tuple()),
+                    semaphore=semaphore,
                 )
                 return WorkflowVersion._load(response.json())
             except CogniteAPIError as e:
