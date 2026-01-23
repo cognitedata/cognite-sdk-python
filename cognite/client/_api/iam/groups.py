@@ -67,7 +67,7 @@ class GroupsAPI(APIClient):
 
                 >>> all_groups = client.iam.groups.list(all=True)
         """
-        res = await self._get(self._RESOURCE_PATH, params={"all": all})
+        res = await self._get(self._RESOURCE_PATH, params={"all": all}, semaphore=self._get_semaphore("read"))
         # Dev.note: We don't use public load method here (it is final) and we need to pass a magic keyword arg. to
         # not raise whenever new Acls/actions/scopes are added to the API. So we specifically allow the 'unknown':
         return GroupList._load(res.json()["items"], allow_unknown=True)

@@ -73,7 +73,7 @@ class SessionsAPI(APIClient):
         else:
             raise ValueError(f"Session type not understood: {session_type}")
 
-        response = await self._post(self._RESOURCE_PATH, {"items": [items]})
+        response = await self._post(self._RESOURCE_PATH, {"items": [items]}, semaphore=self._get_semaphore("write"))
         return CreatedSession.load(response.json()["items"][0])
 
     @overload
