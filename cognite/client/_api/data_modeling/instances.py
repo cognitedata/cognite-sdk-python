@@ -72,7 +72,7 @@ from cognite.client.data_classes.data_modeling.sync import SubscriptionContext
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.utils._auxiliary import is_unlimited, load_yaml_or_json, unpack_items
-from cognite.client.utils._concurrency import get_global_data_modeling_semaphore
+from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 from cognite.client.utils._retry import Backoff
@@ -170,7 +170,6 @@ class InstancesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._AGGREGATE_LIMIT = 1000
         self._SEARCH_LIMIT = 1000
-        self.__dm_semaphore = get_global_data_modeling_semaphore()
 
         self._warn_on_alpha_debug_settings = FeaturePreviewWarning(
             api_maturity="alpha",
@@ -178,6 +177,10 @@ class InstancesAPI(APIClient):
             feature_name="Data modeling debug parameters 'includeTranslatedQuery' and 'includePlan'",
             pluralize=True,
         )
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        factory = ConcurrencySettings._semaphore_factory("data_modeling")
+        return factory(operation, self._cognite_client.config.project)
 
     @overload
     def __call__(
@@ -298,7 +301,6 @@ class InstancesAPI(APIClient):
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
                 headers=headers,
-                semaphore=self.__dm_semaphore,
             ):
                 yield item
             return
@@ -311,7 +313,6 @@ class InstancesAPI(APIClient):
             filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
             other_params=other_params,
             headers=headers,
-            semaphore=self.__dm_semaphore,
         ):
             yield list_cls._load_raw_api_response([raw])
 
@@ -635,7 +636,6 @@ class InstancesAPI(APIClient):
             identifiers=identifiers,
             other_params=other_params,
             settings_forcing_raw_response_loading=[f"{include_typing=}"] if include_typing else None,
-            semaphore=self.__dm_semaphore,
         )
 
         return InstancesResult[T_Node, T_Edge](
@@ -723,7 +723,6 @@ class InstancesAPI(APIClient):
                 identifiers,
                 wrap_ids=True,
                 returns_items=True,
-                semaphore=self.__dm_semaphore,
             ),
         )
         node_ids = [NodeId.load(item) for item in deleted_instances if item["instanceType"] == "node"]
@@ -1068,7 +1067,6 @@ class InstancesAPI(APIClient):
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
             input_resource_cls=_NodeOrEdgeApplyAdapter,  # type: ignore[arg-type]
-            semaphore=self.__dm_semaphore,
         )
         return InstancesApplyResult(
             nodes=NodeApplyResultList([item for item in res if isinstance(item, NodeApplyResult)]),
@@ -1851,7 +1849,6 @@ class InstancesAPI(APIClient):
                 other_params=other_params,
                 settings_forcing_raw_response_loading=settings_forcing_raw_response_loading,
                 headers=headers,
-                semaphore=self.__dm_semaphore,
             ),
         )
 

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import asyncio
+from typing import TYPE_CHECKING, Literal
 
 from cognite.client._api.data_modeling.space_statistics import SpaceStatisticsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.statistics import ProjectStatistics
+from cognite.client.utils._concurrency import ConcurrencySettings
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -17,6 +19,10 @@ class StatisticsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.spaces = SpaceStatisticsAPI(config, api_version, cognite_client)
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        factory = ConcurrencySettings._semaphore_factory("data_modeling")
+        return factory(operation, self._cognite_client.config.project)
 
     async def project(self) -> ProjectStatistics:
         """`Retrieve project-wide usage data and limits <https://developer.cognite.com/api#tag/Statistics/operation/getStatistics>`_
