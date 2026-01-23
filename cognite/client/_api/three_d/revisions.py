@@ -241,7 +241,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = client.three_d.revisions.update_thumbnail(model_id=1, revision_id=1, file_id=1)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/thumbnail", model_id, revision_id)
-        await self._post(resource_path, json={"fileId": file_id})
+        await self._post(resource_path, json={"fileId": file_id}, semaphore=self._get_semaphore("write"))
 
     async def list_nodes(
         self,

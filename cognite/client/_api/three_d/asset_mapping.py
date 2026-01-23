@@ -149,10 +149,14 @@ class ThreeDAssetMappingAPI(APIClient):
         if isinstance(asset_mapping, ThreeDAssetMapping):
             asset_mapping = [asset_mapping]
 
+        semaphore = self._get_semaphore("delete")
         chunks = split_into_chunks(
             [{"nodeId": a.node_id, "assetId": a.asset_id} for a in asset_mapping], self._DELETE_LIMIT
         )
-        tasks = [AsyncSDKTask(self._post, url_path=path + "/delete", json={"items": chunk}) for chunk in chunks]
+        tasks = [
+            AsyncSDKTask(self._post, url_path=path + "/delete", json={"items": chunk}, semaphore=semaphore)
+            for chunk in chunks
+        ]
         summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping._load(el)

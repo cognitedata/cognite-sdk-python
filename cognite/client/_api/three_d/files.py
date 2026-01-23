@@ -26,4 +26,4 @@ class ThreeDFilesAPI(APIClient):
                 >>> res = client.three_d.files.retrieve(1)
         """
         path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", id)
-        return (await self._get(path)).content
+        return (await self._get(path, semaphore=self._get_semaphore("read"))).content
