@@ -6,19 +6,24 @@ You can pass configuration arguments directly to the :ref:`ClientConfig <class_c
 to configure the base url of your requests or any additional headers. For a list of all configuration arguments,
 see the :ref:`ClientConfig <class_client_ClientConfig>` class definition.
 
-To initialise a ``CogniteClient``, simply pass this configuration object, (an instance of ``ClientConfig``) to it:
+To initialise an ``AsyncCogniteClient`` or ``CogniteClient``, simply pass this configuration object (an instance of ``ClientConfig``) to it:
 
 .. code:: python
 
-    from cognite.client import CogniteClient, ClientConfig
+    from cognite.client import AsyncCogniteClient, CogniteClient, ClientConfig
     from cognite.client.credentials import Token
     my_config = ClientConfig(
         client_name="my-client",
         project="myproj",
-        cluster="api",  # or pass the full 'base_url'
+        cluster="westeurope-1",  # or pass the full 'base_url'
         credentials=Token("verysecret"),
     )
-    client = CogniteClient(my_config)
+
+    # Async client (recommended for new code)
+    async_client = AsyncCogniteClient(my_config)
+
+    # Sync client (for backward compatibility)
+    sync_client = CogniteClient(my_config)
 
 Global configuration
 --------------------
@@ -31,7 +36,7 @@ You can set global configuration options like this:
     global_config.default_client_config = ClientConfig(
         client_name="my-client",
         project="myproj",
-        cluster="api",  # or pass the full 'base_url'
+        cluster="westeurope-1",  # or pass the full 'base_url'
         credentials=Token("verysecret"),
     )
     global_config.disable_pypi_version_check = True
@@ -42,17 +47,85 @@ You can set global configuration options like this:
     global_config.max_connection_pool_size = 10
     global_config.status_forcelist = {429, 502, 503, 504}
 
-You should assume that these must be set prior to instantiating a ``CogniteClient`` in order for them to take effect.
+You should **assume that these must be set prior to instantiating** an ``AsyncCogniteClient`` or ``CogniteClient`` in order for them to *take effect*.
 
-Concurrency and connection pooling
-----------------------------------
-This library does not expose API limits to the user. If your request exceeds API limits, the SDK splits your
-request into chunks and performs the sub-requests in parallel when possible. To control how many concurrent requests you send
-to the API, you can set the global :code:`max_workers` config option. *This must be set prior to the first request you make.*
+Concurrency settings
+--------------------
+The SDK allows you to control how many concurrent API requests are made for different categories of APIs
+and operation types. This is managed through the ``concurrency_settings`` attribute on ``global_config``.
 
-If you are working with multiple instances of :ref:`cognite_client:CogniteClient`, all instances will share the same connection pool.
+All concurrency settings apply *per project*, so if you have multiple clients pointing to different CDF projects,
+each project gets its own independent concurrency budget. See `Per-project concurrency`_ for more details.
+
+For backend services expected to serve a high volume of requests, you may want to increase the ``max_connection_pool_size``
+(default is 20). This is the "global concurrency limiter". See `Connection pooling`_ for more details.
+
+.. note::
+    CDF is a shared backend service. Excessive concurrency from one user can degrade performance for others
+    in your organization. The default limits are set quite generously to balance throughput with fair resource
+    usage. Keep that in mind when adjusting these settings!
+
+API categories
+^^^^^^^^^^^^^^
+Concurrency is configured separately for three API categories, *but more can be added in the future*, typically
+if specific API endpoints have different performance characteristics:
+
+- **general**: Covers all API endpoints except those covered by other categories
+- **raw**: Covers the Raw API endpoints
+- **datapoints**: Time series datapoints API endpoints
+- **data_modeling**: Data Modeling API endpoints
+
+Operation types
+^^^^^^^^^^^^^^^
+Within each API category, you can set separate limits for different operation types:
+
+- **read**: List, retrieve, search, aggregate and other read operations
+- **write**: Create, update, upsert operations
+- **delete**: Delete operations
+
+The **total concurrency budget** is the sum of all limits across all categories and operation types.
+
+.. code:: python
+
+    from cognite.client import global_config
+
+    # Configure concurrency limits before making any API requests
+    settings = global_config.concurrency_settings
+    settings.general.read = 8
+    settings.general.write = 4
+    settings.general.delete = 2
+    # (There's also: settings.raw, settings.data_modeling and settings.datapoints)
+
+.. warning::
+    Concurrency settings **must be configured before making any API requests**. Once any API request is made,
+    these settings become frozen and attempting to modify them will raise a ``RuntimeError``.
+
+    This is because the settings are used to initialize semaphores that control concurrent access to the API.
+    Once created, these semaphores cannot be resized.
+
+You can check whether settings have been frozen:
+
+.. code:: python
+
+    from cognite.client import global_config
+
+    global_config.concurrency_settings.is_frozen
+
+Per-project concurrency
+^^^^^^^^^^^^^^^^^^^^^^^
+The concurrency limits apply **per CDF project**. If you have multiple clients pointing to different CDF projects,
+each project gets its own independent concurrency budget. This means that if you set ``general.read = 5``, you can have
+up to 5 concurrent general read requests *per project*, not 5 total across all projects.
+
+Connection pooling
+------------------
+If you are working with multiple instances of ``AsyncCogniteClient`` or ``CogniteClient``, all instances will share the same connection pool.
 If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests.
-You can increase the max connection pool size by setting the :code:`max_connection_pool_size` config option.
+You can increase the max connection pool size by setting the :code:`max_connection_pool_size` config option. It defaults to 20.
+
+The setting should closely match the total concurrency budget (sum of all concurrency limits expected to be in use + a small buffer)
+to optimize connection reuse. Note that you will never see a higher level of concurrency than the connection pool size, even if your
+individual concurrency limits are set higher.
 
 Debug logging
 -------------
