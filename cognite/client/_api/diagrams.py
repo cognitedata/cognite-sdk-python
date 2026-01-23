@@ -296,13 +296,16 @@ class DiagramsAPI(APIClient):
             f"{self._RESOURCE_PATH}/detect",
             json=body,
             api_subversion=api_subversion,
+            semaphore=self._get_semaphore("write"),
         )
         return DiagramDetectResults._load_with_job_token(data=response.json(), headers=response.headers).set_client_ref(
             self._cognite_client
         )
 
     async def get_detect_jobs(self, job_ids: list[int]) -> list[DiagramDetectResults]:
-        res = await self._cognite_client.diagrams._post("/context/diagram/detect/status", json={"items": job_ids})
+        res = await self._cognite_client.diagrams._post(
+            "/context/diagram/detect/status", json={"items": job_ids}, semaphore=self._get_semaphore("read")
+        )
         jobs = res.json()["items"]
         return [
             DiagramDetectResults._load_with_job_token(job, headers=res.headers).set_client_ref(self._cognite_client)
@@ -336,7 +339,9 @@ class DiagramsAPI(APIClient):
         if any(item.get("page_range") is not None for item in result["items"]):
             raise NotImplementedError("Can not run convert on a detect job that used the page range feature")
         items = [{"annotations": item.get("annotations"), "fileId": item.get("fileId")} for item in result["items"]]
-        response = await self._post(f"{self._RESOURCE_PATH}/convert", json={"items": items})
+        response = await self._post(
+            f"{self._RESOURCE_PATH}/convert", json={"items": items}, semaphore=self._get_semaphore("write")
+        )
         return DiagramConvertResults._load_with_job_token(
             data=response.json(), headers=response.headers
         ).set_client_ref(self._cognite_client)

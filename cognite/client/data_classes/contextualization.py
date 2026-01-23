@@ -235,7 +235,10 @@ class EntityMatchingModel(CogniteResourceWithClientRef):
 
     async def update_status_async(self) -> str:
         """Updates the model status and returns it"""
-        data = (await self._cognite_client.entity_matching._get(f"{self._STATUS_PATH}{self.id}")).json()
+        semaphore = self._cognite_client.entity_matching._get_semaphore("read")
+        data = (
+            await self._cognite_client.entity_matching._get(f"{self._STATUS_PATH}{self.id}", semaphore=semaphore)
+        ).json()
         self.status = data["status"]
         self.status_time = data.get("statusTime")
         self.start_time = data.get("startTime")
@@ -302,7 +305,10 @@ class EntityMatchingModel(CogniteResourceWithClientRef):
             "numMatches": num_matches,
             "scoreThreshold": score_threshold,
         }
-        response = await self._cognite_client.entity_matching._post(f"{self._RESOURCE_PATH}/predict", json=json)
+        semaphore = self._cognite_client.entity_matching._get_semaphore("write")
+        response = await self._cognite_client.entity_matching._post(
+            f"{self._RESOURCE_PATH}/predict", json=json, semaphore=semaphore
+        )
         return EntityMatchingPredictionResult._load_with_job_token(
             data=response.json(),
             headers=response.headers,
@@ -331,8 +337,9 @@ class EntityMatchingModel(CogniteResourceWithClientRef):
             EntityMatchingModel: new model refitted to true_matches."""
         true_matches = [convert_true_match(true_match) for true_match in true_matches]
         await self.wait_for_completion_async()
+        semaphore = self._cognite_client.entity_matching._get_semaphore("write")
         response = await self._cognite_client.entity_matching._post(
-            self._RESOURCE_PATH + "/refit", json={"trueMatches": true_matches, "id": self.id}
+            self._RESOURCE_PATH + "/refit", json={"trueMatches": true_matches, "id": self.id}, semaphore=semaphore
         )
         return self._load(response.json()).set_client_ref(self._cognite_client)
 
@@ -532,7 +539,10 @@ class DiagramConvertResults(ContextualizationJob):
         """Updates the model status and returns it"""
         job_token = self.job_token
         headers = {"X-Job-Token": job_token} if job_token else {}
-        resource = (await self._cognite_client.diagrams._get(self._status_path(), headers=headers)).json()
+        semaphore = self._cognite_client.diagrams._get_semaphore("read")
+        resource = (
+            await self._cognite_client.diagrams._get(self._status_path(), headers=headers, semaphore=semaphore)
+        ).json()
         self.__init__(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -657,7 +667,10 @@ class DiagramDetectResults(ContextualizationJob):
     async def update_status_async(self) -> str:
         job_token = self.job_token
         headers = {"X-Job-Token": job_token} if job_token else {}
-        resource = (await self._cognite_client.diagrams._get(self._status_path(), headers=headers)).json()
+        semaphore = self._cognite_client.diagrams._get_semaphore("read")
+        resource = (
+            await self._cognite_client.diagrams._get(self._status_path(), headers=headers, semaphore=semaphore)
+        ).json()
         self.__init__(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -956,10 +969,11 @@ class DetectJobBundle:
         """
         start = time.time()
         self._remaining_job_ids = self.job_ids
+        semaphore = self._cognite_client.diagrams._get_semaphore("read")
         while timeout is None or time.time() < start + timeout:
             try:
                 res = await self._cognite_client.diagrams._post(
-                    self._STATUS_PATH, json={"items": self._remaining_job_ids}
+                    self._STATUS_PATH, json={"items": self._remaining_job_ids}, semaphore=semaphore
                 )
             except CogniteAPIError:
                 await self._back_off()
@@ -987,7 +1001,11 @@ class DetectJobBundle:
         return self.get_result()
 
     async def fetch_results(self) -> list[dict[str, Any]]:
-        return [(await self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}")).json() for j in self.job_ids]
+        semaphore = self._cognite_client.diagrams._get_semaphore("read")
+        return [
+            (await self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}", semaphore=semaphore)).json()
+            for j in self.job_ids
+        ]
 
     async def get_result_async(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Waits for the job to finish and returns the results."""
@@ -1122,7 +1140,8 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
         )
 
     async def update_status_async(self) -> str:
-        resource = (await self._cognite_client.vision._get(self._status_path())).json()
+        semaphore = self._cognite_client.vision._get_semaphore("read")
+        resource = (await self._cognite_client.vision._get(self._status_path(), semaphore=semaphore)).json()
         self.__init__(
             job_id=resource["jobId"],
             status=resource["status"],
@@ -1280,7 +1299,10 @@ class EntityMatchingPredictionResult(ContextualizationJob):
         """Updates the model status and returns it"""
         job_token = self.job_token
         headers = {"X-Job-Token": job_token} if job_token else {}
-        resource = (await self._cognite_client.entity_matching._get(self._status_path(), headers=headers)).json()
+        semaphore = self._cognite_client.entity_matching._get_semaphore("read")
+        resource = (
+            await self._cognite_client.entity_matching._get(self._status_path(), headers=headers, semaphore=semaphore)
+        ).json()
         self.__init__(
             job_id=resource["jobId"],
             status=resource["status"],

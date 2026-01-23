@@ -85,7 +85,9 @@ class VisionAPI(APIClient):
             "features": features,
             **({"parameters": parameters.dump(camel_case=True)} if parameters is not None else {}),
         }
-        response = await self._post(f"{self._RESOURCE_PATH}/extract", json=body, headers=headers)
+        response = await self._post(
+            f"{self._RESOURCE_PATH}/extract", json=body, headers=headers, semaphore=self._get_semaphore("write")
+        )
         return VisionExtractJob._load(response.json()).set_client_ref(self._cognite_client)
 
     async def get_extract_job(self, job_id: int) -> VisionExtractJob:
@@ -109,5 +111,5 @@ class VisionAPI(APIClient):
                 ...     predictions = item.predictions
                 ...     # do something with the predictions
         """
-        result = await self._get(f"{self._RESOURCE_PATH}/extract/{job_id}")
+        result = await self._get(f"{self._RESOURCE_PATH}/extract/{job_id}", semaphore=self._get_semaphore("read"))
         return VisionExtractJob._load(result.json()).set_client_ref(self._cognite_client)
