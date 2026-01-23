@@ -56,6 +56,21 @@ VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "un
 class APIClient(BasicAsyncAPIClient):
     _RESOURCE_PATH: ClassVar[str]
 
+    def _get_semaphore(self, operation: Any) -> asyncio.BoundedSemaphore:
+        """By default, we use the general concurrency settings, but this method can be
+        overridden by APIs that have more fine-grained settings.
+
+        Note: 'operation' is typed as Any to satisfy LSP since subclasses override with narrower Literal types.
+        """
+        from cognite.client import global_config
+
+        assert operation in ("read", "write", "delete"), (
+            f"Default semaphores should use read/write/delete, not {operation}"
+        )
+        return global_config.concurrency_settings.general._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
+
     async def _retrieve(
         self,
         identifier: IdentifierCore,
