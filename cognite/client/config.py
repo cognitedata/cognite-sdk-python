@@ -10,6 +10,7 @@ from typing import Any, NoReturn, overload
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
 from cognite.client.utils._auxiliary import load_resource_to_dict
+from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._importing import local_import
 
 
@@ -33,8 +34,10 @@ class GlobalConfig:
         proxy (str | None): Route all traffic (HTTP and HTTPS) via this proxy, e.g. "http://localhost:8030".
             For proxy authentication, embed credentials in the URL: "http://user:pass@localhost:8030".
             Defaults to None (no proxy).
-        max_workers (int | None): Maximum number of concurrent API calls. Defaults to 5. Note that certain APIs have
-            overrides which comes in addition to this limit.
+        max_workers (int): DEPRECATED: Use 'concurrency_settings' instead. Maximum number of concurrent API calls. Defaults to 5.
+        concurrency_settings (ConcurrencySettings): Settings controlling the maximum number of concurrent API requests
+            for different API categories (general, raw, data_modeling etc.). These settings are frozen after the
+            first API request is made. See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
         follow_redirects (bool): Whether or not to follow redirects. Defaults to False.
         file_download_chunk_size (int | None): Specify the file chunk size for streaming file downloads. When not specified
             (default is None), the actual chunk size is determined by the underlying transport, which in turn is based on the
@@ -51,8 +54,8 @@ class GlobalConfig:
         if hasattr(cls, "_instance"):
             raise TypeError(
                 "GlobalConfig is a singleton and cannot be instantiated directly. Use `global_config` instead, "
-                "`from cognite.client import global_config`, then apply the wanted settings, e.g. `global_config.max_workers = 5`. "
-                "Settings are only guaranteed to take effect if applied before instantiating an AsyncCogniteClient or CogniteClient."
+                "`from cognite.client import global_config`, then apply the wanted settings, e.g. `global_config.max_retries = 5`. "
+                "Settings are only guaranteed to take effect if applied -before- instantiating an AsyncCogniteClient or CogniteClient."
             )
         cls._instance = super().__new__(cls)
         return cls._instance
@@ -68,12 +71,32 @@ class GlobalConfig:
         self.max_connection_pool_size: int = 20
         self.disable_ssl: bool = False
         self.proxy: str | None = None
-        self.max_workers: int = 5
+        self._max_workers: int = 5
+        self._concurrency_settings: ConcurrencySettings = ConcurrencySettings()
         self.follow_redirects: bool = False
         self.file_download_chunk_size: int | None = None
         self.file_upload_chunk_size: int | None = None
         self.silence_feature_preview_warnings: bool = False
         self.event_loop: asyncio.AbstractEventLoop | None = None
+
+    @property
+    def max_workers(self) -> int:
+        return self._max_workers
+
+    @max_workers.setter
+    def max_workers(self, value: int) -> None:
+        warnings.warn(
+            "'max_workers' is no longer in use in the SDK as of v8, and will be removed in the next major version. "
+            "Use 'global_config.concurrency_settings' instead for fine-grained control. For more info: "
+            "https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings",
+            FutureWarning,
+            stacklevel=2,
+        )
+        self._max_workers = value
+
+    @property  # We do not want users to instantiate their own ConcurrencySettings
+    def concurrency_settings(self) -> ConcurrencySettings:
+        return self._concurrency_settings
 
     def __str__(self) -> str:
         return pprint.pformat(vars(self), indent=4)
@@ -107,17 +130,25 @@ class GlobalConfig:
         """
 
         loaded = load_resource_to_dict(settings).copy()  # doing a shallow copy to avoid mutating the user input config
+        maybe_max_workers = loaded.pop("max_workers", None)
         current_settings = vars(self)
         if not loaded.keys() <= current_settings.keys():
             raise ValueError(
                 f"One or more invalid keys provided for global_config, no settings applied: {loaded.keys() - current_settings}"
             )
-
+        if "concurrency_settings" in loaded:
+            raise ValueError(
+                "Cannot apply 'concurrency_settings' via apply_settings. Modify the individual attributes on "
+                "'global_config.concurrency_settings' instead."
+            )
         if "default_client_config" in loaded:
             if not isinstance(loaded["default_client_config"], ClientConfig):
                 loaded["default_client_config"] = ClientConfig.load(loaded["default_client_config"])
 
         current_settings.update(loaded)
+        # Deprecated, stored using a property, hence the special treatment:
+        if maybe_max_workers is not None:
+            self.max_workers = maybe_max_workers
 
 
 global_config = GlobalConfig()
