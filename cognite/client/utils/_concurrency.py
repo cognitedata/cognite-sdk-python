@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import threading
 import warnings
 from collections import UserList
@@ -8,6 +9,7 @@ from collections.abc import Callable, Coroutine
 from functools import cache
 from typing import (
     Any,
+    Literal,
     NoReturn,
     TypeVar,
     cast,
@@ -18,23 +20,152 @@ from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, C
 from cognite.client.utils._auxiliary import no_op
 
 
-@cache
-def get_global_semaphore() -> asyncio.BoundedSemaphore:
-    from cognite.client import global_config
+class CRUDConcurrency:
+    """
+    Concurrency settings for different CRUD operation types, maybe on a specific API.
 
-    return asyncio.BoundedSemaphore(global_config.max_workers)
+    Args:
+        concurrency_settings (ConcurrencySettings): Refernece to the parent settings object, used to check if settings are frozen.
+        api_name (str): Which API these settings apply to (e.g. "data_modeling", "datapoints", etc.).
+        read (int): Maximum number of concurrent read requests (list, retrieve, search, etc.).
+        write (int): Maximum number of concurrent write requests (create, update, upsert, etc.).
+        delete (int): Maximum number of concurrent delete requests.
+    """
+
+    def __init__(
+        self,
+        concurrency_settings: ConcurrencySettings,
+        api_name: str,
+        read: int,
+        write: int,
+        delete: int,
+    ) -> None:
+        self._check_frozen: Callable[[str], None] = functools.partial(
+            concurrency_settings._check_frozen, api_name=api_name
+        )
+        self.api_name = api_name
+        self._read = read
+        self._write = write
+        self._delete = delete
+
+    @property
+    def read(self) -> int:
+        return self._read
+
+    @read.setter
+    def read(self, value: int) -> None:
+        self._check_frozen("read")
+        self._read = value
+
+    @property
+    def write(self) -> int:
+        return self._write
+
+    @write.setter
+    def write(self, value: int) -> None:
+        self._check_frozen("write")
+        self._write = value
+
+    @property
+    def delete(self) -> int:
+        return self._delete
+
+    @delete.setter
+    def delete(self, value: int) -> None:
+        self._check_frozen("delete")
+        self._delete = value
+
+    def __repr__(self) -> str:
+        return f"Concurrency[{self.api_name}](read={self._read}, write={self._write}, delete={self._delete})"
 
 
-@cache
-def get_global_datapoints_semaphore() -> asyncio.BoundedSemaphore:
-    from cognite.client import global_config
+class ConcurrencySettings:
+    """
+    Utility class for managing concurrency settings, controlled by semaphores.
+    The total concurrency budget, i.e. the maximum number of concurrent requests in flight,
+    is the sum of all categories (e.g. general) and operation types (e.g. read or write).
 
-    return asyncio.BoundedSemaphore(global_config.max_workers)
+    See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
 
+    Note:
+        The settings apply on a per-project level, thus if you have multiple clients
+        pointing to different CDF projects, each client will have its budget to consume from.
 
-@cache
-def get_global_data_modeling_semaphore() -> asyncio.BoundedSemaphore:
-    return asyncio.BoundedSemaphore(2)
+    Warning:
+        Once any semaphore is initialized (i.e., after the first API request is made),
+        all settings become frozen and cannot be changed. Attempting to modify frozen
+        settings will raise a RuntimeError.
+    """
+
+    def __init__(self) -> None:
+        self._general = CRUDConcurrency(self, "general", read=5, write=4, delete=2)
+        self._raw = CRUDConcurrency(self, "raw", read=5, write=2, delete=2)
+        self._datapoints = CRUDConcurrency(self, "datapoints", read=5, write=5, delete=5)
+        self._data_modeling = CRUDConcurrency(self, "data_modeling", read=2, write=1, delete=1)
+        self.__frozen = False
+
+    def _check_frozen(self, name: str, api_name: str) -> None:
+        if self.__frozen:
+            raise RuntimeError(
+                f"Cannot modify '{api_name}.{name}' after concurrency settings have been used to create semaphores. "
+                "Concurrency settings must be configured before sending any API requests. "
+                "See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings"
+            )
+
+    def _freeze(self) -> None:
+        """Called internally when settings are consumed to create semaphores."""
+        self.__frozen = True
+
+    @property
+    def is_frozen(self) -> bool:
+        """Returns True if settings have been frozen (at least one semaphore has been created and used)."""
+        return self.__frozen
+
+    @property
+    def general(self) -> CRUDConcurrency:
+        return self._general
+
+    @property
+    def datapoints(self) -> CRUDConcurrency:
+        return self._datapoints
+
+    @property
+    def data_modeling(self) -> CRUDConcurrency:
+        return self._data_modeling
+
+    @property
+    def raw(self) -> CRUDConcurrency:
+        return self._raw
+
+    def __repr__(self) -> str:
+        frozen_str = " (frozen)" if self.__frozen else ""
+        return (
+            f"ConcurrencySettings(\n"
+            f"  general={self._general},\n"
+            f"  raw={self._raw}\n"
+            f"  datapoints={self._datapoints},\n"
+            f"  data_modeling={self._data_modeling},\n"
+            f"){frozen_str}"
+        )
+
+    # Do not access concurrency_settings through self, we -must- go through global_config
+    @staticmethod
+    @cache
+    def _semaphore_factory(
+        api: Literal["general", "datapoints", "data_modeling", "raw"],
+    ) -> Callable[[Literal["read", "write", "delete"], str], asyncio.BoundedSemaphore]:
+        @cache
+        def factory(operation: Literal["read", "write", "delete"], project: str) -> asyncio.BoundedSemaphore:
+            # 'project' is included here to ensure semaphores are unique per project
+            # Consider: concat with cluster name in case of name collisions across clusters?
+            from cognite.client import global_config
+
+            global_config.concurrency_settings._freeze()
+            api_settings: CRUDConcurrency = getattr(global_config.concurrency_settings, api)
+            limit: int = getattr(api_settings, operation)
+            return asyncio.BoundedSemaphore(limit)
+
+        return factory
 
 
 class AsyncSDKTask:
