@@ -664,7 +664,7 @@ class BaseTaskOrchestrator(ABC):
     def _get_result(self) -> Datapoints | DatapointsArray: ...
 
     @abstractmethod
-    def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]: ...
+    def split_into_subtasks(self, concurrency_limit: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]: ...
 
     @property
     @abstractmethod
@@ -681,7 +681,7 @@ class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
             return math.inf
         return self.query.limit - self.n_dps_first_batch - self.subtasks[0].n_dps_fetched
 
-    def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
+    def split_into_subtasks(self, concurrency_limit: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
         # For serial fetching, a single task suffice
         start = self.query.start if self.eager_mode else self.first_start
         subtasks: list[BaseDpsFetchSubtask] = [
@@ -865,11 +865,11 @@ class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
     def get_remaining_limit(self) -> float:
         return math.inf
 
-    def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
+    def split_into_subtasks(self, concurrency_limit: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
         # Given e.g. a single time series, we want to put all our workers to work by splitting into lots of pieces!
         # As the number grows - or we start combining multiple into the same query - we want to split less:
         # we hold back to not create too many subtasks:
-        n_workers_per_queries = max(1, round(max_workers / n_tot_queries))
+        n_workers_per_queries = max(1, round(concurrency_limit / n_tot_queries))
         subtasks: list[BaseDpsFetchSubtask] = self._create_uniformly_split_subtasks(n_workers_per_queries)
         self.subtasks.extend(subtasks)
         self._maybe_queue_outside_dps_subtask(subtasks)
