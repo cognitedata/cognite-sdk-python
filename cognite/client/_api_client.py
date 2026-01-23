@@ -35,7 +35,7 @@ from cognite.client.utils._auxiliary import (
     unpack_items,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
+from cognite.client.utils._concurrency import AsyncSDKTask, ConcurrencySettings, execute_async_tasks
 from cognite.client.utils._identifier import (
     Identifier,
     IdentifierCore,
@@ -55,6 +55,10 @@ VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "un
 
 class APIClient(BasicAsyncAPIClient):
     _RESOURCE_PATH: ClassVar[str]
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        factory = ConcurrencySettings._semaphore_factory("general")
+        return factory(operation, self._cognite_client.config.project)
 
     async def _retrieve(
         self,
