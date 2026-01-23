@@ -68,7 +68,8 @@ Changes are grouped as follows:
 - Iterating through a `DatapointsArray` is no longer supported. Access the numpy arrays directly and use vectorised operations instead.
 - Extending a `Datapoints` instance is no longer supported.
 - **ClientConfig**:
-  - `max_workers` has now permanently moved to `global_config` after the deprecation period
+  - `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`.
+    See the `Settings documentation <https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings>`_ for details.
   - `timeout`: default has been increased from 30 sec to 60 sec
 - **global_config**:
   - New setting `follow_redirects` that controls whether or not to follow redirects. Defaults to `False`.
