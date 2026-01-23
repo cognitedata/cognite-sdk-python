@@ -232,6 +232,8 @@ class BasicAsyncAPIClient:
         timeout: float | None = None,
         include_cdf_headers: bool = False,
         api_subversion: str | None = None,
+        *,
+        semaphore: asyncio.BoundedSemaphore | None,
     ) -> CogniteHTTPResponse:
         """
         Make a request to something that is outside Cognite Data Fusion, with retry enabled.
@@ -245,6 +247,7 @@ class BasicAsyncAPIClient:
             timeout (float | None): Override the default timeout for this request.
             include_cdf_headers (bool): Whether to include Cognite Data Fusion headers in the request. Defaults to False.
             api_subversion (str | None): When include_cdf_headers=True, override the API subversion to use for the request. Has no effect otherwise.
+            semaphore (asyncio.BoundedSemaphore | None): Semaphore to limit concurrent requests. Pass None for no limit.
 
         Returns:
             CogniteHTTPResponse: The response from the server.
@@ -257,7 +260,12 @@ class BasicAsyncAPIClient:
             headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         try:
             res = await http_client.request(
-                method, full_url, content=content, headers=headers, timeout=timeout or self._config.timeout
+                method,
+                full_url,
+                content=content,
+                headers=headers,
+                timeout=timeout or self._config.timeout,
+                semaphore=semaphore,
             )
             self._log_successful_request(res)
             return res
@@ -280,6 +288,7 @@ class BasicAsyncAPIClient:
         full_headers: dict[str, Any] | None = None,
         timeout: float | None = None,
         api_subversion: str | None = None,
+        semaphore: asyncio.BoundedSemaphore | None,
     ) -> AsyncIterator[CogniteHTTPResponse]:
         assert url_path or full_url, "Either url_path or full_url must be provided"
         full_url = full_url or resolve_url(self, method, cast(str, url_path))[1]
@@ -287,7 +296,12 @@ class BasicAsyncAPIClient:
             full_headers = self._configure_headers(headers, api_subversion)
 
         ctx = self._http_client_with_retry.stream(
-            method, full_url, json=json, headers=full_headers, timeout=timeout or self._config.timeout
+            method,
+            full_url,
+            json=json,
+            headers=full_headers,
+            timeout=timeout or self._config.timeout,
+            semaphore=semaphore,
         )
         try:
             async with ctx as resp:
@@ -305,7 +319,8 @@ class BasicAsyncAPIClient:
         headers: dict[str, Any] | None = None,
         follow_redirects: bool = False,
         api_subversion: str | None = None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
+        *,
+        semaphore: asyncio.BoundedSemaphore | None,
     ) -> CogniteHTTPResponse:
         _, full_url = resolve_url(self, "GET", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
@@ -333,7 +348,8 @@ class BasicAsyncAPIClient:
         headers: dict[str, Any] | None = None,
         follow_redirects: bool = False,
         api_subversion: str | None = None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
+        *,
+        semaphore: asyncio.BoundedSemaphore | None,
     ) -> CogniteHTTPResponse:
         is_retryable, full_url = resolve_url(self, "POST", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
@@ -368,7 +384,8 @@ class BasicAsyncAPIClient:
         follow_redirects: bool = False,
         api_subversion: str | None = None,
         timeout: float | None = None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
+        *,
+        semaphore: asyncio.BoundedSemaphore | None,
     ) -> CogniteHTTPResponse:
         _, full_url = resolve_url(self, "PUT", url_path)
 
