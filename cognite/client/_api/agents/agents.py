@@ -247,7 +247,7 @@ class AgentsAPI(APIClient):
 
         """
         self._warnings.warn()
-        res = await self._get(url_path=self._RESOURCE_PATH)
+        res = await self._get(url_path=self._RESOURCE_PATH, semaphore=self._get_semaphore("read"))
         return AgentList._load(res.json()["items"])
 
     async def chat(
@@ -354,5 +354,7 @@ class AgentsAPI(APIClient):
         if actions is not None:
             body["actions"] = [action.dump(camel_case=True) for action in actions]
 
-        response = await self._post(url_path=self._RESOURCE_PATH + "/chat", json=body)
+        response = await self._post(
+            url_path=self._RESOURCE_PATH + "/chat", json=body, semaphore=self._get_semaphore("write")
+        )
         return AgentChatResponse._load(response.json())
