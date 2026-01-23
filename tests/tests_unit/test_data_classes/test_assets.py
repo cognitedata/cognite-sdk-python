@@ -28,7 +28,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteAssetHierarchyError
 from tests.tests_unit.conftest import DefaultResourceGenerator
-from tests.utils import rng_context
+from tests.utils import override_semaphore, rng_context
 
 
 class TestAsset:
@@ -132,7 +132,6 @@ class TestAssetList:
         mock_method = mock.AsyncMock()
         monkeypatch.setattr(async_client, method, mock_method)
         mock_method.list.side_effect = [resources_a1, resources_a2, resources_a3]
-        mock_method._config = mock.Mock(max_workers=3)
 
         assets = AssetList(
             [
@@ -142,17 +141,18 @@ class TestAssetList:
             ]
         ).set_client_ref(async_client)
 
-        actual_method = assets._retrieve_related_resources
+        with override_semaphore(3, target="general"):
+            actual_method = assets._retrieve_related_resources
 
-        async def override_chunk_size(*a: Any, **kw: Any) -> Any:
-            kw["chunk_size"] = 1
-            return await actual_method(*a, **kw)
+            async def override_chunk_size(*a: Any, **kw: Any) -> Any:
+                kw["chunk_size"] = 1
+                return await actual_method(*a, **kw)
 
-        monkeypatch.setattr(assets, "_retrieve_related_resources", override_chunk_size)
+            monkeypatch.setattr(assets, "_retrieve_related_resources", override_chunk_size)
 
-        resources = getattr(assets, method)()
-        expected = [r1, r2, r3]
-        TestCase().assertCountEqual(expected, resources)  # Asserts equal, but ignores ordering
+            resources = getattr(assets, method)()
+            expected = [r1, r2, r3]
+            TestCase().assertCountEqual(expected, resources)  # Asserts equal, but ignores ordering
 
     @pytest.mark.dsl
     def test_to_pandas_nullable_int(self, cognite_client: CogniteClient) -> None:

@@ -880,7 +880,7 @@ class TestDatapointsPoster:
                 ],
             ),
             (
-                # Way above ts limit x max_workers, exactly at dps limit
+                # Way above ts limit x concurrency_limit, exactly at dps limit
                 (10, 10, 7),
                 [{"id": i, d: [(i * 2, i)]} for i in range(1, 98)],
                 [[{"id": i, d: [(i * 2, i)]} for i in range(i, min(98, i + 10))] for i in range(1, 98, 10)],
