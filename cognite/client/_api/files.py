@@ -207,7 +207,10 @@ class FilesAPI(APIClient):
         if isinstance(file_metadata, FileMetadata):
             file_metadata = file_metadata.as_write()
         res = await self._post(
-            url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
+            url_path=self._RESOURCE_PATH,
+            json=file_metadata.dump(camel_case=True),
+            params={"overwrite": overwrite},
+            semaphore=self._get_semaphore("write"),
         )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
@@ -617,7 +620,11 @@ class FilesAPI(APIClient):
         identifiers = IdentifierSequence.load(external_ids=external_id, instance_ids=instance_id).as_singleton()
 
         try:
-            res = await self._post(url_path=f"{self._RESOURCE_PATH}/uploadlink", json={"items": identifiers.as_dicts()})
+            res = await self._post(
+                url_path=f"{self._RESOURCE_PATH}/uploadlink",
+                json={"items": identifiers.as_dicts()},
+                semaphore=self._get_semaphore("write"),
+            )
         except CogniteAPIError as e:
             if e.code == 403:
                 raise CogniteAuthorizationError(
@@ -655,6 +662,7 @@ class FilesAPI(APIClient):
             content=file_content,
             headers=headers,
             timeout=self._config.file_transfer_timeout,
+            semaphore=self._get_semaphore("write"),
         )
         if not upload_response.is_success:
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
@@ -733,6 +741,7 @@ class FilesAPI(APIClient):
                 url_path=self._RESOURCE_PATH,
                 json=file_metadata.dump(camel_case=True),
                 params={"overwrite": overwrite},
+                semaphore=self._get_semaphore("write"),
             )
         except CogniteAPIError as e:
             if e.code == 403 and "insufficient access rights" in e.message:
@@ -829,6 +838,7 @@ class FilesAPI(APIClient):
                 url_path=self._RESOURCE_PATH + "/initmultipartupload",
                 json=file_metadata.dump(camel_case=True),
                 params={"overwrite": overwrite, "parts": parts},
+                semaphore=self._get_semaphore("write"),
             )
         except CogniteAPIError as e:
             if e.code == 403 and "insufficient access rights" in e.message:
@@ -893,6 +903,7 @@ class FilesAPI(APIClient):
                 url_path=f"{self._RESOURCE_PATH}/multiuploadlink",
                 json={"items": identifiers.as_dicts()},
                 params={"parts": parts},
+                semaphore=self._get_semaphore("write"),
             )
         except CogniteAPIError as e:
             if e.code == 403:
@@ -934,6 +945,7 @@ class FilesAPI(APIClient):
             content=file_content,
             headers=headers,
             timeout=self._config.file_transfer_timeout,
+            semaphore=self._get_semaphore("write"),
         )
         if not upload_response.is_success:
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
@@ -947,6 +959,7 @@ class FilesAPI(APIClient):
         await self._post(
             self._RESOURCE_PATH + "/completemultipartupload",
             json={"id": session.file_metadata.id, "uploadId": session._upload_id},
+            semaphore=self._get_semaphore("write"),
         )
 
     async def retrieve_download_urls(
@@ -978,6 +991,7 @@ class FilesAPI(APIClient):
                 url_path=f"{self._RESOURCE_PATH}/downloadlink",
                 json={"items": batch.as_dicts()},
                 params=query_params,
+                semaphore=self._get_semaphore("read"),
             )
             for batch in identifiers.chunked(100)
         ]
@@ -1141,7 +1155,11 @@ class FilesAPI(APIClient):
         )
 
     async def _get_download_link(self, identifier: dict[str, int | str]) -> str:
-        response = await self._post(url_path=f"{self._RESOURCE_PATH}/downloadlink", json={"items": [identifier]})
+        response = await self._post(
+            url_path=f"{self._RESOURCE_PATH}/downloadlink",
+            json={"items": [identifier]},
+            semaphore=self._get_semaphore("read"),
+        )
         return unpack_items(response)[0]["downloadUrl"]
 
     async def _process_file_download(
@@ -1161,7 +1179,11 @@ class FilesAPI(APIClient):
         from cognite.client import global_config
 
         stream = self._stream(
-            "GET", full_url=download_link, full_headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
+            "GET",
+            full_url=download_link,
+            full_headers={"accept": "*/*"},
+            timeout=self._config.file_transfer_timeout,
+            semaphore=self._get_semaphore("read"),
         )
         with path.open("wb") as file:
             async with stream as response:
@@ -1227,6 +1249,7 @@ class FilesAPI(APIClient):
             full_url=download_link,
             headers={"accept": "*/*"},
             timeout=self._config.file_transfer_timeout,
+            semaphore=self._get_semaphore("read"),
         )
         return response.content
 
