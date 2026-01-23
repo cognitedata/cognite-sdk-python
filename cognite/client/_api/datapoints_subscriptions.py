@@ -318,6 +318,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 ...     pass  # do something
         """
         current_partitions = [DatapointSubscriptionPartition(partition, cursor)]
+        semaphore = self._get_semaphore("read")
         while True:
             body = {
                 "externalId": external_id,
@@ -332,7 +333,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 body["initializeCursors"] = start
                 start = None
 
-            res = await self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
+            res = await self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body, semaphore=semaphore)
             batch = _DatapointSubscriptionBatchWithPartitions.load(
                 res.json(), include_status=include_status, ignore_bad_datapoints=ignore_bad_datapoints
             )

@@ -174,9 +174,12 @@ class SyntheticDatapointsAPI(APIClient):
 
     async def _fetch_datapoints(self, query: dict[str, Any], limit: int, short_expression: str) -> Datapoints:
         datapoints = None
+        semaphore = self._get_semaphore("read")
         while True:
             query["limit"] = min(limit, self._DPS_LIMIT_SYNTH)
-            resp = await self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
+            resp = await self._post(
+                url_path=self._RESOURCE_PATH + "/query", json={"items": [query]}, semaphore=semaphore
+            )
             data = resp.json()["items"][0]
             new_dps = Datapoints._load_from_synthetic(data)
             if datapoints is None:
