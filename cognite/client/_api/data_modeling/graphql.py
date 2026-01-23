@@ -18,8 +18,10 @@ class DataModelingGraphQLAPI(APIClient):
         factory = ConcurrencySettings._semaphore_factory("data_modeling")
         return factory(operation, self._cognite_client.config.project)
 
-    async def _post_graphql(self, url_path: str, query_name: str, json: dict) -> dict[str, Any]:
-        res = (await self._post(url_path=url_path, json=json)).json()
+    async def _post_graphql(
+        self, url_path: str, query_name: str, json: dict, semaphore: asyncio.BoundedSemaphore
+    ) -> dict[str, Any]:
+        res = (await self._post(url_path=url_path, json=json, semaphore=semaphore)).json()
         # Errors can be passed both at top level and nested in the response:
         errors = res.get("errors", []) + ((res.get("data", {}).get(query_name) or {}).get("errors") or [])
         if errors:
@@ -56,9 +58,13 @@ class DataModelingGraphQLAPI(APIClient):
                 "version": data_model_id.version,
             },
         }
-
         query_name = "unsafelyWipeAndRegenerateDmlBasedOnDataModel"
-        res = await self._post_graphql(url_path="/dml/graphql", query_name=query_name, json=payload)
+        res = await self._post_graphql(
+            url_path="/dml/graphql",
+            query_name=query_name,
+            json=payload,
+            semaphore=self._get_semaphore("delete"),
+        )
         return res[query_name]["items"][0]["graphQlDml"]
 
     async def apply_dml(
@@ -139,7 +145,12 @@ class DataModelingGraphQLAPI(APIClient):
         }
 
         query_name = "upsertGraphQlDmlVersion"
-        res = await self._post_graphql(url_path="/dml/graphql", query_name=query_name, json=payload)
+        res = await self._post_graphql(
+            url_path="/dml/graphql",
+            query_name=query_name,
+            json=payload,
+            semaphore=self._get_semaphore("write"),
+        )
         return DMLApplyResult.load(res[query_name]["result"])
 
     async def query(
@@ -171,4 +182,9 @@ class DataModelingGraphQLAPI(APIClient):
         endpoint = interpolate_and_url_encode(
             "/userapis/spaces/{}/datamodels/{}/versions/{}/graphql", dm_id.space, dm_id.external_id, dm_id.version
         )
-        return await self._post_graphql(url_path=endpoint, query_name="", json={"query": query, "variables": variables})
+        return await self._post_graphql(
+            url_path=endpoint,
+            query_name="",
+            json={"query": query, "variables": variables},
+            semaphore=self._get_semaphore("read"),
+        )

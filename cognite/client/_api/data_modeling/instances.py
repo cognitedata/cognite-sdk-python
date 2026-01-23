@@ -784,11 +784,12 @@ class InstancesAPI(APIClient):
             raise ValueError("Must pass at least one of 'involved_views' or 'involved_containers'")
 
         items = []
+        semaphore = self._get_semaphore("read")
         for chunk in identifiers.chunked(1000):
             response = await self._post(
                 self._RESOURCE_PATH + "/inspect",
                 json={"items": chunk.as_dicts(), "inspectionOperations": inspect_operations},
-                semaphore=self.__dm_semaphore,
+                semaphore=semaphore,
             )
             items.extend(unpack_items(response))
 
@@ -1256,7 +1257,8 @@ class InstancesAPI(APIClient):
                     raise ValueError("nulls_first argument is not supported when sorting on instance search")
             body["sort"] = [self._dump_instance_sort(s) for s in sorts]
 
-        res = await self._post(url_path=self._RESOURCE_PATH + "/search", json=body, semaphore=self.__dm_semaphore)
+        semaphore = self._get_semaphore("read")
+        res = await self._post(url_path=self._RESOURCE_PATH + "/search", json=body, semaphore=semaphore)
         result = res.json()
         return list_cls(
             [resource_cls._load(item) for item in result["items"]],  # type: ignore [misc]
@@ -1381,7 +1383,8 @@ class InstancesAPI(APIClient):
         if target_units:
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
-        res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=self.__dm_semaphore)
+        semaphore = self._get_semaphore("read")
+        res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=semaphore)
         result_list = InstanceAggregationResultList._load(res.json()["items"])
         if group_by is not None:
             return result_list
@@ -1490,7 +1493,8 @@ class InstancesAPI(APIClient):
         if target_units:
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
-        res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=self.__dm_semaphore)
+        semaphore = self._get_semaphore("read")
+        res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=semaphore)
         if is_singleton:
             return HistogramValue.load(res.json()["items"][0]["aggregates"][0])
         else:
@@ -1648,8 +1652,9 @@ class InstancesAPI(APIClient):
                 self._warn_on_alpha_debug_settings.warn()
                 headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
 
+        semaphore = self._get_semaphore("read")
         response = await self._post(
-            url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body, headers=headers, semaphore=self.__dm_semaphore
+            url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body, headers=headers, semaphore=semaphore
         )
         json_payload = response.json()
         default_by_reference = query.instance_type_by_result_expression()

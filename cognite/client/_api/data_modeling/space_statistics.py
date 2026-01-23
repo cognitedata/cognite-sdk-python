@@ -88,5 +88,5 @@ class SpaceStatisticsAPI(APIClient):
                 ...     print(f"Space: {space_stats.space}, Nodes: {space_stats.nodes}")
 
         """
-        response = await self._get(self._RESOURCE_PATH)
+        response = await self._get(self._RESOURCE_PATH, semaphore=self._get_semaphore("read"))
         return SpaceStatisticsList._load(response.json()["items"])

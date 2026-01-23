@@ -196,24 +196,21 @@ class ContainersAPI(APIClient):
         ids: Sequence[ConstraintIdentifier] | Sequence[IndexIdentifier],
         constraint_or_index: Literal["constraints", "indexes"],
     ) -> list[tuple[ContainerId, str]]:
+        items = [
+            {
+                "space": constraint_id[0].space,
+                "containerExternalId": constraint_id[0].external_id,
+                "identifier": constraint_id[1],
+            }
+            for constraint_id in ids
+        ]
         res = await self._post(
             url_path=f"{self._RESOURCE_PATH}/{constraint_or_index}/delete",
-            json={
-                "items": [
-                    {
-                        "space": constraint_id[0].space,
-                        "containerExternalId": constraint_id[0].external_id,
-                        "identifier": constraint_id[1],
-                    }
-                    for constraint_id in ids
-                ]
-            },
+            json={"items": items},
+            semaphore=self._get_semaphore("delete"),
         )
         return [
-            (
-                ContainerId(space=item["space"], external_id=item["containerExternalId"]),
-                item["identifier"],
-            )
+            (ContainerId(space=item["space"], external_id=item["containerExternalId"]), item["identifier"])
             for item in res.json()["items"]
         ]
 
