@@ -25,6 +25,7 @@ from cognite.client.data_classes._base import (
     T_CogniteResource,
     T_CogniteResourceList,
     T_WritableCogniteResource,
+    WriteableCogniteResource,
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
@@ -74,6 +75,7 @@ class APIClient(BasicAsyncAPIClient):
                 url_path=interpolate_and_url_encode(resource_path + "/{}", str(identifier.as_primitive())),
                 params=params,
                 headers=headers,
+                semaphore=self._get_semaphore("read"),
             )
             return cls._load(res.json())._maybe_set_client_ref(self._cognite_client)
         except CogniteAPIError as e:
@@ -94,7 +96,6 @@ class APIClient(BasicAsyncAPIClient):
         params: dict[str, Any] | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResource | None: ...
 
     @overload
@@ -110,7 +111,6 @@ class APIClient(BasicAsyncAPIClient):
         params: dict[str, Any] | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList: ...
 
     async def _retrieve_multiple(
@@ -125,11 +125,10 @@ class APIClient(BasicAsyncAPIClient):
         params: dict[str, Any] | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
-
         ignore_unknown_obj = {} if ignore_unknown_ids is None else {"ignoreUnknownIds": ignore_unknown_ids}
+        semaphore = self._get_semaphore("read")
         tasks = [
             AsyncSDKTask(
                 self._post,
@@ -235,6 +234,7 @@ class APIClient(BasicAsyncAPIClient):
         )
         unprocessed_items: list[dict[str, Any]] = []
         total_retrieved, current_limit, next_cursor = 0, self._LIST_LIMIT, initial_cursor
+        semaphore = semaphore or self._get_semaphore("read")
         while True:
             if limit and (n_remaining := limit - total_retrieved) < current_limit:
                 current_limit = n_remaining
@@ -294,6 +294,7 @@ class APIClient(BasicAsyncAPIClient):
             limit, method, filter, url_path, resource_path, sort, other_params, advanced_filter
         )
         total_retrieved, current_limit, next_cursor = 0, self._LIST_LIMIT, initial_cursor
+        semaphore = semaphore or self._get_semaphore("read")
         while True:
             if limit and (n_remaining := limit - total_retrieved) < current_limit:
                 current_limit = n_remaining
@@ -409,9 +410,9 @@ class APIClient(BasicAsyncAPIClient):
         advanced_filter: dict | Filter | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList:
         verify_limit(limit)
+        semaphore = self._get_semaphore("read")
         if partitions:
             if not is_unlimited(limit):
                 raise ValueError(
@@ -425,7 +426,7 @@ class APIClient(BasicAsyncAPIClient):
                     f"supported (yet): {settings_forcing_raw_response_loading}"
                 )
             assert initial_cursor is api_subversion is None
-            return await self._list_partitioned(
+            return await self.__list_partitioned(
                 partitions=partitions,
                 method=method,
                 list_cls=list_cls,
@@ -481,7 +482,7 @@ class APIClient(BasicAsyncAPIClient):
             list(itertools.chain.from_iterable(cast(T_CogniteResourceList, resource_lists)))
         )._maybe_set_client_ref(self._cognite_client)
 
-    async def _get_partition(
+    async def __get_partition(
         self,
         method: Literal["POST", "GET"],
         partition: int,
@@ -490,7 +491,7 @@ class APIClient(BasicAsyncAPIClient):
         url_path: str,
         headers: dict[str, Any] | None,
         filter: dict[str, Any],
-        semaphore: asyncio.BoundedSemaphore | None,
+        semaphore: asyncio.BoundedSemaphore,
     ) -> list[dict[str, Any]]:
         next_cursor = None
         retrieved_items = []
@@ -510,7 +511,7 @@ class APIClient(BasicAsyncAPIClient):
                 params = (
                     filter | {"limit": self._LIST_LIMIT, "cursor": next_cursor, "partition": partition} | other_params
                 )
-                res = await self._get(url_path=url_path, params=params, headers=headers)
+                res = await self._get(url_path=url_path, params=params, headers=headers, semaphore=semaphore)
             else:
                 raise ValueError(f"Unsupported method: {method}")
 
@@ -520,7 +521,7 @@ class APIClient(BasicAsyncAPIClient):
                 break
         return retrieved_items
 
-    async def _list_partitioned(
+    async def __list_partitioned(
         self,
         partitions: int,
         method: Literal["POST", "GET"],
@@ -530,13 +531,14 @@ class APIClient(BasicAsyncAPIClient):
         other_params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
         advanced_filter: dict | Filter | None = None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
+        *,
+        semaphore: asyncio.BoundedSemaphore,
     ) -> T_CogniteResourceList:
         if isinstance(advanced_filter, Filter):
             advanced_filter = advanced_filter.dump(camel_case_property=True)
         tasks = [
             AsyncSDKTask(
-                self._get_partition,
+                self.__get_partition,
                 method,
                 partition=f"{i}/{partitions}",
                 other_params=other_params or {},
@@ -570,7 +572,12 @@ class APIClient(BasicAsyncAPIClient):
 
         resource_path = resource_path or self._RESOURCE_PATH
         body: dict[str, Any] = {"filter": dumped_filter}
-        res = await self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
+        res = await self._post(
+            url_path=resource_path + "/aggregate",
+            json=body,
+            headers=headers,
+            semaphore=self._get_semaphore("read"),
+        )
         return unpack_items(res)[0]["count"]
 
     @overload
@@ -681,7 +688,12 @@ class APIClient(BasicAsyncAPIClient):
         if limit is not None:
             body["limit"] = limit
 
-        res = await self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body, api_subversion=api_subversion)
+        res = await self._post(
+            url_path=f"{self._RESOURCE_PATH}/aggregate",
+            json=body,
+            api_subversion=api_subversion,
+            semaphore=self._get_semaphore("read"),
+        )
         json_items = unpack_items(res)
         if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
             return json_items[0]["count"]
@@ -703,7 +715,6 @@ class APIClient(BasicAsyncAPIClient):
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         api_subversion: str | None = None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList: ...
 
     @overload
@@ -719,7 +730,6 @@ class APIClient(BasicAsyncAPIClient):
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         api_subversion: str | None = None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_WritableCogniteResource: ...
 
     async def _create_multiple(
@@ -734,7 +744,6 @@ class APIClient(BasicAsyncAPIClient):
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
         api_subversion: str | None = None,
-        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> T_CogniteResourceList | T_WritableCogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         input_resource_cls = input_resource_cls or resource_cls
@@ -745,6 +754,7 @@ class APIClient(BasicAsyncAPIClient):
         else:
             items = cast(Sequence[T_WritableCogniteResource] | Sequence[dict[str, Any]], items)
 
+        semaphore = self._get_semaphore("write")
         items = [item.as_write() if isinstance(item, SupportsAsWrite) else item for item in items]
         tasks = [
             AsyncSDKTask(
@@ -789,10 +799,10 @@ class APIClient(BasicAsyncAPIClient):
         extra_body_fields: dict[str, Any] | None = None,
         returns_items: bool = False,
         delete_endpoint: str = "/delete",
-        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> list | None:
         resource_path = (resource_path or self._RESOURCE_PATH) + delete_endpoint
         extra_body_fields = extra_body_fields or {}
+        semaphore = self._get_semaphore("delete")
         tasks = [
             AsyncSDKTask(
                 self._post,
@@ -882,6 +892,7 @@ class APIClient(BasicAsyncAPIClient):
             else:
                 raise ValueError("update item must be of type CogniteResource or CogniteUpdate")
 
+        semaphore = self._get_semaphore("write")
         tasks = [
             AsyncSDKTask(
                 self._post,
@@ -890,6 +901,7 @@ class APIClient(BasicAsyncAPIClient):
                 params=params,
                 headers=headers,
                 api_subversion=api_subversion,
+                semaphore=semaphore,
             )
             for chunk in split_into_chunks(patch_objects, self._UPDATE_LIMIT)
         ]
@@ -917,7 +929,7 @@ class APIClient(BasicAsyncAPIClient):
     ) -> T_WritableCogniteResource | T_CogniteResourceList:
         if mode not in ["patch", "replace"]:
             raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
-        is_single = isinstance(items, SupportsAsWrite)  # WriteableCogniteResource (optionally with client ref)
+        is_single = isinstance(items, WriteableCogniteResource)
         items = cast(Sequence[T_WritableCogniteResource], [items] if is_single else items)
         try:
             result = await self._update_multiple(
@@ -936,7 +948,7 @@ class APIClient(BasicAsyncAPIClient):
             try:
                 missing_external_ids = {entry["externalId"] for entry in not_found_error.missing}
             except KeyError:
-                # There is a not found internal id, which means we cannot identify it.
+                # There is a not found internal ID, which means we cannot identify it.
                 raise not_found_error
             to_create = [items_by_external_id[xid] for xid in not_found_error.failed if xid in missing_external_ids]
 
@@ -1040,6 +1052,7 @@ class APIClient(BasicAsyncAPIClient):
             params=params,
             headers=headers,
             api_subversion=api_subversion,
+            semaphore=self._get_semaphore("read"),
         )
         return list_cls._load(unpack_items(res))._maybe_set_client_ref(self._cognite_client)
 
