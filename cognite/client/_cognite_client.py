@@ -98,7 +98,7 @@ class AsyncCogniteClient:
         self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
     ) -> CogniteHTTPResponse:
         """Perform a GET request to an arbitrary path in the API."""
-        return await self._api_client._get(url, params=params, headers=headers)
+        return await self._api_client._get(url, params=params, headers=headers, semaphore=None)
 
     async def post(
         self,
@@ -108,7 +108,7 @@ class AsyncCogniteClient:
         headers: dict[str, Any] | None = None,
     ) -> CogniteHTTPResponse:
         """Perform a POST request to an arbitrary path in the API."""
-        return await self._api_client._post(url, json=json, params=params, headers=headers)
+        return await self._api_client._post(url, json=json, params=params, headers=headers, semaphore=None)
 
     async def put(
         self,
@@ -118,7 +118,7 @@ class AsyncCogniteClient:
         headers: dict[str, Any] | None = None,
     ) -> CogniteHTTPResponse:
         """Perform a PUT request to an arbitrary path in the API."""
-        return await self._api_client._put(url, json=json, params=params, headers=headers)
+        return await self._api_client._put(url, json=json, params=params, headers=headers, semaphore=None)
 
     @property
     def version(self) -> str:
