@@ -259,34 +259,46 @@ class TimeSeriesID(CogniteResource):
     A TimeSeries Identifier to uniquely identify a time series.
 
     Args:
-        id (int): A server-generated ID for the object.
+        id (int | None): A server-generated ID for the object. May be None if the time series
+            reference is broken (e.g., the time series was deleted or its external_id was changed).
         external_id (ExternalId | None): The external ID provided by the client. Must be unique for the resource type.
         instance_id (NodeId | None): The ID of an instance in Cognite Data Models.
     """
 
-    def __init__(self, id: int, external_id: ExternalId | None = None, instance_id: NodeId | None = None) -> None:
+    def __init__(
+        self, id: int | None = None, external_id: ExternalId | None = None, instance_id: NodeId | None = None
+    ) -> None:
         self.id = id
         self.external_id = external_id
         self.instance_id = instance_id
 
+    @property
+    def is_resolved(self) -> bool:
+        """Returns True if this reference points to an existing time series (i.e., has an id)."""
+        return self.id is not None
+
     def __repr__(self) -> str:
-        identifier = f"id={self.id}"
+        parts = []
+        if self.id is not None:
+            parts.append(f"id={self.id}")
         if self.external_id is not None:
-            identifier += f", external_id={self.external_id}"
-        elif self.instance_id is not None:
-            identifier += f", instance_id={self.instance_id!r}"
-        return f"TimeSeriesID({identifier})"
+            parts.append(f"external_id={self.external_id}")
+        if self.instance_id is not None:
+            parts.append(f"instance_id={self.instance_id!r}")
+        return f"TimeSeriesID({', '.join(parts)})"
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> TimeSeriesID:
         return cls(
-            id=resource["id"],
+            id=resource.get("id"),
             external_id=resource.get("externalId"),
             instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        resource: dict[str, Any] = {"id": self.id}
+        resource: dict[str, Any] = {}
+        if self.id is not None:
+            resource["id"] = self.id
         if self.external_id is not None:
             resource["externalId" if camel_case else "external_id"] = self.external_id
         if self.instance_id is not None:

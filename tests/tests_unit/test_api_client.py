@@ -229,6 +229,20 @@ class TestBasicRequests:
         exc_msg = exc_info.value.args[0]
         assert "contain NaN(s) or +/- Inf!" not in exc_msg
 
+    def test_client_with_base_url_including_path_segments(self, cognite_client: AsyncCogniteClient) -> None:
+        client = APIClient(
+            ClientConfig(
+                client_name="any",
+                project="test-project",
+                base_url="https://bla.bla.com/extra",
+                headers={"x-cdp-app": "python-sdk-integration-tests"},
+                credentials=Token(lambda: "abc"),
+            ),
+            api_version="v1",
+            cognite_client=cognite_client,
+        )
+        assert client._base_url_with_base_path == "https://bla.bla.com/extra/api/v1/projects/test-project"
+
 
 class SomeUpdate(CogniteUpdate):
     @property
