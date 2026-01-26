@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from collections.abc import Iterable, Sequence
+from functools import cached_property
 from typing import Any, cast
 
 from typing_extensions import Self
@@ -122,8 +123,9 @@ class SpaceApplyList(CogniteResourceList[SpaceApply]):
 class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
     _RESOURCE = Space
 
-    def _build_id_mappings(self) -> None:
-        self._space_to_item = {inst.space: inst for inst in self.data}
+    @cached_property
+    def _space_to_item(self) -> dict[str, Space]:
+        return {inst.space: inst for inst in self.data}
 
     def get(self, space: str) -> Space | None:  # type: ignore [override]
         """Get a space object from this list by space ID.
