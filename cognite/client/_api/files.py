@@ -6,7 +6,7 @@ from collections import defaultdict
 from collections.abc import AsyncIterator, Sequence
 from pathlib import Path
 from typing import Any, BinaryIO, Literal, overload
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -25,7 +25,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
-from cognite.client.utils._auxiliary import find_duplicates, unpack_items
+from cognite.client.utils._auxiliary import append_url_path, find_duplicates, unpack_items
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._uploading import prepare_content_for_upload
@@ -638,7 +638,7 @@ class FilesAPI(APIClient):
         if urlparse(upload_url).netloc:
             full_upload_url = upload_url
         else:
-            full_upload_url = urljoin(self._config.base_url, upload_url)
+            full_upload_url = append_url_path(self._config.base_url, upload_url)
 
         headers = {"accept": "*/*"}
         file_metadata = FileMetadata._load(returned_file_metadata)

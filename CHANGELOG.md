@@ -13,6 +13,21 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.91.2](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.91.1...cognite-sdk-python-v7.91.2) (2026-01-23)
+
+
+### Bug Fixes
+
+* Fix how paths are concatenated in _get_base_url_with_base_path to handle urls with gateway ([#2448](https://github.com/cognitedata/cognite-sdk-python/issues/2448)) ([88c64f5](https://github.com/cognitedata/cognite-sdk-python/commit/88c64f5a69b7b7c232f82e3a10390561c295cb26))
+
+## [7.91.1](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.91.0...cognite-sdk-python-v7.91.1) (2026-01-13)
+
+
+### Bug Fixes
+
+* handle missing id in TimeSeriesID for broken subscription references ([#2426](https://github.com/cognitedata/cognite-sdk-python/issues/2426)) ([7ce839c](https://github.com/cognitedata/cognite-sdk-python/commit/7ce839c0e2a917ec828b2e4538b0aab089404dcf))
+* restore log flow to root logger on disable (DM-3439) ([#2429](https://github.com/cognitedata/cognite-sdk-python/issues/2429)) ([7c6f363](https://github.com/cognitedata/cognite-sdk-python/commit/7c6f36325cdff2e9eeb9573ca031511917dd531d))
+
 ## [7.91.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.90.1...cognite-sdk-python-v7.91.0) (2026-01-06)
 
 

@@ -9,7 +9,6 @@ from collections.abc import AsyncIterator, MutableMapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
-from urllib.parse import urljoin
 
 import httpx
 from typing_extensions import Self
@@ -24,7 +23,7 @@ from cognite.client.exceptions import (
     CogniteProjectAccessError,
 )
 from cognite.client.utils import _json_extended as _json
-from cognite.client.utils._auxiliary import drop_none_values
+from cognite.client.utils._auxiliary import append_url_path, drop_none_values
 from cognite.client.utils._text import shorten
 from cognite.client.utils._url import resolve_url
 
@@ -219,7 +218,8 @@ class BasicAsyncAPIClient:
     @property
     def _base_url_with_base_path(self) -> str:
         if self._api_version:
-            return urljoin(self._config.base_url, f"/api/{self._api_version}/projects/{self._config.project}")
+            base_path = f"/api/{self._api_version}/projects/{self._config.project}"
+            return append_url_path(self._config.base_url, base_path)
         return self._config.base_url
 
     async def _request(

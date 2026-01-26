@@ -12,6 +12,7 @@ from typing import (
     TypeVar,
     overload,
 )
+from urllib.parse import urlparse, urlunparse
 
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._importing import local_import
@@ -205,3 +206,9 @@ def unpack_items(res: CogniteHTTPResponse) -> list[Any]:
 
 def drop_none_values(dct: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in dct.items() if v is not None}
+
+
+def append_url_path(base_url: str, path: str) -> str:
+    parsed = urlparse(base_url)
+    new_path = f"{parsed.path.rstrip('/')}/{path.lstrip('/')}"
+    return urlunparse(parsed._replace(path=new_path)).rstrip("/")

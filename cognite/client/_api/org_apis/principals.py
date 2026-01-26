@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import overload
-from urllib.parse import urljoin
 
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._org_client import OrgAPIClient
 from cognite.client.data_classes.principals import Principal, PrincipalList
+from cognite.client.utils._auxiliary import append_url_path
 from cognite.client.utils._identifier import PrincipalIdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -30,9 +30,8 @@ class PrincipalsAPI(OrgAPIClient):
         """
         # the /me endpoint is not using the /orgs/{org} base path, so we have to construct the URL manually
         path = f"/api/{self._api_version}{self._RESOURCE_PATH}/me"
-        full_url = urljoin(self._AUTH_URL, path)
-
-        response = await self._cognite_client._a.get(url=full_url)  # type: ignore [attr-defined]
+        full_url = append_url_path(self._AUTH_URL, path)
+        response = await self._cognite_client.get(url=full_url)
         return Principal._load(response.json())
 
     @overload
