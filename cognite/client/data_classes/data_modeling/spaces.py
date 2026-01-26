@@ -122,8 +122,15 @@ class SpaceApplyList(CogniteResourceList[SpaceApply]):
 class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
     _RESOURCE = Space
 
-    def _build_id_mappings(self) -> None:
-        self._space_to_item = {inst.space: inst for inst in self.data}
+    def __init__(self, resources: Sequence[Space]) -> None:
+        super().__init__(resources)
+        self.__space_to_item: dict[str, Space] | None = None
+
+    @property
+    def _space_to_item(self) -> dict[str, Space]:
+        if self.__space_to_item is None:
+            self.__space_to_item = {inst.space: inst for inst in self.data}
+        return self.__space_to_item
 
     def get(self, space: str) -> Space | None:  # type: ignore [override]
         """Get a space object from this list by space ID.
