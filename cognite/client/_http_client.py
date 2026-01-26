@@ -147,7 +147,7 @@ class RetryTracker:
         """
         base = self.config.backoff_factor * 2**self.total
         cap = min(base, self.config.max_backoff_seconds)
-        return 0.1 + random.uniform(0, cap)
+        return random.uniform(0.1, cap)
 
     async def back_off(self) -> None:
         backoff_time = self.get_backoff_time()
