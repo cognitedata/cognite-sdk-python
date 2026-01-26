@@ -244,18 +244,36 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
                     f"'{self._RESOURCE.__name__}', not '{type(resources[0])}'."
                 )
         super().__init__(resources)
-        self._build_id_mappings()  # TODO: Make lazy?
+        self.__id_to_item: dict[int, T_CogniteResource] | None = None
+        self.__external_id_to_item: dict[str, T_CogniteResource] | None = None
+        self.__instance_id_to_item: dict[InstanceId, T_CogniteResource] | None = None
 
-    def _build_id_mappings(self) -> None:
-        self._id_to_item, self._external_id_to_item, self._instance_id_to_item = {}, {}, {}
-        if not self.data:
-            return
-        if hasattr(self.data[0], "external_id"):
-            self._external_id_to_item = {item.external_id: item for item in self.data if item.external_id is not None}
-        if hasattr(self.data[0], "id"):
-            self._id_to_item = {item.id: item for item in self.data if item.id is not None}
-        if hasattr(self.data[0], "instance_id"):
-            self._instance_id_to_item = {item.instance_id: item for item in self.data if item.instance_id is not None}
+    @property
+    def _id_to_item(self) -> dict[int, T_CogniteResource]:
+        if self.__id_to_item is None:
+            if self.data and hasattr(self.data[0], "id"):
+                self.__id_to_item = {item.id: item for item in self.data if item.id is not None}
+            else:
+                self.__id_to_item = {}
+        return self.__id_to_item
+
+    @property
+    def _external_id_to_item(self) -> dict[str, T_CogniteResource]:
+        if self.__external_id_to_item is None:
+            if self.data and hasattr(self.data[0], "external_id"):
+                self.__external_id_to_item = {item.external_id: item for item in self.data if item.external_id is not None}
+            else:
+                self.__external_id_to_item = {}
+        return self.__external_id_to_item
+
+    @property
+    def _instance_id_to_item(self) -> dict[InstanceId, T_CogniteResource]:
+        if self.__instance_id_to_item is None:
+            if self.data and hasattr(self.data[0], "instance_id"):
+                self.__instance_id_to_item = {item.instance_id: item for item in self.data if item.instance_id is not None}
+            else:
+                self.__instance_id_to_item = {}
+        return self.__instance_id_to_item
 
     def pop(self, i: int = -1) -> T_CogniteResource:
         return super().pop(i)
