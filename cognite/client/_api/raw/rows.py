@@ -609,5 +609,4 @@ class RawRowsAPI(APIClient):
         )
         return RowList(
             [row async for row_list in rows_iterator for row in row_list],
-            cognite_client=self._cognite_client,
         )

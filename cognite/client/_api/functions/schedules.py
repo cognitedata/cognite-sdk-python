@@ -90,7 +90,7 @@ class FunctionSchedulesAPI(APIClient):
                 yield s
         else:
             for chunk in split_into_chunks(schedules.data, chunk_size):
-                yield FunctionSchedulesList(chunk, cognite_client=self._cognite_client)
+                yield FunctionSchedulesList(chunk)
 
     @overload
     async def retrieve(self, id: int, ignore_unknown_ids: bool = False) -> FunctionSchedule | None: ...
@@ -182,7 +182,7 @@ class FunctionSchedulesAPI(APIClient):
             json={"filter": filter, "limit": limit},
         )
 
-        return FunctionSchedulesList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FunctionSchedulesList._load(res.json()["items"])
 
     async def create(
         self,

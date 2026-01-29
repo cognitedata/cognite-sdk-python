@@ -2,38 +2,34 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
+from typing import Any, ClassVar, Literal, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     ExternalIDTransformerMixin,
     PropertySpec,
-    UnknownCogniteObject,
+    UnknownCogniteResource,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
 
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
 
 @dataclass
-class CustomMapping(CogniteObject):
+class CustomMapping(CogniteResource):
     expression: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(expression=resource["expression"])
 
 
 @dataclass
-class InputMapping(CogniteObject, ABC):
+class InputMapping(CogniteResource, ABC):
     _type: ClassVar[str]
 
     @classmethod
@@ -42,7 +38,7 @@ class InputMapping(CogniteObject, ABC):
         raise NotImplementedError()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -50,7 +46,7 @@ class InputMapping(CogniteObject, ABC):
             raise KeyError("type")
         job_cls = _INPUTMAPPING_CLASS_BY_TYPE.get(type_)
         if job_cls is None:
-            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+            return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, job_cls._load_input(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -60,12 +56,12 @@ class InputMapping(CogniteObject, ABC):
 
 
 @dataclass
-class ProtoBufFile(CogniteObject):
+class ProtoBufFile(CogniteResource):
     file_name: str
     content: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             file_name=resource["fileName"],
             content=resource["content"],
@@ -168,7 +164,7 @@ class MappingWrite(_MappingCore):
             raise TypeError(f"Invalid input type: {input}")
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
             mapping=CustomMapping._load(resource["mapping"]),
@@ -216,7 +212,7 @@ class Mapping(_MappingCore):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
             mapping=CustomMapping._load(resource["mapping"]),

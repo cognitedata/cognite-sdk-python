@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
+from typing import Any
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
@@ -95,9 +92,9 @@ class AgentUpsert(AgentCore):
         return self
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> AgentUpsert:
+    def _load(cls, resource: dict[str, Any]) -> AgentUpsert:
         tools = (
-            [AgentTool._load(item, cognite_client).as_write() for item in resource.get("tools", [])]
+            [AgentTool._load(item).as_write() for item in resource.get("tools", [])]
             if isinstance(resource.get("tools"), Sequence)
             else None
         )
@@ -153,7 +150,7 @@ class Agent(AgentCore):
             model=model,
             labels=labels,
         )
-        self.tools: AgentToolList = AgentToolList(tools if tools is not None else [])
+        self.tools = AgentToolList(tools if tools is not None else [])
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.owner_id = owner_id
@@ -182,7 +179,7 @@ class Agent(AgentCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Agent:
+    def _load(cls, resource: dict[str, Any]) -> Agent:
         instance = cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -212,4 +209,4 @@ class AgentList(
 
     def as_write(self) -> AgentUpsertList:
         """Returns this AgentList as writeableinstance"""
-        return AgentUpsertList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
+        return AgentUpsertList([item.as_write() for item in self.data])

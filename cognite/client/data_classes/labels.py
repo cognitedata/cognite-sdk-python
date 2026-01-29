@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from abc import ABC
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
-    CogniteObject,
+    CogniteResource,
     CogniteResourceList,
     ExternalIDTransformerMixin,
     WriteableCogniteResource,
@@ -16,13 +16,10 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
 
 class LabelDefinitionCore(WriteableCogniteResource["LabelDefinitionWrite"], ABC):
     """A label definition is a globally defined label that can later be attached to resources (e.g., assets). For example, can you define a "Pump" label definition and attach that label to your pump assets.
-    This is the parent for the reading and writing versions.
+    This is the parent for the reading and write versions.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -46,7 +43,7 @@ class LabelDefinitionCore(WriteableCogniteResource["LabelDefinitionWrite"], ABC)
 
 class LabelDefinition(LabelDefinitionCore):
     """A label definition is a globally defined label that can later be attached to resources (e.g., assets). For example, can you define a "Pump" label definition and attach that label to your pump assets.
-    This is the reading version of the LabelDefinition class. It is used when retrieving existing label definitions.
+    This is the read version of the LabelDefinition class. It is used when retrieving existing label definitions.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -54,7 +51,6 @@ class LabelDefinition(LabelDefinitionCore):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         description (str | None): Description of the label.
         data_set_id (int | None): The id of the dataset this label belongs to.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -64,7 +60,6 @@ class LabelDefinition(LabelDefinitionCore):
         created_time: int,
         description: str | None,
         data_set_id: int | None,
-        cognite_client: AsyncCogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -73,23 +68,21 @@ class LabelDefinition(LabelDefinitionCore):
             data_set_id=data_set_id,
         )
         self.created_time = created_time
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
             name=resource["name"],
             created_time=resource["createdTime"],
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
-            cognite_client=cognite_client,
         )
 
     def as_write(self) -> LabelDefinitionWrite:
-        """Returns this LabelDefinition in its writing version."""
+        """Returns this LabelDefinition in its write version."""
         if self.external_id is None or self.name is None:
-            raise ValueError("External ID and name are required for the writing version of a label definition.")
+            raise ValueError("External ID and name are required for the write version of a label definition.")
         return LabelDefinitionWrite(
             external_id=self.external_id,
             name=self.name,
@@ -100,7 +93,7 @@ class LabelDefinition(LabelDefinitionCore):
 
 class LabelDefinitionWrite(LabelDefinitionCore):
     """A label definition is a globally defined label that can later be attached to resources (e.g., assets). For example, can you define a "Pump" label definition and attach that label to your pump assets.
-    This is the writing version of the LabelDefinition class. It is used when creating new label definitions.
+    This is the write version of the LabelDefinition class. It is used when creating new label definitions.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -124,7 +117,7 @@ class LabelDefinitionWrite(LabelDefinitionCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> LabelDefinitionWrite:
+    def _load(cls, resource: dict[str, Any]) -> LabelDefinitionWrite:
         return cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -144,7 +137,6 @@ class LabelDefinitionFilter(CogniteFilter):
         name (str | None): Returns the label definitions matching that name.
         external_id_prefix (str | None): filter label definitions with external ids starting with the prefix specified
         data_set_ids (list[dict[str, Any]] | None): Only include labels that belong to these datasets.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -152,12 +144,10 @@ class LabelDefinitionFilter(CogniteFilter):
         name: str | None = None,
         external_id_prefix: str | None = None,
         data_set_ids: list[dict[str, Any]] | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.name = name
         self.external_id_prefix = external_id_prefix
         self.data_set_ids = data_set_ids
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
 
 class LabelDefinitionWriteList(CogniteResourceList[LabelDefinitionWrite], ExternalIDTransformerMixin):
@@ -170,13 +160,11 @@ class LabelDefinitionList(
     _RESOURCE = LabelDefinition
 
     def as_write(self) -> LabelDefinitionWriteList:
-        """Returns this LabelDefinitionList in its writing version."""
-        return LabelDefinitionWriteList(
-            [item.as_write() for item in self.data], cognite_client=self._get_cognite_client()
-        )
+        """Returns this LabelDefinitionList in its write version."""
+        return LabelDefinitionWriteList([item.as_write() for item in self.data])
 
 
-class Label(CogniteObject):
+class Label(CogniteResource):
     """A label assigned to a resource.
 
     Args:
@@ -187,7 +175,7 @@ class Label(CogniteObject):
         self.external_id = external_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(external_id=resource["externalId"])
 
     @classmethod
@@ -222,7 +210,6 @@ class LabelFilter(CogniteFilter):
     Args:
         contains_any (list[str] | None): The resource item contains at least one of the listed labels. The labels are defined by a list of external ids.
         contains_all (list[str] | None): The resource item contains all the listed labels. The labels are defined by a list of external ids.
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
 
     Examples:
 
@@ -241,11 +228,9 @@ class LabelFilter(CogniteFilter):
         self,
         contains_any: list[str] | None = None,
         contains_all: list[str] | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> None:
         self.contains_any = contains_any
         self.contains_all = contains_all
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, label_filter: dict[str, Any]) -> LabelFilter:

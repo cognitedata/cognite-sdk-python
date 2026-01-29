@@ -24,4 +24,6 @@ class TokenAPI(APIClient):
         """
         # To not raise whenever new Acls/actions/scopes are added to the API, we specifically allow the unknown:
         response = await self._get("/api/v1/token/inspect")
-        return TokenInspection.load(response.json(), self._cognite_client, allow_unknown=True)
+        return TokenInspection._load_with_project(
+            response.json(), allow_unknown=True, project=self._cognite_client.config.project
+        )

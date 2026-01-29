@@ -74,7 +74,7 @@ def mock_get_response_body_ok() -> dict[str, Any]:
 def mock_post_extract(httpx_mock: HTTPXMock, mock_post_response_body: dict[str, Any]) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
-        url=re.compile(".*?/context/vision/extract"),
+        url=re.compile(r".*?/context/vision/extract"),
         status_code=200,
         json=mock_post_response_body,
         is_optional=True,

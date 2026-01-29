@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from typing_extensions import Self
 
@@ -12,9 +12,6 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], ABC):
@@ -53,7 +50,7 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
         self.kind = kind
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
             model_external_id=resource["modelExternalId"],
@@ -142,7 +139,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
         self.data_set_id = data_set_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
             simulator_external_id=resource["simulatorExternalId"],
@@ -177,4 +174,4 @@ class SimulatorRoutineList(WriteableCogniteResourceList[SimulatorRoutineWrite, S
     _RESOURCE = SimulatorRoutine
 
     def as_write(self) -> SimulatorRoutineWriteList:
-        return SimulatorRoutineWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
+        return SimulatorRoutineWriteList([a.as_write() for a in self.data])

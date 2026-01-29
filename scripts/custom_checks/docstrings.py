@@ -94,7 +94,7 @@ class ReturnParam(Param):
 
 
 def count_indent(s):
-    return re.search("[^ ]", s + "x").start()
+    return re.search(r"[^ ]", s + "x").start()
 
 
 class DocstrFormatter:
@@ -196,7 +196,7 @@ class DocstrFormatter:
         if len(non_zero := np.nonzero(indentations)[0]) == 0:
             raise FalsePositiveDocstring
 
-        section_indent = indentations[(non_zero,)].min()
+        section_indent = indentations[non_zero,].min()
         all_chunks, chunk = [], []
         for line, indent in zip(lines, indentations):
             # If a line is non-empty, remove any excess whitespace at end:

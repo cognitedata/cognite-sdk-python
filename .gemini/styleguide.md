@@ -5,30 +5,31 @@
 - **Strong Typing**: Use type hints extensively with MyPy. Avoid `Any` when possible
 - **Type Safety**: Use dataclasses models for complex data
   structures instead of untyped dictionaries
-- **CogniteResource**: Use `CogniteResource` for DTO (Data Transfer Object) that are request or response
-  objects to/from the Cognite API
-- **CogniteObject**: Use `CogniteObject` for objects that are within `CogniteResource` objects.
+- **CogniteResource**: Use `CogniteResource` for DTO (Data Transfer Object) that are request or
+  response objects to/from the Cognite API
 - **IO Safety**: Always use typed data structures for file operations and data parsing
 - **Readability**: Code should be immediately understandable
 - **Maintainability**: Write code that is easy to modify and extend
 - **Consistency**: Follow established patterns across the codebase
+- **Code Comments**: Use comments sparingly. They should always add necessary context, or
+  explain unintuitive code and never feel like a repeat of the code.
 
 ## Principles on doing pull request reviews
 
-- **Main point first.** Start with the key feedback or required action.
-- **Be concise.** Use short, direct comments. Avoid unnecessary explanations.
-- **Actionable suggestions.** If something needs fixing, state exactly what and how.
-- **One issue per comment.** Separate unrelated feedback for clarity.
-- **Code, not prose.** Prefer code snippets or examples over long text.
-- **Background only if needed.** Add context only if the main point isn't obvious.
+- **Main point first** Start with the key feedback or required action.
+- **Be concise** Use short, direct comments. Avoid unnecessary explanations.
+- **Actionable suggestions** If something needs fixing, state exactly what and how.
+- **One issue per comment** Separate unrelated feedback for clarity.
+- **Code, not prose** Prefer code snippets or examples over long text.
+- **Background only if needed** Add context only if the main point isn't obvious.
 
 ## How to do pull request summaries
 
-- **Short recap.** Summarize the main point of the PR in one or two sentences.
-- **Don't repeat the PR description.** Only add new or clarifying information.
-- **Be brief unless needed.** Only write a longer summary if the PR description
+- **Short recap** Summarize the main point of the PR in one or two sentences.
+- **Don't repeat the PR description** Only add new or clarifying information.
+- **Be brief unless needed** Only write a longer summary if the PR description
   is missing crucial details.
-- **Extend, don't duplicate.** If more detail is needed, clearly state what is
+- **Extend, don't duplicate** If more detail is needed, clearly state what is
   missing from the PR description and add only the necessary context.
 
 ## Line Length and Formatting
@@ -91,7 +92,8 @@ if TYPE_CHECKING:
 
 ## Docstrings
 
-Use concise docstrings with Args/Returns in google-style format. Based on repository patterns:
+Use concise docstrings with Args/Returns in google-style format. 'Raises' can be used, but is not
+required. Based on repository patterns:
 
 ```python
 def render_header(header: str) -> str:
@@ -123,7 +125,8 @@ def walk_sdk_documentation(content: Tag, parser: Parser[T]) -> Iterable[T]:
 ## Error Handling
 
 - **Specific exceptions**: Avoid broad `Exception` catches
-- **Graceful handling**: Provide meaningful error messages
+- **Graceful handling**: Provide meaningful error messages, for example "got type foo,
+  expected type bar".
 - **Type safety**: Return `None` or use Union types for fallible operations
 
 ```python
@@ -137,27 +140,6 @@ def validate_data_modeling_identifier(space: str | None, external_id: str | None
 ## Tooling
 
 - **Pre-commit**: `pre-commit run --all-files` for comprehensive checks
-
-
-## Data Structures
-
-**Prefer typed structures**:
-
-```python
-# Good
-@dataclass
-class FunctionError:
-    function_name: str
-    message: str
-
-# Good
-class QueryCompletion(BaseModel):
-    query: str
-    variables: dict[str, Any]
-
-# Avoid
-error_data = {"function_name": "foo", "message": "bar"}
-```
 
 ## Logging
 
@@ -192,6 +174,4 @@ error_data = {"function_name": "foo", "message": "bar"}
   guarantee against regression.
 - Counter-intuitively, for data classes in the SDK, testing their load/dump
   methods should not be done as this is done automatically
-  (see `tests/tests_unit/test_base.py`). This rule applies to any subclass of
-  `CogniteObject`, `CogniteResource`, `CogniteUpdate`,
-   `WriteableCogniteResource` or `WriteableCogniteResourceList`.
+  (see `tests/tests_unit/test_base.py`). This rule applies to any subclass of `CogniteResource` or `CogniteUpdate`.

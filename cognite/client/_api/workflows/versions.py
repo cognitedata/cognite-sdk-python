@@ -251,7 +251,7 @@ class WorkflowVersionAPI(APIClient):
         tasks = [AsyncSDKTask(get_single, wf_xid) for wf_xid in split_into_chunks(given_wf_ids, self._RETRIEVE_LIMIT)]
         tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
-        return WorkflowVersionList(list(filter(None, tasks_summary.results)), cognite_client=self._cognite_client)
+        return WorkflowVersionList(list(filter(None, tasks_summary.results)))
 
     async def list(
         self,

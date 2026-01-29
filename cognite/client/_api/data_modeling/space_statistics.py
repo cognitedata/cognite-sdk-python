@@ -83,4 +83,4 @@ class SpaceStatisticsAPI(APIClient):
 
         """
         response = await self._get(self._RESOURCE_PATH)
-        return SpaceStatisticsList._load(response.json()["items"], self._cognite_client)
+        return SpaceStatisticsList._load(response.json()["items"])

@@ -104,7 +104,6 @@ class DefaultResourceGenerator:
         source_created_time: int | None = None,
         source_modified_time: int | None = None,
         security_categories: Sequence[int] | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> FileMetadata:
         return FileMetadata(
             id=id,
@@ -126,7 +125,6 @@ class DefaultResourceGenerator:
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
             security_categories=security_categories,
-            cognite_client=cognite_client,
         )
 
     @staticmethod
@@ -144,7 +142,6 @@ class DefaultResourceGenerator:
         created_time: int = 123,
         last_updated_time: int = 123,
         metadata: dict[str, str] | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> Event:
         return Event(
             id=id,
@@ -160,7 +157,6 @@ class DefaultResourceGenerator:
             created_time=created_time,
             last_updated_time=last_updated_time,
             metadata=metadata,
-            cognite_client=cognite_client,
         )
 
     @staticmethod
@@ -180,7 +176,6 @@ class DefaultResourceGenerator:
         last_updated_time: int = 123,
         labels: list[Label] | None = None,
         aggregates: AggregateResultItem | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> Asset:
         return Asset(
             id=id,
@@ -198,7 +193,6 @@ class DefaultResourceGenerator:
             parent_external_id=parent_external_id,
             geo_location=geo_location,
             aggregates=aggregates,
-            cognite_client=cognite_client,
         )
 
     @staticmethod
@@ -218,7 +212,6 @@ class DefaultResourceGenerator:
         name: str | None = None,
         created_time: int = 123,
         last_updated_time: int = 123,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> TimeSeries:
         return TimeSeries(
             id=id,
@@ -236,7 +229,6 @@ class DefaultResourceGenerator:
             name=name,
             created_time=created_time,
             last_updated_time=last_updated_time,
-            cognite_client=cognite_client,
         )
 
     @staticmethod
@@ -251,7 +243,6 @@ class DefaultResourceGenerator:
         asset_id: int | None = None,
         metadata: dict[str, str] | None = None,
         columns: Sequence[SequenceColumn] | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> CogniteSequence:
         return CogniteSequence(
             id=id,
@@ -261,7 +252,6 @@ class DefaultResourceGenerator:
             data_set_id=data_set_id,
             created_time=created_time,
             last_updated_time=last_updated_time,
-            cognite_client=cognite_client,
             asset_id=asset_id,
             metadata=metadata,
             columns=columns or [],
@@ -272,25 +262,21 @@ class DefaultResourceGenerator:
         key: str = "default_key",
         columns: dict[str, Any] | None = None,
         last_updated_time: int = 123,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> Row:
         return Row(
             key=key,
             columns=columns or {},
             last_updated_time=last_updated_time,
-            cognite_client=cognite_client,
         )
 
     @staticmethod
     def raw_table(
         name: str = "default_table",
         created_time: int = 123,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> Table:
         return Table(
             name=name,
             created_time=created_time,
-            cognite_client=cognite_client,
         )
 
     @staticmethod
@@ -300,7 +286,6 @@ class DefaultResourceGenerator:
         data_set_id: int | None = None,
         created_time: int = 123,
         metadata: dict[str, str] | None = None,
-        cognite_client: AsyncCogniteClient | None = None,
     ) -> ThreeDModel:
         return ThreeDModel(
             id=id,
@@ -308,7 +293,6 @@ class DefaultResourceGenerator:
             data_set_id=data_set_id,
             created_time=created_time,
             metadata=metadata,
-            cognite_client=cognite_client,
         )
 
     @staticmethod

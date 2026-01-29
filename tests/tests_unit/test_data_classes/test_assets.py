@@ -34,43 +34,43 @@ from tests.utils import rng_context
 class TestAsset:
     def test_get_events(self, async_client: AsyncCogniteClient) -> None:
         with mock.patch.object(async_client.events, "list", autospec=True) as mock_list:
-            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
+            a = DefaultResourceGenerator.asset(id=1).set_client_ref(async_client)
             a.events()
             mock_list.assert_called_once_with(asset_ids=[1])
 
     def test_get_time_series(self, async_client: AsyncCogniteClient) -> None:
         with mock.patch.object(async_client.time_series, "list", autospec=True) as mock_list:
-            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
+            a = DefaultResourceGenerator.asset(id=1).set_client_ref(async_client)
             a.time_series()
             mock_list.assert_called_once_with(asset_ids=[1])
 
     def test_get_sequences(self, async_client: AsyncCogniteClient) -> None:
         with mock.patch.object(async_client.sequences, "list", autospec=True) as mock_list:
-            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
+            a = DefaultResourceGenerator.asset(id=1).set_client_ref(async_client)
             a.sequences()
             mock_list.assert_called_once_with(asset_ids=[1])
 
     def test_get_files(self, async_client: AsyncCogniteClient) -> None:
         with mock.patch.object(async_client.files, "list", autospec=True) as mock_list:
-            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
+            a = DefaultResourceGenerator.asset(id=1).set_client_ref(async_client)
             a.files()
             mock_list.assert_called_once_with(asset_ids=[1])
 
     def test_get_parent(self, async_client: AsyncCogniteClient) -> None:
         with mock.patch.object(async_client.assets, "retrieve", autospec=True) as mock_retrieve:
-            a = DefaultResourceGenerator.asset(parent_id=1, cognite_client=async_client)
+            a = DefaultResourceGenerator.asset(parent_id=1).set_client_ref(async_client)
             a.parent()
             mock_retrieve.assert_called_once_with(id=1)
 
     def test_get_children(self, async_client: AsyncCogniteClient) -> None:
         with mock.patch.object(async_client.assets, "list", autospec=True) as mock_list:
-            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
+            a = DefaultResourceGenerator.asset(id=1).set_client_ref(async_client)
             a.children()
             mock_list.assert_called_once_with(parent_ids=[1], limit=None)
 
     def test_get_subtree(self, async_client: AsyncCogniteClient) -> None:
         with mock.patch.object(async_client.assets, "retrieve_subtree", autospec=True) as mock_subtree:
-            a = DefaultResourceGenerator.asset(id=1, cognite_client=async_client)
+            a = DefaultResourceGenerator.asset(id=1).set_client_ref(async_client)
             a.subtree(depth=1)
             mock_subtree.assert_called_once_with(id=1, depth=1)
 
@@ -78,25 +78,25 @@ class TestAsset:
 class TestAssetList:
     def test_get_events(self, async_client: AsyncCogniteClient) -> None:
         with mock.patch.object(async_client.events, "list", autospec=True) as mock_list:
-            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=async_client)
+            a = AssetList([DefaultResourceGenerator.asset(id=1)]).set_client_ref(async_client)
             a.events()
             mock_list.assert_called_once_with(asset_ids=[1], limit=None)
 
     def test_get_time_series(self, async_client: AsyncCogniteClient) -> None:
         with mock.patch.object(async_client.time_series, "list", autospec=True) as mock_list:
-            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=async_client)
+            a = AssetList([DefaultResourceGenerator.asset(id=1)]).set_client_ref(async_client)
             a.time_series()
             mock_list.assert_called_once_with(asset_ids=[1], limit=None)
 
     def test_get_sequences(self, async_client: AsyncCogniteClient) -> None:
         with mock.patch.object(async_client.sequences, "list", autospec=True) as mock_list:
-            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=async_client)
+            a = AssetList([DefaultResourceGenerator.asset(id=1)]).set_client_ref(async_client)
             a.sequences()
             mock_list.assert_called_once_with(asset_ids=[1], limit=None)
 
     def test_get_files(self, async_client: AsyncCogniteClient) -> None:
         with mock.patch.object(async_client.files, "list", autospec=True) as mock_list:
-            a = AssetList(resources=[DefaultResourceGenerator.asset(id=1)], cognite_client=async_client)
+            a = AssetList([DefaultResourceGenerator.asset(id=1)]).set_client_ref(async_client)
             a.files()
             mock_list.assert_called_once_with(asset_ids=[1], limit=None)
 
@@ -139,9 +139,8 @@ class TestAssetList:
                 DefaultResourceGenerator.asset(id=1),
                 DefaultResourceGenerator.asset(id=2),
                 DefaultResourceGenerator.asset(id=3),
-            ],
-            cognite_client=async_client,
-        )
+            ]
+        ).set_client_ref(async_client)
 
         actual_method = assets._retrieve_related_resources
 
@@ -157,13 +156,17 @@ class TestAssetList:
 
     @pytest.mark.dsl
     def test_to_pandas_nullable_int(self, cognite_client: CogniteClient) -> None:
+        import numpy as np
         import pandas as pd
 
         for camel_case in [False, True]:
             assets = AssetList(
                 [DefaultResourceGenerator.asset(parent_id=123), DefaultResourceGenerator.asset(parent_id=None)]
             )
-            assert pd.Int64Dtype() == assets.to_pandas(camel_case=camel_case).dtypes[0]
+            col = "parentId" if camel_case else "parent_id"
+            assert pd.Int64Dtype() == assets.to_pandas(camel_case=camel_case)[col].dtype
+            # Meanwhile non-nullable should be regular numpy int64:
+            assert np.int64 == assets.to_pandas(camel_case=camel_case)["id"].dtype
 
 
 def basic_issue_assets() -> list[AssetWrite]:

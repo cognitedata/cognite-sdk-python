@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
+from typing import Any, Literal, TypeAlias, TypeVar, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
-    CogniteObject,
+    CogniteResource,
     CogniteResourceList,
-    UnknownCogniteObject,
+    UnknownCogniteResource,
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
@@ -24,9 +24,6 @@ from cognite.client.data_classes.data_modeling.data_types import (
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_camel_case, to_snake_case
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class ViewCore(DataModelingSchemaResource["ViewApply"], ABC):
@@ -104,7 +101,7 @@ class ViewApply(ViewCore):
         self.properties = properties
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         properties = (
             {k: ViewPropertyApply.load(v) for k, v in resource["properties"].items()}
             if "properties" in resource
@@ -199,7 +196,7 @@ class View(ViewCore):
         self.created_time = created_time
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> View:
+    def _load(cls, resource: dict) -> View:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -307,7 +304,7 @@ class ViewList(WriteableCogniteResourceList[ViewApply, View]):
         Returns:
             ViewApplyList: The view apply list.
         """
-        return ViewApplyList(resources=[v.as_apply() for v in self])
+        return ViewApplyList([v.as_apply() for v in self])
 
     def as_ids(self) -> list[ViewId]:
         """Returns the list of ViewIds
@@ -355,9 +352,9 @@ class ViewFilter(CogniteFilter):
         self.include_global = include_global
 
 
-class ViewProperty(CogniteObject, ABC):
+class ViewProperty(CogniteResource, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ViewProperty:
+    def _load(cls, resource: dict[str, Any]) -> ViewProperty:
         if "connectionType" in resource:
             return ConnectionDefinition.load(resource)
         elif "direction" in resource:
@@ -370,9 +367,9 @@ class ViewProperty(CogniteObject, ABC):
         raise NotImplementedError
 
 
-class ViewPropertyApply(CogniteObject, ABC):
+class ViewPropertyApply(CogniteResource, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ViewPropertyApply:
+    def _load(cls, resource: dict[str, Any]) -> ViewPropertyApply:
         if "connectionType" in resource:
             return ConnectionDefinitionApply.load(resource)
         elif "direction" in resource:
@@ -394,7 +391,7 @@ class MappedPropertyApply(ViewPropertyApply):
     source: ViewId | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             container=ContainerId.load(resource["container"]),
             container_property_identifier=resource["containerPropertyIdentifier"],
@@ -434,7 +431,7 @@ class MappedProperty(ViewProperty):
     constraint_state: PropertyConstraintState | None = field(default=None, init=False)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource["type"]
         source = type_.get("source", None) or resource.get("source")
 
@@ -486,7 +483,7 @@ class MappedProperty(ViewProperty):
 @dataclass
 class ConnectionDefinition(ViewProperty, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> ConnectionDefinition:
+    def _load(cls, resource: dict[str, Any]) -> ConnectionDefinition:
         if "connectionType" not in resource:
             raise ValueError(f"{cls.__name__} must have a connectionType")
         connection_type = to_snake_case(resource["connectionType"])
@@ -500,7 +497,7 @@ class ConnectionDefinition(ViewProperty, ABC):
         if connection_type == "multi_reverse_direct_relation":
             return MultiReverseDirectRelation.load(resource)
 
-        return cast(Self, UnknownCogniteObject(resource))
+        return cast(Self, UnknownCogniteResource(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -534,7 +531,7 @@ class EdgeConnection(ConnectionDefinition, ABC):
     direction: Literal["outwards", "inwards"]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         instance = cls(
             type=DirectRelationReference.load(resource["type"]),
             source=ViewId.load(resource["source"]),
@@ -628,7 +625,7 @@ class ReverseDirectRelation(ConnectionDefinition, ABC):
     description: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             source=ViewId.load(resource["source"]),
             through=PropertyId.load(resource["through"]),
@@ -689,7 +686,7 @@ class MultiReverseDirectRelation(ReverseDirectRelation):
 @dataclass
 class ConnectionDefinitionApply(ViewPropertyApply, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         if "connectionType" not in resource:
             raise ValueError(f"{cls.__name__} must have a connectionType")
         connection_type = to_snake_case(resource["connectionType"])
@@ -702,7 +699,7 @@ class ConnectionDefinitionApply(ViewPropertyApply, ABC):
             return cast(Self, SingleReverseDirectRelationApply.load(resource))
         if connection_type == "multi_reverse_direct_relation":
             return cast(Self, MultiReverseDirectRelationApply.load(resource))
-        return cast(Self, UnknownCogniteObject(resource))
+        return cast(Self, UnknownCogniteResource(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -741,7 +738,7 @@ class EdgeConnectionApply(ConnectionDefinitionApply, ABC):
     direction: Literal["outwards", "inwards"] = "outwards"
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         instance = cls(
             type=DirectRelationReference.load(resource["type"]),
             source=ViewId.load(resource["source"]),
@@ -821,7 +818,7 @@ class ReverseDirectRelationApply(ConnectionDefinitionApply, ABC):
     description: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         instance = cls(
             source=ViewId.load(resource["source"]),
             through=PropertyId.load(resource["through"]),

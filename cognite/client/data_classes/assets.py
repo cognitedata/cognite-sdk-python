@@ -6,7 +6,6 @@ import itertools
 import operator as op
 import textwrap
 import warnings
-from abc import ABC
 from collections import Counter, defaultdict
 from collections.abc import Sequence
 from enum import auto
@@ -18,7 +17,6 @@ from typing import (
     Literal,
     TextIO,
     TypeAlias,
-    TypeVar,
     cast,
 )
 
@@ -28,7 +26,6 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
     CogniteListUpdate,
-    CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
     CogniteResource,
@@ -40,7 +37,8 @@ from cognite.client.data_classes._base import (
     IdTransformerMixin,
     PropertySpec,
     WriteableCogniteResource,
-    WriteableCogniteResourceList,
+    WriteableCogniteResourceListWithClientRef,
+    WriteableCogniteResourceWithClientRef,
 )
 from cognite.client.data_classes.labels import Label, LabelDefinitionWrite, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
@@ -56,12 +54,11 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes import EventList, FileMetadataList, SequenceList, TimeSeriesList
     from cognite.client.data_classes._base import T_CogniteResourceList
 
 
-class AggregateResultItem(CogniteObject):
+class AggregateResultItem(CogniteResource):
     """Aggregated metrics of the asset
 
     Args:
@@ -83,7 +80,7 @@ class AggregateResultItem(CogniteObject):
         self.path = path
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             child_count=resource.get("childCount"),
             depth=resource.get("depth"),
@@ -91,62 +88,7 @@ class AggregateResultItem(CogniteObject):
         )
 
 
-class AssetCore(WriteableCogniteResource["AssetWrite"], ABC):
-    """A representation of a physical asset, for example, a factory or a piece of equipment. This
-    is the parent class for the Asset and AssetWrite classes.
-
-    Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        name (str | None): The name of the asset.
-        parent_id (int | None): The parent of the node, null if it is the root node.
-        parent_external_id (str | None): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
-        description (str | None): The description of the asset.
-        data_set_id (int | None): The id of the dataset this asset belongs to.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str | None): The source of the asset.
-        labels (list[Label] | None): A list of the labels associated with this resource item.
-        geo_location (GeoLocation | None): The geographic metadata of the asset.
-    """
-
-    def __init__(
-        self,
-        external_id: str | None = None,
-        name: str | None = None,
-        parent_id: int | None = None,
-        parent_external_id: str | None = None,
-        description: str | None = None,
-        data_set_id: int | None = None,
-        metadata: dict[str, str] | None = None,
-        source: str | None = None,
-        labels: list[Label] | None = None,
-        geo_location: GeoLocation | None = None,
-    ) -> None:
-        if geo_location is not None and not isinstance(geo_location, GeoLocation):
-            raise TypeError("Asset.geo_location should be of type GeoLocation")
-        self.external_id = external_id
-        self.name = name
-        self.parent_id = parent_id
-        self.parent_external_id = parent_external_id
-        self.description = description
-        self.data_set_id = data_set_id
-        self.metadata = metadata
-        self.source = source
-        self.labels = labels
-        self.geo_location = geo_location
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result = super().dump(camel_case)
-        if self.labels is not None:
-            result["labels"] = [label.dump(camel_case) for label in self.labels]
-        if self.geo_location is not None:
-            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
-        return result
-
-
-T_Asset = TypeVar("T_Asset", bound=AssetCore)
-
-
-class Asset(AssetCore):
+class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
     """A representation of a physical asset, for example, a factory or a piece of equipment. This
     is the read version of the Asset class, it is used when retrieving assets from the Cognite API.
 
@@ -166,7 +108,6 @@ class Asset(AssetCore):
         geo_location (GeoLocation | None): The geographic metadata of the asset.
         root_id (int | None): ID of the root asset.
         aggregates (AggregateResultItem | None): Aggregated metrics of the asset
-        cognite_client (AsyncCogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -186,29 +127,28 @@ class Asset(AssetCore):
         geo_location: GeoLocation | None,
         root_id: int | None,
         aggregates: AggregateResultItem | None,
-        cognite_client: AsyncCogniteClient | None,
     ) -> None:
-        super().__init__(
-            external_id=external_id,
-            name=name,
-            parent_id=parent_id,
-            parent_external_id=parent_external_id,
-            description=description,
-            data_set_id=data_set_id,
-            metadata=metadata,
-            source=source,
-            labels=labels,
-            geo_location=geo_location,
-        )
-        self.id: int = id
-        self.created_time: int = created_time
-        self.last_updated_time: int = last_updated_time
+        if geo_location is not None and not isinstance(geo_location, GeoLocation):
+            raise TypeError("Asset.geo_location should be of type GeoLocation")
+
+        self.id = id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.external_id = external_id
+        self.name = name
+        self.parent_id = parent_id
+        self.parent_external_id = parent_external_id
+        self.description = description
+        self.data_set_id = data_set_id
+        self.metadata = metadata
+        self.source = source
+        self.labels = labels
+        self.geo_location = geo_location
         self.root_id = root_id
         self.aggregates = aggregates
-        self._cognite_client = cast("AsyncCogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -222,16 +162,20 @@ class Asset(AssetCore):
             metadata=resource.get("metadata"),
             source=resource.get("source"),
             labels=Label._load_list(resource.get("labels")),
-            geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
+            geo_location=GeoLocation._load(resource["geoLocation"])
+            if resource.get("geoLocation") is not None
+            else None,
             root_id=resource.get("rootId"),
-            aggregates=(aggregates := resource.get("aggregates")) and AggregateResultItem._load(aggregates),
-            cognite_client=cognite_client,
+            aggregates=AggregateResultItem._load(resource["aggregates"])
+            if resource.get("aggregates") is not None
+            else None,
         )
 
     def as_write(self) -> AssetWrite:
-        """Returns this Asset in its writing version."""
+        """Returns this Asset in its write version."""
         if self.name is None:
-            raise ValueError("name is required for the writing version of an asset.")
+            raise ValueError("Unable to convert Asset to write format: 'name' is a required field")
+
         return AssetWrite(
             external_id=self.external_id,
             name=self.name,
@@ -360,6 +304,10 @@ class Asset(AssetCore):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
+        if self.labels is not None:
+            result["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.geo_location is not None:
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
         if isinstance(self.aggregates, AggregateResultItem):
             result["aggregates"] = self.aggregates.dump(camel_case)
         return result
@@ -404,9 +352,9 @@ class Asset(AssetCore):
         return pd.concat((col, pd.Series(aggregates).add_prefix(aggregates_prefix))).to_frame(name="value")
 
 
-class AssetWrite(AssetCore):
+class AssetWrite(WriteableCogniteResource["AssetWrite"]):
     """A representation of a physical asset, for example, a factory or a piece of equipment. This is the
-    writing version of the Asset class, and is used when inserting new assets.
+    write version of the Asset class, and is used when inserting new assets.
 
     Args:
         name (str): The name of the asset.
@@ -434,21 +382,19 @@ class AssetWrite(AssetCore):
         labels: list[Label | str | LabelDefinitionWrite | dict] | None = None,
         geo_location: GeoLocation | None = None,
     ) -> None:
-        super().__init__(
-            external_id=external_id,
-            name=name,
-            parent_id=parent_id,
-            parent_external_id=parent_external_id,
-            description=description,
-            data_set_id=data_set_id,
-            metadata=metadata,
-            source=source,
-            labels=Label._load_list(labels),
-            geo_location=geo_location,
-        )
+        self.external_id = external_id
+        self.name = name
+        self.parent_id = parent_id
+        self.parent_external_id = parent_external_id
+        self.description = description
+        self.data_set_id = data_set_id
+        self.metadata = metadata
+        self.source = source
+        self.labels = Label._load_list(labels)
+        self.geo_location = geo_location
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: AsyncCogniteClient | None = None) -> AssetWrite:
+    def _load(cls, resource: dict) -> AssetWrite:
         return cls(
             external_id=resource.get("externalId"),
             name=resource["name"],
@@ -458,16 +404,25 @@ class AssetWrite(AssetCore):
             data_set_id=resource.get("dataSetId"),
             metadata=resource.get("metadata"),
             source=resource.get("source"),
-            labels=(labels := resource.get("labels")) and Label._load_list(labels),  # type: ignore[arg-type]
-            geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
+            labels=Label._load_list(resource.get("labels")),  # type: ignore [arg-type]
+            geo_location=GeoLocation._load(resource["geoLocation"])
+            if resource.get("geoLocation") is not None
+            else None,
         )
 
     def as_write(self) -> AssetWrite:
-        """Returns self."""
         return self
 
     def __hash__(self) -> int:
         return hash(self.external_id)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case)
+        if self.labels is not None:
+            result["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.geo_location is not None:
+            result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
+        return result
 
 
 class AssetUpdate(CogniteUpdate):
@@ -573,11 +528,11 @@ class AssetWriteList(CogniteResourceList[AssetWrite], ExternalIDTransformerMixin
     _RESOURCE = AssetWrite
 
 
-class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMixin):
+class AssetList(WriteableCogniteResourceListWithClientRef[AssetWrite, Asset], IdTransformerMixin):
     _RESOURCE = Asset
 
     def as_write(self) -> AssetWriteList:
-        return AssetWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
+        return AssetWriteList([a.as_write() for a in self.data])
 
     async def time_series_async(self, **kwargs: Any) -> TimeSeriesList:
         """Retrieve all time series related to these assets.
@@ -667,9 +622,7 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
         ]
         task_summary = await execute_async_tasks(tasks)
         # TODO: Using .results here may need to be changed to .joined_results()
-        return resource_list_class(
-            list(itertools.chain.from_iterable(task_summary.results)), cognite_client=self._cognite_client
-        )
+        return resource_list_class(list(itertools.chain.from_iterable(task_summary.results)))
 
 
 class AssetFilter(CogniteFilter):

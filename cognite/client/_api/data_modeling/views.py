@@ -87,7 +87,7 @@ class ViewsAPI(APIClient):
     def _get_latest_views(self, views: ViewList) -> ViewList:
         views_by_space_and_xid = defaultdict(list)
         for view in views:
-            views_by_space_and_xid[(view.space, view.external_id)].append(view)
+            views_by_space_and_xid[view.space, view.external_id].append(view)
         return ViewList([max(views, key=lambda view: view.created_time) for views in views_by_space_and_xid.values()])
 
     async def retrieve(

@@ -177,7 +177,7 @@ class Identifier(Generic[T_ID]):
 
 class UserIdentifier:
     def __init__(self, value: str) -> None:
-        self.__value: str = value
+        self.__value = value
 
     def name(self, camel_case: bool = False) -> str:
         return "userIdentifier" if camel_case else "user_identifier"
@@ -191,7 +191,7 @@ class UserIdentifier:
 
 class Username:
     def __init__(self, value: str) -> None:
-        self.__value: str = value
+        self.__value = value
 
     def name(self, camel_case: bool = False) -> str:
         return "username"
@@ -205,7 +205,7 @@ class Username:
 
 class Tablename:
     def __init__(self, value: str) -> None:
-        self.__value: str = value
+        self.__value = value
 
     def name(self, camel_case: bool = False) -> str:
         return "tablename"
@@ -221,7 +221,7 @@ class LimitId:
     def __init__(self, value: str) -> None:
         if not isinstance(value, str):
             raise TypeError(f"Expected limitId to be of type str, got {value} of type {type(value)}")
-        self.__value: str = value
+        self.__value = value
 
     def name(self, camel_case: bool = False) -> str:
         return "limitId" if camel_case else "limit_id"
@@ -235,8 +235,8 @@ class LimitId:
 
 class WorkflowVersionIdentifier:
     def __init__(self, version: str, workflow_external_id: str) -> None:
-        self.__version: str = version
-        self.__workflow_external_id: str = workflow_external_id
+        self.__version = version
+        self.__workflow_external_id = workflow_external_id
 
     def as_dict(self, camel_case: bool = True) -> dict[str, str]:
         return {

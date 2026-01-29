@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def empty_function(cognite_async_mock_client_placeholder: AsyncCogniteClient) -> Function:
+def empty_function(async_client: AsyncCogniteClient) -> Function:
     return Function(
         id=123,
         created_time=123,
@@ -41,12 +41,11 @@ def empty_function(cognite_async_mock_client_placeholder: AsyncCogniteClient) ->
         metadata=None,
         error=None,
         last_called=None,
-        cognite_client=cognite_async_mock_client_placeholder,
-    )
+    ).set_client_ref(async_client)
 
 
 @pytest.fixture
-def function(cognite_async_mock_client_placeholder: AsyncCogniteClient) -> Function:
+def function(async_client: AsyncCogniteClient) -> Function:
     return Function(
         id=123,
         name="my-function",
@@ -66,8 +65,7 @@ def function(cognite_async_mock_client_placeholder: AsyncCogniteClient) -> Funct
         runtime_version=None,
         error=None,
         last_called=123456789,
-        cognite_client=cognite_async_mock_client_placeholder,
-    )
+    ).set_client_ref(async_client)
 
 
 @pytest.fixture

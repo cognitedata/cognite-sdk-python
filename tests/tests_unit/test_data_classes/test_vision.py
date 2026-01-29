@@ -382,7 +382,6 @@ class TestVisionExtractJob:
     def test_items_property(
         self, mock_result: MagicMock, status: JobStatus, result: dict | None, expected_items: list[VisionExtractItem]
     ) -> None:
-        cognite_client = MagicMock(spec=AsyncCogniteClient)
         mock_result.return_value = result
         job: VisionExtractJob = VisionExtractJob(
             job_id=1,
@@ -390,7 +389,6 @@ class TestVisionExtractJob:
             status_time=123,
             created_time=123,
             items=expected_items,
-            cognite_client=cognite_client,
             start_time=123,
             error_message=None,
         )
@@ -423,7 +421,6 @@ class TestVisionExtractJob:
         expected_items: list[VisionExtractItem],
         error_message: str | None,
     ) -> None:
-        cognite_client = MagicMock(spec=AsyncCogniteClient)
         mock_result.return_value = {
             "items": [
                 {
@@ -440,7 +437,6 @@ class TestVisionExtractJob:
             status_time=123,
             created_time=123,
             items=expected_items,
-            cognite_client=cognite_client,
             start_time=123,
             error_message=None,
         )
@@ -604,20 +600,20 @@ class TestVisionExtractJob:
         params: dict,
         expected_items: list | None,
     ) -> None:
-        cognite_client = MagicMock(spec=AsyncCogniteClient)
-        cognite_client.version = (params or {}).get("creating_app_version") or "1"
         mock_result.return_value = result
+
+        mock_client = MagicMock(spec=AsyncCogniteClient)
+        mock_client.version = params.get("creating_app_version") or "1"
 
         job: VisionExtractJob = VisionExtractJob(
             job_id=1,
             status=JobStatus.COMPLETED.value,
             status_time=123,
             created_time=123,
-            cognite_client=cognite_client,
             items=[VisionExtractItem.load(item) for item in result.get("items", [])],
             start_time=123,
             error_message=None,
-        )
+        ).set_client_ref(mock_client)
         assert job._predictions_to_annotations(**params) == expected_items
 
 
