@@ -305,12 +305,10 @@ class _MQTTSource(Source, ABC):
             external_id=resource["externalId"],
             host=resource["host"],
             port=resource.get("port"),
-            authentication=Authentication._load(resource["authentication"]) if "authentication" in resource else None,
+            authentication=Authentication._load_if(resource.get("authentication")),
             use_tls=resource.get("useTls", False),
-            ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
-            auth_certificate=AuthCertificate._load(resource["authCertificate"])
-            if "authCertificate" in resource
-            else None,
+            ca_certificate=CACertificate._load_if(resource.get("caCertificate")),
+            auth_certificate=AuthCertificate._load_if(resource.get("authCertificate")),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
         )
@@ -419,14 +417,10 @@ class _MQTTSourceWrite(SourceWrite, ABC):
             external_id=resource["externalId"],
             host=resource["host"],
             port=resource.get("port"),
-            authentication=AuthenticationWrite._load(resource["authentication"])
-            if "authentication" in resource
-            else None,
+            authentication=AuthenticationWrite._load_if(resource.get("authentication")),
             use_tls=resource.get("useTls", False),
-            ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
-            auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
-            if "authCertificate" in resource
-            else None,
+            ca_certificate=CACertificateWrite._load_if(resource.get("caCertificate")),
+            auth_certificate=AuthCertificateWrite._load_if(resource.get("authCertificate")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -513,14 +507,10 @@ class KafkaSourceWrite(SourceWrite):
         return cls(
             external_id=resource["externalId"],
             bootstrap_brokers=[KafkaBroker._load(broker) for broker in resource["bootstrapBrokers"]],
-            authentication=AuthenticationWrite._load(resource["authentication"])
-            if "authentication" in resource
-            else None,
+            authentication=AuthenticationWrite._load_if(resource.get("authentication")),
             use_tls=resource.get("useTls", False),
-            ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
-            auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
-            if "authCertificate" in resource
-            else None,
+            ca_certificate=CACertificateWrite._load_if(resource.get("caCertificate")),
+            auth_certificate=AuthCertificateWrite._load_if(resource.get("authCertificate")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -582,12 +572,10 @@ class KafkaSource(Source):
         return cls(
             external_id=resource["externalId"],
             bootstrap_brokers=[KafkaBroker._load(broker) for broker in resource["bootstrapBrokers"]],
-            authentication=Authentication._load(resource["authentication"]) if "authentication" in resource else None,
+            authentication=Authentication._load_if(resource.get("authentication")),
             use_tls=resource.get("useTls", False),
-            ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
-            auth_certificate=AuthCertificate._load(resource["authCertificate"])
-            if "authCertificate" in resource
-            else None,
+            ca_certificate=CACertificate._load_if(resource.get("caCertificate")),
+            auth_certificate=AuthCertificate._load_if(resource.get("authCertificate")),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
         )
@@ -704,10 +692,8 @@ class RestSourceWrite(SourceWrite):
             external_id=resource["externalId"],
             host=resource["host"],
             port=resource.get("port"),
-            ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
-            authentication=AuthenticationWrite._load(resource["authentication"])
-            if "authentication" in resource
-            else None,
+            ca_certificate=CACertificateWrite._load_if(resource.get("caCertificate")),
+            authentication=AuthenticationWrite._load_if(resource.get("authentication")),
         )
         if "scheme" in resource:
             args["scheme"] = resource["scheme"]
@@ -770,10 +756,10 @@ class RestSource(Source):
             host=resource["host"],
             scheme=resource["scheme"],
             port=resource.get("port"),
-            ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
+            ca_certificate=CACertificate._load_if(resource.get("caCertificate")),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
-            authentication=Authentication._load(resource["authentication"]) if "authentication" in resource else None,
+            authentication=Authentication._load_if(resource.get("authentication")),
         )
 
     def as_write(self) -> RestSourceWrite:
@@ -857,7 +843,7 @@ class AuthenticationWrite(CogniteResource, ABC):
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
         elif type_ is None:
-            raise KeyError("type is required")
+            raise KeyError("type")  # is required
         try:
             authentication_cls = _AUTHENTICATION_WRITE_CLASS_BY_TYPE[type_]
         except KeyError:

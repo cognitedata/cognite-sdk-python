@@ -2566,7 +2566,7 @@ class RetrieveLatestDpsFetcher:
             ids_exists = (
                 {("id", r["id"]) for r in result}
                 .union({("xid", r.get("externalId")) for r in result})
-                .union({("inst_id", NodeId.load_if(r.get("instanceId"))) for r in result})
+                .union({("inst_id", NodeId._load_if(r.get("instanceId"))) for r in result})
                 .difference({("xid", None), ("inst_id", None)})
             )  # fmt: skip
             self._all_identifiers = [
@@ -2576,7 +2576,7 @@ class RetrieveLatestDpsFetcher:
                     (
                         ("id", query.get("id")),
                         ("xid", query.get("externalId")),
-                        ("inst_id", NodeId.load_if(query.get("instanceId"))),
+                        ("inst_id", NodeId._load_if(query.get("instanceId"))),
                     )
                 )
             ]

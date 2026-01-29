@@ -708,12 +708,12 @@ class DatapointsArray(CogniteResource):
 
         timezone = dps_dct.get("timezone")
         if isinstance(timezone, str):
-            with contextlib.suppress(ValueError):  # Dont fail load if invalid
+            with contextlib.suppress(ValueError):  # Dont fail load if invalid (TODO: warn?)
                 timezone = parse_str_timezone(timezone)
         return cls(
             id=dps_dct.get("id"),
             external_id=dps_dct.get("externalId"),
-            instance_id=NodeId.load(dps_dct["instanceId"]) if "instanceId" in dps_dct else None,
+            instance_id=NodeId._load_if(dps_dct.get("instanceId")),
             is_step=dps_dct.get("isStep"),
             is_string=dps_dct.get("isString"),
             unit=dps_dct.get("unit"),
@@ -1134,7 +1134,7 @@ class Datapoints(CogniteResource):
         instance = cls(
             id=dps_object.get("id"),
             external_id=dps_object.get("externalId"),
-            instance_id=NodeId.load(dps_object["instanceId"]) if "instanceId" in dps_object else None,
+            instance_id=NodeId._load_if(dps_object.get("instanceId")),
             is_string=dps_object.get("isString"),
             is_step=dps_object.get("isStep"),
             unit=dps_object.get("unit"),

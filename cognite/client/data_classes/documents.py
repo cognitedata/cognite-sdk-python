@@ -167,7 +167,7 @@ class SourceFile(CogniteResource):
             size=resource.get("size"),
             asset_ids=resource.get("assetIds"),
             labels=Label._load_list(resource.get("labels")),  # type: ignore[arg-type]
-            geo_location=DocumentsGeoJsonGeometry._load(resource["geoLocation"]) if "geoLocation" in resource else None,
+            geo_location=DocumentsGeoJsonGeometry._load_if(resource.get("geoLocation")),
             dataset_id=resource.get("datasetId"),
             security_categories=resource.get("securityCategories"),
             metadata=resource.get("metadata"),
@@ -263,7 +263,7 @@ class Document(CogniteResource):
             created_time=resource["createdTime"],
             source_file=SourceFile._load(resource["sourceFile"]),
             external_id=resource.get("externalId"),
-            instance_id=InstanceId.load_if(resource.get("instanceId")),
+            instance_id=InstanceId._load_if(resource.get("instanceId")),
             title=resource.get("title"),
             author=resource.get("author"),
             producer=resource.get("producer"),
@@ -277,7 +277,7 @@ class Document(CogniteResource):
             truncated_content=resource.get("truncatedContent"),
             asset_ids=resource.get("assetIds"),
             labels=Label._load_list(resource.get("labels")),  # type: ignore[arg-type]
-            geo_location=DocumentsGeoJsonGeometry._load(resource["geoLocation"]) if "geoLocation" in resource else None,
+            geo_location=DocumentsGeoJsonGeometry._load_if(resource.get("geoLocation")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

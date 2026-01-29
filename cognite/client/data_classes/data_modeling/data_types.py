@@ -40,6 +40,14 @@ class DirectRelationReference:
             case _:
                 raise ValueError("Invalid data provided to load method. Must be dict or tuple with two elements.")
 
+    @classmethod
+    def _load_if(
+        cls, data: dict[str, str] | tuple[str, str] | DirectRelationReference | NodeId | None
+    ) -> DirectRelationReference | None:
+        if data is None:
+            return None
+        return cls.load(data)
+
     def as_tuple(self) -> tuple[str, str]:
         return self.space, self.external_id
 
@@ -106,7 +114,7 @@ class PropertyType(CogniteResource, ABC):
                 )
             case "direct":
                 return DirectRelation(
-                    container=ContainerId.load(container) if (container := resource.get("container")) else None,
+                    container=ContainerId._load_if(resource.get("container")),
                     # The PropertyTypes are used as both read and write objects. The `list` was added later
                     # in the API for DirectRelations. Thus, we need to set the default value to False
                     # to avoid breaking changes. When used as a read object, the `list` will always be present.

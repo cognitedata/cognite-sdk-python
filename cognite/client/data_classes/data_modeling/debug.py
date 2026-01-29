@@ -34,9 +34,9 @@ class DebugInfo(CogniteResource):
     @classmethod
     def _load(cls, data: dict[str, Any]) -> DebugInfo:
         return cls(
-            notices=DebugNoticeList._load(data["notices"]) if "notices" in data else None,
-            translated_query=TranslatedQuery._load(data["translatedQuery"]) if "translatedQuery" in data else None,
-            plan=ExecutionPlan._load(data["plan"]) if "plan" in data else None,
+            notices=DebugNoticeList._load_if(data.get("notices")),
+            translated_query=TranslatedQuery._load_if(data.get("translatedQuery")),
+            plan=ExecutionPlan._load_if(data.get("plan")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

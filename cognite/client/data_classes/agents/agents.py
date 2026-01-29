@@ -95,7 +95,7 @@ class AgentUpsert(AgentCore):
     def _load(cls, resource: dict[str, Any]) -> AgentUpsert:
         tools = (
             [AgentTool._load(item).as_write() for item in resource.get("tools", [])]
-            if isinstance(resource.get("tools"), Sequence)
+            if isinstance(resource.get("tools"), list)
             else None
         )
         instances = cls(
@@ -180,6 +180,7 @@ class Agent(AgentCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Agent:
+        tools_data = resource.get("tools")
         instance = cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -187,7 +188,7 @@ class Agent(AgentCore):
             instructions=resource.get("instructions"),
             model=resource.get("model"),
             labels=resource.get("labels"),
-            tools=(tools := resource.get("tools")) and [AgentTool._load(item) for item in tools],
+            tools=[AgentTool._load(item) for item in tools_data] if tools_data else None,
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             owner_id=resource.get("ownerId"),

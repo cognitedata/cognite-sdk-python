@@ -265,7 +265,7 @@ class Sequence(WriteableCogniteResourceWithClientRef["SequenceWrite"]):
             asset_id=resource.get("assetId"),
             external_id=resource.get("externalId"),
             metadata=resource.get("metadata"),
-            columns=SequenceColumnList._load(resource["columns"] if "columns" in resource else []),
+            columns=SequenceColumnList._load(resource.get("columns", [])),
             data_set_id=resource.get("dataSetId"),
         )
 

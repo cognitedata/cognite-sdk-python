@@ -217,6 +217,10 @@ class TransformationJob(CogniteResourceWithClientRef):
 
     @classmethod
     def _load(cls, resource: dict) -> TransformationJob:
+        if isinstance(resource["destination"], dict):
+            destination = TransformationDestination._load(resource["destination"])
+        else:
+            destination = TransformationDestination(type=resource["destination"])
         return cls(
             id=resource["id"],
             status=TransformationJobStatus(resource["status"]),
@@ -224,9 +228,7 @@ class TransformationJob(CogniteResourceWithClientRef):
             transformation_external_id=resource["transformationExternalId"],
             source_project=resource["sourceProject"],
             destination_project=resource["destinationProject"],
-            destination=TransformationDestination._load(resource["destination"])
-            if isinstance(resource["destination"], dict)
-            else TransformationDestination(type=resource["destination"]),
+            destination=destination,
             conflict_mode=resource["conflictMode"],
             query=resource["query"],
             error=resource.get("error"),
