@@ -17,6 +17,31 @@ Cognite Python SDK
 This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF).
 The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data Fusion (CDF).
 
+## What's new in v8
+The SDK v8 introduces **full async support** with the new `AsyncCogniteClient`. This enables:
+
+- Native `async/await` patterns for all API operations
+- Non-blocking concurrent operations directly in Notebooks (including browser-based via Pyodide) and UI frameworks like Streamlit
+- Significantly faster file uploads on Windows (new underlying HTTP client, `httpx`)
+
+```python
+# Async client (new in v8!)
+from cognite.client import AsyncCogniteClient
+
+async def main():
+    client = AsyncCogniteClient()
+    tss = await client.time_series.list()
+
+# Sync client (still supported)
+from cognite.client import CogniteClient
+
+client = CogniteClient()
+tss = client.time_series.list()
+```
+
+The synchronous `CogniteClient` remains fully supported and now wraps the async client internally.
+See the [Migration Guide](MIGRATION_GUIDE.md) for a complete list of changes.
+
 ## Reference documentation
 * [SDK Documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
 * [CDF API Documentation](https://doc.cognitedata.com/)
@@ -27,7 +52,7 @@ The package is tightly integrated with pandas, and helps you work easily and eff
 ### Without any optional dependencies
 To install the core version of this package:
 ```bash
-$ pip install cognite-sdk
+pip install cognite-sdk
 ```
 
 ### With optional dependencies
@@ -41,15 +66,21 @@ The available extras (along with the libraries they include) are:
 - yaml `[PyYAML]`
 - all `[numpy, pandas, geopandas, shapely, sympy, pip, PyYAML]`
 
-To include optional dependencies, specify them like this with pip:
+To include optional dependencies:
 
+**pip:**
 ```bash
-$ pip install "cognite-sdk[pandas, geo]"
+pip install "cognite-sdk[pandas, geo]"
 ```
 
-or like this if you are using poetry:
+**poetry:**
 ```bash
-$ poetry add cognite-sdk -E pandas -E geo
+poetry add cognite-sdk -E pandas -E geo
+```
+
+**uv:**
+```bash
+uv add "cognite-sdk[pandas, geo]"
 ```
 
 ### Performance notes
