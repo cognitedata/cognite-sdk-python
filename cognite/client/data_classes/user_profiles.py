@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable
+from functools import cached_property
 from typing import Any
 
 from typing_extensions import Self
@@ -56,11 +57,9 @@ class UserProfile(CogniteResource):
 class UserProfileList(CogniteResourceList[UserProfile]):
     _RESOURCE = UserProfile
 
-    def __init__(self, resources: Sequence[UserProfile]) -> None:
-        super().__init__(resources)
-
-        del self._id_to_item, self._external_id_to_item
-        self._user_identifier_to_item = {item.user_identifier: item for item in self.data or []}
+    @cached_property
+    def _user_identifier_to_item(self) -> dict[str, UserProfile]:
+        return {item.user_identifier: item for item in self.data}
 
     def get(self, user_identifier: str) -> UserProfile | None:  # type: ignore [override]
         """Get an item from this list by user_identifier.
@@ -70,6 +69,9 @@ class UserProfileList(CogniteResourceList[UserProfile]):
             UserProfile | None: The requested item or None if not found.
         """
         return self._user_identifier_to_item.get(user_identifier)
+
+    def extend(self, other: Iterable[Any]) -> None:
+        raise NotImplementedError("UserProfileList does not support extend")
 
 
 class UserProfilesConfiguration(CogniteResource):

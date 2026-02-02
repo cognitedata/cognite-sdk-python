@@ -16,7 +16,7 @@ from collections.abc import (
 )
 from dataclasses import dataclass
 from datetime import date, datetime
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
@@ -1035,11 +1035,27 @@ T_Instance = TypeVar("T_Instance", bound=Instance)
 
 
 class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Instance], ABC):
-    def _build_id_mappings(self) -> None:
-        self._instance_id_to_item = {(inst.space, inst.external_id): inst for inst in self.data}
-        # We allow fast lookup via external ID when not ambiguous:
-        self._ambiguous_xids = find_duplicates(inst.external_id for inst in self.data)
-        self._ext_id_to_item = {inst.external_id: inst for inst in self.data}
+    @cached_property
+    def _instance_id_to_item(self) -> dict[tuple[str, str], T_Instance]:  # type: ignore [override]
+        return {(inst.space, inst.external_id): inst for inst in self.data}
+
+    @cached_property
+    def _ext_id_to_item(self) -> dict[str, T_Instance]:
+        return {inst.external_id: inst for inst in self.data}
+
+    @cached_property
+    def _ambiguous_xids(self) -> set[str]:
+        return find_duplicates(inst.external_id for inst in self.data)
+
+    def _merge_id_mappings(self, other: DataModelingInstancesList) -> None:
+        self._instance_id_to_item.update(other._instance_id_to_item)
+        self._ext_id_to_item.update(other._ext_id_to_item)
+        # Ambiguous xids need recalculation as merging may introduce new duplicates. We don't do
+        # this here in case the user is calling us in a loop, but ensure it will happen on next access.
+        try:
+            del self._ambiguous_xids
+        except AttributeError:
+            pass
 
     def get(  # type: ignore [override]
         self,
@@ -1069,13 +1085,13 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
 
         if isinstance(instance_id, InstanceId):
             instance_id = instance_id.as_tuple()
-        return self._instance_id_to_item.get(instance_id)
+        return self._instance_id_to_item.get(instance_id)  # type: ignore [arg-type]
 
     def extend(self, other: Iterable[Any]) -> None:
         other_res_list = type(self)(cast(Sequence, other))  # See if we can accept the types
         if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
             self.data.extend(other_res_list.data)
-            self._build_id_mappings()
+            self._merge_id_mappings(other_res_list)
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
 
@@ -1201,7 +1217,7 @@ class NodeListWithCursor(NodeList[T_Node]):
         other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
         if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
             self.data.extend(other.data)
-            self._build_id_mappings()
+            self._merge_id_mappings(other_res_list)
             self.cursor = other.cursor
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
@@ -1303,7 +1319,7 @@ class EdgeListWithCursor(EdgeList):
         other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
         if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
             self.data.extend(other.data)
-            self._build_id_mappings()
+            self._merge_id_mappings(other_res_list)
             self.cursor = other.cursor
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")

@@ -7,6 +7,7 @@ from collections.abc import Iterable, Iterator, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -244,18 +245,24 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
                     f"'{self._RESOURCE.__name__}', not '{type(resources[0])}'."
                 )
         super().__init__(resources)
-        self._build_id_mappings()  # TODO: Make lazy?
 
-    def _build_id_mappings(self) -> None:
-        self._id_to_item, self._external_id_to_item, self._instance_id_to_item = {}, {}, {}
-        if not self.data:
-            return
-        if hasattr(self.data[0], "external_id"):
-            self._external_id_to_item = {item.external_id: item for item in self.data if item.external_id is not None}
-        if hasattr(self.data[0], "id"):
-            self._id_to_item = {item.id: item for item in self.data if item.id is not None}
-        if hasattr(self.data[0], "instance_id"):
-            self._instance_id_to_item = {item.instance_id: item for item in self.data if item.instance_id is not None}
+    @cached_property
+    def _id_to_item(self) -> dict[int, T_CogniteResource]:
+        if self.data and hasattr(self.data[0], "id"):
+            return {item.id: item for item in self.data if item.id is not None}
+        return {}
+
+    @cached_property
+    def _external_id_to_item(self) -> dict[str, T_CogniteResource]:
+        if self.data and hasattr(self.data[0], "external_id"):
+            return {item.external_id: item for item in self.data if item.external_id is not None}
+        return {}
+
+    @cached_property
+    def _instance_id_to_item(self) -> dict[InstanceId, T_CogniteResource]:
+        if self.data and hasattr(self.data[0], "instance_id"):
+            return {item.instance_id: item for item in self.data if item.instance_id is not None}
+        return {}
 
     def pop(self, i: int = -1) -> T_CogniteResource:
         return super().pop(i)
@@ -333,7 +340,8 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
             return self._id_to_item.get(id)
         elif external_id:
             return self._external_id_to_item.get(external_id)
-        return self._instance_id_to_item.get(ident.as_primitives()[0])
+        # TODO: Instance ID is really not well supported in our identifier helper classes:
+        return self._instance_id_to_item.get(ident.as_primitives()[0])  # type: ignore[call-overload]
 
     def to_pandas(
         self,

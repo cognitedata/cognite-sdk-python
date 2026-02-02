@@ -22,7 +22,7 @@ class Principal(CogniteResource, ABC):
     @abstractmethod
     def _load_principal(cls, resource: dict[str, Any]) -> Self:
         """Load a principal from a resource dictionary."""
-        raise NotImplementedError("This method should be implemented in subclasses.")
+        raise NotImplementedError
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -210,11 +210,6 @@ class PrincipalList(CogniteResourceList[Principal]):
     def as_ids(self) -> list[str]:
         """Returns a list of principal IDs."""
         return [principal.id for principal in self]
-
-    def _build_id_mappings(self) -> None:
-        # Override as the base implementation assumes that if the first element has an 'external_id' attribute,
-        # then all elements have it. This is not the case for principals.
-        return
 
 
 # Build the mapping AFTER all classes are defined
