@@ -1,5 +1,8 @@
 Testing
 -------
+The SDK provides mock classes for both sync and async clients to facilitate unit testing.
+These mocks use ``create_autospec`` with ``spec_set=True`` to provide better type safety and call signature checking.
+
 Object to use as a mock for CogniteClient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: cognite.client.testing.CogniteClientMock
