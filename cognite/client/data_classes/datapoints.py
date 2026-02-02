@@ -10,7 +10,7 @@ from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, NoReturn, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeAlias, TypeVar, overload
 from zoneinfo import ZoneInfo
 
 from typing_extensions import Self
@@ -62,6 +62,9 @@ if TYPE_CHECKING:
     NumpyObjArray: TypeAlias = npt.NDArray[np.object_]
 
 
+_T_DPS = TypeVar("_T_DPS", "Datapoints", "DatapointsArray")
+
+
 def numpy_dtype_fix(
     element: np.float64 | str | MaxOrMinDatapoint, camel_case: bool = False
 ) -> float | str | dict[str, int | float | str]:
@@ -75,6 +78,21 @@ def numpy_dtype_fix(
         elif isinstance(element, MaxOrMinDatapoint):
             return element.dump(camel_case=camel_case)
         raise
+
+
+def build_id_mapping_with_duplicates(
+    dps_objs: Sequence[_T_DPS], attr: Literal["id", "external_id", "instance_id"]
+) -> dict[Any, _T_DPS | list[_T_DPS]]:
+    identifiers = list(filter(lambda v: v is not None, (getattr(dps, attr) for dps in dps_objs)))
+    duplicates = find_duplicates(identifiers)
+    result: dict[Any, _T_DPS | list[_T_DPS]] = {}
+    for dps in dps_objs:
+        if (ident := getattr(dps, attr)) is not None:
+            if ident in duplicates:
+                result.setdefault(ident, []).append(dps)  # type: ignore [union-attr]
+            else:
+                result[ident] = dps
+    return result
 
 
 class StatusCode(IntEnum):
@@ -1236,28 +1254,17 @@ class Datapoints(CogniteResource):
 class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
     _RESOURCE = DatapointsArray
 
-    def __init__(self, resources: Sequence[DatapointsArray]) -> None:
-        super().__init__(resources)
+    @cached_property
+    def _id_to_item(self) -> dict[int, DatapointsArray | list[DatapointsArray]]:  # type: ignore [override]
+        return build_id_mapping_with_duplicates(self.data, "id")
 
-        # Fix what happens for duplicated identifiers:
-        ids = [dps.id for dps in self if dps.id is not None]
-        xids = [dps.external_id for dps in self if dps.external_id is not None]
-        inst_ids = [dps.instance_id for dps in self if dps.instance_id is not None]
-        dupe_ids, id_dct = find_duplicates(ids), defaultdict(list)
-        dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
-        dupe_inst_ids, inst_id_dct = find_duplicates(inst_ids), defaultdict(list)
+    @cached_property
+    def _external_id_to_item(self) -> dict[str, DatapointsArray | list[DatapointsArray]]:  # type: ignore [override]
+        return build_id_mapping_with_duplicates(self.data, "external_id")
 
-        for dps in self:
-            if (id_ := dps.id) is not None and id_ in dupe_ids:
-                id_dct[id_].append(dps)
-            if (xid := dps.external_id) is not None and xid in dupe_xids:
-                xid_dct[xid].append(dps)
-            if (inst_id := dps.instance_id) is not None and inst_id in dupe_inst_ids:
-                inst_id_dct[xid].append(dps)
-
-        self._id_to_item.update(id_dct)
-        self._external_id_to_item.update(xid_dct)
-        self._instance_id_to_item.update(inst_id_dct)
+    @cached_property
+    def _instance_id_to_item(self) -> dict[InstanceId, DatapointsArray | list[DatapointsArray]]:  # type: ignore [override]
+        return build_id_mapping_with_duplicates(self.data, "instance_id")
 
     def get(  # type: ignore [override]
         self,
@@ -1327,28 +1334,17 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
 class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
     _RESOURCE = Datapoints
 
-    def __init__(self, resources: Sequence[Datapoints]) -> None:
-        super().__init__(resources)
+    @cached_property
+    def _id_to_item(self) -> dict[int, Datapoints | list[Datapoints]]:  # type: ignore [override]
+        return build_id_mapping_with_duplicates(self.data, "id")
 
-        # Fix what happens for duplicated identifiers:
-        ids = [dps.id for dps in self if dps.id is not None]
-        xids = [dps.external_id for dps in self if dps.external_id is not None]
-        inst_ids = [dps.instance_id for dps in self if dps.instance_id is not None]
-        dupe_ids, id_dct = find_duplicates(ids), defaultdict(list)
-        dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
-        dupe_inst_ids, inst_id_dct = find_duplicates(inst_ids), defaultdict(list)
+    @cached_property
+    def _external_id_to_item(self) -> dict[str, Datapoints | list[Datapoints]]:  # type: ignore [override]
+        return build_id_mapping_with_duplicates(self.data, "external_id")
 
-        for dps in self:
-            if (id_ := dps.id) is not None and id_ in dupe_ids:
-                id_dct[id_].append(dps)
-            if (xid := dps.external_id) is not None and xid in dupe_xids:
-                xid_dct[xid].append(dps)
-            if (inst_id := dps.instance_id) is not None and inst_id in dupe_inst_ids:
-                inst_id_dct[xid].append(dps)
-
-        self._id_to_item.update(id_dct)
-        self._external_id_to_item.update(xid_dct)
-        self._instance_id_to_item.update(inst_id_dct)
+    @cached_property
+    def _instance_id_to_item(self) -> dict[InstanceId, Datapoints | list[Datapoints]]:  # type: ignore [override]
+        return build_id_mapping_with_duplicates(self.data, "instance_id")
 
     def get(  # type: ignore [override]
         self,
