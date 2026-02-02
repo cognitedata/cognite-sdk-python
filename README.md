@@ -88,15 +88,7 @@ If you regularly need to fetch large amounts of datapoints, consider installing 
 (or with `pandas`, as it depends on `numpy`) for best performance, then use the `retrieve_arrays` (or `retrieve_dataframe`) endpoint(s). This avoids building large pure Python data structures, and instead reads data directly into memory-efficient `numpy.ndarrays`.
 
 ### Windows specific
-On Windows, it is recommended to install `geopandas` and its dependencies using `conda` package manager, see [geopandas installation page](https://geopandas.org/en/stable/getting_started/install.html#installation).
-The following commands create a new environment, install `geopandas` and `cognite-sdk`.
-
-```bash
-conda create -n geo_env
-conda activate geo_env
-conda install --channel conda-forge geopandas
-pip install cognite-sdk
-```
+If you experience issues installing the `geo` extra on Windows, consider using `conda` to install `geopandas` first. See the [geopandas installation page](https://geopandas.org/en/stable/getting_started/install.html#installation) for details.
 
 ## Changelog
 Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](https://github.com/cognitedata/cognite-sdk-python/blob/master/CHANGELOG.md).
