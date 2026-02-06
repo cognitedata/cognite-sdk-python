@@ -29,6 +29,7 @@ from cognite.client.exceptions import (
 )
 from cognite.client.response import CogniteHTTPResponse
 from cognite.client.utils._concurrency import get_global_semaphore
+from cognite.client.utils._url import extract_project_from_url
 
 logger = logging.getLogger(__name__)
 
@@ -265,7 +266,7 @@ class AsyncHTTPClientWithRetry:
         if semaphore is None:
             # By default, we run with a semaphore decided by user settings of 'max_workers' in 'global_config'.
             # Since the user can run any number of SDK tasks concurrently, this needs to be global:
-            semaphore = get_global_semaphore()
+            semaphore = get_global_semaphore(extract_project_from_url(url))
 
         is_auto_retryable = False
         retry_tracker = RetryTracker(url, self.config)

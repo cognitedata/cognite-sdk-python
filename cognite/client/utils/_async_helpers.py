@@ -15,10 +15,10 @@ class SyncIterator(Iterator[_T]):
     avoid loading all items into memory before yielding them as it just wraps the async client."""
 
     def __init__(self, async_iter: AsyncIterator[_T]) -> None:
-        from cognite.client.utils._concurrency import ConcurrencySettings
+        from cognite.client.utils._concurrency import _get_event_loop_executor
 
         self._async_iter = async_iter
-        self._run_coro = ConcurrencySettings._get_event_loop_executor().run_coro
+        self._run_coro = _get_event_loop_executor().run_coro
 
     def __iter__(self) -> Iterator[_T]:
         return self
@@ -37,9 +37,9 @@ class SyncIterator(Iterator[_T]):
 
 
 def run_sync(coro: Coroutine[_T, Any, _T]) -> _T:
-    from cognite.client.utils._concurrency import ConcurrencySettings
+    from cognite.client.utils._concurrency import _get_event_loop_executor
 
-    executor = ConcurrencySettings._get_event_loop_executor()
+    executor = _get_event_loop_executor()
     return executor.run_coro(coro)
 
 

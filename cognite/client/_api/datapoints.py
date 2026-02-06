@@ -112,7 +112,7 @@ class DpsFetchStrategy(ABC):
                     f"{self.dps_client._RESOURCE_PATH}/list",
                     json=payload,
                     headers={"accept": "application/protobuf"},
-                    semaphore=get_global_datapoints_semaphore(),
+                    semaphore=get_global_datapoints_semaphore(self.dps_client._config.project),
                 )
             ).content
         )
@@ -388,7 +388,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self,
         futures_dct: dict[asyncio.Task, list[BaseDpsFetchSubtask]],
     ) -> None:
-        sem = get_global_datapoints_semaphore()
+        sem = get_global_datapoints_semaphore(self.dps_client._config.project)
 
         # This may seem silly (to ask the semaphore for unused capacity), but the logic is sound:
         # we want to combine subtasks into requests *as late as possible* for optimal chunking.
@@ -2222,7 +2222,7 @@ class DatapointsAPI(APIClient):
         await self.insert_multiple(dps)  # type: ignore[arg-type]
 
     def _select_dps_fetch_strategy(self, queries: list[DatapointsQuery]) -> type[DpsFetchStrategy]:
-        semaphore = get_global_datapoints_semaphore()
+        semaphore = get_global_datapoints_semaphore(self._config.project)
 
         # We decide the fetching strategy based on how many time series the user has requested VS the
         # max concurrency we allow for datapoints requests. When the number of time series is small enough
@@ -2362,7 +2362,7 @@ class DatapointsPoster:
             url_path=self.dps_client._RESOURCE_PATH,
             json={"items": payload},
             headers=headers,
-            semaphore=get_global_datapoints_semaphore(),
+            semaphore=get_global_datapoints_semaphore(self.dps_client._config.project),
         )
         for dct in payload:
             dct["datapoints"].clear()

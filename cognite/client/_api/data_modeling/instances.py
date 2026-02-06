@@ -170,7 +170,6 @@ class InstancesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._AGGREGATE_LIMIT = 1000
         self._SEARCH_LIMIT = 1000
-        self.__dm_semaphore = get_global_data_modeling_semaphore()
 
         self._warn_on_alpha_debug_settings = FeaturePreviewWarning(
             api_maturity="alpha",
@@ -298,7 +297,7 @@ class InstancesAPI(APIClient):
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
                 headers=headers,
-                semaphore=self.__dm_semaphore,
+                semaphore=get_global_data_modeling_semaphore(self._config.project),
             ):
                 yield item
             return
@@ -311,7 +310,7 @@ class InstancesAPI(APIClient):
             filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
             other_params=other_params,
             headers=headers,
-            semaphore=self.__dm_semaphore,
+            semaphore=get_global_data_modeling_semaphore(self._config.project),
         ):
             yield list_cls._load_raw_api_response([raw])
 
@@ -635,7 +634,7 @@ class InstancesAPI(APIClient):
             identifiers=identifiers,
             other_params=other_params,
             settings_forcing_raw_response_loading=[f"{include_typing=}"] if include_typing else None,
-            semaphore=self.__dm_semaphore,
+            semaphore=get_global_data_modeling_semaphore(self._config.project),
         )
 
         return InstancesResult[T_Node, T_Edge](
@@ -723,7 +722,7 @@ class InstancesAPI(APIClient):
                 identifiers,
                 wrap_ids=True,
                 returns_items=True,
-                semaphore=self.__dm_semaphore,
+                semaphore=get_global_data_modeling_semaphore(self._config.project),
             ),
         )
         node_ids = [NodeId.load(item) for item in deleted_instances if item["instanceType"] == "node"]
@@ -789,7 +788,7 @@ class InstancesAPI(APIClient):
             response = await self._post(
                 self._RESOURCE_PATH + "/inspect",
                 json={"items": chunk.as_dicts(), "inspectionOperations": inspect_operations},
-                semaphore=self.__dm_semaphore,
+                semaphore=get_global_data_modeling_semaphore(self._config.project),
             )
             items.extend(unpack_items(response))
 
@@ -1068,7 +1067,7 @@ class InstancesAPI(APIClient):
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
             input_resource_cls=_NodeOrEdgeApplyAdapter,  # type: ignore[arg-type]
-            semaphore=self.__dm_semaphore,
+            semaphore=get_global_data_modeling_semaphore(self._config.project),
         )
         return InstancesApplyResult(
             nodes=NodeApplyResultList([item for item in res if isinstance(item, NodeApplyResult)]),
@@ -1258,7 +1257,11 @@ class InstancesAPI(APIClient):
                     raise ValueError("nulls_first argument is not supported when sorting on instance search")
             body["sort"] = [self._dump_instance_sort(s) for s in sorts]
 
-        res = await self._post(url_path=self._RESOURCE_PATH + "/search", json=body, semaphore=self.__dm_semaphore)
+        res = await self._post(
+            url_path=self._RESOURCE_PATH + "/search",
+            json=body,
+            semaphore=get_global_data_modeling_semaphore(self._config.project),
+        )
         result = res.json()
         return list_cls(
             [resource_cls._load(item) for item in result["items"]],  # type: ignore [misc]
@@ -1383,7 +1386,11 @@ class InstancesAPI(APIClient):
         if target_units:
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
-        res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=self.__dm_semaphore)
+        res = await self._post(
+            url_path=self._RESOURCE_PATH + "/aggregate",
+            json=body,
+            semaphore=get_global_data_modeling_semaphore(self._config.project),
+        )
         result_list = InstanceAggregationResultList._load(res.json()["items"])
         if group_by is not None:
             return result_list
@@ -1492,7 +1499,11 @@ class InstancesAPI(APIClient):
         if target_units:
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
-        res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=self.__dm_semaphore)
+        res = await self._post(
+            url_path=self._RESOURCE_PATH + "/aggregate",
+            json=body,
+            semaphore=get_global_data_modeling_semaphore(self._config.project),
+        )
         if is_singleton:
             return HistogramValue.load(res.json()["items"][0]["aggregates"][0])
         else:
@@ -1651,7 +1662,10 @@ class InstancesAPI(APIClient):
                 headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
 
         response = await self._post(
-            url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body, headers=headers, semaphore=self.__dm_semaphore
+            url_path=self._RESOURCE_PATH + f"/{endpoint}",
+            json=body,
+            headers=headers,
+            semaphore=get_global_data_modeling_semaphore(self._config.project),
         )
         json_payload = response.json()
         default_by_reference = query.instance_type_by_result_expression()
@@ -1851,7 +1865,7 @@ class InstancesAPI(APIClient):
                 other_params=other_params,
                 settings_forcing_raw_response_loading=settings_forcing_raw_response_loading,
                 headers=headers,
-                semaphore=self.__dm_semaphore,
+                semaphore=get_global_data_modeling_semaphore(self._config.project),
             ),
         )
 

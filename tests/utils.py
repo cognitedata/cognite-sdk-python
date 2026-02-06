@@ -271,7 +271,7 @@ def override_semaphore(new: int, target: Literal["basic", "datapoints", "data_mo
 
     # The new semaphore should now pick up the changed max_workers value:
     semaphore_get_fn.cache_clear()
-    sem = semaphore_get_fn()
+    sem = semaphore_get_fn("test_project")  # TODO: Stop-gap solution awaiting final concurrency limit implementation
     assert new == sem._value == sem._bound_value, "Semaphore didn't update according to overridden max_workers"  # type: ignore[attr-defined]
 
     try:
