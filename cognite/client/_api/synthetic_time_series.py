@@ -58,6 +58,7 @@ class SyntheticDatapointsAPI(APIClient):
         granularity: str | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
+        timezone: str | None = None
     ) -> Datapoints | DatapointsList:
         """`Calculate the result of a function on time series. <https://developer.cognite.com/api#tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
@@ -71,7 +72,7 @@ class SyntheticDatapointsAPI(APIClient):
             granularity (str | None): use this granularity with the aggregate.
             target_unit (str | None): use this target_unit when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
             target_unit_system (str | None): Same as target_unit, but with unit system (e.g. SI). Only one of target_unit and target_unit_system can be specified.
-
+            timezone (str | None): The timezone to use when aggregating datapoints.
         Returns:
             Datapoints | DatapointsList: A DatapointsList object containing the calculated data.
 
@@ -129,7 +130,12 @@ class SyntheticDatapointsAPI(APIClient):
             expression, short_expression = self._build_expression(
                 user_expr, variables, aggregate, granularity, target_unit, target_unit_system
             )
-            query = {"expression": expression, "start": timestamp_to_ms(start), "end": timestamp_to_ms(end)}
+            query = {
+                "expression": expression,
+                "start": timestamp_to_ms(start),
+                "end": timestamp_to_ms(end),
+                "timeZone": timezone
+            }
             # NOTE / TODO: We misuse the 'external_id' field for the entire 'expression string':
             query_datapoints = Datapoints(external_id=short_expression, value=[], error=[])
             tasks.append((query, query_datapoints, limit))
