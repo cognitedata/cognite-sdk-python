@@ -58,7 +58,7 @@ class SyntheticDatapointsAPI(APIClient):
         granularity: str | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
-        timezone: str | None = None
+        timezone: str | None = None,
     ) -> Datapoints | DatapointsList:
         """`Calculate the result of a function on time series. <https://developer.cognite.com/api#tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
@@ -134,7 +134,7 @@ class SyntheticDatapointsAPI(APIClient):
                 "expression": expression,
                 "start": timestamp_to_ms(start),
                 "end": timestamp_to_ms(end),
-                "timeZone": timezone
+                "timeZone": timezone,
             }
             # NOTE / TODO: We misuse the 'external_id' field for the entire 'expression string':
             query_datapoints = Datapoints(external_id=short_expression, value=[], error=[])
