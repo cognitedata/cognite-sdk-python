@@ -61,7 +61,7 @@ class SyntheticDatapointsAPI(APIClient):
         target_unit_system: str | None = None,
         timezone: str | TimeZone | ZoneInfo | None = None,
     ) -> Datapoints | DatapointsList:
-        """`Calculate the result of a function on time series. <https://developer.cognite.com/api#tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
+        """`Calculate the result of a function on time series. <https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries>`_
 
         Args:
             expressions (str | sympy.Basic | Sequence[str | sympy.Basic]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
