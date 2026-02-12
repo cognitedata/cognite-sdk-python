@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from datetime import datetime
+from datetime import timezone as TimeZone
 from typing import TYPE_CHECKING, Any, Union, cast
 
 from cognite.client._api_client import APIClient
@@ -13,7 +14,7 @@ from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, InstanceId
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._time import timestamp_to_ms
+from cognite.client.utils._time import ZoneInfo, convert_timezone_to_str, timestamp_to_ms
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -58,7 +59,7 @@ class SyntheticDatapointsAPI(APIClient):
         granularity: str | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
-        timezone: str | None = None,
+        timezone: str | TimeZone | ZoneInfo | None = None,
     ) -> Datapoints | DatapointsList:
         """`Calculate the result of a function on time series. <https://developer.cognite.com/api#tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
@@ -72,7 +73,7 @@ class SyntheticDatapointsAPI(APIClient):
             granularity (str | None): use this granularity with the aggregate.
             target_unit (str | None): use this target_unit when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
             target_unit_system (str | None): Same as target_unit, but with unit system (e.g. SI). Only one of target_unit and target_unit_system can be specified.
-            timezone (str | None): The timezone to use when aggregating datapoints.
+            timezone (str | TimeZone | ZoneInfo | None): The timezone to use when displaying the datapoint.
         Returns:
             Datapoints | DatapointsList: A DatapointsList object containing the calculated data.
 
@@ -130,6 +131,8 @@ class SyntheticDatapointsAPI(APIClient):
             expression, short_expression = self._build_expression(
                 user_expr, variables, aggregate, granularity, target_unit, target_unit_system
             )
+            if isinstance(timezone, (ZoneInfo, TimeZone)):
+                timezone = convert_timezone_to_str(timezone)
             query = {
                 "expression": expression,
                 "start": timestamp_to_ms(start),
