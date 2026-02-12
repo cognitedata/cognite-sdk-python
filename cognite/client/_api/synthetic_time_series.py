@@ -73,7 +73,7 @@ class SyntheticDatapointsAPI(APIClient):
             granularity (str | None): use this granularity with the aggregate.
             target_unit (str | None): use this target_unit when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
             target_unit_system (str | None): Same as target_unit, but with unit system (e.g. SI). Only one of target_unit and target_unit_system can be specified.
-            timezone (str | TimeZone | ZoneInfo | None): The timezone to use when displaying the datapoint.
+            timezone (str | TimeZone | ZoneInfo | None): For aggregates of granularity 'hour' and longer, which time zone should we align to. Align to the start of the hour, start of the day or start of the month. For time zones of type Region/Location, the aggregate duration can vary, typically due to daylight saving time. For time zones of type UTC+/-HH:MM, use increments of 15 minutes. Default: "UTC"
         Returns:
             Datapoints | DatapointsList: A DatapointsList object containing the calculated data.
 
