@@ -83,7 +83,7 @@ class SimulatorRoutineInput(CogniteObject, ABC):
 
         is_constant = resource.get("value")
         is_timeseries = resource.get("sourceExternalId")
-        type_ = "constant" if is_constant else "timeseries" if is_timeseries else None
+        type_ = "constant" if is_constant is not None else "timeseries" if is_timeseries else None
         if type_ is None:
             return UnknownCogniteObject(resource)  # type: ignore[return-value]
         input_class = _INPUT_CLASS_BY_TYPE.get(type_)

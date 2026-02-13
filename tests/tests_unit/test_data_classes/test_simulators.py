@@ -11,6 +11,7 @@ from cognite.client.data_classes.simulators.models import (
 from cognite.client.data_classes.simulators.routine_revisions import (
     SimulationValueUnitInput,
     SimulatorRoutineConfiguration,
+    SimulatorRoutineInput,
     SimulatorRoutineInputConstant,
     SimulatorRoutineInputTimeseries,
     SimulatorRoutineOutput,
@@ -489,3 +490,11 @@ class TestSimulationRunWrite:
             SimulationRunWrite(
                 routine_revision_external_id="routine_revision_external_id_1",
             )
+
+
+class TestSimulatorRoutineInput:
+    def test_load_zero_value(self) -> None:
+        routine_input = SimulatorRoutineInput._load(
+            {"name": "input", "referenceId": "input", "value": 0, "valueType": "DOUBLE"}
+        )
+        assert isinstance(routine_input, SimulatorRoutineInput)
