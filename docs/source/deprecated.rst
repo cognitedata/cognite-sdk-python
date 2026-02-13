@@ -1,6 +1,16 @@
 Deprecated
 ==========
 
+Vision
+------
+Start vision extract job
+^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.vision.VisionAPI.extract
+
+Retrieve vision extract job
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.vision.VisionAPI.get_extract_job
+
 Templates
 ---------
 Create Template groups

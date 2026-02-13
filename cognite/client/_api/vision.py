@@ -19,6 +19,14 @@ class VisionAPI(APIClient):
     _RESOURCE_PATH = "/context/vision"
 
     @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            "The Vision API will be removed in a future version of the SDK. Please migrate to the recommended alternative. "
+            "Read more at: https://docs.cognite.com/PLACEHOLDER_VISION_MIGRATION",
+            UserWarning,
+        )
+
+    @staticmethod
     def _process_file_ids(ids: list[int] | int | None, external_ids: list[str] | str | None) -> list:
         """
         Utility for sanitizing a given lists of ids and external ids.
@@ -90,6 +98,7 @@ class VisionAPI(APIClient):
                 >>> # Save predictions in CDF using Annotations API:
                 >>> extract_job.save_predictions()
         """
+        VisionAPI._deprecation_warning()
         # Sanitize input(s)
         assert_type(features, "features", [VisionFeature, list], allow_none=False)
         if isinstance(features, list):
@@ -136,6 +145,7 @@ class VisionAPI(APIClient):
                 ...     predictions = item.predictions
                 ...     # do something with the predictions
         """
+        VisionAPI._deprecation_warning()
         job = VisionExtractJob(
             job_id=job_id,
             status_path=f"{self._RESOURCE_PATH}/extract/",
