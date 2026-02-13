@@ -247,6 +247,27 @@ class TestVisionExtract:
                 assert f"/{job.job_id}" in call.request.url
         assert 1 == num_get_requests
 
+    def test_extract_emits_deprecation_warning(
+        self, mock_post_extract: RequestsMock, mock_get_extract: RequestsMock, cognite_client: CogniteClient
+    ) -> None:
+        mock_get_extract.assert_all_requests_are_fired = False  # only POST (extract) is called
+        VAPI = cognite_client.vision
+        with pytest.warns(UserWarning, match=r"Vision API will be removed"):
+            job = VAPI.extract(
+                features=VisionFeature.TEXT_DETECTION, file_ids=[1], file_external_ids=[]
+            )
+        assert isinstance(job, VisionExtractJob)
+
+    def test_get_extract_job_emits_deprecation_warning(
+        self, mock_post_extract: RequestsMock, mock_get_extract: RequestsMock, cognite_client: CogniteClient
+    ) -> None:
+        mock_post_extract.assert_all_requests_are_fired = False  # only GET (get_extract_job) is called
+        VAPI = cognite_client.vision
+        with pytest.warns(UserWarning, match=r"Vision API will be removed"):
+            job = VAPI.get_extract_job(job_id=1)
+        assert isinstance(job, VisionExtractJob)
+        assert job.job_id == 1
+
     def test_save_empty_predictions(
         self,
         mock_post_extract: RequestsMock,
