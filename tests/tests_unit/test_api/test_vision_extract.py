@@ -253,9 +253,7 @@ class TestVisionExtract:
         mock_get_extract.assert_all_requests_are_fired = False  # only POST (extract) is called
         VAPI = cognite_client.vision
         with pytest.warns(UserWarning, match=r"Vision API will be removed"):
-            job = VAPI.extract(
-                features=VisionFeature.TEXT_DETECTION, file_ids=[1], file_external_ids=[]
-            )
+            job = VAPI.extract(features=VisionFeature.TEXT_DETECTION, file_ids=[1], file_external_ids=[])
         assert isinstance(job, VisionExtractJob)
 
     def test_get_extract_job_emits_deprecation_warning(
