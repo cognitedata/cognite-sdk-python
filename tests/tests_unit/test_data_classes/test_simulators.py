@@ -501,8 +501,6 @@ class TestSimulatorRoutineInput:
         assert routine_input.value == 0
 
     def test_load_empty_string_source_external_id(self) -> None:
-        routine_input = SimulatorRoutineInput._load(
-            {"name": "input", "referenceId": "input", "sourceExternalId": ""}
-        )
+        routine_input = SimulatorRoutineInput._load({"name": "input", "referenceId": "input", "sourceExternalId": ""})
         assert isinstance(routine_input, SimulatorRoutineInputTimeseries)
         assert routine_input.source_external_id == ""
