@@ -372,13 +372,7 @@ def permanent_data_modeling_trigger(cognite_client: CogniteClient, permanent_wor
         workflow_version=version.version,
     )
 
-    existing_triggers = {trigger.external_id: trigger for trigger in cognite_client.workflows.triggers.list(limit=-1)}
-    if trigger.external_id not in existing_triggers:
-        retrieved = cognite_client.workflows.triggers.create(trigger)
-    else:
-        retrieved = existing_triggers[trigger.external_id]
-
-    yield retrieved
+    yield cognite_client.workflows.triggers.create(trigger)
 
 
 class TestWorkflows:
@@ -411,7 +405,6 @@ class TestWorkflows:
         non_existing = cognite_client.workflows.retrieve("integration_test-non_existing_workflow")
         assert non_existing is None
 
-    @pytest.mark.skip("flaky; fix underway")
     def test_list_workflows(self, cognite_client: CogniteClient, persisted_workflow_list: WorkflowList) -> None:
         listed = cognite_client.workflows.list(limit=-1)
         assert len(listed) >= len(persisted_workflow_list)
@@ -661,7 +654,6 @@ class TestWorkflowTriggers:
             if created is not None:
                 cognite_client.workflows.triggers.delete(created.external_id)
 
-    @pytest.mark.skip("This test is temp. disabled, flaky, awaiting a more robust long-term solution. Task: DOGE-100")
     def test_create_update_delete_data_modeling_trigger(
         self,
         cognite_client: CogniteClient,
@@ -669,7 +661,8 @@ class TestWorkflowTriggers:
     ) -> None:
         assert permanent_data_modeling_trigger is not None
         assert permanent_data_modeling_trigger.external_id.startswith("data-modeling-trigger_integration_test-workflow")
-        assert permanent_data_modeling_trigger.trigger_rule == WorkflowDataModelingTriggerRule(
+        actual = permanent_data_modeling_trigger.trigger_rule
+        expected = WorkflowDataModelingTriggerRule(
             data_modeling_query=WorkflowTriggerDataModelingQuery(
                 with_={"timeseries": NodeResultSetExpression(limit=500)},
                 select={
@@ -681,8 +674,9 @@ class TestWorkflowTriggers:
             batch_size=500,
             batch_timeout=300,
         )
+        assert actual.dump() == expected.dump()
         assert permanent_data_modeling_trigger.workflow_external_id.startswith("integration_test-workflow_")
-        assert permanent_data_modeling_trigger.workflow_version == "1"
+        assert permanent_data_modeling_trigger.workflow_version == "v1"
         assert permanent_data_modeling_trigger.created_time is not None
         assert permanent_data_modeling_trigger.last_updated_time is not None
         updated_trigger = cognite_client.workflows.triggers.upsert(
@@ -734,8 +728,6 @@ class TestWorkflowTriggers:
         assert permanent_scheduled_trigger.external_id in external_ids
         assert permanent_data_modeling_trigger.external_id in external_ids
 
-    # TODO: Fix this test
-    @pytest.mark.skip("This test just fails because no trigger history is returned, not sure why")
     def test_trigger_run_history(
         self,
         cognite_client: CogniteClient,
