@@ -366,7 +366,7 @@ def permanent_data_modeling_trigger(cognite_client: CogniteClient, permanent_wor
         workflow_version=version.version,
     )
 
-    yield cognite_client.workflows.triggers.create(trigger)
+    yield cognite_client.workflows.triggers.upsert(trigger)
 
 
 class TestWorkflows:
