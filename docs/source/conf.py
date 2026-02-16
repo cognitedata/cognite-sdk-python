@@ -162,3 +162,20 @@ texinfo_documents = [
 ]
 
 python_maximum_signature_line_length = 80
+
+# Patch Sphinx to hide @overload signatures in docs
+# Sphinx's autodoc uses ModuleAnalyzer.overloads via the parser
+# We patch the analyze method to clear overloads after parsing
+# To see why, check out https://github.com/cognitedata/cognite-sdk-python/pull/2460
+from sphinx.pycode import ModuleAnalyzer  # noqa: E402
+
+analyze_fn = ModuleAnalyzer.analyze
+
+
+def analyze_but_skip_overloads(self):
+    result = analyze_fn(self)
+    self.overloads = {}  # Clear overloads after analysis
+    return result
+
+
+ModuleAnalyzer.analyze = analyze_but_skip_overloads
