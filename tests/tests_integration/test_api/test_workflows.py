@@ -56,19 +56,19 @@ def wf_setup_module(cognite_client: CogniteClient) -> None:
     resource_age = timestamp_to_ms("30m-ago")
 
     wf_triggers = cognite_client.workflows.triggers.list(limit=None)
-    wf_triggers_to_delete = [wf.external_id for wf in wf_triggers if wf.created_time < resource_age]
+    wf_triggers_to_delete = [wf.external_id for wf in wf_triggers if wf.last_updated_time < resource_age]
     if wf_triggers_to_delete:
         cognite_client.workflows.triggers.delete(wf_triggers_to_delete)
 
     wf_versions = cognite_client.workflows.versions.list(limit=None)
     wf_versions_to_delete = [
-        (wf.workflow_external_id, wf.version) for wf in wf_versions if wf.created_time < resource_age
+        (wf.workflow_external_id, wf.version) for wf in wf_versions if wf.last_updated_time < resource_age
     ]
     if wf_versions_to_delete:
         cognite_client.workflows.versions.delete(wf_versions_to_delete)
 
     wfs = cognite_client.workflows.list(limit=None)
-    wfs_to_delete = [wf.external_id for wf in wfs if wf.created_time < resource_age]
+    wfs_to_delete = [wf.external_id for wf in wfs if wf.last_updated_time < resource_age]
     if wfs_to_delete:
         cognite_client.workflows.delete(wfs_to_delete)
 
@@ -337,17 +337,11 @@ def permanent_scheduled_trigger(
     cognite_client: CogniteClient, permanent_workflow_for_triggers: WorkflowVersion
 ) -> WorkflowTrigger:
     version = permanent_workflow_for_triggers
-    ever_minute_expression = "* * * * *"
+    every_minute_expression = "* * * * *"
 
-    on_the_minute = _create_scheduled_trigger(version, ever_minute_expression)
+    on_the_minute = _create_scheduled_trigger(version, every_minute_expression)
 
-    existing_triggers = {trigger.external_id: trigger for trigger in cognite_client.workflows.triggers.list(limit=-1)}
-    if on_the_minute.external_id not in existing_triggers:
-        retrieved = cognite_client.workflows.triggers.upsert(on_the_minute)
-    else:
-        retrieved = existing_triggers[on_the_minute.external_id]
-
-    return retrieved
+    yield cognite_client.workflows.triggers.upsert(on_the_minute)
 
 
 @pytest.fixture(scope="class")
