@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import warnings
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
@@ -64,17 +63,6 @@ NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN: re.Pattern[str] = re.compile(
 )
 VALID_URL_PATTERN = re.compile(r"^https?://[a-z\d.:\-]+(?:/api/v1/projects/[^/]+)?((/[^\?]+)?(\?.+)?)")
 VALID_METHODS = {"GET", "POST", "PUT", "DELETE", "PATCH"}
-
-EXTRACT_PROJECT = re.compile(r"/api/v1/projects/([^/]+)")
-
-
-def extract_project_from_url(url: str, default: str = "") -> str:
-    # TODO: Stop-gap solution while we await the final concurrency limit implementation
-    try:
-        return EXTRACT_PROJECT.search(url).group(1)  # type: ignore[union-attr]
-    except AttributeError:
-        warnings.warn("No project found in URL", UserWarning)
-        return default
 
 
 def resolve_url(api_client: BasicAsyncAPIClient, method: str, url_path: str) -> tuple[bool, str]:

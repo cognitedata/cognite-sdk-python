@@ -18,23 +18,22 @@ from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, C
 from cognite.client.utils._auxiliary import no_op
 
 
-# We add the 'project' argument to make sure concurrency limits are applied per project:
 @cache
-def get_global_semaphore(project: str) -> asyncio.BoundedSemaphore:
+def get_global_semaphore() -> asyncio.BoundedSemaphore:
     from cognite.client import global_config
 
     return asyncio.BoundedSemaphore(global_config.max_workers)
 
 
 @cache
-def get_global_datapoints_semaphore(project: str) -> asyncio.BoundedSemaphore:
+def get_global_datapoints_semaphore() -> asyncio.BoundedSemaphore:
     from cognite.client import global_config
 
     return asyncio.BoundedSemaphore(global_config.max_workers)
 
 
 @cache
-def get_global_data_modeling_semaphore(project: str) -> asyncio.BoundedSemaphore:
+def get_global_data_modeling_semaphore() -> asyncio.BoundedSemaphore:
     return asyncio.BoundedSemaphore(2)
 
 
