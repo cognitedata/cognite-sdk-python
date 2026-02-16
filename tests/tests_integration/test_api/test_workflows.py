@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 import unittest
-import uuid
 from collections.abc import Iterator
 from zoneinfo import ZoneInfo
 
@@ -81,7 +80,7 @@ def data_set(cognite_client: CogniteClient) -> DataSet:
 
 def _new_workflow(cognite_client: CogniteClient, data_set: DataSet) -> Iterator[Workflow]:
     workflow = WorkflowUpsert(
-        external_id=f"integration_test-workflow_{uuid.uuid4()}",
+        external_id=f"integration_test-workflow_{random_string(5)}",
         data_set_id=data_set.id,
     )
     yield cognite_client.workflows.upsert(workflow)
