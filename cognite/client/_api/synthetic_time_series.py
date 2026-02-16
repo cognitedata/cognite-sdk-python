@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import datetime
 import re
 from collections.abc import Sequence
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, Union, cast
 
 from cognite.client._api_client import APIClient
@@ -13,7 +13,7 @@ from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, InstanceId
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._time import timestamp_to_ms
+from cognite.client.utils._time import ZoneInfo, convert_timezone_to_str, timestamp_to_ms
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -50,27 +50,34 @@ class SyntheticDatapointsAPI(APIClient):
     def query(
         self,
         expressions: str | sympy.Basic | Sequence[str | sympy.Basic],
-        start: int | str | datetime,
-        end: int | str | datetime,
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime,
         limit: int | None = None,
         variables: dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
     ) -> Datapoints | DatapointsList:
         """`Calculate the result of a function on time series. <https://developer.cognite.com/api#tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
+        Info:
+            You can read the guide to synthetic time series in our `documentation <https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries>`_.
+
         Args:
             expressions (str | sympy.Basic | Sequence[str | sympy.Basic]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
-            start (int | str | datetime): Inclusive start.
-            end (int | str | datetime): Exclusive end.
+            start (int | str | datetime.datetime): Inclusive start.
+            end (int | str | datetime.datetime): Exclusive end.
             limit (int | None): Number of datapoints per expression to retrieve.
             variables (dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None): An optional map of symbol replacements.
             aggregate (str | None): use this aggregate when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
             granularity (str | None): use this granularity with the aggregate.
             target_unit (str | None): use this target_unit when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
             target_unit_system (str | None): Same as target_unit, but with unit system (e.g. SI). Only one of target_unit and target_unit_system can be specified.
+            timezone (str | datetime.timezone | ZoneInfo | None): The timezone to use when aggregating datapoints. For aggregates of granularity 'hour' and longer,
+                which time zone should we align to. Align to the start of the hour, start of the day or start of the month. For time zones of type Region/Location,
+                the aggregate duration can vary, typically due to daylight saving time. For time zones of type UTC+/-HH:MM, use increments of 15 minutes. Default: "UTC" (None)
 
         Returns:
             Datapoints | DatapointsList: A DatapointsList object containing the calculated data.
@@ -116,7 +123,9 @@ class SyntheticDatapointsAPI(APIClient):
                 ...     variables={x: "foo", y: "bar"},
                 ...     aggregate="interpolation",
                 ...     granularity="15m",
-                ...     target_unit="temperature:deg_c")
+                ...     target_unit="temperature:deg_c",
+                ...     timezone="Europe/Oslo",  # can also use this format: 'UTC+05:30'
+                ... )
         """
         if is_unlimited(limit):
             limit = cast(int, float("inf"))
@@ -129,7 +138,16 @@ class SyntheticDatapointsAPI(APIClient):
             expression, short_expression = self._build_expression(
                 user_expr, variables, aggregate, granularity, target_unit, target_unit_system
             )
-            query = {"expression": expression, "start": timestamp_to_ms(start), "end": timestamp_to_ms(end)}
+            query = {
+                "expression": expression,
+                "start": timestamp_to_ms(start),
+                "end": timestamp_to_ms(end),
+            }
+            if timezone is not None:
+                if isinstance(timezone, (ZoneInfo, datetime.timezone)):
+                    timezone = convert_timezone_to_str(timezone)
+                query["timeZone"] = timezone
+
             # NOTE / TODO: We misuse the 'external_id' field for the entire 'expression string':
             query_datapoints = Datapoints(external_id=short_expression, value=[], error=[])
             tasks.append((query, query_datapoints, limit))
