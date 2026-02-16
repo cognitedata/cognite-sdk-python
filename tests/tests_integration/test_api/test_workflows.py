@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import unittest
+import uuid
 from collections.abc import Iterator
 from zoneinfo import ZoneInfo
 
@@ -80,7 +81,7 @@ def data_set(cognite_client: CogniteClient) -> DataSet:
 
 def _new_workflow(cognite_client: CogniteClient, data_set: DataSet) -> Iterator[Workflow]:
     workflow = WorkflowUpsert(
-        external_id=f"integration_test-workflow_{random_string(5)}",
+        external_id=f"integration_test-workflow_{uuid.uuid4()}",
         data_set_id=data_set.id,
     )
     yield cognite_client.workflows.upsert(workflow)
@@ -649,7 +650,6 @@ class TestWorkflowTriggers:
             if created is not None:
                 cognite_client.workflows.triggers.delete(created.external_id)
 
-    @pytest.mark.skip("This test is temp. disabled, flaky, awaiting a more robust long-term solution. Task: DOGE-100")
     def test_create_update_delete_data_modeling_trigger(
         self,
         cognite_client: CogniteClient,
