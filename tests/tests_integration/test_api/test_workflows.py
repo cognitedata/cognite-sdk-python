@@ -90,12 +90,14 @@ def a_function(cognite_client: CogniteClient) -> Function:
         external_id=external_id,
         function_handle=handle,
     )
-    while function.status != "ready":
+    for _ in range(450):
+        if function.status == "ready":
+            return function
         if function.status == "failed":
             raise RuntimeError(f"Function {external_id} deployment failed: {function.error}")
         time.sleep(2)
         function = cognite_client.functions.retrieve(external_id=external_id)
-    return function
+    raise RuntimeError(f"Function {external_id} did not become ready within ~15 minutes")
 
 
 @pytest.fixture(scope="session")
