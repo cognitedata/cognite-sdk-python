@@ -81,7 +81,6 @@ def handle(client, data) -> str:
 def a_function(cognite_client: CogniteClient) -> Function:
     name = "python-sdk-workflow-test-function"
     external_id = "python-sdk-workflow-test-function"
-    description = "test function"
     retrieved = cognite_client.functions.retrieve(external_id=external_id)
     if retrieved:
         return retrieved
@@ -89,9 +88,11 @@ def a_function(cognite_client: CogniteClient) -> Function:
     function = cognite_client.functions.create(
         name=name,
         external_id=external_id,
-        description=description,
         function_handle=handle,
     )
+    while function.status != "ready":
+        time.sleep(2)
+        function = cognite_client.functions.retrieve(external_id=external_id)
     return function
 
 
