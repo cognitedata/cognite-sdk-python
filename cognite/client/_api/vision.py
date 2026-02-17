@@ -22,7 +22,7 @@ class VisionAPI(APIClient):
     def _deprecation_warning() -> None:
         warnings.warn(
             "The Vision API will be removed in a future version of the SDK. Please migrate to the recommended alternative. "
-            "Read more at: https://docs.cognite.com/PLACEHOLDER_VISION_MIGRATION",
+            "Read more at: https://docs.cognite.com/cdf/deprecated#deprecated-and-retired-features",
             UserWarning,
         )
 
