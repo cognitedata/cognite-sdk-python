@@ -319,7 +319,7 @@ Extractor Extensions
     :show-inheritance:
 
 Debugging Data Classes
-------------
+----------------------
 .. automodule:: cognite.client.data_classes.data_modeling.debug
     :members:
     :show-inheritance:
