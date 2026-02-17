@@ -399,7 +399,6 @@ class TestWorkflows:
         non_existing = cognite_client.workflows.retrieve("integration_test-non_existing_workflow")
         assert non_existing is None
 
-    @pytest.mark.skip("flaky; fix underway")
     def test_list_workflows(self, cognite_client: CogniteClient, persisted_workflow_list: WorkflowList) -> None:
         listed = cognite_client.workflows.list(limit=-1)
         assert len(listed) >= len(persisted_workflow_list)
@@ -723,8 +722,6 @@ class TestWorkflowTriggers:
         assert permanent_scheduled_trigger.external_id in external_ids
         assert permanent_data_modeling_trigger.external_id in external_ids
 
-    # TODO: Fix this test
-    @pytest.mark.skip("This test just fails because no trigger history is returned, not sure why")
     def test_trigger_run_history(
         self,
         cognite_client: CogniteClient,
