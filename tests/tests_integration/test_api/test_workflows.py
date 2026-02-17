@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import DataSet
+from cognite.client.data_classes import DataSet, Function
 from cognite.client.data_classes.data_modeling import ViewId
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
 from cognite.client.data_classes.simulators.runs import SimulationInputOverride, SimulationValueUnitName
@@ -71,6 +71,28 @@ def wf_setup_module(cognite_client: CogniteClient) -> None:
     wfs_to_delete = [wf.external_id for wf in wfs if wf.created_time < resource_age]
     if wfs_to_delete:
         cognite_client.workflows.delete(wfs_to_delete)
+
+
+def handle(client, data) -> str:
+    return "Hello, world!"
+
+
+@pytest.fixture(scope="session")
+def a_function(cognite_client: CogniteClient) -> Function:
+    name = "python-sdk-workflow-test-function"
+    external_id = "python-sdk-workflow-test-function"
+    description = "test function"
+    retrieved = cognite_client.functions.retrieve(external_id=external_id)
+    if retrieved:
+        return retrieved
+
+    function = cognite_client.functions.create(
+        name=name,
+        external_id=external_id,
+        description=description,
+        function_handle=handle,
+    )
+    return function
 
 
 @pytest.fixture(scope="session")
@@ -148,7 +170,9 @@ def new_workflow_version_test_scoped(cognite_client: CogniteClient, new_workflow
     yield from _new_workflow_version(cognite_client, new_workflow_test_scoped)
 
 
-def _new_async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersion]:
+def _new_async_workflow_version(
+    cognite_client: CogniteClient, new_workflow: Workflow, a_function: Function
+) -> Iterator[WorkflowVersion]:
     version = WorkflowVersionUpsert(
         workflow_external_id=new_workflow.external_id,
         version="1",
@@ -157,8 +181,7 @@ def _new_async_workflow_version(cognite_client: CogniteClient, new_workflow: Wor
                 WorkflowTask(
                     external_id=f"{new_workflow.external_id}-1-multiply",
                     parameters=FunctionTaskParameters(
-                        external_id="non-existing-function-async-resolve",
-                        data={"a": 3, "b": 4},
+                        external_id=a_function.external_id,
                         is_async_complete=True,
                     ),
                     timeout=120,
@@ -172,13 +195,8 @@ def _new_async_workflow_version(cognite_client: CogniteClient, new_workflow: Wor
 
 
 @pytest.fixture(scope="session")
-def async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow):
-    yield from _new_async_workflow_version(cognite_client, new_workflow)
-
-
-@pytest.fixture
-def async_workflow_version_test_scoped(cognite_client: CogniteClient, new_workflow_test_scoped: Workflow):
-    yield from _new_async_workflow_version(cognite_client, new_workflow_test_scoped)
+def async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow, a_function: Function):
+    yield from _new_async_workflow_version(cognite_client, new_workflow, a_function)
 
 
 def _new_workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersionList]:
@@ -459,7 +477,6 @@ class TestWorkflowVersions:
             assert len(created_version.workflow_definition.tasks) > 0
 
             execution = cognite_client.workflows.executions.run(workflow_id, version.version)
-            execution_detailed = None
             simulation_task = None
 
             for _ in range(20):
