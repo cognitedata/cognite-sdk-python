@@ -335,7 +335,7 @@ def _create_scheduled_trigger(version: WorkflowVersion, cron_expression: str) ->
 @pytest.fixture(scope="class")
 def permanent_scheduled_trigger(
     cognite_client: CogniteClient, permanent_workflow_for_triggers: WorkflowVersion
-) -> WorkflowTrigger:
+) -> Iterator[WorkflowTrigger]:
     version = permanent_workflow_for_triggers
     every_minute_expression = "* * * * *"
 
