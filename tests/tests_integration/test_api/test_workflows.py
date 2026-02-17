@@ -198,7 +198,7 @@ def _new_async_workflow_version(
 
 
 @pytest.fixture(scope="session")
-def async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow, a_function: Function):
+def async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow, a_function: Function) -> Iterator[WorkflowVersion]:
     yield from _new_async_workflow_version(cognite_client, new_workflow, a_function)
 
 
