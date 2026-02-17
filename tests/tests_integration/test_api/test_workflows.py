@@ -91,6 +91,8 @@ def a_function(cognite_client: CogniteClient) -> Function:
         function_handle=handle,
     )
     while function.status != "ready":
+        if function.status == "failed":
+            raise RuntimeError(f"Function {external_id} deployment failed: {function.error}")
         time.sleep(2)
         function = cognite_client.functions.retrieve(external_id=external_id)
     return function
