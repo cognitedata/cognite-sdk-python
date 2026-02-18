@@ -32,7 +32,9 @@ class TestSimulatorRuns:
 
             run_sync(
                 async_client.simulators._post(
-                    "/simulators/run/callback", json={"items": [{"id": created_runs[0].id, "status": current_status}]}
+                    "/simulators/run/callback",
+                    json={"items": [{"id": created_runs[0].id, "status": current_status}]},
+                    semaphore=None,
                 )
             )
             filter_by_status = cognite_client.simulators.runs.list(
@@ -79,7 +81,9 @@ class TestSimulatorRuns:
 
         run_sync(
             async_client.simulators._post(
-                "/simulators/run/callback", json={"items": [{"id": run_to_update.id, "status": "success"}]}
+                "/simulators/run/callback",
+                json={"items": [{"id": run_to_update.id, "status": "success"}]},
+                semaphore=None,
             )
         )
         created_run.wait(timeout=1)
@@ -169,6 +173,7 @@ class TestSimulatorRuns:
                         }
                     ]
                 },
+                semaphore=None,
             )
         )
 
@@ -272,6 +277,7 @@ class TestSimulatorRuns:
                         }
                     ]
                 },
+                semaphore=None,
             )
         )
 

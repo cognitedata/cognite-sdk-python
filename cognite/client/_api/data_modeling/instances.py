@@ -72,7 +72,6 @@ from cognite.client.data_classes.data_modeling.sync import SubscriptionContext
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.utils._auxiliary import is_unlimited, load_yaml_or_json, unpack_items
-from cognite.client.utils._concurrency import get_global_data_modeling_semaphore
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 from cognite.client.utils._retry import Backoff
@@ -170,13 +169,20 @@ class InstancesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._AGGREGATE_LIMIT = 1000
         self._SEARCH_LIMIT = 1000
-        self.__dm_semaphore = get_global_data_modeling_semaphore()
 
         self._warn_on_alpha_debug_settings = FeaturePreviewWarning(
             api_maturity="alpha",
             sdk_maturity="alpha",
             feature_name="Data modeling debug parameters 'includeTranslatedQuery' and 'includePlan'",
             pluralize=True,
+        )
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete", "search"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        assert operation not in ("read_schema", "write_schema"), "Instances API should not use schema semaphores"
+        return global_config.concurrency_settings.data_modeling._semaphore_factory(
+            operation, project=self._cognite_client.config.project
         )
 
     @overload
@@ -298,7 +304,6 @@ class InstancesAPI(APIClient):
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
                 headers=headers,
-                semaphore=self.__dm_semaphore,
             ):
                 yield item
             return
@@ -311,7 +316,6 @@ class InstancesAPI(APIClient):
             filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
             other_params=other_params,
             headers=headers,
-            semaphore=self.__dm_semaphore,
         ):
             yield list_cls._load_raw_api_response([raw])
 
@@ -635,7 +639,6 @@ class InstancesAPI(APIClient):
             identifiers=identifiers,
             other_params=other_params,
             settings_forcing_raw_response_loading=[f"{include_typing=}"] if include_typing else None,
-            semaphore=self.__dm_semaphore,
         )
 
         return InstancesResult[T_Node, T_Edge](
@@ -723,7 +726,6 @@ class InstancesAPI(APIClient):
                 identifiers,
                 wrap_ids=True,
                 returns_items=True,
-                semaphore=self.__dm_semaphore,
             ),
         )
         node_ids = [NodeId.load(item) for item in deleted_instances if item["instanceType"] == "node"]
@@ -785,11 +787,12 @@ class InstancesAPI(APIClient):
             raise ValueError("Must pass at least one of 'involved_views' or 'involved_containers'")
 
         items = []
+        semaphore = self._get_semaphore("read")
         for chunk in identifiers.chunked(1000):
             response = await self._post(
                 self._RESOURCE_PATH + "/inspect",
                 json={"items": chunk.as_dicts(), "inspectionOperations": inspect_operations},
-                semaphore=self.__dm_semaphore,
+                semaphore=semaphore,
             )
             items.extend(unpack_items(response))
 
@@ -959,6 +962,7 @@ class InstancesAPI(APIClient):
             auto_create_direct_relations (bool): Whether to create missing direct relation targets when ingesting.
             skip_on_version_conflict (bool): If existingVersion is specified on any of the nodes/edges in the input, the default behaviour is that the entire ingestion will fail when version conflicts occur. If skipOnVersionConflict is set to true, items with version conflicts will be skipped instead. If no version is specified for nodes/edges, it will do the writing directly.
             replace (bool): How do we behave when a property value exists? Do we replace all matching and existing values with the supplied values (true)? Or should we merge in new values for properties together with the existing values (false)? Note: This setting applies for all nodes or edges specified in the ingestion call.
+
         Returns:
             InstancesApplyResult: Created instance(s)
 
@@ -1068,7 +1072,6 @@ class InstancesAPI(APIClient):
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
             input_resource_cls=_NodeOrEdgeApplyAdapter,  # type: ignore[arg-type]
-            semaphore=self.__dm_semaphore,
         )
         return InstancesApplyResult(
             nodes=NodeApplyResultList([item for item in res if isinstance(item, NodeApplyResult)]),
@@ -1258,7 +1261,8 @@ class InstancesAPI(APIClient):
                     raise ValueError("nulls_first argument is not supported when sorting on instance search")
             body["sort"] = [self._dump_instance_sort(s) for s in sorts]
 
-        res = await self._post(url_path=self._RESOURCE_PATH + "/search", json=body, semaphore=self.__dm_semaphore)
+        semaphore = self._get_semaphore("search")
+        res = await self._post(url_path=self._RESOURCE_PATH + "/search", json=body, semaphore=semaphore)
         result = res.json()
         return list_cls(
             [resource_cls._load(item) for item in result["items"]],  # type: ignore [misc]
@@ -1383,7 +1387,8 @@ class InstancesAPI(APIClient):
         if target_units:
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
-        res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=self.__dm_semaphore)
+        semaphore = self._get_semaphore("search")
+        res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=semaphore)
         result_list = InstanceAggregationResultList._load(res.json()["items"])
         if group_by is not None:
             return result_list
@@ -1492,7 +1497,8 @@ class InstancesAPI(APIClient):
         if target_units:
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
-        res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=self.__dm_semaphore)
+        semaphore = self._get_semaphore("search")
+        res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=semaphore)
         if is_singleton:
             return HistogramValue.load(res.json()["items"][0]["aggregates"][0])
         else:
@@ -1650,8 +1656,9 @@ class InstancesAPI(APIClient):
                 self._warn_on_alpha_debug_settings.warn()
                 headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
 
+        semaphore = self._get_semaphore("read")
         response = await self._post(
-            url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body, headers=headers, semaphore=self.__dm_semaphore
+            url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body, headers=headers, semaphore=semaphore
         )
         json_payload = response.json()
         default_by_reference = query.instance_type_by_result_expression()
@@ -1851,7 +1858,6 @@ class InstancesAPI(APIClient):
                 other_params=other_params,
                 settings_forcing_raw_response_loading=settings_forcing_raw_response_loading,
                 headers=headers,
-                semaphore=self.__dm_semaphore,
             ),
         )
 

@@ -36,7 +36,9 @@ class DocumentPreviewAPI(APIClient):
                 >>> Image(binary_png)
         """
         response = await self._get(
-            f"{self._RESOURCE_PATH}/{id}/preview/image/pages/{page_number}", headers={"accept": "image/png"}
+            f"{self._RESOURCE_PATH}/{id}/preview/image/pages/{page_number}",
+            headers={"accept": "image/png"},
+            semaphore=self._get_semaphore("read"),
         )
         return response.content
 
@@ -96,7 +98,11 @@ class DocumentPreviewAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> content = client.documents.previews.download_document_as_pdf_bytes(id=123)
         """
-        response = await self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf", headers={"accept": "application/pdf"})
+        response = await self._get(
+            f"{self._RESOURCE_PATH}/{id}/preview/pdf",
+            headers={"accept": "application/pdf"},
+            semaphore=self._get_semaphore("read"),
+        )
         return response.content
 
     async def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
@@ -152,5 +158,7 @@ class DocumentPreviewAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> link = client.documents.previews.retrieve_pdf_link(id=123)
         """
-        res = await self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink")
+        res = await self._get(
+            f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink", semaphore=self._get_semaphore("read")
+        )
         return TemporaryLink.load(res.json())

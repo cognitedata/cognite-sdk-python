@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator, Sequence
-from typing import Any, overload
+from typing import Any, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -15,6 +16,13 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        return global_config.concurrency_settings.raw._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
 
     @overload
     def __call__(self, db_name: str, chunk_size: None = None) -> AsyncIterator[raw.Table]: ...
@@ -108,8 +116,11 @@ class RawTablesAPI(APIClient):
             name = [name]
 
         url_path = interpolate_and_url_encode(self._RESOURCE_PATH, db_name) + "/delete"
+        semaphore = self._get_semaphore("delete")
         tasks = [
-            AsyncSDKTask(self._post, url_path=url_path, json={"items": [{"name": n} for n in chunk]})
+            AsyncSDKTask(
+                self._post, url_path=url_path, json={"items": [{"name": n} for n in chunk]}, semaphore=semaphore
+            )
             for chunk in split_into_chunks(name, self._DELETE_LIMIT)
         ]
         summary = await execute_async_tasks(tasks)

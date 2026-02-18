@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import asyncio
+from typing import TYPE_CHECKING, Literal
 
 from cognite.client._api.data_modeling.space_statistics import SpaceStatisticsAPI
 from cognite.client._api_client import APIClient
@@ -17,6 +18,14 @@ class StatisticsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.spaces = SpaceStatisticsAPI(config, api_version, cognite_client)
+
+    def _get_semaphore(self, operation: Literal["read_schema"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        assert operation == "read_schema", "Statistics API should only use read_schema semaphore"
+        return global_config.concurrency_settings.data_modeling._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
 
     async def project(self) -> ProjectStatistics:
         """`Retrieve project-wide usage data and limits <https://developer.cognite.com/api#tag/Statistics/operation/getStatistics>`_
@@ -38,5 +47,5 @@ class StatisticsAPI(APIClient):
                 >>> data_model_count = stats.data_models.count
                 >>> available_count = stats.data_models.limit - data_model_count
         """
-        response = await self._get(self._RESOURCE_PATH)
+        response = await self._get(self._RESOURCE_PATH, semaphore=self._get_semaphore("read_schema"))
         return ProjectStatistics._load_with_project(response.json(), self._cognite_client.config.project)

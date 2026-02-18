@@ -297,6 +297,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             url_path=f"{self._RESOURCE_PATH}/data/list",
             headers={"cdf-version": "alpha"},
             json={"items": [{"modelRevisionExternalId": model_revision_external_id}]},
+            semaphore=self._get_semaphore("read"),
         )
         items = response.json()["items"]
         return SimulatorModelRevisionDataList._load(items)

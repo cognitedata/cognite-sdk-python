@@ -1079,12 +1079,13 @@ class _AssetHierarchyCreator:
         self.assets_api = assets_api
         self.create_limit = assets_api._CREATE_LIMIT
         self.resource_path = assets_api._RESOURCE_PATH
-        self.max_workers = global_config.max_workers
+        self.concurrency_limit = global_config.concurrency_settings.general.write
         self.failed: list[AssetWrite] = []
         self.unknown: list[AssetWrite] = []
         self.latest_exception: Exception | None = None
 
         self._counter = itertools.count().__next__
+        self._semaphore = self.assets_api._get_semaphore("write")
 
     async def create(self, upsert: bool, upsert_mode: Literal["patch", "replace"]) -> AssetList:
         insert_fn = functools.partial(self._insert, upsert=upsert, upsert_mode=upsert_mode)
@@ -1163,7 +1164,7 @@ class _AssetHierarchyCreator:
     ) -> _TaskResult:
         try:
             # Here we do a single batch insert. If one element fails, the entire batch fails:
-            resp = await self.assets_api._post(self.resource_path, self._dump_assets(assets))
+            resp = await self.assets_api._post(self.resource_path, self._dump_assets(assets), semaphore=self._semaphore)
             successful = [Asset._load(item) for item in resp.json()["items"]]
             return _TaskResult(successful, failed=[], unknown=[])
         except Exception as err:
@@ -1227,7 +1228,9 @@ class _AssetHierarchyCreator:
 
     async def _update_post(self, items: list[AssetUpdate]) -> tuple[list[Asset] | None, Exception | None]:
         try:
-            resp = await self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
+            resp = await self.assets_api._post(
+                self.resource_path + "/update", json=self._dump_assets(items), semaphore=self._semaphore
+            )
             updated = [Asset._load(item) for item in resp.json()["items"]]
             return updated, None  # Update worked, so we hide exception
         except Exception as err:
@@ -1274,7 +1277,7 @@ class _AssetHierarchyCreator:
         # subtree, that way we more quickly get into a state with enough unblocked parents to always keep
         # up the concurrency budget with create-requests.
         n = len(to_create)
-        n_parts = min(n, max(self.max_workers, math.ceil(n / self.create_limit)))
+        n_parts = min(n, max(self.concurrency_limit, math.ceil(n / self.create_limit)))
         tasks = [
             self._extend_with_unblocked_from_subtree(set(chunk), insert_dct, subtree_count)
             for chunk in split_into_n_parts(to_create, n=n_parts)

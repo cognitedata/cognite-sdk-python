@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, cast, overload
 
@@ -32,6 +33,14 @@ class ContainersAPI(APIClient):
         self._DELETE_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
         self._CREATE_LIMIT = 100
+
+    def _get_semaphore(self, operation: Literal["read_schema", "write_schema"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        assert operation in ("read_schema", "write_schema"), "Container API should use schema semaphores"
+        return global_config.concurrency_settings.data_modeling._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
 
     @overload
     def __call__(
@@ -79,6 +88,7 @@ class ContainersAPI(APIClient):
             chunk_size=chunk_size,
             limit=limit,
             filter=flt.dump(camel_case=True),
+            semaphore=self._get_semaphore("read_schema"),
         ):
             yield item
 
@@ -117,6 +127,7 @@ class ContainersAPI(APIClient):
             list_cls=ContainerList,
             resource_cls=Container,
             identifiers=identifier,
+            override_semaphore=self._get_semaphore("read_schema"),
         )
 
     async def delete(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
@@ -141,6 +152,7 @@ class ContainersAPI(APIClient):
                 identifiers=_load_identifier(ids, "container"),
                 wrap_ids=True,
                 returns_items=True,
+                override_semaphore=self._get_semaphore("write_schema"),
             ),
         )
         return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
@@ -190,24 +202,21 @@ class ContainersAPI(APIClient):
         ids: Sequence[ConstraintIdentifier] | Sequence[IndexIdentifier],
         constraint_or_index: Literal["constraints", "indexes"],
     ) -> list[tuple[ContainerId, str]]:
+        items = [
+            {
+                "space": constraint_id[0].space,
+                "containerExternalId": constraint_id[0].external_id,
+                "identifier": constraint_id[1],
+            }
+            for constraint_id in ids
+        ]
         res = await self._post(
             url_path=f"{self._RESOURCE_PATH}/{constraint_or_index}/delete",
-            json={
-                "items": [
-                    {
-                        "space": constraint_id[0].space,
-                        "containerExternalId": constraint_id[0].external_id,
-                        "identifier": constraint_id[1],
-                    }
-                    for constraint_id in ids
-                ]
-            },
+            json={"items": items},
+            semaphore=self._get_semaphore("write_schema"),
         )
         return [
-            (
-                ContainerId(space=item["space"], external_id=item["containerExternalId"]),
-                item["identifier"],
-            )
+            (ContainerId(space=item["space"], external_id=item["containerExternalId"]), item["identifier"])
             for item in res.json()["items"]
         ]
 
@@ -253,6 +262,7 @@ class ContainersAPI(APIClient):
             method="GET",
             limit=limit,
             filter=flt.dump(camel_case=True),
+            override_semaphore=self._get_semaphore("read_schema"),
         )
 
     @overload
@@ -385,4 +395,5 @@ class ContainersAPI(APIClient):
             resource_cls=Container,
             items=container,
             input_resource_cls=ContainerApply,
+            override_semaphore=self._get_semaphore("write_schema"),
         )

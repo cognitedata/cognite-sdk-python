@@ -142,7 +142,13 @@ class EntityMatchingAPI(APIClient):
             }
         )
         # NB no pagination support yet
-        models = unpack_items(await self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}))
+        models = unpack_items(
+            await self._post(
+                self._RESOURCE_PATH + "/list",
+                json={"filter": filter, "limit": limit},
+                semaphore=self._get_semaphore("read"),
+            )
+        )
         return EntityMatchingModelList._load(models).set_client_ref(self._cognite_client)
 
     async def list_jobs(self) -> ContextualizationJobList:
@@ -153,7 +159,7 @@ class EntityMatchingAPI(APIClient):
             ContextualizationJobList: List of jobs.
         """
         return ContextualizationJobList._load(
-            unpack_items(await self._get(self._RESOURCE_PATH + "/jobs"))
+            unpack_items(await self._get(self._RESOURCE_PATH + "/jobs", semaphore=self._get_semaphore("read")))
         ).set_client_ref(self._cognite_client)
 
     async def delete(
@@ -250,6 +256,7 @@ class EntityMatchingAPI(APIClient):
                 "classifier": classifier,
                 "ignoreMissingFields": ignore_missing_fields,
             },
+            semaphore=self._get_semaphore("write"),
         )
         return EntityMatchingModel._load(response.json()).set_client_ref(self._cognite_client)
 

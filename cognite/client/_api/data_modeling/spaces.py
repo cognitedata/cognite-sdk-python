@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator, Sequence
-from typing import TYPE_CHECKING, cast, overload
+from typing import TYPE_CHECKING, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -22,6 +23,14 @@ class SpacesAPI(APIClient):
         self._DELETE_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
         self._CREATE_LIMIT = 100
+
+    def _get_semaphore(self, operation: Literal["read_schema", "write_schema"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        assert operation in ("read_schema", "write_schema"), "Spaces API should use schema semaphores"
+        return global_config.concurrency_settings.data_modeling._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
 
     @overload
     def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Space]: ...
@@ -49,6 +58,7 @@ class SpacesAPI(APIClient):
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
+            semaphore=self._get_semaphore("read_schema"),
         ):
             yield item
 
@@ -84,6 +94,7 @@ class SpacesAPI(APIClient):
             list_cls=SpaceList,
             resource_cls=Space,
             identifiers=identifier,
+            override_semaphore=self._get_semaphore("read_schema"),
         )
 
     async def delete(self, spaces: str | SequenceNotStr[str]) -> list[str]:
@@ -108,6 +119,7 @@ class SpacesAPI(APIClient):
                 identifiers=_load_space_identifier(spaces),
                 wrap_ids=True,
                 returns_items=True,
+                override_semaphore=self._get_semaphore("write_schema"),
             ),
         )
         return [item["space"] for item in deleted_spaces]
@@ -151,6 +163,7 @@ class SpacesAPI(APIClient):
             method="GET",
             limit=limit,
             other_params={"includeGlobal": include_global},
+            override_semaphore=self._get_semaphore("read_schema"),
         )
 
     @overload
@@ -185,4 +198,5 @@ class SpacesAPI(APIClient):
             resource_cls=Space,
             items=spaces,
             input_resource_cls=SpaceApply,
+            override_semaphore=self._get_semaphore("write_schema"),
         )

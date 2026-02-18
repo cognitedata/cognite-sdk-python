@@ -1228,9 +1228,9 @@ class TestRetrieveRawDatapointsAPI:
         parametrized_values_all_unknown_single_multiple_given: tuple[tuple, ...],
     ) -> None:
         test_data = parametrized_values_all_unknown_single_multiple_given[test_id]
-        max_workers, mock_out_eager_or_chunk, ids, external_ids, exp_res_types = test_data
+        concurrency_limit, mock_out_eager_or_chunk, ids, external_ids, exp_res_types = test_data
         with (
-            override_semaphore(max_workers, target="datapoints"),
+            override_semaphore(concurrency_limit, target="datapoints"),
             patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
         ):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
@@ -1246,7 +1246,7 @@ class TestRetrieveRawDatapointsAPI:
                     assert len(res) == 0
 
     @pytest.mark.parametrize(
-        "max_workers, mock_out_eager_or_chunk, identifier, exp_res_types",
+        "concurrency_limit, mock_out_eager_or_chunk, identifier, exp_res_types",
         [
             (1, "ChunkingDpsFetcher", "id", DPS_TYPES),
             (1, "ChunkingDpsFetcher", "external_id", DPS_TYPES),
@@ -1254,7 +1254,7 @@ class TestRetrieveRawDatapointsAPI:
     )
     def test_retrieve_nothing__single(
         self,
-        max_workers: int,
+        concurrency_limit: int,
         mock_out_eager_or_chunk: str,
         identifier: str,
         exp_res_types: list[type],
@@ -1264,7 +1264,7 @@ class TestRetrieveRawDatapointsAPI:
     ) -> None:
         ts = outside_points_ts[0]
         with (
-            override_semaphore(max_workers, target="datapoints"),
+            override_semaphore(concurrency_limit, target="datapoints"),
             patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
         ):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
@@ -1275,7 +1275,7 @@ class TestRetrieveRawDatapointsAPI:
                 assert isinstance(res.is_string, bool)
 
     @pytest.mark.parametrize(
-        "max_workers, mock_out_eager_or_chunk, exp_res_types",
+        "concurrency_limit, mock_out_eager_or_chunk, exp_res_types",
         [
             (1, "EagerDpsFetcher", DPS_LST_TYPES),
             (3, "ChunkingDpsFetcher", DPS_LST_TYPES),
@@ -1283,7 +1283,7 @@ class TestRetrieveRawDatapointsAPI:
     )
     def test_retrieve_nothing__multiple(
         self,
-        max_workers: int,
+        concurrency_limit: int,
         mock_out_eager_or_chunk: str,
         exp_res_types: list[type],
         outside_points_ts: TimeSeriesList,
@@ -1292,7 +1292,7 @@ class TestRetrieveRawDatapointsAPI:
     ) -> None:
         ts1, ts2 = outside_points_ts
         with (
-            override_semaphore(max_workers, target="datapoints"),
+            override_semaphore(concurrency_limit, target="datapoints"),
             patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
         ):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
@@ -1669,7 +1669,7 @@ class TestRetrieveAggregateDatapointsAPI:
                 endpoint(id=ts.id, granularity=granularity, aggregates="min-max-lol")
 
     @pytest.mark.parametrize(
-        "is_step, start, end, exp_start, exp_end, max_workers, mock_out_eager_or_chunk",
+        "is_step, start, end, exp_start, exp_end, concurrency_limit, mock_out_eager_or_chunk",
         (
             (True, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, YEAR_MS[1965], YEAR_MS[1975], 4, "ChunkingDpsFetcher"),
             (False, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, YEAR_MS[1965], YEAR_MS[1975], 4, "ChunkingDpsFetcher"),
@@ -1696,7 +1696,7 @@ class TestRetrieveAggregateDatapointsAPI:
         end: int,
         exp_start: int,
         exp_end: int,
-        max_workers: int,
+        concurrency_limit: int,
         mock_out_eager_or_chunk: str,
         cognite_client: CogniteClient,
         retrieve_endpoints: list[Callable],
@@ -1714,7 +1714,7 @@ class TestRetrieveAggregateDatapointsAPI:
         assert ts.is_step is is_step
 
         with (
-            override_semaphore(max_workers, target="datapoints"),
+            override_semaphore(concurrency_limit, target="datapoints"),
             patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
         ):
             for endpoint in retrieve_endpoints:
@@ -1819,7 +1819,7 @@ class TestRetrieveAggregateDatapointsAPI:
                         assert first_ts == aligned_start
 
     @pytest.mark.parametrize(
-        "max_workers, n_ts, mock_out_eager_or_chunk",
+        "concurrency_limit, n_ts, mock_out_eager_or_chunk",
         [
             (1, 1, "ChunkingDpsFetcher"),
             (5, 1, "ChunkingDpsFetcher"),
@@ -1832,7 +1832,7 @@ class TestRetrieveAggregateDatapointsAPI:
     )
     def test_retrieve_aggregates__string_ts_raises(
         self,
-        max_workers: int,
+        concurrency_limit: int,
         n_ts: int,
         mock_out_eager_or_chunk: str,
         weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
@@ -1840,7 +1840,7 @@ class TestRetrieveAggregateDatapointsAPI:
     ) -> None:
         _, string_ts = weekly_dps_ts
         with (
-            override_semaphore(max_workers, target="datapoints"),
+            override_semaphore(concurrency_limit, target="datapoints"),
             patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
         ):
             ts_chunk = random.sample(string_ts, k=n_ts)
@@ -1926,7 +1926,7 @@ class TestRetrieveAggregateDatapointsAPI:
                 pd.testing.assert_frame_equal(dps1.to_pandas(), dps2.to_pandas())
 
     @pytest.mark.parametrize(
-        "max_workers, ts_idx, granularity, exp_len, start, end, exclude_aggregate",
+        "concurrency_limit, ts_idx, granularity, exp_len, start, end, exclude_aggregate",
         (
             (1, 105, "8m", 81, ts_to_ms("1969-12-31 14:14:14"), ts_to_ms("1970-01-01 01:01:01"), {}),
             (1, 106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), {}),
@@ -1963,7 +1963,7 @@ class TestRetrieveAggregateDatapointsAPI:
     )
     def test_eager_fetcher_unlimited(
         self,
-        max_workers: int,
+        concurrency_limit: int,
         ts_idx: int,
         granularity: str,
         exp_len: int,
@@ -1973,7 +1973,10 @@ class TestRetrieveAggregateDatapointsAPI:
         retrieve_endpoints: list[Callable],
         all_test_time_series: TimeSeriesList,
     ) -> None:
-        with override_semaphore(max_workers, target="datapoints"), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+        with (
+            override_semaphore(concurrency_limit, target="datapoints"),
+            patch(DATAPOINTS_API.format("ChunkingDpsFetcher")),
+        ):
             for endpoint in retrieve_endpoints:
                 res = endpoint(
                     id=all_test_time_series[ts_idx].id,
@@ -2018,7 +2021,7 @@ class TestRetrieveAggregateDatapointsAPI:
                     assert len(set(np.diff(res.timestamp))) == 1
 
     @pytest.mark.parametrize(
-        "max_workers, n_ts, mock_out_eager_or_chunk, use_bursty",
+        "concurrency_limit, n_ts, mock_out_eager_or_chunk, use_bursty",
         (
             (3, 1, "ChunkingDpsFetcher", True),
             (3, 1, "ChunkingDpsFetcher", False),
@@ -2032,7 +2035,7 @@ class TestRetrieveAggregateDatapointsAPI:
     )
     def test_finite_limit(
         self,
-        max_workers: int,
+        concurrency_limit: int,
         n_ts: int,
         mock_out_eager_or_chunk: str,
         use_bursty: bool,
@@ -2047,7 +2050,7 @@ class TestRetrieveAggregateDatapointsAPI:
             ts, _ = one_mill_dps_ts  # data: 1950-2020 ~25k days
             start, end, gran_unit_upper = YEAR_MS[1950], YEAR_MS[2020], 120
         with (
-            override_semaphore(max_workers, target="datapoints"),
+            override_semaphore(concurrency_limit, target="datapoints"),
             patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
         ):
             for endpoint in retrieve_endpoints:
@@ -2415,7 +2418,7 @@ class TestRetrieveDataFrameAPI:
     """
 
     @pytest.mark.parametrize(
-        "max_workers, n_ts, mock_out_eager_or_chunk, outside, exp_len",
+        "concurrency_limit, n_ts, mock_out_eager_or_chunk, outside, exp_len",
         (
             (1, 1, "ChunkingDpsFetcher", True, 524),
             (1, 1, "ChunkingDpsFetcher", False, 524 - 2),
@@ -2425,7 +2428,7 @@ class TestRetrieveDataFrameAPI:
     )
     def test_raw_dps(
         self,
-        max_workers: int,
+        concurrency_limit: int,
         n_ts: int,
         mock_out_eager_or_chunk: str,
         outside: bool,

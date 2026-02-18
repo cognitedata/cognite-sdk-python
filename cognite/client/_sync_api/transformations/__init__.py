@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0b9063239633c2995e9b7a1efb54afd7
+43e6460ffa80c8cd4ae83314d8f0b636
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -466,11 +466,11 @@ class SyncTransformationsAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>>
-                >>> res = client.transformations.run(transformation_id = 1)
+                >>> res = client.transformations.run(transformation_id=1)
 
             Start running transformation by id:
 
-                >>> res = client.transformations.run(transformation_id = 1, wait = False)
+                >>> res = client.transformations.run(transformation_id=1, wait=False)
         """
         return run_sync(
             self.__async_client.transformations.run(

@@ -89,14 +89,16 @@ def seed_simulator(
     fields_to_compare = ["fileExtensionTypes", "modelTypes", "modelDependencies", "stepFields", "unitQuantities"]
 
     if not seeded_simulator:
-        run_sync(async_client.simulators._post("/simulators", json={"items": [SIMULATOR]}))
+        run_sync(async_client.simulators._post("/simulators", json={"items": [SIMULATOR]}, semaphore=None))
     # if any field in simulator is different from the current seeded simulator, update it
     elif any(getattr(seeded_simulator, to_snake_case(field)) != SIMULATOR.get(field) for field in fields_to_compare):
         simulator_update = {
             "id": seeded_simulator.id,
             "update": {field: {"set": SIMULATOR.get(field)} for field in fields_to_compare},
         }
-        run_sync(async_client.simulators._post("/simulators/update", json={"items": [simulator_update]}))
+        run_sync(
+            async_client.simulators._post("/simulators/update", json={"items": [simulator_update]}, semaphore=None)
+        )
 
 
 @pytest.fixture(scope="session")
@@ -120,6 +122,7 @@ def seed_simulator_integration(
             async_client.simulators._post(
                 "/simulators/integrations",
                 json={"items": [new_integration]},
+                semaphore=None,
             )
         )
         log_id = res.json()["items"][0]["logId"]
@@ -129,6 +132,7 @@ def seed_simulator_integration(
             async_client.simulators.integrations._post(
                 "/simulators/integrations/update",
                 json={"items": [{"id": existing_integration.id, "update": {"heartbeat": {"set": timestamp}}}]},
+                semaphore=None,
             )
         )
 

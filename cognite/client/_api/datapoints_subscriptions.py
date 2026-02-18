@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Literal, cast, overload
 
@@ -29,6 +30,13 @@ class DatapointsSubscriptionAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 1
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        return global_config.concurrency_settings.datapoints._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
 
     @overload
     def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[DatapointSubscription]: ...
@@ -310,6 +318,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 ...     pass  # do something
         """
         current_partitions = [DatapointSubscriptionPartition(partition, cursor)]
+        semaphore = self._get_semaphore("read")
         while True:
             body = {
                 "externalId": external_id,
@@ -324,7 +333,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 body["initializeCursors"] = start
                 start = None
 
-            res = await self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
+            res = await self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body, semaphore=semaphore)
             batch = _DatapointSubscriptionBatchWithPartitions.load(
                 res.json(), include_status=include_status, ignore_bad_datapoints=ignore_bad_datapoints
             )

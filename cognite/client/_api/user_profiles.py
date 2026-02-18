@@ -14,12 +14,20 @@ class UserProfilesAPI(APIClient):
 
     async def enable(self) -> UserProfilesConfiguration:
         """Enable user profiles for the project"""
-        res = await self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": True}}}})
+        res = await self._post(
+            "/update",
+            json={"update": {"userProfilesConfiguration": {"set": {"enabled": True}}}},
+            semaphore=self._get_semaphore("write"),
+        )
         return UserProfilesConfiguration._load(res.json()["userProfilesConfiguration"])
 
     async def disable(self) -> UserProfilesConfiguration:
         """Disable user profiles for the project"""
-        res = await self._post("/update", json={"update": {"userProfilesConfiguration": {"set": {"enabled": False}}}})
+        res = await self._post(
+            "/update",
+            json={"update": {"userProfilesConfiguration": {"set": {"enabled": False}}}},
+            semaphore=self._get_semaphore("write"),
+        )
         return UserProfilesConfiguration._load(res.json()["userProfilesConfiguration"])
 
     async def me(self) -> UserProfile:
@@ -42,7 +50,9 @@ class UserProfilesAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.user_profiles.me()
         """
-        return UserProfile._load((await self._get(self._RESOURCE_PATH + "/me")).json())
+        return UserProfile._load(
+            (await self._get(self._RESOURCE_PATH + "/me", semaphore=self._get_semaphore("read"))).json()
+        )
 
     @overload
     async def retrieve(self, user_identifier: str) -> UserProfile | None: ...

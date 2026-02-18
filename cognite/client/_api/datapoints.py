@@ -57,7 +57,7 @@ from cognite.client.utils._auxiliary import (
     unpack_items,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks, get_global_datapoints_semaphore
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._time import (
@@ -85,8 +85,9 @@ class DpsFetchStrategy(ABC):
         self.dps_client = dps_client
         self.all_queries = all_queries
         self.agg_queries, self.raw_queries = self.split_queries(all_queries)
-        self.max_workers = global_config.max_workers
+        self.concurrency_limit = global_config.concurrency_settings.datapoints.read
         self.n_queries = len(all_queries)
+        self.semaphore = dps_client._get_semaphore("read")
 
     @staticmethod
     def split_queries(all_queries: list[DatapointsQuery]) -> tuple[list[DatapointsQuery], list[DatapointsQuery]]:
@@ -112,7 +113,7 @@ class DpsFetchStrategy(ABC):
                     f"{self.dps_client._RESOURCE_PATH}/list",
                     json=payload,
                     headers={"accept": "application/protobuf"},
-                    semaphore=get_global_datapoints_semaphore(),
+                    semaphore=self.semaphore,
                 )
             ).content
         )
@@ -143,7 +144,7 @@ class DpsFetchStrategy(ABC):
 class EagerDpsFetcher(DpsFetchStrategy):
     """A datapoints fetching strategy to make small queries as fast as possible.
 
-    Is used when the number of time series to fetch is smaller than or equal to the number of `max_workers`, so
+    Is used when the number of time series to fetch is smaller than or equal to the number of `concurrency_limit`, so
     that each worker only fetches datapoints for a single time series per request (this maximises throughput
     according to the API docs). This does -not- mean that we assign a time series to each worker! All available
     workers will fetch data for the same time series to speed up fetching. To make this work, the time domain is
@@ -194,7 +195,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
         ts_task_lookup = {}
         for query in self.all_queries:
             ts_task = ts_task_lookup[query] = query.task_orchestrator(query=query, eager_mode=True, use_numpy=use_numpy)
-            for subtask in ts_task.split_into_subtasks(self.max_workers, self.n_queries):
+            for subtask in ts_task.split_into_subtasks(self.concurrency_limit, self.n_queries):
                 payload = {"items": [subtask.get_next_payload_item()], "ignoreUnknownIds": False}
                 future = asyncio.create_task(self._request_datapoints(payload))
                 futures_dct[future] = subtask
@@ -239,7 +240,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     The main underlying assumption is that "the more time series are queried, the lower the average density".
 
-    Is used when the number of time series to fetch is larger than the number of `max_workers`. How many
+    Is used when the number of time series to fetch is larger than the number of `concurrency_limit`. How many
     time series are chunked per request is dynamic and is decided by the overall number to fetch, their
     individual number of datapoints and whether raw- or aggregate datapoints are asked for since
     they are independent in requests - as long as the total number of time series does not exceed `_FETCH_TS_LIMIT`.
@@ -284,7 +285,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         if ts_tasks_left := self._update_queries_with_new_chunking_limit(ts_task_lookup):
             self._add_to_subtask_pools(
                 chain.from_iterable(
-                    task.split_into_subtasks(max_workers=self.max_workers, n_tot_queries=len(ts_tasks_left))
+                    task.split_into_subtasks(concurrency_limit=self.concurrency_limit, n_tot_queries=len(ts_tasks_left))
                     for task in ts_tasks_left
                 )
             )
@@ -324,8 +325,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         initial_query_limits: dict[DatapointsQuery, int] = {}
         initial_futures_dct: dict[asyncio.Task, tuple[list[DatapointsQuery], list[DatapointsQuery]]] = {}
         # Optimal queries uses the entire worker pool. We may be forced to use more (queue) when we
-        # can't fit all individual time series (maxes out at `_FETCH_TS_LIMIT * max_workers`):
-        n_queries = max(self.max_workers, math.ceil(self.n_queries / self.dps_client._FETCH_TS_LIMIT))
+        # can't fit all individual time series (maxes out at `_FETCH_TS_LIMIT * concurrency_limit`):
+        n_queries = max(self.concurrency_limit, math.ceil(self.n_queries / self.dps_client._FETCH_TS_LIMIT))
         for query_chunks in zip(
             split_into_n_parts(self.agg_queries, n=n_queries),
             split_into_n_parts(self.raw_queries, n=n_queries),
@@ -388,14 +389,12 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self,
         futures_dct: dict[asyncio.Task, list[BaseDpsFetchSubtask]],
     ) -> None:
-        sem = get_global_datapoints_semaphore()
-
         # This may seem silly (to ask the semaphore for unused capacity), but the logic is sound:
         # we want to combine subtasks into requests *as late as possible* for optimal chunking.
         # So, simply put, we wait to create a new request until we know we can schedule it immediately.
         # That leaves room for as many done tasks as possible to have been added to the subtask pools
         # in the meantime (we ofc also check that we have subtasks to schedule).
-        while self.semaphore_has_bandwidth(sem) and any(self.subtask_pools):
+        while self.semaphore_has_bandwidth(self.semaphore) and any(self.subtask_pools):
             payload, subtask_lst = self._combine_subtasks_into_new_request()
             future = asyncio.create_task(self._request_datapoints(payload))
             futures_dct[future] = subtask_lst
@@ -462,8 +461,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             else:
                 remaining_tasks[query] = ts_task
         tot_raw = sum(q.is_raw_query for q in remaining_tasks)
-        if tot_raw <= self.max_workers >= len(remaining_tasks) - tot_raw:
-            # Number of raw and agg tasks independently <= max_workers, so we're basically doing "eager fetching",
+        if tot_raw <= self.concurrency_limit >= len(remaining_tasks) - tot_raw:
+            # Number of raw and agg tasks independently <= concurrency_limit, so we're basically doing "eager fetching",
             # but it's worth noting that we'll still chunk 1 raw + 1 agg per query (if they exist).
             return list(remaining_tasks.values())
 
@@ -532,6 +531,13 @@ class DatapointsAPI(APIClient):
         self._POST_DPS_OBJECTS_LIMIT = 10_000
 
         self.query_validator = _DpsQueryValidator(dps_limit_raw=self._DPS_LIMIT_RAW, dps_limit_agg=self._DPS_LIMIT_AGG)
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        return global_config.concurrency_settings.datapoints._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
 
     @overload
     def __call__(
@@ -2148,7 +2154,11 @@ class DatapointsAPI(APIClient):
         await self._delete_datapoints_ranges(valid_ranges)
 
     async def _delete_datapoints_ranges(self, delete_range_objects: list[dict]) -> None:
-        await self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
+        await self._post(
+            url_path=self._RESOURCE_PATH + "/delete",
+            json={"items": delete_range_objects},
+            semaphore=self._get_semaphore("delete"),
+        )
 
     async def insert_dataframe(self, df: pd.DataFrame, dropna: bool = True) -> None:
         """Insert a dataframe containing datapoints to one or more time series.
@@ -2222,7 +2232,7 @@ class DatapointsAPI(APIClient):
         await self.insert_multiple(dps)  # type: ignore[arg-type]
 
     def _select_dps_fetch_strategy(self, queries: list[DatapointsQuery]) -> type[DpsFetchStrategy]:
-        semaphore = get_global_datapoints_semaphore()
+        semaphore = self._get_semaphore("read")
 
         # We decide the fetching strategy based on how many time series the user has requested VS the
         # max concurrency we allow for datapoints requests. When the number of time series is small enough
@@ -2362,7 +2372,7 @@ class DatapointsPoster:
             url_path=self.dps_client._RESOURCE_PATH,
             json={"items": payload},
             headers=headers,
-            semaphore=get_global_datapoints_semaphore(),
+            semaphore=self.dps_client._get_semaphore("write"),
         )
         for dct in payload:
             dct["datapoints"].clear()
@@ -2443,6 +2453,7 @@ class RetrieveLatestDpsFetcher:
 
         self.ignore_unknown_ids = ignore_unknown_ids
         self.dps_client = dps_client
+        self.semaphore = self.dps_client._get_semaphore("read")
 
         parsed_ids = cast(None | int | Sequence[int], self._parse_user_input(id, "id"))
         parsed_xids = cast(None | str | SequenceNotStr[str], self._parse_user_input(external_id, "external_id"))
@@ -2599,6 +2610,7 @@ class RetrieveLatestDpsFetcher:
                 self.dps_client._post,
                 url_path=self.dps_client._RESOURCE_PATH + "/latest",
                 json={"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids},
+                semaphore=self.semaphore,
             )
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]

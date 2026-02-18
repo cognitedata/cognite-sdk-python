@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import asyncio
+from typing import TYPE_CHECKING, Literal
 
 from cognite.client._api.data_modeling.containers import ContainersAPI
 from cognite.client._api.data_modeling.data_models import DataModelsAPI
@@ -26,3 +27,8 @@ class DataModelingAPI(APIClient):
         self.instances = InstancesAPI(config, api_version, cognite_client)
         self.graphql = DataModelingGraphQLAPI(config, api_version, cognite_client)
         self.statistics = StatisticsAPI(config, api_version, cognite_client)
+
+    def _get_semaphore(
+        self, operation: Literal["read", "write", "delete", "search", "read_schema", "write_schema"]
+    ) -> asyncio.BoundedSemaphore:
+        raise NotImplementedError
