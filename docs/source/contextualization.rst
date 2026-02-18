@@ -46,6 +46,9 @@ Convert to an interactive SVG where the provided annotations are highlighted
 Vision
 ------
 
+.. warning::
+   The Vision API will be removed in a future version of the SDK. Please migrate to the recommended alternative. See the :doc:`deprecated` page for details.
+
 The Vision API enable extraction of information from imagery data based on
 their visual content. For example, you can can extract features such as text, asset tags or industrial objects from images using this service.
 
