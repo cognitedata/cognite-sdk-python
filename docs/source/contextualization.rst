@@ -43,8 +43,8 @@ Convert to an interactive SVG where the provided annotations are highlighted
 .. automethod:: cognite.client._api.diagrams.DiagramsAPI.convert
 
 
-Vision
-------
+Vision (deprecated)
+-------------------
 
 .. warning::
    The Vision API will be removed in a future version of the SDK. Please migrate to the recommended alternative. See the :doc:`deprecated` page for details.
