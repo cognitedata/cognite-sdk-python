@@ -25,6 +25,7 @@ class VisionAPI(APIClient):
             "Please migrate to the recommended alternative. "
             "Read more at: https://docs.cognite.com/cdf/deprecated#deprecated-and-retired-features",
             FutureWarning,
+            stacklevel=3,
         )
 
     @staticmethod
