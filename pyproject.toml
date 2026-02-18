@@ -61,9 +61,6 @@ pyodide = ["tzdata", "anyio"]  # keep pyodide related dependencies outside of 'a
 all = ["numpy", "pandas", "geopandas", "shapely", "sympy", "pip", "PyYAML"]
 
 [tool.poetry.group.dev.dependencies]
-docutils = "==0.15.2"
-sphinx = "^5.0.1"
-sphinx-rtd-theme = ">=1.0.0"
 pytest = ">=7"
 pytest-cov = ">=3"
 pytest-rerunfailures = ">=10"
@@ -90,6 +87,10 @@ ruff = "0.13.2"
 pytest-httpx = ">=0.35"
 types-authlib = "^1.6.2.20250825"
 anyio = "^4.11.0"
+
+[tool.poetry.group.docs.dependencies]
+sphinx = ">=7.2"
+sphinx-rtd-theme = ">=1"
 
 [build-system]
 requires = ["poetry-core"]

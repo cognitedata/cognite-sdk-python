@@ -23,7 +23,7 @@ import re
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-# needs_sphinx = '1.0'
+needs_sphinx = "7.2"
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -93,7 +93,8 @@ html_theme = "sphinx_rtd_theme"
 # Add any paths that contain custom _static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin _static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = []
+html_static_path = ["_static"]
+html_css_files = ["css/custom.css"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -159,3 +160,22 @@ texinfo_documents = [
         "Miscellaneous",
     )
 ]
+
+python_maximum_signature_line_length = 80
+
+# Patch Sphinx to hide @overload signatures in docs
+# Sphinx's autodoc uses ModuleAnalyzer.overloads via the parser
+# We patch the analyze method to clear overloads after parsing
+# To see why, check out https://github.com/cognitedata/cognite-sdk-python/pull/2460
+from sphinx.pycode import ModuleAnalyzer  # noqa: E402
+
+analyze_fn = ModuleAnalyzer.analyze
+
+
+def analyze_but_skip_overloads(self):
+    result = analyze_fn(self)
+    self.overloads = {}  # Clear overloads after analysis
+    return result
+
+
+ModuleAnalyzer.analyze = analyze_but_skip_overloads

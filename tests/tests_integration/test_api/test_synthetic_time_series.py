@@ -218,9 +218,10 @@ class TestSyntheticDatapointsAPI:
                 expressions=expression,
                 start=datetime(2017, 1, 1, tzinfo=timezone.utc),
                 end="now",
-                limit=100,
+                limit=10,
                 variables=variables,
                 aggregate="average",
-                granularity="3s",
+                granularity="1h",
+                timezone="Europe/Oslo",
             )
-            assert 100 == len(dps1)
+            assert 3 == len(dps1)
