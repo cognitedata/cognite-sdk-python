@@ -504,3 +504,10 @@ class TestSimulatorRoutineInput:
         routine_input = SimulatorRoutineInput._load({"name": "input", "referenceId": "input", "sourceExternalId": ""})
         assert isinstance(routine_input, SimulatorRoutineInputTimeseries)
         assert routine_input.source_external_id == ""
+
+    def test_load_both_value_and_time_series(self) -> None:
+        with pytest.raises(
+            ValueError,
+            match="Invalid routine input, cannot contain both 'value' and 'sourceExternalId'",
+        ):
+            SimulatorRoutineInput._load({"name": "input", "referenceId": "input", "sourceExternalId": "", "value": 0})
