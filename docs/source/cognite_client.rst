@@ -1,5 +1,5 @@
-CogniteClient
-=============
+Sync and Async Clients
+======================
 
 The SDK provides two client classes:
 
