@@ -24,7 +24,7 @@ class VisionAPI(APIClient):
             "The Vision API will be removed in a future version of the SDK. "
             "Please migrate to the recommended alternative. "
             "Read more at: https://docs.cognite.com/cdf/deprecated#deprecated-and-retired-features",
-            FutureWarning,
+            UserWarning,
             stacklevel=3,
         )
 

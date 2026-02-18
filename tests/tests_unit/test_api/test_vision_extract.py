@@ -252,7 +252,7 @@ class TestVisionExtract:
     ) -> None:
         mock_get_extract.assert_all_requests_are_fired = False  # only POST (extract) is called
         vision_api = cognite_client.vision
-        with pytest.warns(FutureWarning, match=r"Vision API will be removed"):
+        with pytest.warns(UserWarning, match=r"Vision API will be removed"):
             job = vision_api.extract(features=VisionFeature.TEXT_DETECTION, file_ids=[1], file_external_ids=[])
         assert isinstance(job, VisionExtractJob)
 
@@ -261,7 +261,7 @@ class TestVisionExtract:
     ) -> None:
         mock_post_extract.assert_all_requests_are_fired = False  # only GET (get_extract_job) is called
         vision_api = cognite_client.vision
-        with pytest.warns(FutureWarning, match=r"Vision API will be removed"):
+        with pytest.warns(UserWarning, match=r"Vision API will be removed"):
             job = vision_api.get_extract_job(job_id=1)
         assert isinstance(job, VisionExtractJob)
         assert job.job_id == 1
