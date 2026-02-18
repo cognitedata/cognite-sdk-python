@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import DataSet
+from cognite.client.data_classes import DataSet, Function
 from cognite.client.data_classes.data_modeling import ViewId
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
 from cognite.client.data_classes.simulators.runs import SimulationInputOverride, SimulationValueUnitName
@@ -23,12 +23,10 @@ from cognite.client.data_classes.workflows import (
     Workflow,
     WorkflowDataModelingTriggerRule,
     WorkflowDefinitionUpsert,
-    WorkflowExecutionDetailed,
     WorkflowExecutionList,
     WorkflowList,
     WorkflowScheduledTriggerRule,
     WorkflowTask,
-    WorkflowTaskExecution,
     WorkflowTrigger,
     WorkflowTriggerDataModelingQuery,
     WorkflowTriggerUpsert,
@@ -60,21 +58,51 @@ def wf_setup_module(cognite_client: CogniteClient) -> None:
     resource_age = timestamp_to_ms("30m-ago")
 
     wf_triggers = cognite_client.workflows.triggers.list(limit=None)
-    wf_triggers_to_delete = [wf.external_id for wf in wf_triggers if wf.created_time < resource_age]
+    wf_triggers_to_delete = [wf.external_id for wf in wf_triggers if wf.last_updated_time < resource_age]
     if wf_triggers_to_delete:
         cognite_client.workflows.triggers.delete(wf_triggers_to_delete)
 
     wf_versions = cognite_client.workflows.versions.list(limit=None)
     wf_versions_to_delete = [
-        (wf.workflow_external_id, wf.version) for wf in wf_versions if wf.created_time < resource_age
+        (wf.workflow_external_id, wf.version) for wf in wf_versions if wf.last_updated_time < resource_age
     ]
     if wf_versions_to_delete:
         cognite_client.workflows.versions.delete(wf_versions_to_delete)
 
     wfs = cognite_client.workflows.list(limit=None)
-    wfs_to_delete = [wf.external_id for wf in wfs if wf.created_time < resource_age]
+    wfs_to_delete = [wf.external_id for wf in wfs if wf.last_updated_time < resource_age]
     if wfs_to_delete:
         cognite_client.workflows.delete(wfs_to_delete)
+
+
+def handle(client: CogniteClient, data: dict[str, object]) -> str:
+    return "Hello, world!"
+
+
+@pytest.fixture(scope="session")
+def a_function(cognite_client: CogniteClient) -> Function:
+    name = "python-sdk-workflow-test-function"
+    external_id = "python-sdk-workflow-test-function"
+    retrieved = cognite_client.functions.retrieve(external_id=external_id)
+    if retrieved:
+        return retrieved
+
+    function = cognite_client.functions.create(
+        name=name,
+        external_id=external_id,
+        # TODO(Functions Team): mypy should really not complain about this:
+        function_handle=handle,  # type: ignore [arg-type]
+    )
+    backoff = Backoff(max_wait=10, base=2, multiplier=0.3)
+    deadline = time.monotonic() + 15 * 60
+    while time.monotonic() < deadline:
+        if function.status == "Ready":
+            return function
+        if function.status == "Failed":
+            raise RuntimeError(f"Function {external_id} deployment failed: {function.error}")
+        time.sleep(next(backoff))
+        function.update()
+    raise RuntimeError(f"Function {external_id} did not become ready within ~15 minutes")
 
 
 @pytest.fixture(scope="session")
@@ -154,7 +182,9 @@ def new_workflow_version_test_scoped(
     yield from _new_workflow_version(cognite_client, new_workflow_test_scoped)
 
 
-def _new_async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersion]:
+def _new_async_workflow_version(
+    cognite_client: CogniteClient, new_workflow: Workflow, a_function: Function
+) -> Iterator[WorkflowVersion]:
     version = WorkflowVersionUpsert(
         workflow_external_id=new_workflow.external_id,
         version="1",
@@ -163,8 +193,7 @@ def _new_async_workflow_version(cognite_client: CogniteClient, new_workflow: Wor
                 WorkflowTask(
                     external_id=f"{new_workflow.external_id}-1-multiply",
                     parameters=FunctionTaskParameters(
-                        external_id="non-existing-function-async-resolve",
-                        data={"a": 3, "b": 4},
+                        external_id=get_or_raise(a_function.external_id),
                         is_async_complete=True,
                     ),
                     timeout=120,
@@ -178,15 +207,10 @@ def _new_async_workflow_version(cognite_client: CogniteClient, new_workflow: Wor
 
 
 @pytest.fixture(scope="session")
-def async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersion]:
-    yield from _new_async_workflow_version(cognite_client, new_workflow)
-
-
-@pytest.fixture
-def async_workflow_version_test_scoped(
-    cognite_client: CogniteClient, new_workflow_test_scoped: Workflow
+def async_workflow_version(
+    cognite_client: CogniteClient, new_workflow: Workflow, a_function: Function
 ) -> Iterator[WorkflowVersion]:
-    yield from _new_async_workflow_version(cognite_client, new_workflow_test_scoped)
+    yield from _new_async_workflow_version(cognite_client, new_workflow, a_function)
 
 
 def _new_workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersionList]:
@@ -345,24 +369,18 @@ def _create_scheduled_trigger(version: WorkflowVersion, cron_expression: str) ->
 @pytest.fixture(scope="class")
 def permanent_scheduled_trigger(
     cognite_client: CogniteClient, permanent_workflow_for_triggers: WorkflowVersion
-) -> WorkflowTrigger:
+) -> Iterator[WorkflowTrigger]:
     version = permanent_workflow_for_triggers
     every_15min = "*/15 * * * *"
     on_the_minute = _create_scheduled_trigger(version, every_15min)
 
-    existing_triggers = {trigger.external_id: trigger for trigger in cognite_client.workflows.triggers.list(limit=-1)}
-    if on_the_minute.external_id not in existing_triggers:
-        retrieved = cognite_client.workflows.triggers.upsert(on_the_minute)
-    else:
-        retrieved = existing_triggers[on_the_minute.external_id]
-
-    return retrieved
+    yield cognite_client.workflows.triggers.upsert(on_the_minute)
 
 
 @pytest.fixture(scope="class")
 def permanent_data_modeling_trigger(
     cognite_client: CogniteClient, permanent_workflow_for_triggers: WorkflowVersion
-) -> WorkflowTrigger:
+) -> Iterator[WorkflowTrigger]:
     version = permanent_workflow_for_triggers
 
     trigger = WorkflowTriggerUpsert(
@@ -383,13 +401,7 @@ def permanent_data_modeling_trigger(
         workflow_version=version.version,
     )
 
-    existing_triggers = {trigger.external_id: trigger for trigger in cognite_client.workflows.triggers.list(limit=-1)}
-    if trigger.external_id not in existing_triggers:
-        retrieved = cognite_client.workflows.triggers.upsert(trigger)
-    else:
-        retrieved = existing_triggers[trigger.external_id]
-
-    return retrieved
+    yield cognite_client.workflows.triggers.upsert(trigger)
 
 
 class TestWorkflows:
@@ -472,8 +484,6 @@ class TestWorkflowVersions:
             assert len(created_version.workflow_definition.tasks) > 0
 
             execution = cognite_client.workflows.executions.run(workflow_id, version.version)
-            execution_detailed: WorkflowExecutionDetailed | None
-            simulation_task: WorkflowTaskExecution | None
 
             backoff = Backoff()
             for _ in range(20):
@@ -498,9 +508,7 @@ class TestWorkflowVersions:
 
         finally:
             if created_version is not None:
-                cognite_client.workflows.versions.delete(
-                    created_version.as_id(),
-                )
+                cognite_client.workflows.versions.delete(created_version.as_id())
                 cognite_client.workflows.delete(created_version.workflow_external_id)
 
     def test_upsert_preexisting(
@@ -682,15 +690,15 @@ class TestWorkflowTriggers:
             if created is not None:
                 cognite_client.workflows.triggers.delete(created.external_id)
 
-    @pytest.mark.skip("This test is temp. disabled, flaky, awaiting a more robust long-term solution. Task: DOGE-100")
     def test_create_update_delete_data_modeling_trigger(
         self,
         cognite_client: CogniteClient,
         permanent_data_modeling_trigger: WorkflowTrigger,
     ) -> None:
         assert permanent_data_modeling_trigger is not None
-        assert permanent_data_modeling_trigger.external_id.startswith("data-modeling-trigger_integration_test-workflow")
-        assert permanent_data_modeling_trigger.trigger_rule == WorkflowDataModelingTriggerRule(
+        assert permanent_data_modeling_trigger.external_id.startswith("data-modeling-trigger_integ_test_wf")
+        actual = permanent_data_modeling_trigger.trigger_rule
+        expected = WorkflowDataModelingTriggerRule(
             data_modeling_query=WorkflowTriggerDataModelingQuery(
                 with_={"timeseries": NodeResultSetExpression(limit=500)},
                 select={
@@ -702,8 +710,9 @@ class TestWorkflowTriggers:
             batch_size=500,
             batch_timeout=300,
         )
-        assert permanent_data_modeling_trigger.workflow_external_id.startswith("integration_test-workflow_")
-        assert permanent_data_modeling_trigger.workflow_version == "1"
+        assert actual.dump() == expected.dump()
+        assert permanent_data_modeling_trigger.workflow_external_id.startswith("integ_test_wf_")
+        assert permanent_data_modeling_trigger.workflow_version == "v1"
         assert permanent_data_modeling_trigger.created_time is not None
         assert permanent_data_modeling_trigger.last_updated_time is not None
         updated_trigger = cognite_client.workflows.triggers.upsert(
@@ -755,8 +764,6 @@ class TestWorkflowTriggers:
         assert permanent_scheduled_trigger.external_id in external_ids
         assert permanent_data_modeling_trigger.external_id in external_ids
 
-    # TODO: Improve test reliability; the API works in mysterious ways...
-    @pytest.mark.skip("This test is temp. disabled, flaky, awaiting a more robust long-term solution.")
     def test_trigger_run_history(
         self,
         cognite_client: CogniteClient,

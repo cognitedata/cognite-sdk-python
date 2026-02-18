@@ -1,15 +1,16 @@
 """
 ===============================================================================
-ba420a10cb3584372ce6ee71cc57255c
+c30ea9cd2b7de10dc2a40c7c1065ef4a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping, Sequence
-from datetime import datetime
 from typing import TYPE_CHECKING, overload
+from zoneinfo import ZoneInfo
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
@@ -32,55 +33,64 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
     def query(
         self,
         expressions: SequenceNotStr[str] | SequenceNotStr[sympy.Basic],
-        start: int | str | datetime,
-        end: int | str | datetime,
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime,
         limit: int | None = None,
         variables: Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
     ) -> DatapointsList: ...
 
     @overload
     def query(
         self,
         expressions: str | sympy.Basic,
-        start: int | str | datetime,
-        end: int | str | datetime,
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime,
         limit: int | None = None,
         variables: Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
     ) -> Datapoints: ...
 
     def query(
         self,
         expressions: str | sympy.Basic | Sequence[str] | Sequence[sympy.Basic],
-        start: int | str | datetime,
-        end: int | str | datetime,
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime,
         limit: int | None = None,
         variables: Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
     ) -> Datapoints | DatapointsList:
         """
         `Calculate the result of a function on time series. <https://developer.cognite.com/api#tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
+        Info:
+            You can read the guide to synthetic time series in our `documentation <https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries>`_.
+
         Args:
             expressions (str | sympy.Basic | Sequence[str] | Sequence[sympy.Basic]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
-            start (int | str | datetime): Inclusive start.
-            end (int | str | datetime): Exclusive end.
+            start (int | str | datetime.datetime): Inclusive start.
+            end (int | str | datetime.datetime): Exclusive end.
             limit (int | None): Number of datapoints per expression to retrieve.
             variables (Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None): An optional map of symbol replacements.
             aggregate (str | None): use this aggregate when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
             granularity (str | None): use this granularity with the aggregate.
             target_unit (str | None): use this target_unit when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
             target_unit_system (str | None): Same as target_unit, but with unit system (e.g. SI). Only one of target_unit and target_unit_system can be specified.
+            timezone (str | datetime.timezone | ZoneInfo | None): The timezone to use when aggregating datapoints. For aggregates of granularity 'hour' and longer,
+                which time zone should we align to. Align to the start of the hour, start of the day or start of the month. For time zones of type Region/Location,
+                the aggregate duration can vary, typically due to daylight saving time. For time zones of type UTC+/-HH:MM, use increments of 15 minutes. Default: "UTC" (None)
 
         Returns:
             Datapoints | DatapointsList: A DatapointsList object containing the calculated data.
@@ -127,7 +137,9 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
                 ...     variables={x: "foo", y: "bar"},
                 ...     aggregate="interpolation",
                 ...     granularity="15m",
-                ...     target_unit="temperature:deg_c")
+                ...     target_unit="temperature:deg_c",
+                ...     timezone="Europe/Oslo",  # can also use this format: 'UTC+05:30'
+                ... )
         """
         return run_sync(
             self.__async_client.time_series.data.synthetic.query(
@@ -140,5 +152,6 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
                 granularity=granularity,
                 target_unit=target_unit,
                 target_unit_system=target_unit_system,
+                timezone=timezone,
             )
         )
