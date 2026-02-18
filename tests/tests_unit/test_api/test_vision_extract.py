@@ -166,7 +166,7 @@ class TestVisionExtract:
         error_message: str | None,
         cognite_client: CogniteClient,
     ) -> None:
-        VAPI = cognite_client.vision
+        vision_api = cognite_client.vision
         file_ids = [1, 2, 3]
         file_external_ids = []
         if error_message is not None:
@@ -174,13 +174,13 @@ class TestVisionExtract:
                 # GET request will not be executed due to invalid parameters in POST
                 # thus relax the assertion requirements
                 mock_post_extract.assert_all_requests_are_fired = False
-                VAPI.extract(features=features, file_ids=file_ids, file_external_ids=file_external_ids)
+                vision_api.extract(features=features, file_ids=file_ids, file_external_ids=file_external_ids)
         else:
             is_beta_feature: bool = len([f for f in features if f in VisionFeature.beta_features()]) > 0
             error_handling = UserWarning if is_beta_feature else does_not_raise()
             # Job should be queued immediately after a successfully POST
             with error_handling:
-                job = VAPI.extract(
+                job = vision_api.extract(
                     features=features, file_ids=file_ids, file_external_ids=file_external_ids, parameters=parameters
                 )
             assert isinstance(job, VisionExtractJob)
@@ -226,16 +226,16 @@ class TestVisionExtract:
     def test_get_extract(
         self, mock_post_extract: RequestsMock, mock_get_extract: RequestsMock, cognite_client: CogniteClient
     ) -> None:
-        VAPI = cognite_client.vision
+        vision_api = cognite_client.vision
         file_ids = [1, 2, 3]
         file_external_ids = []
 
-        job = VAPI.extract(
+        job = vision_api.extract(
             features=VisionFeature.TEXT_DETECTION, file_ids=file_ids, file_external_ids=file_external_ids
         )
 
         # retrieved job should correspond to the started job:
-        retrieved_job = VAPI.get_extract_job(job_id=job.job_id)
+        retrieved_job = vision_api.get_extract_job(job_id=job.job_id)
 
         assert isinstance(retrieved_job, VisionExtractJob)
         assert retrieved_job.job_id == job.job_id
@@ -251,18 +251,18 @@ class TestVisionExtract:
         self, mock_post_extract: RequestsMock, mock_get_extract: RequestsMock, cognite_client: CogniteClient
     ) -> None:
         mock_get_extract.assert_all_requests_are_fired = False  # only POST (extract) is called
-        VAPI = cognite_client.vision
-        with pytest.warns(UserWarning, match=r"Vision API will be removed"):
-            job = VAPI.extract(features=VisionFeature.TEXT_DETECTION, file_ids=[1], file_external_ids=[])
+        vision_api = cognite_client.vision
+        with pytest.warns(FutureWarning, match=r"Vision API will be removed"):
+            job = vision_api.extract(features=VisionFeature.TEXT_DETECTION, file_ids=[1], file_external_ids=[])
         assert isinstance(job, VisionExtractJob)
 
     def test_get_extract_job_emits_deprecation_warning(
         self, mock_post_extract: RequestsMock, mock_get_extract: RequestsMock, cognite_client: CogniteClient
     ) -> None:
         mock_post_extract.assert_all_requests_are_fired = False  # only GET (get_extract_job) is called
-        VAPI = cognite_client.vision
-        with pytest.warns(UserWarning, match=r"Vision API will be removed"):
-            job = VAPI.get_extract_job(job_id=1)
+        vision_api = cognite_client.vision
+        with pytest.warns(FutureWarning, match=r"Vision API will be removed"):
+            job = vision_api.get_extract_job(job_id=1)
         assert isinstance(job, VisionExtractJob)
         assert job.job_id == 1
 
@@ -272,16 +272,16 @@ class TestVisionExtract:
         mock_get_extract_empty_predictions: RequestsMock,
         cognite_client: CogniteClient,
     ) -> None:
-        VAPI = cognite_client.vision
+        vision_api = cognite_client.vision
         file_ids = [1]
         file_external_ids = []
 
-        job = VAPI.extract(
+        job = vision_api.extract(
             features=VisionFeature.ASSET_TAG_DETECTION, file_ids=file_ids, file_external_ids=file_external_ids
         )
 
         # retrieved job should correspond to the started job:
-        retrieved_job = VAPI.get_extract_job(job_id=job.job_id)
+        retrieved_job = vision_api.get_extract_job(job_id=job.job_id)
 
         assert isinstance(retrieved_job, VisionExtractJob)
         assert retrieved_job.job_id == job.job_id
