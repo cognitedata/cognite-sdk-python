@@ -45,10 +45,17 @@ WorkflowStatus: TypeAlias = Literal["completed", "failed", "running", "terminate
 
 
 class WorkflowCore(WriteableCogniteResource["WorkflowUpsert"], ABC):
-    def __init__(self, external_id: str, description: str | None = None, data_set_id: int | None = None) -> None:
+    def __init__(
+        self,
+        external_id: str,
+        description: str | None = None,
+        data_set_id: int | None = None,
+        max_concurrent_executions: int | None = None,
+    ) -> None:
         self.external_id = external_id
         self.description = description
         self.data_set_id = data_set_id
+        self.max_concurrent_executions = max_concurrent_executions
 
 
 class WorkflowUpsert(WorkflowCore):
@@ -64,6 +71,9 @@ class WorkflowUpsert(WorkflowCore):
                             If a dataSetId is provided, any operations on this workflow, or its versions, executions,
                             and triggers will require appropriate access to the data set. More information on data sets
                             and their configuration can be found here: https://docs.cognite.com/cdf/data_governance/concepts/datasets/
+        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to the
+                            project limit if not specified or explicitly set to None. Values exceeding the project limit
+                            are dynamically capped at runtime.
     """
 
     @classmethod
@@ -72,6 +82,7 @@ class WorkflowUpsert(WorkflowCore):
             external_id=resource["externalId"],
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
+            max_concurrent_executions=resource.get("maxConcurrentExecutions"),
         )
 
     def as_write(self) -> WorkflowUpsert:
@@ -89,6 +100,9 @@ class Workflow(WorkflowCore):
         last_updated_time (int): The time when the workflow was last updated. Unix timestamp in milliseconds.
         description (str | None): Description of the workflow. Defaults to None.
         data_set_id (int | None): The id of the data set this workflow belongs to.
+        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to the
+                            project limit if not specified or explicitly set to None. Values exceeding the project limit
+                            are dynamically capped at runtime.
     """
 
     def __init__(
@@ -98,8 +112,9 @@ class Workflow(WorkflowCore):
         last_updated_time: int,
         description: str | None = None,
         data_set_id: int | None = None,
+        max_concurrent_executions: int | None = None,
     ) -> None:
-        super().__init__(external_id, description, data_set_id)
+        super().__init__(external_id, description, data_set_id, max_concurrent_executions)
         self.created_time = created_time
         self.last_updated_time = last_updated_time
 
@@ -111,6 +126,7 @@ class Workflow(WorkflowCore):
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             data_set_id=resource.get("dataSetId"),
+            max_concurrent_executions=resource.get("maxConcurrentExecutions"),
         )
 
     def as_write(self) -> WorkflowUpsert:
@@ -119,6 +135,7 @@ class Workflow(WorkflowCore):
             external_id=self.external_id,
             description=self.description,
             data_set_id=self.data_set_id,
+            max_concurrent_executions=self.max_concurrent_executions,
         )
 
 
