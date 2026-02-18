@@ -87,7 +87,7 @@ tenacity = "^9.1.2"
 ruff = "0.13.2"
 
 [tool.poetry.group.docs.dependencies]
-sphinx = ">=7.2"
+sphinx = ">=8.1"
 sphinx-rtd-theme = ">=1"
 
 [build-system]

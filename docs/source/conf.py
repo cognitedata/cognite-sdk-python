@@ -23,7 +23,7 @@ import re
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = "7.2"
+needs_sphinx = "8.1"
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -46,7 +46,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "cognite-sdk"
-copyright = "2019, Cognite AS"
+copyright = "2017-%Y, Cognite AS"
 author = "Erlend Vollset"
 
 # The version info for the project you're documenting, acts as replacement for
