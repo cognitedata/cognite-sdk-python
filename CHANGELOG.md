@@ -22,17 +22,10 @@ As of 2025-08-29, changes are grouped as follows
 * **workflows:** add maxConcurrentExecutions support ([#2479](https://github.com/cognitedata/cognite-sdk-python/issues/2479)) ([baecf3d](https://github.com/cognitedata/cognite-sdk-python/commit/baecf3dbeafb6e7bebcf418cf28061b9d511eb39))
 
 
-### Bug Fixes
-
-* flaky workflow test test_trigger_retrieve_detailed_update_async_task now uses actual function ([#2475](https://github.com/cognitedata/cognite-sdk-python/issues/2475)) ([c18ef7f](https://github.com/cognitedata/cognite-sdk-python/commit/c18ef7f2836918ddada841caa66190658430fb0a))
-* re-enables the flaky workflow tests ([#2473](https://github.com/cognitedata/cognite-sdk-python/issues/2473)) ([b2c4580](https://github.com/cognitedata/cognite-sdk-python/commit/b2c45805fb43e4c7fa6cdaef1215e511225e047d))
-
-
 ### Documentation
 
 * add data modelling debugging data classes to the docs ([#2476](https://github.com/cognitedata/cognite-sdk-python/issues/2476)) ([c523322](https://github.com/cognitedata/cognite-sdk-python/commit/c523322efc23594e36cd6819b8b19783b93dedf5))
 * improve readability of API method signatures ([#2460](https://github.com/cognitedata/cognite-sdk-python/issues/2460)) ([f9cf998](https://github.com/cognitedata/cognite-sdk-python/commit/f9cf998d261a2da6cc1609feaa6ab6055ad137b0))
-* Split long object signatures in separate lines ([c45b298](https://github.com/cognitedata/cognite-sdk-python/commit/c45b29819aa0e1f89c3b795d2f1527ead80e9391))
 
 ## [7.91.2](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.91.1...cognite-sdk-python-v7.91.2) (2026-01-23)
 
