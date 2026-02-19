@@ -1,29 +1,14 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 from collections.abc import Collection, Sequence
-from typing import Any, Literal
-=======
-from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Literal
->>>>>>> 1f672cf9 (Fix issues reported by Geminii)
+from typing import Any, Literal
 
 from typing_extensions import Self
 
-<<<<<<< HEAD
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, UnknownCogniteResource
-=======
-from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geometry, UnknownCogniteObject
 from cognite.client.utils._time import timestamp_to_ms
->>>>>>> 392bd57c (feat: Add support for time-shift strings in TimestampRange)
 
-<<<<<<< HEAD
-from datetime import datetime
-=======
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
->>>>>>> 1f672cf9 (Fix issues reported by Geminii)
 
 class TimestampRange(CogniteResource):
     """Range between two timestamps.

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -71,8 +71,8 @@ class TestDataset:
         self, cognite_client: CogniteClient, mock_ds_response: HTTPXMock, min_time: int | datetime
     ) -> None:
         cognite_client.data_sets.list(created_time=TimestampRange(min=min_time))
-        assert 20 == jsgz_load(mock_ds_response.calls[0].request.body)["filter"]["createdTime"]["min"]
-        assert "max" not in jsgz_load(mock_ds_response.calls[0].request.body)["filter"]["createdTime"]
+        assert 20 == jsgz_load(mock_ds_response.get_requests()[0].content)["filter"]["createdTime"]["min"]
+        assert "max" not in jsgz_load(mock_ds_response.get_requests()[0].content)["filter"]["createdTime"]
 
     def test_list_with_time_dict(self, cognite_client: CogniteClient, mock_ds_response: HTTPXMock) -> None:
         cognite_client.data_sets.list(last_updated_time={"max": 20})

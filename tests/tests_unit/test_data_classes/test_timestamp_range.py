@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -31,7 +32,7 @@ class TestTimestampRange:
         assert 23 == ag.child_count
         assert {"childCount": 23, "depth": 1, "path": []} == ag.dump(camel_case=True)
 
-    def test_datetime(self):
+    def test_datetime(self) -> None:
         min_time = datetime.fromtimestamp(1767222000, timezone.utc)  # 2026-01-01 00:00:00 GMT+01
         max_time = datetime.fromtimestamp(1767308400, timezone.utc)  # 2026-01-02 00:00:00 GMT+01
         tsr = TimestampRange(min=min_time, max=max_time)
@@ -39,7 +40,7 @@ class TestTimestampRange:
         assert tsr.max == 1767308400000
         assert {"min": 1767222000000, "max": 1767308400000} == tsr.dump()
 
-    def test_time_shift_string(self):
+    def test_time_shift_string(self) -> None:
         now_time = int(datetime.now(timezone.utc).timestamp() * 1000)
         day_ago_time = now_time - timedelta(days=1) // timedelta(milliseconds=1)
         tsr = TimestampRange(min="1d-ago", max="now")
