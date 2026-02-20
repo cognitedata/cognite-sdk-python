@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c7e0250a7afdf41370a375942043efcf
+b0413359a7aacb20d810982f2fd2dd38
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -44,15 +44,14 @@ class SyncExtractionPipelineRunsAPI(SyncAPIClient):
         `List runs for an extraction pipeline with given external_id <https://developer.cognite.com/api#tag/Extraction-Pipelines-Runs/operation/filterRuns>`_
 
         Args:
-            external_id (str): Extraction pipeline external Id.
-            statuses (RunStatus | Sequence[RunStatus] | SequenceNotStr[str] | None): One or more among "success" / "failure" / "seen".
-            message_substring (str | None): Failure message part.
-            created_time (dict[str, Any] | TimestampRange | str | None): Range between two timestamps. Possible keys are `min` and `max`, with values given as timestamps in ms.
-                If a string is passed, it is assumed to be the minimum value.
-            limit (int | None): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            external_id: Extraction pipeline external Id.
+            statuses: One or more among "success" / "failure" / "seen".
+            message_substring: Failure message part.
+            created_time: Range between two timestamps. Possible keys are `min` and `max`, with values given as timestamps in ms. If a string is passed, it is assumed to be the minimum value.
+            limit: Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            ExtractionPipelineRunList: List of requested extraction pipeline runs
+            List of requested extraction pipeline runs
 
         Tip:
             The ``created_time`` parameter can also be passed as a string, to support the most typical usage pattern
@@ -108,10 +107,10 @@ class SyncExtractionPipelineRunsAPI(SyncAPIClient):
         You can create an arbitrary number of extraction pipeline runs, and the SDK will split the request into multiple requests.
 
         Args:
-            run (ExtractionPipelineRun | ExtractionPipelineRunWrite | Sequence[ExtractionPipelineRun] | Sequence[ExtractionPipelineRunWrite]): ExtractionPipelineRun| ExtractionPipelineRunWrite | Sequence[ExtractionPipelineRun]  | Sequence[ExtractionPipelineRunWrite]): Extraction pipeline or list of extraction pipeline runs to create.
+            run: Extraction pipeline or list of extraction pipeline runs to create.
 
         Returns:
-            ExtractionPipelineRun | ExtractionPipelineRunList: Created extraction pipeline run(s)
+            Created extraction pipeline run(s)
 
         Examples:
 

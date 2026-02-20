@@ -48,7 +48,7 @@ class AsyncFileChunker(AsyncIterator[bytes]):
     file handles in a way that doesn't involve HTTP multipart encoding (as opposed to requests).
 
     Args:
-        file_handle (BinaryIO): An open file handle.
+        file_handle: An open file handle.
     """
 
     CHUNK_SIZE = 64 * 1024  # 64 KiB chunks by default, copying httpx default

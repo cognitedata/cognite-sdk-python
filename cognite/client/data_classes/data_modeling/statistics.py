@@ -12,14 +12,14 @@ class InstanceStatistics(CogniteResource):
     """Statistics for instances in the data modeling API.
 
     Attributes:
-        edges (int): Number of edges in the project.
-        soft_deleted_edges (int): Number of soft-deleted edges in the project.
-        nodes (int): Number of nodes in the project.
-        soft_deleted_nodes (int): Number of soft-deleted nodes in the project.
-        instances (int): Total number of instances in the project.
-        instances_limit (int): Maximum number of instances allowed in the project.
-        soft_deleted_instances (int): Total number of soft-deleted instances in the project.
-        soft_deleted_instances_limit (int): Maximum number of soft-deleted instances allowed in the project.
+        edges: Number of edges in the project.
+        soft_deleted_edges: Number of soft-deleted edges in the project.
+        nodes: Number of nodes in the project.
+        soft_deleted_nodes: Number of soft-deleted nodes in the project.
+        instances: Total number of instances in the project.
+        instances_limit: Maximum number of instances allowed in the project.
+        soft_deleted_instances: Total number of soft-deleted instances in the project.
+        soft_deleted_instances_limit: Maximum number of soft-deleted instances allowed in the project.
     """
 
     edges: int
@@ -50,8 +50,8 @@ class CountLimit(CogniteResource):
     """Usage and limits for a specific resource in the data modeling API.
 
     Attributes:
-        count (int): The current usage count for the resource.
-        limit (int): The maximum allowed limit for the resource.
+        count: The current usage count for the resource.
+        limit: The maximum allowed limit for the resource.
 
     """
 
@@ -68,14 +68,14 @@ class SpaceStatistics(CogniteResource):
     """Statistics for a space in the data modeling API.
 
     Attributes:
-        space (str): The space name
-        containers (int): Number of containers in the space.
-        views (int): Number of views in the space.
-        data_models (int): Number of data models in the space.
-        nodes (int): Number of nodes in the space.
-        edges (int): Number of edges in the space.
-        soft_deleted_nodes (int): Number of soft-deleted nodes in the space.
-        soft_deleted_edges (int): Number of soft-deleted edges in the space.
+        space: The space name
+        containers: Number of containers in the space.
+        views: Number of views in the space.
+        data_models: Number of data models in the space.
+        nodes: Number of nodes in the space.
+        edges: Number of edges in the space.
+        soft_deleted_nodes: Number of soft-deleted nodes in the space.
+        soft_deleted_edges: Number of soft-deleted edges in the space.
 
     """
 
@@ -107,15 +107,15 @@ class ProjectStatistics(CogniteResource):
     """Statistics for a project in the data modeling API.
 
     Attributes:
-        spaces (CountLimit): Usage and limits for spaces in the project
-        containers (CountLimit): Usage and limits for containers in the project
-        views (CountLimit): Usage and limits for views including all versions in the project
-        data_models (CountLimit): Usage and limits for data models including all versions in the project
-        container_properties (CountLimit): Usage and limits for sum of container properties in the project
-        instances (InstanceStatistics): Usage and limits for number of instances in the project
-        concurrent_read_limit (int): Maximum number of concurrent read operations allowed in the project
-        concurrent_write_limit (int): Maximum number of concurrent write operations allowed in the project
-        concurrent_delete_limit (int): Maximum number of concurrent delete operations allowed in the project
+        spaces: Usage and limits for spaces in the project
+        containers: Usage and limits for containers in the project
+        views: Usage and limits for views including all versions in the project
+        data_models: Usage and limits for data models including all versions in the project
+        container_properties: Usage and limits for sum of container properties in the project
+        instances: Usage and limits for number of instances in the project
+        concurrent_read_limit: Maximum number of concurrent read operations allowed in the project
+        concurrent_write_limit: Maximum number of concurrent write operations allowed in the project
+        concurrent_delete_limit: Maximum number of concurrent delete operations allowed in the project
     """
 
     spaces: CountLimit

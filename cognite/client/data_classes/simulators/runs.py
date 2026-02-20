@@ -88,17 +88,14 @@ class SimulationRunWrite(WriteableCogniteResource["SimulationRunWrite"]):
     2. By routine revision external ID + model revision external ID
 
     Args:
-        routine_external_id (str | None): External id of the associated simulator routine.
-            Cannot be specified together with routine_revision_external_id and model_revision_external_id.
-        routine_revision_external_id (str | None): External id of the associated simulator routine revision.
-            Must be specified together with model_revision_external_id.
-        model_revision_external_id (str | None): External id of the associated simulator model revision.
-            Must be specified together with routine_revision_external_id.
-        run_type (str | None): The type of the simulation run
-        run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
-        queue (bool | None): Queue the simulation run when connector is down.
-        log_severity (str | None): Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
-        inputs (list[SimulationInputOverride] | None): List of input overrides
+        routine_external_id: External id of the associated simulator routine. Cannot be specified together with routine_revision_external_id and model_revision_external_id.
+        routine_revision_external_id: External id of the associated simulator routine revision. Must be specified together with model_revision_external_id.
+        model_revision_external_id: External id of the associated simulator model revision. Must be specified together with routine_revision_external_id.
+        run_type: The type of the simulation run
+        run_time: Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
+        queue: Queue the simulation run when connector is down.
+        log_severity: Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
+        inputs: List of input overrides
     """
 
     def __init__(
@@ -188,23 +185,23 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
     This is the read/response format of a simulation run.
 
     Args:
-        id (int): The id of the simulation run
-        simulator_external_id (str): External id of the associated simulator
-        simulator_integration_external_id (str | None): External id of the associated simulator integration
-        model_external_id (str): External id of the associated simulator model
-        model_revision_external_id (str): External id of the associated simulator model revision
-        routine_revision_external_id (str): External id of the associated simulator routine revision
-        routine_external_id (str): External id of the associated simulator routine
-        run_type (Literal['external', 'manual', 'scheduled']): The type of the simulation run
-        status (Literal['ready', 'running', 'success', 'failure']): The status of the simulation run
-        data_set_id (int): The id of the dataset associated with the simulation run
-        user_id (str): The id of the user who executed the simulation run
-        log_id (int): The id of the log associated with the simulation run
-        created_time (int): The number of milliseconds since epoch
-        last_updated_time (int): The number of milliseconds since epoch
-        status_message (str | None): The status message of the simulation run
-        simulation_time (int | None): Simulation time in milliseconds. Timestamp when the input data was sampled. Used for indexing input and output time series.
-        run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
+        id: The id of the simulation run
+        simulator_external_id: External id of the associated simulator
+        simulator_integration_external_id: External id of the associated simulator integration
+        model_external_id: External id of the associated simulator model
+        model_revision_external_id: External id of the associated simulator model revision
+        routine_revision_external_id: External id of the associated simulator routine revision
+        routine_external_id: External id of the associated simulator routine
+        run_type: The type of the simulation run
+        status: The status of the simulation run
+        data_set_id: The id of the dataset associated with the simulation run
+        user_id: The id of the user who executed the simulation run
+        log_id: The id of the log associated with the simulation run
+        created_time: The number of milliseconds since epoch
+        last_updated_time: The number of milliseconds since epoch
+        status_message: The status message of the simulation run
+        simulation_time: Simulation time in milliseconds. Timestamp when the input data was sampled. Used for indexing input and output time series.
+        run_time: Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
 
     """
 
@@ -257,7 +254,7 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
         """`Retrieve logs for this simulation run. <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
 
         Returns:
-            SimulatorLog | None: Log for the simulation run.
+            Log for the simulation run.
         """
         return await self._cognite_client.simulators.logs.retrieve(ids=self.log_id)
 
@@ -269,7 +266,7 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
         """`Retrieve data associated with this simulation run. <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
 
         Returns:
-            SimulationRunDataItem | None: Data for the simulation run.
+            Data for the simulation run.
         """
         data = await self._cognite_client.simulators.runs.list_run_data(run_id=self.id)
         if data:
@@ -300,7 +297,7 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
         This is generally not needed to call directly, as client.simulators.routines.run(...) will wait for the simulation to finish by default.
 
         Args:
-            timeout (float): Time out after this many seconds. Defaults to 60 seconds.
+            timeout: Time out after this many seconds. Defaults to 60 seconds.
         """
 
         end_time = time.time() + timeout
@@ -478,7 +475,7 @@ class SimulationRunDataItem(CogniteResource):
         """Convert the simulation run data to a pandas DataFrame.
 
         Returns:
-            pandas.DataFrame: The dataframe.
+            The dataframe.
         """
         pd = local_import("pandas")
 
@@ -517,7 +514,7 @@ class SimulationRunDataList(CogniteResourceList[SimulationRunDataItem], IdTransf
         """Convert the simulation run data list to a pandas DataFrame.
 
         Returns:
-            pandas.DataFrame: The dataframe.
+            The dataframe.
         """
         pd = local_import("pandas")
         return pd.concat([item.to_pandas() for item in self.data], ignore_index=True)

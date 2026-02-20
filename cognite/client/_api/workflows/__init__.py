@@ -60,11 +60,11 @@ class WorkflowAPI(APIClient):
         """Iterate over workflows
 
         Args:
-            chunk_size (int | None): The number of workflows to return in each chunk. Defaults to yielding one workflow at a time.
-            limit (int | None): Maximum number of workflows to return. Defaults to returning all items.
+            chunk_size: The number of workflows to return in each chunk. Defaults to yielding one workflow at a time.
+            limit: Maximum number of workflows to return. Defaults to returning all items.
 
         Yields:
-            Workflow | WorkflowList: Yields Workflow one by one if chunk_size is None, otherwise yields WorkflowList objects.
+            Yields Workflow one by one if chunk_size is None, otherwise yields WorkflowList objects.
         """  # noqa: DOC404
         async for item in self._list_generator(
             method="GET", resource_cls=Workflow, list_cls=WorkflowList, limit=limit, chunk_size=chunk_size
@@ -87,11 +87,11 @@ class WorkflowAPI(APIClient):
         Note this is an upsert endpoint, so workflows that already exist will be updated, and new ones will be created.
 
         Args:
-            workflow (WorkflowUpsert | Sequence[WorkflowUpsert]): The workflow(s) to upsert.
-            mode (Literal['replace']): This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
+            workflow: The workflow(s) to upsert.
+            mode: This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
 
         Returns:
-            Workflow | WorkflowList: The created workflow(s).
+            The created workflow(s).
 
         Examples:
 
@@ -133,11 +133,11 @@ class WorkflowAPI(APIClient):
         """`Retrieve one or more workflows. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/fetchWorkflowDetails>`_
 
         Args:
-            external_id (str | SequenceNotStr[str]): Identifier (or sequence of identifiers) for a Workflow. Must be unique.
-            ignore_unknown_ids (bool): When requesting multiple workflows, whether to ignore external IDs that are not found rather than throwing an exception.
+            external_id: Identifier (or sequence of identifiers) for a Workflow. Must be unique.
+            ignore_unknown_ids: When requesting multiple workflows, whether to ignore external IDs that are not found rather than throwing an exception.
 
         Returns:
-            Workflow | WorkflowList | None: If a single external ID is specified: the requested workflow, or None if it does not exist. If several external IDs are specified: the requested workflows.
+            the requested workflows.
 
         Examples:
 
@@ -178,8 +178,8 @@ class WorkflowAPI(APIClient):
         """`Delete one or more workflows with versions. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/DeleteWorkflows>`_
 
         Args:
-            external_id (str | SequenceNotStr[str]): External id or list of external ids to delete.
-            ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
+            external_id: External id or list of external ids to delete.
+            ignore_unknown_ids: Ignore external ids that are not found rather than throw an exception.
 
         Examples:
 
@@ -200,10 +200,10 @@ class WorkflowAPI(APIClient):
         """`List workflows in the project. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/FetchAllWorkflows>`_
 
         Args:
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
 
         Returns:
-            WorkflowList: Workflows in the CDF project.
+            Workflows in the CDF project.
 
         Examples:
 

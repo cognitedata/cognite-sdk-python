@@ -120,31 +120,31 @@ class FilesAPI(APIClient):
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
 
         Args:
-            chunk_size (int | None): Number of files to return in each chunk. Defaults to yielding one event a time.
-            name (str | None): Name of the file.
-            mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
-            metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
-            asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
-            asset_external_ids (SequenceNotStr[str] | None): No description.
-            asset_subtree_ids (int | Sequence[int] | None): Only include files that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include files that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            data_set_ids (int | Sequence[int] | None): Return only files in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only files in the specified data set(s) with this external id / these external ids.
-            labels (LabelFilter | None): Return only the files matching the specified label(s).
-            geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
-            source (str | None): The source of this event.
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            source_created_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-            source_modified_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-            uploaded_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
-            directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
-            uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-            limit (int | None): Maximum number of files to return. Defaults to return all items.
+            chunk_size: Number of files to return in each chunk. Defaults to yielding one event a time.
+            name: Name of the file.
+            mime_type: File type. E.g. text/plain, application/pdf, ..
+            metadata: Custom, application specific metadata. String key -> String value
+            asset_ids: Only include files that reference these specific asset IDs.
+            asset_external_ids: No description.
+            asset_subtree_ids: Only include files that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids: Only include files that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            data_set_ids: Return only files in the specified data set(s) with this id / these ids.
+            data_set_external_ids: Return only files in the specified data set(s) with this external id / these external ids.
+            labels: Return only the files matching the specified label(s).
+            geo_location: Only include files matching the specified geographic relation.
+            source: The source of this event.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            source_created_time: Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+            source_modified_time: Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+            uploaded_time: Range between two timestamps
+            external_id_prefix: External Id provided by client. Should be unique within the project.
+            directory_prefix: Filter by this (case-sensitive) prefix for the directory provided by the client.
+            uploaded: Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
+            limit: Maximum number of files to return. Defaults to return all items.
 
         Yields:
-            FileMetadata | FileMetadataList: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
+            yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
         """  # noqa: DOC404
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -186,11 +186,11 @@ class FilesAPI(APIClient):
         """Create file without uploading content.
 
         Args:
-            file_metadata (FileMetadata | FileMetadataWrite): File metadata for the file to create.
-            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
+            file_metadata: File metadata for the file to create.
+            overwrite: If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
-            tuple[FileMetadata, str]: Tuple containing the file metadata and upload url of the created file.
+            Tuple containing the file metadata and upload url of the created file.
 
         Examples:
 
@@ -223,12 +223,12 @@ class FilesAPI(APIClient):
         """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
 
         Args:
-            id (int | None): ID
-            external_id (str | None): External ID
-            instance_id (NodeId | None): Instance ID
+            id: ID
+            external_id: External ID
+            instance_id: Instance ID
 
         Returns:
-            FileMetadata | None: Requested file metadata or None if it does not exist.
+            Requested file metadata or None if it does not exist.
 
         Examples:
 
@@ -258,13 +258,13 @@ class FilesAPI(APIClient):
         """`Retrieve multiple file metadatas by id. <https://developer.cognite.com/api#tag/Files/operation/byIdsFiles>`_
 
         Args:
-            ids (Sequence[int] | None): IDs
-            external_ids (SequenceNotStr[str] | None): External IDs
-            instance_ids (Sequence[NodeId] | None): Instance IDs
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            ids: IDs
+            external_ids: External IDs
+            instance_ids: Instance IDs
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            FileMetadataList: The requested file metadatas.
+            The requested file metadatas.
 
         Examples:
 
@@ -291,10 +291,10 @@ class FilesAPI(APIClient):
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
-            filter (FileMetadataFilter | dict[str, Any] | None): Filter on file metadata filter with exact match
+            filter: Filter on file metadata filter with exact match
 
         Returns:
-            int: Count of files matching the filter.
+            Count of files matching the filter.
 
         Examples:
 
@@ -316,9 +316,9 @@ class FilesAPI(APIClient):
         """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): str or list of str
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            id: Id or list of ids
+            external_id: str or list of str
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
 
@@ -361,11 +361,11 @@ class FilesAPI(APIClient):
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
-            item (FileMetadata | FileMetadataWrite | FileMetadataUpdate | Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]): file(s) to update.
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (FilesMetadata or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: file(s) to update.
+            mode: How to update data when a non-update object is given (FilesMetadata or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            FileMetadata | FileMetadataList: The updated files.
+            The updated files.
 
         Examples:
 
@@ -415,12 +415,12 @@ class FilesAPI(APIClient):
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
-            name (str | None): Prefix and fuzzy search on name.
-            filter (FileMetadataFilter | dict[str, Any] | None): Filter to apply. Performs exact match on these fields.
-            limit (int): Max number of results to return.
+            name: Prefix and fuzzy search on name.
+            filter: Filter to apply. Performs exact match on these fields.
+            limit: Max number of results to return.
 
         Returns:
-            FileMetadataList: List of requested files metadata.
+            List of requested files metadata.
 
         Examples:
 
@@ -447,11 +447,11 @@ class FilesAPI(APIClient):
         """`Upload a file content <https://developer.cognite.com/api#tag/Files/operation/getUploadLink>`_
 
         Args:
-            path (Path | str): Path to the file you wish to upload.
-            external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            path: Path to the file you wish to upload.
+            external_id: The external ID provided by the client. Must be unique within the project.
+            instance_id: Instance ID of the file.
         Returns:
-            FileMetadata: No description.
+            No description.
         """
         path = Path(path)
         if path.is_file():
@@ -483,25 +483,25 @@ class FilesAPI(APIClient):
         """`Upload a file <https://developer.cognite.com/api#tag/Files/operation/initFileUpload>`_
 
         Args:
-            path (Path | str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
-            external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            name (str | None): Name of the file.
-            source (str | None): The source of the file.
-            mime_type (str | None): File type. E.g. text/plain, application/pdf, ...
-            metadata (dict[str, str] | None): Customizable extra data about the file. String key -> String value.
-            directory (str | None): The directory to be associated with this file. Must be an absolute, unix-style path.
-            asset_ids (Sequence[int] | None): No description.
-            source_created_time (int | None): The timestamp for when the file was originally created in the source system.
-            source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
-            data_set_id (int | None): ID of the data set.
-            labels (Sequence[Label] | None): A list of the labels associated with this resource item.
-            geo_location (GeoLocation | None): The geographic metadata of the file.
-            security_categories (Sequence[int] | None): Security categories to attach to this file.
-            recursive (bool): If path is a directory, upload all contained files recursively.
-            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
+            path: Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
+            external_id: The external ID provided by the client. Must be unique within the project.
+            name: Name of the file.
+            source: The source of the file.
+            mime_type: File type. E.g. text/plain, application/pdf, ...
+            metadata: Customizable extra data about the file. String key -> String value.
+            directory: The directory to be associated with this file. Must be an absolute, unix-style path.
+            asset_ids: No description.
+            source_created_time: The timestamp for when the file was originally created in the source system.
+            source_modified_time: The timestamp for when the file was last modified in the source system.
+            data_set_id: ID of the data set.
+            labels: A list of the labels associated with this resource item.
+            geo_location: The geographic metadata of the file.
+            security_categories: Security categories to attach to this file.
+            recursive: If path is a directory, upload all contained files recursively.
+            overwrite: If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
-            FileMetadata | FileMetadataList: The file metadata of the uploaded file(s).
+            The file metadata of the uploaded file(s).
 
         Examples:
 
@@ -594,12 +594,12 @@ class FilesAPI(APIClient):
         Note that the maximum file size is 5GiB. In order to upload larger files use `multipart_upload_content_session`.
 
         Args:
-            content (str | bytes | BinaryIO): The content to upload.
-            external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            content: The content to upload.
+            external_id: The external ID provided by the client. Must be unique within the project.
+            instance_id: Instance ID of the file.
 
         Returns:
-            FileMetadata: No description.
+            No description.
 
         Examples:
 
@@ -693,24 +693,24 @@ class FilesAPI(APIClient):
         Note that the maximum file size is 5GiB. In order to upload larger files use `multipart_upload_session`.
 
         Args:
-            content (str | bytes | BinaryIO | AsyncIterator[bytes]): The content to upload.
-            name (str): Name of the file.
-            external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            source (str | None): The source of the file.
-            mime_type (str | None): File type. E.g. text/plain, application/pdf,...
-            metadata (dict[str, str] | None): Customizable extra data about the file. String key -> String value.
-            directory (str | None): The directory to be associated with this file. Must be an absolute, unix-style path.
-            asset_ids (Sequence[int] | None): No description.
-            data_set_id (int | None): Id of the data set.
-            labels (Sequence[Label] | None): A list of the labels associated with this resource item.
-            geo_location (GeoLocation | None): The geographic metadata of the file.
-            source_created_time (int | None): The timestamp for when the file was originally created in the source system.
-            source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
-            security_categories (Sequence[int] | None): Security categories to attach to this file.
-            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
+            content: The content to upload.
+            name: Name of the file.
+            external_id: The external ID provided by the client. Must be unique within the project.
+            source: The source of the file.
+            mime_type: File type. E.g. text/plain, application/pdf,...
+            metadata: Customizable extra data about the file. String key -> String value.
+            directory: The directory to be associated with this file. Must be an absolute, unix-style path.
+            asset_ids: No description.
+            data_set_id: Id of the data set.
+            labels: A list of the labels associated with this resource item.
+            geo_location: The geographic metadata of the file.
+            source_created_time: The timestamp for when the file was originally created in the source system.
+            source_modified_time: The timestamp for when the file was last modified in the source system.
+            security_categories: Security categories to attach to this file.
+            overwrite: If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
-            FileMetadata: The metadata of the uploaded file.
+            The metadata of the uploaded file.
 
         Examples:
 
@@ -787,24 +787,24 @@ class FilesAPI(APIClient):
         for each part before exiting. It also supports async usage with `async with`, then calling `await upload_part_async`.
 
         Args:
-            name (str): Name of the file.
-            parts (int): The number of parts to upload, must be between 1 and 250.
-            external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            source (str | None): The source of the file.
-            mime_type (str | None): File type. E.g. text/plain, application/pdf,...
-            metadata (dict[str, str] | None): Customizable extra data about the file. String key -> String value.
-            directory (str | None): The directory to be associated with this file. Must be an absolute, unix-style path.
-            asset_ids (Sequence[int] | None): No description.
-            data_set_id (int | None): Id of the data set.
-            labels (Sequence[Label] | None): A list of the labels associated with this resource item.
-            geo_location (GeoLocation | None): The geographic metadata of the file.
-            source_created_time (int | None): The timestamp for when the file was originally created in the source system.
-            source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
-            security_categories (Sequence[int] | None): Security categories to attach to this file.
-            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
+            name: Name of the file.
+            parts: The number of parts to upload, must be between 1 and 250.
+            external_id: The external ID provided by the client. Must be unique within the project.
+            source: The source of the file.
+            mime_type: File type. E.g. text/plain, application/pdf,...
+            metadata: Customizable extra data about the file. String key -> String value.
+            directory: The directory to be associated with this file. Must be an absolute, unix-style path.
+            asset_ids: No description.
+            data_set_id: Id of the data set.
+            labels: A list of the labels associated with this resource item.
+            geo_location: The geographic metadata of the file.
+            source_created_time: The timestamp for when the file was originally created in the source system.
+            source_modified_time: The timestamp for when the file was last modified in the source system.
+            security_categories: Security categories to attach to this file.
+            overwrite: If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
-            FileMultipartUploadSession: Object containing metadata about the created file, and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once all parts are uploaded.
+            Object containing metadata about the created file, and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once all parts are uploaded.
 
         Examples:
 
@@ -878,12 +878,12 @@ class FilesAPI(APIClient):
         for each part before exiting. It also supports async usage with `async with`, then calling `await upload_part_async`.
 
         Args:
-            parts (int): The number of parts to upload, must be between 1 and 250.
-            external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            parts: The number of parts to upload, must be between 1 and 250.
+            external_id: The external ID provided by the client. Must be unique within the project.
+            instance_id: Instance ID of the file.
 
         Returns:
-            FileMultipartUploadSession: Object containing metadata about the created file, and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once all parts are uploaded.
+            Object containing metadata about the created file, and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once all parts are uploaded.
 
         Examples:
 
@@ -931,8 +931,8 @@ class FilesAPI(APIClient):
             If `content` does not somehow expose its length, this method may not work on Azure or AWS.
 
         Args:
-            upload_url (str): URL to upload file chunk to.
-            content (str | bytes | BinaryIO): The content to upload.
+            upload_url: URL to upload file chunk to.
+            content: The content to upload.
         """
         headers = {"accept": "*/*"}
         file_size, file_content = prepare_content_for_upload(content)
@@ -954,7 +954,7 @@ class FilesAPI(APIClient):
         """Complete a multipart upload. Once this returns the file can be downloaded.
 
         Args:
-            session (FileMultipartUploadSession): Multipart upload session returned from
+            session: Multipart upload session returned from
         """
         await self._post(
             self._RESOURCE_PATH + "/completemultipartupload",
@@ -972,13 +972,13 @@ class FilesAPI(APIClient):
         """Get download links by id or external id
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids.
-            external_id (str | SequenceNotStr[str] | None): External id or list of external ids.
-            instance_id (NodeId | Sequence[NodeId] | None): Instance id or list of instance ids.
-            extended_expiration (bool): Extend expiration time of download url to 1 hour. Defaults to false.
+            id: Id or list of ids.
+            external_id: External id or list of external ids.
+            instance_id: Instance id or list of instance ids.
+            extended_expiration: Extend expiration time of download url to 1 hour. Defaults to false.
 
         Returns:
-            dict[int | str | NodeId, str]: Dictionary containing download urls.
+            Dictionary containing download urls.
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id)
 
@@ -1052,13 +1052,12 @@ class FilesAPI(APIClient):
             the files missing. A warning is issued when this happens, listing the affected files.
 
         Args:
-            directory (str | Path): Directory to download the file(s) to.
-            id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids.
-            instance_id (NodeId | Sequence[NodeId] | None): Instance ID or list of instance ids.
-            keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF,
-                creating subdirectories as needed below the given directory.
-            resolve_duplicate_file_names (bool): Whether or not to resolve duplicate file names by appending a number on duplicate file names
+            directory: Directory to download the file(s) to.
+            id: Id or list of ids
+            external_id: External ID or list of external ids.
+            instance_id: Instance ID or list of instance ids.
+            keep_directory_structure: Whether or not to keep the directory hierarchy in CDF, creating subdirectories as needed below the given directory.
+            resolve_duplicate_file_names: Whether or not to resolve duplicate file names by appending a number on duplicate file names
 
         Examples:
 
@@ -1196,10 +1195,10 @@ class FilesAPI(APIClient):
         """Download a file to a specific target.
 
         Args:
-            path (Path | str): Download to this path.
-            id (int | None): Id of of the file to download.
-            external_id (str | None): External id of the file to download.
-            instance_id (NodeId | None): Instance id of the file to download.
+            path: Download to this path.
+            id: Id of of the file to download.
+            external_id: External id of the file to download.
+            instance_id: Instance id of the file to download.
 
         Examples:
 
@@ -1223,9 +1222,9 @@ class FilesAPI(APIClient):
         """Download a file as bytes.
 
         Args:
-            id (int | None): Id of the file
-            external_id (str | None): External id of the file
-            instance_id (NodeId | None): Instance id of the file
+            id: Id of the file
+            external_id: External id of the file
+            instance_id: Instance id of the file
 
         Examples:
 
@@ -1237,7 +1236,7 @@ class FilesAPI(APIClient):
                 >>> file_content = client.files.download_bytes(id=1)
 
         Returns:
-            bytes: The file in binary format
+            The file in binary format
         """
         identifier = Identifier.of_either(id, external_id, instance_id).as_dict()
         download_link = await self._get_download_link(identifier)
@@ -1281,31 +1280,31 @@ class FilesAPI(APIClient):
         """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
 
         Args:
-            name (str | None): Name of the file.
-            mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
-            metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
-            asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
-            asset_external_ids (SequenceNotStr[str] | None): No description.
-            asset_subtree_ids (int | Sequence[int] | None): Only include files that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include files that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            data_set_ids (int | Sequence[int] | None): Return only files in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only files in the specified data set(s) with this external id / these external ids.
-            labels (LabelFilter | None): Return only the files matching the specified label filter(s).
-            geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
-            source (str | None): The source of this event.
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            source_created_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-            source_modified_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-            uploaded_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
-            directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
-            uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-            limit (int | None): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
+            name: Name of the file.
+            mime_type: File type. E.g. text/plain, application/pdf, ..
+            metadata: Custom, application specific metadata. String key -> String value
+            asset_ids: Only include files that reference these specific asset IDs.
+            asset_external_ids: No description.
+            asset_subtree_ids: Only include files that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids: Only include files that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            data_set_ids: Return only files in the specified data set(s) with this id / these ids.
+            data_set_external_ids: Return only files in the specified data set(s) with this external id / these external ids.
+            labels: Return only the files matching the specified label filter(s).
+            geo_location: Only include files matching the specified geographic relation.
+            source: The source of this event.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            source_created_time: Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+            source_modified_time: Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+            uploaded_time: Range between two timestamps
+            external_id_prefix: External Id provided by client. Should be unique within the project.
+            directory_prefix: Filter by this (case-sensitive) prefix for the directory provided by the client.
+            uploaded: Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
+            limit: Max number of files to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions: Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
 
         Returns:
-            FileMetadataList: The requested files.
+            The requested files.
 
         Examples:
 

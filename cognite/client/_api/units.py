@@ -54,11 +54,11 @@ class UnitAPI(APIClient):
         """`Retrieve one or more unit <https://developer.cognite.com/api#tag/Units/operation/byIdsUnits>`_
 
         Args:
-            external_id (str | SequenceNotStr[str]): External ID or list of external IDs
-            ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
+            external_id: External ID or list of external IDs
+            ignore_unknown_ids: Ignore external IDs that are not found rather than throw an exception.
 
         Returns:
-            Unit | UnitList | None: If a single external ID is specified: the requested unit, or None if it does not exist. If several external IDs are specified: the requested units.
+            the requested units.
 
         Examples:
 
@@ -122,13 +122,13 @@ class UnitAPI(APIClient):
             may not be any close matches, in which case an empty UnitList is returned.
 
         Args:
-            alias (str): Alias of the unit, like 'cmol / L' or 'meter per second'.
-            quantity (str | None): Quantity of the unit, like 'Temperature' or 'Pressure'.
-            return_ambiguous (bool): If False (default), when the alias is ambiguous (i.e. no quantity was given), raise a ValueError. If True, return the list of all matching units.
-            return_closest_matches (bool): If False (default), when the lookup fails, raise a ValueError (default). If True, return the closest matching units (even if empty).
+            alias: Alias of the unit, like 'cmol / L' or 'meter per second'.
+            quantity: Quantity of the unit, like 'Temperature' or 'Pressure'.
+            return_ambiguous: If False (default), when the alias is ambiguous (i.e. no quantity was given), raise a ValueError. If True, return the list of all matching units.
+            return_closest_matches: If False (default), when the lookup fails, raise a ValueError (default). If True, return the closest matching units (even if empty).
 
         Returns:
-            Unit | UnitList: The unit if found, else a ValueError is raised. If one or both of ``return_ambiguous`` and ``return_closest_matches`` is passed as True, a UnitList may be returned.
+            The unit if found, else a ValueError is raised. If one or both of ``return_ambiguous`` and ``return_closest_matches`` is passed as True, a UnitList may be returned.
 
         Examples:
 
@@ -205,7 +205,7 @@ class UnitAPI(APIClient):
         """`List all supported units <https://developer.cognite.com/api#tag/Units/operation/listUnits>`_
 
         Returns:
-            UnitList: List of units
+            List of units
 
         Examples:
 

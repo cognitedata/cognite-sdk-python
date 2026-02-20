@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8e339ffece20e9f0685104f8b625f982
+6acd0116cb4337950bd3e077f7b31818
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -47,11 +47,11 @@ class SyncUsersAPI(SyncAPIClient):
         Fetches user as they are iterated over, so you keep a limited number of users in memory.
 
         Args:
-            chunk_size (int | None): Number of users to return in each chunk. Defaults to yielding one user at a time.
-            limit (int | None): Maximum number of users to return. Defaults to return all.
+            chunk_size: Number of users to return in each chunk. Defaults to yielding one user at a time.
+            limit: Maximum number of users to return. Defaults to return all.
 
         Yields:
-            User | UserList: yields User one by one if chunk_size is not specified, else UserList objects.
+            yields User one by one if chunk_size is not specified, else UserList objects.
         """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.postgres_gateway.users(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
@@ -68,10 +68,10 @@ class SyncUsersAPI(SyncAPIClient):
         Create postgres users.
 
         Args:
-            user (UserWrite | Sequence[UserWrite]): The user(s) to create.
+            user: The user(s) to create.
 
         Returns:
-            UserCreated | UserCreatedList: The created user(s)
+            The created user(s)
 
         Examples:
 
@@ -105,10 +105,10 @@ class SyncUsersAPI(SyncAPIClient):
         Update postgres users
 
         Args:
-            items (UserUpdate | UserWrite | Sequence[UserUpdate | UserWrite]): The user(s) to update.
+            items: The user(s) to update.
 
         Returns:
-            User | UserList: The updated user(s)
+            The updated user(s)
 
         Examples:
 
@@ -136,9 +136,8 @@ class SyncUsersAPI(SyncAPIClient):
         Delete postgres users
 
         Args:
-            username (str | SequenceNotStr[str]): Usernames of the users to delete.
-            ignore_unknown_ids (bool): Ignore usernames that are not found
-
+            username: Usernames of the users to delete.
+            ignore_unknown_ids: Ignore usernames that are not found
 
         Examples:
 
@@ -166,11 +165,11 @@ class SyncUsersAPI(SyncAPIClient):
         Retrieve a list of postgres users by their usernames, optionally ignoring unknown usernames
 
         Args:
-            username (str | SequenceNotStr[str]): Usernames of the users to retrieve.
-            ignore_unknown_ids (bool): Ignore usernames that are not found
+            username: Usernames of the users to retrieve.
+            ignore_unknown_ids: Ignore usernames that are not found
 
         Returns:
-            User | UserList: The retrieved user(s).
+            The retrieved user(s).
 
         Examples:
 
@@ -194,10 +193,10 @@ class SyncUsersAPI(SyncAPIClient):
         List all users in a given project.
 
         Args:
-            limit (int): Limits the number of results to be returned.
+            limit: Limits the number of results to be returned.
 
         Returns:
-            UserList: A list of users
+            A list of users
 
         Examples:
 

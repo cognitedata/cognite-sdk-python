@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ac7597ce6ff7edc9d99e5f720b375c96
+324a45aa6edbe9caf933c545235285f7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -40,10 +40,10 @@ class SyncSequencesDataAPI(SyncAPIClient):
         `Insert rows into a sequence <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
 
         Args:
-            rows (SequenceRows | dict[int, typing.Sequence[int | float | str]] | typing.Sequence[tuple[int, typing.Sequence[int | float | str]]] | typing.Sequence[dict[str, Any]]):  The rows you wish to insert. Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
-            columns (SequenceNotStr[str] | None): List of external id for the columns of the sequence.
-            id (int | None): Id of sequence to insert rows into.
-            external_id (str | None): External id of sequence to insert rows into.
+            rows:  The rows you wish to insert. Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
+            columns: List of external id for the columns of the sequence.
+            id: Id of sequence to insert rows into.
+            external_id: External id of sequence to insert rows into.
 
         Examples:
             Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted:
@@ -92,10 +92,10 @@ class SyncSequencesDataAPI(SyncAPIClient):
         The sequence and columns must already exist.
 
         Args:
-            dataframe (pd.DataFrame):  Pandas DataFrame object containing the sequence data.
-            id (int | None): Id of sequence to insert rows into.
-            external_id (str | None): External id of sequence to insert rows into.
-            dropna (bool): Whether to drop rows where all values are missing. Default: True.
+            dataframe:  Pandas DataFrame object containing the sequence data.
+            id: Id of sequence to insert rows into.
+            external_id: External id of sequence to insert rows into.
+            dropna: Whether to drop rows where all values are missing. Default: True.
 
         Examples:
             Insert three rows into columns 'col_a' and 'col_b' of the sequence with id=123:
@@ -118,9 +118,9 @@ class SyncSequencesDataAPI(SyncAPIClient):
         `Delete rows from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_
 
         Args:
-            rows (typing.Sequence[int]): List of row numbers.
-            id (int | None): Id of sequence to delete rows from.
-            external_id (str | None): External id of sequence to delete rows from.
+            rows: List of row numbers.
+            id: Id of sequence to delete rows from.
+            external_id: External id of sequence to delete rows from.
 
         Examples:
 
@@ -138,10 +138,10 @@ class SyncSequencesDataAPI(SyncAPIClient):
         `Delete a range of rows from a sequence. Note this operation is potentially slow, as retrieves each row before deleting. <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_
 
         Args:
-            start (int): Row number to start from (inclusive).
-            end (int | None): Upper limit on the row number (exclusive). Set to None or -1 to delete all rows until end of sequence.
-            id (int | None): Id of sequence to delete rows from.
-            external_id (str | None): External id of sequence to delete rows from.
+            start: Row number to start from (inclusive).
+            end: Upper limit on the row number (exclusive). Set to None or -1 to delete all rows until end of sequence.
+            id: Id of sequence to delete rows from.
+            external_id: External id of sequence to delete rows from.
 
         Examples:
 
@@ -235,15 +235,15 @@ class SyncSequencesDataAPI(SyncAPIClient):
         `Retrieve data from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
 
         Args:
-            external_id (str | SequenceNotStr[str] | None): The external id of the sequence to retrieve from.
-            id (int | typing.Sequence[int] | None): The internal if the sequence to retrieve from.
-            start (int): Row number to start from (inclusive).
-            end (int | None): Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
-            columns (SequenceNotStr[str] | None): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
-            limit (int | None): Maximum number of rows to return per sequence. Pass None to fetch all (possibly limited by 'end').
+            external_id: The external id of the sequence to retrieve from.
+            id: The internal if the sequence to retrieve from.
+            start: Row number to start from (inclusive).
+            end: Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
+            columns: List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
+            limit: Maximum number of rows to return per sequence. Pass None to fetch all (possibly limited by 'end').
 
         Returns:
-            SequenceRows | SequenceRowsList: SequenceRows if a single identifier was given, else SequenceRowsList
+            SequenceRows if a single identifier was given, else SequenceRowsList
 
         Examples:
 
@@ -273,13 +273,13 @@ class SyncSequencesDataAPI(SyncAPIClient):
         `Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://developer.cognite.com/api#tag/Sequences/operation/getLatestSequenceRow>`_
 
         Args:
-            id (int | None): Id or list of ids.
-            external_id (str | None): External id or list of external ids.
-            columns (SequenceNotStr[str] | None): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
-            before (int | None): (optional, int): Get latest datapoint before this row number.
+            id: Id or list of ids.
+            external_id: External id or list of external ids.
+            columns: List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
+            before: Get latest datapoint before this row number.
 
         Returns:
-            SequenceRows: A Datapoints object containing the requested data, or a list of such objects.
+            A Datapoints object containing the requested data, or a list of such objects.
 
         Examples:
 
@@ -310,16 +310,16 @@ class SyncSequencesDataAPI(SyncAPIClient):
         `Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
 
         Args:
-            start (int): (inclusive) row number to start from.
-            end (int | None): (exclusive) upper limit on the row number. Set to None or -1 to get all rows until end of sequence.
-            columns (list[str] | None): List of external id for the columns of the sequence.  If 'None' is passed, all columns will be retrieved.
-            external_id (str | None): External id of sequence.
-            column_names (str | None):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
-            id (int | None): Id of sequence
-            limit (int | None): Maximum number of rows to return per sequence.
+            start: (inclusive) row number to start from.
+            end: (exclusive) upper limit on the row number. Set to None or -1 to get all rows until end of sequence.
+            columns: List of external id for the columns of the sequence.  If 'None' is passed, all columns will be retrieved.
+            external_id: External id of sequence.
+            column_names:  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
+            id: Id of sequence
+            limit: Maximum number of rows to return per sequence.
 
         Returns:
-            pd.DataFrame: The requested sequence data in a pandas DataFrame
+            The requested sequence data in a pandas DataFrame
 
         Examples:
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient

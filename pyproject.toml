@@ -91,6 +91,7 @@ anyio = "^4.11.0"
 [tool.poetry.group.docs.dependencies]
 sphinx = ">=7.2"
 sphinx-rtd-theme = ">=1"
+sphinx_autodoc_typehints = ">=3.0.1"
 
 [build-system]
 requires = ["poetry-core"]

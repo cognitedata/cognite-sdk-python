@@ -1,6 +1,6 @@
 """
 ===============================================================================
-4084f19e9d60803a93ffa88c0ac39ad0
+52353e1e28eda5b7a29b93e791af60fa
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -69,15 +69,15 @@ class SyncDataModelsAPI(SyncAPIClient):
         Fetches data model as they are iterated over, so you keep a limited number of data model in memory.
 
         Args:
-            chunk_size (int | None): Number of data model to return in each chunk. Defaults to yielding one data_model a time.
-            limit (int | None): Maximum number of data model to return. Defaults to returning all items.
-            space (str | None): The space to query.
-            inline_views (bool): Whether to expand the referenced views inline in the returned result.
-            all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
-            include_global (bool): Whether to include global views.
+            chunk_size: Number of data model to return in each chunk. Defaults to yielding one data_model a time.
+            limit: Maximum number of data model to return. Defaults to returning all items.
+            space: The space to query.
+            inline_views: Whether to expand the referenced views inline in the returned result.
+            all_versions: Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
+            include_global: Whether to include global views.
 
         Yields:
-            DataModel | DataModelList: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
+            yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.data_modeling.data_models(
@@ -107,11 +107,11 @@ class SyncDataModelsAPI(SyncAPIClient):
         `Retrieve data_model(s) by id(s). <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_
 
         Args:
-            ids (DataModelIdentifier | Sequence[DataModelIdentifier]): Data Model identifier(s).
-            inline_views (bool): Whether to expand the referenced views inline in the returned result.
+            ids: Data Model identifier(s).
+            inline_views: Whether to expand the referenced views inline in the returned result.
 
         Returns:
-            DataModelList[ViewId] | DataModelList[View]: Requested data model(s) or empty if none exist.
+            Requested data model(s) or empty if none exist.
 
         Examples:
 
@@ -131,9 +131,9 @@ class SyncDataModelsAPI(SyncAPIClient):
         `Delete one or more data model <https://developer.cognite.com/api#tag/Data-models/operation/deleteDataModels>`_
 
         Args:
-            ids (DataModelIdentifier | Sequence[DataModelIdentifier]): Data Model identifier(s).
+            ids: Data Model identifier(s).
         Returns:
-            list[DataModelId]: The data_model(s) which has been deleted. None if nothing was deleted.
+            The data_model(s) which has been deleted. None if nothing was deleted.
         Examples:
 
             Delete data model by id:
@@ -177,14 +177,14 @@ class SyncDataModelsAPI(SyncAPIClient):
         `List data models <https://developer.cognite.com/api#tag/Data-models/operation/listDataModels>`_
 
         Args:
-            inline_views (bool): Whether to expand the referenced views inline in the returned result.
-            limit (int | None): Maximum number of data model to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
-            space (str | None): The space to query.
-            all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
-            include_global (bool): Whether to include global data models.
+            inline_views: Whether to expand the referenced views inline in the returned result.
+            limit: Maximum number of data model to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            space: The space to query.
+            all_versions: Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
+            include_global: Whether to include global data models.
 
         Returns:
-            DataModelList[View] | DataModelList[ViewId]: List of requested data models
+            List of requested data models
 
         Examples:
 
@@ -226,10 +226,10 @@ class SyncDataModelsAPI(SyncAPIClient):
         `Create or update one or more data model. <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_
 
         Args:
-            data_model (DataModelApply | Sequence[DataModelApply]): Data model(s) to create or update (upsert).
+            data_model: Data model(s) to create or update (upsert).
 
         Returns:
-            DataModel | DataModelList: Created data model(s)
+            Created data model(s)
 
         Examples:
 

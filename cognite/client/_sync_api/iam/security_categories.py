@@ -1,6 +1,6 @@
 """
 ===============================================================================
-fea2e0196dbe6a2804d937ee40ff61e9
+11b752b7383f113febe1ff2669789673
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -29,10 +29,10 @@ class SyncSecurityCategoriesAPI(SyncAPIClient):
         `List security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:
-            limit (int | None): Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit: Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            SecurityCategoryList: List of security categories
+            List of security categories
 
         Example:
 
@@ -64,10 +64,10 @@ class SyncSecurityCategoriesAPI(SyncAPIClient):
         `Create one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/createSecurityCategories>`_
 
         Args:
-            security_category (SecurityCategory | SecurityCategoryWrite | Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]): Security category or list of categories to create.
+            security_category: Security category or list of categories to create.
 
         Returns:
-            SecurityCategory | SecurityCategoryList: The created security category or categories.
+            The created security category or categories.
 
         Example:
 
@@ -87,7 +87,7 @@ class SyncSecurityCategoriesAPI(SyncAPIClient):
         `Delete one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/deleteSecurityCategories>`_
 
         Args:
-            id (int | Sequence[int]): ID or list of IDs of security categories to delete.
+            id: ID or list of IDs of security categories to delete.
 
         Example:
 

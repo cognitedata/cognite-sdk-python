@@ -49,10 +49,10 @@ class GroupsAPI(APIClient):
         """`List groups. <https://developer.cognite.com/api#tag/Groups/operation/getGroups>`_
 
         Args:
-            all (bool): Whether to get all groups, only available with the groups:list acl.
+            all: Whether to get all groups, only available with the groups:list acl.
 
         Returns:
-            GroupList: List of groups.
+            List of groups.
 
         Example:
 
@@ -82,9 +82,9 @@ class GroupsAPI(APIClient):
         """`Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
 
         Args:
-            group (Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]): Group or list of groups to create.
+            group: Group or list of groups to create.
         Returns:
-            Group | GroupList: The created group(s).
+            The created group(s).
 
         Example:
 
@@ -149,7 +149,7 @@ class GroupsAPI(APIClient):
         """`Delete one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_
 
         Args:
-            id (int | Sequence[int]): ID or list of IDs of groups to delete.
+            id: ID or list of IDs of groups to delete.
 
         Example:
 

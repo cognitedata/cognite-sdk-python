@@ -41,14 +41,14 @@ class AnnotationCore(WriteableCogniteResource["AnnotationWrite"], ABC):
     """Representation of an annotation in CDF.
 
     Args:
-        annotation_type (str): The type of the annotation. This uniquely decides what the structure of the 'data' block will be.
-        data (dict): The annotation information. The format of this object is decided by and validated against the 'annotation_type' attribute.
-        status (str): The status of the annotation, e.g. "suggested", "approved", "rejected".
-        creating_app (str): The name of the app from which this annotation was created.
-        creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
-        creating_user (str): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
-        annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_id (int): The internal ID of the annotated resource.
+        annotation_type: The type of the annotation. This uniquely decides what the structure of the 'data' block will be.
+        data: The annotation information. The format of this object is decided by and validated against the 'annotation_type' attribute.
+        status: The status of the annotation, e.g. "suggested", "approved", "rejected".
+        creating_app: The name of the app from which this annotation was created.
+        creating_app_version: The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
+        creating_user: A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+        annotated_resource_type: Type name of the CDF resource that is annotated, e.g. "file".
+        annotated_resource_id: The internal ID of the annotated resource.
     """
 
     def __init__(
@@ -84,17 +84,17 @@ class Annotation(AnnotationCore):
     This is the read version of the Annotation class. It is never to be used when creating new annotations.
 
     Args:
-        id (int): A server-generated ID for the object.
-        created_time (int): The timestamp for when the annotation was created, in milliseconds since epoch.
-        last_updated_time (int): The timestamp for when the annotation was last updated, in milliseconds since epoch.
-        annotation_type (str): The type of the annotation. This uniquely decides what the structure of the 'data' block will be.
-        data (dict): The annotation information. The format of this object is decided by and validated against the 'annotation_type' attribute.
-        status (str): The status of the annotation, e.g. "suggested", "approved", "rejected".
-        creating_app (str): The name of the app from which this annotation was created.
-        creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
-        creating_user (str): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
-        annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_id (int): The internal ID of the annotated resource.
+        id: A server-generated ID for the object.
+        created_time: The timestamp for when the annotation was created, in milliseconds since epoch.
+        last_updated_time: The timestamp for when the annotation was last updated, in milliseconds since epoch.
+        annotation_type: The type of the annotation. This uniquely decides what the structure of the 'data' block will be.
+        data: The annotation information. The format of this object is decided by and validated against the 'annotation_type' attribute.
+        status: The status of the annotation, e.g. "suggested", "approved", "rejected".
+        creating_app: The name of the app from which this annotation was created.
+        creating_app_version: The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
+        creating_user: A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+        annotated_resource_type: Type name of the CDF resource that is annotated, e.g. "file".
+        annotated_resource_id: The internal ID of the annotated resource.
     """
 
     def __init__(
@@ -162,14 +162,14 @@ class AnnotationWrite(AnnotationCore):
     This is the write version of the Annotation class. It is used when creating new annotations.
 
     Args:
-        annotation_type (AnnotationType): The type of the annotation. This uniquely decides what the structure of the 'data' block will be.
-        data (dict): The annotation information. The format of this object is decided by and validated against the 'annotation_type' attribute.
-        status (Literal['suggested', 'approved', 'rejected']): The status of the annotation, e.g. "suggested", "approved", "rejected".
-        creating_app (str): The name of the app from which this annotation was created.
-        creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
-        creating_user (str): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
-        annotated_resource_type (Literal['file', 'threedmodel']): Type name of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_id (int): The internal ID of the annotated resource.
+        annotation_type: The type of the annotation. This uniquely decides what the structure of the 'data' block will be.
+        data: The annotation information. The format of this object is decided by and validated against the 'annotation_type' attribute.
+        status: The status of the annotation, e.g. "suggested", "approved", "rejected".
+        creating_app: The name of the app from which this annotation was created.
+        creating_app_version: The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
+        creating_user: A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+        annotated_resource_type: Type name of the CDF resource that is annotated, e.g. "file".
+        annotated_resource_id: The internal ID of the annotated resource.
     """
 
     def __init__(
@@ -216,13 +216,13 @@ class AnnotationReverseLookupFilter(CogniteFilter):
     """Filter on annotations with various criteria
 
     Args:
-        annotated_resource_type (str): The type of the CDF resource that is annotated, e.g. "file".
-        status (str | None): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
-        creating_user (str | None): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
-        creating_app (str | None): Name of the app from which the annotations to filter for where created.
-        creating_app_version (str | None): Version of the app from which the annotations to filter for were created.
-        annotation_type (str | None): Type name of the annotations.
-        data (dict[str, Any] | None): The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
+        annotated_resource_type: The type of the CDF resource that is annotated, e.g. "file".
+        status: Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
+        creating_user: Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
+        creating_app: Name of the app from which the annotations to filter for where created.
+        creating_app_version: Version of the app from which the annotations to filter for were created.
+        annotation_type: Type name of the annotations.
+        data: The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
     """
 
     def __init__(
@@ -260,14 +260,14 @@ class AnnotationFilter(AnnotationReverseLookupFilter):
     """Filter on annotations with various criteria
 
     Args:
-        annotated_resource_type (str): The type of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_ids (list[dict[str, int]]): List of ids of the annotated CDF resources to filter in. Example format: [{"id": 1234}, {"id": "4567"}]. Must contain at least one item.
-        status (str | None): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
-        creating_user (str | None): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
-        creating_app (str | None): Name of the app from which the annotations to filter for where created.
-        creating_app_version (str | None): Version of the app from which the annotations to filter for were created.
-        annotation_type (str | None): Type name of the annotations.
-        data (dict[str, Any] | None): The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
+        annotated_resource_type: The type of the CDF resource that is annotated, e.g. "file".
+        annotated_resource_ids: List of ids of the annotated CDF resources to filter in. Example format: [{"id": 1234}, {"id": "4567"}]. Must contain at least one item.
+        status: Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
+        creating_user: Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
+        creating_app: Name of the app from which the annotations to filter for where created.
+        creating_app_version: Version of the app from which the annotations to filter for were created.
+        annotation_type: Type name of the annotations.
+        data: The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
     """
 
     def __init__(
@@ -297,7 +297,7 @@ class AnnotationUpdate(CogniteUpdate):
     """Changes applied to annotation
 
     Args:
-        id (int): A server-generated ID for the object.
+        id: A server-generated ID for the object.
     """
 
     def __init__(self, id: int) -> None:

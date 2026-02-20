@@ -20,8 +20,8 @@ class UnitConversion:
     The conversion between a unit and its base unit.
 
     Args:
-        multiplier (float): The multiplier to convert from the unit to the base unit.
-        offset (float): The offset to convert from the unit to the base unit.
+        multiplier: The multiplier to convert from the unit to the base unit.
+        offset: The offset to convert from the unit to the base unit.
     """
 
     multiplier: float
@@ -46,8 +46,8 @@ class UnitID(CogniteResource):
     Unit Identifier
 
     Args:
-        unit_external_id (str): External ID of the unit.
-        name (str): Name of the unit.
+        unit_external_id: External ID of the unit.
+        name: Name of the unit.
     """
 
     def __init__(self, unit_external_id: str, name: str) -> None:
@@ -67,16 +67,15 @@ class Unit(CogniteResource):
     This class represents a Unit in CDF.
 
     Args:
-        external_id (str): A unique identifier of the unit.
-        name (str): The name of the unit, e.g. DEG_C for Celsius.
-        long_name (str): A more descriptive name of the unit, e.g., degrees Celsius.
-        symbol (str): The symbol of the unit, e.g., °C.
-        alias_names (list[str]): List of alias names for the unit, e.g., Degree C, degC, °C, and so on.
-        quantity (str): The quantity of the unit, e.g., temperature.
-        conversion (UnitConversion): The conversion between the unit and its base unit. For example, the base unit for
-            temperature is Kelvin, and the conversion from Celsius to Kelvin is multiplier = 1, offset = 273.15.
-        source (str | None): The source of the unit, e.g., qudt.org
-        source_reference (str | None): The reference to the source of the unit, e.g., http://qudt.org/vocab/unit/DEG_C
+        external_id: A unique identifier of the unit.
+        name: The name of the unit, e.g. DEG_C for Celsius.
+        long_name: A more descriptive name of the unit, e.g., degrees Celsius.
+        symbol: The symbol of the unit, e.g., °C.
+        alias_names: List of alias names for the unit, e.g., Degree C, degC, °C, and so on.
+        quantity: The quantity of the unit, e.g., temperature.
+        conversion: The conversion between the unit and its base unit. For example, the base unit for temperature is Kelvin, and the conversion from Celsius to Kelvin is multiplier = 1, offset = 273.15.
+        source: The source of the unit, e.g., qudt.org
+        source_reference: The reference to the source of the unit, e.g., http://qudt.org/vocab/unit/DEG_C
     """
 
     def __init__(
@@ -139,8 +138,8 @@ class UnitSystem(CogniteResource):
     This class represents a Unit System in CDF.
 
     Args:
-        name (str): The name of the unit system, e.g., SI and Imperial.
-        quantities (list[UnitID]): The quantities of the unit system, e.g., length, mass, and so on.
+        name: The name of the unit system, e.g., SI and Imperial.
+        quantities: The quantities of the unit system, e.g., length, mass, and so on.
 
     """
 

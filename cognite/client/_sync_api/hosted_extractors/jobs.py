@@ -1,6 +1,6 @@
 """
 ===============================================================================
-bd17aab24c1acbcf37ae90452f8d16b4
+605e64e7f9ad12b42736af8c5cef2d05
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -47,11 +47,11 @@ class SyncJobsAPI(SyncAPIClient):
         Fetches jobs as they are iterated over, so you keep a limited number of jobs in memory.
 
         Args:
-            chunk_size (int | None): Number of jobs to return in each chunk. Defaults to yielding one job a time.
-            limit (int | None): Maximum number of jobs to return. Defaults to returning all items.
+            chunk_size: Number of jobs to return in each chunk. Defaults to yielding one job a time.
+            limit: Maximum number of jobs to return. Defaults to returning all items.
 
         Yields:
-            Job | JobList: yields Job one by one if chunk_size is not specified, else JobList objects.
+            yields Job one by one if chunk_size is not specified, else JobList objects.
         """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.hosted_extractors.jobs(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
@@ -68,11 +68,11 @@ class SyncJobsAPI(SyncAPIClient):
         `Retrieve one or more jobs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/retrieve_jobs>`_
 
         Args:
-            external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the job type.
-            ignore_unknown_ids (bool): Ignore external IDs that are not found
+            external_ids: The external ID provided by the client. Must be unique for the job type.
+            ignore_unknown_ids: Ignore external IDs that are not found
 
         Returns:
-            Job | None | JobList: Requested jobs
+            Requested jobs
 
         Examples:
 
@@ -96,8 +96,8 @@ class SyncJobsAPI(SyncAPIClient):
         `Delete one or more jobs <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/delete_jobs>`_
 
         Args:
-            external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
-            ignore_unknown_ids (bool): Ignore external IDs that are not found
+            external_ids: The external ID provided by the client. Must be unique for the resource type.
+            ignore_unknown_ids: Ignore external IDs that are not found
         Examples:
 
             Delete jobs by external id:
@@ -124,10 +124,10 @@ class SyncJobsAPI(SyncAPIClient):
         `Create one or more jobs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/create_jobs>`_
 
         Args:
-            items (JobWrite | Sequence[JobWrite]): Job(s) to create.
+            items: Job(s) to create.
 
         Returns:
-            Job | JobList: Created job(s)
+            Created job(s)
 
         Examples:
 
@@ -165,11 +165,11 @@ class SyncJobsAPI(SyncAPIClient):
         `Update one or more jobs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/update_jobs>`_
 
         Args:
-            items (JobWrite | JobUpdate | Sequence[JobWrite | JobUpdate]): Job(s) to update.
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (JobWrite). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            items: Job(s) to update.
+            mode: How to update data when a non-update object is given (JobWrite). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            Job | JobList: Updated job(s)
+            Updated job(s)
 
         Examples:
 
@@ -189,10 +189,10 @@ class SyncJobsAPI(SyncAPIClient):
         `List jobs <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/list_jobs>`_
 
         Args:
-            limit (int | None): Maximum number of jobs to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit: Maximum number of jobs to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            JobList: List of requested jobs
+            List of requested jobs
 
         Examples:
 
@@ -226,13 +226,13 @@ class SyncJobsAPI(SyncAPIClient):
         `List job logs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/get_job_logs>`_
 
         Args:
-            job (str | None): Require returned logs to belong to the job given by this external ID.
-            source (str | None): Require returned logs to belong to the any job with source given by this external ID.
-            destination (str | None): Require returned logs to belong to the any job with destination given by this external ID.
-            limit (int | None): Maximum number of logs to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            job: Require returned logs to belong to the job given by this external ID.
+            source: Require returned logs to belong to the any job with source given by this external ID.
+            destination: Require returned logs to belong to the any job with destination given by this external ID.
+            limit: Maximum number of logs to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            JobLogsList: List of requested job logs
+            List of requested job logs
 
         Examples:
 
@@ -260,13 +260,13 @@ class SyncJobsAPI(SyncAPIClient):
         `List job metrics. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/get_job_metrics>`_
 
         Args:
-            job (str | None): Require returned metrics to belong to the job given by this external ID.
-            source (str | None): Require returned metrics to belong to the any job with source given by this external ID.
-            destination (str | None): Require returned metrics to belong to the any job with destination given by this external ID.
-            limit (int | None): Maximum number of metrics to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            job: Require returned metrics to belong to the job given by this external ID.
+            source: Require returned metrics to belong to the any job with source given by this external ID.
+            destination: Require returned metrics to belong to the any job with destination given by this external ID.
+            limit: Maximum number of metrics to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            JobMetricsList: List of requested job metrics
+            List of requested job metrics
 
         Examples:
 

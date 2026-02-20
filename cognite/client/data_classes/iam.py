@@ -65,12 +65,12 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
     """No description.
 
     Args:
-        name (str): Name of the group.
-        source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
-        capabilities (list[Capability] | Capability | None): List of capabilities (acls) this group should grant its users.
-        attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
-        metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
-        members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
+        name: Name of the group.
+        source_id: ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
+        capabilities: List of capabilities (acls) this group should grant its users.
+        attributes: Attributes of the group, this scopes down access based on the attributes specified.
+        metadata: Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        members: Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
 
     def __init__(
@@ -119,15 +119,15 @@ class Group(GroupCore):
     Groups can either be managed through the external identity provider for the project or managed by CDF.
 
     Args:
-        id (int): No description.
-        name (str): Name of the group.
-        source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
-        capabilities (list[Capability] | Capability | None): List of capabilities (acls) this group should grant its users.
-        attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
-        is_deleted (bool | None): No description.
-        deleted_time (int | None): No description.
-        metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
-        members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
+        id: No description.
+        name: Name of the group.
+        source_id: ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
+        capabilities: List of capabilities (acls) this group should grant its users.
+        attributes: Attributes of the group, this scopes down access based on the attributes specified.
+        is_deleted: No description.
+        deleted_time: No description.
+        metadata: Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        members: Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
 
     def __init__(
@@ -217,12 +217,12 @@ class GroupWrite(GroupCore):
     Groups can either be managed through the external identity provider for the project or managed by CDF.
 
     Args:
-        name (str): Name of the group.
-        source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
-        attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
-        metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
-        members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
+        name: Name of the group.
+        source_id: ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
+        capabilities: List of capabilities (acls) this group should grant its users.
+        attributes: Attributes of the group, this scopes down access based on the attributes specified.
+        metadata: Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        members: Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
 
     def __init__(
@@ -297,7 +297,7 @@ class SecurityCategoryCore(WriteableCogniteResource["SecurityCategoryWrite"], AB
     """No description.
 
     Args:
-        name (str | None): Name of the security category
+        name: Name of the security category
     """
 
     def __init__(self, name: str | None = None) -> None:
@@ -309,8 +309,8 @@ class SecurityCategory(SecurityCategoryCore):
     This is the read version of a security category, which is used when retrieving security categories.
 
     Args:
-        id (int): Id of the security category
-        name (str | None): Name of the security category
+        id: Id of the security category
+        name: Name of the security category
     """
 
     def __init__(self, id: int, name: str | None) -> None:
@@ -334,7 +334,7 @@ class SecurityCategoryWrite(SecurityCategoryCore):
 
 
     Args:
-        name (str): Name of the security category
+        name: Name of the security category
     """
 
     def __init__(self, name: str) -> None:
@@ -369,8 +369,8 @@ class ProjectSpec(CogniteResource):
     """A CDF project spec
 
     Args:
-        url_name (str): The url name for the project
-        groups (list[int]): Group ids in the project
+        url_name: The url name for the project
+        groups: Group ids in the project
     """
 
     def __init__(self, url_name: str, groups: list[int]) -> None:
@@ -396,9 +396,9 @@ class TokenInspection(CogniteResource):
     """Current login status
 
     Args:
-        subject (str): Subject (sub claim) of JWT.
-        projects (list[ProjectSpec]): Projects this token is valid for.
-        capabilities (ProjectCapabilityList): Capabilities associated with this token.
+        subject: Subject (sub claim) of JWT.
+        projects: Projects this token is valid for.
+        capabilities: Capabilities associated with this token.
     """
 
     def __init__(self, subject: str, projects: list[ProjectSpec], capabilities: ProjectCapabilityList) -> None:
@@ -449,11 +449,11 @@ class CreatedSession(CogniteResource):
     """Session creation related information
 
     Args:
-        id (int): ID of the created session.
-        status (SessionStatus): Current status of the session.
-        nonce (str): Nonce to be passed to the internal service that will bind the session
-        type (SessionType | None): Credentials kind used to create the session.
-        client_id (str | None): Client ID in identity provider. Returned only if the session was created using client credentials
+        id: ID of the created session.
+        status: Current status of the session.
+        nonce: Nonce to be passed to the internal service that will bind the session
+        type: Credentials kind used to create the session.
+        client_id: Client ID in identity provider. Returned only if the session was created using client credentials
     """
 
     def __init__(
@@ -485,12 +485,12 @@ class Session(CogniteResource):
     """Session status
 
     Args:
-        id (int): ID of the session.
-        type (SessionType): Credentials kind used to create the session.
-        status (SessionStatus): Current status of the session.
-        creation_time (int): Session creation time, in milliseconds since 1970
-        expiration_time (int): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
-        client_id (str | None): Client ID in identity provider. Returned only if the session was created using client credentials
+        id: ID of the session.
+        type: Credentials kind used to create the session.
+        status: Current status of the session.
+        creation_time: Session creation time, in milliseconds since 1970
+        expiration_time: Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
+        client_id: Client ID in identity provider. Returned only if the session was created using client credentials
     """
 
     def __init__(
@@ -529,8 +529,8 @@ class ClientCredentials(CogniteResource):
     """Client credentials for session creation
 
     Args:
-        client_id (str): Client ID from identity provider.
-        client_secret (str): Client secret from identity provider.
+        client_id: Client ID from identity provider.
+        client_secret: Client secret from identity provider.
     """
 
     def __init__(self, client_id: str, client_secret: str) -> None:

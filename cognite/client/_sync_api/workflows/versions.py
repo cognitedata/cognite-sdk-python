@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c89364f15d0ee4178e12fb002ea38399
+7bdbaaa465ad01ded467630eb5232abd
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -59,12 +59,12 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
         Iterate over workflow versions
 
         Args:
-            chunk_size (int | None): The number of workflow versions to return in each chunk. Defaults to yielding one workflow version at a time.
-            workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
-            limit (int | None): Maximum number of workflow versions to return. Defaults to returning all.
+            chunk_size: The number of workflow versions to return in each chunk. Defaults to yielding one workflow version at a time.
+            workflow_version_ids: Workflow version id or list of workflow version ids to filter on.
+            limit: Maximum number of workflow versions to return. Defaults to returning all.
 
         Yields:
-            WorkflowVersion | WorkflowVersionList: Yields WorkflowVersion one by one if chunk_size is None, otherwise yields WorkflowVersionList objects.
+            Yields WorkflowVersion one by one if chunk_size is None, otherwise yields WorkflowVersionList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.workflows.versions(
@@ -87,11 +87,11 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
         Note this is an upsert endpoint, so workflow versions that already exist will be updated, and new ones will be created.
 
         Args:
-            version (WorkflowVersionUpsert | Sequence[WorkflowVersionUpsert]): The workflow version(s) to upsert.
-            mode (Literal['replace']): This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
+            version: The workflow version(s) to upsert.
+            mode: This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
 
         Returns:
-            WorkflowVersion | WorkflowVersionList: The created workflow version(s).
+            The created workflow version(s).
 
         Examples:
 
@@ -136,8 +136,8 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
         `Delete a workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/DeleteSpecificVersionsOfWorkflow>`_
 
         Args:
-            workflow_version_id (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionId] | MutableSequence[tuple[str, str]]): Workflow version id or list of workflow version ids to delete.
-            ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
+            workflow_version_id: Workflow version id or list of workflow version ids to delete.
+            ignore_unknown_ids: Ignore external ids that are not found rather than throw an exception.
 
         Examples:
 
@@ -177,11 +177,11 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
         `Retrieve a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/GetSpecificVersion>`_
 
         Args:
-            workflow_external_id (WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds): External id of the workflow.
-            ignore_unknown_ids (bool): When requesting multiple, whether to ignore external IDs that are not found rather than throwing an exception.
+            workflow_external_id: External id of the workflow.
+            ignore_unknown_ids: When requesting multiple, whether to ignore external IDs that are not found rather than throwing an exception.
 
         Returns:
-            WorkflowVersion | WorkflowVersionList | None: If a single identifier is specified: the requested workflow version, or None if it does not exist. If several ids are specified: the requested workflow versions.
+            the requested workflow versions.
 
         Examples:
 
@@ -217,11 +217,11 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
         `List workflow versions in the project <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/ListWorkflowVersions>`_
 
         Args:
-            workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
+            workflow_version_ids: Workflow version id or list of workflow version ids to filter on.
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
 
         Returns:
-            WorkflowVersionList: The requested workflow versions.
+            The requested workflow versions.
 
         Examples:
 

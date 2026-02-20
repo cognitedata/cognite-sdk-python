@@ -28,10 +28,10 @@ class ExtractionPipelineContact(CogniteResource):
     """A contact for an extraction pipeline
 
     Args:
-        name (str | None): Name of contact
-        email (str | None): Email address of contact
-        role (str | None): Role of contact, such as Owner, Maintainer, etc.
-        send_notification (bool | None): Whether to send notifications to this contact or not
+        name: Name of contact
+        email: Email address of contact
+        role: Role of contact, such as Owner, Maintainer, etc.
+        send_notification: Whether to send notifications to this contact or not
     """
 
     def __init__(
@@ -61,7 +61,7 @@ class ExtractionPipelineNotificationConfiguration(CogniteResource):
     """Extraction pipeline notification configuration
 
     Args:
-        allowed_not_seen_range_in_minutes (int | None): Time in minutes to pass without any Run. Null if extraction pipeline is not checked.
+        allowed_not_seen_range_in_minutes: Time in minutes to pass without any Run. Null if extraction pipeline is not checked.
 
     """
 
@@ -78,18 +78,18 @@ class ExtractionPipelineCore(WriteableCogniteResource["ExtractionPipelineWrite"]
     """An extraction pipeline is a representation of a process writing data to CDF, such as an extractor or an ETL tool.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str | None): The name of the extraction pipeline.
-        description (str | None): The description of the extraction pipeline.
-        data_set_id (int | None): The id of the dataset this extraction pipeline related with.
-        raw_tables (list[dict[str, str]] | None): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
-        schedule (str | None): One of None/On trigger/Continuous/cron regex.
-        contacts (list[ExtractionPipelineContact] | None): list of contacts
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str | None): Source text value for extraction pipeline.
-        documentation (str | None): Documentation text value for extraction pipeline.
-        notification_config (ExtractionPipelineNotificationConfiguration | None): Notification configuration for the extraction pipeline.
-        created_by (str | None): Extraction pipeline creator, usually an email.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: The name of the extraction pipeline.
+        description: The description of the extraction pipeline.
+        data_set_id: The id of the dataset this extraction pipeline related with.
+        raw_tables: list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
+        schedule: One of None/On trigger/Continuous/cron regex.
+        contacts: list of contacts
+        metadata: Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source: Source text value for extraction pipeline.
+        documentation: Documentation text value for extraction pipeline.
+        notification_config: Notification configuration for the extraction pipeline.
+        created_by: Extraction pipeline creator, usually an email.
 
     """
 
@@ -135,25 +135,25 @@ class ExtractionPipeline(ExtractionPipelineCore):
     This is the read version of the ExtractionPipeline class, which is used when retrieving extraction pipelines.
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the extraction pipeline.
-        description (str | None): The description of the extraction pipeline.
-        data_set_id (int): The id of the dataset this extraction pipeline related with.
-        raw_tables (list[dict[str, str]] | None): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
-        last_success (int | None): Milliseconds value of last success status.
-        last_failure (int | None): Milliseconds value of last failure status.
-        last_message (str | None): Message of last failure.
-        last_seen (int | None): Milliseconds value of last seen status.
-        schedule (str | None): One of None/On trigger/Continuous/cron regex.
-        contacts (list[ExtractionPipelineContact] | None): list of contacts
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str | None): Source text value for extraction pipeline.
-        documentation (str | None): Documentation text value for extraction pipeline.
-        notification_config (ExtractionPipelineNotificationConfiguration | None): Notification configuration for the extraction pipeline.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_by (str | None): Extraction pipeline creator, usually an email.
+        id: A server-generated ID for the object.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: The name of the extraction pipeline.
+        description: The description of the extraction pipeline.
+        data_set_id: The id of the dataset this extraction pipeline related with.
+        raw_tables: list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
+        last_success: Milliseconds value of last success status.
+        last_failure: Milliseconds value of last failure status.
+        last_message: Message of last failure.
+        last_seen: Milliseconds value of last seen status.
+        schedule: One of None/On trigger/Continuous/cron regex.
+        contacts: list of contacts
+        metadata: Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source: Source text value for extraction pipeline.
+        documentation: Documentation text value for extraction pipeline.
+        notification_config: Notification configuration for the extraction pipeline.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_by: Extraction pipeline creator, usually an email.
     """
 
     def __init__(
@@ -258,18 +258,18 @@ class ExtractionPipelineWrite(ExtractionPipelineCore):
     This is the write version of the ExtractionPipeline class, which is used when creating extraction pipelines.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the extraction pipeline.
-        data_set_id (int): The id of the dataset this extraction pipeline related with.
-        description (str | None): The description of the extraction pipeline.
-        raw_tables (list[dict[str, str]] | None): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
-        schedule (str | None): One of None/On trigger/Continuous/cron regex.
-        contacts (list[ExtractionPipelineContact] | None): list of contacts
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str | None): Source text value for extraction pipeline.
-        documentation (str | None): Documentation text value for extraction pipeline.
-        notification_config (ExtractionPipelineNotificationConfiguration | None): Notification configuration for the extraction pipeline.
-        created_by (str | None): Extraction pipeline creator, usually an email.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: The name of the extraction pipeline.
+        data_set_id: The id of the dataset this extraction pipeline related with.
+        description: The description of the extraction pipeline.
+        raw_tables: list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
+        schedule: One of None/On trigger/Continuous/cron regex.
+        contacts: list of contacts
+        metadata: Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source: Source text value for extraction pipeline.
+        documentation: Documentation text value for extraction pipeline.
+        notification_config: Notification configuration for the extraction pipeline.
+        created_by: Extraction pipeline creator, usually an email.
     """
 
     def __init__(
@@ -330,8 +330,8 @@ class ExtractionPipelineUpdate(CogniteUpdate):
     """Changes applied to an extraction pipeline
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        id: A server-generated ID for the object.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
     """
 
     class _PrimitiveExtractionPipelineUpdate(CognitePrimitiveUpdate):
@@ -436,9 +436,9 @@ class ExtractionPipelineRunCore(WriteableCogniteResource["ExtractionPipelineRunW
     """A representation of an extraction pipeline run.
 
     Args:
-        status (str): success/failure/seen.
-        message (str | None): Optional status message.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        status: success/failure/seen.
+        message: Optional status message.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -456,11 +456,11 @@ class ExtractionPipelineRun(ExtractionPipelineRunCore):
     """A representation of an extraction pipeline run.
 
     Args:
-        id (int): A server-generated ID for the object.
-        extpipe_external_id (str | None): The external ID of the extraction pipeline.
-        status (str): success/failure/seen.
-        message (str | None): Optional status message.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        id: A server-generated ID for the object.
+        extpipe_external_id: The external ID of the extraction pipeline.
+        status: success/failure/seen.
+        message: Optional status message.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -523,10 +523,10 @@ class ExtractionPipelineRunWrite(ExtractionPipelineRunCore):
     This is the write version of the ExtractionPipelineRun class, which is used when creating extraction pipeline runs.
 
     Args:
-        extpipe_external_id (str): The external ID of the extraction pipeline.
-        status (Literal['success', 'failure', 'seen']): success/failure/seen.
-        message (str | None): Optional status message.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        extpipe_external_id: The external ID of the extraction pipeline.
+        status: success/failure/seen.
+        message: Optional status message.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -588,7 +588,7 @@ class StringFilter(CogniteFilter):
     """Filter runs on substrings of the message
 
     Args:
-        substring (str | None): Part of message
+        substring: Part of message
     """
 
     def __init__(self, substring: str | None = None) -> None:
@@ -599,10 +599,10 @@ class ExtractionPipelineRunFilter(CogniteFilter):
     """Filter runs with exact matching
 
     Args:
-        external_id (str | None): The external ID of related ExtractionPipeline provided by the client. Must be unique for the resource type.
-        statuses (SequenceNotStr[str] | None): success/failure/seen.
-        message (StringFilter | None): message filter.
-        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+        external_id: The external ID of related ExtractionPipeline provided by the client. Must be unique for the resource type.
+        statuses: success/failure/seen.
+        message: message filter.
+        created_time: Range between two timestamps.
     """
 
     def __init__(
@@ -622,10 +622,10 @@ class ExtractionPipelineConfigRevision(CogniteResource):
     """An extraction pipeline config revision
 
     Args:
-        external_id (str): The external ID of the associated extraction pipeline.
-        revision (int): The revision number of this config as a positive integer.
-        description (str | None): Short description of this configuration revision.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        external_id: The external ID of the associated extraction pipeline.
+        revision: The revision number of this config as a positive integer.
+        description: Short description of this configuration revision.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -654,9 +654,9 @@ class ExtractionPipelineConfigCore(WriteableCogniteResource["ExtractionPipelineC
     """An extraction pipeline config
 
     Args:
-        external_id (str | None): The external ID of the associated extraction pipeline.
-        config (str | None): Contents of this configuration revision.
-        description (str | None): Short description of this configuration revision.
+        external_id: The external ID of the associated extraction pipeline.
+        config: Contents of this configuration revision.
+        description: Short description of this configuration revision.
     """
 
     def __init__(
@@ -674,11 +674,11 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigCore):
     """An extraction pipeline config
 
     Args:
-        external_id (str): The external ID of the associated extraction pipeline.
-        config (str | None): Contents of this configuration revision.
-        revision (int): The revision number of this config as a positive integer.
-        description (str | None): Short description of this configuration revision.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        external_id: The external ID of the associated extraction pipeline.
+        config: Contents of this configuration revision.
+        revision: The revision number of this config as a positive integer.
+        description: Short description of this configuration revision.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -722,9 +722,9 @@ class ExtractionPipelineConfigWrite(ExtractionPipelineConfigCore):
     """An extraction pipeline config
 
     Args:
-        external_id (str): The external ID of the associated extraction pipeline.
-        config (str | None): Contents of this configuration revision.
-        description (str | None): Short description of this configuration revision.
+        external_id: The external ID of the associated extraction pipeline.
+        config: Contents of this configuration revision.
+        description: Short description of this configuration revision.
     """
 
     def __init__(

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-fe09ebcbcb830ad53c6070c9d3d75614
+d65ed29d7fa57070fe41d79eac5099c7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -100,25 +100,25 @@ class SyncRelationshipsAPI(SyncAPIClient):
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
         Args:
-            chunk_size (int | None): Number of Relationships to return in each chunk. Defaults to yielding one relationship at a time.
-            source_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their source External Id field
-            source_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their source Type field
-            target_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their target External Id field
-            target_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their target Type field
-            data_set_ids (int | Sequence[int] | None): Return only relationships in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only relationships in the specified data set(s) with this external id / these external ids.
-            start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
-            end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
-            confidence (dict[str, int] | None): Range to filter the field for (inclusive).
-            last_updated_time (dict[str, int] | None): Range to filter the field for (inclusive).
-            created_time (dict[str, int] | None): Range to filter the field for (inclusive).
-            active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the beginning of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
-            labels (LabelFilter | None): Return only the resource matching the specified label constraints.
-            limit (int | None): No description.
-            fetch_resources (bool): No description.
+            chunk_size: Number of Relationships to return in each chunk. Defaults to yielding one relationship at a time.
+            source_external_ids: Include relationships that have any of these values in their source External Id field
+            source_types: Include relationships that have any of these values in their source Type field
+            target_external_ids: Include relationships that have any of these values in their target External Id field
+            target_types: Include relationships that have any of these values in their target Type field
+            data_set_ids: Return only relationships in the specified data set(s) with this id / these ids.
+            data_set_external_ids: Return only relationships in the specified data set(s) with this external id / these external ids.
+            start_time: Range between two timestamps, minimum and maximum milliseconds (inclusive)
+            end_time: Range between two timestamps, minimum and maximum milliseconds (inclusive)
+            confidence: Range to filter the field for (inclusive).
+            last_updated_time: Range to filter the field for (inclusive).
+            created_time: Range to filter the field for (inclusive).
+            active_at_time: Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the beginning of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
+            labels: Return only the resource matching the specified label constraints.
+            limit: No description.
+            fetch_resources: No description.
 
         Yields:
-            Relationship | RelationshipList: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
+            yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.relationships(
@@ -146,11 +146,11 @@ class SyncRelationshipsAPI(SyncAPIClient):
         Retrieve a single relationship by external id.
 
         Args:
-            external_id (str): External ID
-            fetch_resources (bool): If true, will try to return the full resources referenced by the relationship in the source and target fields.
+            external_id: External ID
+            fetch_resources: If true, will try to return the full resources referenced by the relationship in the source and target fields.
 
         Returns:
-            Relationship | None: Requested relationship or None if it does not exist.
+            Requested relationship or None if it does not exist.
 
         Examples:
 
@@ -172,13 +172,12 @@ class SyncRelationshipsAPI(SyncAPIClient):
         `Retrieve multiple relationships by external id.  <https://developer.cognite.com/api#tag/Relationships/operation/byidsRelationships>`_
 
         Args:
-            external_ids (SequenceNotStr[str]): External IDs
-            fetch_resources (bool): If true, will try to return the full resources referenced by the relationship in the
-                source and target fields.
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            external_ids: External IDs
+            fetch_resources: If true, will try to return the full resources referenced by the relationship in the source and target fields.
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            RelationshipList: The requested relationships.
+            The requested relationships.
 
         Examples:
 
@@ -218,25 +217,25 @@ class SyncRelationshipsAPI(SyncAPIClient):
         `Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://developer.cognite.com/api#tag/Relationships/operation/listRelationships>`_
 
         Args:
-            source_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their source External Id field
-            source_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their source Type field
-            target_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their target External Id field
-            target_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their target Type field
-            data_set_ids (int | Sequence[int] | None): Return only relationships in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only relationships in the specified data set(s) with this external id / these external ids.
-            start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
-            end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
-            confidence (dict[str, int] | None): Range to filter the field for (inclusive).
-            last_updated_time (dict[str, int] | None): Range to filter the field for (inclusive).
-            created_time (dict[str, int] | None): Range to filter the field for (inclusive).
-            active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the beginning of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
-            labels (LabelFilter | None): Return only the resource matching the specified label constraints.
-            limit (int | None): Maximum number of relationships to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            partitions (int | None): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
-            fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the source and target fields.
+            source_external_ids: Include relationships that have any of these values in their source External Id field
+            source_types: Include relationships that have any of these values in their source Type field
+            target_external_ids: Include relationships that have any of these values in their target External Id field
+            target_types: Include relationships that have any of these values in their target Type field
+            data_set_ids: Return only relationships in the specified data set(s) with this id / these ids.
+            data_set_external_ids: Return only relationships in the specified data set(s) with this external id / these external ids.
+            start_time: Range between two timestamps, minimum and maximum milliseconds (inclusive)
+            end_time: Range between two timestamps, minimum and maximum milliseconds (inclusive)
+            confidence: Range to filter the field for (inclusive).
+            last_updated_time: Range to filter the field for (inclusive).
+            created_time: Range to filter the field for (inclusive).
+            active_at_time: Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the beginning of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
+            labels: Return only the resource matching the specified label constraints.
+            limit: Maximum number of relationships to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions: Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
+            fetch_resources: if true, will try to return the full resources referenced by the relationship in the source and target fields.
 
         Returns:
-            RelationshipList: List of requested relationships
+            List of requested relationships
 
         Examples:
 
@@ -286,10 +285,10 @@ class SyncRelationshipsAPI(SyncAPIClient):
         `Create one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/createRelationships>`_
 
         Args:
-            relationship (Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]): Relationship or list of relationships to create.
+            relationship: Relationship or list of relationships to create.
 
         Returns:
-            Relationship | RelationshipList: Created relationship(s)
+            Created relationship(s)
 
         Note:
             - The source_type and target_type field in the Relationship(s) can be any string among "Asset", "TimeSeries", "File", "Event", "Sequence".
@@ -344,11 +343,11 @@ class SyncRelationshipsAPI(SyncAPIClient):
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
-            item (Relationship | RelationshipWrite | RelationshipUpdate | Sequence[Relationship | RelationshipWrite | RelationshipUpdate]): Relationship(s) to update
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Relationship or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: Relationship(s) to update
+            mode: How to update data when a non-update object is given (Relationship or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            Relationship | RelationshipList: Updated relationship(s)
+            Updated relationship(s)
 
         Examples:
             Update a data set that you have fetched. This will perform a full update of the data set:
@@ -406,11 +405,11 @@ class SyncRelationshipsAPI(SyncAPIClient):
             For more details, see :ref:`appendix-upsert`.
 
         Args:
-            item (Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]): Relationship or list of relationships to upsert.
-            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the relationships are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            item: Relationship or list of relationships to upsert.
+            mode: Whether to patch or replace in the case the relationships are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
-            Relationship | RelationshipList: The upserted relationship(s).
+            The upserted relationship(s).
 
         Examples:
 
@@ -438,8 +437,8 @@ class SyncRelationshipsAPI(SyncAPIClient):
         `Delete one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/deleteRelationships>`_
 
         Args:
-            external_id (str | SequenceNotStr[str]): External ID or list of external ids
-            ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
+            external_id: External ID or list of external ids
+            ignore_unknown_ids: Ignore external IDs that are not found rather than throw an exception.
         Examples:
 
             Delete relationships by external id:

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-831938d78c499d094223f8b4531026b2
+03b42121d2e346189b87c6ef3856e495
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -29,11 +29,11 @@ class SyncTransformationSchemaAPI(SyncAPIClient):
         `Get expected schema for a transformation destination. <https://developer.cognite.com/api#tag/Schema/operation/getTransformationSchema>`_
 
         Args:
-            destination (TransformationDestination): destination for which the schema is requested.
-            conflict_mode (str | None): conflict mode for which the schema is requested.
+            destination: destination for which the schema is requested.
+            conflict_mode: conflict mode for which the schema is requested.
 
         Returns:
-            TransformationSchemaColumnList: List of column descriptions
+            List of column descriptions
 
         Example:
 

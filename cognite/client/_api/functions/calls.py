@@ -30,16 +30,16 @@ class FunctionCallsAPI(APIClient):
         """`List all calls associated with a specific function id. <https://developer.cognite.com/api#tag/Function-calls/operation/listFunctionCalls>`_ Either function_id or function_external_id must be specified.
 
         Args:
-            function_id (int | None): ID of the function on which the calls were made.
-            function_external_id (str | None): External ID of the function on which the calls were made.
-            status (str | None): Status of the call. Possible values ["Running", "Failed", "Completed", "Timeout"].
-            schedule_id (int | None): Schedule id from which the call belongs (if any).
-            start_time (dict[str, int] | None): Start time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            end_time (dict[str, int] | None): End time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (int | None): Maximum number of function calls to list. Pass in -1, float('inf') or None to list all Function Calls.
+            function_id: ID of the function on which the calls were made.
+            function_external_id: External ID of the function on which the calls were made.
+            status: Status of the call. Possible values ["Running", "Failed", "Completed", "Timeout"].
+            schedule_id: Schedule id from which the call belongs (if any).
+            start_time: Start time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            end_time: End time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit: Maximum number of function calls to list. Pass in -1, float('inf') or None to list all Function Calls.
 
         Returns:
-            FunctionCallList: List of function calls
+            List of function calls
 
         Examples:
 
@@ -83,12 +83,12 @@ class FunctionCallsAPI(APIClient):
         """`Retrieve a single function call by id. <https://developer.cognite.com/api#tag/Function-calls/operation/byIdsFunctionCalls>`_
 
         Args:
-            call_id (int): ID of the call.
-            function_id (int | None): ID of the function on which the call was made.
-            function_external_id (str | None): External ID of the function on which the call was made.
+            call_id: ID of the call.
+            function_id: ID of the function on which the call was made.
+            function_external_id: External ID of the function on which the call was made.
 
         Returns:
-            FunctionCall | None: Requested function call or None if either call ID or function identifier is not found.
+            Requested function call or None if either call ID or function identifier is not found.
 
         Examples:
 
@@ -125,12 +125,12 @@ class FunctionCallsAPI(APIClient):
         """`Retrieve the response from a function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCallResponse>`_
 
         Args:
-            call_id (int): ID of the call.
-            function_id (int | None): ID of the function on which the call was made.
-            function_external_id (str | None): External ID of the function on which the call was made.
+            call_id: ID of the call.
+            function_id: ID of the function on which the call was made.
+            function_external_id: External ID of the function on which the call was made.
 
         Returns:
-            dict[str, object] | None: Response from the function call.
+            Response from the function call.
 
         Examples:
 
@@ -163,12 +163,12 @@ class FunctionCallsAPI(APIClient):
         """`Retrieve logs for function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCalls>`_
 
         Args:
-            call_id (int): ID of the call.
-            function_id (int | None): ID of the function on which the call was made.
-            function_external_id (str | None): External ID of the function on which the call was made.
+            call_id: ID of the call.
+            function_id: ID of the function on which the call was made.
+            function_external_id: External ID of the function on which the call was made.
 
         Returns:
-            FunctionCallLog: Log for the function call.
+            Log for the function call.
 
         Examples:
 

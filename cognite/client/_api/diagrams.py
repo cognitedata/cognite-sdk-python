@@ -137,19 +137,19 @@ class DiagramsAPI(APIClient):
             are able to access the data sent to this endpoint.
 
         Args:
-            entities (Sequence[dict | CogniteResource]): List of entities to detect
-            search_field (str): If entities is a list of dictionaries, this is the key to the values to detect in the PnId
-            partial_match (bool): Allow for a partial match (e.g. missing prefix).
-            min_tokens (int): Minimal number of tokens a match must be based on
-            file_ids (int | Sequence[int] | None): ID of the files, should already be uploaded in the same tenant.
-            file_external_ids (str | SequenceNotStr[str] | None): File external ids, alternative to file_ids and file_references.
-            file_instance_ids (NodeId | Sequence[NodeId] | None): Files to detect in, specified by instance id.
-            file_references (list[FileReference] | FileReference | None): File references (id, external_id or instance_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
-            pattern_mode (bool | None): If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
-            configuration (DiagramDetectConfig | None): Additional configuration for the detect algorithm. See `DiagramDetectConfig` class documentation and `beta API docs <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
-            multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
+            entities: List of entities to detect
+            search_field: If entities is a list of dictionaries, this is the key to the values to detect in the PnId
+            partial_match: Allow for a partial match (e.g. missing prefix).
+            min_tokens: Minimal number of tokens a match must be based on
+            file_ids: ID of the files, should already be uploaded in the same tenant.
+            file_external_ids: File external ids, alternative to file_ids and file_references.
+            file_instance_ids: Files to detect in, specified by instance id.
+            file_references: File references (id, external_id or instance_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
+            pattern_mode: If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
+            configuration: Additional configuration for the detect algorithm. See `DiagramDetectConfig` class documentation and `beta API docs <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
+            multiple_jobs: Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
         Returns:
-            DiagramDetectResults | tuple[DetectJobBundle, list[dict[str, Any]]]: Resulting queued job or a bundle of jobs and a list of unposted files. Note that the .result property of the job or job bundle will block waiting for results.
+            Resulting queued job or a bundle of jobs and a list of unposted files. Note that the .result property of the job or job bundle will block waiting for results.
 
         Note:
             The results are not written to CDF, to create annotations based on detected entities use `AnnotationsAPI`.
@@ -319,10 +319,10 @@ class DiagramsAPI(APIClient):
             Will automatically wait for the detect job to complete before starting the conversion.
 
         Args:
-            detect_job (DiagramDetectResults): detect job
+            detect_job: detect job
 
         Returns:
-            DiagramConvertResults: Resulting queued job.
+            Resulting queued job.
 
         Examples:
 

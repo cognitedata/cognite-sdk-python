@@ -13,8 +13,8 @@ class Limit(CogniteResource):
     Service and limit names are always in `lower_snake_case`.
 
     Args:
-        limit_id (str): Limits are identified by an id containing the service name and a service-scoped limit name.
-        value (float | int): The numeric value of the limit.
+        limit_id: Limits are identified by an id containing the service name and a service-scoped limit name.
+        value: The numeric value of the limit.
     """
 
     def __init__(self, limit_id: str, value: float | int) -> None:

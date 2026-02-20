@@ -40,7 +40,7 @@ class TextContent(MessageContent):
     """Text content for messages.
 
     Args:
-        text (str): The text content.
+        text: The text content.
     """
 
     _type: ClassVar[str] = "text"
@@ -56,8 +56,8 @@ class UnknownContent(MessageContent):
     """Unknown content type for forward compatibility.
 
     Args:
-        data (dict[str, Any]): The raw content data.
-        type (str): The content type.
+        data: The raw content data.
+        type: The content type.
     """
 
     type: str
@@ -107,9 +107,9 @@ class ClientToolAction(Action):
     """A client-side tool definition that can be called by the agent.
 
     Args:
-        name (str): The name of the client tool to call.
-        description (str): A description of what the function does. The language model will use this description when selecting the function and interpreting its parameters.
-        parameters (dict[str, object]): The parameters the function accepts, described as a JSON Schema object.
+        name: The name of the client tool to call.
+        description: A description of what the function does. The language model will use this description when selecting the function and interpreting its parameters.
+        parameters: The parameters the function accepts, described as a JSON Schema object.
     """
 
     _type: ClassVar[str] = "clientTool"
@@ -144,8 +144,8 @@ class UnknownAction(Action):
     """Unknown action type for forward compatibility.
 
     Args:
-        type (str): The action type.
-        data (dict[str, object]): The raw action data.
+        type: The action type.
+        data: The raw action data.
     """
 
     type: str
@@ -196,9 +196,9 @@ class ClientToolCall(ActionCall):
     """A client tool call requested by the agent.
 
     Args:
-        action_id (str): The unique identifier for this action call.
-        name (str): The name of the client tool being called.
-        arguments (dict[str, object]): The parsed arguments for the tool call.
+        action_id: The unique identifier for this action call.
+        name: The name of the client tool being called.
+        arguments: The parsed arguments for the tool call.
     """
 
     _type: ClassVar[str] = "clientTool"
@@ -232,13 +232,13 @@ class ToolConfirmationCall(ActionCall):
     """A tool confirmation request from the agent.
 
     Args:
-        action_id (str): The unique identifier for this action call.
-        content (MessageContent): The confirmation message content.
-        tool_name (str): The name of the tool requiring confirmation.
-        tool_arguments (dict[str, object]): The arguments for the tool call.
-        tool_description (str): Description of what the tool does.
-        tool_type (str): The type of tool (e.g., "runPythonCode", "callRestApi").
-        details (dict[str, object] | None): Optional additional details about the tool call.
+        action_id: The unique identifier for this action call.
+        content: The confirmation message content.
+        tool_name: The name of the tool requiring confirmation.
+        tool_arguments: The arguments for the tool call.
+        tool_description: Description of what the tool does.
+        tool_type: The type of tool (e.g., "runPythonCode", "callRestApi").
+        details: Optional additional details about the tool call.
     """
 
     _type: ClassVar[str] = "toolConfirmation"
@@ -286,9 +286,9 @@ class UnknownActionCall(ActionCall):
     """Unknown action call type for forward compatibility.
 
     Args:
-        action_id (str): The unique identifier for this action call.
-        type (str): The action call type.
-        data (dict[str, object]): The raw action call data.
+        action_id: The unique identifier for this action call.
+        type: The action call type.
+        data: The raw action call data.
     """
 
     action_id: str
@@ -321,9 +321,9 @@ class Message(CogniteResource):
     """A message to send to an agent.
 
     Args:
-        content (str | MessageContent): The message content. If a string is provided,
+        content: The message content. If a string is provided,
             it will be converted to TextContent.
-        role (Literal["user"]): The role of the message sender. Defaults to "user".
+        role: The role of the message sender. Defaults to "user".
     """
 
     content: MessageContent
@@ -368,9 +368,9 @@ class ClientToolResult(ActionResult):
     """Result of executing a client tool, for sending back to the agent.
 
     Args:
-        action_id (str): The ID of the action being responded to.
-        content (str | MessageContent): The result of executing the action.
-        data (list[Any] | None): Optional structured data.
+        action_id: The ID of the action being responded to.
+        content: The result of executing the action.
+        data: Optional structured data.
     """
 
     _type: ClassVar[str] = "clientTool"
@@ -407,8 +407,8 @@ class ToolConfirmationResult(ActionResult):
     """Result of a tool confirmation request.
 
     Args:
-        action_id (str): The ID of the action being responded to.
-        status (Literal["ALLOW", "DENY"]): Whether to allow or deny the tool execution.
+        action_id: The ID of the action being responded to.
+        status: Whether to allow or deny the tool execution.
     """
 
     _type: ClassVar[str] = "toolConfirmation"
@@ -436,8 +436,8 @@ class AgentDataItem(CogniteResource):
     """Data item in agent response.
 
     Args:
-        type (str): The type of data item.
-        data (dict[str, Any]): The data payload.
+        type: The type of data item.
+        data: The data payload.
     """
 
     type: str
@@ -461,7 +461,7 @@ class AgentReasoningItem(CogniteResource):
     """Reasoning item in agent response.
 
     Args:
-        content (list[MessageContent]): The reasoning content.
+        content: The reasoning content.
     """
 
     content: list[MessageContent]
@@ -482,11 +482,11 @@ class AgentMessage(CogniteResource):
     """A message from an agent.
 
     Args:
-        content (MessageContent | None): The message content.
-        data (list[AgentDataItem] | None): Data items in the response.
-        reasoning (list[AgentReasoningItem] | None): Reasoning items in the response.
-        actions (list[ActionCall] | None): Action calls requested by the agent.
-        role (Literal["agent"]): The role of the message sender.
+        content: The message content.
+        data: Data items in the response.
+        reasoning: Reasoning items in the response.
+        actions: Action calls requested by the agent.
+        role: The role of the message sender.
     """
 
     content: MessageContent | None = None
@@ -531,10 +531,10 @@ class AgentChatResponse(CogniteResource):
     """Response from agent chat.
 
     Args:
-        agent_external_id (str): The external ID of the agent.
-        messages (AgentMessageList): The response messages from the agent.
-        type (str): The response type.
-        cursor (str | None): Cursor for conversation continuation.
+        agent_external_id: The external ID of the agent.
+        messages: The response messages from the agent.
+        type: The response type.
+        cursor: Cursor for conversation continuation.
     """
 
     def __init__(

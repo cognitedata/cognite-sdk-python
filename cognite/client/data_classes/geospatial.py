@@ -27,10 +27,10 @@ class FeatureTypeCore(WriteableCogniteResource["FeatureTypeWrite"], ABC):
     """A representation of a feature type in the geospatial API.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        data_set_id (int | None): The ID of the dataset this feature type belongs to.
-        properties (dict[str, Any] | None): The properties of the feature type.
-        search_spec (dict[str, Any] | None): The search spec of the feature type.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        data_set_id: The ID of the dataset this feature type belongs to.
+        properties: The properties of the feature type.
+        search_spec: The search spec of the feature type.
     """
 
     def __init__(
@@ -51,12 +51,12 @@ class FeatureType(FeatureTypeCore):
     This is the read version of the FeatureType class, it is used when retrieving feature types from the api.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        data_set_id (int | None): The ID of the dataset this feature type belongs to.
-        created_time (int): The created time of the feature type.
-        last_updated_time (int): The last updated time of the feature type.
-        properties (dict[str, Any] | None): The properties of the feature type.
-        search_spec (dict[str, Any] | None): The search spec of the feature type.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        data_set_id: The ID of the dataset this feature type belongs to.
+        created_time: The created time of the feature type.
+        last_updated_time: The last updated time of the feature type.
+        properties: The properties of the feature type.
+        search_spec: The search spec of the feature type.
     """
 
     def __init__(
@@ -106,10 +106,10 @@ class FeatureTypeWrite(FeatureTypeCore):
     This is the write version of the FeatureType class, it is used when creating feature types in the api.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        properties (dict[str, Any]): The properties of the feature type.
-        data_set_id (int | None): The ID of the dataset this feature type belongs to.
-        search_spec (dict[str, Any] | None): The search spec of the feature type.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        properties: The properties of the feature type.
+        data_set_id: The ID of the dataset this feature type belongs to.
+        search_spec: The search spec of the feature type.
     """
 
     def __init__(
@@ -210,8 +210,8 @@ class FeatureCore(WriteableCogniteResource["FeatureWrite"], ABC):
     """A representation of a feature in the geospatial API.
 
     Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        **properties (Any): The properties of the feature.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        **properties: The properties of the feature.
     """
 
     PRE_DEFINED_SNAKE_CASE_NAMES = frozenset({to_snake_case(key) for key in RESERVED_PROPERTIES})
@@ -243,11 +243,11 @@ class Feature(FeatureCore):
     This is the read version of the Feature class, it is used when retrieving features from the api.
 
     Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        created_time (int | None): No description.
-        last_updated_time (int | None): No description.
-        data_set_id (int | None): No description.
-        **properties (Any): The properties of the feature.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        created_time: No description.
+        last_updated_time: No description.
+        data_set_id: No description.
+        **properties: The properties of the feature.
     """
 
     def __init__(
@@ -294,8 +294,8 @@ class FeatureWrite(FeatureCore):
     This is the write version of the Feature class, it is used when creating features in the api.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        **properties (Any): The properties of the feature.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        **properties: The properties of the feature.
     """
 
     def __init__(self, external_id: str, **properties: Any) -> None:
@@ -359,11 +359,11 @@ class FeatureListCore(WriteableCogniteResourceList[FeatureWrite, T_Feature], Ext
         """Convert the instance into a GeoPandas GeoDataFrame.
 
         Args:
-            geometry (str): The name of the feature type geometry property to use in the GeoDataFrame
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+            geometry: The name of the feature type geometry property to use in the GeoDataFrame
+            camel_case: Convert column names to camel case (e.g. `externalId` instead of `external_id`)
 
         Returns:
-            geopandas.GeoDataFrame: The GeoPandas GeoDataFrame.
+            The GeoPandas GeoDataFrame.
 
         Examples:
 
@@ -397,14 +397,14 @@ class FeatureListCore(WriteableCogniteResourceList[FeatureWrite, T_Feature], Ext
         """Convert a GeoDataFrame instance into a FeatureList.
 
         Args:
-            feature_type (FeatureType): The feature type the features will conform to
-            geodataframe (geopandas.GeoDataFrame): the geodataframe instance to convert into features
-            external_id_column (str): the geodataframe column to use for the feature external id
-            property_column_mapping (dict[str, str] | None): provides a mapping from featuretype property names to geodataframe columns
-            data_set_id_column (str): the geodataframe column to use for the feature dataSet id
+            feature_type: The feature type the features will conform to
+            geodataframe: the geodataframe instance to convert into features
+            external_id_column: the geodataframe column to use for the feature external id
+            property_column_mapping: provides a mapping from featuretype property names to geodataframe columns
+            data_set_id_column: the geodataframe column to use for the feature dataSet id
 
         Returns:
-            FeatureList: The list of features converted from the geodataframe rows.
+            The list of features converted from the geodataframe rows.
 
         Examples:
 
@@ -504,9 +504,9 @@ class CoordinateReferenceSystemCore(WriteableCogniteResource["CoordinateReferenc
     """A representation of a feature in the geospatial API.
 
     Args:
-        srid (int): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
-        wkt (str): Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
-        proj_string (str): The projection specification string as described in https://proj.org/usage/quickstart.html
+        srid: EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
+        wkt: Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
+        proj_string: The projection specification string as described in https://proj.org/usage/quickstart.html
     """
 
     def __init__(self, srid: int, wkt: str, proj_string: str) -> None:
@@ -520,9 +520,9 @@ class CoordinateReferenceSystem(CoordinateReferenceSystemCore):
     This is the read version of the CoordinateReferenceSystem class, it is used when retrieving from the CDF.
 
     Args:
-        srid (int): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
-        wkt (str): Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
-        proj_string (str): The projection specification string as described in https://proj.org/usage/quickstart.html
+        srid: EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
+        wkt: Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
+        proj_string: The projection specification string as described in https://proj.org/usage/quickstart.html
     """
 
     def __init__(
@@ -553,9 +553,9 @@ class CoordinateReferenceSystemWrite(CoordinateReferenceSystemCore):
     """A representation of a feature in the geospatial API.
 
     Args:
-        srid (int): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
-        wkt (str): Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
-        proj_string (str): The projection specification string as described in https://proj.org/usage/quickstart.html
+        srid: EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
+        wkt: Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
+        proj_string: The projection specification string as described in https://proj.org/usage/quickstart.html
     """
 
     def __init__(self, srid: int, wkt: str, proj_string: str) -> None:
@@ -640,7 +640,7 @@ class GeospatialGeometryValueComputeFunction(GeospatialGeometryComputeFunction):
     see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
 
     Args:
-        ewkt (str): No description.
+        ewkt: No description.
     """
 
     def __init__(self, ewkt: str) -> None:

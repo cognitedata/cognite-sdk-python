@@ -67,21 +67,21 @@ class SimulatorModelRevision(WriteableCogniteResourceWithClientRef["SimulatorMod
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
 
     Args:
-        id (int): Internal id of the simulator model revision
-        external_id (str): External id of the simulator model revision
-        model_external_id (str): External id of the associated simulator model
-        file_id (int): The id of the file associated with the simulator model revision
-        created_time (int): The time when the simulator model revision was created
-        last_updated_time (int): The time when the simulator model revision was last updated
-        simulator_external_id (str): External id of the simulator associated with the simulator model revision
-        data_set_id (int): The id of the dataset associated with the simulator model revision
-        created_by_user_id (str): The id of the user who created the simulator model revision
-        status (str): The status of the simulator model revision
-        version_number (int): The version number of the simulator model revision
-        log_id (int): The id of the log associated with the simulator model revision
-        description (str | None): The description of the simulator model revision
-        status_message (str | None): The current status message of the simulator model revision
-        external_dependencies (list[SimulatorModelRevisionDependency] | None): A list of external dependencies for the simulator model revision
+        id: Internal id of the simulator model revision
+        external_id: External id of the simulator model revision
+        model_external_id: External id of the associated simulator model
+        file_id: The id of the file associated with the simulator model revision
+        created_time: The time when the simulator model revision was created
+        last_updated_time: The time when the simulator model revision was last updated
+        simulator_external_id: External id of the simulator associated with the simulator model revision
+        data_set_id: The id of the dataset associated with the simulator model revision
+        created_by_user_id: The id of the user who created the simulator model revision
+        status: The status of the simulator model revision
+        version_number: The version number of the simulator model revision
+        log_id: The id of the log associated with the simulator model revision
+        description: The description of the simulator model revision
+        status_message: The current status message of the simulator model revision
+        external_dependencies: A list of external dependencies for the simulator model revision
     """
 
     def __init__(
@@ -160,7 +160,7 @@ class SimulatorModelRevision(WriteableCogniteResourceWithClientRef["SimulatorMod
         """`Retrieve data associated with this simulator model revision. <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revision_data>`_
 
         Returns:
-            SimulatorModelRevisionData | None: Data for the simulator model revision.
+            Data for the simulator model revision.
         """
         data = await self._cognite_client.simulators.models.revisions.retrieve_data(
             model_revision_external_id=self.external_id
@@ -188,12 +188,12 @@ class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
     This is the read/response format of a simulator model.
 
     Args:
-        external_id (str): External id of the simulator model
-        simulator_external_id (str): External id of the associated simulator
-        data_set_id (int): The id of the dataset associated with the simulator model
-        name (str): The name of the simulator model
-        type (str): The type key of the simulator model
-        description (str | None): The description of the simulator model
+        external_id: External id of the simulator model
+        simulator_external_id: External id of the associated simulator
+        data_set_id: The id of the dataset associated with the simulator model
+        name: The name of the simulator model
+        type: The type key of the simulator model
+        description: The description of the simulator model
     """
 
     def __init__(
@@ -243,15 +243,15 @@ class SimulatorModel(SimulatorModelCore):
     This is the read/response format of a simulator model.
 
     Args:
-        id (int): A unique id of a simulator model
-        external_id (str): External id of the simulator model
-        simulator_external_id (str): External id of the associated simulator
-        data_set_id (int): The id of the dataset associated with the simulator model
-        name (str): The name of the simulator model
-        type (str): The type key of the simulator model
-        created_time (int): The time when the simulator model was created
-        last_updated_time (int): The time when the simulator model was last updated
-        description (str | None): The description of the simulator model
+        id: A unique id of a simulator model
+        external_id: External id of the simulator model
+        simulator_external_id: External id of the associated simulator
+        data_set_id: The id of the dataset associated with the simulator model
+        name: The name of the simulator model
+        type: The type key of the simulator model
+        created_time: The time when the simulator model was created
+        last_updated_time: The time when the simulator model was last updated
+        description: The description of the simulator model
     """
 
     def __init__(
@@ -368,8 +368,8 @@ class SimulatorModelRevisionDependency(CogniteResource):
     """
     Represents an external dependency for a simulator model revision.
     Args:
-        file (int): The file ID associated with the external dependency.
-        arguments (dict[str, str]): A dictionary that contains the key-value pairs (fields) for the external dependency.
+        file: The file ID associated with the external dependency.
+        arguments: A dictionary that contains the key-value pairs (fields) for the external dependency.
     """
 
     file: SimulatorModelDependencyFileReference
@@ -597,13 +597,13 @@ class SimulatorModelRevisionData(CogniteResource):
     - Fully implement it with comprehensive model details
 
     Args:
-        model_revision_external_id (str): External id of the associated model revision
-        created_time (int): The time when the simulator model revision data was created
-        last_updated_time (int): The time when the simulator model revision data was last updated
-        data_set_id (int): The id of the dataset associated with the simulator model revision data
-        flowsheets (list[SimulatorFlowsheet] | None): Extracted flowsheet information,
+        model_revision_external_id: External id of the associated model revision
+        created_time: The time when the simulator model revision data was created
+        last_updated_time: The time when the simulator model revision data was last updated
+        data_set_id: The id of the dataset associated with the simulator model revision data
+        flowsheets: Extracted flowsheet information,
             if supported by the connector. May include blocks, equipment, properties, and connections
-        info (dict[str, str] | None): Additional metadata extracted from the simulator file,
+        info: Additional metadata extracted from the simulator file,
             if supported by the connector
     """
 

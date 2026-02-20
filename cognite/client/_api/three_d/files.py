@@ -11,10 +11,10 @@ class ThreeDFilesAPI(APIClient):
         """`Retrieve the contents of a 3d file by id. <https://developer.cognite.com/api#tag/3D-Files/operation/get3DFile>`_
 
         Args:
-            id (int): The id of the file to retrieve.
+            id: The id of the file to retrieve.
 
         Returns:
-            bytes: The contents of the file.
+            The contents of the file.
 
         Example:
 

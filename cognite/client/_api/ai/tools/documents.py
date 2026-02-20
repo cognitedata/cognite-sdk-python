@@ -25,12 +25,12 @@ class AIDocumentsAPI(APIClient):
             this may be extended in the future.
 
         Args:
-            id (int | None): The ID of the document
-            external_id (str | None): The external ID of the document
-            instance_id (NodeId | None): The instance ID of the document
+            id: The ID of the document
+            external_id: The external ID of the document
+            instance_id: The instance ID of the document
 
         Returns:
-            Summary: A summary of the document.
+            A summary of the document.
 
         Examples:
 
@@ -85,16 +85,16 @@ class AIDocumentsAPI(APIClient):
         Supports up to 100 documents at a time.
 
         Args:
-            question (str): The question.
-            id (int | Sequence[int] | None): The ID(s) of the document(s)
-            external_id (str | Sequence[str] | None): The external ID(s) of the document(s)
-            instance_id (NodeId | Sequence[NodeId] | None): The instance ID(s) of the document(s)
-            language (AnswerLanguage | Literal['Chinese', 'Dutch', 'English', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Latvian', 'Norwegian', 'Portuguese', 'Spanish', 'Swedish']): The desired language of the answer, defaults to English.
-            additional_context (str | None): Additional context that you want the LLM to take into account.
-            ignore_unknown_ids (bool): Whether to skip documents that do not exist or that are not fully processed, instead of throwing an error. If no valid documents are found, an error will always be raised.
+            question: The question.
+            id: The ID(s) of the document(s)
+            external_id: The external ID(s) of the document(s)
+            instance_id: The instance ID(s) of the document(s)
+            language: The desired language of the answer, defaults to English.
+            additional_context: Additional context that you want the LLM to take into account.
+            ignore_unknown_ids: Whether to skip documents that do not exist or that are not fully processed, instead of throwing an error. If no valid documents are found, an error will always be raised.
 
         Returns:
-            Answer: The answer to the question in the form of a list of multiple content objects, each consisting of a chunk of text along with a set of references.
+            The answer to the question in the form of a list of multiple content objects, each consisting of a chunk of text along with a set of references.
 
         Examples:
 

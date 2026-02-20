@@ -1,6 +1,6 @@
 """
 ===============================================================================
-215983ac4df951f01a198f0eca4a529a
+ef827367aadc9cbf18d34667c0e76b53
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -58,13 +58,13 @@ class SyncSimulatorIntegrationsAPI(SyncAPIClient):
         Fetches simulator integrations as they are iterated over, so you keep a limited number of simulator integrations in memory.
 
         Args:
-            chunk_size (int | None): Number of simulator integrations to return in each chunk. Defaults to yielding one simulator integration a time.
-            simulator_external_ids (str | SequenceNotStr[str] | None): Filter on simulator external ids.
-            active (bool | None): Filter on active status of the simulator integration.
-            limit (int | None): The maximum number of simulator integrations to return, pass None to return all.
+            chunk_size: Number of simulator integrations to return in each chunk. Defaults to yielding one simulator integration a time.
+            simulator_external_ids: Filter on simulator external ids.
+            active: Filter on active status of the simulator integration.
+            limit: The maximum number of simulator integrations to return, pass None to return all.
 
         Yields:
-            SimulatorIntegration | SimulatorIntegrationList: yields SimulatorIntegration one by one if chunk_size is not specified, else SimulatorIntegrationList objects.
+            yields SimulatorIntegration one by one if chunk_size is not specified, else SimulatorIntegrationList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.simulators.integrations(
@@ -84,12 +84,12 @@ class SyncSimulatorIntegrationsAPI(SyncAPIClient):
         Retrieves a list of simulator integrations that match the given criteria.
 
         Args:
-            limit (int | None): The maximum number of simulator integrations to return, pass None to return all.
-            simulator_external_ids (str | SequenceNotStr[str] | None): Filter on simulator external ids.
-            active (bool | None): Filter on active status of the simulator integration.
+            limit: The maximum number of simulator integrations to return, pass None to return all.
+            simulator_external_ids: Filter on simulator external ids.
+            active: Filter on active status of the simulator integration.
 
         Returns:
-            SimulatorIntegrationList: List of simulator integrations
+            List of simulator integrations
 
         Examples:
             List a few simulator integrations:
@@ -121,8 +121,8 @@ class SyncSimulatorIntegrationsAPI(SyncAPIClient):
         `Delete simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
 
         Args:
-            ids (int | Sequence[int] | None): Id(s) of simulator integrations to delete
-            external_ids (str | SequenceNotStr[str] | None): External_id(s) of simulator integrations to delete
+            ids: Id(s) of simulator integrations to delete
+            external_ids: External_id(s) of simulator integrations to delete
 
         Examples:
             Delete simulator integrations by id or external id:

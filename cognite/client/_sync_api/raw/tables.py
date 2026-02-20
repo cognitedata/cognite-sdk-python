@@ -1,6 +1,6 @@
 """
 ===============================================================================
-48028ade158f6c6a12a7ff231fe10c87
+92fe9d80e648744edfc9807377889346
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -39,12 +39,12 @@ class SyncRawTablesAPI(SyncAPIClient):
         Fetches tables as they are iterated over, so you keep a limited number of tables in memory.
 
         Args:
-            db_name (str): Name of the database to iterate over tables for
-            chunk_size (int | None): Number of tables to return in each chunk. Defaults to yielding one table a time.
-            limit (int | None): Maximum number of tables to return. Defaults to return all items.
+            db_name: Name of the database to iterate over tables for
+            chunk_size: Number of tables to return in each chunk. Defaults to yielding one table a time.
+            limit: Maximum number of tables to return. Defaults to return all items.
 
         Yields:
-            raw.Table | raw.TableList: The tables in the database.
+            The tables in the database.
         """
         yield from SyncIterator(self.__async_client.raw.tables(db_name=db_name, chunk_size=chunk_size, limit=limit))  # type: ignore [call-overload]
 
@@ -59,11 +59,11 @@ class SyncRawTablesAPI(SyncAPIClient):
         `Create one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/createTables>`_
 
         Args:
-            db_name (str): Database to create the tables in.
-            name (str | list[str]): A table name or list of table names to create.
+            db_name: Database to create the tables in.
+            name: A table name or list of table names to create.
 
         Returns:
-            raw.Table | raw.TableList: raw.Table or list of tables that has been created.
+            raw.Table or list of tables that has been created.
 
         Examples:
 
@@ -81,8 +81,8 @@ class SyncRawTablesAPI(SyncAPIClient):
         `Delete one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/deleteTables>`_
 
         Args:
-            db_name (str): Database to delete tables from.
-            name (str | SequenceNotStr[str]): A table name or list of table names to delete.
+            db_name: Database to delete tables from.
+            name: A table name or list of table names to delete.
 
         Examples:
 
@@ -100,11 +100,11 @@ class SyncRawTablesAPI(SyncAPIClient):
         `List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_
 
         Args:
-            db_name (str): The database to list tables from.
-            limit (int | None): Maximum number of tables to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            db_name: The database to list tables from.
+            limit: Maximum number of tables to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            raw.TableList: List of requested tables.
+            List of requested tables.
 
         Examples:
 

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8c673a83cc32133198ae7e6d190c587a
+27d84df9580f0ca1a1b5c692145898db
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -119,29 +119,29 @@ class SyncAssetsAPI(SyncAPIClient):
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
 
         Args:
-            chunk_size (int | None): Number of assets to return in each chunk. Defaults to yielding one asset a time.
-            name (str | None): Name of asset. Often referred to as tag.
-            parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
-            parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
-            asset_subtree_ids (int | Sequence[int] | None): Only include assets in subtrees rooted at any of the specified assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include assets in subtrees rooted at any of the specified assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
-            data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
-            labels (LabelFilter | None): Return only the assets matching the specified label.
-            geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
-            source (str | None): The source of this asset
-            created_time (TimestampRange | dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (TimestampRange | dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            root (bool | None): filtered assets are root assets or not
-            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-            aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
-            limit (int | None): Maximum number of assets to return. Defaults to return all items.
-            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            chunk_size: Number of assets to return in each chunk. Defaults to yielding one asset a time.
+            name: Name of asset. Often referred to as tag.
+            parent_ids: Return only the direct descendants of the specified assets.
+            parent_external_ids: Return only the direct descendants of the specified assets.
+            asset_subtree_ids: Only include assets in subtrees rooted at any of the specified assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids: Only include assets in subtrees rooted at any of the specified assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            metadata: Custom, application specific metadata. String key -> String value
+            data_set_ids: Return only assets in the specified data set(s) with this id / these ids.
+            data_set_external_ids: Return only assets in the specified data set(s) with this external id / these external ids.
+            labels: Return only the assets matching the specified label.
+            geo_location: Only include files matching the specified geographic relation.
+            source: The source of this asset
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            root: filtered assets are root assets or not
+            external_id_prefix: Filter by this (case-sensitive) prefix for the external ID.
+            aggregated_properties: Set of aggregated properties to include. Options are childCount, path, depth.
+            limit: Maximum number of assets to return. Defaults to return all items.
+            advanced_filter: Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+            sort: The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Yields:
-            Asset | AssetList: yields Asset one by one if chunk_size is not specified, else AssetList objects.
+            yields Asset one by one if chunk_size is not specified, else AssetList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.assets(
@@ -173,11 +173,11 @@ class SyncAssetsAPI(SyncAPIClient):
         `Retrieve a single asset by id. <https://developer.cognite.com/api#tag/Assets/operation/getAsset>`_
 
         Args:
-            id (int | None): ID
-            external_id (str | None): External ID
+            id: ID
+            external_id: External ID
 
         Returns:
-            Asset | None: Requested asset or None if it does not exist.
+            Requested asset or None if it does not exist.
 
         Examples:
 
@@ -204,12 +204,12 @@ class SyncAssetsAPI(SyncAPIClient):
         `Retrieve multiple assets by id. <https://developer.cognite.com/api#tag/Assets/operation/byIdsAssets>`_
 
         Args:
-            ids (Sequence[int] | None): IDs
-            external_ids (SequenceNotStr[str] | None): External IDs
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            ids: IDs
+            external_ids: External IDs
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            AssetList: The requested assets.
+            The requested assets.
 
         Examples:
 
@@ -240,12 +240,12 @@ class SyncAssetsAPI(SyncAPIClient):
         `Count of assets matching the specified filters. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
-            property (AssetPropertyLike | None): If specified, get an approximate number of asset with a specific property (property is not null) and matching the filters.
-            advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down the assets to count.
-            filter (AssetFilter | dict[str, Any] | None): The filter to narrow down the assets to count (strict matching).
+            property: If specified, get an approximate number of asset with a specific property (property is not null) and matching the filters.
+            advanced_filter: The advanced filter to narrow down the assets to count.
+            filter: The filter to narrow down the assets to count (strict matching).
 
         Returns:
-            int: The number of assets matching the specified filters.
+            The number of assets matching the specified filters.
 
         Examples:
 
@@ -280,12 +280,12 @@ class SyncAssetsAPI(SyncAPIClient):
         `Find approximate property count for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
-            property (AssetPropertyLike): The property to count the cardinality of.
-            advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down assets.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (AssetFilter | dict[str, Any] | None): The filter to narrow down assets (strict matching).
+            property: The property to count the cardinality of.
+            advanced_filter: The advanced filter to narrow down assets.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down assets (strict matching).
         Returns:
-            int: The number of properties matching the specified filters and search.
+            The number of properties matching the specified filters and search.
 
         Examples:
 
@@ -323,13 +323,12 @@ class SyncAssetsAPI(SyncAPIClient):
         `Find approximate paths count for assets.  <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
-            path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
-                It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down assets.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (AssetFilter | dict[str, Any] | None): The filter to narrow down assets (strict matching).
+            path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
+            advanced_filter: The advanced filter to narrow down assets.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down assets (strict matching).
         Returns:
-            int: The number of properties matching the specified filters.
+            The number of properties matching the specified filters.
 
         Examples:
 
@@ -361,13 +360,13 @@ class SyncAssetsAPI(SyncAPIClient):
             In the case of text fields, the values are aggregated in a case-insensitive manner.
 
         Args:
-            property (AssetPropertyLike): The property to group by.
-            advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down assets.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (AssetFilter | dict[str, Any] | None): The filter to narrow down assets (strict matching).
+            property: The property to group by.
+            advanced_filter: The advanced filter to narrow down assets.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down assets (strict matching).
 
         Returns:
-            UniqueResultList: List of unique values of assets matching the specified filters and search.
+            List of unique values of assets matching the specified filters and search.
 
         Examples:
 
@@ -421,14 +420,13 @@ class SyncAssetsAPI(SyncAPIClient):
             In the case of text fields, the values are aggregated in a case-insensitive manner.
 
         Args:
-            path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
-                It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict[str, Any] | None): The advanced filter to narrow down assets.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (AssetFilter | dict[str, Any] | None): The filter to narrow down assets (strict matching).
+            path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
+            advanced_filter: The advanced filter to narrow down assets.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down assets (strict matching).
 
         Returns:
-            UniqueResultList: List of unique values of assets matching the specified filters and search.
+            List of unique values of assets matching the specified filters and search.
 
         Examples:
 
@@ -460,10 +458,10 @@ class SyncAssetsAPI(SyncAPIClient):
         When specifying parent-child relation between assets using `parentExternalId` the link will be resvoled into an internal ID and stored as `parentId`.
 
         Args:
-            asset (Asset | AssetWrite | Sequence[Asset] | Sequence[AssetWrite]): Asset or list of assets to create.
+            asset: Asset or list of assets to create.
 
         Returns:
-            Asset | AssetList: Created asset(s)
+            Created asset(s)
 
         Examples:
 
@@ -500,12 +498,12 @@ class SyncAssetsAPI(SyncAPIClient):
         assets, so you may pass zero, one or many (same goes for the non-root assets).
 
         Args:
-            assets (Sequence[AssetWrite] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
-            upsert (bool): If used, already existing assets will be updated instead of an exception being raised. You may control how updates are applied with the 'upsert_mode' argument.
-            upsert_mode (Literal['patch', 'replace']): Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
+            assets: List of assets to create or an instance of AssetHierarchy.
+            upsert: If used, already existing assets will be updated instead of an exception being raised. You may control how updates are applied with the 'upsert_mode' argument.
+            upsert_mode: Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
 
         Returns:
-            AssetList: Created (and possibly updated) asset hierarchy
+            Created (and possibly updated) asset hierarchy
 
         Prior to insertion, this function will run validation on the given assets and raise an error if any of
         the following issues are found:
@@ -624,10 +622,10 @@ class SyncAssetsAPI(SyncAPIClient):
         `Delete one or more assets <https://developer.cognite.com/api#tag/Assets/operation/deleteAssets>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
-            recursive (bool): Recursively delete whole asset subtrees under given ids. Defaults to False.
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            id: Id or list of ids
+            external_id: External ID or list of external ids
+            recursive: Recursively delete whole asset subtrees under given ids. Defaults to False.
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
 
@@ -668,10 +666,10 @@ class SyncAssetsAPI(SyncAPIClient):
         Labels can be added, removed or replaced (set). Note that set operation deletes all the existing labels and adds the new specified labels.
 
         Args:
-            item (Asset | AssetWrite | AssetUpdate | Sequence[Asset | AssetWrite | AssetUpdate]): Asset(s) to update
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Asset or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: Asset(s) to update
+            mode: How to update data when a non-update object is given (Asset or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
         Returns:
-            Asset | AssetList: Updated asset(s)
+            Updated asset(s)
 
         Examples:
             Perform a partial update on an asset, updating the description and adding a new field to metadata:
@@ -733,11 +731,11 @@ class SyncAssetsAPI(SyncAPIClient):
             For more details, see :ref:`appendix-upsert`.
 
         Args:
-            item (Asset | AssetWrite | Sequence[Asset | AssetWrite]): Asset or list of assets to upsert.
-            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the assets are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            item: Asset or list of assets to upsert.
+            mode: Whether to patch or replace in the case the assets are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
-            Asset | AssetList: The upserted asset(s).
+            The upserted asset(s).
 
         Examples:
 
@@ -767,14 +765,14 @@ class SyncAssetsAPI(SyncAPIClient):
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
-            name (str | None): Fuzzy match on name.
-            description (str | None): Fuzzy match on description.
-            query (str | None): Whitespace-separated terms to search for in assets. Does a best-effort fuzzy search in relevant fields (currently name and description) for variations of any of the search terms, and orders results by relevance.
-            filter (AssetFilter | dict[str, Any] | None): Filter to apply. Performs exact match on these fields.
-            limit (int): Maximum number of results to return.
+            name: Fuzzy match on name.
+            description: Fuzzy match on description.
+            query: Whitespace-separated terms to search for in assets. Does a best-effort fuzzy search in relevant fields (currently name and description) for variations of any of the search terms, and orders results by relevance.
+            filter: Filter to apply. Performs exact match on these fields.
+            limit: Maximum number of results to return.
 
         Returns:
-            AssetList: List of requested assets
+            List of requested assets
 
         Examples:
 
@@ -815,12 +813,12 @@ class SyncAssetsAPI(SyncAPIClient):
         Retrieve the subtree for this asset up to a specified depth.
 
         Args:
-            id (int | None): Id of the root asset in the subtree.
-            external_id (str | None): External id of the root asset in the subtree.
-            depth (int | None): Retrieve assets up to this depth below the root asset in the subtree. Omit to get the entire subtree.
+            id: Id of the root asset in the subtree.
+            external_id: External id of the root asset in the subtree.
+            depth: Retrieve assets up to this depth below the root asset in the subtree. Omit to get the entire subtree.
 
         Returns:
-            AssetList: The requested assets or empty AssetList if asset does not exist.
+            The requested assets or empty AssetList if asset does not exist.
         """
         return run_sync(self.__async_client.assets.retrieve_subtree(id=id, external_id=external_id, depth=depth))
 
@@ -851,29 +849,29 @@ class SyncAssetsAPI(SyncAPIClient):
         `List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
 
         Args:
-            name (str | None): Name of asset. Often referred to as tag.
-            parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
-            parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
-            asset_subtree_ids (int | Sequence[int] | None): Only include assets in subtrees rooted at any of the specified assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include assets in subtrees rooted at any of the specified assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
-            labels (LabelFilter | None): Return only the assets matching the specified label filter.
-            geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
-            metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value.
-            source (str | None): The source of this asset.
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            root (bool | None): filtered assets are root assets or not.
-            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-            aggregated_properties (Sequence[AggregateAssetProperty] | None): Set of aggregated properties to include. Options are childCount, path, depth.
-            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
-            limit (int | None): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            name: Name of asset. Often referred to as tag.
+            parent_ids: Return only the direct descendants of the specified assets.
+            parent_external_ids: Return only the direct descendants of the specified assets.
+            asset_subtree_ids: Only include assets in subtrees rooted at any of the specified assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids: Only include assets in subtrees rooted at any of the specified assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            data_set_ids: Return only assets in the specified data set(s) with this id / these ids.
+            data_set_external_ids: Return only assets in the specified data set(s) with this external id / these external ids.
+            labels: Return only the assets matching the specified label filter.
+            geo_location: Only include files matching the specified geographic relation.
+            metadata: Custom, application specific metadata. String key -> String value.
+            source: The source of this asset.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            root: filtered assets are root assets or not.
+            external_id_prefix: Filter by this (case-sensitive) prefix for the external ID.
+            aggregated_properties: Set of aggregated properties to include. Options are childCount, path, depth.
+            partitions: Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
+            limit: Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            advanced_filter: Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+            sort: The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
-            AssetList: List of requested assets
+            List of requested assets
 
         .. note::
             When using `partitions`, there are few considerations to keep in mind:

@@ -39,20 +39,20 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
     """No description.
 
     Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        instance_id (NodeId | None): The instance ID for the file. (Only applicable for files created in DMS)
-        name (str): Name of the file.
-        source (str | None): The source of the file.
-        mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        directory (str | None): Directory associated with the file. It must be an absolute, unix-style path.
-        asset_ids (Sequence[int] | None): No description.
-        data_set_id (int | None): The dataSet ID for the item.
-        labels (Sequence[Label] | None): A list of the labels associated with this resource item.
-        geo_location (GeoLocation | None): The geographic metadata of the file.
-        source_created_time (int | None): The timestamp for when the file was originally created in the source system.
-        source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
-        security_categories (Sequence[int] | None): The security category IDs required to access this file.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        instance_id: The instance ID for the file. (Only applicable for files created in DMS)
+        name: Name of the file.
+        source: The source of the file.
+        mime_type: File type. E.g., text/plain, application/pdf, ...
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        directory: Directory associated with the file. It must be an absolute, unix-style path.
+        asset_ids: No description.
+        data_set_id: The dataSet ID for the item.
+        labels: A list of the labels associated with this resource item.
+        geo_location: The geographic metadata of the file.
+        source_created_time: The timestamp for when the file was originally created in the source system.
+        source_modified_time: The timestamp for when the file was last modified in the source system.
+        security_categories: The security category IDs required to access this file.
     """
 
     def __init__(
@@ -113,25 +113,25 @@ class FileMetadata(FileMetadataCore):
     This is the read version of FileMetadata, and it is used when retrieving from CDF.
 
     Args:
-        id (int): A server-generated ID for the object.
-        uploaded (bool): Whether the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        uploaded_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        instance_id (NodeId | None): The Instance ID for the file. (Only applicable for files created in DMS)
-        name (str): Name of the file.
-        source (str | None): The source of the file.
-        mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        directory (str | None): Directory associated with the file. It must be an absolute, unix-style path.
-        asset_ids (Sequence[int] | None): No description.
-        data_set_id (int | None): The dataSet ID for the item.
-        labels (Sequence[Label] | None): A list of the labels associated with this resource item.
-        geo_location (GeoLocation | None): The geographic metadata of the file.
-        source_created_time (int | None): The timestamp for when the file was originally created in the source system.
-        source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
-        security_categories (Sequence[int] | None): The security category IDs required to access this file.
+        id: A server-generated ID for the object.
+        uploaded: Whether the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        uploaded_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        instance_id: The Instance ID for the file. (Only applicable for files created in DMS)
+        name: Name of the file.
+        source: The source of the file.
+        mime_type: File type. E.g., text/plain, application/pdf, ...
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        directory: Directory associated with the file. It must be an absolute, unix-style path.
+        asset_ids: No description.
+        data_set_id: The dataSet ID for the item.
+        labels: A list of the labels associated with this resource item.
+        geo_location: The geographic metadata of the file.
+        source_created_time: The timestamp for when the file was originally created in the source system.
+        source_modified_time: The timestamp for when the file was last modified in the source system.
+        security_categories: The security category IDs required to access this file.
     """
 
     def __init__(
@@ -231,20 +231,20 @@ class FileMetadataWrite(FileMetadataCore):
     This is the write version of FileMetadata, and it is used when inserting or updating files.
 
     Args:
-        name (str): Name of the file.
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        instance_id (NodeId | None): The Instance ID for the file. (Only applicable for files created in DMS)
-        source (str | None): The source of the file.
-        mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        directory (str | None): Directory associated with the file. It must be an absolute, unix-style path.
-        asset_ids (Sequence[int] | None): No description.
-        data_set_id (int | None): The dataSet ID for the item.
-        labels (Sequence[Label] | None): A list of the labels associated with this resource item.
-        geo_location (GeoLocation | None): The geographic metadata of the file.
-        source_created_time (int | None): The timestamp for when the file was originally created in the source system.
-        source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
-        security_categories (Sequence[int] | None): The security category IDs required to access this file.
+        name: Name of the file.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        instance_id: The Instance ID for the file. (Only applicable for files created in DMS)
+        source: The source of the file.
+        mime_type: File type. E.g., text/plain, application/pdf, ...
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        directory: Directory associated with the file. It must be an absolute, unix-style path.
+        asset_ids: No description.
+        data_set_id: The dataSet ID for the item.
+        labels: A list of the labels associated with this resource item.
+        geo_location: The geographic metadata of the file.
+        source_created_time: The timestamp for when the file was originally created in the source system.
+        source_modified_time: The timestamp for when the file was last modified in the source system.
+        security_categories: The security category IDs required to access this file.
     """
 
     def __init__(
@@ -309,24 +309,24 @@ class FileMetadataFilter(CogniteFilter):
     """No description.
 
     Args:
-        name (str | None): Name of the file.
-        mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
-        asset_external_ids (SequenceNotStr[str] | None): Only include files that reference these specific asset external IDs.
-        data_set_ids (Sequence[dict[str, Any]] | None): Only include files that belong to these datasets.
-        labels (LabelFilter | None): Return only the files matching the specified label(s).
-        geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
-        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include files that have a related asset in a subtree rooted at any of these asset IDs or external IDs. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        source (str | None): The source of this event.
-        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        uploaded_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        source_created_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-        source_modified_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-        external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-        directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
-        uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
+        name: Name of the file.
+        mime_type: File type. E.g. text/plain, application/pdf, ..
+        metadata: Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        asset_ids: Only include files that reference these specific asset IDs.
+        asset_external_ids: Only include files that reference these specific asset external IDs.
+        data_set_ids: Only include files that belong to these datasets.
+        labels: Return only the files matching the specified label(s).
+        geo_location: Only include files matching the specified geographic relation.
+        asset_subtree_ids: Only include files that have a related asset in a subtree rooted at any of these asset IDs or external IDs. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        source: The source of this event.
+        created_time: Range between two timestamps.
+        last_updated_time: Range between two timestamps.
+        uploaded_time: Range between two timestamps.
+        source_created_time: Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+        source_modified_time: Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+        external_id_prefix: Filter by this (case-sensitive) prefix for the external ID.
+        directory_prefix: Filter by this (case-sensitive) prefix for the directory provided by the client.
+        uploaded: Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
     """
 
     def __init__(
@@ -395,9 +395,9 @@ class FileMetadataUpdate(CogniteUpdate):
     """Changes will be applied to file.
 
     Args:
-        id (int | None): A server-generated ID for the object.
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        instance_id (NodeId | None): The ID of the file.
+        id: A server-generated ID for the object.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        instance_id: The ID of the file.
     """
 
     def __init__(
@@ -551,10 +551,10 @@ class FileMultipartUploadSession(
         Can be used both as a regular and async context manager. Use
 
     Args:
-        file_metadata (FileMetadata): The created file in CDF.
-        upload_urls (list[str]): List of upload URLs for the file upload.
-        upload_id (str): ID of the multipart upload, needed to complete the upload.
-        cognite_client (AsyncCogniteClient): Cognite client to use for completing the upload.
+        file_metadata: The created file in CDF.
+        upload_urls: List of upload URLs for the file upload.
+        upload_id: ID of the multipart upload, needed to complete the upload.
+        cognite_client: Cognite client to use for completing the upload.
     """
 
     def __init__(
@@ -574,8 +574,8 @@ class FileMultipartUploadSession(
             If `content` does not somehow expose its length, this method may not work on Azure or AWS.
 
         Args:
-            part_no (int): Which part number this is, must be between 0 and `parts` given to `multipart_upload_session`
-            content (str | bytes | BinaryIO): The content to upload.
+            part_no: Which part number this is, must be between 0 and `parts` given to `multipart_upload_session`
+            content: The content to upload.
         """
         if part_no < 0 or part_no > len(self._uploaded_urls):
             raise IndexError(f"Index out of range: {part_no}, must be between 0 and {len(self._uploaded_urls)}")

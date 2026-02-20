@@ -324,9 +324,9 @@ class JobWrite(_JobCore):
     This is the write/request format of the job.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        destination_id (str): ID of the destination this job should write to.
-        source_id (str): ID of the source this job should read from.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        destination_id: ID of the destination this job should write to.
+        source_id: ID of the source this job should read from.
         format: The format of the messages from the source. This is used to convert
             messages coming from the source system to a format that can be inserted into CDF.
         config: Configuration for the job. This must match the source. For example, if the source is MQTT,
@@ -356,15 +356,15 @@ class Job(_JobCore):
     This is the read/response format of the job.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        destination_id (str): ID of the destination this job should write to.
-        source_id (str): ID of the source this job should read from.
-        format (JobFormat): The format of the messages from the source. This is used to convert messages coming from the source system to a format that can be inserted into CDF.
-        target_status (TargetStatus): The target status of a job. Set this to start or stop the job.
-        status (JobStatus): Status of this job.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        config (JobConfig | None): Configuration for the job. This is specific to the source system.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        destination_id: ID of the destination this job should write to.
+        source_id: ID of the source this job should read from.
+        format: The format of the messages from the source. This is used to convert messages coming from the source system to a format that can be inserted into CDF.
+        target_status: The target status of a job. Set this to start or stop the job.
+        status: Status of this job.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        config: Configuration for the job. This is specific to the source system.
 
     """
 
@@ -476,10 +476,10 @@ class JobLogs(CogniteResource):
     """Logs for a hosted extractor job.
 
     Args:
-        job_external_id (str): The external ID of the job.
-        type (Literal['paused', 'startup_error', 'connection_error', 'connected', 'transform_error', 'cdf_write_error', 'ok']): Type of log entry.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        message (str | None): Log message. Not all log entries have messages.
+        job_external_id: The external ID of the job.
+        type: Type of log entry.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        message: Log message. Not all log entries have messages.
 
     Statuses
 
@@ -521,16 +521,16 @@ class JobMetrics(CogniteResource):
     """Metrics for a hosted extractor job.
 
     Args:
-        job_external_id (str): External ID of the job this metrics batch belongs to.
-        timestamp (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Metrics are from the UTC hour this timestamp is ingest. For example, if this timestamp is at 01:43:15, the metrics batch contains metrics from 01:00:00 to 01:43:15.
-        source_messages (int): Number of messages received from the source system.
-        cdf_input_values (int): Destination resources successfully transformed and passed to CDF.
-        cdf_requests (int): Requests made to CDF containing data produced by this job.
-        transform_failures (int): Source messages that failed to transform.
-        cdf_write_failures (int): Times the destination received data from transformations, but failed to produce a valid request to CDF.
-        cdf_skipped_values (int): Values the destination received from the source, then decided to skip due to data type mismatch, invalid content, or other.
-        cdf_failed_values (int): Values the destination was unable to upload to CDF.
-        cdf_uploaded_values (int): Values the destination successfully uploaded to CDF.
+        job_external_id: External ID of the job this metrics batch belongs to.
+        timestamp: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Metrics are from the UTC hour this timestamp is ingest. For example, if this timestamp is at 01:43:15, the metrics batch contains metrics from 01:00:00 to 01:43:15.
+        source_messages: Number of messages received from the source system.
+        cdf_input_values: Destination resources successfully transformed and passed to CDF.
+        cdf_requests: Requests made to CDF containing data produced by this job.
+        transform_failures: Source messages that failed to transform.
+        cdf_write_failures: Times the destination received data from transformations, but failed to produce a valid request to CDF.
+        cdf_skipped_values: Values the destination received from the source, then decided to skip due to data type mismatch, invalid content, or other.
+        cdf_failed_values: Values the destination was unable to upload to CDF.
+        cdf_uploaded_values: Values the destination successfully uploaded to CDF.
 
     """
 

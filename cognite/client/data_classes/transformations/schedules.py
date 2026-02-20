@@ -22,8 +22,8 @@ class TransformationScheduleCore(WriteableCogniteResource["TransformationSchedul
     """The transformation schedules resource allows running recurrent transformations.
 
     Args:
-        interval (str | None): Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
-        is_paused (bool): If true, the transformation is not scheduled.
+        interval: Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
+        is_paused: If true, the transformation is not scheduled.
     """
 
     def __init__(self, interval: str | None, is_paused: bool) -> None:
@@ -35,12 +35,12 @@ class TransformationSchedule(TransformationScheduleCore):
     """The transformation schedules resource allows running recurrent transformations.
 
     Args:
-        id (int): Transformation id.
-        external_id (str): Transformation external id.
-        created_time (int): Time when the schedule was created.
-        last_updated_time (int): Time when the schedule was last updated.
-        interval (str): Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
-        is_paused (bool): If true, the transformation is not scheduled.
+        id: Transformation id.
+        external_id: Transformation external id.
+        created_time: Time when the schedule was created.
+        last_updated_time: Time when the schedule was last updated.
+        interval: Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
+        is_paused: If true, the transformation is not scheduled.
     """
 
     def __init__(
@@ -93,10 +93,10 @@ class TransformationScheduleWrite(TransformationScheduleCore):
     """The transformation schedules resource allows running recurrent transformations.
 
     Args:
-        interval (str): Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
-        id (int | None): Transformation id.
-        external_id (str | None): Transformation external id.
-        is_paused (bool): If true, the transformation is not scheduled.
+        interval: Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
+        id: Transformation id.
+        external_id: Transformation external id.
+        is_paused: If true, the transformation is not scheduled.
     """
 
     def __init__(
@@ -130,8 +130,8 @@ class TransformationScheduleUpdate(CogniteUpdate):
     """Changes applied to transformation schedule
 
     Args:
-        id (int): Transformation id.
-        external_id (str): Transformation externalId.
+        id: Transformation id.
+        external_id: Transformation externalId.
     """
 
     class _PrimitiveTransformationScheduleUpdate(CognitePrimitiveUpdate):

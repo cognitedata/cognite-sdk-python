@@ -20,12 +20,12 @@ class ExtractionPipelineConfigsAPI(APIClient):
         By default the latest configuration revision is retrieved, or you can specify a timestamp or a revision number.
 
         Args:
-            external_id (str): External id of the extraction pipeline to retrieve config from.
-            revision (int | None): Optionally specify a revision number to retrieve.
-            active_at_time (int | None): Optionally specify a timestamp the configuration revision should be active.
+            external_id: External id of the extraction pipeline to retrieve config from.
+            revision: Optionally specify a revision number to retrieve.
+            active_at_time: Optionally specify a timestamp the configuration revision should be active.
 
         Returns:
-            ExtractionPipelineConfig: Retrieved extraction pipeline configuration revision
+            Retrieved extraction pipeline configuration revision
 
         Examples:
 
@@ -47,10 +47,10 @@ class ExtractionPipelineConfigsAPI(APIClient):
         """`Retrieve all configuration revisions from an extraction pipeline <https://developer.cognite.com/api#tag/Extraction-Pipelines-Config/operation/listExtPipeConfigRevisions>`
 
         Args:
-            external_id (str): External id of the extraction pipeline to retrieve config from.
+            external_id: External id of the extraction pipeline to retrieve config from.
 
         Returns:
-            ExtractionPipelineConfigRevisionList: Retrieved extraction pipeline configuration revisions
+            Retrieved extraction pipeline configuration revisions
 
         Examples:
 
@@ -74,10 +74,10 @@ class ExtractionPipelineConfigsAPI(APIClient):
         """`Create a new configuration revision <https://developer.cognite.com/api#tag/Extraction-Pipelines-Config/operation/createExtPipeConfig>`
 
         Args:
-            config (ExtractionPipelineConfig | ExtractionPipelineConfigWrite): Configuration revision to create.
+            config: Configuration revision to create.
 
         Returns:
-            ExtractionPipelineConfig: Created extraction pipeline configuration revision
+            Created extraction pipeline configuration revision
 
         Examples:
 
@@ -99,11 +99,11 @@ class ExtractionPipelineConfigsAPI(APIClient):
         """`Revert to a previous configuration revision <https://developer.cognite.com/api#tag/Extraction-Pipelines-Config/operation/revertExtPipeConfigRevision>`
 
         Args:
-            external_id (str): External id of the extraction pipeline to revert revision for.
-            revision (int): Revision to revert to.
+            external_id: External id of the extraction pipeline to revert revision for.
+            revision: Revision to revert to.
 
         Returns:
-            ExtractionPipelineConfig: New latest extraction pipeline configuration revision.
+            New latest extraction pipeline configuration revision.
 
         Examples:
 

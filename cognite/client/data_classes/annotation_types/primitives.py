@@ -19,10 +19,10 @@ class VisionResource(CogniteResource, ABC):
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            dict[str, Any]: A dictionary representation of the instance.
+            A dictionary representation of the instance.
         """
         dumped = {}
         for k, v in vars(self).items():
@@ -42,10 +42,10 @@ class VisionResource(CogniteResource, ABC):
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+            camel_case: Convert column names to camel case (e.g. `externalId` instead of `external_id`)
 
         Returns:
-            pandas.DataFrame: The dataframe.
+            The dataframe.
         """
         pd = local_import("pandas")
         return pd.Series(self.dump(camel_case), name="value").to_frame()

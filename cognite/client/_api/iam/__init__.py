@@ -113,14 +113,12 @@ class IAMAPI(APIClient):
             ``client.iam.verify_capabilities`` instead.
 
         Args:
-            existing_capabilities (ComparableCapability): List of existing capabilities.
-            desired_capabilities (ComparableCapability): List of wanted capabilities to check against existing.
-            project (str | None): If a ProjectCapability or ProjectCapabilityList is passed, we need to know which CDF project
-                to pull capabilities from (existing might be from several). If project is not passed, and ProjectCapabilityList
-                is used, it will be inferred from the AsyncCogniteClient used to call retrieve it via token/inspect.
+            existing_capabilities: List of existing capabilities.
+            desired_capabilities: List of wanted capabilities to check against existing.
+            project: If a ProjectCapability or ProjectCapabilityList is passed, we need to know which CDF project to pull capabilities from (existing might be from several). If project is not passed, and ProjectCapabilityList is used, it will be inferred from the AsyncCogniteClient used to call retrieve it via token/inspect.
 
         Returns:
-            list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
+            A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
 
         Examples:
 
@@ -210,10 +208,10 @@ class IAMAPI(APIClient):
         """Helper method to compare your current capabilities with a set of desired capabilities and return any missing.
 
         Args:
-            desired_capabilities (ComparableCapability): List of desired capabilities to check against existing.
+            desired_capabilities: List of desired capabilities to check against existing.
 
         Returns:
-            list[Capability]: A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
+            A flattened list of the missing capabilities, meaning they each have exactly 1 action, 1 scope, 1 id etc.
 
         Examples:
 

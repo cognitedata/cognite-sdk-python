@@ -1,6 +1,6 @@
 """
 ===============================================================================
-4c797ab98ba8663bd1d57f352855c2ef
+1cddc46d83897d442813705f021107c0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -30,10 +30,10 @@ class SyncDataModelingGraphQLAPI(SyncAPIClient):
             This removes all comments from the DML.
 
         Args:
-            id (DataModelIdentifier): The data model to apply DML to.
+            id: The data model to apply DML to.
 
         Returns:
-            str: The new DML
+            The new DML
         """
         return run_sync(self.__async_client.data_modeling.graphql._unsafely_wipe_and_regenerate_dml(id=id))
 
@@ -49,14 +49,14 @@ class SyncDataModelingGraphQLAPI(SyncAPIClient):
         Apply the DML for a given data model.
 
         Args:
-            id (DataModelIdentifier): The data model to apply DML to.
-            dml (str): The DML to apply.
-            name (str | None): The name of the data model.
-            description (str | None): The description of the data model.
-            previous_version (str | None): The previous version of the data model. Specify to reuse view versions from previous data model version.
+            id: The data model to apply DML to.
+            dml: The DML to apply.
+            name: The name of the data model.
+            description: The description of the data model.
+            previous_version: The previous version of the data model. Specify to reuse view versions from previous data model version.
 
         Returns:
-            DMLApplyResult: The id of the updated data model.
+            The id of the updated data model.
 
         Examples:
 
@@ -83,12 +83,12 @@ class SyncDataModelingGraphQLAPI(SyncAPIClient):
         Execute a GraphQl query against a given data model.
 
         Args:
-            id (DataModelIdentifier): The data model to query.
-            query (str): The query to issue.
-            variables (dict[str, Any] | None): An optional dict of variables to pass to the query.
+            id: The data model to query.
+            query: The query to issue.
+            variables: An optional dict of variables to pass to the query.
 
         Returns:
-            dict[str, Any]: The query result
+            The query result
 
         Examples:
 

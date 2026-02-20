@@ -123,8 +123,8 @@ class ContextualizationJob(CogniteResourceWithClientRef, ABC):
         """Waits for job completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
-            timeout (float | None): Time out after this many seconds. (None means wait indefinitely)
-            interval (float): Influence how often to poll status (seconds).
+            timeout: Time out after this many seconds. (None means wait indefinitely)
+            interval: Influence how often to poll status (seconds).
 
         Raises:
             CogniteModelFailedError: The model fit failed.
@@ -255,8 +255,8 @@ class EntityMatchingModel(CogniteResourceWithClientRef):
         """Waits for model completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
-            timeout (int | None): Time out after this many seconds. (None means wait indefinitely)
-            interval (int): Influence how often to poll status (seconds).
+            timeout: Time out after this many seconds. (None means wait indefinitely)
+            interval: Influence how often to poll status (seconds).
 
         Raises:
             CogniteModelFailedError: The model fit failed.
@@ -290,13 +290,13 @@ class EntityMatchingModel(CogniteResourceWithClientRef):
             Blocks and waits for the model to be ready if it has been recently created.
 
         Args:
-            sources (list[dict] | None): entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
-            targets (list[dict] | None): entities to match to, does not need an 'id' field. Tolerant to passing more than is needed or used. If omitted, will use data from fit.
-            num_matches (int): number of matches to return for each item.
-            score_threshold (float | None): only return matches with a score above this threshold
+            sources: entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
+            targets: entities to match to, does not need an 'id' field. Tolerant to passing more than is needed or used. If omitted, will use data from fit.
+            num_matches: number of matches to return for each item.
+            score_threshold: only return matches with a score above this threshold
 
         Returns:
-            EntityMatchingPredictionResult: object which can be used to wait for and retrieve results."""
+            object which can be used to wait for and retrieve results."""
         await self.wait_for_completion_async()
         json = {
             "id": self.id,
@@ -332,9 +332,9 @@ class EntityMatchingModel(CogniteResourceWithClientRef):
         """Re-fits an entity matching model, using the combination of the old and new true matches.
 
         Args:
-            true_matches (Sequence[dict | tuple[int | str, int | str]]): Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId'). A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
+            true_matches: Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId'). A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
         Returns:
-            EntityMatchingModel: new model refitted to true_matches."""
+            new model refitted to true_matches."""
         true_matches = [convert_true_match(true_match) for true_match in true_matches]
         await self.wait_for_completion_async()
         semaphore = self._cognite_client.entity_matching._get_semaphore("write")
@@ -367,8 +367,8 @@ class EntityMatchingModelUpdate(CogniteUpdate):
     """Changes applied to entity matching model
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        id: A server-generated ID for the object.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
     """
 
     class _PrimitiveUpdate(CognitePrimitiveUpdate):
@@ -483,10 +483,10 @@ class DiagramConvertItem(CogniteResource):
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+            camel_case: Convert column names to camel case (e.g. `externalId` instead of `external_id`)
 
         Returns:
-            pandas.DataFrame: The dataframe.
+            The dataframe.
         """
         df = super().to_pandas(camel_case=camel_case)
         df.loc["results"] = f"{len(df['results'])} pages"
@@ -607,10 +607,10 @@ class DiagramDetectItem(CogniteResource):
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+            camel_case: Convert column names to camel case (e.g. `externalId` instead of `external_id`)
 
         Returns:
-            pandas.DataFrame: The dataframe.
+            The dataframe.
         """
         df = super().to_pandas(camel_case=camel_case)
         df.loc["annotations"] = f"{len(self.annotations or [])} annotations"
@@ -965,7 +965,7 @@ class DetectJobBundle:
         """Waits for all jobs to complete, generally not needed to call as it is called by result.
 
         Args:
-            timeout (int | None): Time out after this many seconds. (None means wait indefinitely)
+            timeout: Time out after this many seconds. (None means wait indefinitely)
         """
         start = time.time()
         self._remaining_job_ids = self.job_ids
@@ -1234,11 +1234,11 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
         See https://docs.cognite.com/api/v1/#operation/annotationsSuggest
 
         Args:
-            creating_user (str): (str, optional): A username, or email, or name.
-            creating_app (str | None): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-python'.
-            creating_app_version (str | None): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string. Defaults to client version.
+            creating_user: A username, or email, or name.
+            creating_app: The name of the app from which this annotation was created. Defaults to 'cognite-sdk-python'.
+            creating_app_version: The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string. Defaults to client version.
         Returns:
-            Annotation | AnnotationList: (suggested) annotation(s) stored in CDF.
+            (suggested) annotation(s) stored in CDF.
 
         """
         if JobStatus(self.status) is JobStatus.COMPLETED:
@@ -1346,10 +1346,10 @@ class DirectionWeights(CogniteResource):
     larger distance is allowed.
 
     Args:
-        left (float | None): Weight for the connection towards text boxes to the left.
-        right (float | None): Weight for the connection towards text boxes to the right.
-        up (float | None): Weight for the connection towards text boxes above.
-        down (float | None): Weight for the connection towards text boxes below.
+        left: Weight for the connection towards text boxes to the left.
+        right: Weight for the connection towards text boxes to the right.
+        up: Weight for the connection towards text boxes above.
+        down: Weight for the connection towards text boxes below.
     """
 
     def __init__(
@@ -1378,9 +1378,9 @@ class CustomizeFuzziness(CogniteResource):
     """Additional requirements for the fuzzy matching algorithm. The fuzzy match is allowed if any of these are true for each match candidate. The overall minFuzzyScore still applies, but a stricter fuzzyScore can be set here, which would not be enforced if either the minChars or maxBoxes conditions are met, making it possible to exclude detections using replacements if they are either short, or combined from many boxes.
 
     Args:
-        fuzzy_score (float | None): The minimum fuzzy score of the candidate match.
-        max_boxes (int | None): Maximum number of text boxes the potential match is composed of.
-        min_chars (int | None): The minimum number of characters that must be present in the candidate match string.
+        fuzzy_score: The minimum fuzzy score of the candidate match.
+        max_boxes: Maximum number of text boxes the potential match is composed of.
+        min_chars: The minimum number of characters that must be present in the candidate match string.
     """
 
     def __init__(
@@ -1406,9 +1406,9 @@ class ConnectionFlags:
     """Connection flags for token graph. These are passed as an array of strings to the API. Only flags set to True are included in the array. There is no need to set any flags to False.
 
     Args:
-        natural_reading_order (bool): Only connect text regions that are in natural reading order (i.e. top to bottom and left to right).
-        no_text_inbetween (bool): Only connect text regions that are not separated by other text regions.
-        **flags (bool): Other flags.
+        natural_reading_order: Only connect text regions that are in natural reading order (i.e. top to bottom and left to right).
+        no_text_inbetween: Only connect text regions that are not separated by other text regions.
+        **flags: Other flags.
     """
 
     def __init__(
@@ -1441,17 +1441,17 @@ class DiagramDetectConfig(CogniteResource):
     """`Configuration options for the diagrams/detect endpoint <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
 
     Args:
-        annotation_extract (bool | None): Read SHX text embedded in the diagram file. If present, this text will override overlapping OCR text. Cannot be used at the same time as read_embedded_text.
-        case_sensitive (bool | None): Case sensitive text matching. Defaults to True.
-        connection_flags (ConnectionFlags | list[str] | None): Connection flags for token graph. Two flags are supported thus far: `no_text_inbetween` and `natural_reading_order`.
-        customize_fuzziness (CustomizeFuzziness | dict[str, Any] | None): Additional requirements for the fuzzy matching algorithm. The fuzzy match is allowed if any of these are true for each match candidate. The overall minFuzzyScore still applies, but a stricter fuzzyScore can be set here, which would not be enforced if either the minChars or maxBoxes conditions are met, making it possible to exclude detections using replacements if they are either short, or combined from many boxes.
-        direction_delta (float | None): Maximum angle between the direction of two text boxes for them to be connected. Directions are currently multiples of 90 degrees.
-        direction_weights (DirectionWeights | dict[str, Any] | None): Direction weights that control how far subsequent ocr text boxes can be from another in a particular direction and still be combined into the same detection. Lower value means larger distance is allowed. The direction is relative to the text orientation.
-        min_fuzzy_score (float | None): For each detection, this controls to which degree characters can be replaced from the OCR text with similar characters, e.g. I and 1. A value of 1 will disable character replacements entirely.
-        read_embedded_text (bool | None): Read text embedded in the PDF file. If present, this text will override overlapping OCR text.
-        remove_leading_zeros (bool | None): Disregard leading zeroes when matching tags (e.g. "A0001" will match "A1")
-        substitutions (dict[str, list[str]] | None): Override the default mapping of characters to an array of allowed substitute characters. The default mapping contains characters commonly confused by OCR. Provide your custom mapping in the format like so: {"0": ["O", "Q"], "1": ["l", "I"]}. This means: 0 (zero) is allowed to be replaced by uppercase letter O or Q, and 1 (one) is allowed to be replaced by lowercase letter l or uppercase letter I. No other replacements are allowed.
-        **params (Any): Other parameters. The parameter name will be converted to camel case but the value will be passed as is.
+        annotation_extract: Read SHX text embedded in the diagram file. If present, this text will override overlapping OCR text. Cannot be used at the same time as read_embedded_text.
+        case_sensitive: Case sensitive text matching. Defaults to True.
+        connection_flags: Connection flags for token graph. Two flags are supported thus far: `no_text_inbetween` and `natural_reading_order`.
+        customize_fuzziness: Additional requirements for the fuzzy matching algorithm. The fuzzy match is allowed if any of these are true for each match candidate. The overall minFuzzyScore still applies, but a stricter fuzzyScore can be set here, which would not be enforced if either the minChars or maxBoxes conditions are met, making it possible to exclude detections using replacements if they are either short, or combined from many boxes.
+        direction_delta: Maximum angle between the direction of two text boxes for them to be connected. Directions are currently multiples of 90 degrees.
+        direction_weights: Direction weights that control how far subsequent ocr text boxes can be from another in a particular direction and still be combined into the same detection. Lower value means larger distance is allowed. The direction is relative to the text orientation.
+        min_fuzzy_score: For each detection, this controls to which degree characters can be replaced from the OCR text with similar characters, e.g. I and 1. A value of 1 will disable character replacements entirely.
+        read_embedded_text: Read text embedded in the PDF file. If present, this text will override overlapping OCR text.
+        remove_leading_zeros: Disregard leading zeroes when matching tags (e.g. "A0001" will match "A1")
+        substitutions: Override the default mapping of characters to an array of allowed substitute characters. The default mapping contains characters commonly confused by OCR. Provide your custom mapping in the format like so: {"0": ["O", "Q"], "1": ["l", "I"]}. This means: 0 (zero) is allowed to be replaced by uppercase letter O or Q, and 1 (one) is allowed to be replaced by lowercase letter l or uppercase letter I. No other replacements are allowed.
+        **params: Other parameters. The parameter name will be converted to camel case but the value will be passed as is.
 
     Example:
 

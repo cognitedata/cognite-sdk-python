@@ -15,7 +15,7 @@ class TransformationDestination(CogniteResource):
     """TransformationDestination has static methods to define the target resource type of a transformation
 
     Args:
-        type (str): Used as data type identifier on transformation creation/retrieval.
+        type: Used as data type identifier on transformation creation/retrieval.
     """
 
     def __init__(self, type: str) -> None:
@@ -96,11 +96,11 @@ class TransformationDestination(CogniteResource):
         """To be used when the transformation is meant to produce raw table rows.
 
         Args:
-            database (str): database name of the target raw table.
-            table (str): name of the target raw table
+            database: database name of the target raw table.
+            table: name of the target raw table
 
         Returns:
-            RawTable: TransformationDestination pointing to the target table
+            TransformationDestination pointing to the target table
         """
         return RawTable(database=database, table=table)
 
@@ -109,10 +109,10 @@ class TransformationDestination(CogniteResource):
         """To be used when the transformation is meant to produce sequence rows.
 
         Args:
-            external_id (str): Sequence external id.
+            external_id: Sequence external id.
 
         Returns:
-            SequenceRowsDestination: TransformationDestination pointing to the target sequence rows
+            TransformationDestination pointing to the target sequence rows
         """
         return SequenceRowsDestination(external_id=external_id)
 
@@ -121,10 +121,10 @@ class TransformationDestination(CogniteResource):
         """
 
         Args:
-            view (ViewInfo | None): information of the view.
-            instance_space (str | None): space id of the instance.
+            view: information of the view.
+            instance_space: space id of the instance.
         Returns:
-            Nodes: pointing to the target flexible data model.
+            pointing to the target flexible data model.
         """
         return Nodes(view=view, instance_space=instance_space)
 
@@ -137,11 +137,11 @@ class TransformationDestination(CogniteResource):
         """
 
         Args:
-            view (ViewInfo | None): information of the view.
-            instance_space (str | None): space id of the instance.
-            edge_type (EdgeType | None): information about the type of the edge
+            view: information of the view.
+            instance_space: space id of the instance.
+            edge_type: information about the type of the edge
         Returns:
-            Edges: pointing to the target flexible data model.
+            pointing to the target flexible data model.
         """
         return Edges(view=view, instance_space=instance_space, edge_type=edge_type)
 
@@ -149,10 +149,10 @@ class TransformationDestination(CogniteResource):
     def instances(data_model: DataModelInfo | None = None, instance_space: str | None = None) -> Instances:
         """
         Args:
-            data_model (DataModelInfo | None): information of the Data Model.
-            instance_space (str | None): space id of the instance.
+            data_model: information of the Data Model.
+            instance_space: space id of the instance.
         Returns:
-            Instances: pointing to the target centric data model.
+            pointing to the target centric data model.
         """
         return Instances(data_model=data_model, instance_space=instance_space)
 
@@ -331,12 +331,12 @@ class OidcCredentials:
         destination_oidc_credentials.
 
     Args:
-        client_id (str): Your application's client id.
-        client_secret (str): Your application's client secret
-        token_uri (str): OAuth token url
-        cdf_project_name (str): Name of CDF project
-        scopes (str | list[str] | None): A list of scopes or a comma-separated string (for backwards compatibility).
-        audience (str | None): Audience (optional)
+        client_id: Your application's client id.
+        client_secret: Your application's client secret
+        token_uri: OAuth token url
+        cdf_project_name: Name of CDF project
+        scopes: A list of scopes or a comma-separated string (for backwards compatibility).
+        audience: Audience (optional)
     """
 
     def __init__(
@@ -383,10 +383,10 @@ class OidcCredentials:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            dict[str, Any]: A dictionary representation of the instance.
+            A dictionary representation of the instance.
         """
         return basic_obj_dump(self, camel_case)
 
@@ -395,9 +395,9 @@ class OidcCredentials:
         """Load data into the instance.
 
         Args:
-            data (dict[str, Any]): A dictionary representation of the instance.
+            data: A dictionary representation of the instance.
         Returns:
-            Self: No description.
+            No description.
         """
         return cls(
             client_id=data["clientId"],
@@ -428,10 +428,10 @@ class NonceCredentials:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            dict[str, Any]: A dictionary representation of the instance.
+            A dictionary representation of the instance.
         """
         return basic_obj_dump(self, camel_case)
 
@@ -440,9 +440,9 @@ class NonceCredentials:
         """Load data into the instance.
 
         Args:
-            data (dict[str, Any]): A dictionary representation of the instance.
+            data: A dictionary representation of the instance.
         Returns:
-            NonceCredentials: No description.
+            No description.
         """
         return cls(
             session_id=data["sessionId"],
@@ -459,8 +459,8 @@ class TransformationBlockedInfo:
     """Information about the reason why and when a transformation is blocked.
 
     Args:
-        reason (str): Reason why the transformation is blocked.
-        created_time (int): Timestamp when the transformation was blocked.
+        reason: Reason why the transformation is blocked.
+        created_time: Timestamp when the transformation was blocked.
     """
 
     def __init__(self, reason: str, created_time: int) -> None:

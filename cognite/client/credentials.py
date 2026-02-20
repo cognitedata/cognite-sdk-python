@@ -40,10 +40,10 @@ class CredentialProvider(Protocol):
             The value of the key is a dictionary containing the configuration for the credential provider.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing the configuration for the credential provider.
+            config: A dictionary or YAML/JSON string containing the configuration for the credential provider.
 
         Returns:
-            CredentialProvider: Initialized credential provider of the specified type.
+            Initialized credential provider of the specified type.
 
         Examples:
 
@@ -90,7 +90,7 @@ class Token(CredentialProvider):
     """Token credential provider
 
     Args:
-        token (str | Callable[[], str]): A token or a token factory.
+        token: A token or a token factory.
 
     Examples:
 
@@ -127,10 +127,10 @@ class Token(CredentialProvider):
         """Load a token credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, str | Callable[[], str]] | str): A dictionary or YAML/JSON string containing configuration values defined in the Token class.
+            config: A dictionary or YAML/JSON string containing configuration values defined in the Token class.
 
         Returns:
-            Token: Initialized token credential provider.
+            Initialized token credential provider.
 
         Note:
             A callable token is not supported if passing in a yaml string.
@@ -260,17 +260,16 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
     """OAuth credential provider for the device code login flow.
 
     Args:
-        authority_url (str | None): MS Entra OAuth authority url, typically "https://login.microsoftonline.com/{tenant_id}"
-        client_id (str): Your application's client id that allows device code flows.
-        scopes (list[str] | None): A list of scopes.
-        cdf_cluster (str | None): The CDF cluster where the CDF project is located. If provided, scopes will be set to
-            [f"https://{cdf_cluster}.cognitedata.com/IDENTITY https://{cdf_cluster}.cognitedata.com/user_impersonation openid profile"].
-        oauth_discovery_url (str | None): Standard OAuth discovery URL, should be where "/.well-known/openid-configuration" is found.
-        token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
-        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
-        clear_cache (bool): If True, the token cache will be cleared on initialization. Default: False
-        mem_cache_only (bool): If True, the token cache will only be stored in memory. Default: False
-        **token_custom_args (Any): Additional request parameters to pass to the authorization endpoint.
+        authority_url: MS Entra OAuth authority url, typically "https://login.microsoftonline.com/{tenant_id}"
+        client_id: Your application's client id that allows device code flows.
+        scopes: A list of scopes.
+        cdf_cluster: The CDF cluster where the CDF project is located. If provided, scopes will be set to [f"https://{cdf_cluster}.cognitedata.com/IDENTITY https://{cdf_cluster}.cognitedata.com/user_impersonation openid profile"].
+        oauth_discovery_url: Standard OAuth discovery URL, should be where "/.well-known/openid-configuration" is found.
+        token_cache_path: Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
+        token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
+        clear_cache: If True, the token cache will be cleared on initialization. Default: False
+        mem_cache_only: If True, the token cache will only be stored in memory. Default: False
+        **token_custom_args: Additional request parameters to pass to the authorization endpoint.
     Examples:
 
             >>> from cognite.client.credentials import OAuthDeviceCode
@@ -409,11 +408,11 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         """Initiate device code flow and return the device flow object.
 
         Args:
-            device_auth_endpoint (str): The device authorization endpoint URL.
-            data (dict[str, Any]): The request data (scope, client_id, etc.).
+            device_auth_endpoint: The device authorization endpoint URL.
+            data: The request data (scope, client_id, etc.).
 
         Returns:
-            dict[str, Any]: The device flow object containing device_code, user_code, etc.
+            The device flow object containing device_code, user_code, etc.
         """
 
         try:
@@ -534,10 +533,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         """Load a OAuth device code credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthDeviceCode class.
+            config: A dictionary or YAML/JSON string containing configuration values defined in the OAuthDeviceCode class.
 
         Returns:
-            OAuthDeviceCode: Initialized OAuthDeviceCode credential provider.
+            Initialized OAuthDeviceCode credential provider.
 
         Examples:
 
@@ -588,15 +587,15 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
 
         Args:
-            tenant_id (str): The Azure tenant id
-            client_id (str): An app registration that allows device code flow.
-            cdf_cluster (str): The CDF cluster where the CDF project is located.
-            token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
-            token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
-            clear_cache (bool): If True, the token cache will be cleared on initialization. Default: False
-            mem_cache_only (bool): If True, the token cache will only be stored in memory. Default: False
+            tenant_id: The Azure tenant id
+            client_id: An app registration that allows device code flow.
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            token_cache_path: Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
+            token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
+            clear_cache: If True, the token cache will be cleared on initialization. Default: False
+            mem_cache_only: If True, the token cache will only be stored in memory. Default: False
         Returns:
-            OAuthDeviceCode: An OAuthDeviceCode instance
+            An OAuthDeviceCode instance
         """
         return cls(
             authority_url=f"https://login.microsoftonline.com/{tenant_id}",
@@ -636,12 +635,12 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
     Make sure you have http://localhost:port in Redirect URI in App Registration as type "Mobile and desktop applications".
 
     Args:
-        authority_url (str): OAuth authority url
-        client_id (str): Your application's client id.
-        scopes (list[str]): A list of scopes.
-        redirect_port (int): Redirect port defaults to 53000.
-        token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
-        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
+        authority_url: OAuth authority url
+        client_id: Your application's client id.
+        scopes: A list of scopes.
+        redirect_port: Redirect port defaults to 53000.
+        token_cache_path: Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
+        token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
 
     Examples:
 
@@ -714,10 +713,10 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         """Load a OAuth interactive credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthInteractive class.
+            config: A dictionary or YAML/JSON string containing configuration values defined in the OAuthInteractive class.
 
         Returns:
-            OAuthInteractive: Initialized OAuthInteractive credential provider.
+            Initialized OAuthInteractive credential provider.
 
         Examples:
 
@@ -760,14 +759,14 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
 
         Args:
-            tenant_id (str): The Azure tenant id
-            client_id (str): Your application's client id.
-            cdf_cluster (str): The CDF cluster where the CDF project is located.
-            token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
-            **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
+            tenant_id: The Azure tenant id
+            client_id: Your application's client id.
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
+            **token_custom_args: Optional additional arguments to pass as query parameters to the token fetch request.
 
         Returns:
-            OAuthInteractive: An OAuthInteractive instance
+            An OAuthInteractive instance
         """
         return cls(
             authority_url=f"https://login.microsoftonline.com/{tenant_id}",
@@ -797,12 +796,12 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
     """OAuth credential provider for the "Client Credentials" flow.
 
     Args:
-        token_url (str): OAuth token url
-        client_id (str): Your application's client id.
-        client_secret (str): Your application's client secret
-        scopes (list[str] | None): A list of scopes.
-        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
-        **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
+        token_url: OAuth token url
+        client_id: Your application's client id.
+        client_secret: Your application's client secret
+        scopes: A list of scopes.
+        token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
+        **token_custom_args: Optional additional arguments to pass as query parameters to the token fetch request.
 
     Examples:
 
@@ -898,10 +897,10 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         """Load a OAuth client credentials credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCredentials class.
+            config: A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCredentials class.
 
         Returns:
-            OAuthClientCredentials: Initialized OAuthClientCredentials credential provider.
+            Initialized OAuthClientCredentials credential provider.
 
         Examples:
 
@@ -947,15 +946,15 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
 
         Args:
-            tenant_id (str): The Azure tenant id
-            client_id (str): Your application's client id.
-            client_secret (str): Your application's client secret.
-            cdf_cluster (str): The CDF cluster where the CDF project is located.
-            token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
-            **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
+            tenant_id: The Azure tenant id
+            client_id: Your application's client id.
+            client_secret: Your application's client secret.
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
+            **token_custom_args: Optional additional arguments to pass as query parameters to the token fetch request.
 
         Returns:
-            OAuthClientCredentials: An OAuthClientCredentials instance
+            An OAuthClientCredentials instance
         """
         return cls(
             token_url=f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token",
@@ -986,12 +985,12 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
     """OAuth credential provider for authenticating with a client certificate.
 
     Args:
-        authority_url (str): OAuth authority url
-        client_id (str): Your application's client id.
-        cert_thumbprint (str): Your certificate's thumbprint. You get it when you upload your certificate to Azure AD.
-        certificate (str): Your private certificate, typically read from a .pem file
-        scopes (list[str]): A list of scopes.
-        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
+        authority_url: OAuth authority url
+        client_id: Your application's client id.
+        cert_thumbprint: Your certificate's thumbprint. You get it when you upload your certificate to Azure AD.
+        certificate: Your private certificate, typically read from a .pem file
+        scopes: A list of scopes.
+        token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
 
     Examples:
 
@@ -1059,10 +1058,10 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         """Load a OAuth client certificate credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCertificate class.
+            config: A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCertificate class.
 
         Returns:
-            OAuthClientCertificate: Initialized OAuthClientCertificate credential provider.
+            Initialized OAuthClientCertificate credential provider.
 
         Examples:
 

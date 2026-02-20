@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c224295f9172ecb603e6c8da256ce938
+f3bfae368b7b5c9549e261eb691da2cb
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -67,16 +67,16 @@ class SyncFunctionSchedulesAPI(SyncAPIClient):
         Iterate over function schedules
 
         Args:
-            chunk_size (int | None): The number of schedules to return in each chunk. Defaults to yielding one schedule a time.
-            name (str | None): Name of the function schedule.
-            function_id (int | None): ID of the function the schedules are linked to.
-            function_external_id (str | None): External ID of the function the schedules are linked to.
-            created_time (dict[str, int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            cron_expression (str | None): Cron expression.
-            limit (int | None): Maximum schedules to return. Defaults to return all schedules.
+            chunk_size: The number of schedules to return in each chunk. Defaults to yielding one schedule a time.
+            name: Name of the function schedule.
+            function_id: ID of the function the schedules are linked to.
+            function_external_id: External ID of the function the schedules are linked to.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            cron_expression: Cron expression.
+            limit: Maximum schedules to return. Defaults to return all schedules.
 
         Yields:
-            FunctionSchedule | FunctionSchedulesList: Function schedules.
+            Function schedules.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.functions.schedules(
@@ -103,11 +103,11 @@ class SyncFunctionSchedulesAPI(SyncAPIClient):
         `Retrieve a single function schedule by id. <https://developer.cognite.com/api#tag/Function-schedules/operation/byIdsFunctionSchedules>`_
 
         Args:
-            id (int | Sequence[int]): Schedule ID
-            ignore_unknown_ids (bool): Ignore IDs that are not found rather than throw an exception.
+            id: Schedule ID
+            ignore_unknown_ids: Ignore IDs that are not found rather than throw an exception.
 
         Returns:
-            FunctionSchedule | None | FunctionSchedulesList: Requested function schedule or None if not found.
+            Requested function schedule or None if not found.
 
         Examples:
 
@@ -133,15 +133,15 @@ class SyncFunctionSchedulesAPI(SyncAPIClient):
         `List all schedules associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/listFunctionSchedules>`_
 
         Args:
-            name (str | None): Name of the function schedule.
-            function_id (int | None): ID of the function the schedules are linked to.
-            function_external_id (str | None): External ID of the function the schedules are linked to.
-            created_time (dict[str, int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            cron_expression (str | None): Cron expression.
-            limit (int | None): Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
+            name: Name of the function schedule.
+            function_id: ID of the function the schedules are linked to.
+            function_external_id: External ID of the function the schedules are linked to.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            cron_expression: Cron expression.
+            limit: Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
 
         Returns:
-            FunctionSchedulesList: List of function schedules
+            List of function schedules
 
         Examples:
 
@@ -182,18 +182,16 @@ class SyncFunctionSchedulesAPI(SyncAPIClient):
         `Create a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/postFunctionSchedules>`_
 
         Args:
-            name (str | FunctionScheduleWrite): Name of the schedule or FunctionSchedule object. If a function schedule object is passed, the other arguments are ignored except for the client_credentials argument.
-            cron_expression (str | None): Cron expression.
-            function_id (int | None): Id of the function to attach the schedule to.
-            function_external_id (str | None): (DEPRECATED) External id of the function to attach the schedule to.
-                Note: Will be automatically converted to (internal) ID, as schedules must be bound to an ID.
-            client_credentials (dict[str, str] | ClientCredentials | None): Instance of ClientCredentials
-                or a dictionary containing client credentials: 'client_id' and 'client_secret'.
-            description (str | None): Description of the schedule.
-            data (dict[str, object] | None): Data to be passed to the scheduled run.
+            name: Name of the schedule or FunctionSchedule object. If a function schedule object is passed, the other arguments are ignored except for the client_credentials argument.
+            cron_expression: Cron expression.
+            function_id: Id of the function to attach the schedule to.
+            function_external_id: (DEPRECATED) External id of the function to attach the schedule to. Note: Will be automatically converted to (internal) ID, as schedules must be bound to an ID.
+            client_credentials: Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
+            description: Description of the schedule.
+            data: Data to be passed to the scheduled run.
 
         Returns:
-            FunctionSchedule: Created function schedule.
+            Created function schedule.
 
         Note:
             There are several ways to authenticate the function schedule — the order of priority is as follows:
@@ -270,7 +268,7 @@ class SyncFunctionSchedulesAPI(SyncAPIClient):
         `Delete a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/deleteFunctionSchedules>`_
 
         Args:
-            id (int): Id of the schedule
+            id: Id of the schedule
 
         Examples:
 
@@ -288,10 +286,10 @@ class SyncFunctionSchedulesAPI(SyncAPIClient):
         `Retrieve the input data to the associated function. <https://developer.cognite.com/api#tag/Function-schedules/operation/getFunctionScheduleInputData>`_
 
         Args:
-            id (int): Id of the schedule
+            id: Id of the schedule
 
         Returns:
-            dict[str, object] | None: Input data to the associated function or None if not set. This data is passed deserialized into the function through the data argument.
+            Input data to the associated function or None if not set. This data is passed deserialized into the function through the data argument.
 
         Examples:
 

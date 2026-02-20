@@ -1,6 +1,6 @@
 """
 ===============================================================================
-2cef22902bdcc712b1db3783a23ab21c
+ca2227168e0715bbbb728abcc02cabc3
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -41,10 +41,10 @@ class SyncAnnotationsAPI(SyncAPIClient):
         `Create annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsCreate>`_
 
         Args:
-            annotations (Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]): Annotation(s) to create
+            annotations: Annotation(s) to create
 
         Returns:
-            Annotation | AnnotationList: Created annotation(s)
+            Created annotation(s)
         """
         return run_sync(self.__async_client.annotations.create(annotations=annotations))
 
@@ -61,10 +61,10 @@ class SyncAnnotationsAPI(SyncAPIClient):
         `Suggest annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsSuggest>`_
 
         Args:
-            annotations (Annotation | AnnotationWrite | Sequence[Annotation] | Sequence[AnnotationWrite]): annotation(s) to suggest. They must have status set to "suggested".
+            annotations: annotation(s) to suggest. They must have status set to "suggested".
 
         Returns:
-            Annotation | AnnotationList: suggested annotation(s)
+            suggested annotation(s)
         """
         return run_sync(self.__async_client.annotations.suggest(annotations=annotations))
 
@@ -94,11 +94,11 @@ class SyncAnnotationsAPI(SyncAPIClient):
         `Update annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsUpdate>`_
 
         Args:
-            item (Annotation | AnnotationWrite | AnnotationUpdate | Sequence[Annotation | AnnotationWrite | AnnotationUpdate]): Annotation or list of annotations to update (or patch or list of patches to apply)
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Annotation or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: Annotation or list of annotations to update (or patch or list of patches to apply)
+            mode: How to update data when a non-update object is given (Annotation or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            Annotation | AnnotationList: No description.
+            No description.
         """
         return run_sync(self.__async_client.annotations.update(item=item, mode=mode))
 
@@ -107,7 +107,7 @@ class SyncAnnotationsAPI(SyncAPIClient):
         `Delete annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsDelete>`_
 
         Args:
-            id (int | Sequence[int]): ID or list of IDs to be deleted
+            id: ID or list of IDs to be deleted
         """
         return run_sync(self.__async_client.annotations.delete(id=id))
 
@@ -116,10 +116,10 @@ class SyncAnnotationsAPI(SyncAPIClient):
         `Retrieve annotations by IDs <https://developer.cognite.com/api#tag/Annotations/operation/annotationsByids>`_`
 
         Args:
-            ids (Sequence[int]): list of IDs to be retrieved
+            ids: list of IDs to be retrieved
 
         Returns:
-            AnnotationList: list of annotations
+            list of annotations
         """
         return run_sync(self.__async_client.annotations.retrieve_multiple(ids=ids))
 
@@ -128,10 +128,10 @@ class SyncAnnotationsAPI(SyncAPIClient):
         `Retrieve an annotation by id <https://developer.cognite.com/api#tag/Annotations/operation/annotationsGet>`_
 
         Args:
-            id (int): id of the annotation to be retrieved
+            id: id of the annotation to be retrieved
 
         Returns:
-            Annotation | None: annotation requested
+            annotation requested
         """
         return run_sync(self.__async_client.annotations.retrieve(id=id))
 
@@ -140,11 +140,11 @@ class SyncAnnotationsAPI(SyncAPIClient):
         Reverse lookup annotated resources based on having annotations matching the filter.
 
         Args:
-            filter (AnnotationReverseLookupFilter): Filter to apply
-            limit (int | None): Maximum number of results to return. Defaults to None (all).
+            filter: Filter to apply
+            limit: Maximum number of results to return. Defaults to None (all).
 
         Returns:
-            ResourceReferenceList: List of resource references
+            List of resource references
 
         Examples:
 
@@ -167,11 +167,11 @@ class SyncAnnotationsAPI(SyncAPIClient):
             Passing a filter with both 'annotated_resource_type' and 'annotated_resource_ids' is always required.
 
         Args:
-            filter (AnnotationFilter | dict): Return annotations with parameter values that match what is specified.
-            limit (int | None): Maximum number of annotations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            filter: Return annotations with parameter values that match what is specified.
+            limit: Maximum number of annotations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            AnnotationList: list of annotations
+            list of annotations
 
         Example:
 

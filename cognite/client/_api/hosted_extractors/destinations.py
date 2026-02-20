@@ -47,11 +47,11 @@ class DestinationsAPI(APIClient):
         Fetches Destination as they are iterated over, so you keep a limited number of destinations in memory.
 
         Args:
-            chunk_size (int | None): Number of Destinations to return in each chunk. Defaults to yielding one Destination a time.
-            limit (int | None): Maximum number of Destination to return. Defaults to returning all items.
+            chunk_size: Number of Destinations to return in each chunk. Defaults to yielding one Destination a time.
+            limit: Maximum number of Destination to return. Defaults to returning all items.
 
         Yields:
-            Destination | DestinationList: yields Destination one by one if chunk_size is not specified, else DestinationList objects.
+            yields Destination one by one if chunk_size is not specified, else DestinationList objects.
         """  # noqa: DOC404
         self._warning.warn()
 
@@ -79,12 +79,11 @@ class DestinationsAPI(APIClient):
         """`Retrieve one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/retrieve_destinations>`_
 
         Args:
-            external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
-            ignore_unknown_ids (bool): Ignore external IDs that are not found
-
+            external_ids: The external ID provided by the client. Must be unique for the resource type.
+            ignore_unknown_ids: Ignore external IDs that are not found
 
         Returns:
-            Destination | DestinationList: Requested destinations
+            Requested destinations
 
         Examples:
 
@@ -113,9 +112,9 @@ class DestinationsAPI(APIClient):
         """`Delete one or more destsinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/delete_destinations>`_
 
         Args:
-            external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
-            ignore_unknown_ids (bool): Ignore external IDs that are not found
-            force (bool): Delete any jobs associated with each item.
+            external_ids: The external ID provided by the client. Must be unique for the resource type.
+            ignore_unknown_ids: Ignore external IDs that are not found
+            force: Delete any jobs associated with each item.
 
         Examples:
 
@@ -151,10 +150,10 @@ class DestinationsAPI(APIClient):
         """`Create one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/create_destinations>`_
 
         Args:
-            items (DestinationWrite | Sequence[DestinationWrite]): Destination(s) to create.
+            items: Destination(s) to create.
 
         Returns:
-            Destination | DestinationList: Created destination(s)
+            Created destination(s)
 
         Examples:
 
@@ -198,11 +197,11 @@ class DestinationsAPI(APIClient):
         """`Update one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/update_destinations>`_
 
         Args:
-            items (DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]): Destination(s) to update.
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (DestinationWrite). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            items: Destination(s) to update.
+            mode: How to update data when a non-update object is given (DestinationWrite). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            Destination | DestinationList: Updated destination(s)
+            Updated destination(s)
 
         Examples:
 
@@ -232,10 +231,10 @@ class DestinationsAPI(APIClient):
         """`List destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/list_destinations>`_
 
         Args:
-            limit (int | None): Maximum number of destinations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit: Maximum number of destinations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            DestinationList: List of requested destinations
+            List of requested destinations
 
         Examples:
 

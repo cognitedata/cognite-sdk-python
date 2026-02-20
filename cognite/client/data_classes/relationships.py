@@ -37,16 +37,16 @@ class RelationshipCore(WriteableCogniteResource["RelationshipWrite"], ABC):
     """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
 
     Args:
-        external_id (str): External id of the relationship, must be unique within the project.
-        source_external_id (str): External id of the CDF resource that constitutes the relationship source.
-        source_type (str): The CDF resource type of the relationship source. Must be one of the specified values.
-        target_external_id (str): External id of the CDF resource that constitutes the relationship target.
-        target_type (str): The CDF resource type of the relationship target. Must be one of the specified values.
-        start_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
-        end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
-        confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
-        data_set_id (int | None): The id of the dataset this relationship belongs to.
-        labels (list[Label] | None): A list of the labels associated with this resource item.
+        external_id: External id of the relationship, must be unique within the project.
+        source_external_id: External id of the CDF resource that constitutes the relationship source.
+        source_type: The CDF resource type of the relationship source. Must be one of the specified values.
+        target_external_id: External id of the CDF resource that constitutes the relationship target.
+        target_type: The CDF resource type of the relationship target. Must be one of the specified values.
+        start_time: Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
+        end_time: Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
+        confidence: Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
+        data_set_id: The id of the dataset this relationship belongs to.
+        labels: A list of the labels associated with this resource item.
     """
 
     _RESOURCE_TYPE_MAP: typing.ClassVar[dict[str, type[Asset | TimeSeries | FileMetadata | Event | Sequence]]] = {
@@ -103,20 +103,20 @@ class Relationship(RelationshipCore):
     This is the read version of the relationship class, it is used when retrieving from CDF.
 
     Args:
-        external_id (str): External id of the relationship, must be unique within the project.
-        created_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
-        last_updated_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
-        source_external_id (str): External id of the CDF resource that constitutes the relationship source.
-        source_type (str): The CDF resource type of the relationship source. Must be one of the specified values.
-        source (Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None): The full resource referenced by the source_external_id and source_type fields.
-        target_external_id (str): External id of the CDF resource that constitutes the relationship target.
-        target_type (str): The CDF resource type of the relationship target. Must be one of the specified values.
-        target (Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None): The full resource referenced by the target_external_id and target_type fields.
-        start_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
-        end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
-        confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
-        data_set_id (int | None): The id of the dataset this relationship belongs to.
-        labels (SequenceNotStr[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
+        external_id: External id of the relationship, must be unique within the project.
+        created_time: Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
+        last_updated_time: Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
+        source_external_id: External id of the CDF resource that constitutes the relationship source.
+        source_type: The CDF resource type of the relationship source. Must be one of the specified values.
+        source: The full resource referenced by the source_external_id and source_type fields.
+        target_external_id: External id of the CDF resource that constitutes the relationship target.
+        target_type: The CDF resource type of the relationship target. Must be one of the specified values.
+        target: The full resource referenced by the target_external_id and target_type fields.
+        start_time: Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
+        end_time: Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
+        confidence: Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
+        data_set_id: The id of the dataset this relationship belongs to.
+        labels: A list of the labels associated with this resource item.
     """
 
     def __init__(
@@ -243,16 +243,16 @@ class RelationshipWrite(RelationshipCore):
     This is the write version of the relationship class, and is used when creating new relationships.
 
     Args:
-        external_id (str): External id of the relationship, must be unique within the project.
-        source_external_id (str): External id of the CDF resource that constitutes the relationship source.
-        source_type (RelationshipType): The CDF resource type of the relationship source. Must be one of the specified values.
-        target_external_id (str): External id of the CDF resource that constitutes the relationship target.
-        target_type (RelationshipType): The CDF resource type of the relationship target. Must be one of the specified values.
-        start_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
-        end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
-        confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
-        data_set_id (int | None): The id of the dataset this relationship belongs to.
-        labels (SequenceNotStr[Label | str | LabelDefinitionWrite | dict] | None): A list of the labels associated with this resource item.
+        external_id: External id of the relationship, must be unique within the project.
+        source_external_id: External id of the CDF resource that constitutes the relationship source.
+        source_type: The CDF resource type of the relationship source. Must be one of the specified values.
+        target_external_id: External id of the CDF resource that constitutes the relationship target.
+        target_type: The CDF resource type of the relationship target. Must be one of the specified values.
+        start_time: Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
+        end_time: Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
+        confidence: Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
+        data_set_id: The id of the dataset this relationship belongs to.
+        labels: A list of the labels associated with this resource item.
     """
 
     def __init__(
@@ -306,18 +306,18 @@ class RelationshipFilter(CogniteFilter):
     """Filter on relationships with exact match. Multiple filter elements in one property, e.g. `sourceExternalIds: [ "a", "b" ]`, will return all relationships where the `sourceExternalId` field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.
 
     Args:
-        source_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their `sourceExternalId` field
-        source_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their `sourceType` field
-        target_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their `targetExternalId` field
-        target_types (SequenceNotStr[str] | None): Include relationships that have any of these values in their `targetType` field
-        data_set_ids (typing.Sequence[dict[str, Any]] | None): Either one of `internalId` (int) or `externalId` (str)
-        start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
-        end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
-        confidence (dict[str, int] | None): Range to filter the field for (inclusive).
-        last_updated_time (dict[str, int] | None): Range to filter the field for (inclusive).
-        created_time (dict[str, int] | None): Range to filter the field for (inclusive).
-        active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the beginning of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
-        labels (LabelFilter | None): Return only the resource matching the specified label constraints.
+        source_external_ids: Include relationships that have any of these values in their `sourceExternalId` field
+        source_types: Include relationships that have any of these values in their `sourceType` field
+        target_external_ids: Include relationships that have any of these values in their `targetExternalId` field
+        target_types: Include relationships that have any of these values in their `targetType` field
+        data_set_ids: Either one of `internalId` (int) or `externalId` (str)
+        start_time: Range between two timestamps, minimum and maximum milliseconds (inclusive)
+        end_time: Range between two timestamps, minimum and maximum milliseconds (inclusive)
+        confidence: Range to filter the field for (inclusive).
+        last_updated_time: Range to filter the field for (inclusive).
+        created_time: Range to filter the field for (inclusive).
+        active_at_time: Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the beginning of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
+        labels: Return only the resource matching the specified label constraints.
     """
 
     def __init__(
@@ -359,7 +359,7 @@ class RelationshipUpdate(CogniteUpdate):
     """Update applied to a single relationship
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
 
     """
 

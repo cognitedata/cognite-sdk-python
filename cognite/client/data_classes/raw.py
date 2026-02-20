@@ -24,8 +24,8 @@ class RowCore(WriteableCogniteResource["RowWrite"], ABC):
     """No description.
 
     Args:
-        key (str): Unique row key
-        columns (dict[str, Any]): Row data stored as a JSON object.
+        key: Unique row key
+        columns: Row data stored as a JSON object.
     """
 
     def __init__(
@@ -61,7 +61,7 @@ class RowCore(WriteableCogniteResource["RowWrite"], ABC):
         """Convert the instance into a pandas DataFrame.
 
         Returns:
-            pandas.DataFrame: The pandas DataFrame representing this instance.
+            The pandas DataFrame representing this instance.
         """
         pd = local_import("pandas")
         return pd.DataFrame([self.columns], [self.key])
@@ -75,9 +75,9 @@ class Row(RowCore):
     This is the read version of the Row class, which is used when retrieving a row.
 
     Args:
-        key (str): Unique row key
-        columns (dict[str, Any]): Row data stored as a JSON object.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        key: Unique row key
+        columns: Row data stored as a JSON object.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -109,8 +109,8 @@ class RowWrite(RowCore):
     This is the write version of the Row class, which is used when creating a row.
 
     Args:
-        key (str): Unique row key
-        columns (dict[str, Any]): Row data stored as a JSON object.
+        key: Unique row key
+        columns: Row data stored as a JSON object.
     """
 
     def __init__(self, key: str, columns: dict[str, Any]) -> None:
@@ -130,7 +130,7 @@ class RowListCore(WriteableCogniteResourceList[RowWrite, T_Row], ABC):
         """Convert the instance into a pandas DataFrame.
 
         Returns:
-            pandas.DataFrame: The pandas DataFrame representing this instance.
+            The pandas DataFrame representing this instance.
         """
         pd = local_import("pandas")
         if not self:
@@ -159,8 +159,8 @@ class Table(WriteableCogniteResourceWithClientRef["TableWrite"]):
     This is the read version of the Table class, which is used when retrieving a table.
 
     Args:
-        name (str): Unique name of the table
-        created_time (int | None): Time the table was created.
+        name: Unique name of the table
+        created_time: Time the table was created.
     """
 
     def __init__(
@@ -193,11 +193,11 @@ class Table(WriteableCogniteResourceWithClientRef["TableWrite"]):
         """Get the rows in this table.
 
         Args:
-            key (str | None): Specify a key to return only that row.
-            limit (int | None): The number of rows to return.
+            key: Specify a key to return only that row.
+            limit: The number of rows to return.
 
         Returns:
-            Row | RowList | None: List of tables in this database.
+            List of tables in this database.
         """
         if self._db_name is None:
             raise ValueError("Table is not linked to a database, did you instantiate it yourself?")
@@ -224,7 +224,7 @@ class TableWrite(WriteableCogniteResource["TableWrite"]):
     This is the write version of the Table class, which is used when creating a table.
 
     Args:
-        name (str): Unique name of the table
+        name: Unique name of the table
     """
 
     def __init__(self, name: str) -> None:
@@ -255,8 +255,8 @@ class Database(WriteableCogniteResourceWithClientRef["DatabaseWrite"]):
     """A NoSQL database to store customer data.
 
     Args:
-        name (str): Unique name of a database.
-        created_time (int | None): Time the database was created.
+        name: Unique name of a database.
+        created_time: Time the database was created.
     """
 
     def __init__(
@@ -281,10 +281,10 @@ class Database(WriteableCogniteResourceWithClientRef["DatabaseWrite"]):
         """Get the tables in this database.
 
         Args:
-            limit (int | None): The number of tables to return.
+            limit: The number of tables to return.
 
         Returns:
-            TableList: List of tables in this database.
+            List of tables in this database.
         """
         if self.name is None:
             raise ValueError("Unable to list tables, 'name' is not set on instance")
@@ -299,7 +299,7 @@ class DatabaseWrite(WriteableCogniteResource["DatabaseWrite"]):
     """A NoSQL database to store customer data.
 
     Args:
-        name (str): Unique name of a database.
+        name: Unique name of a database.
     """
 
     def __init__(self, name: str) -> None:

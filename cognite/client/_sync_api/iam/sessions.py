@@ -1,6 +1,6 @@
 """
 ===============================================================================
-312e9a2bb82dd0860e0c463ca8ef0a85
+8816a2865e5d5598efb02dc405b9124c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -36,13 +36,8 @@ class SyncSessionsAPI(SyncAPIClient):
         `Create a session. <https://developer.cognite.com/api#tag/Sessions/operation/createSessions>`_
 
         Args:
-            client_credentials (ClientCredentials | None): The client credentials to create the session. This is required
-                if session_type is set to 'CLIENT_CREDENTIALS'.
-            session_type (SessionType | Literal['DEFAULT']): The type of session to create. Can be
-                either 'CLIENT_CREDENTIALS', 'TOKEN_EXCHANGE', 'ONESHOT_TOKEN_EXCHANGE' or 'DEFAULT'.
-                Defaults to 'DEFAULT' which will use -this- AsyncCogniteClient object to create the session.
-                If this client was created using a token, 'TOKEN_EXCHANGE' will be used, and if
-                this client was created using client credentials, 'CLIENT_CREDENTIALS' will be used.
+            client_credentials: The client credentials to create the session. This is required if session_type is set to 'CLIENT_CREDENTIALS'.
+            session_type: The type of session to create. Can be either 'CLIENT_CREDENTIALS', 'TOKEN_EXCHANGE', 'ONESHOT_TOKEN_EXCHANGE' or 'DEFAULT'. Defaults to 'DEFAULT' which will use -this- AsyncCogniteClient object to create the session. If this client was created using a token, 'TOKEN_EXCHANGE' will be used, and if this client was created using client credentials, 'CLIENT_CREDENTIALS' will be used.
 
         Session Types:
 
@@ -51,7 +46,7 @@ class SyncSessionsAPI(SyncAPIClient):
             * **one_shot_token_exchange**: Credentials for a session using one-shot token exchange to reuse the user's credentials. One-shot sessions are short-lived sessions that are not refreshed and do not require support for token exchange from the identity provider.
 
         Returns:
-            CreatedSession: The object with token inspection details.
+            The object with token inspection details.
         """
         return run_sync(
             self.__async_client.iam.sessions.create(client_credentials=client_credentials, session_type=session_type)
@@ -68,10 +63,10 @@ class SyncSessionsAPI(SyncAPIClient):
         `Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_
 
         Args:
-            id (int | Sequence[int]): Id or list of session ids
+            id: Id or list of session ids
 
         Returns:
-            Session | SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
+            LIST capability, then only the session IDs will be present in the response.
         """
         return run_sync(self.__async_client.iam.sessions.revoke(id=id))
 
@@ -88,10 +83,10 @@ class SyncSessionsAPI(SyncAPIClient):
         The request will fail if any of the IDs does not belong to an existing session.
 
         Args:
-            id (int | Sequence[int]): Id or list of session ids
+            id: Id or list of session ids
 
         Returns:
-            Session | SessionList: Session or list of sessions.
+            Session or list of sessions.
         """
         return run_sync(self.__async_client.iam.sessions.retrieve(id=id))
 
@@ -100,10 +95,10 @@ class SyncSessionsAPI(SyncAPIClient):
         `List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_
 
         Args:
-            status (SessionStatus | None): If given, only sessions with the given status are returned.
-            limit (int): Max number of sessions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            status: If given, only sessions with the given status are returned.
+            limit: Max number of sessions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            SessionList: a list of sessions in the current project.
+            a list of sessions in the current project.
         """
         return run_sync(self.__async_client.iam.sessions.list(status=status, limit=limit))

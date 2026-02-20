@@ -185,10 +185,10 @@ class Query(QueryBase["ResultSetExpression", Select]):
     r"""Query allows you to do advanced queries on the data model.
 
     Args:
-        with_ (Mapping[str, ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
-        select (Mapping[str, Select]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
-        parameters (Mapping[str, PropertyValue] | None): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
-        cursors (Mapping[str, str | None] | None): A dictionary of cursors to use in the query. These allow for pagination.
+        with_: A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
+        select: A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
+        parameters: Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
+        cursors: A dictionary of cursors to use in the query. These allow for pagination.
     """
 
     @classmethod
@@ -201,11 +201,11 @@ class QuerySync(QueryBase["ResultSetExpressionSync", SelectSync]):
     r"""Sync allows you to do subscribe to changes in instances.
 
     Args:
-        with_ (Mapping[str, ResultSetExpressionSync]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
-        select (Mapping[str, SelectSync]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
-        parameters (Mapping[str, PropertyValue] | None): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
-        cursors (Mapping[str, str | None] | None): A dictionary of cursors to use in the query. These allow for pagination.
-        allow_expired_cursors_and_accept_missed_deletes (bool): Sync cursors expire after 3 days because soft-deleted instances are cleaned up after this grace period, so a client using a cursor older than that risks missing deletes. If set to True, the API will allow the use of expired cursors.
+        with_: A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
+        select: A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
+        parameters: Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
+        cursors: A dictionary of cursors to use in the query. These allow for pagination.
+        allow_expired_cursors_and_accept_missed_deletes: Sync cursors expire after 3 days because soft-deleted instances are cleaned up after this grace period, so a client using a cursor older than that risks missing deletes. If set to True, the API will allow the use of expired cursors.
     """
 
     allow_expired_cursors_and_accept_missed_deletes: bool = False
@@ -292,13 +292,13 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
     """Describes how to query for nodes in the data model.
 
     Args:
-        from_ (str | None): Chain your result-expression based on this view.
-        filter (Filter | None): Filter the result set based on this filter.
-        sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
-        limit (int | None): Limit the result set to this number of instances.
-        through (list[str] | tuple[str, str, str] | PropertyId | None): Chain your result-expression through this container or view. The property must be a reference to a direct relation property. `from_` must be defined. The tuple must be on the form (space, container, property) or (space, view/version, property).
-        direction (Literal['outwards', 'inwards']): The direction to use when traversing direct relations. Only applicable when through is specified.
-        chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
+        from_: Chain your result-expression based on this view.
+        filter: Filter the result set based on this filter.
+        sort: Sort the result set based on this list of sort criteria.
+        limit: Limit the result set to this number of instances.
+        through: Chain your result-expression through this container or view. The property must be a reference to a direct relation property. `from_` must be defined. The tuple must be on the form (space, container, property) or (space, view/version, property).
+        direction: The direction to use when traversing direct relations. Only applicable when through is specified.
+        chain_to: Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
     """
 
     through: PropertyId | None = None
@@ -360,17 +360,17 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
     """Describes how to query for edges in the data model.
 
     Args:
-        from_ (str | None): Chain your result expression from this edge.
-        max_distance (int | None): The largest - max - number of levels to traverse.
-        direction (Literal['outwards', 'inwards']): The direction to use when traversing.
-        filter (Filter | None): Filter the result set based on this filter.
-        node_filter (Filter | None): Filter the result set based on this filter.
-        termination_filter (Filter | None): Filter the result set based on this filter.
-        limit_each (int | None): Limit the number of returned edges for each of the source nodes in the result set. The indicated uniform limit applies to the result set from the referenced from. limitEach only has meaning when you also specify maxDistance=1 and from.
-        sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
-        post_sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
-        limit (int | None): Limit the result set to this number of instances.
-        chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
+        from_: Chain your result expression from this edge.
+        max_distance: The largest - max - number of levels to traverse.
+        direction: The direction to use when traversing.
+        filter: Filter the result set based on this filter.
+        node_filter: Filter the result set based on this filter.
+        termination_filter: Filter the result set based on this filter.
+        limit_each: Limit the number of returned edges for each of the source nodes in the result set. The indicated uniform limit applies to the result set from the referenced from. limitEach only has meaning when you also specify maxDistance=1 and from.
+        sort: Sort the result set based on this list of sort criteria.
+        post_sort: Sort the result set based on this list of sort criteria.
+        limit: Limit the result set to this number of instances.
+        chain_to: Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
     """
 
     max_distance: int | None = None
@@ -480,15 +480,15 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
     """Describes how to query for nodes in the data model.
 
     Args:
-        from_ (str | None): Chain your result-expression based on this view.
-        filter (Filter | None): Filter the result set based on this filter.
-        limit (int | None): Limit the result set to this number of instances.
-        through (list[str] | tuple[str, str, str] | PropertyId | None): Chain your result-expression through this container or view. The property must be a reference to a direct relation property. `from_` must be defined. The tuple must be on the form (space, container, property) or (space, view/version, property).
-        direction (Literal['outwards', 'inwards']): The direction to use when traversing direct relations. Only applicable when through is specified.
-        chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
-        skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
-        sync_mode (Literal['one_phase', 'two_phase', 'no_backfill'] | None): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
-        backfill_sort (list[InstanceSort] | None): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
+        from_: Chain your result-expression based on this view.
+        filter: Filter the result set based on this filter.
+        limit: Limit the result set to this number of instances.
+        through: Chain your result-expression through this container or view. The property must be a reference to a direct relation property. `from_` must be defined. The tuple must be on the form (space, container, property) or (space, view/version, property).
+        direction: The direction to use when traversing direct relations. Only applicable when through is specified.
+        chain_to: Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
+        skip_already_deleted: If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
+        sync_mode: Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
+        backfill_sort: Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
     """
 
     through: PropertyId | None = None
@@ -567,17 +567,17 @@ class EdgeResultSetExpressionSync(ResultSetExpressionSync):
     """Describes how to query for edges in the data model.
 
     Args:
-        from_ (str | None): Chain your result expression from this edge.
-        max_distance (int | None): The largest - max - number of levels to traverse.
-        direction (Literal['outwards', 'inwards']): The direction to use when traversing.
-        filter (Filter | None): Filter the result set based on this filter.
-        node_filter (Filter | None): Filter the result set based on this filter.
-        termination_filter (Filter | None): Filter the result set based on this filter.
-        limit (int | None): Limit the result set to this number of instances.
-        chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
-        skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
-        sync_mode (Literal['one_phase', 'two_phase', 'no_backfill'] | None): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
-        backfill_sort (list[InstanceSort] | None): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
+        from_: Chain your result expression from this edge.
+        max_distance: The largest - max - number of levels to traverse.
+        direction: The direction to use when traversing.
+        filter: Filter the result set based on this filter.
+        node_filter: Filter the result set based on this filter.
+        termination_filter: Filter the result set based on this filter.
+        limit: Limit the result set to this number of instances.
+        chain_to: Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
+        skip_already_deleted: If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
+        sync_mode: Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
+        backfill_sort: Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
     """
 
     max_distance: int | None = None

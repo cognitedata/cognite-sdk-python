@@ -62,10 +62,10 @@ class AggregateResultItem(CogniteResource):
     """Aggregated metrics of the asset
 
     Args:
-        child_count (int | None): Number of direct descendants for the asset
-        depth (int | None): Asset path depth (number of levels below root node).
-        path (list[dict[str, Any]] | None): IDs of assets on the path to the asset.
-        **_ (Any): No description.
+        child_count: Number of direct descendants for the asset
+        depth: Asset path depth (number of levels below root node).
+        path: IDs of assets on the path to the asset.
+        **_: No description.
     """
 
     def __init__(
@@ -93,21 +93,21 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
     is the read version of the Asset class, it is used when retrieving assets from the Cognite API.
 
     Args:
-        id (int): A server-generated ID for the object.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        name (str | None): The name of the asset.
-        parent_id (int | None): The parent of the node, null if it is the root node.
-        parent_external_id (str | None): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
-        description (str | None): The description of the asset.
-        data_set_id (int | None): The id of the dataset this asset belongs to.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str | None): The source of the asset.
-        labels (list[Label] | None): A list of the labels associated with this resource item.
-        geo_location (GeoLocation | None): The geographic metadata of the asset.
-        root_id (int | None): ID of the root asset.
-        aggregates (AggregateResultItem | None): Aggregated metrics of the asset
+        id: A server-generated ID for the object.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: The name of the asset.
+        parent_id: The parent of the node, null if it is the root node.
+        parent_external_id: The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
+        description: The description of the asset.
+        data_set_id: The id of the dataset this asset belongs to.
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source: The source of the asset.
+        labels: A list of the labels associated with this resource item.
+        geo_location: The geographic metadata of the asset.
+        root_id: ID of the root asset.
+        aggregates: Aggregated metrics of the asset
     """
 
     def __init__(
@@ -192,7 +192,7 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         """Returns this asset's parent.
 
         Returns:
-            Asset: The parent asset.
+            The parent asset.
         """
         if self.parent_id is None:
             raise ValueError("parent_id is None, is this a root asset?")
@@ -206,7 +206,7 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         """Returns the children of this asset.
 
         Returns:
-            AssetList: The requested assets
+            The requested assets
         """
         if self.id is None:
             raise ValueError("Unable to fetch child assets: id is missing")
@@ -220,10 +220,10 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         """Returns the subtree of this asset up to a specified depth.
 
         Args:
-            depth (int | None): Retrieve assets up to this depth below the asset.
+            depth: Retrieve assets up to this depth below the asset.
 
         Returns:
-            AssetList: The requested assets sorted topologically.
+            The requested assets sorted topologically.
         """
         if self.id is None:
             raise ValueError("Unable to fetch asset subtree: id is missing")
@@ -237,9 +237,9 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         """Retrieve all time series related to this asset.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to time_series/list.
+            **kwargs: All extra keyword arguments are passed to time_series/list.
         Returns:
-            TimeSeriesList: All time series related to this asset.
+            All time series related to this asset.
         """
         asset_ids = self._prepare_asset_ids("time series", kwargs)
         return await self._cognite_client.time_series.list(asset_ids=asset_ids, **kwargs)
@@ -252,9 +252,9 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         """Retrieve all sequences related to this asset.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to sequences/list.
+            **kwargs: All extra keyword arguments are passed to sequences/list.
         Returns:
-            SequenceList: All sequences related to this asset.
+            All sequences related to this asset.
         """
         asset_ids = self._prepare_asset_ids("sequences", kwargs)
         return await self._cognite_client.sequences.list(asset_ids=asset_ids, **kwargs)
@@ -267,9 +267,9 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         """Retrieve all events related to this asset.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to events/list.
+            **kwargs: All extra keyword arguments are passed to events/list.
         Returns:
-            EventList: All events related to this asset.
+            All events related to this asset.
         """
         asset_ids = self._prepare_asset_ids("events", kwargs)
         return await self._cognite_client.events.list(asset_ids=asset_ids, **kwargs)
@@ -282,9 +282,9 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         """Retrieve all files metadata related to this asset.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to files/list.
+            **kwargs: All extra keyword arguments are passed to files/list.
         Returns:
-            FileMetadataList: Metadata about all files related to this asset.
+            Metadata about all files related to this asset.
         """
         asset_ids = self._prepare_asset_ids("files", kwargs)
         return await self._cognite_client.files.list(asset_ids=asset_ids, **kwargs)
@@ -321,16 +321,16 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            expand_metadata (bool): Expand the metadata into separate rows (default: False).
-            metadata_prefix (str): Prefix to use for the metadata rows, if expanded.
-            expand_aggregates (bool): Expand the aggregates into separate rows (default: False).
-            aggregates_prefix (str): Prefix to use for the aggregates rows, if expanded.
-            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
-            camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect custom data like metadata if expanded.
-            convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
+            expand_metadata: Expand the metadata into separate rows (default: False).
+            metadata_prefix: Prefix to use for the metadata rows, if expanded.
+            expand_aggregates: Expand the aggregates into separate rows (default: False).
+            aggregates_prefix: Prefix to use for the aggregates rows, if expanded.
+            ignore: List of row keys to skip when converting to a data frame. Is applied before expansions.
+            camel_case: Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect custom data like metadata if expanded.
+            convert_timestamps: Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
-            pandas.DataFrame: The dataframe.
+            The dataframe.
         """
         df = super().to_pandas(
             expand_metadata=expand_metadata,
@@ -353,16 +353,16 @@ class AssetWrite(WriteableCogniteResource["AssetWrite"]):
     write version of the Asset class, and is used when inserting new assets.
 
     Args:
-        name (str): The name of the asset.
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        parent_id (int | None): The parent of the node, null if it is the root node.
-        parent_external_id (str | None): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
-        description (str | None): The description of the asset.
-        data_set_id (int | None): The id of the dataset this asset belongs to.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str | None): The source of the asset.
-        labels (list[Label | str | LabelDefinitionWrite | dict] | None): A list of the labels associated with this resource item.
-        geo_location (GeoLocation | None): The geographic metadata of the asset.
+        name: The name of the asset.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        parent_id: The parent of the node, null if it is the root node.
+        parent_external_id: The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
+        description: The description of the asset.
+        data_set_id: The id of the dataset this asset belongs to.
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source: The source of the asset.
+        labels: A list of the labels associated with this resource item.
+        geo_location: The geographic metadata of the asset.
     """
 
     def __init__(
@@ -423,8 +423,8 @@ class AssetUpdate(CogniteUpdate):
     """Changes applied to asset
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        id: A server-generated ID for the object.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
     """
 
     class _PrimitiveAssetUpdate(CognitePrimitiveUpdate):
@@ -532,9 +532,9 @@ class AssetList(WriteableCogniteResourceListWithClientRef[AssetWrite, Asset], Id
         """Retrieve all time series related to these assets.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to time_series/list. Note: 'partitions' and 'limit' can not be used.
+            **kwargs: All extra keyword arguments are passed to time_series/list. Note: 'partitions' and 'limit' can not be used.
         Returns:
-            TimeSeriesList: All time series related to the assets in this AssetList.
+            All time series related to the assets in this AssetList.
         """
         from cognite.client.data_classes import TimeSeriesList
 
@@ -548,9 +548,9 @@ class AssetList(WriteableCogniteResourceListWithClientRef[AssetWrite, Asset], Id
         """Retrieve all sequences related to these assets.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to sequences/list. Note: 'limit' can not be used.
+            **kwargs: All extra keyword arguments are passed to sequences/list. Note: 'limit' can not be used.
         Returns:
-            SequenceList: All sequences related to the assets in this AssetList.
+            All sequences related to the assets in this AssetList.
         """
         from cognite.client.data_classes import SequenceList
 
@@ -564,9 +564,9 @@ class AssetList(WriteableCogniteResourceListWithClientRef[AssetWrite, Asset], Id
         """Retrieve all events related to these assets.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to events/list. Note: 'sort', 'partitions' and 'limit' can not be used.
+            **kwargs: All extra keyword arguments are passed to events/list. Note: 'sort', 'partitions' and 'limit' can not be used.
         Returns:
-            EventList: All events related to the assets in this AssetList.
+            All events related to the assets in this AssetList.
         """
         from cognite.client.data_classes import EventList
 
@@ -580,9 +580,9 @@ class AssetList(WriteableCogniteResourceListWithClientRef[AssetWrite, Asset], Id
         """Retrieve all files metadata related to these assets.
 
         Args:
-            **kwargs (Any): All extra keyword arguments are passed to files/list. Note: 'limit' can not be used.
+            **kwargs: All extra keyword arguments are passed to files/list. Note: 'limit' can not be used.
         Returns:
-            FileMetadataList: Metadata about all files related to the assets in this AssetList.
+            Metadata about all files related to the assets in this AssetList.
         """
         from cognite.client.data_classes import FileMetadataList
 
@@ -623,19 +623,19 @@ class AssetFilter(CogniteFilter):
     """Filter on assets with strict matching.
 
     Args:
-        name (str | None): The name of the asset.
-        parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
-        parent_external_ids (SequenceNotStr[str] | None): Return only the direct descendants of the specified assets.
-        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include assets in subtrees rooted at the specified asset IDs and external IDs. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        data_set_ids (Sequence[dict[str, Any]] | None): No description.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str | None): The source of the asset.
-        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        root (bool | None): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
-        external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-        labels (LabelFilter | None): Return only the resource matching the specified label constraints.
-        geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
+        name: The name of the asset.
+        parent_ids: Return only the direct descendants of the specified assets.
+        parent_external_ids: Return only the direct descendants of the specified assets.
+        asset_subtree_ids: Only include assets in subtrees rooted at the specified asset IDs and external IDs. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_ids: No description.
+        metadata: Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source: The source of the asset.
+        created_time: Range between two timestamps.
+        last_updated_time: Range between two timestamps.
+        root: Whether the filtered assets are root assets, or not. Set to True to only list root assets.
+        external_id_prefix: Filter by this (case-sensitive) prefix for the external ID.
+        labels: Return only the resource matching the specified label constraints.
+        geo_location: Only include files matching the specified geographic relation.
     """
 
     def __init__(
@@ -691,8 +691,8 @@ class AssetHierarchy:
     any asset providing a parent link by ID instead of external ID, are assumed valid.
 
     Args:
-        assets (Sequence[AssetWrite]): Sequence of assets to be inspected for validity.
-        ignore_orphans (bool): If true, orphan assets are assumed valid and won't raise.
+        assets: Sequence of assets to be inspected for validity.
+        ignore_orphans: If true, orphan assets are assumed valid and won't raise.
 
     Examples:
 
@@ -831,7 +831,7 @@ class AssetHierarchy:
             The same is true for all assets linking its parent by ID.
 
         Returns:
-            dict[str | None, list[AssetWrite]]: No description."""
+            No description."""
         self.is_valid(on_error="raise")
 
         # Sort (on parent) as required by groupby. This is tricky as we need to avoid comparing string with None,
@@ -866,10 +866,10 @@ class AssetHierarchy:
         """Returns a mapping from asset external ID to the size of its subtree (children and children of children etc.).
 
         Args:
-            mapping (dict[str | None, list[AssetWrite]]): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
+            mapping: The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
 
         Returns:
-            dict[str, int]: Lookup from external ID to descendant count.
+            Lookup from external ID to descendant count.
         """
         if mapping is None:
             mapping = self.groupby_parent_xid()

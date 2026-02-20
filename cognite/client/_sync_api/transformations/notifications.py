@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ffb8afc8b8e4dd416046292bf4dddc81
+2fe8cbaf89649aa2c7268da746d6aa29
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -59,14 +59,14 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
         Iterate over transformation notifications
 
         Args:
-            chunk_size (int | None): Number of notifications to yield per chunk. Defaults to yielding notifications one by one.
-            transformation_id (int | None): Filter by transformation internal numeric ID.
-            transformation_external_id (str | None): Filter by transformation externalId.
-            destination (str | None): Filter by notification destination.
-            limit (int | None): Limits the number of results to be returned. Defaults to yielding all notifications.
+            chunk_size: Number of notifications to yield per chunk. Defaults to yielding notifications one by one.
+            transformation_id: Filter by transformation internal numeric ID.
+            transformation_external_id: Filter by transformation externalId.
+            destination: Filter by notification destination.
+            limit: Limits the number of results to be returned. Defaults to yielding all notifications.
 
         Yields:
-            TransformationNotification | TransformationNotificationList: Yields notifications one by one if chunk_size is None, otherwise yields lists of notifications.
+            Yields notifications one by one if chunk_size is None, otherwise yields lists of notifications.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.transformations.notifications(
@@ -99,10 +99,10 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
         `Subscribe for notifications on the transformation errors. <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/createTransformationNotifications>`_
 
         Args:
-            notification (TransformationNotification | TransformationNotificationWrite | Sequence[TransformationNotification] | Sequence[TransformationNotificationWrite]): Notification or list of notifications to create.
+            notification: Notification or list of notifications to create.
 
         Returns:
-            TransformationNotification | TransformationNotificationList: Created notification(s)
+            Created notification(s)
 
         Examples:
 
@@ -128,13 +128,13 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
         `List notification subscriptions. <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/getTransformationNotifications>`_
 
         Args:
-            transformation_id (int | None): Filter by transformation internal numeric ID.
-            transformation_external_id (str | None): Filter by transformation externalId.
-            destination (str | None): Filter by notification destination.
-            limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            transformation_id: Filter by transformation internal numeric ID.
+            transformation_external_id: Filter by transformation externalId.
+            destination: Filter by notification destination.
+            limit: Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
         Returns:
-            TransformationNotificationList: List of transformation notifications
+            List of transformation notifications
 
         Example:
 
@@ -166,7 +166,7 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
         `Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/deleteTransformationNotifications>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of transformation notification ids
+            id: Id or list of transformation notification ids
 
         Examples:
 

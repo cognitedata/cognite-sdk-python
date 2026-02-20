@@ -31,13 +31,10 @@ class LimitsAPI(APIClient):
         Retrieves a limit value by its `limitId`.
 
         Args:
-            id (str): Limit ID to retrieve.
-                Limits are identified by an id containing the service name and a service-scoped limit name.
-                For instance `atlas.monthly_ai_tokens` is the id of the `atlas` service limit `monthly_ai_tokens`.
-                Service and limit names are always in `lower_snake_case`.
+            id: Limit ID to retrieve. Limits are identified by an id containing the service name and a service-scoped limit name. For instance `atlas.monthly_ai_tokens` is the id of the `atlas` service limit `monthly_ai_tokens`. Service and limit names are always in `lower_snake_case`.
 
         Returns:
-            Limit | None: The requested limit, or `None` if not found.
+            The requested limit, or `None` if not found.
 
         Examples:
 
@@ -64,11 +61,11 @@ class LimitsAPI(APIClient):
         Retrieves all limit values for a specific project. Optionally filter by limit ID prefix using a `Prefix` filter.
 
         Args:
-            filter (Prefix | None): Optional `Prefix` filter to apply on the `limitId` property (only `Prefix` filters are supported).
-            limit (int | None): Maximum number of limits to return. Defaults to 25. Set to None or -1 to return all limits
+            filter: Optional `Prefix` filter to apply on the `limitId` property (only `Prefix` filters are supported).
+            limit: Maximum number of limits to return. Defaults to 25. Set to None or -1 to return all limits
 
         Returns:
-            LimitList: List of all limit values in the project.
+            List of all limit values in the project.
 
         Examples:
 

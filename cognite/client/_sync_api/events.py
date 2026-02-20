@@ -1,6 +1,6 @@
 """
 ===============================================================================
-89cb2979c8c928e5dbdc38ec14974271
+77d3ee5e2efc989a1d91bebec687e704
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -114,29 +114,29 @@ class SyncEventsAPI(SyncAPIClient):
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
 
         Args:
-            chunk_size (int | None): Number of events to return in each chunk. Defaults to yielding one event a time.
-            start_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            end_time (dict[str, Any] | EndTimeFilter | None): Range between two timestamps
-            active_at_time (dict[str, Any] | TimestampRange | None): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
-            type (str | None): Type of the event, e.g 'failure'.
-            subtype (str | None): Subtype of the event, e.g 'electrical'.
-            metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
-            asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
-            asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (int | Sequence[int] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include events that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            data_set_ids (int | Sequence[int] | None): Return only events in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only events in the specified data set(s) with this external id / these external ids.
-            source (str | None): The source of this event.
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            external_id_prefix (str | None): External Id provided by client. Should be unique within the project
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
-            limit (int | None): Maximum number of events to return. Defaults to return all items.
-            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+            chunk_size: Number of events to return in each chunk. Defaults to yielding one event a time.
+            start_time: Range between two timestamps
+            end_time: Range between two timestamps
+            active_at_time: Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
+            type: Type of the event, e.g 'failure'.
+            subtype: Subtype of the event, e.g 'electrical'.
+            metadata: Customizable extra data about the event. String key -> String value.
+            asset_ids: Asset IDs of related equipments that this event relates to.
+            asset_external_ids: Asset External IDs of related equipment that this event relates to.
+            asset_subtree_ids: Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids: Only include events that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            data_set_ids: Return only events in the specified data set(s) with this id / these ids.
+            data_set_external_ids: Return only events in the specified data set(s) with this external id / these external ids.
+            source: The source of this event.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            external_id_prefix: External Id provided by client. Should be unique within the project
+            sort: The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            limit: Maximum number of events to return. Defaults to return all items.
+            advanced_filter: Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
 
         Yields:
-            Event | EventList: yields Event one by one if chunk_size is not specified, else EventList objects.
+            yields Event one by one if chunk_size is not specified, else EventList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.events(
@@ -168,11 +168,11 @@ class SyncEventsAPI(SyncAPIClient):
         `Retrieve a single event by id. <https://developer.cognite.com/api#tag/Events/operation/getEventByInternalId>`_
 
         Args:
-            id (int | None): ID
-            external_id (str | None): External ID
+            id: ID
+            external_id: External ID
 
         Returns:
-            Event | None: Requested event or None if it does not exist.
+            Requested event or None if it does not exist.
 
         Examples:
 
@@ -199,12 +199,12 @@ class SyncEventsAPI(SyncAPIClient):
         `Retrieve multiple events by id. <https://developer.cognite.com/api#tag/Events/operation/byIdsEvents>`_
 
         Args:
-            ids (Sequence[int] | None): IDs
-            external_ids (SequenceNotStr[str] | None): External IDs
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            ids: IDs
+            external_ids: External IDs
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            EventList: The requested events.
+            The requested events.
 
         Examples:
 
@@ -236,13 +236,13 @@ class SyncEventsAPI(SyncAPIClient):
         `Get unique properties with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
-            property (EventPropertyLike | None): The property name(s) to apply the aggregation on.
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to consider.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            filter: The filter to narrow down the events to count requiring exact match.
+            property: The property name(s) to apply the aggregation on.
+            advanced_filter: The filter to narrow down the events to consider.
+            aggregate_filter: The filter to apply to the resulting buckets.
 
         Returns:
-            UniqueResultList: List of unique values of events matching the specified filters and search.
+            List of unique values of events matching the specified filters and search.
 
         Examples:
 
@@ -292,13 +292,12 @@ class SyncEventsAPI(SyncAPIClient):
         `Count of event matching the specified filters. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            property (EventPropertyLike | None): If specified, Get an approximate number of Events with a specific property
-                (property is not null) and matching the filters.
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count.
-            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
+            property: If specified, Get an approximate number of Events with a specific property (property is not null) and matching the filters.
+            advanced_filter: The filter to narrow down the events to count.
+            filter: The filter to narrow down the events to count requiring exact match.
 
         Returns:
-            int: The number of events matching the specified filters and search.
+            The number of events matching the specified filters and search.
 
         Examples:
 
@@ -333,12 +332,12 @@ class SyncEventsAPI(SyncAPIClient):
         `Find approximate property count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            property (EventPropertyLike): The property to count the cardinality of.
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
+            property: The property to count the cardinality of.
+            advanced_filter: The filter to narrow down the events to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down the events to count requiring exact match.
         Returns:
-            int: The number of properties matching the specified filter.
+            The number of properties matching the specified filter.
 
         Examples:
 
@@ -374,13 +373,12 @@ class SyncEventsAPI(SyncAPIClient):
         `Find approximate paths count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
-                It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
+            path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
+            advanced_filter: The filter to narrow down the events to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down the events to count requiring exact match.
         Returns:
-            int: The number of properties matching the specified filters and search.
+            The number of properties matching the specified filters and search.
 
         Examples:
 
@@ -409,14 +407,13 @@ class SyncEventsAPI(SyncAPIClient):
         `Get unique paths with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
-                It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the events to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
+            path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
+            advanced_filter: The filter to narrow down the events to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down the events to count requiring exact match.
 
         Returns:
-            UniqueResultList: List of unique values of events matching the specified filters and search.
+            List of unique values of events matching the specified filters and search.
 
         Examples:
 
@@ -446,10 +443,10 @@ class SyncEventsAPI(SyncAPIClient):
         `Create one or more events. <https://developer.cognite.com/api#tag/Events/operation/createEvents>`_
 
         Args:
-            event (Event | EventWrite | Sequence[Event] | Sequence[EventWrite]): Event or list of events to create.
+            event: Event or list of events to create.
 
         Returns:
-            Event | EventList: Created event(s)
+            Created event(s)
 
         Examples:
 
@@ -474,9 +471,9 @@ class SyncEventsAPI(SyncAPIClient):
         `Delete one or more events <https://developer.cognite.com/api#tag/Events/operation/deleteEvents>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            id: Id or list of ids
+            external_id: External ID or list of external ids
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
 
@@ -514,11 +511,11 @@ class SyncEventsAPI(SyncAPIClient):
         `Update one or more events <https://developer.cognite.com/api#tag/Events/operation/updateEvents>`_
 
         Args:
-            item (Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]): Event(s) to update
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Event or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: Event(s) to update
+            mode: How to update data when a non-update object is given (Event or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            Event | EventList: Updated event(s)
+            Updated event(s)
 
         Examples:
 
@@ -550,12 +547,12 @@ class SyncEventsAPI(SyncAPIClient):
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
-            description (str | None): Fuzzy match on description.
-            filter (EventFilter | dict[str, Any] | None): Filter to apply. Performs exact match on these fields.
-            limit (int): Maximum number of results to return.
+            description: Fuzzy match on description.
+            filter: Filter to apply. Performs exact match on these fields.
+            limit: Maximum number of results to return.
 
         Returns:
-            EventList: List of requested events
+            List of requested events
 
         Examples:
 
@@ -585,11 +582,11 @@ class SyncEventsAPI(SyncAPIClient):
             For more details, see :ref:`appendix-upsert`.
 
         Args:
-            item (Event | EventWrite | Sequence[Event | EventWrite]): Event or list of events to upsert.
-            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            item: Event or list of events to upsert.
+            mode: Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
-            Event | EventList: The upserted event(s).
+            The upserted event(s).
 
         Examples:
 
@@ -633,29 +630,29 @@ class SyncEventsAPI(SyncAPIClient):
         `List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 
         Args:
-            start_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-            end_time (dict[str, Any] | EndTimeFilter | None): Range between two timestamps.
-            active_at_time (dict[str, Any] | TimestampRange | None): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
-            type (str | None): Type of the event, e.g 'failure'.
-            subtype (str | None): Subtype of the event, e.g 'electrical'.
-            metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
-            asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
-            asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (int | Sequence[int] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include events that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            data_set_ids (int | Sequence[int] | None): Return only events in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only events in the specified data set(s) with this external id / these external ids.
-            source (str | None): The source of this event.
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
-            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
-            limit (int | None): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+            start_time: Range between two timestamps.
+            end_time: Range between two timestamps.
+            active_at_time: Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
+            type: Type of the event, e.g 'failure'.
+            subtype: Subtype of the event, e.g 'electrical'.
+            metadata: Customizable extra data about the event. String key -> String value.
+            asset_ids: Asset IDs of related equipments that this event relates to.
+            asset_external_ids: Asset External IDs of related equipment that this event relates to.
+            asset_subtree_ids: Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids: Only include events that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            data_set_ids: Return only events in the specified data set(s) with this id / these ids.
+            data_set_external_ids: Return only events in the specified data set(s) with this external id / these external ids.
+            source: The source of this event.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            external_id_prefix: External Id provided by client. Should be unique within the project.
+            sort: The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            partitions: Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
+            limit: Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            advanced_filter: Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
 
         Returns:
-            EventList: List of requested events
+            List of requested events
 
         .. note::
             When using `partitions`, there are few considerations to keep in mind:

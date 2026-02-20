@@ -47,7 +47,7 @@ class AsyncCogniteClient:
     For the synchronous client, see :class:`~cognite.client._cognite_client.CogniteClient`.
 
     Args:
-        config (ClientConfig | None): The configuration for this client.
+        config: The configuration for this client.
     """
 
     _API_VERSION = "v1"
@@ -125,7 +125,7 @@ class AsyncCogniteClient:
         """Returns the current SDK version.
 
         Returns:
-            str: The current SDK version
+            The current SDK version
         """
         from cognite.client import __version__
 
@@ -136,7 +136,7 @@ class AsyncCogniteClient:
         """Returns a config object containing the configuration for the current client.
 
         Returns:
-            ClientConfig: The configuration object.
+            The configuration object.
         """
         return self._config
 
@@ -156,13 +156,13 @@ class AsyncCogniteClient:
         * Base URL: "https://{cdf_cluster}.cognitedata.com/
 
         Args:
-            project (str): The CDF project.
-            cdf_cluster (str): The CDF cluster where the CDF project is located.
-            credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
-            client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
+            project: The CDF project.
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            credentials: Credentials. e.g. Token, ClientCredentials.
+            client_name: A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
+            An AsyncCogniteClient instance with default configurations.
         """
         return cls(ClientConfig.default(project, cdf_cluster, credentials, client_name=client_name))
 
@@ -186,15 +186,15 @@ class AsyncCogniteClient:
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
 
         Args:
-            project (str): The CDF project.
-            cdf_cluster (str): The CDF cluster where the CDF project is located.
-            tenant_id (str): The Azure tenant ID.
-            client_id (str): The Azure client ID.
-            client_secret (str): The Azure client secret.
-            client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
+            project: The CDF project.
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            tenant_id: The Azure tenant ID.
+            client_id: The Azure client ID.
+            client_secret: The Azure client secret.
+            client_name: A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
+            An AsyncCogniteClient instance with default configurations.
         """
         credentials = OAuthClientCredentials.default_for_entra_id(tenant_id, client_id, client_secret, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
@@ -218,14 +218,14 @@ class AsyncCogniteClient:
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
 
         Args:
-            project (str): The CDF project.
-            cdf_cluster (str): The CDF cluster where the CDF project is located.
-            tenant_id (str): The Azure tenant ID.
-            client_id (str): The Azure client ID.
-            client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
+            project: The CDF project.
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            tenant_id: The Azure tenant ID.
+            client_id: The Azure client ID.
+            client_name: A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
+            An AsyncCogniteClient instance with default configurations.
         """
         credentials = OAuthInteractive.default_for_entra_id(tenant_id, client_id, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
@@ -235,10 +235,10 @@ class AsyncCogniteClient:
         """Load a cognite client object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the AsyncCogniteClient class.
+            config: A dictionary or YAML/JSON string containing configuration values defined in the AsyncCogniteClient class.
 
         Returns:
-            AsyncCogniteClient: A cognite client object.
+            A cognite client object.
 
         Examples:
 

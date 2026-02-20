@@ -141,10 +141,10 @@ class MappingWrite(_MappingCore):
     This is the write/request format of a mapping.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        mapping (CustomMapping): The custom mapping.
-        published (bool): Whether this mapping is published and should be available to be used in jobs.
-        input (InputMapping | Literal['csv', 'json', 'xml']): The input mapping. Defaults to 'json'
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        mapping: The custom mapping.
+        published: Whether this mapping is published and should be available to be used in jobs.
+        input: The input mapping. Defaults to 'json'
     """
 
     def __init__(
@@ -189,12 +189,12 @@ class Mapping(_MappingCore):
     This is the read/response format of a mapping.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        mapping (CustomMapping): The custom mapping.
-        published (bool): Whether this mapping is published and should be available to be used in jobs.
-        input (InputMapping): The input mapping.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        mapping: The custom mapping.
+        published: Whether this mapping is published and should be available to be used in jobs.
+        input: The input mapping.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
