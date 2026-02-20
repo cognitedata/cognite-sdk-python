@@ -1,6 +1,6 @@
 """
 ===============================================================================
-627f42fbdbc933e30799270aba58ef0d
+8368bdd19f65023e757c7ab61239919c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -184,8 +184,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
             Filter runs by time ranges:
                 >>> from cognite.client.data_classes.shared import TimestampRange
                 >>> res = client.simulators.runs.list(
-                ...     created_time=TimestampRange(min=0, max=1_700_000_000_000),
-                ...     simulation_time=TimestampRange(min=0, max=1_700_000_000_000),
+                ...     created_time=TimestampRange(min="1d-ago", max="now"),
+                ...     simulation_time=TimestampRange(min="1d-ago", max="now"),
                 ... )
         """
         return run_sync(

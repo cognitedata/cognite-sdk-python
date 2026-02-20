@@ -1,6 +1,6 @@
 """
 ===============================================================================
-1d02275dfbb16469b08dc17b88cc9d14
+13a7de2b1a61099448b86ddf1135519c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -72,8 +72,8 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
                 >>> res = client.simulators.models.revisions.list(
                 ...     model_external_ids=["model1", "model2"],
                 ...     all_versions=True,
-                ...     created_time=TimestampRange(min=0, max=1000000),
-                ...     last_updated_time=TimestampRange(min=0, max=1000000),
+                ...     created_time=TimestampRange(min="1d-ago", max="now"),
+                ...     last_updated_time=TimestampRange(min="1d-ago", max="now"),
                 ...     sort=PropertySort(order="asc", property="createdTime"),
                 ...     limit=10
                 ... )
