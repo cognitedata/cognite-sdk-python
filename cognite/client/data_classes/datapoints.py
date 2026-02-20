@@ -611,6 +611,7 @@ class DatapointsArray(CogniteResource):
         self,
         id: int,
         is_string: bool,
+        type: Literal["numeric", "string", "state"],
         external_id: str | None = None,
         instance_id: NodeId | None = None,
         is_step: bool | None = None,
@@ -647,6 +648,7 @@ class DatapointsArray(CogniteResource):
         self.instance_id = instance_id
         self.is_string = is_string
         self.is_step = is_step
+        self.type = type
         self.unit = unit
         self.unit_external_id = unit_external_id
         self.granularity = granularity
@@ -685,6 +687,7 @@ class DatapointsArray(CogniteResource):
             "instance_id": self.instance_id,
             "is_string": self.is_string,
             "is_step": self.is_step,
+            "type": self.type,
             "unit": self.unit,
             "unit_external_id": self.unit_external_id,
             "granularity": self.granularity,
@@ -738,6 +741,7 @@ class DatapointsArray(CogniteResource):
             is_step=dps_dct.get("isStep"),
             is_string=dps_dct["isString"],
             unit=dps_dct.get("unit"),
+            type=dps_dct["type"],
             granularity=dps_dct.get("granularity"),
             unit_external_id=dps_dct.get("unitExternalId"),
             timestamp=array_by_attr.get("timestamp"),
@@ -923,6 +927,7 @@ class Datapoints(CogniteResource):
     Args:
         id (int | None): Id of the time series the datapoints belong to
         is_string (bool): Whether the time series contains numerical or string data.
+        type (Literal['numeric', 'string', 'state']): The type of the time series.
         external_id (str | None): External id of the time series the datapoints belong to
         instance_id (NodeId | None): The instance id of the time series the datapoints belong to
         is_step (bool | None): Whether the time series is stepwise or continuous.
@@ -960,6 +965,7 @@ class Datapoints(CogniteResource):
         *,
         id: int | None = None,  # TODO: When we stop misusing this for synthetic datapoints
         is_string: bool,
+        type: Literal["numeric", "string", "state"],
         external_id: str | None = None,
         instance_id: NodeId | None = None,
         is_step: bool | None = None,
@@ -996,6 +1002,7 @@ class Datapoints(CogniteResource):
         self.instance_id = instance_id
         self.is_string = is_string
         self.is_step = is_step
+        self.type = type
         self.unit = unit
         self.unit_external_id = unit_external_id
         self.granularity = granularity
@@ -1078,6 +1085,7 @@ class Datapoints(CogniteResource):
             "external_id": self.external_id,
             "is_string": self.is_string,
             "is_step": self.is_step,
+            "type": self.type,
             "unit": self.unit,
             "unit_external_id": self.unit_external_id,
         }
@@ -1138,6 +1146,9 @@ class Datapoints(CogniteResource):
         cls,
         dps_object: dict[str, Any],
     ) -> Datapoints:
+        # The Synthetic Datapoints API doesn't return the type field, but is always numeric according to docs:
+        # TODO: Remove when we add specialized classes for synthetic datapoints...
+        dps_object.setdefault("type", "numeric")
         if dps := dps_object["datapoints"]:
             for dp in dps:
                 dp.setdefault("error", None)
@@ -1159,6 +1170,7 @@ class Datapoints(CogniteResource):
             instance_id=NodeId._load_if(dps_object.get("instanceId")),
             is_string=dps_object["isString"],
             is_step=dps_object.get("isStep"),
+            type=dps_object["type"],
             unit=dps_object.get("unit"),
             unit_external_id=dps_object.get("unitExternalId"),
         )
@@ -1167,6 +1179,7 @@ class Datapoints(CogniteResource):
                 snake_key = to_snake_case(key)
                 setattr(instance, snake_key, [])
             return instance
+
         data_lists = defaultdict(list)
         for row in dps_object["datapoints"]:
             for attr, value in row.items():
@@ -1199,6 +1212,7 @@ class Datapoints(CogniteResource):
             "instance_id",
             "is_string",
             "is_step",
+            "type",
             "unit",
             "unit_external_id",
             "granularity",
@@ -1238,6 +1252,7 @@ class Datapoints(CogniteResource):
             instance_id=self.instance_id,
             is_string=self.is_string,
             is_step=self.is_step,
+            type=self.type,
             unit=self.unit,
             unit_external_id=self.unit_external_id,
             granularity=self.granularity,
