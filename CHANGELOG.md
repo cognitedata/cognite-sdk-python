@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.93.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.92.0...cognite-sdk-python-v7.93.0) (2026-02-20)
+
+
+### Features
+
+* Add deprecation warning for Vision API ([#2469](https://github.com/cognitedata/cognite-sdk-python/issues/2469)) ([ea1b662](https://github.com/cognitedata/cognite-sdk-python/commit/ea1b662b1d252381dfc99d8737539e9119f91f11))
+
 ## [7.92.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.91.2...cognite-sdk-python-v7.92.0) (2026-02-18)
 
 
