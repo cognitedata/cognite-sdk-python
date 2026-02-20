@@ -1,5 +1,5 @@
-Events
-------
+Events (legacy)
+===============
 Retrieve an event by id
 ^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.retrieve
