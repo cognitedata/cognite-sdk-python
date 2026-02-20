@@ -59,7 +59,7 @@ def chat_response_body() -> dict:
 class TestAgentChat:
     def test_chat_simple_message(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
         # Mock the API response
-        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
+        cognite_client.agents._do_request = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
 
         # Test with simple string message
         response = cognite_client.agents.chat(
@@ -67,9 +67,11 @@ class TestAgentChat:
         )
 
         # Verify the request
-        cognite_client.agents._post.assert_called_once()
-        call_args = cognite_client.agents._post.call_args
+        cognite_client.agents._do_request.assert_called_once()
+        call_args = cognite_client.agents._do_request.call_args
+        assert call_args[0][0] == "POST"
         assert call_args[1]["url_path"] == "/ai/agents/chat"
+        assert call_args[1]["timeout"] == 60  # Verify default timeout
         assert call_args[1]["json"]["agentExternalId"] == "my_agent"
         assert len(call_args[1]["json"]["messages"]) == 1
         assert call_args[1]["json"]["messages"][0]["content"]["text"] == "What can you help me with?"
@@ -107,7 +109,7 @@ class TestAgentChat:
         assert response.text == "I can help you with various tasks related to your industrial data."
 
     def test_chat_with_cursor(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
-        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
+        cognite_client.agents._do_request = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
 
         # Test with cursor
         cognite_client.agents.chat(
@@ -117,11 +119,11 @@ class TestAgentChat:
         )
 
         # Verify cursor was included in request
-        call_args = cognite_client.agents._post.call_args
+        call_args = cognite_client.agents._do_request.call_args
         assert call_args[1]["json"]["cursor"] == "previous_cursor_123"
 
     def test_chat_multiple_messages(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
-        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
+        cognite_client.agents._do_request = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
 
         # Test with multiple messages
         messages = [
@@ -131,7 +133,7 @@ class TestAgentChat:
         cognite_client.agents.chat(agent_external_id="my_agent", messages=messages)
 
         # Verify multiple messages were sent
-        call_args = cognite_client.agents._post.call_args
+        call_args = cognite_client.agents._do_request.call_args
         assert len(call_args[1]["json"]["messages"]) == 2
         assert call_args[1]["json"]["messages"][0]["content"]["text"] == "I need help with time series data"
         assert call_args[1]["json"]["messages"][1]["content"]["text"] == "Specifically about temperature sensors"
@@ -155,7 +157,7 @@ class TestAgentChat:
             },
         }
 
-        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: minimal_response))
+        cognite_client.agents._do_request = MagicMock(return_value=MagicMock(json=lambda: minimal_response))
 
         response = cognite_client.agents.chat(agent_external_id="my_agent", messages=Message("Hello"))
 
@@ -163,6 +165,20 @@ class TestAgentChat:
         assert response.messages[0].data is None
         assert response.messages[0].reasoning is None
         assert response.text == "Simple response"
+
+    def test_chat_with_custom_timeout(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
+        cognite_client.agents._do_request = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
+
+        # Test with custom timeout
+        cognite_client.agents.chat(
+            agent_external_id="my_agent",
+            messages=Message("Perform a complex analysis"),
+            timeout=120,
+        )
+
+        # Verify custom timeout was passed
+        call_args = cognite_client.agents._do_request.call_args
+        assert call_args[1]["timeout"] == 120
 
     def test_message_creation_from_string(self) -> None:
         # Test that string is automatically converted to TextContent
