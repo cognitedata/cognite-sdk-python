@@ -606,11 +606,12 @@ class DatapointsArray(CogniteResource):
 
     def __init__(
         self,
-        id: int | None = None,
+        id: int,
+        is_string: bool,
+        is_step: bool,
+        type: Literal["numeric", "string", "state"],
         external_id: str | None = None,
         instance_id: NodeId | None = None,
-        is_string: bool | None = None,
-        is_step: bool | None = None,
         unit: str | None = None,
         unit_external_id: str | None = None,
         granularity: str | None = None,
@@ -644,6 +645,7 @@ class DatapointsArray(CogniteResource):
         self.instance_id = instance_id
         self.is_string = is_string
         self.is_step = is_step
+        self.type = type
         self.unit = unit
         self.unit_external_id = unit_external_id
         self.granularity = granularity
@@ -682,6 +684,7 @@ class DatapointsArray(CogniteResource):
             "instance_id": self.instance_id,
             "is_string": self.is_string,
             "is_step": self.is_step,
+            "type": self.type,
             "unit": self.unit,
             "unit_external_id": self.unit_external_id,
             "granularity": self.granularity,
@@ -729,12 +732,13 @@ class DatapointsArray(CogniteResource):
             with contextlib.suppress(ValueError):  # Dont fail load if invalid (TODO: warn?)
                 timezone = parse_str_timezone(timezone)
         return cls(
-            id=dps_dct.get("id"),
+            id=dps_dct["id"],
             external_id=dps_dct.get("externalId"),
             instance_id=NodeId._load_if(dps_dct.get("instanceId")),
-            is_step=dps_dct.get("isStep"),
-            is_string=dps_dct.get("isString"),
+            is_step=dps_dct["isStep"],
+            is_string=dps_dct["isString"],
             unit=dps_dct.get("unit"),
+            type=dps_dct["type"],
             granularity=dps_dct.get("granularity"),
             unit_external_id=dps_dct.get("unitExternalId"),
             timestamp=array_by_attr.get("timestamp"),
@@ -918,11 +922,12 @@ class Datapoints(CogniteResource):
     """An object representing a list of datapoints.
 
     Args:
-        id (int | None): Id of the time series the datapoints belong to
+        id (int): Id of the time series the datapoints belong to
+        is_string (bool): Whether the time series contains numerical or string data.
+        is_step (bool): Whether the time series is stepwise or continuous.
+        type (Literal['numeric', 'string', 'state']): No description.
         external_id (str | None): External id of the time series the datapoints belong to
         instance_id (NodeId | None): The instance id of the time series the datapoints belong to
-        is_string (bool | None): Whether the time series contains numerical or string data.
-        is_step (bool | None): Whether the time series is stepwise or continuous.
         unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
         unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
@@ -954,11 +959,12 @@ class Datapoints(CogniteResource):
 
     def __init__(
         self,
-        id: int | None = None,
+        id: int,
+        is_string: bool,
+        is_step: bool,
+        type: Literal["numeric", "string", "state"],
         external_id: str | None = None,
         instance_id: NodeId | None = None,
-        is_string: bool | None = None,
-        is_step: bool | None = None,
         unit: str | None = None,
         unit_external_id: str | None = None,
         granularity: str | None = None,
@@ -992,6 +998,7 @@ class Datapoints(CogniteResource):
         self.instance_id = instance_id
         self.is_string = is_string
         self.is_step = is_step
+        self.type = type
         self.unit = unit
         self.unit_external_id = unit_external_id
         self.granularity = granularity
@@ -1074,6 +1081,7 @@ class Datapoints(CogniteResource):
             "external_id": self.external_id,
             "is_string": self.is_string,
             "is_step": self.is_step,
+            "type": self.type,
             "unit": self.unit,
             "unit_external_id": self.unit_external_id,
         }
@@ -1150,11 +1158,12 @@ class Datapoints(CogniteResource):
         dps_object: dict[str, Any],
     ) -> Datapoints:
         instance = cls(
-            id=dps_object.get("id"),
+            id=dps_object["id"],
             external_id=dps_object.get("externalId"),
             instance_id=NodeId._load_if(dps_object.get("instanceId")),
-            is_string=dps_object.get("isString"),
-            is_step=dps_object.get("isStep"),
+            is_string=dps_object["isString"],
+            is_step=dps_object["isStep"],
+            type=dps_object["type"],
             unit=dps_object.get("unit"),
             unit_external_id=dps_object.get("unitExternalId"),
         )
@@ -1195,6 +1204,7 @@ class Datapoints(CogniteResource):
             "instance_id",
             "is_string",
             "is_step",
+            "type",
             "unit",
             "unit_external_id",
             "granularity",
@@ -1234,6 +1244,7 @@ class Datapoints(CogniteResource):
             instance_id=self.instance_id,
             is_string=self.is_string,
             is_step=self.is_step,
+            type=self.type,
             unit=self.unit,
             unit_external_id=self.unit_external_id,
             granularity=self.granularity,
