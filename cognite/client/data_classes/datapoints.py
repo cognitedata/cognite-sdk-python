@@ -1039,12 +1039,9 @@ class Datapoints(CogniteResource):
         return len(self.timestamp)
 
     def __eq__(self, other: Any) -> bool:
-        return (
-            type(self) is type(other)
-            and self.id == other.id
-            and self.external_id == other.external_id
-            and list(self._get_non_empty_data_fields()) == list(other._get_non_empty_data_fields())
-        )
+        # Override CogniteResource __eq__ which checks exact type & dump being equal. We do not want
+        # this: comparing arrays with (mostly) floats is a very bad idea; also dump is exceedingly expensive.
+        return id(self) == id(other)
 
     @overload
     def __getitem__(self, item: int) -> Datapoint: ...
