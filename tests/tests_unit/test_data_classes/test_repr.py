@@ -42,8 +42,8 @@ class TestRepr:
         "inst",
         (
             Datapoint(timestamp=0, value=0),
-            Datapoints(id=1),
-            Datapoints(instance_id=NodeId("space", "xid")),
+            Datapoints(id=1, is_string=False, is_step=False, type="numeric"),
+            Datapoints(id=0, is_string=False, is_step=False, type="numeric", instance_id=NodeId("space", "xid")),
         ),
     )
     def test_repr_html_dps_classes(self, inst: CogniteResource) -> None:
@@ -52,10 +52,19 @@ class TestRepr:
     def test_repr_html_dps_classes_with_numpy(self) -> None:
         import numpy as np
 
-        arr1 = DatapointsArray(id=1, timestamp=np.array([], dtype="datetime64[ns]"))
+        arr1 = DatapointsArray(
+            id=1, is_string=False, is_step=False, type="numeric", timestamp=np.array([], dtype="datetime64[ns]")
+        )
         assert len(arr1._repr_html_()) > 0
 
-        arr2 = DatapointsArray(instance_id=NodeId("space", "xid"), timestamp=np.array([], dtype="datetime64[ns]"))
+        arr2 = DatapointsArray(
+            id=0,
+            is_string=False,
+            is_step=False,
+            type="numeric",
+            instance_id=NodeId("space", "xid"),
+            timestamp=np.array([], dtype="datetime64[ns]"),
+        )
         assert len(arr2._repr_html_()) > 0
 
     @pytest.mark.parametrize(
@@ -82,8 +91,10 @@ class TestRepr:
                     )
                 ]
             ),
-            DatapointsList([Datapoints(id=1)]),
-            DatapointsList([Datapoints(instance_id=NodeId("space", "xid"))]),
+            DatapointsList([Datapoints(id=1, is_string=False, is_step=False, type="numeric")]),
+            DatapointsList(
+                [Datapoints(id=0, is_string=False, is_step=False, type="numeric", instance_id=NodeId("space", "xid"))]
+            ),
             TableList([Table(name="bla", created_time=123)]),
             RowList([Row("row", columns={}, last_updated_time=123)]),
         ),
