@@ -11,7 +11,7 @@ class UnitSystemAPI(APIClient):
         """`List all supported unit systems <https://developer.cognite.com/api#tag/Unit-Systems/operation/listUnitSystems>`_
 
         Returns:
-            UnitSystemList: List of unit systems
+            List of unit systems
 
         Examples:
 

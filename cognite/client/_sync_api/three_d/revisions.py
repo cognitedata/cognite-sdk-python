@@ -1,6 +1,6 @@
 """
 ===============================================================================
-edd0706bfc08e69741933f0ef59dec72
+cc358eab067a2c063e28b6128b2b1abf
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -45,13 +45,13 @@ class Sync3DRevisionsAPI(SyncAPIClient):
         Fetches 3d model revisions as they are iterated over, so you keep a limited number of 3d model revisions in memory.
 
         Args:
-            model_id (int): Iterate over revisions for the model with this id.
-            chunk_size (int | None): Number of 3d model revisions to return in each chunk. Defaults to yielding one model a time.
-            published (bool): Filter based on whether or not the revision has been published.
-            limit (int | None): Maximum number of 3d model revisions to return. Defaults to return all items.
+            model_id: Iterate over revisions for the model with this id.
+            chunk_size: Number of 3d model revisions to return in each chunk. Defaults to yielding one model a time.
+            published: Filter based on whether or not the revision has been published.
+            limit: Maximum number of 3d model revisions to return. Defaults to return all items.
 
         Yields:
-            ThreeDModelRevision | ThreeDModelRevisionList: yields ThreeDModelRevision one by one if chunk is not specified, else ThreeDModelRevisionList objects.
+            yields ThreeDModelRevision one by one if chunk is not specified, else ThreeDModelRevisionList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.three_d.revisions(
@@ -67,11 +67,11 @@ class Sync3DRevisionsAPI(SyncAPIClient):
         `Retrieve a 3d model revision by id <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevision>`_
 
         Args:
-            model_id (int): Get the revision under the model with this id.
-            id (int): Get the model revision with this id.
+            model_id: Get the revision under the model with this id.
+            id: Get the model revision with this id.
 
         Returns:
-            ThreeDModelRevision | None: The requested 3d model revision.
+            The requested 3d model revision.
 
         Example:
 
@@ -106,11 +106,11 @@ class Sync3DRevisionsAPI(SyncAPIClient):
         `Create a revisions for a specified 3d model. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/create3DRevisions>`_
 
         Args:
-            model_id (int): Create revisions for this model.
-            revision (ThreeDModelRevision | ThreeDModelRevisionWrite | Sequence[ThreeDModelRevision] | Sequence[ThreeDModelRevisionWrite]): The revision(s) to create.
+            model_id: Create revisions for this model.
+            revision: The revision(s) to create.
 
         Returns:
-            ThreeDModelRevision | ThreeDModelRevisionList: The created revision(s)
+            The created revision(s)
 
         Example:
 
@@ -132,12 +132,12 @@ class Sync3DRevisionsAPI(SyncAPIClient):
         `List 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevisions>`_
 
         Args:
-            model_id (int): List revisions under the model with this id.
-            published (bool): Filter based on whether or not the revision is published.
-            limit (int | None): Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            model_id: List revisions under the model with this id.
+            published: Filter based on whether or not the revision is published.
+            limit: Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            ThreeDModelRevisionList: The list of 3d model revisions.
+            The list of 3d model revisions.
 
         Example:
 
@@ -162,12 +162,12 @@ class Sync3DRevisionsAPI(SyncAPIClient):
         `Update 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/update3DRevisions>`_
 
         Args:
-            model_id (int): Update the revision under the model with this id.
-            item (ThreeDModelRevision | ThreeDModelRevisionUpdate | Sequence[ThreeDModelRevision | ThreeDModelRevisionUpdate]): ThreeDModelRevision(s) to update
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (ThreeDModelRevision or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            model_id: Update the revision under the model with this id.
+            item: ThreeDModelRevision(s) to update
+            mode: How to update data when a non-update object is given (ThreeDModelRevision or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            ThreeDModelRevision | ThreeDModelRevisionList: Updated ThreeDModelRevision(s)
+            Updated ThreeDModelRevision(s)
 
         Examples:
 
@@ -193,8 +193,8 @@ class Sync3DRevisionsAPI(SyncAPIClient):
         `Delete 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/delete3DRevisions>`_
 
         Args:
-            model_id (int): Delete the revision under the model with this id.
-            id (int | Sequence[int]): ID or list of IDs to delete.
+            model_id: Delete the revision under the model with this id.
+            id: ID or list of IDs to delete.
 
         Example:
 
@@ -212,9 +212,9 @@ class Sync3DRevisionsAPI(SyncAPIClient):
         `Update a revision thumbnail. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/updateThumbnail>`_
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
-            file_id (int): Id of the thumbnail file in the Files API.
+            model_id: Id of the model.
+            revision_id: Id of the revision.
+            file_id: Id of the thumbnail file in the Files API.
 
         Example:
 
@@ -248,16 +248,16 @@ class Sync3DRevisionsAPI(SyncAPIClient):
         the resulting subtree with the 'depth' query parameter.
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
-            node_id (int | None): ID of the root node of the subtree you request (default is the root node).
-            depth (int | None): Get sub nodes up to this many levels below the specified node. Depth 0 is the root node.
-            sort_by_node_id (bool): Returns the nodes in `nodeId` order.
-            partitions (int | None): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
-            limit (int | None): Maximum number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            model_id: Id of the model.
+            revision_id: Id of the revision.
+            node_id: ID of the root node of the subtree you request (default is the root node).
+            depth: Get sub nodes up to this many levels below the specified node. Depth 0 is the root node.
+            sort_by_node_id: Returns the nodes in `nodeId` order.
+            partitions: The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
+            limit: Maximum number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            ThreeDNodeList: The list of 3d nodes.
+            The list of 3d nodes.
 
         Example:
 
@@ -292,14 +292,14 @@ class Sync3DRevisionsAPI(SyncAPIClient):
         `List nodes in a revision, filtered by node property values. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/filter3DNodes>`_
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
-            properties (dict[str, dict[str, SequenceNotStr[str]]] | None): Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the category+property combination with a value that is contained within the corresponding list in the filter.
-            limit (int | None): Maximum number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            partitions (int | None): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
+            model_id: Id of the model.
+            revision_id: Id of the revision.
+            properties: Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the category+property combination with a value that is contained within the corresponding list in the filter.
+            limit: Maximum number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions: The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
 
         Returns:
-            ThreeDNodeList: The list of 3d nodes.
+            The list of 3d nodes.
 
         Example:
 
@@ -323,13 +323,13 @@ class Sync3DRevisionsAPI(SyncAPIClient):
         `Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodeAncestors>`_
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
-            node_id (int | None): ID of the node to get the ancestors of.
-            limit (int | None): Maximum number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            model_id: Id of the model.
+            revision_id: Id of the revision.
+            node_id: ID of the node to get the ancestors of.
+            limit: Maximum number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            ThreeDNodeList: The list of 3d nodes.
+            The list of 3d nodes.
 
         Example:
 

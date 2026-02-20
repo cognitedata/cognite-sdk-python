@@ -18,36 +18,36 @@ class GlobalConfig:
     """Global configuration object
 
     Attributes:
-        default_client_config (Optional[ClientConfig]): A default instance of a client configuration. This will be used
+        default_client_config: A default instance of a client configuration. This will be used
             by the AsyncCogniteClient or CogniteClient constructor if no config is passed directly. Defaults to None.
-        disable_gzip (bool): Whether or not to disable gzipping of json bodies. Defaults to False.
-        disable_pypi_version_check (bool): Whether or not to check for newer SDK versions when instantiating a new client.
+        disable_gzip: Whether or not to disable gzipping of json bodies. Defaults to False.
+        disable_pypi_version_check: Whether or not to check for newer SDK versions when instantiating a new client.
             Defaults to False.
-        status_forcelist (Set[int]): HTTP status codes to retry. Defaults to {429, 502, 503, 504}
-        max_retries (int): Max number of retries on a given http request. Defaults to 10.
-        max_retries_connect (int): Max number of retries on connection errors. Defaults to 3.
-        max_retry_backoff (int): Retry strategy employs exponential backoff. This parameter sets a max on the amount of
+        status_forcelist: HTTP status codes to retry. Defaults to {429, 502, 503, 504}
+        max_retries: Max number of retries on a given http request. Defaults to 10.
+        max_retries_connect: Max number of retries on connection errors. Defaults to 3.
+        max_retry_backoff: Retry strategy employs exponential backoff. This parameter sets a max on the amount of
             backoff after any request failure. Defaults to 60.
-        max_connection_pool_size (int): The maximum number of connections which will be kept in the SDKs connection pool.
+        max_connection_pool_size: The maximum number of connections which will be kept in the SDKs connection pool.
             Defaults to 20.
-        disable_ssl (bool): Whether or not to disable SSL. Defaults to False
-        proxy (str | None): Route all traffic (HTTP and HTTPS) via this proxy, e.g. "http://localhost:8030".
+        disable_ssl: Whether or not to disable SSL. Defaults to False
+        proxy: Route all traffic (HTTP and HTTPS) via this proxy, e.g. "http://localhost:8030".
             For proxy authentication, embed credentials in the URL: "http://user:pass@localhost:8030".
             Defaults to None (no proxy).
-        max_workers (int): DEPRECATED: Use 'concurrency_settings' instead. Maximum number of concurrent API calls. Defaults to 5.
-        concurrency_settings (ConcurrencySettings): Settings controlling the maximum number of concurrent API requests
+        max_workers: DEPRECATED: Use 'concurrency_settings' instead. Maximum number of concurrent API calls. Defaults to 5.
+        concurrency_settings: Settings controlling the maximum number of concurrent API requests
             for different API categories (general, raw, data_modeling etc.). These settings are frozen after the
             first API request is made. See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
-        follow_redirects (bool): Whether or not to follow redirects. Defaults to False.
-        file_download_chunk_size (int | None): Specify the file chunk size for streaming file downloads. When not specified
+        follow_redirects: Whether or not to follow redirects. Defaults to False.
+        file_download_chunk_size: Specify the file chunk size for streaming file downloads. When not specified
             (default is None), the actual chunk size is determined by the underlying transport, which in turn is based on the
             size of the data packets being read from the network socket. The chunks will be of a variable and unpredictable
             size, but optimized for network efficiency (best download speed).
-        file_upload_chunk_size (int | None): Override the chunk size for streaming file uploads. Defaults to None, which
+        file_upload_chunk_size: Override the chunk size for streaming file uploads. Defaults to None, which
             translates to 65536 (64KiB chunks).
-        silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
+        silence_feature_preview_warnings: Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
-        event_loop (asyncio.AbstractEventLoop | None): Override the default event loop used by the SDK.
+        event_loop: Override the default event loop used by the SDK.
     """
 
     def __new__(cls) -> GlobalConfig:
@@ -115,7 +115,7 @@ class GlobalConfig:
             This must be done before instantiating an AsyncCogniteClient for the configuration to take effect.
 
         Args:
-            settings (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the GlobalConfig class.
+            settings: A dictionary or YAML/JSON string containing configuration values defined in the GlobalConfig class.
 
         Examples:
 
@@ -158,19 +158,16 @@ class ClientConfig:
     """Configuration object for the client
 
     Args:
-        client_name (str): A user-defined name for the client. Used to identify number of unique applications/scripts running on top of CDF.
-        project (str): CDF Project name.
-        credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
-        api_subversion (str | None): API subversion
-        base_url (str | None): Base url to send requests to. Typically on the form 'https://<cluster>.cognitedata.com'.
-            Either base_url or cluster must be provided.
-        cluster (str | None): The cluster where the CDF project is located. When passed, it is assumed that the base
-            URL can be constructed as: 'https://<cluster>.cognitedata.com'. Either base_url or cluster must be provided.
-        headers (dict[str, str] | None): Additional headers to add to all requests.
-        timeout (int | None): Timeout on requests sent to the api. Defaults to 60 seconds.
-        file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
-        debug (bool): Enables debug logging to stderr. This includes full request/response details and logs regarding retry
-            attempts (e.g., on 429 throttling or 5xx errors).
+        client_name: A user-defined name for the client. Used to identify number of unique applications/scripts running on top of CDF.
+        project: CDF Project name.
+        credentials: Credentials. e.g. Token, ClientCredentials.
+        api_subversion: API subversion
+        base_url: Base url to send requests to. Typically on the form 'https://<cluster>.cognitedata.com'. Either base_url or cluster must be provided.
+        cluster: The cluster where the CDF project is located. When passed, it is assumed that the base URL can be constructed as: 'https://<cluster>.cognitedata.com'. Either base_url or cluster must be provided.
+        headers: Additional headers to add to all requests.
+        timeout: Timeout on requests sent to the api. Defaults to 60 seconds.
+        file_transfer_timeout: Timeout on file upload/download requests. Defaults to 600 seconds.
+        debug: Enables debug logging to stderr. This includes full request/response details and logs regarding retry attempts (e.g., on 429 throttling or 5xx errors).
     """
 
     def __init__(
@@ -259,13 +256,13 @@ class ClientConfig:
         """Create a default client config object.
 
         Args:
-            project (str): CDF Project name.
-            cdf_cluster (str): The CDF cluster where the CDF project is located.
-            credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
-            client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
+            project: CDF Project name.
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            credentials: Credentials. e.g. Token, ClientCredentials.
+            client_name: A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            ClientConfig: A default client config object.
+            A default client config object.
         """
 
         return cls(
@@ -280,10 +277,10 @@ class ClientConfig:
         """Load a client config object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the ClientConfig class.
+            config: A dictionary or YAML/JSON string containing configuration values defined in the ClientConfig class.
 
         Returns:
-            ClientConfig: A client config object.
+            A client config object.
 
         Examples:
 

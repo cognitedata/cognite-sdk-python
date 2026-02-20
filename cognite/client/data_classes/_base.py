@@ -89,10 +89,10 @@ class CogniteResource(ABC):
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            dict[str, Any]: A dictionary representation of the instance.
+            A dictionary representation of the instance.
         """
         return basic_instance_dump(self, camel_case=camel_case)
 
@@ -100,7 +100,7 @@ class CogniteResource(ABC):
         """Dump the instance into a YAML formatted string.
 
         Returns:
-            str: A YAML formatted string representing the instance.
+            A YAML formatted string representing the instance.
         """
         yaml = local_import("yaml")
         return yaml.safe_dump(self.dump(camel_case=True), sort_keys=False)
@@ -122,10 +122,10 @@ class CogniteResource(ABC):
         Subclasses must implement this method to handle their specific resource loading logic.
 
         Args:
-            resource (dict[str, Any]): The resource to load.
+            resource: The resource to load.
 
         Returns:
-            Self: The loaded resource.
+            The loaded resource.
         """
         raise NotImplementedError
 
@@ -147,14 +147,14 @@ class CogniteResource(ABC):
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            expand_metadata (bool): Expand the metadata into separate rows (default: False).
-            metadata_prefix (str): Prefix to use for the metadata rows, if expanded.
-            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
-            camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect custom data like metadata if expanded.
-            convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
+            expand_metadata: Expand the metadata into separate rows (default: False).
+            metadata_prefix: Prefix to use for the metadata rows, if expanded.
+            ignore: List of row keys to skip when converting to a data frame. Is applied before expansions.
+            camel_case: Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect custom data like metadata if expanded.
+            convert_timestamps: Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
-            pandas.DataFrame: The dataframe.
+            The dataframe.
         """
         pd = local_import("pandas")
 
@@ -303,10 +303,10 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            list[dict[str, Any]]: A list of dicts representing the instance.
+            A list of dicts representing the instance.
         """
         return [resource.dump(camel_case) for resource in self.data]
 
@@ -314,7 +314,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         """Dump the instances into a YAML formatted string.
 
         Returns:
-            str: A YAML formatted string representing the instances.
+            A YAML formatted string representing the instances.
         """
         yaml = local_import("yaml")
         return yaml.safe_dump(self.dump(camel_case=True), sort_keys=False)
@@ -328,12 +328,12 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         """Get an item from this list by id, external_id or instance_id.
 
         Args:
-            id (int | None): The id of the item to get.
-            external_id (str | None): The external_id of the item to get.
-            instance_id (InstanceId | tuple[str, str] | None): The instance_id of the item to get.
+            id: The id of the item to get.
+            external_id: The external_id of the item to get.
+            instance_id: The instance_id of the item to get.
 
         Returns:
-            T_CogniteResource | None: The requested item if present, otherwise None.
+            The requested item if present, otherwise None.
         """
         (ident := IdentifierSequence.load(id, external_id, instance_id)).assert_singleton()
         if id:
@@ -354,13 +354,13 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         keys in the metadata that already exist in the DataFrame, then an error will be raised by pd.join.
 
         Args:
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
-            expand_metadata (bool): Expand the metadata column into separate columns.
-            metadata_prefix (str): Prefix to use for metadata columns.
-            convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
+            camel_case: Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+            expand_metadata: Expand the metadata column into separate columns.
+            metadata_prefix: Prefix to use for metadata columns.
+            convert_timestamps: Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
-            pandas.DataFrame: The Cognite resource as a dataframe.
+            The Cognite resource as a dataframe.
         """
         pd = local_import("pandas")
         from cognite.client.utils._pandas_helpers import (
@@ -419,10 +419,10 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         """This method dumps the list with extra information in addition to the items.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            dict[str, Any]: A dictionary representation of the list.
+            A dictionary representation of the list.
         """
         return {"items": [resource.dump(camel_case) for resource in self.data]}
 
@@ -581,10 +581,10 @@ class CogniteUpdate:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (Literal[True]): No description.
+            camel_case: No description.
 
         Returns:
-            dict[str, Any]: A dictionary representation of the instance.
+            A dictionary representation of the instance.
         """
         dumped: dict[str, Any] = {"update": self._update_object}
         if self._id is not None:
@@ -694,10 +694,10 @@ class CogniteFilter(ABC):
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            dict[str, Any]: A dictionary representation of the instance.
+            A dictionary representation of the instance.
         """
         return basic_instance_dump(self, camel_case=camel_case)
 
@@ -831,7 +831,7 @@ class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):
             ValueError: If any resource in the list does not have an external id.
 
         Returns:
-            list[str]: The external ids of all resources in the list.
+            The external ids of all resources in the list.
         """
         external_ids: list[str] = []
         for x in self:
@@ -850,7 +850,7 @@ class NameTransformerMixin(Sequence[HasName], ABC):
             ValueError: If any resource in the list does not have a name.
 
         Returns:
-            list[str]: The names of all resources in the list.
+            The names of all resources in the list.
         """
         names: list[str] = []
         for x in self:
@@ -869,7 +869,7 @@ class InternalIdTransformerMixin(Sequence[HasInternalId], ABC):
             ValueError: If any resource in the list does not have an id.
 
         Returns:
-            list[int]: The ids of all resources in the list.
+            The ids of all resources in the list.
         """
         ids: list[int] = []
         for x in self:

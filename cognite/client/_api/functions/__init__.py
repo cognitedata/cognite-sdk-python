@@ -115,18 +115,18 @@ class FunctionsAPI(APIClient):
         """Iterate over functions.
 
         Args:
-            chunk_size (int | None): Number of functions to yield per chunk. Defaults to yielding functions one by one.
-            name (str | None): The name of the function.
-            owner (str | None): Owner of the function.
-            file_id (int | None): The file ID of the zip-file used to create the function.
-            status (FunctionStatus | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
-            external_id_prefix (str | None): External ID prefix to filter on.
-            created_time (dict[Literal['min', 'max'], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            metadata (dict[str, str] | None): No description.
-            limit (int | None): Maximum number of functions to return. Defaults to yielding all functions.
+            chunk_size: Number of functions to yield per chunk. Defaults to yielding functions one by one.
+            name: The name of the function.
+            owner: Owner of the function.
+            file_id: The file ID of the zip-file used to create the function.
+            status: Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
+            external_id_prefix: External ID prefix to filter on.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            metadata: No description.
+            limit: Maximum number of functions to return. Defaults to yielding all functions.
 
         Yields:
-            Function | FunctionList: An iterator over functions.
+            An iterator over functions.
         """  # noqa: DOC404
         # The _list_generator method is not used as the /list endpoint does not
         # respond with a cursor (pagination is not supported)
@@ -185,28 +185,27 @@ class FunctionsAPI(APIClient):
         For help with troubleshooting, please see `this page. <https://docs.cognite.com/cdf/functions/known_issues/>`_
 
         Args:
-            name (str | FunctionWrite): The name of the function or a FunctionWrite object. If a FunctionWrite
-                object is passed, all other arguments are ignored.
-            folder (str | None): Path to the folder where the function source code is located.
-            file_id (int | None): File ID of the code uploaded to the Files API.
-            function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
-            function_handle (FunctionHandle | None): Reference to a function object, which must be named `handle`.
-            external_id (str | None): External id of the function.
-            description (str | None): Description of the function.
-            owner (str | None): Owner of this function. Typically used to know who created it.
-            secrets (dict[str, str] | None): Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
-            env_vars (dict[str, str] | None): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
-            cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            runtime (RunTime | None): The function runtime. Valid values are ["py310", "py311", "py312", `None`], and `None` translates to the API default which will change over time. The runtime "py312" resolves to the latest version of the Python 3.12 series.
-            metadata (dict[str, str] | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
-            index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-            extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-            skip_folder_validation (bool): When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
-            data_set_id (int | None): Data set to upload the function code to. Note: Does not affect the function itself.
+            name: The name of the function or a FunctionWrite object. If a FunctionWrite object is passed, all other arguments are ignored.
+            folder: Path to the folder where the function source code is located.
+            file_id: File ID of the code uploaded to the Files API.
+            function_path: Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
+            function_handle: Reference to a function object, which must be named `handle`.
+            external_id: External id of the function.
+            description: Description of the function.
+            owner: Owner of this function. Typically used to know who created it.
+            secrets: Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
+            env_vars: Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
+            cpu: Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            memory: Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            runtime: The function runtime. Valid values are ["py310", "py311", "py312", `None`], and `None` translates to the API default which will change over time. The runtime "py312" resolves to the latest version of the Python 3.12 series.
+            metadata: Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
+            index_url: Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            extra_index_urls: Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            skip_folder_validation: When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
+            data_set_id: Data set to upload the function code to. Note: Does not affect the function itself.
 
         Returns:
-            Function: The created function.
+            The created function.
 
         Examples:
 
@@ -345,8 +344,8 @@ class FunctionsAPI(APIClient):
         """`Delete one or more functions. <https://developer.cognite.com/api#tag/Functions/operation/deleteFunctions>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids.
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids.
+            id: Id or list of ids.
+            external_id: External ID or list of external ids.
 
         Example:
 
@@ -376,17 +375,17 @@ class FunctionsAPI(APIClient):
         """`List all functions. <https://developer.cognite.com/api#tag/Functions/operation/listFunctions>`_
 
         Args:
-            name (str | None): The name of the function.
-            owner (str | None): Owner of the function.
-            file_id (int | None): The file ID of the zip-file used to create the function.
-            status (FunctionStatus | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
-            external_id_prefix (str | None): External ID prefix to filter on.
-            created_time (dict[Literal['min', 'max'], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32, value 512 characters, up to 16 key-value pairs. Maximum size of entire metadata is 4096 bytes.
-            limit (int | None): Maximum number of functions to return. Pass in -1, float('inf') or None to list all.
+            name: The name of the function.
+            owner: Owner of the function.
+            file_id: The file ID of the zip-file used to create the function.
+            status: Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
+            external_id_prefix: External ID prefix to filter on.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32, value 512 characters, up to 16 key-value pairs. Maximum size of entire metadata is 4096 bytes.
+            limit: Maximum number of functions to return. Pass in -1, float('inf') or None to list all.
 
         Returns:
-            FunctionList: List of functions
+            List of functions
 
         Example:
 
@@ -425,11 +424,11 @@ class FunctionsAPI(APIClient):
         """`Retrieve a single function by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
 
         Args:
-            id (int | None): ID
-            external_id (str | None): External ID
+            id: ID
+            external_id: External ID
 
         Returns:
-            Function | None: Requested function or None if it does not exist.
+            Requested function or None if it does not exist.
 
         Examples:
 
@@ -456,12 +455,12 @@ class FunctionsAPI(APIClient):
         """`Retrieve multiple functions by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
 
         Args:
-            ids (Sequence[int] | None): IDs
-            external_ids (SequenceNotStr[str] | None): External IDs
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            ids: IDs
+            external_ids: External IDs
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            FunctionList: The requested functions.
+            The requested functions.
 
         Examples:
 
@@ -496,17 +495,17 @@ class FunctionsAPI(APIClient):
         """`Call a function by its ID or external ID. <https://developer.cognite.com/api#tag/Function-calls/operation/postFunctionsCall>`_.
 
         Args:
-            id (int | None): ID
-            external_id (str | None): External ID
-            data (dict[str, object] | None): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.'
-            wait (bool): Wait until the function call is finished. Defaults to True.
-            nonce (str | None): Nonce retrieved from sessions API when creating a session. This will be used to bind the session before executing the function. If not provided, a new session will be created based on the client credentials.
+            id: ID
+            external_id: External ID
+            data: Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.'
+            wait: Wait until the function call is finished. Defaults to True.
+            nonce: Nonce retrieved from sessions API when creating a session. This will be used to bind the session before executing the function. If not provided, a new session will be created based on the client credentials.
 
         Tip:
             You can create a session via the Sessions API, using the client.iam.session.create() method.
 
         Returns:
-            FunctionCall: A function call object.
+            A function call object.
 
         Examples:
 
@@ -540,7 +539,7 @@ class FunctionsAPI(APIClient):
         """`Get service limits. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_.
 
         Returns:
-            FunctionsLimits: A function limits object.
+            A function limits object.
 
         Examples:
 
@@ -652,7 +651,7 @@ class FunctionsAPI(APIClient):
             May take some time to take effect (hours).
 
         Returns:
-            FunctionsStatus: A function activation status.
+            A function activation status.
 
         Examples:
 
@@ -670,7 +669,7 @@ class FunctionsAPI(APIClient):
         """`Functions activation status for the Project. <https://developer.cognite.com/api#tag/Functions/operation/getFunctionsStatus>`_.
 
         Returns:
-            FunctionsStatus: A function activation status.
+            A function activation status.
 
         Examples:
 
@@ -694,11 +693,10 @@ def get_handle_function_node(file_content: str) -> ast.FunctionDef | ast.Assign 
     and assignments since Cognite Functions require directly callable entry points.
 
     Args:
-        file_content (str): The Python source code as a string
+        file_content: The Python source code as a string
 
     Returns:
-        ast.FunctionDef | ast.Assign | ast.AnnAssign | None: The AST node of the last top-level 'handle' function,
-        assignment, or None if not found or if the file is not a valid Python file.
+        The AST node of the last top-level 'handle' function, assignment, or None if not found or if the file is not a valid Python file.
     """
     try:
         tree = ast.parse(file_content)
@@ -824,10 +822,10 @@ def _extract_requirements_from_file(file_name: str) -> list[str]:
     """Extracts a list of library requirements from a file. Comments, lines starting with '#', are ignored.
 
     Args:
-        file_name (str): name of the file to parse
+        file_name: name of the file to parse
 
     Returns:
-        list[str]: returns a list of library records
+        returns a list of library records
     """
     requirements: list[str] = []
     with open(file_name, "r+") as f:
@@ -842,10 +840,10 @@ def _extract_requirements_from_doc_string(docstr: str) -> list[str] | None:
     """Extracts a list of library requirements defined between [requirements] and [/requirements] in a functions docstring.
 
     Args:
-        docstr (str): the docstring to extract requirements from
+        docstr: the docstring to extract requirements from
 
     Returns:
-        list[str] | None: returns a list of library records if requirements are defined in the docstring, else None
+        returns a list of library records if requirements are defined in the docstring, else None
     """
     substr_start, substr_end = None, None
 
@@ -867,11 +865,11 @@ def _validate_and_parse_requirements(requirements: list[str]) -> list[str]:
     """Validates the requirement specifications
 
     Args:
-        requirements (list[str]): list of requirement specifications
+        requirements: list of requirement specifications
     Raises:
         ValueError: if validation of requirements fails
     Returns:
-        list[str]: The parsed requirements
+        The parsed requirements
     """
     constructors = local_import("pip._internal.req.constructors")
     install_req_from_line = constructors.install_req_from_line
@@ -890,10 +888,10 @@ def _get_fn_docstring_requirements(fn: Callable) -> list[str]:
     """Read requirements from a function docstring, validate them and return.
 
     Args:
-        fn (Callable): the function to read requirements from
+        fn: the function to read requirements from
 
     Returns:
-        list[str]: A (possibly empty) list of requirements.
+        A (possibly empty) list of requirements.
     """
     if docstr := getdoc(fn):
         if reqs := _extract_requirements_from_doc_string(docstr):

@@ -38,11 +38,11 @@ class TablesAPI(APIClient):
         Fetches custom tables as they are iterated over, so you keep a limited number of custom tables in memory.
 
         Args:
-            chunk_size (int | None): Number of custom tables to return in each chunk. Defaults to yielding one custom table at a time.
-            limit (int | None): Maximum number of custom tables to return. Defaults to return all.
+            chunk_size: Number of custom tables to return in each chunk. Defaults to yielding one custom table at a time.
+            limit: Maximum number of custom tables to return. Defaults to return all.
 
         Yields:
-            pg.Table | pg.TableList: yields Table one by one if chunk_size is not specified, else TableList objects.
+            yields Table one by one if chunk_size is not specified, else TableList objects.
         """
         async for item in self._list_generator(  # type: ignore [call-overload]
             list_cls=pg.TableList,
@@ -63,11 +63,11 @@ class TablesAPI(APIClient):
         """`Create tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/create_tables>`_
 
         Args:
-            username (str): The name of the username (a.k.a. database) to be managed from the API
-            items (pg.TableWrite | Sequence[pg.TableWrite]): The table(s) to create
+            username: The name of the username (a.k.a. database) to be managed from the API
+            items: The table(s) to create
 
         Returns:
-            pg.Table | pg.TableList: Created tables
+            Created tables
 
         Examples:
 
@@ -109,12 +109,12 @@ class TablesAPI(APIClient):
         Retrieve a list of Postgres tables for a user by their table names, optionally ignoring unknown table names
 
         Args:
-            username (str): The username (a.k.a. database) to be managed from the API
-            tablename (str | SequenceNotStr[str]): The name of the table(s) to be retrieved
-            ignore_unknown_ids (bool): Ignore table names not found
+            username: The username (a.k.a. database) to be managed from the API
+            tablename: The name of the table(s) to be retrieved
+            ignore_unknown_ids: Ignore table names not found
 
         Returns:
-            pg.Table | pg.TableList | None: Foreign tables
+            Foreign tables
 
         Examples:
 
@@ -144,9 +144,9 @@ class TablesAPI(APIClient):
         """`Delete postgres table(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/delete_tables>`_
 
         Args:
-            username (str): The name of the username (a.k.a. database) to be managed from the API
-            tablename (str | SequenceNotStr[str]): The name of the table(s) to be deleted
-            ignore_unknown_ids (bool): Ignore table names that are not found
+            username: The name of the username (a.k.a. database) to be managed from the API
+            tablename: The name of the table(s) to be deleted
+            ignore_unknown_ids: Ignore table names that are not found
 
         Examples:
 
@@ -178,12 +178,12 @@ class TablesAPI(APIClient):
         List all tables in a given project.
 
         Args:
-            username (str): The name of the username (a.k.a. database) to be managed from the API
-            include_built_ins (Literal['yes', 'no'] | None): Determines if API should return built-in tables or not
-            limit (int | None): Limits the number of results to be returned.
+            username: The name of the username (a.k.a. database) to be managed from the API
+            include_built_ins: Determines if API should return built-in tables or not
+            limit: Limits the number of results to be returned.
 
         Returns:
-            pg.TableList: Foreign tables
+            Foreign tables
 
         Examples:
 

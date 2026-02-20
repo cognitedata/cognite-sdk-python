@@ -67,14 +67,14 @@ class ViewApply(ViewCore):
     """A group of properties. Write only version.
 
     Args:
-        space (str): The workspace for the view, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the view.
-        version (str): DMS version.
-        description (str | None): Textual description of the view
-        name (str | None): Human readable name for the view.
-        filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
-        implements (list[ViewId] | None): References to the views from where this view will inherit properties and edges.
-        properties (dict[str, ViewPropertyApply] | None): No description.
+        space: The workspace for the view, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the view.
+        version: DMS version.
+        description: Textual description of the view
+        name: Human readable name for the view.
+        filter: A filter Domain Specific Language (DSL) used to create advanced filter queries.
+        implements: References to the views from where this view will inherit properties and edges.
+        properties: No description.
 
     .. note::
         The order of elements (i.e., `ViewId`) in :code:`implements` matters, as it indicates priority on how to handle
@@ -135,7 +135,7 @@ class ViewApply(ViewCore):
         """Helper function to get the set of containers referenced by this view.
 
         Returns:
-            set[ContainerId]: The set of containers referenced by this view.
+            The set of containers referenced by this view.
         """
         referenced_containers = set()
         for prop in (self.properties or {}).values():
@@ -148,19 +148,19 @@ class View(ViewCore):
     """A group of properties. Read only version.
 
     Args:
-        space (str): The workspace for the view, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the view.
-        version (str): DMS version.
-        properties (dict[str, ViewProperty]): View with included properties and expected edges, indexed by a unique space-local identifier.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        description (str | None): Textual description of the view
-        name (str | None): Human readable name for the view.
-        filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
-        implements (list[ViewId] | None): References to the views from where this view will inherit properties and edges.
-        writable (bool): Whether the view supports write operations.
-        used_for (Literal['node', 'edge', 'all']): Does this view apply to nodes, edges or both.
-        is_global (bool): Whether this is a global view.
+        space: The workspace for the view, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the view.
+        version: DMS version.
+        properties: View with included properties and expected edges, indexed by a unique space-local identifier.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description: Textual description of the view
+        name: Human readable name for the view.
+        filter: A filter Domain Specific Language (DSL) used to create advanced filter queries.
+        implements: References to the views from where this view will inherit properties and edges.
+        writable: Whether the view supports write operations.
+        used_for: Does this view apply to nodes, edges or both.
+        is_global: Whether this is a global view.
     """
 
     def __init__(
@@ -224,7 +224,7 @@ class View(ViewCore):
         """Convert to a view applies.
 
         Returns:
-            ViewApply: The view apply.
+            The view apply.
         """
         properties: dict[str, ViewPropertyApply] | None = None
         if self.properties:
@@ -263,7 +263,7 @@ class View(ViewCore):
         """Helper function to get the set of containers referenced by this view.
 
         Returns:
-            set[ContainerId]: The set of containers referenced by this view.
+            The set of containers referenced by this view.
         """
         referenced_containers = set()
         for prop in self.properties.values():
@@ -279,7 +279,7 @@ class ViewApplyList(CogniteResourceList[ViewApply]):
         """Returns the list of ViewIds
 
         Returns:
-            list[ViewId]: The list of ViewIds
+            The list of ViewIds
         """
         return [v.as_id() for v in self]
 
@@ -287,7 +287,7 @@ class ViewApplyList(CogniteResourceList[ViewApply]):
         """Helper function to get the set of containers referenced by this view.
 
         Returns:
-            set[ContainerId]: The set of containers referenced by this view.
+            The set of containers referenced by this view.
         """
         referenced_containers = set()
         for view in self:
@@ -302,7 +302,7 @@ class ViewList(WriteableCogniteResourceList[ViewApply, View]):
         """Convert to a view an apply list.
 
         Returns:
-            ViewApplyList: The view apply list.
+            The view apply list.
         """
         return ViewApplyList([v.as_apply() for v in self])
 
@@ -310,7 +310,7 @@ class ViewList(WriteableCogniteResourceList[ViewApply, View]):
         """Returns the list of ViewIds
 
         Returns:
-            list[ViewId]: The list of ViewIds
+            The list of ViewIds
         """
         return [v.as_id() for v in self]
 
@@ -321,7 +321,7 @@ class ViewList(WriteableCogniteResourceList[ViewApply, View]):
         """Helper function to get the set of containers referenced by this view.
 
         Returns:
-            set[ContainerId]: The set of containers referenced by this view.
+            The set of containers referenced by this view.
         """
         referenced_containers = set()
         for view in self:
@@ -333,10 +333,10 @@ class ViewFilter(CogniteFilter):
     """Represent the filer arguments for the list endpoint.
 
     Args:
-        space (str | None): The space to query
-        include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
-        all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
-        include_global (bool): Whether to include global views.
+        space: The space to query
+        include_inherited_properties: Whether to include properties inherited from views this view implements.
+        all_versions: Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
+        include_global: Whether to include global views.
     """
 
     def __init__(
@@ -511,14 +511,14 @@ class EdgeConnection(ConnectionDefinition, ABC):
     A connection has a max distance of one hop.
 
     Args:
-        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference
+        type: Reference to the node pointed to by the direct relation. The reference
             consists of a space and an external-id.
-        source (ViewId): The target node(s) of this connection can be read through the view specified in 'source'.
-        name (str | None): Readable property name.
-        description (str | None): Description of the content and suggested use for this property.
-        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in
+        source: The target node(s) of this connection can be read through the view specified in 'source'.
+        name: Readable property name.
+        description: Description of the content and suggested use for this property.
+        edge_source: The edge(s) of this connection can be read through the view specified in
             'edgeSource'.
-        direction (Literal["outwards", "inwards"]): The direction of the edge. The outward direction is used to
+        direction: The direction of the edge. The outward direction is used to
             indicate that the edge points from the source to the target. The inward direction is used to indicate
             that the edge points from the target to the source.
     """
@@ -611,11 +611,11 @@ class ReverseDirectRelation(ConnectionDefinition, ABC):
     It is called 'ReverseDirectRelationConnection' in the API spec.
 
     Args:
-        source (ViewId): The node(s) containing the direct relation property can be read through
+        source: The node(s) containing the direct relation property can be read through
             the view specified in 'source'.
-        through (PropertyId): The view or container of the node containing the direct relation property.
-        name (str | None): Readable property name.
-        description (str | None): Description of the content and suggested use for this property.
+        through: The view or container of the node containing the direct relation property.
+        name: Readable property name.
+        description: Description of the content and suggested use for this property.
 
     """
 
@@ -718,14 +718,14 @@ class EdgeConnectionApply(ConnectionDefinitionApply, ABC):
     It is called 'EdgeConnection' in the API spec.
 
     Args:
-        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference
+        type: Reference to the node pointed to by the direct relation. The reference
             consists of a space and an external-id.
-        source (ViewId): The target node(s) of this connection can be read through the view specified in 'source'.
-        name (str | None): Readable property name.
-        description (str | None): Description of the content and suggested use for this property.
-        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in
+        source: The target node(s) of this connection can be read through the view specified in 'source'.
+        name: Readable property name.
+        description: Description of the content and suggested use for this property.
+        edge_source: The edge(s) of this connection can be read through the view specified in
             'edgeSource'.
-        direction (Literal["outwards", "inwards"]): The direction of the edge. The outward direction is used to
+        direction: The direction of the edge. The outward direction is used to
             indicate that the edge points from the source to the target. The inward direction is used to indicate
             that the edge points from the target to the source.
     """
@@ -804,11 +804,11 @@ class ReverseDirectRelationApply(ConnectionDefinitionApply, ABC):
     It is called 'ReverseDirectRelationConnection' in the API spec.
 
     Args:
-        source (ViewId): The node(s) containing the direct relation property can be read through
+        source: The node(s) containing the direct relation property can be read through
             the view specified in 'source'.
-        through (PropertyId): The view or container of the node containing the direct relation property.
-        name (str | None): Readable property name.
-        description (str | None): Description of the content and suggested use for this property.
+        through: The view or container of the node containing the direct relation property.
+        name: Readable property name.
+        description: Description of the content and suggested use for this property.
 
     """
 

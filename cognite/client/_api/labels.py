@@ -54,15 +54,15 @@ class LabelsAPI(APIClient):
         """Iterate over Labels
 
         Args:
-            chunk_size (int | None): Number of Labels to return in each chunk. Defaults to yielding one Label a time.
-            name (str | None): returns the label definitions matching that name
-            external_id_prefix (str | None): filter label definitions with external ids starting with the prefix specified
-            limit (int | None): Maximum number of label definitions to return. Defaults return all labels.
-            data_set_ids (int | Sequence[int] | None): return only labels in the data sets with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): return only labels in the data sets with this external id / these external ids.
+            chunk_size: Number of Labels to return in each chunk. Defaults to yielding one Label a time.
+            name: returns the label definitions matching that name
+            external_id_prefix: filter label definitions with external ids starting with the prefix specified
+            limit: Maximum number of label definitions to return. Defaults return all labels.
+            data_set_ids: return only labels in the data sets with this id / these ids.
+            data_set_external_ids: return only labels in the data sets with this external id / these external ids.
 
         Yields:
-            LabelDefinition | LabelDefinitionList: yields Labels one by one or in chunks.
+            yields Labels one by one or in chunks.
         """  # noqa: DOC404
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -97,11 +97,11 @@ class LabelsAPI(APIClient):
         """`Retrieve one or more label definitions by external id. <https://developer.cognite.com/api#tag/Labels/operation/byIdsLabels>`_
 
         Args:
-            external_id (str | SequenceNotStr[str]): External ID or list of external ids
-            ignore_unknown_ids (bool): If True, ignore IDs and external IDs that are not found rather than throw an exception.
+            external_id: External ID or list of external ids
+            ignore_unknown_ids: If True, ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            LabelDefinition | LabelDefinitionList | None: The requested label definition(s)
+            The requested label definition(s)
 
         Examples:
 
@@ -137,14 +137,14 @@ class LabelsAPI(APIClient):
         """`List Labels <https://developer.cognite.com/api#tag/Labels/operation/listLabels>`_
 
         Args:
-            name (str | None): returns the label definitions matching that name
-            external_id_prefix (str | None): filter label definitions with external ids starting with the prefix specified
-            data_set_ids (int | Sequence[int] | None): return only labels in the data sets with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): return only labels in the data sets with this external id / these external ids.
-            limit (int | None): Maximum number of label definitions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            name: returns the label definitions matching that name
+            external_id_prefix: filter label definitions with external ids starting with the prefix specified
+            data_set_ids: return only labels in the data sets with this id / these ids.
+            data_set_external_ids: return only labels in the data sets with this external id / these external ids.
+            limit: Maximum number of label definitions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            LabelDefinitionList: List of requested Labels
+            List of requested Labels
 
         Examples:
 
@@ -186,10 +186,10 @@ class LabelsAPI(APIClient):
         """`Create one or more label definitions. <https://developer.cognite.com/api#tag/Labels/operation/createLabelDefinitions>`_
 
         Args:
-            label (LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]): The label definition(s) to create.
+            label: The label definition(s) to create.
 
         Returns:
-            LabelDefinition | LabelDefinitionList: Created label definition(s)
+            Created label definition(s)
 
         Raises:
             TypeError: Function input 'label' is of the wrong type
@@ -217,7 +217,7 @@ class LabelsAPI(APIClient):
         """`Delete one or more label definitions <https://developer.cognite.com/api#tag/Labels/operation/deleteLabels>`_
 
         Args:
-            external_id (str | SequenceNotStr[str] | None): One or more label external ids
+            external_id: One or more label external ids
 
         Examples:
 

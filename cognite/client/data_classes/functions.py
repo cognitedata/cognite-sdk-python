@@ -39,10 +39,10 @@ class FunctionHandle(Protocol):
     must be named "handle" and can take any of the following named only arguments:
 
     Args:
-        client (CogniteClient | None): Cognite client.
-        data (dict[str, object] | None): Input data to the function.
-        secrets (dict[str, str] | None): Secrets passed to the function.
-        function_call_info (dict[str, object] | None): Function call information.
+        client: Cognite client.
+        data: Input data to the function.
+        secrets: Secrets passed to the function.
+        function_call_info: Function call information.
 
     Example:
         .. code-block:: python
@@ -54,8 +54,8 @@ class FunctionHandle(Protocol):
                 # Do something with the data
                 return {"result": "success"}
 
-    Returns:
-        object: Return value of the function. Any JSON serializable object is allowed.
+    :
+        Return value of the function. Any JSON serializable object is allowed.
     """
 
     async def __call__(
@@ -70,13 +70,13 @@ class FunctionHandle(Protocol):
         """Function handle protocol.
 
         Args:
-            client (CogniteClient | None): Cognite client.
-            data (dict[str, object] | None): Input data to the function.
-            secrets (dict[str, str] | None): Secrets passed to the function.
-            function_call_info (dict[str, object] | None): Function call information.
+            client: Cognite client.
+            data: Input data to the function.
+            secrets: Secrets passed to the function.
+            function_call_info: Function call information.
 
         Returns:
-            object: Return value of the function. Any JSON serializable object is allowed.
+            Return value of the function. Any JSON serializable object is allowed.
         """
         ...
 
@@ -85,18 +85,18 @@ class FunctionCore(WriteableCogniteResourceWithClientRef["FunctionWrite"], ABC):
     """A representation of a Cognite Function.
 
     Args:
-        name (str): Name of the function.
-        external_id (str | None): External id of the function.
-        description (str | None): Description of the function.
-        owner (str | None): Owner of the function.
-        file_id (int): File id of the code represented by this object.
-        function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
-        secrets (dict[str, str] | None): Secrets attached to the function ((key, value) pairs).
-        env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
-        cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        runtime (RunTime | None): Runtime of the function. Allowed values are ["py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
-        metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
+        name: Name of the function.
+        external_id: External id of the function.
+        description: Description of the function.
+        owner: Owner of the function.
+        file_id: File id of the code represented by this object.
+        function_path: Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
+        secrets: Secrets attached to the function ((key, value) pairs).
+        env_vars: User specified environment variables on the function ((key, value) pairs).
+        cpu: Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+        memory: Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+        runtime: Runtime of the function. Allowed values are ["py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
+        metadata: Metadata associated with a function as a set of key:value pairs.
     """
 
     def __init__(
@@ -133,24 +133,24 @@ class Function(FunctionCore):
     This is the read version, which is used when retrieving a function.
 
     Args:
-        id (int): ID of the function.
-        created_time (int): Created time in UNIX.
-        name (str): Name of the function.
-        external_id (str | None): External id of the function.
-        description (str | None): Description of the function.
-        owner (str | None): Owner of the function.
-        status (str): Status of the function.
-        file_id (int): File id of the code represented by this object.
-        function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
-        secrets (dict[str, str] | None): Secrets attached to the function ((key, value) pairs).
-        env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
-        cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        runtime (RunTime | None): Runtime of the function. Allowed values are ["py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
-        runtime_version (str | None): The complete specification of the function runtime with major, minor and patch version numbers.
-        metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
-        error (dict | None): Dictionary with keys "message" and "trace", which is populated if deployment fails.
-        last_called (int | None): Last time the function was called, in UNIX timestamp milliseconds.
+        id: ID of the function.
+        created_time: Created time in UNIX.
+        name: Name of the function.
+        external_id: External id of the function.
+        description: Description of the function.
+        owner: Owner of the function.
+        status: Status of the function.
+        file_id: File id of the code represented by this object.
+        function_path: Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
+        secrets: Secrets attached to the function ((key, value) pairs).
+        env_vars: User specified environment variables on the function ((key, value) pairs).
+        cpu: Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+        memory: Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+        runtime: Runtime of the function. Allowed values are ["py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
+        runtime_version: The complete specification of the function runtime with major, minor and patch version numbers.
+        metadata: Metadata associated with a function as a set of key:value pairs.
+        error: Dictionary with keys "message" and "trace", which is populated if deployment fails.
+        last_called: Last time the function was called, in UNIX timestamp milliseconds.
     """
 
     def __init__(
@@ -219,7 +219,7 @@ class Function(FunctionCore):
         )
 
     def as_write(self) -> FunctionWrite:
-        """Returns a writeable version of this function."""
+        """a writeable version of this function."""
         if self.file_id is None or self.name is None:
             raise ValueError("file_id and name are required to create a function")
         return FunctionWrite(
@@ -241,11 +241,11 @@ class Function(FunctionCore):
         """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
 
         Args:
-            data (dict[str, object] | None): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.
-            wait (bool): Wait until the function call is finished. Defaults to True.
+            data: Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.
+            wait: Wait until the function call is finished. Defaults to True.
 
         Returns:
-            FunctionCall: A function call object.
+            A function call object.
         """
         return await self._cognite_client.functions.call(id=self.id, data=data, wait=wait)
 
@@ -264,14 +264,14 @@ class Function(FunctionCore):
         """List all calls to this function.
 
         Args:
-            status (str | None): Status of the call. Possible values ["Running", "Failed", "Completed", "Timeout"].
-            schedule_id (int | None): Schedule id from which the call belongs (if any).
-            start_time (dict[str, int] | None): Start time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            end_time (dict[str, int] | None): End time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (int | None): Maximum number of function calls to list. Pass in -1, float('inf') or None to list all Function Calls.
+            status: Status of the call. Possible values ["Running", "Failed", "Completed", "Timeout"].
+            schedule_id: Schedule id from which the call belongs (if any).
+            start_time: Start time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            end_time: End time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit: Maximum number of function calls to list. Pass in -1, float('inf') or None to list all Function Calls.
 
         Returns:
-            FunctionCallList: List of function calls
+            List of function calls
         """
         return await self._cognite_client.functions.calls.list(
             function_id=self.id,
@@ -305,10 +305,10 @@ class Function(FunctionCore):
         """`List all schedules associated with this function. <https://docs.cognite.com/api/v1/#operation/getFunctionSchedules>`_
 
         Args:
-            limit (int | None): Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
+            limit: Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
 
         Returns:
-            FunctionSchedulesList: List of function schedules
+            List of function schedules
         """
         return await self._cognite_client.functions.schedules.list(function_id=self.id, limit=limit)
 
@@ -320,10 +320,10 @@ class Function(FunctionCore):
         """`Retrieve call by id. <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_
 
         Args:
-            id (int): ID of the call.
+            id: ID of the call.
 
         Returns:
-            FunctionCall | None: Requested function call or None if not found.
+            Requested function call or None if not found.
         """
         return await self._cognite_client.functions.calls.retrieve(call_id=id, function_id=self.id)
 
@@ -353,20 +353,20 @@ class FunctionWrite(FunctionCore):
     This is the write version, which is used when creating a function.
 
     Args:
-        name (str): Name of the function.
-        file_id (int): File id of the code represented by this object.
-        external_id (str | None): External id of the function.
-        description (str | None): Description of the function.
-        owner (str | None): Owner of the function.
-        function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
-        secrets (dict[str, str] | None): Secrets attached to the function ((key, value) pairs).
-        env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
-        cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        runtime (RunTime | None): Runtime of the function. Allowed values are ["py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
-        metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
-        index_url (str | None): Specify a different python package index, allowing for packages published in private repositories. Supports basic HTTP authentication as described in pip basic authentication. See the documentation for additional information related to the security risks of using this option.
-        extra_index_urls (list[str] | None): Extra package index URLs to use when building the function, allowing for packages published in private repositories. Supports basic HTTP authentication as described in pip basic authentication. See the documentation for additional information related to the security risks of using this option.
+        name: Name of the function.
+        file_id: File id of the code represented by this object.
+        external_id: External id of the function.
+        description: Description of the function.
+        owner: Owner of the function.
+        function_path: Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
+        secrets: Secrets attached to the function ((key, value) pairs).
+        env_vars: User specified environment variables on the function ((key, value) pairs).
+        cpu: Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+        memory: Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+        runtime: Runtime of the function. Allowed values are ["py310", "py311", "py312"]. The runtime "py312" resolves to the latest version of the Python 3.12 series.
+        metadata: Metadata associated with a function as a set of key:value pairs.
+        index_url: Specify a different python package index, allowing for packages published in private repositories. Supports basic HTTP authentication as described in pip basic authentication. See the documentation for additional information related to the security risks of using this option.
+        extra_index_urls: Extra package index URLs to use when building the function, allowing for packages published in private repositories. Supports basic HTTP authentication as described in pip basic authentication. See the documentation for additional information related to the security risks of using this option.
     """
 
     def __init__(
@@ -423,7 +423,7 @@ class FunctionWrite(FunctionCore):
         )
 
     def as_write(self) -> FunctionWrite:
-        """Returns this FunctionWrite instance."""
+        """this FunctionWrite instance."""
         return self
 
 
@@ -465,11 +465,11 @@ class FunctionScheduleCore(WriteableCogniteResourceWithClientRef["FunctionSchedu
     """A representation of a Cognite Function Schedule.
 
     Args:
-        name (str): Name of the function schedule.
-        function_id (int | None): Id of the function.
-        function_external_id (str | None): External id of the function.
-        description (str | None): Description of the function schedule.
-        cron_expression (str): Cron expression
+        name: Name of the function schedule.
+        function_id: Id of the function.
+        function_external_id: External id of the function.
+        description: Description of the function schedule.
+        cron_expression: Cron expression
     """
 
     def __init__(
@@ -492,15 +492,15 @@ class FunctionSchedule(FunctionScheduleCore):
     This is the read version, which is used when retrieving a function schedule.
 
     Args:
-        id (int): ID of the schedule.
-        name (str): Name of the function schedule.
-        function_id (int | None): ID of the function.
-        function_external_id (str | None): External id of the function.
-        description (str | None): Description of the function schedule.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cron_expression (str): Cron expression
-        session_id (int): ID of the session running with the schedule.
-        when (str): When the schedule will trigger, in human readable text (server generated from cron_expression).
+        id: ID of the schedule.
+        name: Name of the function schedule.
+        function_id: ID of the function.
+        function_external_id: External id of the function.
+        description: Description of the function schedule.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cron_expression: Cron expression
+        session_id: ID of the session running with the schedule.
+        when: When the schedule will trigger, in human readable text (server generated from cron_expression).
     """
 
     def __init__(
@@ -542,7 +542,7 @@ class FunctionSchedule(FunctionScheduleCore):
         )
 
     def as_write(self) -> FunctionScheduleWrite:
-        """Returns a writeable version of this function schedule."""
+        """a writeable version of this function schedule."""
         if self.cron_expression is None or self.name is None:
             raise ValueError("cron_expression or name are required to create a FunctionSchedule")
 
@@ -559,8 +559,8 @@ class FunctionSchedule(FunctionScheduleCore):
         """
         Retrieve the input data to the associated function.
 
-        Returns:
-            dict | None: Input data to the associated function or None if not set. This data is passed deserialized into the function through the data argument.
+        :
+            Input data to the associated function or None if not set. This data is passed deserialized into the function through the data argument.
         """
         if self.id is None:
             raise ValueError("FunctionSchedule is missing 'id'")
@@ -575,16 +575,13 @@ class FunctionScheduleWrite(FunctionScheduleCore):
     """A representation of a Cognite Function Schedule.
 
     Args:
-        name (str): Name of the function schedule.
-        cron_expression (str): Cron expression
-        function_id (int | None): ID of the function.
-        function_external_id (str | None): External ID of the function.
-        description (str | None): Description of the function schedule.
-        data (dict | None): Input data to the function (only present if provided on the schedule). This data is passed deserialized into the function through one of the arguments called data. WARNING: Secrets or other confidential information should not be passed via the data object. There is a dedicated secrets object in the request body to "Create functions" for this purpose.
-        nonce (str | None): Nonce retrieved from sessions API when creating a session. This will be used to bind the
-                session before executing the function. The corresponding access token will be passed to the
-                function and used to instantiate the client of the handle() function. You can create a session
-                via the Sessions API.
+        name: Name of the function schedule.
+        cron_expression: Cron expression
+        function_id: ID of the function.
+        function_external_id: External ID of the function.
+        description: Description of the function schedule.
+        data: Input data to the function (only present if provided on the schedule). This data is passed deserialized into the function through one of the arguments called data. WARNING: Secrets or other confidential information should not be passed via the data object. There is a dedicated secrets object in the request body to "Create functions" for this purpose.
+        nonce: Nonce retrieved from sessions API when creating a session. This will be used to bind the session before executing the function. The corresponding access token will be passed to the function and used to instantiate the client of the handle() function. You can create a session via the Sessions API.
     """
 
     def __init__(
@@ -621,7 +618,7 @@ class FunctionScheduleWrite(FunctionScheduleCore):
         )
 
     def as_write(self) -> FunctionScheduleWrite:
-        """Returns this FunctionScheduleWrite instance."""
+        """this FunctionScheduleWrite instance."""
         return self
 
 
@@ -652,7 +649,7 @@ class FunctionSchedulesList(
     _RESOURCE = FunctionSchedule
 
     def as_write(self) -> FunctionScheduleWriteList:
-        """Returns a writeable version of this function schedule."""
+        """a writeable version of this function schedule."""
         return FunctionScheduleWriteList([f.as_write() for f in self.data])
 
 
@@ -664,7 +661,7 @@ class FunctionList(WriteableCogniteResourceList[FunctionWrite, Function], IdTran
     _RESOURCE = Function
 
     def as_write(self) -> FunctionWriteList:
-        """Returns a writeable version of this function."""
+        """a writeable version of this function."""
         return FunctionWriteList([f.as_write() for f in self.data])
 
 
@@ -672,14 +669,14 @@ class FunctionCall(CogniteResourceWithClientRef):
     """A representation of a Cognite Function call.
 
     Args:
-        id (int): A server-generated ID for the object.
-        start_time (int): Start time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        end_time (int | None): End time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        scheduled_time (int | None): Scheduled time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (str): Status of the function call ("Running", "Completed" or "Failed").
-        schedule_id (int | None): The schedule id belonging to the call.
-        error (dict | None): Error from the function call. It contains an error message and the stack trace.
-        function_id (int): No description.
+        id: A server-generated ID for the object.
+        start_time: Start time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        end_time: End time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        scheduled_time: Scheduled time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        status: Status of the function call ("Running", "Completed" or "Failed").
+        schedule_id: The schedule id belonging to the call.
+        error: Error from the function call. It contains an error message and the stack trace.
+        function_id: No description.
     """
 
     def __init__(
@@ -718,8 +715,8 @@ class FunctionCall(CogniteResourceWithClientRef):
     async def get_response_async(self) -> dict[str, object] | None:
         """Retrieve the response from this function call.
 
-        Returns:
-            dict[str, object] | None: Response from the function call.
+        :
+            Response from the function call.
         """
         call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
         return await self._cognite_client.functions.calls.get_response(call_id=call_id, function_id=function_id)
@@ -731,7 +728,7 @@ class FunctionCall(CogniteResourceWithClientRef):
     async def get_logs_async(self) -> FunctionCallLog:
         """`Retrieve logs for this function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCallLogs>`_
 
-        Returns:
+        :
             FunctionCallLog: Log for the function call.
         """
         call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
@@ -782,8 +779,8 @@ class FunctionCallLogEntry(CogniteResource):
     """A log entry for a function call.
 
     Args:
-        timestamp (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        message (str): Single line from stdout / stderr.
+        timestamp: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        message: Single line from stdout / stderr.
     """
 
     def __init__(
@@ -814,9 +811,11 @@ class FunctionCallLog(CogniteResourceList[FunctionCallLogEntry]):
         """Return a new-line delimited string of the log entry messages, optionally with entry timestamps.
 
         Args:
-            with_timestamps (bool): Whether to include entry timestamps in the output. Defaults to False.
+            with_timestamps: Whether to include entry timestamps in the output. Defaults to False.
         Returns:
-            str: new-line delimited log entries.
+            No description.
+        :
+            new-line delimited log entries.
         """
         return "\n".join(entry._format(with_timestamps) for entry in self)
 
@@ -825,11 +824,11 @@ class FunctionsLimits(CogniteResource):
     """Service limits for the associated project.
 
     Args:
-        timeout_minutes (int): Timeout of each function call.
-        cpu_cores (dict[str, float]): The number of CPU cores per function execution (i.e. function call).
-        memory_gb (dict[str, float]): The amount of available memory in GB per function execution (i.e. function call).
-        runtimes (list[RunTime]): Available runtimes. For example, "py312" translates to the latest version of the Python 3.12 series.
-        response_size_mb (int | None): Maximum response size of function calls.
+        timeout_minutes: Timeout of each function call.
+        cpu_cores: The number of CPU cores per function execution (i.e. function call).
+        memory_gb: The amount of available memory in GB per function execution (i.e. function call).
+        runtimes: Available runtimes. For example, "py312" translates to the latest version of the Python 3.12 series.
+        response_size_mb: Maximum response size of function calls.
     """
 
     def __init__(
@@ -861,7 +860,7 @@ class FunctionsStatus(CogniteResource):
     """Activation Status for the associated project.
 
     Args:
-        status (str): Activation Status for the associated project.
+        status: Activation Status for the associated project.
     """
 
     def __init__(self, status: str) -> None:

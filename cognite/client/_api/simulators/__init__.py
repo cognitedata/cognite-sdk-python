@@ -46,11 +46,11 @@ class SimulatorsAPI(APIClient):
         Fetches simulators as they are iterated over, so you keep a limited number of simulators in memory.
 
         Args:
-            chunk_size (int | None): Number of simulators to return in each chunk. Defaults to yielding one simulator a time.
-            limit (int | None): Maximum number of simulators to return. Defaults to return all items.
+            chunk_size: Number of simulators to return in each chunk. Defaults to yielding one simulator a time.
+            limit: Maximum number of simulators to return. Defaults to return all items.
 
         Yields:
-            Simulator | SimulatorList: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
+            yields Simulator one by one if chunk is not specified, else SimulatorList objects.
         """  # noqa: DOC404
         async for item in self._list_generator(
             list_cls=SimulatorList,
@@ -65,10 +65,10 @@ class SimulatorsAPI(APIClient):
         """`List all simulators <https://developer.cognite.com/api#tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
         Args:
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
         Returns:
-            SimulatorList: List of simulators
+            List of simulators
 
         Examples:
             List simulators:

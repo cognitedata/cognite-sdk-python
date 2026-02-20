@@ -22,10 +22,10 @@ class LabelDefinitionCore(WriteableCogniteResource["LabelDefinitionWrite"], ABC)
     This is the parent for the reading and write versions.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str | None): Name of the label.
-        description (str | None): Description of the label.
-        data_set_id (int | None): The id of the dataset this label belongs to.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: Name of the label.
+        description: Description of the label.
+        data_set_id: The id of the dataset this label belongs to.
     """
 
     def __init__(
@@ -46,11 +46,11 @@ class LabelDefinition(LabelDefinitionCore):
     This is the read version of the LabelDefinition class. It is used when retrieving existing label definitions.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): Name of the label.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        description (str | None): Description of the label.
-        data_set_id (int | None): The id of the dataset this label belongs to.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: Name of the label.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description: Description of the label.
+        data_set_id: The id of the dataset this label belongs to.
     """
 
     def __init__(
@@ -96,10 +96,10 @@ class LabelDefinitionWrite(LabelDefinitionCore):
     This is the write version of the LabelDefinition class. It is used when creating new label definitions.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): Name of the label.
-        description (str | None): Description of the label.
-        data_set_id (int | None): The id of the dataset this label belongs to.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: Name of the label.
+        description: Description of the label.
+        data_set_id: The id of the dataset this label belongs to.
     """
 
     def __init__(
@@ -134,9 +134,9 @@ class LabelDefinitionFilter(CogniteFilter):
     """Filter on labels definitions with strict matching.
 
     Args:
-        name (str | None): Returns the label definitions matching that name.
-        external_id_prefix (str | None): filter label definitions with external ids starting with the prefix specified
-        data_set_ids (list[dict[str, Any]] | None): Only include labels that belong to these datasets.
+        name: Returns the label definitions matching that name.
+        external_id_prefix: filter label definitions with external ids starting with the prefix specified
+        data_set_ids: Only include labels that belong to these datasets.
     """
 
     def __init__(
@@ -168,7 +168,7 @@ class Label(CogniteResource):
     """A label assigned to a resource.
 
     Args:
-        external_id (str): The external id to the attached label.
+        external_id: The external id to the attached label.
     """
 
     def __init__(self, external_id: str) -> None:
@@ -208,8 +208,8 @@ class LabelFilter(CogniteFilter):
     """Return only the resource matching the specified label constraints.
 
     Args:
-        contains_any (list[str] | None): The resource item contains at least one of the listed labels. The labels are defined by a list of external ids.
-        contains_all (list[str] | None): The resource item contains all the listed labels. The labels are defined by a list of external ids.
+        contains_any: The resource item contains at least one of the listed labels. The labels are defined by a list of external ids.
+        contains_all: The resource item contains all the listed labels. The labels are defined by a list of external ids.
 
     Examples:
 

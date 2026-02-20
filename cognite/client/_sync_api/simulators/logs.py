@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a0924757f3aa2b1e9014f5bc1247ee5f
+b0e214a2da2884ea52bf3bdb08931335
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -42,10 +42,10 @@ class SyncSimulatorLogsAPI(SyncAPIClient):
         They help users identify issues, diagnose problems, and gain insights into the behavior of the simulator integrations.
 
         Args:
-            ids (int | Sequence[int]): The ids of the simulator log.
+            ids: The ids of the simulator log.
 
         Returns:
-            SimulatorLogList | SimulatorLog | None: Requested simulator log(s)
+            Requested simulator log(s)
 
         Examples:
             Get simulator logs by simulator model id:

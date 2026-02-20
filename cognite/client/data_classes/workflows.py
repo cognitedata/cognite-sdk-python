@@ -58,15 +58,15 @@ class WorkflowUpsert(WorkflowCore):
     This class represents a workflow. This is the write version, used when creating or updating a workflow.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        description (str | None): Description of the workflow. Note that when updating a workflow, the description will
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        description: Description of the workflow. Note that when updating a workflow, the description will
                             always be overwritten also if it is set to None. Meaning if the workflow already has a description,
                             and you want to keep it, you need to provide the description when updating the workflow.
-        data_set_id (int | None): The id of the data set this workflow belongs to.
+        data_set_id: The id of the data set this workflow belongs to.
                             If a dataSetId is provided, any operations on this workflow, or its versions, executions,
                             and triggers will require appropriate access to the data set. More information on data sets
                             and their configuration can be found here: https://docs.cognite.com/cdf/data_governance/concepts/datasets/
-        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to None, which means the workflow will use the project limit.
+        max_concurrent_executions: Maximum concurrent executions for this workflow. Defaults to None, which means the workflow will use the project limit.
     """
 
     @classmethod
@@ -88,12 +88,12 @@ class Workflow(WorkflowCore):
     This class represents a workflow. This is the read version, used when reading or listing workflows.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        created_time (int): The time when the workflow was created. Unix timestamp in milliseconds.
-        last_updated_time (int): The time when the workflow was last updated. Unix timestamp in milliseconds.
-        description (str | None): Description of the workflow. Defaults to None.
-        data_set_id (int | None): The id of the data set this workflow belongs to.
-        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to None, which means the workflow will use the project limit.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        created_time: The time when the workflow was created. Unix timestamp in milliseconds.
+        last_updated_time: The time when the workflow was last updated. Unix timestamp in milliseconds.
+        description: Description of the workflow. Defaults to None.
+        data_set_id: The id of the data set this workflow belongs to.
+        max_concurrent_executions: Maximum concurrent executions for this workflow. Defaults to None, which means the workflow will use the project limit.
     """
 
     def __init__(
@@ -182,9 +182,9 @@ class FunctionTaskParameters(WorkflowTaskParameters):
     """The function parameters are used to specify the Cognite Function to be called.
 
     Args:
-        external_id (str): The external ID of the function to be called.
-        data (dict | str | None): The data to be passed to the function. Defaults to None. The data can be used to specify the input to the function from previous tasks or the workflow input. See the tip below for more information.
-        is_async_complete (bool | None): Whether the function is asynchronous. Defaults to None, which the API will interpret as False.
+        external_id: The external ID of the function to be called.
+        data: The data to be passed to the function. Defaults to None. The data can be used to specify the input to the function from previous tasks or the workflow input. See the tip below for more information.
+        is_async_complete: Whether the function is asynchronous. Defaults to None, which the API will interpret as False.
 
     If a function is asynchronous, you need to call the client.workflows.tasks.update() endpoint to update the status of the task.
     While synchronous tasks update the status automatically.
@@ -263,9 +263,9 @@ class SimulationTaskParameters(WorkflowTaskParameters):
     The simulation parameters are used to specify the simulation routine to be executed.
 
     Args:
-        routine_external_id (str): The external ID of the simulation routine to be executed.
-        run_time (int | None): Reference timestamp used for data pre-processing and data sampling.
-        inputs (list[SimulationInputOverride] | None): List of input overrides.
+        routine_external_id: The external ID of the simulation routine to be executed.
+        run_time: Reference timestamp used for data pre-processing and data sampling.
+        inputs: List of input overrides.
     """
 
     task_type = "simulation"
@@ -312,9 +312,9 @@ class TransformationTaskParameters(WorkflowTaskParameters):
     The transformation parameters are used to specify the transformation to be called.
 
     Args:
-        external_id (str): The external ID of the transformation to be called.
-        concurrency_policy (Literal['fail', 'restartAfterCurrent', 'waitForCurrent']): Determines the behavior of the task if the Transformation is already running. ``fail``: The task fails if another instance of the Transformation is currently running. ``waitForCurrent``: The task will pause and wait for the already running Transformation to complete. Once completed, the task is completed. This mode is useful for preventing redundant Transformation runs. ``restartAfterCurrent``: The task waits for the ongoing Transformation to finish. After completion, the task restarts the Transformation. This mode ensures that the most recent data can be used by following tasks.
-        use_transformation_credentials (bool): If set to `true`, the transformation will be run using the client credentials configured on the transformation. If set to `false`, the transformation will be run using the client credentials used to trigger the workflow.
+        external_id: The external ID of the transformation to be called.
+        concurrency_policy: Determines the behavior of the task if the Transformation is already running. ``fail``: The task fails if another instance of the Transformation is currently running. ``waitForCurrent``: The task will pause and wait for the already running Transformation to complete. Once completed, the task is completed. This mode is useful for preventing redundant Transformation runs. ``restartAfterCurrent``: The task waits for the ongoing Transformation to finish. After completion, the task restarts the Transformation. This mode ensures that the most recent data can be used by following tasks.
+        use_transformation_credentials: If set to `true`, the transformation will be run using the client credentials configured on the transformation. If set to `false`, the transformation will be run using the client credentials used to trigger the workflow.
     """
 
     task_type = "transformation"
@@ -354,11 +354,11 @@ class CDFTaskParameters(WorkflowTaskParameters):
     The CDF request parameters are used to specify a request to the Cognite Data Fusion API.
 
     Args:
-        resource_path (str): The resource path of the request. Note the path of the request which is prefixed by '{cluster}.cognitedata.com/api/v1/project/{project}' based on the cluster and project of the request.
-        method (Literal['GET', 'POST', 'PUT', 'DELETE'] | str): The HTTP method of the request.
-        query_parameters (dict | str | None): The query parameters of the request. Defaults to None.
-        body (dict | str | None): The body of the request. Defaults to None. Limited to 1024KiB in size
-        request_timeout_in_millis (int | str): The timeout of the request in milliseconds. Defaults to 10000.
+        resource_path: The resource path of the request. Note the path of the request which is prefixed by '{cluster}.cognitedata.com/api/v1/project/{project}' based on the cluster and project of the request.
+        method: The HTTP method of the request.
+        query_parameters: The query parameters of the request. Defaults to None.
+        body: The body of the request. Defaults to None. Limited to 1024KiB in size
+        request_timeout_in_millis: The timeout of the request in milliseconds. Defaults to 10000.
 
     Examples:
 
@@ -420,7 +420,7 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
     dynamic task).
 
     Args:
-        tasks (list[WorkflowTask]): The tasks belonging to the subworkflow.
+        tasks: The tasks belonging to the subworkflow.
     """
 
     task_type = "subworkflow"
@@ -447,8 +447,8 @@ class SubworkflowReferenceParameters(WorkflowTaskParameters):
     The subworkflow reference is used to specifying a reference to another workflow which will be embedded into the execution at start time.
 
     Args:
-        workflow_external_id (str): The external ID of the referenced workflow.
-        version (str): The version of the referenced workflow.
+        workflow_external_id: The external ID of the referenced workflow.
+        version: The version of the referenced workflow.
     """
 
     task_type = "subworkflow"
@@ -490,9 +490,7 @@ class DynamicTaskParameters(WorkflowTaskParameters):
         - `${<taskExternalId>.input.someKey}`: A specific key within the input of the task with the given external id.
 
     Args:
-        tasks (list[WorkflowTask] | str): The tasks to be dynamically executed. The dynamic task is a string that is evaluated
-                    during the workflow's execution. When calling Version Upsert, the tasks parameter must be a Reference string.
-                    When calling Execution details, the tasks parameter will be a list of WorkflowTask objects.
+        tasks: The tasks to be dynamically executed. The dynamic task is a string that is evaluated during the workflow's execution. When calling Version Upsert, the tasks parameter must be a Reference string. When calling Execution details, the tasks parameter will be a list of WorkflowTask objects.
     """
 
     task_type = "dynamic"
@@ -527,14 +525,14 @@ class WorkflowTask(CogniteResource):
         Tasks do not distinguish between write and read versions.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        parameters (WorkflowTaskParameters): The parameters of the task.
-        name (str | None): The name of the task. Defaults to None.
-        description (str | None): The description of the task. Defaults to None.
-        retries (int): The number of retries for the task. Defaults to 3.
-        timeout (int): The timeout of the task in seconds. Defaults to 3600.
-        on_failure (Literal['abortWorkflow', 'skipTask']): The policy to handle failures and timeouts. Defaults to *abortWorkflow*. ``skipTask``: For both failures and timeouts, the task will retry until the retries are exhausted. After that, the Task is marked as COMPLETED_WITH_ERRORS and the subsequent tasks are executed. ``abortWorkflow``: In case of failures, retries will be performed until exhausted. After which the task is marked as FAILED and the Workflow is marked the same. In the event of a timeout, no retries are undertaken; the task is marked as TIMED_OUT and the Workflow is marked as FAILED.
-        depends_on (list[str] | None): The external ids of the tasks that this task depends on. Defaults to None.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        parameters: The parameters of the task.
+        name: The name of the task. Defaults to None.
+        description: The description of the task. Defaults to None.
+        retries: The number of retries for the task. Defaults to 3.
+        timeout: The timeout of the task in seconds. Defaults to 3600.
+        on_failure: The policy to handle failures and timeouts. Defaults to *abortWorkflow*. ``skipTask``: For both failures and timeouts, the task will retry until the retries are exhausted. After that, the Task is marked as COMPLETED_WITH_ERRORS and the subsequent tasks are executed. ``abortWorkflow``: In case of failures, retries will be performed until exhausted. After which the task is marked as FAILED and the Workflow is marked the same. In the event of a timeout, no retries are undertaken; the task is marked as TIMED_OUT and the Workflow is marked as FAILED.
+        depends_on: The external ids of the tasks that this task depends on. Defaults to None.
     """
 
     def __init__(
@@ -634,9 +632,9 @@ class FunctionTaskOutput(WorkflowTaskOutput):
     The class represent the output of Cognite Function task.
 
     Args:
-        call_id (int | None): The call_id of the CDF Function call.
-        function_id (int | None): The function_id of the CDF Function.
-        response (dict | None): The response of the CDF Function call.
+        call_id: The call_id of the CDF Function call.
+        function_id: The function_id of the CDF Function.
+        response: The response of the CDF Function call.
 
     """
 
@@ -665,9 +663,9 @@ class SimulationTaskOutput(WorkflowTaskOutput):
     The class represent the output of Simulation execution.
 
     Args:
-        run_id (int | None): The run ID of the simulation run.
-        log_id (int | None): The log ID of the simulation run.
-        status_message (str | None): Status message of the simulation execution.
+        run_id: The run ID of the simulation run.
+        log_id: The log ID of the simulation run.
+        status_message: Status message of the simulation execution.
     """
 
     task_type: ClassVar[str] = "simulation"
@@ -707,7 +705,7 @@ class TransformationTaskOutput(WorkflowTaskOutput):
     The transformation output is used to specify the output of a transformation task.
 
     Args:
-        job_id (int | None): The job id of the transformation job.
+        job_id: The job id of the transformation job.
     """
 
     task_type: ClassVar[str] = "transformation"
@@ -729,8 +727,8 @@ class CDFTaskOutput(WorkflowTaskOutput):
     The CDF Request output is used to specify the output of a CDF Request.
 
     Args:
-        response (str | dict | None): The response of the CDF Request. Will be a JSON object if content-type is application/json, otherwise will be a string.
-        status_code (int | None): The status code of the CDF Request.
+        response: The response of the CDF Request. Will be a JSON object if content-type is application/json, otherwise will be a string.
+        status_code: The status code of the CDF Request.
     """
 
     task_type: ClassVar[str] = "cdf"
@@ -790,15 +788,15 @@ class WorkflowTaskExecution(CogniteResource):
     This class represents a task execution.
 
     Args:
-        id (str): The server generated id of the task execution.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        status (TaskStatus): The status of the task execution.
-        input (WorkflowTaskParameters): The input parameters of the task execution.
-        output (WorkflowTaskOutput): The output of the task execution.
-        version (str | None): The version of the task execution. Defaults to None.
-        start_time (int | None): The start time of the task execution. Unix timestamp in milliseconds. Defaults to None.
-        end_time (int | None): The end time of the task execution. Unix timestamp in milliseconds. Defaults to None.
-        reason_for_incompletion (str | None): Provides the reason if the workflow did not complete successfully. Defaults to None.
+        id: The server generated id of the task execution.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        status: The status of the task execution.
+        input: The input parameters of the task execution.
+        output: The output of the task execution.
+        version: The version of the task execution. Defaults to None.
+        start_time: The start time of the task execution. Unix timestamp in milliseconds. Defaults to None.
+        end_time: The end time of the task execution. Unix timestamp in milliseconds. Defaults to None.
+        reason_for_incompletion: Provides the reason if the workflow did not complete successfully. Defaults to None.
     """
 
     def __init__(
@@ -862,11 +860,8 @@ class WorkflowDefinitionCore(WriteableCogniteResource["WorkflowDefinitionUpsert"
     A workflow definition defines the tasks and order/dependencies of these tasks.
 
     Args:
-        tasks (list[WorkflowTask]): The tasks of the workflow definition.
-        description (str | None): The description of the workflow definition. Note that when updating a workflow definition
-                            description, it will always be overwritten also if it is set to None. Meaning if the
-                            workflow definition already has a description, and you want to keep it, you need to provide
-                            the description when updating it.
+        tasks: The tasks of the workflow definition.
+        description: The description of the workflow definition. Note that when updating a workflow definition description, it will always be overwritten also if it is set to None. Meaning if the workflow definition already has a description, and you want to keep it, you need to provide the description when updating it.
     """
 
     def __init__(
@@ -898,11 +893,8 @@ class WorkflowDefinitionUpsert(WorkflowDefinitionCore):
     A workflow definition defines the tasks and order/dependencies of these tasks.
 
     Args:
-        tasks (list[WorkflowTask]): The tasks of the workflow definition.
-        description (str | None): The description of the workflow definition. Note that when updating a workflow definition
-                            description, it will always be overwritten also if it is set to None. Meaning if the
-                            workflow definition already has a description, and you want to keep it, you need to provide
-                            the description when updating it.
+        tasks: The tasks of the workflow definition.
+        description: The description of the workflow definition. Note that when updating a workflow definition description, it will always be overwritten also if it is set to None. Meaning if the workflow definition already has a description, and you want to keep it, you need to provide the description when updating it.
     """
 
     def __init__(self, tasks: list[WorkflowTask], description: str | None = None) -> None:
@@ -933,9 +925,9 @@ class WorkflowDefinition(WorkflowDefinitionCore):
     A workflow definition defines the tasks and order/dependencies of these tasks.
 
     Args:
-        hash_ (str): The hash of the tasks and description. This is used to uniquely identify the workflow definition as you can overwrite a workflow version.
-        tasks (list[WorkflowTask]): The tasks of the workflow definition.
-        description (str | None): The description of the workflow definition. Defaults to None.
+        hash_: The hash of the tasks and description. This is used to uniquely identify the workflow definition as you can overwrite a workflow version.
+        tasks: The tasks of the workflow definition.
+        description: The description of the workflow definition. Defaults to None.
     """
 
     def __init__(
@@ -973,8 +965,8 @@ class WorkflowVersionCore(WriteableCogniteResource["WorkflowVersionUpsert"], ABC
     This class represents a workflow version.
 
     Args:
-        workflow_external_id (str): The external ID of the workflow.
-        version (str): The version of the workflow.
+        workflow_external_id: The external ID of the workflow.
+        version: The version of the workflow.
     """
 
     def __init__(
@@ -997,9 +989,9 @@ class WorkflowVersionUpsert(WorkflowVersionCore):
     This class represents a workflow version. This is the write-variant, used when creating or updating a workflow variant.
 
     Args:
-        workflow_external_id (str): The external ID of the workflow.
-        version (str): The version of the workflow.
-        workflow_definition (WorkflowDefinitionUpsert): The workflow definition of the workflow version.
+        workflow_external_id: The external ID of the workflow.
+        version: The version of the workflow.
+        workflow_definition: The workflow definition of the workflow version.
 
     """
 
@@ -1035,11 +1027,11 @@ class WorkflowVersion(WorkflowVersionCore):
     This class represents a workflow version. This is the read variant, used when retrieving/listing a workflow variant.
 
     Args:
-        workflow_external_id (str): The external ID of the workflow.
-        version (str): The version of the workflow.
-        workflow_definition (WorkflowDefinition): The workflow definition of the workflow version.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        workflow_external_id: The external ID of the workflow.
+        version: The version of the workflow.
+        workflow_definition: The workflow definition of the workflow version.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -1114,15 +1106,15 @@ class WorkflowExecution(CogniteResource):
     This class represents a workflow execution.
 
     Args:
-        id (str): The server generated id of the workflow execution.
-        workflow_external_id (str): The external ID of the workflow.
-        status (WorkflowStatus): The status of the workflow execution.
-        created_time (int): The time when the workflow execution was created. Unix timestamp in milliseconds.
-        version (str | None): The version of the workflow. Defaults to None.
-        start_time (int | None): The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
-        end_time (int | None): The end time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
-        reason_for_incompletion (str | None): Provides the reason if the workflow did not complete successfully. Defaults to None.
-        metadata (dict | None): Application specific metadata.
+        id: The server generated id of the workflow execution.
+        workflow_external_id: The external ID of the workflow.
+        status: The status of the workflow execution.
+        created_time: The time when the workflow execution was created. Unix timestamp in milliseconds.
+        version: The version of the workflow. Defaults to None.
+        start_time: The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
+        end_time: The end time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
+        reason_for_incompletion: Provides the reason if the workflow did not complete successfully. Defaults to None.
+        metadata: Application specific metadata.
     """
 
     def __init__(
@@ -1181,18 +1173,18 @@ class WorkflowExecutionDetailed(WorkflowExecution):
     it contains the workflow definition of the workflow.
 
     Args:
-        id (str): The server generated id of the workflow execution.
-        workflow_external_id (str): The external ID of the workflow.
-        workflow_definition (WorkflowDefinition): The workflow definition of the workflow.
-        status (WorkflowStatus): The status of the workflow execution.
-        executed_tasks (list[WorkflowTaskExecution]): The executed tasks of the workflow execution.
-        created_time (int): The time when the workflow execution was created. Unix timestamp in milliseconds.
-        version (str | None): The version of the workflow. Defaults to None.
-        start_time (int | None): The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
-        end_time (int | None): The end time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
-        reason_for_incompletion (str | None): Provides the reason if the workflow did not complete successfully. Defaults to None.
-        input (dict | None): Input arguments the workflow was triggered with.
-        metadata (dict | None): Metadata set when the workflow was triggered.
+        id: The server generated id of the workflow execution.
+        workflow_external_id: The external ID of the workflow.
+        workflow_definition: The workflow definition of the workflow.
+        status: The status of the workflow execution.
+        executed_tasks: The executed tasks of the workflow execution.
+        created_time: The time when the workflow execution was created. Unix timestamp in milliseconds.
+        version: The version of the workflow. Defaults to None.
+        start_time: The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
+        end_time: The end time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
+        reason_for_incompletion: Provides the reason if the workflow did not complete successfully. Defaults to None.
+        input: Input arguments the workflow was triggered with.
+        metadata: Metadata set when the workflow was triggered.
     """
 
     def __init__(
@@ -1269,8 +1261,8 @@ class WorkflowVersionId:
     This class represents a Workflow Version Identifier.
 
     Args:
-        workflow_external_id (str): The external ID of the workflow.
-        version (str, optional): The version of the workflow. Defaults to None.
+        workflow_external_id: The external ID of the workflow.
+        version: The version of the workflow. Defaults to None.
     """
 
     workflow_external_id: str
@@ -1377,8 +1369,8 @@ class WorkflowTriggerDataModelingQuery(Query):
     r"""This class represents a data modeling trigger query.
 
     Args:
-        with_ (dict[str, ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select.
-        select (dict[str, Select]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
+        with_: A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select.
+        select: A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
     """
 
     def __init__(
@@ -1404,9 +1396,8 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
     This class represents a scheduled trigger rule.
 
     Args:
-        cron_expression (str): The cron specification for the scheduled trigger.
-        timezone (ZoneInfo | None): The timezone in which the scheduled trigger should be evaluated.
-            If not provided, UTC will be used as the default timezone on the server side.
+        cron_expression: The cron specification for the scheduled trigger.
+        timezone: The timezone in which the scheduled trigger should be evaluated. If not provided, UTC will be used as the default timezone on the server side.
     """
 
     _trigger_type = "schedule"
@@ -1436,9 +1427,9 @@ class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
     This class represents a data modeling trigger rule.
 
     Args:
-        data_modeling_query (WorkflowTriggerDataModelingQuery): The data modeling query of the trigger.
-        batch_size (int | None): The batch size of the trigger.
-        batch_timeout (int | None): The batch timeout of the trigger.
+        data_modeling_query: The data modeling query of the trigger.
+        batch_size: The batch size of the trigger.
+        batch_timeout: The batch timeout of the trigger.
     """
 
     _trigger_type = "dataModeling"
@@ -1484,10 +1475,10 @@ class WorkflowTriggerCore(WriteableCogniteResource["WorkflowTriggerUpsert"], ABC
     This class represents a base class for a workflow trigger.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
-        workflow_external_id (str): The external ID of the workflow.
-        workflow_version (str): The version of the workflow.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        trigger_rule: The trigger rule of the workflow version trigger.
+        workflow_external_id: The external ID of the workflow.
+        workflow_version: The version of the workflow.
     """
 
     def __init__(
@@ -1504,12 +1495,12 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
     This class represents a workflow trigger for upsertion.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
-        workflow_external_id (str): The external ID of the workflow.
-        workflow_version (str): The version of the workflow.
-        input (dict | None): The input data of the workflow version trigger. Defaults to None.
-        metadata (dict | None): Application specific metadata. Defaults to None.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        trigger_rule: The trigger rule of the workflow version trigger.
+        workflow_external_id: The external ID of the workflow.
+        workflow_version: The version of the workflow.
+        input: The input data of the workflow version trigger. Defaults to None.
+        metadata: Application specific metadata. Defaults to None.
     """
 
     def __init__(
@@ -1567,15 +1558,15 @@ class WorkflowTrigger(WorkflowTriggerCore):
     This class represents a workflow trigger.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
-        workflow_external_id (str): The external ID of the workflow.
-        workflow_version (str): The version of the workflow.
-        is_paused (bool): Whether the trigger is paused.
-        input (dict | None): The input data passed to the workflow when an execution is started.
-        metadata (dict | None): Application specific metadata.
-        created_time (int): The time when the workflow version trigger was created. Unix timestamp in milliseconds.
-        last_updated_time (int): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        trigger_rule: The trigger rule of the workflow version trigger.
+        workflow_external_id: The external ID of the workflow.
+        workflow_version: The version of the workflow.
+        is_paused: Whether the trigger is paused.
+        input: The input data passed to the workflow when an execution is started.
+        metadata: Application specific metadata.
+        created_time: The time when the workflow version trigger was created. Unix timestamp in milliseconds.
+        last_updated_time: The time when the workflow version trigger was last updated. Unix timestamp in milliseconds.
     """
 
     def __init__(

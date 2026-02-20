@@ -45,11 +45,11 @@ class SequenceColumnCore(WriteableCogniteResource["SequenceColumnWrite"], ABC):
     """This represents a column in a sequence.
 
     Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        name (str | None): Name of the column
-        description (str | None): Description of the column
-        value_type (ValueType): The type of the column. It can be String, Double or Long.
-        metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. The maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: Name of the column
+        description: Description of the column
+        value_type: The type of the column. It can be String, Double or Long.
+        metadata: Custom, application-specific metadata. String key -> String value. The maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
     """
 
     def __init__(
@@ -71,13 +71,13 @@ class SequenceColumn(SequenceColumnCore):
     """This represents a column in a sequence. It is used for reading only.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        created_time (int | None): Time when this column was created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time (int | None): The last time this column was updated in CDF, in milliseconds since Jan 1, 1970.
-        name (str | None): Name of the column
-        description (str | None): Description of the column
-        value_type (ValueType): The type of the column. It can be String, Double or Long.
-        metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        created_time: Time when this column was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time: The last time this column was updated in CDF, in milliseconds since Jan 1, 1970.
+        name: Name of the column
+        description: Description of the column
+        value_type: The type of the column. It can be String, Double or Long.
+        metadata: Custom, application-specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
     """
 
     def __init__(
@@ -130,11 +130,11 @@ class SequenceColumnWrite(SequenceColumnCore):
     """This represents a column in a sequence. This is used for writing only.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str | None): Name of the column
-        description (str | None): Description of the column
-        value_type (ValueType): The type of the column. It can be String, Double or Long.
-        metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. The maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: Name of the column
+        description: Description of the column
+        value_type: The type of the column. It can be String, Double or Long.
+        metadata: Custom, application-specific metadata. String key -> String value. The maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
     """
 
     def __init__(
@@ -176,7 +176,7 @@ class SequenceColumnList(CogniteResourceList[SequenceColumn], ExternalIDTransfor
         """Retrieves list of column value types
 
         Returns:
-            list[ValueType]: List of column value types
+            List of column value types
         """
         return [c.value_type for c in self]
 
@@ -193,7 +193,7 @@ class SequenceColumnWriteList(CogniteResourceList[SequenceColumnWrite], External
         """Retrieves list of column value types
 
         Returns:
-            list[ValueType]: List of column value types
+            List of column value types
         """
         return [c.value_type for c in self]
 
@@ -203,16 +203,16 @@ class Sequence(WriteableCogniteResourceWithClientRef["SequenceWrite"]):
     This is the read version of the class, it is used for retrieving data from the CDF.
 
     Args:
-        id (int): Unique cognite-provided identifier for the sequence
-        created_time (int): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time (int): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
-        name (str | None): Name of the sequence
-        description (str | None): Description of the sequence
-        asset_id (int | None): Optional asset this sequence is associated with
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. The maximum length of the key is 32 bytes, the value 512 bytes, with up to 16 key-value pairs.
-        columns (typing.Sequence[SequenceColumn]): List of column definitions
-        data_set_id (int | None): Data set that this sequence belongs to
+        id: Unique cognite-provided identifier for the sequence
+        created_time: Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time: The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
+        name: Name of the sequence
+        description: Description of the sequence
+        asset_id: Optional asset this sequence is associated with
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        metadata: Custom, application-specific metadata. String key -> String value. The maximum length of the key is 32 bytes, the value 512 bytes, with up to 16 key-value pairs.
+        columns: List of column definitions
+        data_set_id: Data set that this sequence belongs to
     """
 
     def __init__(
@@ -294,11 +294,11 @@ class Sequence(WriteableCogniteResourceWithClientRef["SequenceWrite"]):
         """Retrieves rows from this sequence.
 
         Args:
-            start (int): Row number to start from (inclusive).
-            end (int | None): Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
+            start: Row number to start from (inclusive).
+            end: Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
 
         Returns:
-            SequenceRows: List of sequence data.
+            List of sequence data.
         """
         if self.external_id is not None:
             return await self._cognite_client.sequences.data.retrieve(
@@ -317,7 +317,7 @@ class Sequence(WriteableCogniteResourceWithClientRef["SequenceWrite"]):
         """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods
 
         Returns:
-            list[str]: List of sequence column external ids
+            List of sequence column external ids
         """
         assert self.columns is not None
         return self.columns.as_external_ids()
@@ -327,7 +327,7 @@ class Sequence(WriteableCogniteResourceWithClientRef["SequenceWrite"]):
         """Retrieves list of column value types
 
         Returns:
-            list[ValueType]: List of column value types
+            List of column value types
         """
         assert self.columns is not None
         return self.columns.value_types
@@ -338,13 +338,13 @@ class SequenceWrite(WriteableCogniteResource["SequenceWrite"]):
     This is the write version of the class, it is used for inserting data into the CDF.
 
     Args:
-        columns (typing.Sequence[SequenceColumnWrite]): List of column definitions
-        name (str | None): Name of the sequence
-        description (str | None): Description of the sequence
-        asset_id (int | None): Optional asset this sequence is associated with
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. Th maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        data_set_id (int | None): Data set that this sequence belongs to
+        columns: List of column definitions
+        name: Name of the sequence
+        description: Description of the sequence
+        asset_id: Optional asset this sequence is associated with
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        metadata: Custom, application-specific metadata. String key -> String value. Th maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        data_set_id: Data set that this sequence belongs to
     """
 
     def __init__(
@@ -396,14 +396,14 @@ class SequenceFilter(CogniteFilter):
     """No description.
 
     Args:
-        name (str | None): Return only sequences with this *exact* name.
-        external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-        metadata (dict[str, Any] | None): Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
-        asset_ids (typing.Sequence[int] | None): Return only sequences linked to one of the specified assets.
-        asset_subtree_ids (typing.Sequence[dict[str, Any]] | None): Only include sequences that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        data_set_ids (typing.Sequence[dict[str, Any]] | None): Only include sequences that belong to these datasets.
+        name: Return only sequences with this *exact* name.
+        external_id_prefix: Filter by this (case-sensitive) prefix for the external ID.
+        metadata: Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
+        asset_ids: Return only sequences linked to one of the specified assets.
+        asset_subtree_ids: Only include sequences that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        created_time: Range between two timestamps.
+        last_updated_time: Range between two timestamps.
+        data_set_ids: Only include sequences that belong to these datasets.
     """
 
     def __init__(
@@ -474,8 +474,8 @@ class SequenceUpdate(CogniteUpdate):
     """No description.
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        id: A server-generated ID for the object.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
     """
 
     class _PrimitiveSequenceUpdate(CognitePrimitiveUpdate):
@@ -593,8 +593,8 @@ class SequenceRow(CogniteResource):
     """This class represents a row in a sequence. It is used for both read and write.
 
     Args:
-        row_number (int): The row number for this row.
-        values (typing.Sequence[RowValues]): List of values in the order defined in the columns field. Number of items must match. Null is accepted for missing values. String values must be no longer than 256 characters.
+        row_number: The row number for this row.
+        values: List of values in the order defined in the columns field. Number of items must match. Null is accepted for missing values. String values must be no longer than 256 characters.
 
     """
 
@@ -625,10 +625,10 @@ class SequenceRows(CogniteResource):
     """An object representing a list of rows from a sequence.
 
     Args:
-        rows (typing.Sequence[SequenceRow]): The sequence rows.
-        columns (SequenceColumnList): The column information.
-        id (int | None): Identifier of the sequence the data belong to
-        external_id (str | None): External id of the sequence the data belong to
+        rows: The sequence rows.
+        columns: The column information.
+        id: Identifier of the sequence the data belong to
+        external_id: External id of the sequence the data belong to
     """
 
     def __init__(
@@ -675,10 +675,10 @@ class SequenceRows(CogniteResource):
         """Get a column by external_id.
 
         Args:
-            external_id (str): External id of the column.
+            external_id: External id of the column.
 
         Returns:
-            list[RowValues]: A list of values for that column in the sequence
+            A list of values for that column in the sequence
         """
         try:
             ix = self.column_external_ids.index(external_id)
@@ -702,10 +702,10 @@ class SequenceRows(CogniteResource):
         """Dump the sequence data into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            dict[str, Any]: A dictionary representing the instance.
+            A dictionary representing the instance.
         """
         key = "rowNumber" if camel_case else "row_number"
         dumped: dict[str, Any] = {
@@ -731,10 +731,10 @@ class SequenceRows(CogniteResource):
         """Convert the sequence data into a pandas DataFrame.
 
         Args:
-            column_names (ColumnNames): Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId".
+            column_names: Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId".
 
         Returns:
-            pandas.DataFrame: The dataframe.
+            The dataframe.
         """
         pd = local_import("pandas")
 
@@ -770,7 +770,7 @@ class SequenceRows(CogniteResource):
         """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods.
 
         Returns:
-            list[str]: List of sequence column external ids.
+            List of sequence column external ids.
         """
         assert self.columns is not None
         return self.columns.as_external_ids()
@@ -780,7 +780,7 @@ class SequenceRows(CogniteResource):
         """Retrieves list of column value types.
 
         Returns:
-            list[ValueType]: List of column value types
+            List of column value types
         """
         assert self.columns is not None
         return self.columns.value_types
@@ -825,12 +825,12 @@ class SequenceRowsList(CogniteResourceList[SequenceRows], IdTransformerMixin):
         """Convert the sequence data list into a pandas DataFrame. Each column will be a sequence.
 
         Args:
-            key (Literal['id', 'external_id']): If concat = False, this decides which field to use as key in the dictionary. Defaults to "external_id".
-            column_names (ColumnNames): Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
-            concat (bool): Whether to concatenate the sequences into a single DataFrame or return a dictionary of DataFrames. Defaults to False.
+            key: If concat = False, this decides which field to use as key in the dictionary. Defaults to "external_id".
+            column_names: Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
+            concat: Whether to concatenate the sequences into a single DataFrame or return a dictionary of DataFrames. Defaults to False.
 
         Returns:
-            pandas.DataFrame | dict[str, pandas.DataFrame] | dict[int, pandas.DataFrame]: The sequence data list as a pandas DataFrame.
+            The sequence data list as a pandas DataFrame.
         """
         pd = local_import("pandas")
         if concat:

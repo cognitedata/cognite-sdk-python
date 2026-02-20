@@ -240,17 +240,17 @@ class BasicAsyncAPIClient:
         Requires the caller to handle errors coming from non-2xx response status codes.
 
         Args:
-            method (Literal['GET', 'PUT', 'HEAD']): HTTP method.
-            full_url (str): Full URL to make the request to.
-            content (bytes | AsyncIterator[bytes] | None): Optional body content to send along with the request.
-            headers (dict[str, Any] | None): Optional headers to include in the request.
-            timeout (float | None): Override the default timeout for this request.
-            include_cdf_headers (bool): Whether to include Cognite Data Fusion headers in the request. Defaults to False.
-            api_subversion (str | None): When include_cdf_headers=True, override the API subversion to use for the request. Has no effect otherwise.
-            semaphore (asyncio.BoundedSemaphore | None): Semaphore to limit concurrent requests. Pass None for no limit.
+            method: HTTP method.
+            full_url: Full URL to make the request to.
+            content: Optional body content to send along with the request.
+            headers: Optional headers to include in the request.
+            timeout: Override the default timeout for this request.
+            include_cdf_headers: Whether to include Cognite Data Fusion headers in the request. Defaults to False.
+            api_subversion: When include_cdf_headers=True, override the API subversion to use for the request. Has no effect otherwise.
+            semaphore: Semaphore to limit concurrent requests. Pass None for no limit.
 
         Returns:
-            CogniteHTTPResponse: The response from the server.
+            The response from the server.
 
         Raises:
             CogniteHTTPStatusError: If the response status code is 4xx or 5xx.

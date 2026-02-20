@@ -99,22 +99,22 @@ class SimulatorRunsAPI(APIClient):
         Fetches simulation runs as they are iterated over, so you keep a limited number of simulation runs in memory.
 
         Args:
-            chunk_size (int | None): Number of simulation runs to return in each chunk. Defaults to yielding one simulation run a time.
-            limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (str | None): Filter by simulation run status
-            run_type (str | None): Filter by simulation run type
-            model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
-            simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
-            simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids
-            routine_external_ids (SequenceNotStr[str] | None): Filter by routine external ids
-            routine_revision_external_ids (SequenceNotStr[str] | None): Filter by routine revision external ids
-            model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
-            created_time (TimestampRange | None): Filter by created time
-            simulation_time (TimestampRange | None): Filter by simulation time
-            sort (SimulationRunsSort | None): The criteria to sort by.
+            chunk_size: Number of simulation runs to return in each chunk. Defaults to yielding one simulation run a time.
+            limit: The maximum number of simulation runs to return, pass None to return all.
+            status: Filter by simulation run status
+            run_type: Filter by simulation run type
+            model_external_ids: Filter by simulator model external ids
+            simulator_integration_external_ids: Filter by simulator integration external ids
+            simulator_external_ids: Filter by simulator external ids
+            routine_external_ids: Filter by routine external ids
+            routine_revision_external_ids: Filter by routine revision external ids
+            model_revision_external_ids: Filter by model revision external ids
+            created_time: Filter by created time
+            simulation_time: Filter by simulation time
+            sort: The criteria to sort by.
 
         Yields:
-            SimulationRun | SimulationRunList: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
+            yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
         """  # noqa: DOC404
         filter_runs = SimulatorRunsFilter(
             status=status,
@@ -160,21 +160,21 @@ class SimulatorRunsAPI(APIClient):
         Retrieves a list of simulation runs that match the given criteria.
 
         Args:
-            limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (str | None): Filter by simulation run status
-            run_type (str | None): Filter by simulation run type
-            model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
-            simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
-            simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids
-            routine_external_ids (SequenceNotStr[str] | None): Filter by routine external ids
-            routine_revision_external_ids (SequenceNotStr[str] | None): Filter by routine revision external ids
-            model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
-            created_time (TimestampRange | None): Filter by created time
-            simulation_time (TimestampRange | None): Filter by simulation time
-            sort (SimulationRunsSort | None): The criteria to sort by.
+            limit: The maximum number of simulation runs to return, pass None to return all.
+            status: Filter by simulation run status
+            run_type: Filter by simulation run type
+            model_external_ids: Filter by simulator model external ids
+            simulator_integration_external_ids: Filter by simulator integration external ids
+            simulator_external_ids: Filter by simulator external ids
+            routine_external_ids: Filter by routine external ids
+            routine_revision_external_ids: Filter by routine revision external ids
+            model_revision_external_ids: Filter by model revision external ids
+            created_time: Filter by created time
+            simulation_time: Filter by simulation time
+            sort: The criteria to sort by.
 
         Returns:
-            SimulationRunList: List of simulation runs
+            List of simulation runs
 
         Examples:
             List simulation runs:
@@ -239,10 +239,10 @@ class SimulatorRunsAPI(APIClient):
         """`Retrieve simulation runs by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_by_id_simulators_runs_byids_post>`_
 
         Args:
-            ids (int | Sequence[int]): The ID(s) of the simulation run(s) to retrieve.
+            ids: The ID(s) of the simulation run(s) to retrieve.
 
         Returns:
-            SimulationRun | SimulationRunList | None: The simulation run(s) with the given ID(s)
+            The simulation run(s) with the given ID(s)
 
         Examples:
             Retrieve a single simulation run by id:
@@ -272,10 +272,10 @@ class SimulatorRunsAPI(APIClient):
         """`Create simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
 
         Args:
-            items (SimulationRunWrite | Sequence[SimulationRunWrite]): The simulation run(s) to execute.
+            items: The simulation run(s) to execute.
 
         Returns:
-            SimulationRun | SimulationRunList: Created simulation run(s)
+            Created simulation run(s)
 
         Examples:
             Create new simulation run:
@@ -311,10 +311,10 @@ class SimulatorRunsAPI(APIClient):
         Retrieve data associated with a simulation run by ID.
 
         Args:
-            run_id (int): Simulation run id.
+            run_id: Simulation run id.
 
         Returns:
-            SimulationRunDataList: List of simulation run data
+            List of simulation run data
 
         Examples:
             Get simulation run data by run id:

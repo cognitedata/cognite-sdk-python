@@ -48,11 +48,11 @@ class ExtractionPipelinesAPI(APIClient):
         """Iterate over extraction pipelines
 
         Args:
-            chunk_size (int | None): Number of extraction pipelines to yield per chunk. Defaults to yielding extraction pipelines one by one.
-            limit (int | None): Limits the number of results to be returned. Defaults to yielding all extraction pipelines.
+            chunk_size: Number of extraction pipelines to yield per chunk. Defaults to yielding extraction pipelines one by one.
+            limit: Limits the number of results to be returned. Defaults to yielding all extraction pipelines.
 
         Yields:
-            ExtractionPipeline | ExtractionPipelineList: Yields extraction pipelines one by one or in chunks up to the chunk size.
+            Yields extraction pipelines one by one or in chunks up to the chunk size.
         """  # noqa: DOC404
         async for item in self._list_generator(
             method="GET",
@@ -67,11 +67,11 @@ class ExtractionPipelinesAPI(APIClient):
         """`Retrieve a single extraction pipeline by id. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/showExtPipe>`_
 
         Args:
-            id (int | None): ID
-            external_id (str | None): External ID
+            id: ID
+            external_id: External ID
 
         Returns:
-            ExtractionPipeline | None: Requested extraction pipeline or None if it does not exist.
+            Requested extraction pipeline or None if it does not exist.
 
         Examples:
 
@@ -101,12 +101,12 @@ class ExtractionPipelinesAPI(APIClient):
         """`Retrieve multiple extraction pipelines by ids and external ids. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/byidsExtPipes>`_
 
         Args:
-            ids (Sequence[int] | None): IDs
-            external_ids (SequenceNotStr[str] | None): External IDs
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            ids: IDs
+            external_ids: External IDs
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            ExtractionPipelineList: The requested ExtractionPipelines.
+            The requested ExtractionPipelines.
 
         Examples:
 
@@ -133,10 +133,10 @@ class ExtractionPipelinesAPI(APIClient):
         """`List extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/listExtPipes>`_
 
         Args:
-            limit (int | None): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit: Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            ExtractionPipelineList: List of requested ExtractionPipelines
+            List of requested ExtractionPipelines
 
         Examples:
 
@@ -172,10 +172,10 @@ class ExtractionPipelinesAPI(APIClient):
         You can create an arbitrary number of extraction pipelines, and the SDK will split the request into multiple requests if necessary.
 
         Args:
-            extraction_pipeline (ExtractionPipeline | ExtractionPipelineWrite | Sequence[ExtractionPipeline] | Sequence[ExtractionPipelineWrite]): Extraction pipeline or list of extraction pipelines to create.
+            extraction_pipeline: Extraction pipeline or list of extraction pipelines to create.
 
         Returns:
-            ExtractionPipeline | ExtractionPipelineList: Created extraction pipeline(s)
+            Created extraction pipeline(s)
 
         Examples:
 
@@ -203,8 +203,8 @@ class ExtractionPipelinesAPI(APIClient):
         """`Delete one or more extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/deleteExtPipes>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
+            id: Id or list of ids
+            external_id: External ID or list of external ids
 
         Examples:
 
@@ -240,11 +240,11 @@ class ExtractionPipelinesAPI(APIClient):
         """`Update one or more extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/updateExtPipes>`_
 
         Args:
-            item (ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate | Sequence[ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate]): Extraction pipeline(s) to update
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (ExtractionPipeline or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: Extraction pipeline(s) to update
+            mode: How to update data when a non-update object is given (ExtractionPipeline or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            ExtractionPipeline | ExtractionPipelineList: Updated extraction pipeline(s)
+            Updated extraction pipeline(s)
 
         Examples:
 

@@ -106,10 +106,10 @@ def datetime_to_ms(dt: datetime) -> int:
     """Converts a datetime object to milliseconds since epoch.
 
     Args:
-        dt (datetime): Naive or aware datetime object. Naive datetimes are interpreted as local time.
+        dt: Naive or aware datetime object. Naive datetimes are interpreted as local time.
 
     Returns:
-        int: Milliseconds since epoch (negative for time prior to 1970-01-01)
+        Milliseconds since epoch (negative for time prior to 1970-01-01)
     """
     try:
         return int(1000 * dt.timestamp())
@@ -125,13 +125,13 @@ def ms_to_datetime(ms: int | float) -> datetime:
     """Converts valid Cognite timestamps, i.e. milliseconds since epoch, to datetime object.
 
     Args:
-        ms (int | float): Milliseconds since epoch.
+        ms: Milliseconds since epoch.
 
     Raises:
         ValueError: On invalid Cognite timestamps.
 
     Returns:
-        datetime: Aware datetime object in UTC.
+        Aware datetime object in UTC.
     """
     if not (MIN_TIMESTAMP_MS <= ms <= MAX_TIMESTAMP_MS):
         raise ValueError(f"Input {ms=} does not satisfy: {MIN_TIMESTAMP_MS} <= ms <= {MAX_TIMESTAMP_MS}")
@@ -144,13 +144,13 @@ def datetime_to_ms_iso_timestamp(dt: datetime) -> str:
     """Converts a datetime object to a string representing a timestamp in the ISO-format expected by the Cognite Data Modeling APIs.
 
     Args:
-        dt (datetime): Naive or aware datetime object. Naive datetimes are interpreted as local time.
+        dt: Naive or aware datetime object. Naive datetimes are interpreted as local time.
 
     Raises:
         TypeError: If dt is not a datetime object
 
     Returns:
-        str: Timestamp string in ISO 8601 format with milliseconds
+        Timestamp string in ISO 8601 format with milliseconds
     """
     if isinstance(dt, datetime):
         if dt.tzinfo is None:
@@ -163,10 +163,10 @@ def convert_data_modeling_timestamp(timestamp: str) -> datetime:
     """Converts a timestamp string to a datetime object.
 
     Args:
-        timestamp (str): A timestamp string.
+        timestamp: A timestamp string.
 
     Returns:
-        datetime: A datetime object.
+        A datetime object.
     """
     try:
         return datetime.fromisoformat(timestamp)
@@ -232,10 +232,10 @@ def timestamp_to_ms(timestamp: int | float | str | datetime) -> int:
     """Returns the ms representation of some timestamp given by milliseconds, time-shift format or datetime object
 
     Args:
-        timestamp (int | float | str | datetime): Convert this timestamp to ms.
+        timestamp: Convert this timestamp to ms.
 
     Returns:
-        int: Milliseconds since epoch representation of timestamp
+        Milliseconds since epoch representation of timestamp
 
     Examples:
 

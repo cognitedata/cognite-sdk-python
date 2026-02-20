@@ -95,23 +95,23 @@ class TransformationsAPI(APIClient):
         """Iterate over transformations
 
         Args:
-            chunk_size (int | None): Number of transformations to return in each chunk. Defaults to yielding one transformation a time.
-            include_public (bool): Whether public transformations should be included in the results. (default true).
-            name_regex (str | None): Regex expression to match the transformation name
-            query_regex (str | None): Regex expression to match the transformation query
-            destination_type (str | None): Transformation destination resource name to filter by.
-            conflict_mode (str | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
-            cdf_project_name (str | None): Project name to filter by configured source and destination project
-            has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
-            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            data_set_ids (int | list[int] | None): Return only transformations in the specified data sets with these id(s).
-            data_set_external_ids (str | list[str] | None): Return only transformations in the specified data sets with these external id(s).
-            tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
-            limit (int | None): Limits the number of results to be returned. Defaults to yielding all transformations.
+            chunk_size: Number of transformations to return in each chunk. Defaults to yielding one transformation a time.
+            include_public: Whether public transformations should be included in the results. (default true).
+            name_regex: Regex expression to match the transformation name
+            query_regex: Regex expression to match the transformation query
+            destination_type: Transformation destination resource name to filter by.
+            conflict_mode: Filters by a selected transformation action type: abort/create, upsert, update, delete
+            cdf_project_name: Project name to filter by configured source and destination project
+            has_blocked_error: Whether only the blocked transformations should be included in the results.
+            created_time: Range between two timestamps
+            last_updated_time: Range between two timestamps
+            data_set_ids: Return only transformations in the specified data sets with these id(s).
+            data_set_external_ids: Return only transformations in the specified data sets with these external id(s).
+            tags: Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+            limit: Limits the number of results to be returned. Defaults to yielding all transformations.
 
         Yields:
-            Transformation | TransformationList: Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
+            Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
         """  # noqa: DOC404
         ds_ids = IdentifierSequence.load(data_set_ids, data_set_external_ids, id_name="data_set").as_dicts()
 
@@ -155,10 +155,10 @@ class TransformationsAPI(APIClient):
         """`Create one or more transformations. <https://developer.cognite.com/api#tag/Transformations/operation/createTransformations>`_
 
         Args:
-            transformation (Transformation | TransformationWrite | Sequence[Transformation] | Sequence[TransformationWrite]): Transformation or list of transformations to create.
+            transformation: Transformation or list of transformations to create.
 
         Returns:
-            Transformation | TransformationList: Created transformation(s)
+            Created transformation(s)
 
         Examples:
 
@@ -257,9 +257,9 @@ class TransformationsAPI(APIClient):
         """`Delete one or more transformations. <https://developer.cognite.com/api#tag/Transformations/operation/deleteTransformations>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids.
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids.
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            id: Id or list of ids.
+            external_id: External ID or list of external ids.
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Example:
 
@@ -295,22 +295,22 @@ class TransformationsAPI(APIClient):
         """`List all transformations. <https://developer.cognite.com/api#tag/Transformations/operation/filterTransformations>`_
 
         Args:
-            include_public (bool): Whether public transformations should be included in the results. (default true).
-            name_regex (str | None): Regex expression to match the transformation name
-            query_regex (str | None): Regex expression to match the transformation query
-            destination_type (str | None): Transformation destination resource name to filter by.
-            conflict_mode (str | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
-            cdf_project_name (str | None): Project name to filter by configured source and destination project
-            has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
-            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            data_set_ids (int | list[int] | None): Return only transformations in the specified data sets with these id(s).
-            data_set_external_ids (str | list[str] | None): Return only transformations in the specified data sets with these external id(s).
-            tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
-            limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            include_public: Whether public transformations should be included in the results. (default true).
+            name_regex: Regex expression to match the transformation name
+            query_regex: Regex expression to match the transformation query
+            destination_type: Transformation destination resource name to filter by.
+            conflict_mode: Filters by a selected transformation action type: abort/create, upsert, update, delete
+            cdf_project_name: Project name to filter by configured source and destination project
+            has_blocked_error: Whether only the blocked transformations should be included in the results.
+            created_time: Range between two timestamps
+            last_updated_time: Range between two timestamps
+            data_set_ids: Return only transformations in the specified data sets with these id(s).
+            data_set_external_ids: Return only transformations in the specified data sets with these external id(s).
+            tags: Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+            limit: Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
         Returns:
-            TransformationList: List of transformations
+            List of transformations
 
         Example:
 
@@ -350,11 +350,11 @@ class TransformationsAPI(APIClient):
         """`Retrieve a single transformation by id. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_
 
         Args:
-            id (int | None): ID
-            external_id (str | None): No description.
+            id: ID
+            external_id: No description.
 
         Returns:
-            Transformation | None: Requested transformation or None if it does not exist.
+            Requested transformation or None if it does not exist.
 
         Examples:
 
@@ -385,12 +385,12 @@ class TransformationsAPI(APIClient):
         """`Retrieve multiple transformations. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_
 
         Args:
-            ids (Sequence[int] | None): List of ids to retrieve.
-            external_ids (SequenceNotStr[str] | None): List of external ids to retrieve.
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            ids: List of ids to retrieve.
+            external_ids: List of external ids to retrieve.
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            TransformationList: Requested transformation or None if it does not exist.
+            Requested transformation or None if it does not exist.
 
         Examples:
 
@@ -434,11 +434,11 @@ class TransformationsAPI(APIClient):
         """`Update one or more transformations <https://developer.cognite.com/api#tag/Transformations/operation/updateTransformations>`_
 
         Args:
-            item (Transformation | TransformationWrite | TransformationUpdate | Sequence[Transformation | TransformationWrite | TransformationUpdate]): Transformation(s) to update
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Transformation or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: Transformation(s) to update
+            mode: How to update data when a non-update object is given (Transformation or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            Transformation | TransformationList: Updated transformation(s)
+            Updated transformation(s)
 
         Examples:
 
@@ -516,13 +516,13 @@ class TransformationsAPI(APIClient):
         """`Run a transformation. <https://developer.cognite.com/api#tag/Transformations/operation/runTransformation>`_
 
         Args:
-            transformation_id (int | None): Transformation internal id
-            transformation_external_id (str | None): Transformation external id
-            wait (bool): Wait until the transformation run is finished. Defaults to True.
-            timeout (float | None): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status. Won't have any effect if wait is False.
+            transformation_id: Transformation internal id
+            transformation_external_id: Transformation external id
+            wait: Wait until the transformation run is finished. Defaults to True.
+            timeout: maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status. Won't have any effect if wait is False.
 
         Returns:
-            TransformationJob: Created transformation job
+            Created transformation job
 
         Examples:
 
@@ -554,8 +554,8 @@ class TransformationsAPI(APIClient):
         """`Cancel a running transformation. <https://developer.cognite.com/api#tag/Transformations/operation/postApiV1ProjectsProjectTransformationsCancel>`_
 
         Args:
-            transformation_id (int | None): Transformation internal id
-            transformation_external_id (str | None): Transformation external id
+            transformation_id: Transformation internal id
+            transformation_external_id: Transformation external id
 
         Examples:
 
@@ -586,15 +586,15 @@ class TransformationsAPI(APIClient):
         """`Preview the result of a query. <https://developer.cognite.com/api#tag/Query/operation/runPreview>`_
 
         Args:
-            query (str | None): SQL query to run for preview.
-            convert_to_string (bool): Stringify values in the query results, default is False.
-            limit (int | None): Maximum number of rows to return in the final result, default is 100.
-            source_limit (int | None): Maximum number of items to read from the data source or None to run without limit, default is 100.
-            infer_schema_limit (int | None): Limit for how many rows that are used for inferring result schema, default is 10 000.
-            timeout (int | None): Number of seconds to wait before cancelling a query. The default, and maximum, is 240.
+            query: SQL query to run for preview.
+            convert_to_string: Stringify values in the query results, default is False.
+            limit: Maximum number of rows to return in the final result, default is 100.
+            source_limit: Maximum number of items to read from the data source or None to run without limit, default is 100.
+            infer_schema_limit: Limit for how many rows that are used for inferring result schema, default is 10 000.
+            timeout: Number of seconds to wait before cancelling a query. The default, and maximum, is 240.
 
         Returns:
-            TransformationPreviewResult: Result of the executed query
+            Result of the executed query
 
         Examples:
 

@@ -23,10 +23,10 @@ class VisionAPI(APIClient):
         expected by the Context API.
 
         Args:
-            ids (list[int] | int | None): No description.
-            external_ids (list[str] | str | None): No description.
+            ids: No description.
+            external_ids: No description.
         Returns:
-            list: No description."""
+            No description."""
         identifier_sequence = IdentifierSequence.load(ids=ids, external_ids=external_ids).as_primitives()
         id_objs = [{"fileId": id} for id in identifier_sequence if isinstance(id, int)]
         external_id_objs = [
@@ -44,12 +44,12 @@ class VisionAPI(APIClient):
         """`Start an asynchronous job to extract features from image files. <https://developer.cognite.com/api#tag/Vision/operation/postVisionExtract>`_
 
         Args:
-            features (VisionFeature | list[VisionFeature]): The feature(s) to extract from the provided image files.
-            file_ids (list[int] | None): IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
-            file_external_ids (list[str] | None): The external file ids of the image files to analyze.
-            parameters (FeatureParameters | None): No description.
+            features: The feature(s) to extract from the provided image files.
+            file_ids: IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
+            file_external_ids: The external file ids of the image files to analyze.
+            parameters: No description.
         Returns:
-            VisionExtractJob: Resulting queued job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
+            Resulting queued job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
 
         Examples:
             Start a job, wait for completion and then get the parsed results:
@@ -94,10 +94,10 @@ class VisionAPI(APIClient):
         """`Retrieve an existing extract job by ID. <https://developer.cognite.com/api#tag/Vision/operation/getVisionExtract>`_
 
         Args:
-            job_id (int): ID of an existing feature extraction job.
+            job_id: ID of an existing feature extraction job.
 
         Returns:
-            VisionExtractJob: Vision extract job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
+            Vision extract job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
 
         Examples:
             Retrieve a vision extract job by ID:

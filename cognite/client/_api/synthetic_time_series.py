@@ -104,21 +104,19 @@ class SyntheticDatapointsAPI(APIClient):
             You can read the guide to synthetic time series in our `documentation <https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries>`_.
 
         Args:
-            expressions (str | sympy.Basic | Sequence[str] | Sequence[sympy.Basic]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
-            start (int | str | datetime.datetime): Inclusive start.
-            end (int | str | datetime.datetime): Exclusive end.
-            limit (int | None): Number of datapoints per expression to retrieve.
-            variables (Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None): An optional map of symbol replacements.
-            aggregate (str | None): use this aggregate when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
-            granularity (str | None): use this granularity with the aggregate.
-            target_unit (str | None): use this target_unit when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
-            target_unit_system (str | None): Same as target_unit, but with unit system (e.g. SI). Only one of target_unit and target_unit_system can be specified.
-            timezone (str | datetime.timezone | ZoneInfo | None): The timezone to use when aggregating datapoints. For aggregates of granularity 'hour' and longer,
-                which time zone should we align to. Align to the start of the hour, start of the day or start of the month. For time zones of type Region/Location,
-                the aggregate duration can vary, typically due to daylight saving time. For time zones of type UTC+/-HH:MM, use increments of 15 minutes. Default: "UTC" (None)
+            expressions: Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
+            start: Inclusive start.
+            end: Exclusive end.
+            limit: Number of datapoints per expression to retrieve.
+            variables: An optional map of symbol replacements.
+            aggregate: use this aggregate when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
+            granularity: use this granularity with the aggregate.
+            target_unit: use this target_unit when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
+            target_unit_system: Same as target_unit, but with unit system (e.g. SI). Only one of target_unit and target_unit_system can be specified.
+            timezone: The timezone to use when aggregating datapoints. For aggregates of granularity 'hour' and longer, which time zone should we align to. Align to the start of the hour, start of the day or start of the month. For time zones of type Region/Location, the aggregate duration can vary, typically due to daylight saving time. For time zones of type UTC+/-HH:MM, use increments of 15 minutes. Default: "UTC" (None)
 
         Returns:
-            Datapoints | DatapointsList: A DatapointsList object containing the calculated data.
+            A DatapointsList object containing the calculated data.
 
         Examples:
 

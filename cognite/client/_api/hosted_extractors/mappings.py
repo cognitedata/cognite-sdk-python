@@ -42,11 +42,11 @@ class MappingsAPI(APIClient):
         Fetches Mapping as they are iterated over, so you keep a limited number of mappings in memory.
 
         Args:
-            chunk_size (int | None): Number of Mappings to return in each chunk. Defaults to yielding one mapping at a time.
-            limit (int | None): Maximum number of mappings to return. Defaults to returning all items.
+            chunk_size: Number of Mappings to return in each chunk. Defaults to yielding one mapping at a time.
+            limit: Maximum number of mappings to return. Defaults to returning all items.
 
         Yields:
-            Mapping | MappingList: yields Mapping one by one if chunk_size is not specified, else MappingList objects.
+            yields Mapping one by one if chunk_size is not specified, else MappingList objects.
         """  # noqa: DOC404
         self._warning.warn()
 
@@ -72,12 +72,11 @@ class MappingsAPI(APIClient):
         """`Retrieve one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/retrieve_mappings>`_
 
         Args:
-            external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
-            ignore_unknown_ids (bool): Ignore external IDs that are not found
-
+            external_ids: The external ID provided by the client. Must be unique for the resource type.
+            ignore_unknown_ids: Ignore external IDs that are not found
 
         Returns:
-            Mapping | MappingList: Requested mappings
+            Requested mappings
 
         Examples:
 
@@ -106,9 +105,9 @@ class MappingsAPI(APIClient):
         """`Delete one or more mappings  <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/delete_mappings>`_
 
         Args:
-            external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
-            ignore_unknown_ids (bool): Ignore external IDs that are not found
-            force (bool): Delete any jobs associated with each item.
+            external_ids: The external ID provided by the client. Must be unique for the resource type.
+            ignore_unknown_ids: Ignore external IDs that are not found
+            force: Delete any jobs associated with each item.
 
         Examples:
 
@@ -143,10 +142,10 @@ class MappingsAPI(APIClient):
         """`Create one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/create_mappings>`_
 
         Args:
-            items (MappingWrite | Sequence[MappingWrite]): Mapping(s) to create.
+            items: Mapping(s) to create.
 
         Returns:
-            Mapping | MappingList: Created mapping(s)
+            Created mapping(s)
 
         Examples:
 
@@ -180,10 +179,10 @@ class MappingsAPI(APIClient):
         """`Update one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/update_mappings>`_
 
         Args:
-            items (MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]): Mapping(s) to update.
+            items: Mapping(s) to update.
 
         Returns:
-            Mapping | MappingList: Updated mapping(s)
+            Updated mapping(s)
 
         Examples:
 
@@ -212,10 +211,10 @@ class MappingsAPI(APIClient):
         """`List mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/list_mappings>`_
 
         Args:
-            limit (int | None): Maximum number of mappings to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit: Maximum number of mappings to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            MappingList: List of requested mappings
+            List of requested mappings
 
         Examples:
 

@@ -50,15 +50,15 @@ class SimulatorModelRevisionsAPI(APIClient):
         Retrieves a list of simulator model revisions that match the given criteria.
 
         Args:
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
-            sort (PropertySort | None): The criteria to sort by.
-            model_external_ids (str | SequenceNotStr[str] | None): The external ids of the simulator models to filter by.
-            all_versions (bool | None): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
-            created_time (TimestampRange | None): Filter by created time.
-            last_updated_time (TimestampRange | None): Filter by last updated time.
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
+            sort: The criteria to sort by.
+            model_external_ids: The external ids of the simulator models to filter by.
+            all_versions: If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
+            created_time: Filter by created time.
+            last_updated_time: Filter by last updated time.
 
         Returns:
-            SimulatorModelRevisionList: List of simulator model revisions
+            List of simulator model revisions
 
         Examples:
             List simulator model revisions:
@@ -118,11 +118,11 @@ class SimulatorModelRevisionsAPI(APIClient):
         Retrieve one or more simulator model revisions by ID(s) or external ID(s).
 
         Args:
-            ids (int | Sequence[int] | None): The ids of the simulator model revisions.
-            external_ids (str | SequenceNotStr[str] | None): The external ids of the simulator model revisions.
+            ids: The ids of the simulator model revisions.
+            external_ids: The external ids of the simulator model revisions.
 
         Returns:
-            SimulatorModelRevision | SimulatorModelRevisionList | None: Requested simulator model revision(s)
+            Requested simulator model revision(s)
 
         Examples:
             Get simulator model revision by id:
@@ -191,16 +191,16 @@ class SimulatorModelRevisionsAPI(APIClient):
         Fetches simulator model revisions as they are iterated over, so you keep a limited number of simulator model revisions in memory.
 
         Args:
-            chunk_size (int | None): Number of simulator model revisions to return in each chunk. Defaults to yielding one simulator model revision a time.
-            sort (PropertySort | None): The criteria to sort by.
-            model_external_ids (str | SequenceNotStr[str] | None): The external ids of the simulator models to filter by.
-            all_versions (bool | None): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
-            created_time (TimestampRange | None): Filter by created time.
-            last_updated_time (TimestampRange | None): Filter by last updated time.
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
+            chunk_size: Number of simulator model revisions to return in each chunk. Defaults to yielding one simulator model revision a time.
+            sort: The criteria to sort by.
+            model_external_ids: The external ids of the simulator models to filter by.
+            all_versions: If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
+            created_time: Filter by created time.
+            last_updated_time: Filter by last updated time.
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
         Yields:
-            SimulatorModelRevision | SimulatorModelRevisionList: yields SimulatorModelRevision one by one if chunk is not specified, else SimulatorModelRevisionList objects.
+            yields SimulatorModelRevision one by one if chunk is not specified, else SimulatorModelRevisionList objects.
         """  # noqa: DOC404
         model_revisions_filter = SimulatorModelRevisionsFilter(
             model_external_ids=model_external_ids,
@@ -231,10 +231,10 @@ class SimulatorModelRevisionsAPI(APIClient):
         """`Create simulator model revisions <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
 
         Args:
-            items (SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]): The model revision(s) to create.
+            items: The model revision(s) to create.
 
         Returns:
-            SimulatorModelRevision | SimulatorModelRevisionList: Created simulator model revision(s)
+            Created simulator model revision(s)
 
         Examples:
             Create new simulator model revisions:
@@ -280,9 +280,9 @@ class SimulatorModelRevisionsAPI(APIClient):
         Retrieves a list of simulator model revisions data that match the given criteria.
 
         Args:
-            model_revision_external_id (str): The external id of the simulator model revision to filter by.
+            model_revision_external_id: The external id of the simulator model revision to filter by.
         Returns:
-            SimulatorModelRevisionDataList: List of simulator model revision data
+            List of simulator model revision data
 
         Examples:
             List simulator model revision data:

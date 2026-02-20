@@ -33,15 +33,15 @@ class ThreeDAssetMappingAPI(APIClient):
         """`List 3D node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/get3DMappings>`_
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
-            node_id (int | None): List only asset mappings associated with this node.
-            asset_id (int | None): List only asset mappings associated with this asset.
-            intersects_bounding_box (BoundingBox3D | None): If given, only return asset mappings for assets whose bounding box intersects with the given bounding box.
-            limit (int | None): Maximum number of asset mappings to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            model_id: Id of the model.
+            revision_id: Id of the revision.
+            node_id: List only asset mappings associated with this node.
+            asset_id: List only asset mappings associated with this asset.
+            intersects_bounding_box: If given, only return asset mappings for assets whose bounding box intersects with the given bounding box.
+            limit: Maximum number of asset mappings to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            ThreeDAssetMappingList: The list of asset mappings.
+            The list of asset mappings.
 
         Example:
 
@@ -97,12 +97,12 @@ class ThreeDAssetMappingAPI(APIClient):
         """`Create 3d node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/create3DMappings>`_
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
-            asset_mapping (ThreeDAssetMapping | ThreeDAssetMappingWrite | Sequence[ThreeDAssetMapping] | Sequence[ThreeDAssetMappingWrite]): The asset mapping(s) to create.
+            model_id: Id of the model.
+            revision_id: Id of the revision.
+            asset_mapping: The asset mapping(s) to create.
 
         Returns:
-            ThreeDAssetMapping | ThreeDAssetMappingList: The created asset mapping(s).
+            The created asset mapping(s).
 
         Example:
 
@@ -130,9 +130,9 @@ class ThreeDAssetMappingAPI(APIClient):
         """`Delete 3d node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/delete3DMappings>`_
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
-            asset_mapping (ThreeDAssetMapping | Sequence[ThreeDAssetMapping]): The asset mapping(s) to delete.
+            model_id: Id of the model.
+            revision_id: Id of the revision.
+            asset_mapping: The asset mapping(s) to delete.
 
         Example:
 

@@ -31,10 +31,10 @@ class Summary:
     A summary object consisting of a textual summary plus the id of the summarized document
 
     Args:
-        summary (str): The textual summary of the document
-        id (int | None): The id of the document
-        external_id (str | None): The external id of the document
-        instance_id (NodeId| None): The instance id of the document
+        summary: The textual summary of the document
+        id: The id of the document
+        external_id: The external id of the document
+        instance_id: The instance id of the document
     """
 
     summary: str
@@ -61,11 +61,11 @@ class AnswerLocation:
     specifies exactly where inside a document an answer can be found.
 
     Args:
-        page_number (int): Page number, starting with 1
-        left (float): Leftmost edge of the bounding box
-        right (float): Rightmost edge of the bounding box
-        top (float): Topmost edge of the bounding box
-        bottom (float): Bottommost edge of the bounding box
+        page_number: Page number, starting with 1
+        left: Leftmost edge of the bounding box
+        right: Rightmost edge of the bounding box
+        top: Topmost edge of the bounding box
+        bottom: Bottommost edge of the bounding box
     """
 
     page_number: int
@@ -99,11 +99,11 @@ class AnswerReference:
     where the answer was found.
 
     Args:
-        file_id (int): The internal id of the document
-        external_id (str | None): The external id of the document
-        instance_id (NodeId | None): The instance id of the document
-        file_name (str): The name of the document
-        locations (list[AnswerLocation]): A list of locations within the document, where the answer was found
+        file_id: The internal id of the document
+        external_id: The external id of the document
+        instance_id: The instance id of the document
+        file_name: The name of the document
+        locations: A list of locations within the document, where the answer was found
     """
 
     file_id: int
@@ -135,8 +135,8 @@ class AnswerContent:
     the documents containing the source material for the answer.
 
     Args:
-        text (str): The extracted plain text
-        content (list[AnswerReference]): The list of references
+        text: The extracted plain text
+        content: The list of references
     """
 
     text: str
@@ -163,7 +163,7 @@ class Answer:
     of the piece of text the answer was constructed from.
 
     Args:
-        content (list[AnswerContent]): The list of content objects.
+        content: The list of content objects.
     """
 
     content: list[AnswerContent]

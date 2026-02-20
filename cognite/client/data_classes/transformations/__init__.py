@@ -41,9 +41,9 @@ class SessionDetails:
     """Details of a source session.
 
     Args:
-        session_id (int | None): CDF source session ID
-        client_id (str | None): Idp source client ID
-        project_name (str | None): CDF source project name
+        session_id: CDF source session ID
+        client_id: Idp source client ID
+        project_name: CDF source project name
     """
 
     def __init__(
@@ -72,10 +72,10 @@ class SessionDetails:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            dict[str, Any]: A dictionary representation of the instance.
+            A dictionary representation of the instance.
         """
         ret = vars(self)
 
@@ -177,30 +177,30 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
     """The transformation resource allows transforming data in CDF.
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the Transformation.
-        query (str): SQL query of the transformation.
-        destination (TransformationDestination): see TransformationDestination for options.
-        conflict_mode (str): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
-        is_public (bool): Indicates if the transformation is visible to all in project or only to the owner.
-        ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
-        source_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials key on the destination.
-        destination_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials on the destination.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        owner (str): Owner of the transformation: requester's identity.
-        owner_is_current_user (bool): Indicates if the transformation belongs to the current user.
-        running_job (TransformationJob | None): Details for the job of this transformation currently running.
-        last_finished_job (TransformationJob | None): Details for the last finished job of this transformation.
-        blocked (TransformationBlockedInfo | None): Provides reason and time if the transformation is blocked.
-        schedule (TransformationSchedule | None): Details for the schedule if the transformation is scheduled.
-        data_set_id (int | None): No description.
-        source_nonce (NonceCredentials | None): Single use credentials to bind to a CDF session for reading.
-        destination_nonce (NonceCredentials | None): Single use credentials to bind to a CDF session for writing.
-        source_session (SessionDetails | None): Details for the session used to read from the source project.
-        destination_session (SessionDetails | None): Details for the session used to write to the destination project.
-        tags (list[str] | None): No description.
+        id: A server-generated ID for the object.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: The name of the Transformation.
+        query: SQL query of the transformation.
+        destination: see TransformationDestination for options.
+        conflict_mode: What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
+        is_public: Indicates if the transformation is visible to all in project or only to the owner.
+        ignore_null_fields: Indicates how null values are handled on updates: ignore or set null.
+        source_oidc_credentials: Configure the transformation to authenticate with the given oidc credentials key on the destination.
+        destination_oidc_credentials: Configure the transformation to authenticate with the given oidc credentials on the destination.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        owner: Owner of the transformation: requester's identity.
+        owner_is_current_user: Indicates if the transformation belongs to the current user.
+        running_job: Details for the job of this transformation currently running.
+        last_finished_job: Details for the last finished job of this transformation.
+        blocked: Provides reason and time if the transformation is blocked.
+        schedule: Details for the schedule if the transformation is scheduled.
+        data_set_id: No description.
+        source_nonce: Single use credentials to bind to a CDF session for reading.
+        destination_nonce: Single use credentials to bind to a CDF session for writing.
+        source_session: Details for the session used to read from the source project.
+        destination_session: Details for the session used to write to the destination project.
+        tags: No description.
     """
 
     def __init__(
@@ -331,10 +331,10 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            dict[str, Any]: A dictionary representation of the instance.
+            A dictionary representation of the instance.
         """
         ret = super().dump(camel_case=camel_case)
 
@@ -346,10 +346,10 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
     async def run_async(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
         """Run this transformation.
         Args:
-            wait (bool): Whether to wait for the transformation to finish. Defaults to True.
-            timeout (float | None): How long to wait for the transformation to finish, in seconds. If None, wait indefinitely. Only used if `wait` is True. Defaults to None.
+            wait: Whether to wait for the transformation to finish. Defaults to True.
+            timeout: How long to wait for the transformation to finish, in seconds. If None, wait indefinitely. Only used if `wait` is True. Defaults to None.
         Returns:
-            TransformationJob: The started transformation job.
+            The started transformation job.
         """
         return await self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
 
@@ -413,19 +413,19 @@ class TransformationWrite(WriteableCogniteResource["TransformationWrite"], _Tran
     """The transformation resource allows transforming data in CDF.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the Transformation.
-        ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
-        query (str | None): SQL query of the transformation.
-        destination (TransformationDestination | None): see TransformationDestination for options.
-        conflict_mode (Literal['abort', 'delete', 'update', 'upsert'] | None): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
-        is_public (bool): Indicates if the transformation is visible to all in project or only to the owner.
-        source_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials key on the destination.
-        destination_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials on the destination.
-        data_set_id (int | None): No description.
-        source_nonce (NonceCredentials | None): Single use credentials to bind to a CDF session for reading.
-        destination_nonce (NonceCredentials | None): Single use credentials to bind to a CDF session for writing.
-        tags (list[str] | None): No description.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: The name of the Transformation.
+        ignore_null_fields: Indicates how null values are handled on updates: ignore or set null.
+        query: SQL query of the transformation.
+        destination: see TransformationDestination for options.
+        conflict_mode: What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
+        is_public: Indicates if the transformation is visible to all in project or only to the owner.
+        source_oidc_credentials: Configure the transformation to authenticate with the given oidc credentials key on the destination.
+        destination_oidc_credentials: Configure the transformation to authenticate with the given oidc credentials on the destination.
+        data_set_id: No description.
+        source_nonce: Single use credentials to bind to a CDF session for reading.
+        destination_nonce: Single use credentials to bind to a CDF session for writing.
+        tags: No description.
     """
 
     def __init__(
@@ -497,10 +497,10 @@ class TransformationWrite(WriteableCogniteResource["TransformationWrite"], _Tran
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            dict[str, Any]: A dictionary representation of the instance.
+            A dictionary representation of the instance.
         """
         ret = super().dump(camel_case=camel_case)
 
@@ -518,8 +518,8 @@ class TransformationUpdate(CogniteUpdate):
     """Changes applied to transformation
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): External Id provided by client. Should be unique within the project.
+        id: A server-generated ID for the object.
+        external_id: External Id provided by client. Should be unique within the project.
     """
 
     class _PrimitiveTransformationUpdate(CognitePrimitiveUpdate):
@@ -636,7 +636,7 @@ class ContainsAny(TagsFilter):
     """Return transformations that has one of the tags specified.
 
     Args:
-        tags (list[str] | None): The resource item contains at least one of the listed tags. The tags are defined by a list of external ids.
+        tags: The resource item contains at least one of the listed tags. The tags are defined by a list of external ids.
 
     Examples:
 
@@ -658,17 +658,17 @@ class TransformationFilter(CogniteFilter):
     """No description.
 
     Args:
-        include_public (bool): Whether public transformations should be included in the results. The default is true.
-        name_regex (str | None): Regex expression to match the transformation name
-        query_regex (str | None): Regex expression to match the transformation query
-        destination_type (str | None): Transformation destination resource name to filter by.
-        conflict_mode (str | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
-        cdf_project_name (str | None): Project name to filter by configured source and destination project
-        has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
-        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-        last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-        data_set_ids (list[dict[str, Any]] | None): Return only transformations in the specified data sets with these ids, e.g. [{"id": 1}, {"externalId": "foo"}].
-        tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+        include_public: Whether public transformations should be included in the results. The default is true.
+        name_regex: Regex expression to match the transformation name
+        query_regex: Regex expression to match the transformation query
+        destination_type: Transformation destination resource name to filter by.
+        conflict_mode: Filters by a selected transformation action type: abort/create, upsert, update, delete
+        cdf_project_name: Project name to filter by configured source and destination project
+        has_blocked_error: Whether only the blocked transformations should be included in the results.
+        created_time: Range between two timestamps
+        last_updated_time: Range between two timestamps
+        data_set_ids: Return only transformations in the specified data sets with these ids, e.g. [{"id": 1}, {"externalId": "foo"}].
+        tags: Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
     """
 
     def __init__(
@@ -711,8 +711,8 @@ class TransformationPreviewResult(CogniteResource):
     """Allows previewing the result of a sql transformation before executing it.
 
     Args:
-        schema (TransformationSchemaColumnList): List of column descriptions.
-        results (list[dict]): List of resulting rows. Each row is a dictionary where the key is the column name and the value is the entry.
+        schema: List of column descriptions.
+        results: List of resulting rows. Each row is a dictionary where the key is the column name and the value is the entry.
     """
 
     def __init__(
@@ -734,10 +734,10 @@ class TransformationPreviewResult(CogniteResource):
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            dict[str, Any]: A dictionary representation of the instance.
+            A dictionary representation of the instance.
         """
         return {
             "schema": {"items": self.schema.dump(camel_case=camel_case)},

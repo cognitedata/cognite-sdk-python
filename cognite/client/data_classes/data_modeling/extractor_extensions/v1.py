@@ -27,11 +27,11 @@ class CogniteExtractorDataApply(_CogniteExtractorDataProperties, TypedNodeApply)
     It is used when data is written to CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite extractor datum.
-        extracted_data (dict | None | Omitted): Unstructured information extracted from source system
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite extractor datum.
+        extracted_data: Unstructured information extracted from source system
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -53,14 +53,14 @@ class CogniteExtractorData(_CogniteExtractorDataProperties, TypedNode):
     It is used when data is read from CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite extractor datum.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        extracted_data (dict | None): Unstructured information extracted from source system
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite extractor datum.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        extracted_data: Unstructured information extracted from source system
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -109,26 +109,26 @@ class CogniteExtractorFileApply(_CogniteExtractorFileProperties, TypedNodeApply)
     It is used when data is written to CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite extractor file.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        assets (list[DirectRelationReference | tuple[str, str]] | None | Omitted): List of assets this file relates to
-        mime_type (str | None | Omitted): MIME type of the file
-        directory (str | None | Omitted): Contains the path elements from the source (for when the source system has a file system hierarchy or similar)
-        category (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to an instance of CogniteFileCategory representing the detected categorization/class for the file
-        extracted_data (dict | None | Omitted): Unstructured information extracted from source system
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite extractor file.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        assets: List of assets this file relates to
+        mime_type: MIME type of the file
+        directory: Contains the path elements from the source (for when the source system has a file system hierarchy or similar)
+        category: Direct relation to an instance of CogniteFileCategory representing the detected categorization/class for the file
+        extracted_data: Unstructured information extracted from source system
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -180,31 +180,31 @@ class CogniteExtractorFile(_CogniteExtractorFileProperties, TypedNode):
     It is used when data is read from CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite extractor file.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        assets (list[DirectRelationReference] | None): List of assets this file relates to
-        mime_type (str | None): MIME type of the file
-        directory (str | None): Contains the path elements from the source (for when the source system has a file system hierarchy or similar)
-        is_uploaded (bool | None): Whether the file content has been uploaded to Cognite Data Fusion
-        uploaded_time (datetime | None): Point in time when the file upload was completed and the file was made available
-        category (DirectRelationReference | None): Direct relation to an instance of CogniteFileCategory representing the detected categorization/class for the file
-        extracted_data (dict | None): Unstructured information extracted from source system
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite extractor file.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        assets: List of assets this file relates to
+        mime_type: MIME type of the file
+        directory: Contains the path elements from the source (for when the source system has a file system hierarchy or similar)
+        is_uploaded: Whether the file content has been uploaded to Cognite Data Fusion
+        uploaded_time: Point in time when the file upload was completed and the file was made available
+        category: Direct relation to an instance of CogniteFileCategory representing the detected categorization/class for the file
+        extracted_data: Unstructured information extracted from source system
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     is_uploaded = PropertyOptions("isUploaded")
@@ -307,28 +307,28 @@ class CogniteExtractorTimeSeriesApply(_CogniteExtractorTimeSeriesProperties, Typ
     It is used when data is written to CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite extractor time series.
-        is_step (bool): Defines whether the time series is a step series or not.
-        time_series_type (Literal['numeric', 'string']): Defines data type of the data points.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_unit (str | None | Omitted): Unit as specified in the source system
-        unit (DirectRelationReference | tuple[str, str] | None | Omitted): direct relation to the unit of the time series
-        assets (list[DirectRelationReference | tuple[str, str]] | None | Omitted): The asset field.
-        equipment (list[DirectRelationReference | tuple[str, str]] | None | Omitted): The equipment field.
-        extracted_data (dict | None | Omitted): Unstructured information extracted from source system
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite extractor time series.
+        is_step: Defines whether the time series is a step series or not.
+        time_series_type: Defines data type of the data points.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_unit: Unit as specified in the source system
+        unit: direct relation to the unit of the time series
+        assets: The asset field.
+        equipment: The equipment field.
+        extracted_data: Unstructured information extracted from source system
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -384,31 +384,31 @@ class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, TypedNod
     It is used when data is read from CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite extractor time series.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        is_step (bool): Defines whether the time series is a step series or not.
-        time_series_type (Literal['numeric', 'string']): Defines data type of the data points.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_unit (str | None): Unit as specified in the source system
-        unit (DirectRelationReference | None): direct relation to the unit of the time series
-        assets (list[DirectRelationReference] | None): The asset field.
-        equipment (list[DirectRelationReference] | None): The equipment field.
-        extracted_data (dict | None): Unstructured information extracted from source system
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite extractor time series.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        is_step: Defines whether the time series is a step series or not.
+        time_series_type: Defines data type of the data points.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_unit: Unit as specified in the source system
+        unit: direct relation to the unit of the time series
+        assets: The asset field.
+        equipment: The equipment field.
+        extracted_data: Unstructured information extracted from source system
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(

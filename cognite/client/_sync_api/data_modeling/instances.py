@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e9ec879b211d48e1aa0e9d7c871a6f05
+faeefd4645cd7c3acfbdfc0d81b11f88
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -130,19 +130,19 @@ class SyncInstancesAPI(SyncAPIClient):
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
 
         Args:
-            chunk_size (int | None): Number of data_models to return in each chunk. Defaults to yielding one instance at a time.
-            instance_type (Literal['node', 'edge']): Whether to query for nodes or edges.
-            limit (int | None): Maximum number of instances to return. Defaults to returning all items.
-            include_typing (bool): Whether to return property type information as part of the result.
-            sources (Source | Sequence[Source] | None): Views to retrieve properties from.
-            space (str | SequenceNotStr[str] | None): Only return instances in the given space (or list of spaces).
-            sort (list[InstanceSort | dict] | InstanceSort | dict | None): Sort(s) to apply to the returned instances. For nontrivial amounts of data, you need to have a backing, cursorable index.
-            filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
-            debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
+            chunk_size: Number of data_models to return in each chunk. Defaults to yielding one instance at a time.
+            instance_type: Whether to query for nodes or edges.
+            limit: Maximum number of instances to return. Defaults to returning all items.
+            include_typing: Whether to return property type information as part of the result.
+            sources: Views to retrieve properties from.
+            space: Only return instances in the given space (or list of spaces).
+            sort: Sort(s) to apply to the returned instances. For nontrivial amounts of data, you need to have a backing, cursorable index.
+            filter: Advanced filtering of instances.
+            debug: Debug settings for profiling and troubleshooting.
 
         Yields:
-            Edge | EdgeList | Node | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
-        """
+            yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.data_modeling.instances(
                 chunk_size=chunk_size,
@@ -200,13 +200,13 @@ class SyncInstancesAPI(SyncAPIClient):
 
 
         Args:
-            edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]]): Edge id(s) to retrieve.
-            edge_cls (type[T_Edge]): The custom edge class to use, the retrieved edges will automatically be serialized into this class.
-            sources (Source | Sequence[Source] | None): Retrieve properties from the listed - by reference - views. This only applies if you do not provide a custom edge class.
-            include_typing (bool): Whether to include typing information
+            edges: Edge id(s) to retrieve.
+            edge_cls: The custom edge class to use, the retrieved edges will automatically be serialized into this class.
+            sources: Retrieve properties from the listed - by reference - views. This only applies if you do not provide a custom edge class.
+            include_typing: Whether to include typing information
 
         Returns:
-            EdgeList[T_Edge] | T_Edge | Edge | None: The requested edges.
+            The requested edges.
 
         Examples:
 
@@ -296,13 +296,13 @@ class SyncInstancesAPI(SyncAPIClient):
             built-in Node class.
 
         Args:
-            nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]]): Node id(s) to retrieve.
-            node_cls (type[T_Node]): The custom node class to use, the retrieved nodes will automatically be serialized to this class.
-            sources (Source | Sequence[Source] | None): Retrieve properties from the listed - by reference - views. This only applies if you do not provide a custom node class.
-            include_typing (bool): Whether to include typing information
+            nodes: Node id(s) to retrieve.
+            node_cls: The custom node class to use, the retrieved nodes will automatically be serialized to this class.
+            sources: Retrieve properties from the listed - by reference - views. This only applies if you do not provide a custom node class.
+            include_typing: Whether to include typing information
 
         Returns:
-            NodeList[T_Node] | T_Node | Node | None: The requested edges.
+            The requested edges.
 
         Examples:
 
@@ -367,13 +367,13 @@ class SyncInstancesAPI(SyncAPIClient):
         `Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
 
         Args:
-            nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
-            edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
-            sources (Source | Sequence[Source] | None): Retrieve properties from the listed - by reference - views.
-            include_typing (bool): Whether to return property type information as part of the result.
+            nodes: Node ids
+            edges: Edge ids
+            sources: Retrieve properties from the listed - by reference - views.
+            include_typing: Whether to return property type information as part of the result.
 
         Returns:
-            InstancesResult[Node, Edge]: Requested instances.
+            Requested instances.
 
         Examples:
 
@@ -418,11 +418,11 @@ class SyncInstancesAPI(SyncAPIClient):
         `Delete one or more instances <https://developer.cognite.com/api#tag/Instances/operation/deleteBulk>`_
 
         Args:
-            nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
-            edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
+            nodes: Node ids
+            edges: Edge ids
 
         Returns:
-            InstancesDeleteResult: The instance ID(s) that was deleted. Empty list if nothing was deleted.
+            The instance ID(s) that was deleted. Empty list if nothing was deleted.
 
         Examples:
 
@@ -461,13 +461,13 @@ class SyncInstancesAPI(SyncAPIClient):
         This method will return the involved views and containers for the given nodes and edges.
 
         Args:
-            nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node IDs.
-            edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge IDs.
-            involved_views (InvolvedViews | None): Whether to include involved views. Must pass at least one of involved_views or involved_containers.
-            involved_containers (InvolvedContainers | None): Whether to include involved containers. Must pass at least one of involved_views or involved_containers.
+            nodes: Node IDs.
+            edges: Edge IDs.
+            involved_views: Whether to include involved views. Must pass at least one of involved_views or involved_containers.
+            involved_containers: Whether to include involved containers. Must pass at least one of involved_views or involved_containers.
 
         Returns:
-            InstanceInspectResults: List of instance inspection results.
+            List of instance inspection results.
 
         Examples:
 
@@ -513,13 +513,13 @@ class SyncInstancesAPI(SyncAPIClient):
             see :ref:`this example of syncing instances to a local SQLite database <dm_instances_subscribe_example>`.
 
         Args:
-            query (QuerySync): The query to subscribe to.
-            callback (Callable[[QueryResult], None | Awaitable[None]]): The callback function to call when the result set changes. Can be a regular or async function.
-            poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
-            throttle_seconds (float): The time to wait between polls despite data being present.
+            query: The query to subscribe to.
+            callback: The callback function to call when the result set changes. Can be a regular or async function.
+            poll_delay_seconds: The time to wait between polls when no data is present. Defaults to 30 seconds.
+            throttle_seconds: The time to wait between polls despite data being present.
 
         Returns:
-            SubscriptionContext: An object that can be used to inspect and cancel the subscription.
+            An object that can be used to inspect and cancel the subscription.
 
         Examples:
 
@@ -569,15 +569,16 @@ class SyncInstancesAPI(SyncAPIClient):
         `Add or update (upsert) instances. <https://developer.cognite.com/api#tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
-            nodes (NodeApply | Sequence[NodeApply] | None): Nodes to apply
-            edges (EdgeApply | Sequence[EdgeApply] | None): Edges to apply
-            auto_create_start_nodes (bool): Whether to create missing start nodes for edges when ingesting. By default, the start node of an edge must exist before it can be ingested.
-            auto_create_end_nodes (bool): Whether to create missing end nodes for edges when ingesting. By default, the end node of an edge must exist before it can be ingested.
-            auto_create_direct_relations (bool): Whether to create missing direct relation targets when ingesting.
-            skip_on_version_conflict (bool): If existingVersion is specified on any of the nodes/edges in the input, the default behaviour is that the entire ingestion will fail when version conflicts occur. If skipOnVersionConflict is set to true, items with version conflicts will be skipped instead. If no version is specified for nodes/edges, it will do the writing directly.
-            replace (bool): How do we behave when a property value exists? Do we replace all matching and existing values with the supplied values (true)? Or should we merge in new values for properties together with the existing values (false)? Note: This setting applies for all nodes or edges specified in the ingestion call.
+            nodes: Nodes to apply
+            edges: Edges to apply
+            auto_create_start_nodes: Whether to create missing start nodes for edges when ingesting. By default, the start node of an edge must exist before it can be ingested.
+            auto_create_end_nodes: Whether to create missing end nodes for edges when ingesting. By default, the end node of an edge must exist before it can be ingested.
+            auto_create_direct_relations: Whether to create missing direct relation targets when ingesting.
+            skip_on_version_conflict: If existingVersion is specified on any of the nodes/edges in the input, the default behaviour is that the entire ingestion will fail when version conflicts occur. If skipOnVersionConflict is set to true, items with version conflicts will be skipped instead. If no version is specified for nodes/edges, it will do the writing directly.
+            replace: How do we behave when a property value exists? Do we replace all matching and existing values with the supplied values (true)? Or should we merge in new values for properties together with the existing values (false)? Note: This setting applies for all nodes or edges specified in the ingestion call.
+
         Returns:
-            InstancesApplyResult: Created instance(s)
+            Created instance(s)
 
         Examples:
 
@@ -765,24 +766,20 @@ class SyncInstancesAPI(SyncAPIClient):
         `Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
         Args:
-            view (ViewId): View to search in.
-            query (str | None): Query string that will be parsed and used for search.
-            instance_type (Literal['node', 'edge'] | type[T_Node] | type[T_Edge]): Whether to search for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
-            properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
-            target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
-            space (str | SequenceNotStr[str] | None): Restrict instance search to the given space (or list of spaces).
-            filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
-            include_typing (bool): Whether to include typing information.
-            limit (int | None): Maximum number of instances to return. Defaults to 25. Will return the maximum number
-                of results (1000) if set to None, -1, or math.inf.
-            sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
-            operator (Literal['AND', 'OR']): Controls how multiple search terms are combined when matching documents.
-                AND (default): A document matches only if it contains all of the query terms across the searchable fields.
-                This typically returns fewer results but with higher relevance. OR: A document matches if it contains any
-                of the query terms in the searchable fields. This typically returns more results but with lower precision.
+            view: View to search in.
+            query: Query string that will be parsed and used for search.
+            instance_type: Whether to search for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
+            properties: Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            target_units: Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
+            space: Restrict instance search to the given space (or list of spaces).
+            filter: Advanced filtering of instances.
+            include_typing: Whether to include typing information.
+            limit: Maximum number of instances to return. Defaults to 25. Will return the maximum number of results (1000) if set to None, -1, or math.inf.
+            sort: How you want the listed instances information ordered.
+            operator: Controls how multiple search terms are combined when matching documents. AND (default): A document matches only if it contains all of the query terms across the searchable fields. This typically returns fewer results but with higher relevance. OR: A document matches if it contains any of the query terms in the searchable fields. This typically returns more results but with lower precision.
 
         Returns:
-            NodeList[T_Node] | EdgeList[T_Edge]: Search result with matching nodes or edges.
+            Search result with matching nodes or edges.
 
         Examples:
 
@@ -894,20 +891,19 @@ class SyncInstancesAPI(SyncAPIClient):
         `Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
         Args:
-            view (ViewId): View to aggregate over.
-            aggregates (MetricAggregation | dict | Sequence[MetricAggregation | dict]): The properties to aggregate over.
-            group_by (str | SequenceNotStr[str] | None): The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
-            instance_type (Literal['node', 'edge']): The type of instance.
-            query (str | None): Optional query string. The API will parse the query string, and use it to match the text properties on elements to use for the aggregate(s).
-            properties (str | SequenceNotStr[str] | None): Optional list of properties you want to apply the query to. If you do not list any properties, you search through text fields by default.
-            target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
-            space (str | SequenceNotStr[str] | None): Restrict instance aggregate query to the given space (or list of spaces).
-            filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
-            limit (int | None): Maximum number of instances to return. Defaults to 25. Will return the maximum number
-                of results (1000) if set to None, -1, or math.inf.
+            view: View to aggregate over.
+            aggregates: The properties to aggregate over.
+            group_by: The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
+            instance_type: The type of instance.
+            query: Optional query string. The API will parse the query string, and use it to match the text properties on elements to use for the aggregate(s).
+            properties: Optional list of properties you want to apply the query to. If you do not list any properties, you search through text fields by default.
+            target_units: Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
+            space: Restrict instance aggregate query to the given space (or list of spaces).
+            filter: Advanced filtering of instances.
+            limit: Maximum number of instances to return. Defaults to 25. Will return the maximum number of results (1000) if set to None, -1, or math.inf.
 
         Returns:
-            AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList: Node or edge aggregation results.
+            Node or edge aggregation results.
 
         Examples:
 
@@ -981,18 +977,18 @@ class SyncInstancesAPI(SyncAPIClient):
         `Produces histograms for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
         Args:
-            view (ViewId): View to to aggregate over.
-            histograms (Histogram | Sequence[Histogram]):  The properties to aggregate over.
-            instance_type (Literal['node', 'edge']): Whether to search for nodes or edges.
-            query (str | None): Query string that will be parsed and used for search.
-            properties (SequenceNotStr[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
-            target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
-            space (str | SequenceNotStr[str] | None): Restrict histogram query to instances in the given space (or list of spaces).
-            filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
-            limit (int): Maximum number of instances to return. Defaults to 25.
+            view: View to to aggregate over.
+            histograms:  The properties to aggregate over.
+            instance_type: Whether to search for nodes or edges.
+            query: Query string that will be parsed and used for search.
+            properties: Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            target_units: Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
+            space: Restrict histogram query to instances in the given space (or list of spaces).
+            filter: Advanced filtering of instances.
+            limit: Maximum number of instances to return. Defaults to 25.
 
         Returns:
-            HistogramValue | list[HistogramValue]: Node or edge aggregation results.
+            Node or edge aggregation results.
 
         Examples:
 
@@ -1029,12 +1025,12 @@ class SyncInstancesAPI(SyncAPIClient):
         recursive edge traversal, chaining of result sets, and granular property selection.
 
         Args:
-            query (Query): Query.
-            include_typing (bool): Should we return property type information as part of the result?
-            debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
+            query: Query.
+            include_typing: Should we return property type information as part of the result?
+            debug: Debug settings for profiling and troubleshooting.
 
         Returns:
-            QueryResult: The resulting nodes and/or edges from the query.
+            The resulting nodes and/or edges from the query.
 
         Examples:
 
@@ -1104,12 +1100,12 @@ class SyncInstancesAPI(SyncAPIClient):
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
         Args:
-            query (QuerySync): Query.
-            include_typing (bool): Should we return property type information as part of the result?
-            debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
+            query: Query.
+            include_typing: Should we return property type information as part of the result?
+            debug: Debug settings for profiling and troubleshooting.
 
         Returns:
-            QueryResult: The resulting nodes and/or edges from the query.
+            The resulting nodes and/or edges from the query.
 
         Examples:
 
@@ -1223,17 +1219,17 @@ class SyncInstancesAPI(SyncAPIClient):
         `List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
         Args:
-            instance_type (Literal['node', 'edge'] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
-            include_typing (bool): Whether to return property type information as part of the result.
-            sources (Source | Sequence[Source] | None): Views to retrieve properties from.
-            space (str | SequenceNotStr[str] | None): Only return instances in the given space (or list of spaces).
-            limit (int | None): Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
-            filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
-            debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
+            instance_type: Whether to query for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
+            include_typing: Whether to return property type information as part of the result.
+            sources: Views to retrieve properties from.
+            space: Only return instances in the given space (or list of spaces).
+            limit: Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            sort: How you want the listed instances information ordered.
+            filter: Advanced filtering of instances.
+            debug: Debug settings for profiling and troubleshooting.
 
         Returns:
-            NodeList[T_Node] | EdgeList[T_Edge]: List of requested instances
+            List of requested instances
 
         Examples:
 

@@ -19,12 +19,12 @@ class DebugInfo(CogniteResource):
     Contains the requested debug information.
 
     Args:
-        notices (DebugNoticeList | None): A list of notices that provide insights into the query's execution.
+        notices: A list of notices that provide insights into the query's execution.
             These can highlight potential performance issues, offer optimization suggestions, or explain aspects
             of the query processing. Each notice falls into a category, such as indexing, sorting, filtering, or
             cursoring, to help identify areas for improvement.
-        translated_query (TranslatedQuery | None): The internal representation of the query.
-        plan (ExecutionPlan | None): The execution plan for the query.
+        translated_query: The internal representation of the query.
+        plan: The execution plan for the query.
     """
 
     notices: DebugNoticeList | None = None
@@ -57,8 +57,8 @@ class TranslatedQuery(CogniteResource):
     Internal representation of query. Depends on postgres-controlled output, hence the generic dict types.
 
     Args:
-        query (object): Parameterized query.
-        parameters (object): Parameter values for query.
+        query: Parameterized query.
+        parameters: Parameter values for query.
     """
 
     query: dict[str, Any]
@@ -78,9 +78,9 @@ class ExecutionPlan(CogniteResource):
     Execution plan for the query.
 
     Args:
-        full_plan (dict[str, Any]): The full execution plan.
-        profiled (bool): The execution plan has been profiled.
-        by_identifier (dict[str, Any]): The execution plan grouped by query identifiers.
+        full_plan: The full execution plan.
+        profiled: The execution plan has been profiled.
+        by_identifier: The execution plan grouped by query identifiers.
     """
 
     full_plan: dict[str, Any]
@@ -109,11 +109,11 @@ class DebugParameters:
     Debug parameters for debugging and analyzing queries.
 
     Args:
-        emit_results (bool): Include the query result in the response. Using emit_results=False is required for advanced query analysis features.
-        timeout (int | None): Query timeout in milliseconds. Can be used to override the default timeout when analysing queries. Requires emit_results=False.
-        include_translated_query (bool): Include the internal representation of the query.
-        include_plan (bool): Include the execution plan for the query.
-        profile (bool): Most thorough level of query analysis. Requires emit_results=False.
+        emit_results: Include the query result in the response. Using emit_results=False is required for advanced query analysis features.
+        timeout: Query timeout in milliseconds. Can be used to override the default timeout when analysing queries. Requires emit_results=False.
+        include_translated_query: Include the internal representation of the query.
+        include_plan: Include the execution plan for the query.
+        profile: Most thorough level of query analysis. Requires emit_results=False.
     """
 
     emit_results: bool = True

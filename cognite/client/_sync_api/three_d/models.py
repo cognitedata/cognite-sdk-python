@@ -1,6 +1,6 @@
 """
 ===============================================================================
-548e0609338f18fa22fa7745a576bd52
+c971288b7ad55e15a90c90580f3a572f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -43,12 +43,12 @@ class Sync3DModelsAPI(SyncAPIClient):
         Fetches 3d models as they are iterated over, so you keep a limited number of 3d models in memory.
 
         Args:
-            chunk_size (int | None): Number of 3d models to return in each chunk. Defaults to yielding one model a time.
-            published (bool | None): Filter based on whether or not the model has published revisions.
-            limit (int | None): Maximum number of 3d models to return. Defaults to return all items.
+            chunk_size: Number of 3d models to return in each chunk. Defaults to yielding one model a time.
+            published: Filter based on whether or not the model has published revisions.
+            limit: Maximum number of 3d models to return. Defaults to return all items.
 
         Yields:
-            ThreeDModel | ThreeDModelList: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
+            yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.three_d.models(chunk_size=chunk_size, published=published, limit=limit)
@@ -59,10 +59,10 @@ class Sync3DModelsAPI(SyncAPIClient):
         `Retrieve a 3d model by id <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModel>`_
 
         Args:
-            id (int): Get the model with this id.
+            id: Get the model with this id.
 
         Returns:
-            ThreeDModel | None: The requested 3d model.
+            The requested 3d model.
 
         Example:
 
@@ -80,11 +80,11 @@ class Sync3DModelsAPI(SyncAPIClient):
         `List 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModels>`_
 
         Args:
-            published (bool | None): Filter based on whether or not the model has published revisions.
-            limit (int | None): Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            published: Filter based on whether or not the model has published revisions.
+            limit: Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            ThreeDModelList: The list of 3d models.
+            The list of 3d models.
 
         Examples:
 
@@ -130,14 +130,12 @@ class Sync3DModelsAPI(SyncAPIClient):
         `Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
 
         Args:
-            name (str | ThreeDModelWrite | SequenceNotStr[str | ThreeDModelWrite]): The name of the 3d model(s) or 3D
-                model object to create. If a 3D model object is provided, the other arguments are ignored.
-            data_set_id (int | None): The id of the dataset this 3D model belongs to.
-            metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
-                Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+            name: The name of the 3d model(s) or 3D model object to create. If a 3D model object is provided, the other arguments are ignored.
+            data_set_id: The id of the dataset this 3D model belongs to.
+            metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
 
         Returns:
-            ThreeDModel | ThreeDModelList: The created 3d model(s).
+            The created 3d model(s).
 
         Example:
 
@@ -185,11 +183,11 @@ class Sync3DModelsAPI(SyncAPIClient):
         `Update 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_
 
         Args:
-            item (ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]): ThreeDModel(s) to update
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (ThreeDModel or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: ThreeDModel(s) to update
+            mode: How to update data when a non-update object is given (ThreeDModel or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            ThreeDModel | ThreeDModelList: Updated ThreeDModel(s)
+            Updated ThreeDModel(s)
 
         Examples:
 
@@ -215,7 +213,7 @@ class Sync3DModelsAPI(SyncAPIClient):
         `Delete 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/delete3DModels>`_
 
         Args:
-            id (int | Sequence[int]): ID or list of IDs to delete.
+            id: ID or list of IDs to delete.
 
         Example:
 

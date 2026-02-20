@@ -71,14 +71,14 @@ class SimulatorRoutinesAPI(APIClient):
         Fetches simulator routines as they are iterated over, so you keep a limited number of simulator routines in memory.
 
         Args:
-            chunk_size (int | None): Number of simulator routines to return in each chunk. Defaults to yielding one simulator routine a time.
-            model_external_ids (Sequence[str] | None): Filter on model external ids.
-            simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
-            sort (PropertySort | None): The criteria to sort by.
-            limit (int | None): Maximum number of simulator routines to return. Defaults to return all items.
+            chunk_size: Number of simulator routines to return in each chunk. Defaults to yielding one simulator routine a time.
+            model_external_ids: Filter on model external ids.
+            simulator_integration_external_ids: Filter on simulator integration external ids.
+            sort: The criteria to sort by.
+            limit: Maximum number of simulator routines to return. Defaults to return all items.
 
         Yields:
-            SimulatorRoutine | SimulatorRoutineList: yields SimulatorRoutine one by one if chunk is not specified, else SimulatorRoutineList objects.
+            yields SimulatorRoutine one by one if chunk is not specified, else SimulatorRoutineList objects.
         """  # noqa: DOC404
         self._warning.warn()
         routines_filter = SimulatorRoutinesFilter(
@@ -109,10 +109,10 @@ class SimulatorRoutinesAPI(APIClient):
         """`Create simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
 
         Args:
-            routine (SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]): Simulator routine(s) to create.
+            routine: Simulator routine(s) to create.
 
         Returns:
-            SimulatorRoutine | SimulatorRoutineList: Created simulator routine(s)
+            Created simulator routine(s)
 
         Examples:
             Create new simulator routines:
@@ -156,8 +156,8 @@ class SimulatorRoutinesAPI(APIClient):
         """`Delete simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
 
         Args:
-            ids (int | Sequence[int] | None): ids (or sequence of ids) for the routine(s) to delete.
-            external_ids (str | SequenceNotStr[str] | SequenceNotStr[str] | None): external ids (or sequence of external ids) for the routine(s) to delete.
+            ids: ids (or sequence of ids) for the routine(s) to delete.
+            external_ids: external ids (or sequence of external ids) for the routine(s) to delete.
 
         Examples:
             Delete simulator routines by id or external id:
@@ -185,14 +185,14 @@ class SimulatorRoutinesAPI(APIClient):
         Retrieves a list of simulator routines that match the given criteria.
 
         Args:
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
-            model_external_ids (Sequence[str] | None): Filter on model external ids.
-            simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
-            kind (Literal['long'] | None): Filter on routine kind.
-            sort (PropertySort | None): The criteria to sort by.
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
+            model_external_ids: Filter on model external ids.
+            simulator_integration_external_ids: Filter on simulator integration external ids.
+            kind: Filter on routine kind.
+            sort: The criteria to sort by.
 
         Returns:
-            SimulatorRoutineList: List of simulator routines
+            List of simulator routines
 
         Examples:
             List simulator routines:
@@ -285,21 +285,18 @@ class SimulatorRoutinesAPI(APIClient):
         2. By routine revision external ID + model revision external ID
 
         Args:
-            routine_external_id (str | None): External id of the simulator routine to run.
-                Cannot be specified together with routine_revision_external_id and model_revision_external_id.
-            routine_revision_external_id (str | None): External id of the simulator routine revision to run.
-                Must be specified together with model_revision_external_id.
-            model_revision_external_id (str | None): External id of the simulator model revision.
-                Must be specified together with routine_revision_external_id.
-            inputs (Sequence[SimulationInputOverride] | None): List of input overrides
-            run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
-            queue (bool | None): Queue the simulation run when connector is down.
-            log_severity (Literal['Debug', 'Information', 'Warning', 'Error'] | None): Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
-            wait (bool): Wait until the simulation run is finished. Defaults to True.
-            timeout (float): Timeout in seconds for waiting for the simulation run to finish. Defaults to 60 seconds.
+            routine_external_id: External id of the simulator routine to run. Cannot be specified together with routine_revision_external_id and model_revision_external_id.
+            routine_revision_external_id: External id of the simulator routine revision to run. Must be specified together with model_revision_external_id.
+            model_revision_external_id: External id of the simulator model revision. Must be specified together with routine_revision_external_id.
+            inputs: List of input overrides
+            run_time: Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
+            queue: Queue the simulation run when connector is down.
+            log_severity: Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
+            wait: Wait until the simulation run is finished. Defaults to True.
+            timeout: Timeout in seconds for waiting for the simulation run to finish. Defaults to 60 seconds.
 
         Returns:
-            SimulationRun: Created simulation run
+            Created simulation run
 
         Examples:
             Create new simulation run using routine external ID:

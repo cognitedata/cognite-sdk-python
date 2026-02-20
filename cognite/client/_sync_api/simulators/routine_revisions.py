@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ff594df7d1b2db4d55aa175696b87157
+59e08b3e8ed6c3221b448ba843da4197
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -84,20 +84,20 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         Fetches simulator routine revisions as they are iterated over, so you keep a limited number of simulator routine revisions in memory.
 
         Args:
-            chunk_size (int | None): Number of simulator routine revisions to return in each chunk. Defaults to yielding one simulator routine revision a time.
-            routine_external_ids (SequenceNotStr[str] | None): Filter on routine external ids.
-            model_external_ids (SequenceNotStr[str] | None): Filter on model external ids.
-            simulator_integration_external_ids (SequenceNotStr[str] | None): Filter on simulator integration external ids.
-            simulator_external_ids (SequenceNotStr[str] | None): Filter on simulator external ids.
-            kind (Literal['long'] | None): Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
-            created_time (TimestampRange | None): Filter on created time.
-            all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
-            include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
-            limit (int | None): Maximum number of simulator routine revisions to return. Defaults to return all items.
-            sort (PropertySort | None): The criteria to sort by.
+            chunk_size: Number of simulator routine revisions to return in each chunk. Defaults to yielding one simulator routine revision a time.
+            routine_external_ids: Filter on routine external ids.
+            model_external_ids: Filter on model external ids.
+            simulator_integration_external_ids: Filter on simulator integration external ids.
+            simulator_external_ids: Filter on simulator external ids.
+            kind: Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
+            created_time: Filter on created time.
+            all_versions: If all versions of the routine should be returned. Defaults to false which only returns the latest version.
+            include_all_fields: If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
+            limit: Maximum number of simulator routine revisions to return. Defaults to return all items.
+            sort: The criteria to sort by.
 
         Yields:
-            SimulatorRoutineRevision | SimulatorRoutineRevisionList: yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionList objects.
+            yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.simulators.routines.revisions(
@@ -136,11 +136,11 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         Retrieve simulator routine revisions by ID or External Id.
 
         Args:
-            ids (int | Sequence[int] | None): Simulator routine revision ID or list of IDs
-            external_ids (str | SequenceNotStr[str] | None): Simulator routine revision External ID or list of external IDs
+            ids: Simulator routine revision ID or list of IDs
+            external_ids: Simulator routine revision External ID or list of external IDs
 
         Returns:
-            SimulatorRoutineRevision | SimulatorRoutineRevisionList | None: Requested simulator routine revision
+            Requested simulator routine revision
 
         Examples:
             Get simulator routine revision by id:
@@ -171,10 +171,10 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         `Create simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/create_simulator_routine_revision_simulators_routines_revisions_post>`_
 
         Args:
-            items (SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite]): Simulator routine revisions to create.
+            items: Simulator routine revisions to create.
 
         Returns:
-            SimulatorRoutineRevision | SimulatorRoutineRevisionList: Created simulator routine revision(s)
+            Created simulator routine revision(s)
 
         Examples:
             Create new simulator routine revisions:
@@ -301,19 +301,19 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         Retrieves a list of simulator routine revisions that match the given criteria.
 
         Args:
-            routine_external_ids (SequenceNotStr[str] | None): Filter on routine external ids.
-            model_external_ids (SequenceNotStr[str] | None): Filter on model external ids.
-            simulator_integration_external_ids (SequenceNotStr[str] | None): Filter on simulator integration external ids.
-            simulator_external_ids (SequenceNotStr[str] | None): Filter on simulator external ids.
-            kind (Literal['long'] | None): Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
-            created_time (TimestampRange | None): Filter on created time.
-            all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
-            include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
-            limit (int | None): Maximum number of simulator routine revisions to return. Defaults to return all items.
-            sort (PropertySort | None): The criteria to sort by.
+            routine_external_ids: Filter on routine external ids.
+            model_external_ids: Filter on model external ids.
+            simulator_integration_external_ids: Filter on simulator integration external ids.
+            simulator_external_ids: Filter on simulator external ids.
+            kind: Filter by routine kind. Note that this filter cannot be applied when 'include_all_fields' set to 'True' in the same query.
+            created_time: Filter on created time.
+            all_versions: If all versions of the routine should be returned. Defaults to false which only returns the latest version.
+            include_all_fields: If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
+            limit: Maximum number of simulator routine revisions to return. Defaults to return all items.
+            sort: The criteria to sort by.
 
         Returns:
-            SimulatorRoutineRevisionList: List of simulator routine revisions
+            List of simulator routine revisions
 
         Examples:
             List simulator routine revisions:

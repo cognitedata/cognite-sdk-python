@@ -43,21 +43,21 @@ class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
     of TimesSeries, which is used when retrieving from CDF.
 
     Args:
-        id (int): A server-generated ID for the object.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        is_step (bool): Whether the time series is a step series or not.
-        is_string (bool): Whether the time series is string valued or not.
-        external_id (str | None): The externally supplied ID for the time series.
-        instance_id (NodeId | None): The Instance ID for the time series. (Only applicable for time series created in DMS)
-        name (str | None): The display short name of the time series.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        unit (str | None): The physical unit of the time series.
-        unit_external_id (str | None): The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
-        asset_id (int | None): Asset ID of equipment linked to this time series.
-        description (str | None): Description of the time series.
-        security_categories (Sequence[int] | None): The required security categories to access this time series.
-        data_set_id (int | None): The dataSet ID for the item.
+        id: A server-generated ID for the object.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        is_step: Whether the time series is a step series or not.
+        is_string: Whether the time series is string valued or not.
+        external_id: The externally supplied ID for the time series.
+        instance_id: The Instance ID for the time series. (Only applicable for time series created in DMS)
+        name: The display short name of the time series.
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        unit: The physical unit of the time series.
+        unit_external_id: The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
+        asset_id: Asset ID of equipment linked to this time series.
+        description: Description of the time series.
+        security_categories: The required security categories to access this time series.
+        data_set_id: The dataSet ID for the item.
     """
 
     def __init__(
@@ -145,13 +145,13 @@ class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
         This result may not be completely accurate, as it is based on aggregates which may be occasionally out of date.
 
         Returns:
-            int: The number of datapoints in this time series.
+            The number of datapoints in this time series.
 
         Raises:
             RuntimeError: If the time series is string, as count aggregate is only supported for numeric data
 
         Returns:
-            int: The total number of datapoints
+            The total number of datapoints
         """
         if self.is_string:
             raise RuntimeError("String time series does not support count aggregate.")
@@ -171,9 +171,9 @@ class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
         """Returns the latest datapoint in this time series. If empty, returns None.
 
         Args:
-            before (int | str | datetime | None): Get latest datapoint before this time.
+            before: Get latest datapoint before this time.
         Returns:
-            Datapoint | None: A datapoint object containing the value and timestamp of the latest datapoint.
+            A datapoint object containing the value and timestamp of the latest datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id, self.instance_id).as_dict()
         if dps := await self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before):
@@ -188,7 +188,7 @@ class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
         """Returns the first datapoint in this time series. If empty, returns None.
 
         Returns:
-            Datapoint | None: A datapoint object containing the value and timestamp of the first datapoint.
+            A datapoint object containing the value and timestamp of the first datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id, self.instance_id).as_dict()
         dps = await self._cognite_client.time_series.data.retrieve(
@@ -206,7 +206,7 @@ class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
         """Returns the asset this time series belongs to.
 
         Returns:
-            Asset: The asset given by its `asset_id`.
+            The asset given by its `asset_id`.
         Raises:
             ValueError: If asset_id is missing.
         """
@@ -223,18 +223,18 @@ class TimeSeriesWrite(WriteableCogniteResource["TimeSeriesWrite"]):
     """This is the write version of TimeSeries, which is used when writing to CDF.
 
     Args:
-        external_id (str | None): The externally supplied ID for the time series.
-        instance_id (NodeId | None): The Instance ID for the time series. (Only applicable for time series created in DMS)
-        name (str | None): The display short name of the time series.
-        is_string (bool | None): Whether the time series is string valued or not.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        unit (str | None): The physical unit of the time series.
-        unit_external_id (str | None): The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
-        asset_id (int | None): Asset ID of equipment linked to this time series.
-        is_step (bool | None): Whether the time series is a step series or not.
-        description (str | None): Description of the time series.
-        security_categories (Sequence[int] | None): The required security categories to access this time series.
-        data_set_id (int | None): The dataSet ID for the item.
+        external_id: The externally supplied ID for the time series.
+        instance_id: The Instance ID for the time series. (Only applicable for time series created in DMS)
+        name: The display short name of the time series.
+        is_string: Whether the time series is string valued or not.
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        unit: The physical unit of the time series.
+        unit_external_id: The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
+        asset_id: Asset ID of equipment linked to this time series.
+        is_step: Whether the time series is a step series or not.
+        description: Description of the time series.
+        security_categories: The required security categories to access this time series.
+        data_set_id: The dataSet ID for the item.
     """
 
     def __init__(
@@ -299,20 +299,20 @@ class TimeSeriesFilter(CogniteFilter):
     """No description.
 
     Args:
-        name (str | None): Filter on name.
-        unit (str | None): Filter on unit.
-        unit_external_id (str | None): Filter on unit external ID.
-        unit_quantity (str | None): Filter on unit quantity.
-        is_string (bool | None): Filter on isString.
-        is_step (bool | None): Filter on isStep.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        asset_ids (Sequence[int] | None): Only include time series that reference these specific asset IDs.
-        asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of related equipment that this time series relates to.
-        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include time series that are related to an asset in a subtree rooted at any of these asset IDs or external IDs. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        data_set_ids (Sequence[dict[str, Any]] | None): No description.
-        external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+        name: Filter on name.
+        unit: Filter on unit.
+        unit_external_id: Filter on unit external ID.
+        unit_quantity: Filter on unit quantity.
+        is_string: Filter on isString.
+        is_step: Filter on isStep.
+        metadata: Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        asset_ids: Only include time series that reference these specific asset IDs.
+        asset_external_ids: Asset External IDs of related equipment that this time series relates to.
+        asset_subtree_ids: Only include time series that are related to an asset in a subtree rooted at any of these asset IDs or external IDs. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_ids: No description.
+        external_id_prefix: Filter by this (case-sensitive) prefix for the external ID.
+        created_time: Range between two timestamps.
+        last_updated_time: Range between two timestamps.
     """
 
     def __init__(
@@ -352,9 +352,9 @@ class TimeSeriesUpdate(CogniteUpdate):
     """Changes will be applied to time series.
 
     Args:
-        id (int | None): A server-generated ID for the object.
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        instance_id (NodeId | None): The ID of the instance this time series belongs to.
+        id: A server-generated ID for the object.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        instance_id: The ID of the instance this time series belongs to.
     """
 
     def __init__(

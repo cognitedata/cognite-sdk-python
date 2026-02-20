@@ -1,6 +1,6 @@
 """
 ===============================================================================
-244b8f18467f4c17297f8ccf14dc127e
+26f14757e2571b3eb1bd9d112aa90a5c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -118,29 +118,29 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
-            chunk_size (int | None): Number of time series to return in each chunk. Defaults to yielding one time series a time.
-            name (str | None): Name of the time series. Often referred to as tag.
-            unit (str | None): Unit of the time series.
-            unit_external_id (str | None): Filter on unit external ID.
-            unit_quantity (str | None): Filter on unit quantity.
-            is_string (bool | None): Whether the time series is a string time series.
-            is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
-            asset_ids (Sequence[int] | None): List time series related to these assets.
-            asset_external_ids (SequenceNotStr[str] | None): List time series related to these assets.
-            asset_subtree_ids (int | Sequence[int] | None): Only include time series that are related to an asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include time series that are related to an asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            data_set_ids (int | Sequence[int] | None): Return only time series in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
-            metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value
-            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-            created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (int | None): Maximum number of time series to return. Defaults to return all items.
-            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            chunk_size: Number of time series to return in each chunk. Defaults to yielding one time series a time.
+            name: Name of the time series. Often referred to as tag.
+            unit: Unit of the time series.
+            unit_external_id: Filter on unit external ID.
+            unit_quantity: Filter on unit quantity.
+            is_string: Whether the time series is a string time series.
+            is_step: Whether the time series is a step (piecewise constant) time series.
+            asset_ids: List time series related to these assets.
+            asset_external_ids: List time series related to these assets.
+            asset_subtree_ids: Only include time series that are related to an asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids: Only include time series that are related to an asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            data_set_ids: Return only time series in the specified data set(s) with this id / these ids.
+            data_set_external_ids: Return only time series in the specified data set(s) with this external id / these external ids.
+            metadata: Custom, application specific metadata. String key -> String value
+            external_id_prefix: Filter by this (case-sensitive) prefix for the external ID.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit: Maximum number of time series to return. Defaults to return all items.
+            advanced_filter: Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+            sort: The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Yields:
-            TimeSeries | TimeSeriesList: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
+            yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.time_series(
@@ -174,12 +174,12 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         `Retrieve a single time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
 
         Args:
-            id (int | None): ID
-            external_id (str | None): External ID
-            instance_id (NodeId | None): Instance ID
+            id: ID
+            external_id: External ID
+            instance_id: Instance ID
 
         Returns:
-            TimeSeries | None: Requested time series or None if it does not exist.
+            Requested time series or None if it does not exist.
 
         Examples:
 
@@ -209,13 +209,13 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         `Retrieve multiple time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
 
         Args:
-            ids (Sequence[int] | None): IDs
-            external_ids (SequenceNotStr[str] | None): External IDs
-            instance_ids (Sequence[NodeId] | None): Instance IDs
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            ids: IDs
+            external_ids: External IDs
+            instance_ids: Instance IDs
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            TimeSeriesList: The requested time series.
+            The requested time series.
 
         Examples:
 
@@ -245,11 +245,11 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         `Count of time series matching the specified filters and search. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count.
-            filter (TimeSeriesFilter | dict[str, Any] | None): The filter to narrow down time series to count requiring exact match.
+            advanced_filter: The filter to narrow down the time series to count.
+            filter: The filter to narrow down time series to count requiring exact match.
 
         Returns:
-            int: The number of time series matching the specified filters and search.
+            The number of time series matching the specified filters and search.
 
         Examples:
 
@@ -280,12 +280,12 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         `Find approximate property count for time series. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
-            property (TimeSeriesProperty | str | list[str]): The property to count the cardinality of.
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (TimeSeriesFilter | dict[str, Any] | None): The filter to narrow down the time series to count requiring exact match.
+            property: The property to count the cardinality of.
+            advanced_filter: The filter to narrow down the time series to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down the time series to count requiring exact match.
         Returns:
-            int: The number of properties matching the specified filters and search.
+            The number of properties matching the specified filters and search.
 
         Examples:
 
@@ -326,12 +326,12 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         `Find approximate paths count for time series.  <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
-            path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (TimeSeriesFilter | dict[str, Any] | None): The filter to narrow down the time series to count requiring exact match.
+            path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
+            advanced_filter: The filter to narrow down the time series to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down the time series to count requiring exact match.
         Returns:
-            int: The number of properties matching the specified filters and search.
+            The number of properties matching the specified filters and search.
 
         Examples:
 
@@ -360,13 +360,13 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         `Get unique properties with counts for time series. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
-            property (TimeSeriesProperty | str | list[str]): The property to group by.
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (TimeSeriesFilter | dict[str, Any] | None): The filter to narrow down the time series to count requiring exact match.
+            property: The property to group by.
+            advanced_filter: The filter to narrow down the time series to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down the time series to count requiring exact match.
 
         Returns:
-            UniqueResultList: List of unique values of time series matching the specified filters and search.
+            List of unique values of time series matching the specified filters and search.
 
         Examples:
 
@@ -416,13 +416,13 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         `Get unique paths with counts for time series. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
-            path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (TimeSeriesFilter | dict[str, Any] | None): The filter to narrow down the time series to count requiring exact match.
+            path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
+            advanced_filter: The filter to narrow down the time series to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down the time series to count requiring exact match.
 
         Returns:
-            UniqueResultList: List of unique values of time series matching the specified filters and search.
+            List of unique values of time series matching the specified filters and search.
 
         Examples:
 
@@ -453,10 +453,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         `Create one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/postTimeSeries>`_
 
         Args:
-            time_series (TimeSeries | TimeSeriesWrite | Sequence[TimeSeries] | Sequence[TimeSeriesWrite]): TimeSeries or list of TimeSeries to create.
+            time_series: TimeSeries or list of TimeSeries to create.
 
         Returns:
-            TimeSeries | TimeSeriesList: The created time series.
+            The created time series.
 
         Examples:
 
@@ -480,9 +480,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         `Delete one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteTimeSeries>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            id: Id or list of ids
+            external_id: External ID or list of external ids
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
 
@@ -525,11 +525,11 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         `Update one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/alterTimeSeries>`_
 
         Args:
-            item (TimeSeries | TimeSeriesWrite | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]): Time series to update
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (TimeSeries or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: Time series to update
+            mode: How to update data when a non-update object is given (TimeSeries or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            TimeSeries | TimeSeriesList: Updated time series.
+            Updated time series.
 
         Examples:
 
@@ -583,11 +583,11 @@ class SyncTimeSeriesAPI(SyncAPIClient):
             For more details, see :ref:`appendix-upsert`.
 
         Args:
-            item (TimeSeries | TimeSeriesWrite | Sequence[TimeSeries | TimeSeriesWrite]): TimeSeries or list of TimeSeries to upsert.
-            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            item: TimeSeries or list of TimeSeries to upsert.
+            mode: Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
-            TimeSeries | TimeSeriesList: The upserted time series(s).
+            The upserted time series(s).
 
         Examples:
 
@@ -617,14 +617,14 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
-            name (str | None): Prefix and fuzzy search on name.
-            description (str | None): Prefix and fuzzy search on description.
-            query (str | None): Search on name and description using wildcard search on each of the words (separated by spaces). Retrieves results where at least one word must match. Example: 'some other'
-            filter (TimeSeriesFilter | dict[str, Any] | None): Filter to apply. Performs exact match on these fields.
-            limit (int): Max number of results to return.
+            name: Prefix and fuzzy search on name.
+            description: Prefix and fuzzy search on description.
+            query: Search on name and description using wildcard search on each of the words (separated by spaces). Retrieves results where at least one word must match. Example: 'some other'
+            filter: Filter to apply. Performs exact match on these fields.
+            limit: Max number of results to return.
 
         Returns:
-            TimeSeriesList: List of requested time series.
+            List of requested time series.
 
         Examples:
 
@@ -672,29 +672,29 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         `List time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
 
         Args:
-            name (str | None): Name of the time series. Often referred to as tag.
-            unit (str | None): Unit of the time series.
-            unit_external_id (str | None): Filter on unit external ID.
-            unit_quantity (str | None): Filter on unit quantity.
-            is_string (bool | None): Whether the time series is a string time series.
-            is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
-            asset_ids (Sequence[int] | None): List time series related to these assets.
-            asset_external_ids (SequenceNotStr[str] | None): List time series related to these assets.
-            asset_subtree_ids (int | Sequence[int] | None): Only include time series that are related to an asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include time series that are related to an asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            data_set_ids (int | Sequence[int] | None): Return only time series in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
-            metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value
-            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-            created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
-            limit (int | None): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
-            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
-            sort (SortSpec | list[SortSpec] | TimeSeriesProperty | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            name: Name of the time series. Often referred to as tag.
+            unit: Unit of the time series.
+            unit_external_id: Filter on unit external ID.
+            unit_quantity: Filter on unit quantity.
+            is_string: Whether the time series is a string time series.
+            is_step: Whether the time series is a step (piecewise constant) time series.
+            asset_ids: List time series related to these assets.
+            asset_external_ids: List time series related to these assets.
+            asset_subtree_ids: Only include time series that are related to an asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids: Only include time series that are related to an asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            data_set_ids: Return only time series in the specified data set(s) with this id / these ids.
+            data_set_external_ids: Return only time series in the specified data set(s) with this external id / these external ids.
+            metadata: Custom, application specific metadata. String key -> String value
+            external_id_prefix: Filter by this (case-sensitive) prefix for the external ID.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            partitions: Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
+            limit: Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
+            advanced_filter: Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+            sort: The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
-            TimeSeriesList: The requested time series.
+            The requested time series.
 
         .. note::
             When using `partitions`, there are few considerations to keep in mind:

@@ -597,7 +597,7 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
     Will patch all clients and replace them with specced MagicMock objects.
 
     Yields:
-        CogniteClientMock: The mock with which the CogniteClient has been replaced
+        The mock with which the CogniteClient has been replaced
 
     Examples:
 
@@ -650,7 +650,7 @@ def monkeypatch_async_cognite_client() -> Iterator[AsyncCogniteClientMock]:
     Will patch all clients and replace them with specced MagicMock objects.
 
     Yields:
-        AsyncCogniteClientMock: The mock with which the AsyncCogniteClient has been replaced
+        The mock with which the AsyncCogniteClient has been replaced
 
     Examples:
 

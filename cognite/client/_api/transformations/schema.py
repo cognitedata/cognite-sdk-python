@@ -18,11 +18,11 @@ class TransformationSchemaAPI(APIClient):
         """`Get expected schema for a transformation destination. <https://developer.cognite.com/api#tag/Schema/operation/getTransformationSchema>`_
 
         Args:
-            destination (TransformationDestination): destination for which the schema is requested.
-            conflict_mode (str | None): conflict mode for which the schema is requested.
+            destination: destination for which the schema is requested.
+            conflict_mode: conflict mode for which the schema is requested.
 
         Returns:
-            TransformationSchemaColumnList: List of column descriptions
+            List of column descriptions
 
         Example:
 

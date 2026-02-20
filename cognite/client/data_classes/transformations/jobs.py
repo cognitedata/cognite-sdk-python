@@ -29,9 +29,9 @@ class TransformationJobMetric(CogniteResource):
     """The transformation job metric resource allows following details of execution of a transformation run.
 
     Args:
-        timestamp (int): Time of the last metric update.
-        name (str): Name of the metric.
-        count (int): Value of the metric.
+        timestamp: Time of the last metric update.
+        name: Name of the metric.
+        count: Value of the metric.
     """
 
     def __init__(
@@ -61,21 +61,21 @@ class TransformationJob(CogniteResourceWithClientRef):
     """The transformation job resource allows following the status of execution of a transformation run.
 
     Args:
-        id (int): A server-generated ID for the object.
-        status (TransformationJobStatus): Status of the job.
-        transformation_id (int): Server-generated ID of the transformation.
-        transformation_external_id (str): external ID of the transformation.
-        source_project (str): Name of the CDF project the data will be read from.
-        destination_project (str): Name of the CDF project the data will be written to.
-        destination (TransformationDestination): No description.
-        conflict_mode (str): What to do in case of id collisions: either "abort", "upsert", "update" or "delete".
-        query (str): Query of the transformation that is being executed.
-        error (str | None): Error message from the server.
-        ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
-        created_time (int | None): Time when the job was created.
-        started_time (int | None): Time when the job started running.
-        finished_time (int | None): Time when the job finished running.
-        last_seen_time (int | None): Time of the last status update from the job.
+        id: A server-generated ID for the object.
+        status: Status of the job.
+        transformation_id: Server-generated ID of the transformation.
+        transformation_external_id: external ID of the transformation.
+        source_project: Name of the CDF project the data will be read from.
+        destination_project: Name of the CDF project the data will be written to.
+        destination: No description.
+        conflict_mode: What to do in case of id collisions: either "abort", "upsert", "update" or "delete".
+        query: Query of the transformation that is being executed.
+        error: Error message from the server.
+        ignore_null_fields: Indicates how null values are handled on updates: ignore or set null.
+        created_time: Time when the job was created.
+        started_time: Time when the job started running.
+        finished_time: Time when the job finished running.
+        last_seen_time: Time of the last status update from the job.
     """
 
     def __init__(
@@ -156,11 +156,11 @@ class TransformationJob(CogniteResourceWithClientRef):
         """`Waits for the job to finish.`
 
         Args:
-            polling_interval (float): time (s) to wait between job status updates, default is one second.
-            timeout (float | None): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status.
+            polling_interval: time (s) to wait between job status updates, default is one second.
+            timeout: maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status.
 
         Returns:
-            TransformationJob: The transformation job (itself).
+            The transformation job (itself).
 
         Examples:
             Run transformations 1 and 2 in parallel, and run 3 once they finish successfully:
@@ -251,8 +251,8 @@ class TransformationJobFilter(CogniteFilter):
     """TransformationJobFilter
 
     Args:
-        transformation_id (int | None):  Filter jobs by transformation internal numeric ID.
-        transformation_external_id (str | None): Filter jobs by transformation external ID.
+        transformation_id:  Filter jobs by transformation internal numeric ID.
+        transformation_external_id: Filter jobs by transformation external ID.
     """
 
     def __init__(self, transformation_id: int | None = None, transformation_external_id: str | None = None) -> None:

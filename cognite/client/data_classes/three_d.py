@@ -25,8 +25,8 @@ class RevisionCameraProperties(CogniteResource):
     """Initial camera position and target.
 
     Args:
-        target (list[float]): Initial camera target.
-        position (list[float]): Initial camera position.
+        target: Initial camera target.
+        position: Initial camera position.
     """
 
     def __init__(self, target: list[float], position: list[float]) -> None:
@@ -45,8 +45,8 @@ class BoundingBox3D(CogniteResource):
     """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
 
     Args:
-        max (list[float]): No description.
-        min (list[float]): No description.
+        max: No description.
+        min: No description.
     """
 
     def __init__(self, max: list[float], min: list[float]) -> None:
@@ -66,9 +66,9 @@ class ThreeDModelCore(WriteableCogniteResource["ThreeDModelWrite"], ABC):
 
 
     Args:
-        name (str): The name of the model.
-        data_set_id (int | None): The id of the dataset this 3D model belongs to.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        name: The name of the model.
+        data_set_id: The id of the dataset this 3D model belongs to.
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
     """
 
     def __init__(
@@ -87,11 +87,11 @@ class ThreeDModel(ThreeDModelCore):
     This is the read version of ThreeDModel, which is used when retrieving 3D models.
 
     Args:
-        name (str): The name of the model.
-        id (int): The ID of the model.
-        created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
-        data_set_id (int | None): The id of the dataset this 3D model belongs to.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        name: The name of the model.
+        id: The ID of the model.
+        created_time: The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
+        data_set_id: The id of the dataset this 3D model belongs to.
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
     """
 
     def __init__(
@@ -137,9 +137,9 @@ class ThreeDModelWrite(ThreeDModelCore):
 
 
     Args:
-        name (str): The name of the model.
-        data_set_id (int | None): The id of the dataset this 3D model belongs to.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        name: The name of the model.
+        data_set_id: The id of the dataset this 3D model belongs to.
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
     """
 
     def __init__(
@@ -171,7 +171,7 @@ class ThreeDModelUpdate(CogniteUpdate):
     """No description.
 
     Args:
-        id (int): A server-generated ID for the object.
+        id: A server-generated ID for the object.
     """
 
     class _PrimitiveThreeDModelUpdate(CognitePrimitiveUpdate):
@@ -244,13 +244,13 @@ class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite
     """No description.
 
     Args:
-        file_id (int | None): The file id.
-        published (bool | None): True if the revision is marked as published.
-        rotation (list[float] | None): No description.
-        scale (list[float] | None): Scale of 3D model in directions X,Y and Z. Should be uniform.
-        translation (list[float] | None): 3D offset of the model.
-        camera (RevisionCameraProperties | dict[str, Any] | None): Initial camera position and target.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        file_id: The file id.
+        published: True if the revision is marked as published.
+        rotation: No description.
+        scale: Scale of 3D model in directions X,Y and Z. Should be uniform.
+        translation: 3D offset of the model.
+        camera: Initial camera position and target.
+        metadata: Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
     """
 
     def __init__(
@@ -295,19 +295,19 @@ class ThreeDModelRevision(ThreeDModelRevisionCore):
     This is the read version of ThreeDModelRevision, which is used when retrieving 3D model revisions.
 
     Args:
-        id (int): The ID of the revision.
-        file_id (int): The file id.
-        published (bool): True if the revision is marked as published.
-        rotation (list[float] | None): No description.
-        scale (list[float] | None): Scale of 3D model in directions X,Y and Z. Should be uniform.
-        translation (list[float] | None): 3D offset of the model.
-        camera (RevisionCameraProperties | None): Initial camera position and target.
-        status (str): The status of the revision.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        thumbnail_threed_file_id (int | None): The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
-        thumbnail_url (str | None): The URL of a thumbnail for the revision.
-        asset_mapping_count (int): The number of asset mappings for this revision.
-        created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
+        id: The ID of the revision.
+        file_id: The file id.
+        published: True if the revision is marked as published.
+        rotation: No description.
+        scale: Scale of 3D model in directions X,Y and Z. Should be uniform.
+        translation: 3D offset of the model.
+        camera: Initial camera position and target.
+        status: The status of the revision.
+        metadata: Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        thumbnail_threed_file_id: The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
+        thumbnail_url: The URL of a thumbnail for the revision.
+        asset_mapping_count: The number of asset mappings for this revision.
+        created_time: The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
     """
 
     def __init__(
@@ -380,13 +380,13 @@ class ThreeDModelRevisionWrite(ThreeDModelRevisionCore):
     This is the write version of ThreeDModelRevision, which is used when creating 3D model revisions.
 
     Args:
-        file_id (int): The file id to a file uploaded to Cognite's Files API. Can only be set on revision creation, and can never be updated.
-        published (bool): True if the revision is marked as published.
-        rotation (list[float] | None): No description.
-        scale (list[float] | None): Scale of 3D model in directions X,Y and Z. Should be uniform.
-        translation (list[float] | None): 3D offset of the model.
-        camera (RevisionCameraProperties | dict[str, Any] | None): Initial camera position and target.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        file_id: The file id to a file uploaded to Cognite's Files API. Can only be set on revision creation, and can never be updated.
+        published: True if the revision is marked as published.
+        rotation: No description.
+        scale: Scale of 3D model in directions X,Y and Z. Should be uniform.
+        translation: 3D offset of the model.
+        camera: Initial camera position and target.
+        metadata: Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
     """
 
     def __init__(
@@ -430,7 +430,7 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
     """No description.
 
     Args:
-        id (int): A server-generated ID for the object.
+        id: A server-generated ID for the object.
     """
 
     class _PrimitiveThreeDModelRevisionUpdate(CognitePrimitiveUpdate):
@@ -518,14 +518,14 @@ class ThreeDNode(CogniteResource):
     """No description.
 
     Args:
-        id (int): The ID of the node.
-        tree_index (int): The index of the node in the 3D model hierarchy, starting from 0. The tree is traversed in a depth-first order.
-        parent_id (int | None): The parent of the node, null if it is the root node.
-        depth (int): The depth of the node in the tree, starting from 0 at the root node.
-        name (str): The name of the node.
-        subtree_size (int): The number of descendants of the node, plus one (counting itself).
-        properties (dict[str, dict[str, str]] | None): Properties extracted from 3D model, with property categories containing key/value string pairs.
-        bounding_box (BoundingBox3D | None): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+        id: The ID of the node.
+        tree_index: The index of the node in the 3D model hierarchy, starting from 0. The tree is traversed in a depth-first order.
+        parent_id: The parent of the node, null if it is the root node.
+        depth: The depth of the node in the tree, starting from 0 at the root node.
+        name: The name of the node.
+        subtree_size: The number of descendants of the node, plus one (counting itself).
+        properties: Properties extracted from 3D model, with property categories containing key/value string pairs.
+        bounding_box: The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
     """
 
     def __init__(
@@ -576,8 +576,8 @@ class ThreeDAssetMappingCore(WriteableCogniteResource["ThreeDAssetMappingWrite"]
     """No description.
 
     Args:
-        node_id (int): The ID of the node.
-        asset_id (int | None): The ID of the associated asset (Cognite's Assets API).
+        node_id: The ID of the node.
+        asset_id: The ID of the associated asset (Cognite's Assets API).
     """
 
     def __init__(
@@ -594,10 +594,10 @@ class ThreeDAssetMapping(ThreeDAssetMappingCore):
     This is the read version of ThreeDAssetMapping, which is used when retrieving 3D asset mappings.
 
     Args:
-        node_id (int): The ID of the node.
-        asset_id (int | None): The ID of the associated asset (Cognite's Assets API).
-        tree_index (int | None): A number describing the position of this node in the 3D hierarchy, starting from 0. The tree is traversed in a depth-first order.
-        subtree_size (int | None): The number of nodes in the subtree of this node (this number included the node itself).
+        node_id: The ID of the node.
+        asset_id: The ID of the associated asset (Cognite's Assets API).
+        tree_index: A number describing the position of this node in the 3D hierarchy, starting from 0. The tree is traversed in a depth-first order.
+        subtree_size: The number of nodes in the subtree of this node (this number included the node itself).
     """
 
     def __init__(
@@ -638,8 +638,8 @@ class ThreeDAssetMappingWrite(ThreeDAssetMappingCore):
     This is the write version of ThreeDAssetMapping, which is used when creating 3D asset mappings.
 
     Args:
-        node_id (int): The ID of the node.
-        asset_id (int | None): The ID of the associated asset (Cognite's Assets API).
+        node_id: The ID of the node.
+        asset_id: The ID of the associated asset (Cognite's Assets API).
     """
 
     def __init__(self, node_id: int, asset_id: int | None = None) -> None:

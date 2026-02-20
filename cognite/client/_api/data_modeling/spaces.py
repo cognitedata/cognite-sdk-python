@@ -46,11 +46,11 @@ class SpacesAPI(APIClient):
         Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
 
         Args:
-            chunk_size (int | None): Number of spaces to return in each chunk. Defaults to yielding one space a time.
-            limit (int | None): Maximum number of spaces to return. Defaults to returning all items.
+            chunk_size: Number of spaces to return in each chunk. Defaults to yielding one space a time.
+            limit: Maximum number of spaces to return. Defaults to returning all items.
 
         Yields:
-            Space | SpaceList: yields Space one by one if chunk_size is not specified, else SpaceList objects.
+            yields Space one by one if chunk_size is not specified, else SpaceList objects.
         """  # noqa: DOC404
         async for item in self._list_generator(
             list_cls=SpaceList,
@@ -72,10 +72,10 @@ class SpacesAPI(APIClient):
         """`Retrieve one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/bySpaceIdsSpaces>`_
 
         Args:
-            spaces (str | SequenceNotStr[str]): Space ID
+            spaces: Space ID
 
         Returns:
-            Space | SpaceList | None: Requested space or None if it does not exist.
+            Requested space or None if it does not exist.
 
         Examples:
 
@@ -101,9 +101,9 @@ class SpacesAPI(APIClient):
         """`Delete one or more spaces <https://developer.cognite.com/api#tag/Spaces/operation/deleteSpacesV3>`_
 
         Args:
-            spaces (str | SequenceNotStr[str]): ID or ID list ids of spaces.
+            spaces: ID or ID list ids of spaces.
         Returns:
-            list[str]: The space(s) which has been deleted.
+            The space(s) which has been deleted.
         Examples:
 
             Delete spaces by id:
@@ -132,11 +132,11 @@ class SpacesAPI(APIClient):
         """`List spaces <https://developer.cognite.com/api#tag/Spaces/operation/listSpacesV3>`_
 
         Args:
-            limit (int | None): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
-            include_global (bool): Whether to include global spaces. Defaults to False.
+            limit: Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            include_global: Whether to include global spaces. Defaults to False.
 
         Returns:
-            SpaceList: List of requested spaces
+            List of requested spaces
 
         Examples:
 
@@ -176,10 +176,10 @@ class SpacesAPI(APIClient):
         """`Create or patch one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/ApplySpaces>`_
 
         Args:
-            spaces (SpaceApply | Sequence[SpaceApply]): Space | Sequence[Space]): Space or spaces of spacesda to create or update.
+            spaces: Space or spaces of spacesda to create or update.
 
         Returns:
-            Space | SpaceList: Created space(s)
+            Created space(s)
 
         Examples:
 

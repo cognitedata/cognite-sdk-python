@@ -27,12 +27,12 @@ class TransformationJobsAPI(APIClient):
         """`List all running transformation jobs. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobs>`_
 
         Args:
-            limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
-            transformation_id (int | None): Filters the results by the internal transformation id.
-            transformation_external_id (str | None): Filters the results by the external transformation id.
+            limit: Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            transformation_id: Filters the results by the internal transformation id.
+            transformation_external_id: Filters the results by the external transformation id.
 
         Returns:
-            TransformationJobList: List of transformation jobs
+            List of transformation jobs
 
         Example:
 
@@ -63,10 +63,10 @@ class TransformationJobsAPI(APIClient):
         """`Retrieve a single transformation job by id. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsByIds>`_
 
         Args:
-            id (int): Job internal Id
+            id: Job internal Id
 
         Returns:
-            TransformationJob | None: Requested transformation job or None if it does not exist.
+            Requested transformation job or None if it does not exist.
 
         Examples:
 
@@ -86,10 +86,10 @@ class TransformationJobsAPI(APIClient):
         """`List the metrics of a single transformation job. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsMetrics>`_
 
         Args:
-            id (int): Job internal Id
+            id: Job internal Id
 
         Returns:
-            TransformationJobMetricList: List of updated metrics of the given job.
+            List of updated metrics of the given job.
 
         Examples:
 
@@ -114,11 +114,11 @@ class TransformationJobsAPI(APIClient):
         """`Retrieve multiple transformation jobs by id. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsByIds>`_
 
         Args:
-            ids (Sequence[int]): Job internal Ids
-            ignore_unknown_ids (bool): Ignore IDs that are not found rather than throw an exception.
+            ids: Job internal Ids
+            ignore_unknown_ids: Ignore IDs that are not found rather than throw an exception.
 
         Returns:
-            TransformationJobList: Requested transformation jobs.
+            Requested transformation jobs.
 
         Examples:
 

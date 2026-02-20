@@ -198,18 +198,18 @@ class CogniteAPIError(CogniteMultiException):
     failed to be processed (4xx).
 
     Args:
-        message (str): The error message produced by the API.
-        code (int): The error code produced by the failure.
-        x_request_id (str | None): The request-id generated for the failed request.
-        missing (list | None): List of missing identifiers.
-        duplicated (list | None): List of duplicated identifiers.
-        successful (list | None): List of items which were successfully processed.
-        failed (list | None): List of items which failed.
-        unknown (list | None): List of items which may or may not have been successfully processed.
-        skipped (list | None): List of items that were skipped due to "fail fast" mode.
-        cluster (str | None): Which Cognite cluster the user's project is on.
-        project (str | None): No description.
-        extra (dict | None): A dict of any additional information.
+        message: The error message produced by the API.
+        code: The error code produced by the failure.
+        x_request_id: The request-id generated for the failed request.
+        missing: List of missing identifiers.
+        duplicated: List of duplicated identifiers.
+        successful: List of items which were successfully processed.
+        failed: List of items which failed.
+        unknown: List of items which may or may not have been successfully processed.
+        skipped: List of items that were skipped due to "fail fast" mode.
+        cluster: Which Cognite cluster the user's project is on.
+        project: No description.
+        extra: A dict of any additional information.
     """
 
     def __init__(
@@ -301,8 +301,8 @@ class CogniteImportError(CogniteException, ImportError):
     Raised if the user attempts to use functionality which requires an uninstalled package.
 
     Args:
-        module (str): Name of the module which could not be imported
-        message (str | None): The error message to output.
+        module: Name of the module which could not be imported
+        message: The error message to output.
     """
 
     def __init__(self, module: str, message: str | None = None) -> None:
@@ -319,7 +319,7 @@ class CogniteMissingClientError(CogniteException):
     Raised if the user attempts to make use of a method which requires the cognite_client being set, but it is not.
 
     Args:
-        obj (Any): Object missing client reference.
+        obj: Object missing client reference.
     """
 
     def __init__(self, obj: Any) -> None:
@@ -350,9 +350,8 @@ class CogniteAssetHierarchyError(CogniteException):
     Raised if the given assets form an invalid hierarchy (by CDF standards).
 
     Args:
-        message (str): The error message to output.
-        hierarchy (AssetHierarchy): An instance of AssetHierarchy that holds various groups
-            of assets that failed validation.
+        message: The error message to output.
+        hierarchy: An instance of AssetHierarchy that holds various groups of assets that failed validation.
     """
 
     def __init__(self, message: str, hierarchy: AssetHierarchy) -> None:

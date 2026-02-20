@@ -28,7 +28,13 @@ needs_sphinx = "7.2"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.doctest", "sphinx.ext.napoleon", "sphinx.ext.autosectionlabel"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autosectionlabel",
+    "sphinx_autodoc_typehints",
+]
 
 autosectionlabel_prefix_document = True
 
@@ -179,3 +185,7 @@ def analyze_but_skip_overloads(self):
 
 
 ModuleAnalyzer.analyze = analyze_but_skip_overloads
+
+# Options for how to autodoc type hints
+typehints_use_signature = True
+always_use_bars_union = True

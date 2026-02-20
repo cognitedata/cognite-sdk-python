@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ebf94ce24437dd81bab208403099ec24
+a3e57d6b670ac6d420094220bc5c790f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -24,7 +24,7 @@ class SyncUnitSystemAPI(SyncAPIClient):
         `List all supported unit systems <https://developer.cognite.com/api#tag/Unit-Systems/operation/listUnitSystems>`_
 
         Returns:
-            UnitSystemList: List of unit systems
+            List of unit systems
 
         Examples:
 

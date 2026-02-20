@@ -25,12 +25,12 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
     This is the read/response format of a simulator routine.
 
     Args:
-        external_id (str): External id of the simulator routine
-        model_external_id (str): External id of the associated simulator model
-        simulator_integration_external_id (str | None): External id of the associated simulator integration
-        name (str): The name of the simulator routine
-        description (str | None): The description of the simulator routine
-        kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
+        external_id: External id of the simulator routine
+        model_external_id: External id of the associated simulator model
+        simulator_integration_external_id: External id of the associated simulator integration
+        name: The name of the simulator routine
+        description: The description of the simulator routine
+        kind: The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
 
     def __init__(
@@ -72,12 +72,12 @@ class SimulatorRoutineWrite(SimulatorRoutineCore):
     This is the read/response format of a simulator routine.
 
     Args:
-        external_id (str): External id of the simulator routine
-        model_external_id (str): External id of the associated simulator model
-        simulator_integration_external_id (str): External id of the associated simulator integration
-        name (str): The name of the simulator routine
-        description (str | None): The description of the simulator routine
-        kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
+        external_id: External id of the simulator routine
+        model_external_id: External id of the associated simulator model
+        simulator_integration_external_id: External id of the associated simulator integration
+        name: The name of the simulator routine
+        description: The description of the simulator routine
+        kind: The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
 
     def as_write(self) -> SimulatorRoutineWrite:
@@ -96,17 +96,17 @@ class SimulatorRoutine(SimulatorRoutineCore):
     This is the read/response format of a simulator routine.
 
     Args:
-        id (int): A unique id of a simulator routine
-        external_id (str): External id of the simulator routine
-        model_external_id (str): External id of the associated simulator model
-        simulator_integration_external_id (str | None): External id of the associated simulator integration
-        name (str): The name of the simulator routine
-        data_set_id (int): The id of the dataset associated with the simulator routine
-        simulator_external_id (str): External id of the associated simulator
-        created_time (int): The time when the simulator routine was created
-        last_updated_time (int): The time when the simulator routine was last updated
-        description (str | None): The description of the simulator routine
-        kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
+        id: A unique id of a simulator routine
+        external_id: External id of the simulator routine
+        model_external_id: External id of the associated simulator model
+        simulator_integration_external_id: External id of the associated simulator integration
+        name: The name of the simulator routine
+        data_set_id: The id of the dataset associated with the simulator routine
+        simulator_external_id: External id of the associated simulator
+        created_time: The time when the simulator routine was created
+        last_updated_time: The time when the simulator routine was last updated
+        description: The description of the simulator routine
+        kind: The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
 
     def __init__(

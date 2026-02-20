@@ -1,6 +1,6 @@
 """
 ===============================================================================
-1eaa0d561ca8b8cd03d87b44b8c0c8bc
+3f883e3cf967206d715bdaef521dbb22
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -36,11 +36,11 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         `Retrieve model  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_
 
         Args:
-            id (int | None): id of the model to retrieve.
-            external_id (str | None): external id of the model to retrieve.
+            id: id of the model to retrieve.
+            external_id: external id of the model to retrieve.
 
         Returns:
-            EntityMatchingModel | None: Model requested.
+            Model requested.
 
         Examples:
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
@@ -57,11 +57,11 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         `Retrieve models  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_
 
         Args:
-            ids (Sequence[int] | None): ids of the model to retrieve.
-            external_ids (SequenceNotStr[str] | None): external ids of the model to retrieve.
+            ids: ids of the model to retrieve.
+            external_ids: external ids of the model to retrieve.
 
         Returns:
-            EntityMatchingModelList: Models requested.
+            Models requested.
 
         Examples:
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
@@ -82,11 +82,11 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         `Update model  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingUpdate>`_
 
         Args:
-            item (EntityMatchingModel | EntityMatchingModelUpdate | Sequence[EntityMatchingModel | EntityMatchingModelUpdate]): Model(s) to update
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (EntityMatchingModel). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: Model(s) to update
+            mode: How to update data when a non-update object is given (EntityMatchingModel). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            EntityMatchingModelList | EntityMatchingModel: No description.
+            No description.
 
         Examples:
             >>> from cognite.client.data_classes.contextualization import EntityMatchingModelUpdate
@@ -110,15 +110,15 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         `List models  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingModels>`_
 
         Args:
-            name (str | None): Optional user-defined name of model.
-            description (str | None): Optional user-defined description of model.
-            original_id (int | None): id of the original model for models that were created with refit.
-            feature_type (str | None): feature type that defines the combination of features used.
-            classifier (str | None): classifier used in training.
-            limit (int | None): Maximum number of items to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            name: Optional user-defined name of model.
+            description: Optional user-defined description of model.
+            original_id: id of the original model for models that were created with refit.
+            feature_type: feature type that defines the combination of features used.
+            classifier: classifier used in training.
+            limit: Maximum number of items to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            EntityMatchingModelList: List of models.
+            List of models.
 
         Examples:
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
@@ -142,7 +142,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         List jobs, typically model fit and predict runs.
 
         Returns:
-            ContextualizationJobList: List of jobs.
+            List of jobs.
         """
         return run_sync(self.__async_client.entity_matching.list_jobs())
 
@@ -156,8 +156,8 @@ class SyncEntityMatchingAPI(SyncAPIClient):
 
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
+            id: Id or list of ids
+            external_id: External ID or list of external ids
         Examples:
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
@@ -187,18 +187,18 @@ class SyncEntityMatchingAPI(SyncAPIClient):
             capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
-            sources (Sequence[dict | CogniteResource]): entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). Metadata fields are automatically flattened to "metadata.key" entries, such that they can be used in match_fields.
-            targets (Sequence[dict | CogniteResource]): entities to match to, should have an 'id' field. Tolerant to passing more than is needed or used.
-            true_matches (Sequence[dict | tuple[int | str, int | str]] | None): Known valid matches given as a list of dicts with keys 'sourceId', 'sourceExternalId', 'targetId', 'targetExternalId'). If omitted, uses an unsupervised model. A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
-            match_fields (dict | Sequence[tuple[str, str]] | None): List of (from,to) keys to use in matching. Default in the API is [('name','name')]. Also accepts {"source": .., "target": ..}.
-            feature_type (str | None): feature type that defines the combination of features used, see API docs for details.
-            classifier (str | None): classifier used in training.
-            ignore_missing_fields (bool): whether missing data in match_fields should return error or be filled in with an empty string.
-            name (str | None): Optional user-defined name of model.
-            description (str | None): Optional user-defined description of model.
-            external_id (str | None): Optional external id. Must be unique within the project.
+            sources: entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). Metadata fields are automatically flattened to "metadata.key" entries, such that they can be used in match_fields.
+            targets: entities to match to, should have an 'id' field. Tolerant to passing more than is needed or used.
+            true_matches: Known valid matches given as a list of dicts with keys 'sourceId', 'sourceExternalId', 'targetId', 'targetExternalId'). If omitted, uses an unsupervised model. A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
+            match_fields: List of (from,to) keys to use in matching. Default in the API is [('name','name')]. Also accepts {"source": .., "target": ..}.
+            feature_type: feature type that defines the combination of features used, see API docs for details.
+            classifier: classifier used in training.
+            ignore_missing_fields: whether missing data in match_fields should return error or be filled in with an empty string.
+            name: Optional user-defined name of model.
+            description: Optional user-defined description of model.
+            external_id: Optional external id. Must be unique within the project.
         Returns:
-            EntityMatchingModel: Resulting queued model.
+            Resulting queued model.
 
         Example:
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
@@ -249,15 +249,15 @@ class SyncEntityMatchingAPI(SyncAPIClient):
             capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
-            sources (Sequence[dict] | None): entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
-            targets (Sequence[dict] | None): entities to match to, does not need an 'id' field. Tolerant to passing more than is needed or used. If omitted, will use data from fit.
-            num_matches (int): number of matches to return for each item.
-            score_threshold (float | None): only return matches with a score above this threshold
-            id (int | None): id of the model to use.
-            external_id (str | None): external id of the model to use.
+            sources: entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
+            targets: entities to match to, does not need an 'id' field. Tolerant to passing more than is needed or used. If omitted, will use data from fit.
+            num_matches: number of matches to return for each item.
+            score_threshold: only return matches with a score above this threshold
+            id: id of the model to use.
+            external_id: external id of the model to use.
 
         Returns:
-            EntityMatchingPredictionResult: object which can be used to wait for and retrieve results.
+            object which can be used to wait for and retrieve results.
 
         Examples:
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
@@ -299,11 +299,11 @@ class SyncEntityMatchingAPI(SyncAPIClient):
             capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
-            true_matches (Sequence[dict | tuple[int | str, int | str]]): Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId'). A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
-            id (int | None): id of the model to use.
-            external_id (str | None): external id of the model to use.
+            true_matches: Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId'). A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
+            id: id of the model to use.
+            external_id: external id of the model to use.
         Returns:
-            EntityMatchingModel: new model refitted to true_matches.
+            new model refitted to true_matches.
 
         Examples:
             >>> from cognite.client import CogniteClient, AsyncCogniteClient

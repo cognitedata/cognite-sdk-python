@@ -1,6 +1,6 @@
 """
 ===============================================================================
-7450cb501a5fe150b43354f5aa1448a4
+57a1fb8046c7953c621c19285433859e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -33,7 +33,7 @@ class SyncStatisticsAPI(SyncAPIClient):
         Returns the usage data and limits for a project's data modelling usage, including data model schemas and graph instances
 
         Returns:
-            ProjectStatistics: The requested statistics and limits
+            The requested statistics and limits
 
         Examples:
 

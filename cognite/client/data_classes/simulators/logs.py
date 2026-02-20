@@ -21,9 +21,9 @@ class SimulatorLogData(CogniteResource):
     Simulator log data represents a single log entry in a simulator log.
 
     Args:
-        timestamp (int): Timestamp of the log message.
-        message (str): Log message.
-        severity (Severity): Log severity level.
+        timestamp: Timestamp of the log message.
+        message: Log message.
+        severity: Log severity level.
     """
 
     timestamp: int
@@ -48,12 +48,12 @@ class SimulatorLog(CogniteResource):
     They help users identify issues, diagnose problems, and gain insights into the behavior of the simulator integrations.
 
     Args:
-        id (int): A unique id of a simulator resource log.
-        data (Sequence[SimulatorLogData]): Log data of the simulator resource.
-        created_time (int): The number of milliseconds since epoch.
-        last_updated_time (int): The number of milliseconds since epoch.
-        data_set_id (int): Dataset id of the resource.
-        severity (Severity | None): Minimum severity level of the log data. This overrides connector configuration minimum severity level and can be used for more granular control.
+        id: A unique id of a simulator resource log.
+        data: Log data of the simulator resource.
+        created_time: The number of milliseconds since epoch.
+        last_updated_time: The number of milliseconds since epoch.
+        data_set_id: Dataset id of the resource.
+        severity: Minimum severity level of the log data. This overrides connector configuration minimum severity level and can be used for more granular control.
     """
 
     def __init__(

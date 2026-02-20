@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ba1dc9330d8160a0dd16e42e281ac200
+b388f88a590ae6b0a208fb19f1abf3d6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -99,23 +99,23 @@ class SyncSequencesAPI(SyncAPIClient):
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
-            chunk_size (int | None): Number of sequences to return in each chunk. Defaults to yielding one event a time.
-            name (str | None): Filter out sequences that do not have this *exact* name.
-            external_id_prefix (str | None): Filter out sequences that do not have this string as the start of the externalId
-            metadata (dict[str, str] | None): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
-            asset_ids (typing.Sequence[int] | None): Filter out sequences that are not linked to any of these assets.
-            asset_subtree_ids (int | typing.Sequence[int] | None): Only include sequences that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include sequences that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            data_set_ids (int | typing.Sequence[int] | None): Return only sequences in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only sequences in the specified data set(s) with this external id / these external ids.
-            created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (int | None): Max number of sequences to return. Defaults to return all items.
-            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            chunk_size: Number of sequences to return in each chunk. Defaults to yielding one event a time.
+            name: Filter out sequences that do not have this *exact* name.
+            external_id_prefix: Filter out sequences that do not have this string as the start of the externalId
+            metadata: Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
+            asset_ids: Filter out sequences that are not linked to any of these assets.
+            asset_subtree_ids: Only include sequences that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids: Only include sequences that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            data_set_ids: Return only sequences in the specified data set(s) with this id / these ids.
+            data_set_external_ids: Return only sequences in the specified data set(s) with this external id / these external ids.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit: Max number of sequences to return. Defaults to return all items.
+            advanced_filter: Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+            sort: The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Yields:
-            Sequence | SequenceList: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
+            yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.sequences(
@@ -141,11 +141,11 @@ class SyncSequencesAPI(SyncAPIClient):
         `Retrieve a single sequence by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
 
         Args:
-            id (int | None): ID
-            external_id (str | None): External ID
+            id: ID
+            external_id: External ID
 
         Returns:
-            Sequence | None: Requested sequence or None if it does not exist.
+            Requested sequence or None if it does not exist.
 
         Examples:
 
@@ -172,12 +172,12 @@ class SyncSequencesAPI(SyncAPIClient):
         `Retrieve multiple sequences by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
 
         Args:
-            ids (typing.Sequence[int] | None): IDs
-            external_ids (SequenceNotStr[str] | None): External IDs
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            ids: IDs
+            external_ids: External IDs
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            SequenceList: The requested sequences.
+            The requested sequences.
 
         Examples:
 
@@ -207,11 +207,11 @@ class SyncSequencesAPI(SyncAPIClient):
         `Count of sequences matching the specified filters and search. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count.
-            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down sequences to count requiring exact match.
+            advanced_filter: The filter to narrow down the sequences to count.
+            filter: The filter to narrow down sequences to count requiring exact match.
 
         Returns:
-            int: The number of sequences matching the specified filters and search.
+            The number of sequences matching the specified filters and search.
 
         Examples:
 
@@ -242,13 +242,13 @@ class SyncSequencesAPI(SyncAPIClient):
         `Find approximate property count for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            property (SequenceProperty | str | list[str]): The property to count the cardinality of.
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down the sequences  to count requiring exact match.
+            property: The property to count the cardinality of.
+            advanced_filter: The filter to narrow down the sequences to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down the sequences  to count requiring exact match.
 
         Returns:
-            int: The number of properties matching the specified filters and search.
+            The number of properties matching the specified filters and search.
 
         Examples:
 
@@ -289,13 +289,13 @@ class SyncSequencesAPI(SyncAPIClient):
         `Find approximate paths count for sequences.  <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down the sequences  to count requiring exact match.
+            path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
+            advanced_filter: The filter to narrow down the sequences to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down the sequences  to count requiring exact match.
 
         Returns:
-            int: The number of properties matching the specified filters and search.
+            The number of properties matching the specified filters and search.
 
         Examples:
 
@@ -324,13 +324,13 @@ class SyncSequencesAPI(SyncAPIClient):
         `Get unique paths with counts for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            property (SequenceProperty | str | list[str]): The property to group by.
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down the sequences to count requiring exact match.
+            property: The property to group by.
+            advanced_filter: The filter to narrow down the sequences to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down the sequences to count requiring exact match.
 
         Returns:
-            UniqueResultList: List of unique values of sequences matching the specified filters and search.
+            List of unique values of sequences matching the specified filters and search.
 
         Examples:
 
@@ -380,13 +380,13 @@ class SyncSequencesAPI(SyncAPIClient):
         `Find approximate unique sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
-            advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down the sequences to count requiring exact match.
+            path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
+            advanced_filter: The filter to narrow down the sequences to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            filter: The filter to narrow down the sequences to count requiring exact match.
 
         Returns:
-            UniqueResultList: List of unique values of sequences matching the specified filters and search.
+            List of unique values of sequences matching the specified filters and search.
 
         Examples:
 
@@ -417,10 +417,10 @@ class SyncSequencesAPI(SyncAPIClient):
         `Create one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/createSequence>`_
 
         Args:
-            sequence (Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]): Sequence or list of Sequence to create. The Sequence columns parameter is a list of objects with fields `externalId` (external id of the column, when omitted, they will be given ids of 'column0, column1, ...'), `valueType` (data type of the column, either STRING, LONG, or DOUBLE, with default DOUBLE), `name`, `description`, `metadata` (optional fields to describe and store information about the data in the column). Other fields will be removed automatically, so a columns definition from a different sequence object can be passed here.
+            sequence: Sequence or list of Sequence to create. The Sequence columns parameter is a list of objects with fields `externalId` (external id of the column, when omitted, they will be given ids of 'column0, column1, ...'), `valueType` (data type of the column, either STRING, LONG, or DOUBLE, with default DOUBLE), `name`, `description`, `metadata` (optional fields to describe and store information about the data in the column). Other fields will be removed automatically, so a columns definition from a different sequence object can be passed here.
 
         Returns:
-            Sequence | SequenceList: The created sequence(s).
+            The created sequence(s).
 
         Examples:
 
@@ -452,9 +452,9 @@ class SyncSequencesAPI(SyncAPIClient):
         `Delete one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequences>`_
 
         Args:
-            id (int | typing.Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            id: Id or list of ids
+            external_id: External ID or list of external ids
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
 
@@ -492,11 +492,11 @@ class SyncSequencesAPI(SyncAPIClient):
         `Update one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/updateSequences>`_
 
         Args:
-            item (Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]): Sequences to update
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Sequence or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: Sequences to update
+            mode: How to update data when a non-update object is given (Sequence or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            Sequence | SequenceList: Updated sequences.
+            Updated sequences.
 
         Examples:
 
@@ -587,11 +587,11 @@ class SyncSequencesAPI(SyncAPIClient):
             For more details, see :ref:`appendix-upsert`.
 
         Args:
-            item (Sequence | SequenceWrite | typing.Sequence[Sequence | SequenceWrite]): Sequence or list of sequences to upsert.
-            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the sequences are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            item: Sequence or list of sequences to upsert.
+            mode: Whether to patch or replace in the case the sequences are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
-            Sequence | SequenceList: The upserted sequence(s).
+            The upserted sequence(s).
 
         Examples:
 
@@ -625,14 +625,14 @@ class SyncSequencesAPI(SyncAPIClient):
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
-            name (str | None): Prefix and fuzzy search on name.
-            description (str | None): Prefix and fuzzy search on description.
-            query (str | None): Search on name and description using wildcard search on each of the words (separated by spaces). Retrieves results where at least one word must match. Example: 'some other'
-            filter (SequenceFilter | dict[str, Any] | None): Filter to apply. Performs exact match on these fields.
-            limit (int): Max number of results to return.
+            name: Prefix and fuzzy search on name.
+            description: Prefix and fuzzy search on description.
+            query: Search on name and description using wildcard search on each of the words (separated by spaces). Retrieves results where at least one word must match. Example: 'some other'
+            filter: Filter to apply. Performs exact match on these fields.
+            limit: Max number of results to return.
 
         Returns:
-            SequenceList: The search result as a SequenceList
+            The search result as a SequenceList
 
         Examples:
 
@@ -670,23 +670,23 @@ class SyncSequencesAPI(SyncAPIClient):
         `List sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
 
         Args:
-            name (str | None): Filter out sequences that do not have this *exact* name.
-            external_id_prefix (str | None): Filter out sequences that do not have this string as the start of the externalId
-            metadata (dict[str, str] | None): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
-            asset_ids (typing.Sequence[int] | None): Filter out sequences that are not linked to any of these assets.
-            asset_subtree_ids (int | typing.Sequence[int] | None): Only include sequences that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include sequences that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-            data_set_ids (int | typing.Sequence[int] | None): Return only sequences in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only sequences in the specified data set(s) with this external id / these external ids.
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (int | None): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
-            advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            name: Filter out sequences that do not have this *exact* name.
+            external_id_prefix: Filter out sequences that do not have this string as the start of the externalId
+            metadata: Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
+            asset_ids: Filter out sequences that are not linked to any of these assets.
+            asset_subtree_ids: Only include sequences that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            asset_subtree_external_ids: Only include sequences that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+            data_set_ids: Return only sequences in the specified data set(s) with this id / these ids.
+            data_set_external_ids: Return only sequences in the specified data set(s) with this external id / these external ids.
+            created_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time:  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit: Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions: Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
+            advanced_filter: Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
+            sort: The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
-            SequenceList: The requested sequences.
+            The requested sequences.
 
         .. note::
             When using `partitions`, there are few considerations to keep in mind:

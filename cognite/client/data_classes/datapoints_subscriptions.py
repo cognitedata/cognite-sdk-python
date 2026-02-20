@@ -59,15 +59,15 @@ class DatapointSubscription(DatapointSubscriptionCore):
         This is the read version of a subscription, used when reading subscriptions from CDF.
 
     Args:
-        external_id (ExternalId): Externally provided ID for the subscription. Must be unique.
-        partition_count (int): The maximum effective parallelism of this subscription (the number of clients that can read from it concurrently) will be limited to this number, but a higher partition count will cause a higher time overhead.
-        created_time (int): Time when the subscription was created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time (int): Time when the subscription was last updated in CDF in milliseconds since Jan 1, 1970.
-        time_series_count (int | None): The number of time series in the subscription. None if no timeseries.
-        filter (Filter | None): If present, the subscription is defined by this filter.
-        name (str | None): No description.
-        description (str | None): A summary explanation for the subscription.
-        data_set_id (int | None): The id of the dataset this subscription belongs to.
+        external_id: Externally provided ID for the subscription. Must be unique.
+        partition_count: The maximum effective parallelism of this subscription (the number of clients that can read from it concurrently) will be limited to this number, but a higher partition count will cause a higher time overhead.
+        created_time: Time when the subscription was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time: Time when the subscription was last updated in CDF in milliseconds since Jan 1, 1970.
+        time_series_count: The number of time series in the subscription. None if no timeseries.
+        filter: If present, the subscription is defined by this filter.
+        name: No description.
+        description: A summary explanation for the subscription.
+        data_set_id: The id of the dataset this subscription belongs to.
     """
 
     def __init__(
@@ -120,14 +120,14 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
     A subscription can either be defined directly by a list of time series ids or indirectly by a filter.
 
     Args:
-        external_id (str): Externally provided ID for the subscription. Must be unique.
-        partition_count (int): The maximum effective parallelism of this subscription (the number of clients that can read from it concurrently) will be limited to this number, but a higher partition count will cause a higher time overhead. The partition count must be between 1 and 100. CAVEAT: This cannot change after the subscription has been created.
-        time_series_ids (list[ExternalId] | None): List of (external) ids of time series that this subscription will listen to. Not compatible with filter.
-        instance_ids(list[NodeId] | None): List of instance ids of time series that this subscription will listen to. Not compatible with filter.
-        filter (Filter | None): A filter DSL (Domain Specific Language) to define advanced filter queries. Not compatible with time_series_ids.
-        name (str | None): No description.
-        description (str | None): A summary explanation for the subscription.
-        data_set_id (int | None): The id of the dataset this subscription belongs to.
+        external_id: Externally provided ID for the subscription. Must be unique.
+        partition_count: The maximum effective parallelism of this subscription (the number of clients that can read from it concurrently) will be limited to this number, but a higher partition count will cause a higher time overhead. The partition count must be between 1 and 100. CAVEAT: This cannot change after the subscription has been created.
+        time_series_ids: List of (external) ids of time series that this subscription will listen to. Not compatible with filter.
+        instance_ids: List of instance ids of time series that this subscription will listen to. Not compatible with filter.
+        filter: A filter DSL (Domain Specific Language) to define advanced filter queries. Not compatible with time_series_ids.
+        name: No description.
+        description: A summary explanation for the subscription.
+        data_set_id: The id of the dataset this subscription belongs to.
     """
 
     def __init__(
@@ -176,7 +176,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
     """Changes applied to datapoint subscription
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
     """
 
     def __init__(self, external_id: str) -> None:
@@ -255,10 +255,9 @@ class TimeSeriesID(CogniteResource):
     A TimeSeries Identifier to uniquely identify a time series.
 
     Args:
-        id (int | None): A server-generated ID for the object. May be None if the time series
-            reference is broken (e.g., the time series was deleted or its external_id was changed).
-        external_id (ExternalId | None): The external ID provided by the client. Must be unique for the resource type.
-        instance_id (NodeId | None): The ID of an instance in Cognite Data Models.
+        id: A server-generated ID for the object. May be None if the time series reference is broken (e.g., the time series was deleted or its external_id was changed).
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        instance_id: The ID of an instance in Cognite Data Models.
     """
 
     def __init__(
@@ -401,10 +400,10 @@ class _DatapointSubscriptionBatchWithPartitions:
     """A batch of data from a subscription.
 
     Args:
-        updates (list[DatapointsUpdate]): List of updates from the subscription, sorted by point in time they were applied to the time series. Every update contains a time series along with a set of changes to that time series.
-        partitions (list[DatapointSubscriptionPartition]): Which partitions/cursors to use for the next request. Map from partition index to cursor.
-        has_next (bool): Whether there is more data available at the time of the query. In rare cases, we may return true, even if there is no data available. If that is the case, just continue to query with the updated cursors, and it will eventually return false.
-        subscription_changes (SubscriptionTimeSeriesUpdate): If present, this object represents changes to the subscription definition. The subscription will now start/stop listening to changes from the time series listed here.
+        updates: List of updates from the subscription, sorted by point in time they were applied to the time series. Every update contains a time series along with a set of changes to that time series.
+        partitions: Which partitions/cursors to use for the next request. Map from partition index to cursor.
+        has_next: Whether there is more data available at the time of the query. In rare cases, we may return true, even if there is no data available. If that is the case, just continue to query with the updated cursors, and it will eventually return false.
+        subscription_changes: If present, this object represents changes to the subscription definition. The subscription will now start/stop listening to changes from the time series listed here.
     """
 
     updates: list[DatapointsUpdate]

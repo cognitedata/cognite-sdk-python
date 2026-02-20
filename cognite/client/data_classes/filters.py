@@ -107,12 +107,10 @@ class Filter(ABC):
         Dump the filter to a dictionary.
 
         Args:
-            camel_case_property (bool): Whether to camel case the property names. Defaults to False. Typically,
-                when the filter is used in data modeling, the property names should not be changed,
-                while when used with Assets, Events, Sequences, or Files, the property names should be camel cased.
+            camel_case_property: Whether to camel case the property names. Defaults to False. Typically, when the filter is used in data modeling, the property names should not be changed, while when used with Assets, Events, Sequences, or Files, the property names should be camel cased.
 
         Returns:
-            dict[str, Any]: The filter as a dictionary.
+            The filter as a dictionary.
 
         """
         return {self._filter_name: self._filter_body(camel_case_property=camel_case_property)}
@@ -303,7 +301,7 @@ class And(CompoundFilter):
     """A filter that combines multiple filters with a logical AND.
 
     Args:
-        *filters (Filter): The filters to combine.
+        *filters: The filters to combine.
 
     Example:
         A filter that combines an Equals and an In filter:
@@ -339,7 +337,7 @@ class Or(CompoundFilter):
     """A filter that combines multiple filters with a logical OR.
 
     Args:
-        *filters (Filter): The filters to combine.
+        *filters: The filters to combine.
 
     Example:
         A filter that combines an Equals and an In filter:
@@ -373,7 +371,7 @@ class Not(CompoundFilter):
     """A filter that negates another filter.
 
     Args:
-        filter (Filter): The filter to negate.
+        filter: The filter to negate.
 
     Example:
         A filter that negates an Equals filter:
@@ -412,8 +410,8 @@ class Nested(Filter):
     """A filter to apply to the node at the other side of a direct relation.
 
     Args:
-        scope (PropertyReference): The direct relation property to traverse.
-        filter (Filter): The filter to apply.
+        scope: The direct relation property to traverse.
+        filter: The filter to apply.
 
     Example:
         Assume you have two Views, viewA and viewB. viewA has a direct relation to viewB called "viewB-ID",
@@ -473,8 +471,8 @@ class HasData(Filter):
     """Return only instances that have data in the provided containers/views.
 
     Args:
-        containers (Sequence[tuple[str, str] | ContainerId] | None): Containers to check for data.
-        views (Sequence[tuple[str, str, str] | ViewId] | None): Views to check for data.
+        containers: Containers to check for data.
+        views: Views to check for data.
 
     Example:
 
@@ -527,11 +525,11 @@ class Range(FilterWithProperty):
     """Filters results based on a range of values.
 
     Args:
-        property (PropertyReference): The property to filter on.
-        gt (FilterValue | None): Greater than.
-        gte (FilterValue | None): Greater than or equal to.
-        lt (FilterValue | None): Less than.
-        lte (FilterValue | None): Less than or equal to.
+        property: The property to filter on.
+        gt: Greater than.
+        gte: Greater than or equal to.
+        lt: Less than.
+        lte: Less than or equal to.
 
     Example:
         Filter that can be used to retrieve all instances with a property value greater than 42:
@@ -591,13 +589,12 @@ class Overlaps(Filter):
     properties.
 
     Args:
-        start_property (PropertyReference): The property to filter on.
-        end_property (PropertyReference): The property to filter on.
-        gt (FilterValue | None): Greater than.
-        gte (FilterValue | None): Greater than or equal to.
-        lt (FilterValue | None): Less than.
-        lte (FilterValue | None): Less than or equal to.
-
+        start_property: The property to filter on.
+        end_property: The property to filter on.
+        gt: Greater than.
+        gte: Greater than or equal to.
+        lt: Less than.
+        lte: Less than or equal to.
 
     Example:
         Filter that can be used to retrieve all instances with a range overlapping with (42, 100):
@@ -669,8 +666,8 @@ class Equals(FilterWithPropertyAndValue):
     """Filters results based on whether the property equals the provided value.
 
     Args:
-        property (PropertyReference): The property to filter on.
-        value (FilterValue): The value to filter on.
+        property: The property to filter on.
+        value: The value to filter on.
 
     Example:
         Filter than can be used to retrieve items where the property value equals 42:
@@ -705,8 +702,8 @@ class In(FilterWithPropertyAndValueList):
             >>> 1 in [1,2,3] => true
 
     Args:
-        property (PropertyReference): The property to filter on.
-        values (FilterValueList): The value(s) to filter on.
+        property: The property to filter on.
+        values: The value(s) to filter on.
 
     Example:
         Filter than can be used to retrieve items where the property value equals 42 or 43 (or both):
@@ -735,7 +732,7 @@ class Exists(FilterWithProperty):
     """Filters results based on whether the property is set or not.
 
     Args:
-        property (PropertyReference): The property to filter on.
+        property: The property to filter on.
 
     Example:
         Filter than can be used to retrieve items where the property value is set:
@@ -763,8 +760,8 @@ class Prefix(FilterWithPropertyAndValue):
     is a list, the list starts with the provided values.
 
     Args:
-        property (PropertyReference): The property to filter on.
-        value (FilterValue): The value to filter on.
+        property: The property to filter on.
+        value: The value to filter on.
 
     Example:
         Filter than can be used to retrieve items where the property value starts with "somePrefix":
@@ -803,8 +800,8 @@ class ContainsAny(FilterWithPropertyAndValueList):
         >>> 1 in [1,2,3] => ERROR
 
     Args:
-        property (PropertyReference): The property to filter on.
-        values (FilterValueList): The value(s) to filter on.
+        property: The property to filter on.
+        values: The value(s) to filter on.
 
     Example:
         Filter than can be used to retrieve items where the property value contains either 42 or 43:
@@ -827,8 +824,8 @@ class ContainsAll(FilterWithPropertyAndValueList):
     """Returns results where the referenced property contains _all_ of the provided values.
 
     Args:
-        property (PropertyReference): The property to filter on.
-        values (FilterValueList): The value to filter on.
+        property: The property to filter on.
+        values: The value to filter on.
 
     Example:
         Filter than can be used to retrieve items where the property value contains both 42 and 43:
@@ -882,8 +879,8 @@ class InAssetSubtree(FilterWithPropertyAndValueList):
     that is in the subtree rooted at any of the provided IDs.
 
     Args:
-        property (PropertyReference): The property to filter on, e.g. 'assetId' or 'assetExternalId'.
-        values (FilterValueList): The value(s) to filter on.
+        property: The property to filter on, e.g. 'assetId' or 'assetExternalId'.
+        values: The value(s) to filter on.
 
     Example:
 
@@ -910,7 +907,7 @@ class InstanceReferences(Filter):
     """Data modeling filter which matches instances with these fully qualified references.
 
     Args:
-        references (Sequence[InstanceId] | Sequence[tuple[str, str]] | Sequence[dict[str, str]]): The instance references.
+        references: The instance references.
 
     Example:
         Filter than can be used to retrieve instances where their space/externalId matches any of the provided values:
@@ -954,8 +951,8 @@ class SpaceFilter(FilterWithProperty):
     """Filters instances based on the space.
 
     Args:
-        space (str | SequenceNotStr[str]): The space (or spaces) to filter on.
-        instance_type (Literal['node', 'edge']): Type of instance to filter on. Defaults to "node".
+        space: The space (or spaces) to filter on.
+        instance_type: Type of instance to filter on. Defaults to "node".
 
     Example:
         Filter than can be used to retrieve nodes from space "space1" or "space2":
@@ -1001,7 +998,7 @@ class IsNull(Not):
     """Data modeling filter for instances whose property is null, effectively a negated Exists-filter.
 
     Args:
-        property (SequenceNotStr[str]): The property to filter on.
+        property: The property to filter on.
 
     Example:
         Filter than can be used to retrieve instances where the property value is not set:

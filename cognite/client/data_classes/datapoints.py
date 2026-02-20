@@ -402,15 +402,15 @@ class LatestDatapointQuery:
         Pass either ID or external ID.
 
     Args:
-        id (Optional[int]): The internal ID of the time series to query.
-        external_id (Optional[str]): The external ID of the time series to query.
-        instance_id (Optional[NodeId]): The instance ID of the time series to query.
-        before (Union[None, int, str, datetime]): Get latest datapoint before this time. None means 'now'.
-        target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-        target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
-        include_status (bool): Also return the status code, an integer, for each datapoint in the response.
-        ignore_bad_datapoints (bool): Prevent data points with a bad status code to be returned. Default: True.
-        treat_uncertain_as_bad (bool): Treat uncertain status codes as bad. If false, treat uncertain as good. Default: True.
+        id: The internal ID of the time series to query.
+        external_id: The external ID of the time series to query.
+        instance_id: The instance ID of the time series to query.
+        before: Get latest datapoint before this time. None means 'now'.
+        target_unit: The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+        target_unit_system: The unit system of the data points returned. Cannot be used with target_unit.
+        include_status: Also return the status code, an integer, for each datapoint in the response.
+        ignore_bad_datapoints: Prevent data points with a bad status code to be returned. Default: True.
+        treat_uncertain_as_bad: Treat uncertain status codes as bad. If false, treat uncertain as good. Default: True.
     """
 
     id: InitVar[int | None] = None
@@ -436,29 +436,29 @@ class Datapoint(CogniteResource):
     """An object representing a datapoint.
 
     Args:
-        timestamp (int): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (str | float | None): The raw data value. Can be string or numeric.
-        average (float | None): The time-weighted average value in the aggregate interval.
-        max (float | None): The maximum value in the aggregate interval.
-        max_datapoint (MaxDatapoint | MaxDatapointWithStatus | None): Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
-        min (float | None): The minimum value in the aggregate interval.
-        min_datapoint (MinDatapoint | MinDatapointWithStatus | None): Objects with the minimum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
-        count (int | None): The number of raw datapoints in the aggregate interval.
-        sum (float | None): The sum of the raw datapoints in the aggregate interval.
-        interpolation (float | None): The interpolated value at the beginning of the aggregate interval.
-        step_interpolation (float | None): The interpolated value at the beginning of the aggregate interval using stepwise interpretation.
-        continuous_variance (float | None): The variance of the interpolated underlying function.
-        discrete_variance (float | None): The variance of the datapoint values.
-        total_variation (float | None): The total variation of the interpolated underlying function.
-        count_bad (int | None): The number of raw datapoints with a bad status code, in the aggregate interval.
-        count_good (int | None): The number of raw datapoints with a good status code, in the aggregate interval.
-        count_uncertain (int | None): The number of raw datapoints with a uncertain status code, in the aggregate interval.
-        duration_bad (int | None): The duration the aggregate is defined and marked as bad (measured in milliseconds).
-        duration_good (int | None): The duration the aggregate is defined and marked as good (measured in milliseconds).
-        duration_uncertain (int | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
-        status_code (int | None): The status code for the raw datapoint.
-        status_symbol (str | None): The status symbol for the raw datapoint.
-        timezone (datetime.timezone | ZoneInfo | None): The timezone to use when displaying the datapoint.
+        timestamp: The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        value: The raw data value. Can be string or numeric.
+        average: The time-weighted average value in the aggregate interval.
+        max: The maximum value in the aggregate interval.
+        max_datapoint: Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
+        min: The minimum value in the aggregate interval.
+        min_datapoint: Objects with the minimum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
+        count: The number of raw datapoints in the aggregate interval.
+        sum: The sum of the raw datapoints in the aggregate interval.
+        interpolation: The interpolated value at the beginning of the aggregate interval.
+        step_interpolation: The interpolated value at the beginning of the aggregate interval using stepwise interpretation.
+        continuous_variance: The variance of the interpolated underlying function.
+        discrete_variance: The variance of the datapoint values.
+        total_variation: The total variation of the interpolated underlying function.
+        count_bad: The number of raw datapoints with a bad status code, in the aggregate interval.
+        count_good: The number of raw datapoints with a good status code, in the aggregate interval.
+        count_uncertain: The number of raw datapoints with a uncertain status code, in the aggregate interval.
+        duration_bad: The duration the aggregate is defined and marked as bad (measured in milliseconds).
+        duration_good: The duration the aggregate is defined and marked as good (measured in milliseconds).
+        duration_uncertain: The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
+        status_code: The status code for the raw datapoint.
+        status_symbol: The status symbol for the raw datapoint.
+        timezone: The timezone to use when displaying the datapoint.
     """
 
     def __init__(
@@ -520,10 +520,10 @@ class Datapoint(CogniteResource):
         """Convert the datapoint into a pandas DataFrame.
 
         Args:
-            camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
+            camel_case: Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
 
         Returns:
-            pandas.DataFrame: The DataFrame representation of the datapoint.
+            The DataFrame representation of the datapoint.
         """
         pd = local_import("pandas")
 
@@ -827,11 +827,11 @@ class DatapointsArray(CogniteResource):
         """Dump the DatapointsArray into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
-            convert_timestamps (bool): Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
+            camel_case: Use camelCase for attribute names. Defaults to True.
+            convert_timestamps: Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
 
         Returns:
-            dict[str, Any]: A dictionary representing the instance.
+            A dictionary representing the instance.
         """
         attrs, arrays = self._data_fields()
         if not convert_timestamps:  # Eh.. so.. we still have to convert...
@@ -894,14 +894,13 @@ class DatapointsArray(CogniteResource):
         """Convert the DatapointsArray into a pandas DataFrame.
 
         Args:
-            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
-            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
-            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
-            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
-                as a separate level in the columns (MultiIndex).
+            include_aggregate_name: Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name: Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_unit: Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
+            include_status: Include status code and status symbol as separate columns, if available. Also adds the status info as a separate level in the columns (MultiIndex).
 
         Returns:
-            pandas.DataFrame: The datapoints as a pandas DataFrame.
+            The datapoints as a pandas DataFrame.
         """
         local_import("pandas")  # throw nice import error early
 
@@ -918,38 +917,38 @@ class Datapoints(CogniteResource):
     """An object representing a list of datapoints.
 
     Args:
-        id (int | None): Id of the time series the datapoints belong to
-        external_id (str | None): External id of the time series the datapoints belong to
-        instance_id (NodeId | None): The instance id of the time series the datapoints belong to
-        is_string (bool | None): Whether the time series contains numerical or string data.
-        is_step (bool | None): Whether the time series is stepwise or continuous.
-        unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
-        unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
-        granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
-        timestamp (list[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (list[str] | list[float] | None): The raw data values. Can be string or numeric.
-        average (list[float] | None): The time-weighted average values per aggregate interval.
-        max (list[float] | None): The maximum values per aggregate interval.
-        max_datapoint (list[MaxDatapoint] | list[MaxDatapointWithStatus] | None): Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
-        min (list[float] | None): The minimum values per aggregate interval.
-        min_datapoint (list[MinDatapoint] | list[MinDatapointWithStatus] | None): Objects with the minimum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
-        count (list[int] | None): The number of raw datapoints per aggregate interval.
-        sum (list[float] | None): The sum of the raw datapoints per aggregate interval.
-        interpolation (list[float] | None): The interpolated values at the beginning of each the aggregate interval.
-        step_interpolation (list[float] | None): The interpolated values at the beginning of each the aggregate interval using stepwise interpretation.
-        continuous_variance (list[float] | None): The variance of the interpolated underlying function.
-        discrete_variance (list[float] | None): The variance of the datapoint values.
-        total_variation (list[float] | None): The total variation of the interpolated underlying function.
-        count_bad (list[int] | None): The number of raw datapoints with a bad status code, per aggregate interval.
-        count_good (list[int] | None): The number of raw datapoints with a good status code, per aggregate interval.
-        count_uncertain (list[int] | None): The number of raw datapoints with a uncertain status code, per aggregate interval.
-        duration_bad (list[int] | None): The duration the aggregate is defined and marked as bad (measured in milliseconds).
-        duration_good (list[int] | None): The duration the aggregate is defined and marked as good (measured in milliseconds).
-        duration_uncertain (list[int] | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
-        status_code (list[int] | None): The status codes for the raw datapoints.
-        status_symbol (list[str] | None): The status symbols for the raw datapoints.
-        error (list[None | str] | None): Human readable strings with description of what went wrong (returned by synthetic datapoints queries).
-        timezone (datetime.timezone | ZoneInfo | None): The timezone to use when displaying the datapoints.
+        id: Id of the time series the datapoints belong to
+        external_id: External id of the time series the datapoints belong to
+        instance_id: The instance id of the time series the datapoints belong to
+        is_string: Whether the time series contains numerical or string data.
+        is_step: Whether the time series is stepwise or continuous.
+        unit: The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
+        unit_external_id: The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
+        granularity: The granularity of the aggregate datapoints (does not apply to raw data)
+        timestamp: The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        value: The raw data values. Can be string or numeric.
+        average: The time-weighted average values per aggregate interval.
+        max: The maximum values per aggregate interval.
+        max_datapoint: Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
+        min: The minimum values per aggregate interval.
+        min_datapoint: Objects with the minimum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
+        count: The number of raw datapoints per aggregate interval.
+        sum: The sum of the raw datapoints per aggregate interval.
+        interpolation: The interpolated values at the beginning of each the aggregate interval.
+        step_interpolation: The interpolated values at the beginning of each the aggregate interval using stepwise interpretation.
+        continuous_variance: The variance of the interpolated underlying function.
+        discrete_variance: The variance of the datapoint values.
+        total_variation: The total variation of the interpolated underlying function.
+        count_bad: The number of raw datapoints with a bad status code, per aggregate interval.
+        count_good: The number of raw datapoints with a good status code, per aggregate interval.
+        count_uncertain: The number of raw datapoints with a uncertain status code, per aggregate interval.
+        duration_bad: The duration the aggregate is defined and marked as bad (measured in milliseconds).
+        duration_good: The duration the aggregate is defined and marked as good (measured in milliseconds).
+        duration_uncertain: The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
+        status_code: The status codes for the raw datapoints.
+        status_symbol: The status symbols for the raw datapoints.
+        error: Human readable strings with description of what went wrong (returned by synthetic datapoints queries).
+        timezone: The timezone to use when displaying the datapoints.
     """
 
     def __init__(
@@ -1064,10 +1063,10 @@ class Datapoints(CogniteResource):
         """Dump the datapoints into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+            camel_case: Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            dict[str, Any]: A dictionary representing the instance.
+            A dictionary representing the instance.
         """
         dumped: dict[str, Any] = {
             "id": self.id,
@@ -1108,15 +1107,14 @@ class Datapoints(CogniteResource):
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
-            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
-            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
-            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
-            include_errors (bool): For synthetic datapoint queries, include a column with errors.
-            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
-                as a separate level in the columns (MultiIndex).
+            include_aggregate_name: Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name: Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_unit: Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
+            include_errors: For synthetic datapoint queries, include a column with errors.
+            include_status: Include status code and status symbol as separate columns, if available. Also adds the status info as a separate level in the columns (MultiIndex).
 
         Returns:
-            pandas.DataFrame: The dataframe.
+            The dataframe.
         """
         local_import("pandas")  # throw nice import error early
 
@@ -1278,12 +1276,12 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
             For duplicated time series, returns a list of DatapointsArray.
 
         Args:
-            id (int | None): The id of the item(s) to get.
-            external_id (str | None): The external_id of the item(s) to get.
-            instance_id (NodeId | tuple[str, str] | None): The instance_id of the item(s) to get.
+            id: The id of the item(s) to get.
+            external_id: The external_id of the item(s) to get.
+            instance_id: The instance_id of the item(s) to get.
 
         Returns:
-            DatapointsArray | list[DatapointsArray] | None: The requested item(s)
+            The requested item(s)
         """
         # TODO: Question, can we type annotate without specifying the function?
         return super().get(id, external_id, instance_id)
@@ -1301,14 +1299,13 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
         Args:
-            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
-            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
-            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
-            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
-                as a separate level in the columns (MultiIndex).
+            include_aggregate_name: Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name: Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_unit: Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
+            include_status: Include status code and status symbol as separate columns, if available. Also adds the status info as a separate level in the columns (MultiIndex).
 
         Returns:
-            pandas.DataFrame: The datapoints as a pandas DataFrame.
+            The datapoints as a pandas DataFrame.
         """
         return concat_dps_dataframe_list(
             self,
@@ -1322,11 +1319,11 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
-            convert_timestamps (bool): Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
+            camel_case: Use camelCase for attribute names. Defaults to True.
+            convert_timestamps: Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
 
         Returns:
-            list[dict[str, Any]]: A list of dicts representing the instance.
+            A list of dicts representing the instance.
         """
         return [dps.dump(camel_case, convert_timestamps) for dps in self]
 
@@ -1358,12 +1355,12 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
             For duplicated time series, returns a list of Datapoints.
 
         Args:
-            id (int | None): The id of the item(s) to get.
-            external_id (str | None): The external_id of the item(s) to get.
-            instance_id (InstanceId | tuple[str, str] | None): The instance_id of the item(s) to get.
+            id: The id of the item(s) to get.
+            external_id: The external_id of the item(s) to get.
+            instance_id: The instance_id of the item(s) to get.
 
         Returns:
-            Datapoints | list[Datapoints] | None: The requested item(s)
+            The requested item(s)
         """
         # TODO: Question, can we type annotate without specifying the function?
         return super().get(id, external_id, instance_id)
@@ -1385,14 +1382,13 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
-            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
-            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
-            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
-            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
-                as a separate level in the columns (MultiIndex).
+            include_aggregate_name: Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name: Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_unit: Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
+            include_status: Include status code and status symbol as separate columns, if available. Also adds the status info as a separate level in the columns (MultiIndex).
 
         Returns:
-            pandas.DataFrame: The datapoints list as a pandas DataFrame.
+            The datapoints list as a pandas DataFrame.
         """
         return concat_dps_dataframe_list(
             self,

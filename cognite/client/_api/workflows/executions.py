@@ -29,10 +29,10 @@ class WorkflowExecutionAPI(APIClient):
         """`Retrieve a workflow execution with detailed information. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ExecutionOfSpecificRunOfWorkflow>`_
 
         Args:
-            id (str): The server-generated id of the workflow execution.
+            id: The server-generated id of the workflow execution.
 
         Returns:
-            WorkflowExecutionDetailed | None: The requested workflow execution if it exists, None otherwise.
+            The requested workflow execution if it exists, None otherwise.
 
         Examples:
 
@@ -69,12 +69,12 @@ class WorkflowExecutionAPI(APIClient):
         """`Run a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
 
         Args:
-            workflow_external_id (str): External id of the workflow.
-            version (str): Version of the workflow.
-            input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the string "${workflow.input}" See tip below for more information.
-            metadata (dict | None): Application specific metadata. Keys have a maximum length of 32 characters, values a maximum of 255, and there can be a maximum of 10 key-value pairs.
-            client_credentials (ClientCredentials | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
-            nonce (str | None): The nonce to use to bind the session. If not provided, a new session will be created using the given 'client_credentials'. If this is not given, the current credentials will be used.
+            workflow_external_id: External id of the workflow.
+            version: Version of the workflow.
+            input: The input to the workflow execution. This will be available for tasks that have specified it as an input with the string "${workflow.input}" See tip below for more information.
+            metadata: Application specific metadata. Keys have a maximum length of 32 characters, values a maximum of 255, and there can be a maximum of 10 key-value pairs.
+            client_credentials: Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
+            nonce: The nonce to use to bind the session. If not provided, a new session will be created using the given 'client_credentials'. If this is not given, the current credentials will be used.
 
         Tip:
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
@@ -91,7 +91,7 @@ class WorkflowExecutionAPI(APIClient):
             You can create a session via the Sessions API, using the client.iam.session.create() method.
 
         Returns:
-            WorkflowExecution: The created workflow execution.
+            The created workflow execution.
 
         Examples:
 
@@ -140,14 +140,14 @@ class WorkflowExecutionAPI(APIClient):
         """`List workflow executions in the project. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ListWorkflowExecutions>`_
 
         Args:
-            workflow_version_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
-            created_time_start (int | None): Filter out executions that was created before this time. Time is in milliseconds since epoch.
-            created_time_end (int | None): Filter out executions that was created after this time. Time is in milliseconds since epoch.
-            statuses (WorkflowStatus | MutableSequence[WorkflowStatus] | None): Workflow status or list of workflow statuses to filter on.
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            workflow_version_ids: Workflow version id or list of workflow version ids to filter on.
+            created_time_start: Filter out executions that was created before this time. Time is in milliseconds since epoch.
+            created_time_end: Filter out executions that was created after this time. Time is in milliseconds since epoch.
+            statuses: Workflow status or list of workflow statuses to filter on.
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            WorkflowExecutionList: The requested workflow executions.
+            The requested workflow executions.
 
         Examples:
 
@@ -202,12 +202,11 @@ class WorkflowExecutionAPI(APIClient):
             other services (like transformations and functions).
 
         Args:
-            id (str): The server-generated id of the workflow execution.
-            reason (str | None): The reason for the cancellation, this will be put within the execution's `reasonForIncompletion` field. It is defaulted to 'cancelled' if not provided.
-
+            id: The server-generated id of the workflow execution.
+            reason: The reason for the cancellation, this will be put within the execution's `reasonForIncompletion` field. It is defaulted to 'cancelled' if not provided.
 
         Returns:
-            WorkflowExecution: The canceled workflow execution.
+            The canceled workflow execution.
 
         Examples:
 
@@ -230,11 +229,11 @@ class WorkflowExecutionAPI(APIClient):
         """`Retry a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionRetryn>`_
 
         Args:
-            id (str): The server-generated id of the workflow execution.
-            client_credentials (ClientCredentials | None): Specific credentials that should be used to retry the workflow execution. When passed will take precedence over the current credentials.
+            id: The server-generated id of the workflow execution.
+            client_credentials: Specific credentials that should be used to retry the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
-            WorkflowExecution: The retried workflow execution.
+            The retried workflow execution.
 
         Examples:
             Retry a workflow execution that has been cancelled or failed:

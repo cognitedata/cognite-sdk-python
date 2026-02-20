@@ -1,6 +1,6 @@
 """
 ===============================================================================
-43a5b979901a5b2c3b5c6fdb3bd8bb67
+ae88276485e6ef32e03131d8ca280214
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -38,10 +38,10 @@ class SyncAgentsAPI(SyncAPIClient):
         `Create or update (upsert) one or more agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/main_ai_agents_post/>`_
 
         Args:
-            agents (AgentUpsert | Sequence[AgentUpsert]): Agent or list of agents to create or update.
+            agents: Agent or list of agents to create or update.
 
         Returns:
-            Agent | AgentList: The created or updated agent(s).
+            The created or updated agent(s).
 
         Examples:
 
@@ -169,11 +169,11 @@ class SyncAgentsAPI(SyncAPIClient):
         `Retrieve one or more agents by external ID. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/get_agents_by_ids_ai_agents_byids_post/>`_
 
         Args:
-            external_ids (str | SequenceNotStr[str]): The external id of the agent(s) to retrieve.
-            ignore_unknown_ids (bool): Whether to ignore unknown IDs. Defaults to False.
+            external_ids: The external id of the agent(s) to retrieve.
+            ignore_unknown_ids: Whether to ignore unknown IDs. Defaults to False.
 
         Returns:
-            Agent | AgentList | None: The requested agent or agent list. `None` is returned if `ignore_unknown_ids` is `True` and the external ID is not found.
+            The requested agent or agent list. `None` is returned if `ignore_unknown_ids` is `True` and the external ID is not found.
 
         Examples:
 
@@ -197,8 +197,8 @@ class SyncAgentsAPI(SyncAPIClient):
         `Delete one or more agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_delete_ai_agents_delete_post/>`_
 
         Args:
-            external_ids (str | SequenceNotStr[str]): External ID of the agent or a list of external ids.
-            ignore_unknown_ids (bool): If `True`, the call will ignore unknown external IDs. Defaults to False.
+            external_ids: External ID of the agent or a list of external ids.
+            ignore_unknown_ids: If `True`, the call will ignore unknown external IDs. Defaults to False.
 
         Examples:
 
@@ -218,7 +218,7 @@ class SyncAgentsAPI(SyncAPIClient):
         `List agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_list_ai_agents_get/>`_
 
         Returns:
-            AgentList: The list of agents.
+            The list of agents.
 
         Examples:
 
@@ -245,14 +245,13 @@ class SyncAgentsAPI(SyncAPIClient):
         Users can ensure conversation continuity by including the cursor from the previous response in subsequent requests.
 
         Args:
-            agent_external_id (str): External ID that uniquely identifies the agent.
-            messages (Message | ActionResult | Sequence[Message | ActionResult]): A list of one or many input messages to the agent. Can include regular messages and action results.
-            cursor (str | None): The cursor to use for continuation of a conversation. Use this to
-                create multi-turn conversations, as the cursor will keep track of the conversation state.
-            actions (Sequence[Action] | None): A list of client-side actions that can be called by the agent.
+            agent_external_id: External ID that uniquely identifies the agent.
+            messages: A list of one or many input messages to the agent. Can include regular messages and action results.
+            cursor: The cursor to use for continuation of a conversation. Use this to create multi-turn conversations, as the cursor will keep track of the conversation state.
+            actions: A list of client-side actions that can be called by the agent.
 
         Returns:
-            AgentChatResponse: The response from the agent.
+            The response from the agent.
 
         Examples:
 

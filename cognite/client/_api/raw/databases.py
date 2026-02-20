@@ -37,11 +37,11 @@ class RawDatabasesAPI(APIClient):
         Fetches dbs as they are iterated over, so you keep a limited number of dbs in memory.
 
         Args:
-            chunk_size (int | None): Number of dbs to return in each chunk. Defaults to yielding one db a time.
-            limit (int | None): Maximum number of dbs to return. Defaults to return all items.
+            chunk_size: Number of dbs to return in each chunk. Defaults to yielding one db a time.
+            limit: Maximum number of dbs to return. Defaults to return all items.
 
         Yields:
-            Database | DatabaseList: No description.
+            No description.
         """  # noqa: DOC404
         async for item in self._list_generator(
             list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
@@ -58,10 +58,10 @@ class RawDatabasesAPI(APIClient):
         """`Create one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/createDBs>`_
 
         Args:
-            name (str | list[str]): A db name or list of db names to create.
+            name: A db name or list of db names to create.
 
         Returns:
-            Database | DatabaseList: Database or list of databases that has been created.
+            Database or list of databases that has been created.
 
         Examples:
 
@@ -83,8 +83,8 @@ class RawDatabasesAPI(APIClient):
         """`Delete one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/deleteDBs>`_
 
         Args:
-            name (str | SequenceNotStr[str]): A db name or list of db names to delete.
-            recursive (bool): Recursively delete all tables in the database(s).
+            name: A db name or list of db names to delete.
+            recursive: Recursively delete all tables in the database(s).
 
         Examples:
 
@@ -117,10 +117,10 @@ class RawDatabasesAPI(APIClient):
         """`List databases <https://developer.cognite.com/api#tag/Raw/operation/getDBs>`_
 
         Args:
-            limit (int | None): Maximum number of databases to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit: Maximum number of databases to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            DatabaseList: List of requested databases.
+            List of requested databases.
 
         Examples:
 

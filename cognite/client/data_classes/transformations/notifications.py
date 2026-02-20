@@ -19,7 +19,7 @@ class TransformationNotificationCore(WriteableCogniteResource["TransformationNot
     """The transformation notification resource allows configuring email alerts on events related to a transformation run.
 
     Args:
-        destination (str): Email address where notifications should be sent.
+        destination: Email address where notifications should be sent.
     """
 
     def __init__(
@@ -34,12 +34,12 @@ class TransformationNotification(TransformationNotificationCore):
     This is the read format of a transformation notification.
 
     Args:
-        id (int): A server-generated ID for the object.
-        transformation_id (int): Transformation Id.
-        transformation_external_id (str): Transformation external Id.
-        destination (str): Email address where notifications should be sent.
-        created_time (int): Time when the notification was created.
-        last_updated_time (int): Time when the notification was last updated.
+        id: A server-generated ID for the object.
+        transformation_id: Transformation Id.
+        transformation_external_id: Transformation external Id.
+        destination: Email address where notifications should be sent.
+        created_time: Time when the notification was created.
+        last_updated_time: Time when the notification was last updated.
     """
 
     def __init__(
@@ -87,9 +87,9 @@ class TransformationNotificationWrite(TransformationNotificationCore):
     This is the write format of a transformation notification.
 
     Args:
-        destination (str): Email address where notifications should be sent.
-        transformation_id (int | None): Transformation ID.
-        transformation_external_id (str | None): Transformation external ID.
+        destination: Email address where notifications should be sent.
+        transformation_id: Transformation ID.
+        transformation_external_id: Transformation external ID.
     """
 
     def __init__(
@@ -136,9 +136,9 @@ class TransformationNotificationFilter(CogniteFilter):
     """TransformationNotificationFilter
 
     Args:
-        transformation_id (int | None): Filter by transformation internal numeric ID.
-        transformation_external_id (str | None): Filter by transformation externalId.
-        destination (str | None): Filter by notification destination.
+        transformation_id: Filter by transformation internal numeric ID.
+        transformation_external_id: Filter by transformation externalId.
+        destination: Filter by notification destination.
     """
 
     def __init__(

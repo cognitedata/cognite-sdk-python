@@ -17,8 +17,8 @@ class AgentToolCore(WriteableCogniteResource["AgentToolUpsert"], ABC):
     """Core representation of an AI Agent Tool in CDF.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
     """
 
     _type: ClassVar[str]  # Will be set by concrete classes
@@ -39,8 +39,8 @@ class AgentToolUpsert(AgentToolCore, ABC):
     """The write format of an agent tool.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
     """
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -66,8 +66,8 @@ class AgentTool(AgentToolCore, ABC):
     """The read format of an agent tool.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
     """
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -105,10 +105,10 @@ class DataModelInfo(WriteableCogniteResource):
     """Information about a data model used in knowledge graph queries.
 
     Args:
-        space (str): The space of the data model.
-        external_id (str): The external ID of the data model.
-        version (str): The version of the data model.
-        view_external_ids (Sequence[str] | None): The external IDs of the views of the data model.
+        space: The space of the data model.
+        external_id: The external ID of the data model.
+        version: The version of the data model.
+        view_external_ids: The external IDs of the views of the data model.
     """
 
     space: str
@@ -138,8 +138,8 @@ class InstanceSpaces(WriteableCogniteResource):
     """Configuration for instance spaces in knowledge graph queries.
 
     Args:
-        type (Literal["manual", "all"]): The type of instance spaces.
-        spaces (Sequence[str] | None): The spaces of the instance spaces.
+        type: The type of instance spaces.
+        spaces: The spaces of the instance spaces.
     """
 
     type: Literal["manual", "all"]
@@ -161,9 +161,9 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     """Configuration for knowledge graph query agent tools.
 
     Args:
-        data_models (Sequence[DataModelInfo]): The data models and views to query.
-        instance_spaces (InstanceSpaces | None): The instance spaces to query.
-        version (str | None): The version of the query generation strategy to use. A higher number does not necessarily mean a better query. Supported values are "v1" and "v2".
+        data_models: The data models and views to query.
+        instance_spaces: The instance spaces to query.
+        version: The version of the query generation strategy to use. A higher number does not necessarily mean a better query. Supported values are "v1" and "v2".
     """
 
     data_models: Sequence[DataModelInfo]
@@ -199,8 +199,8 @@ class SummarizeDocumentAgentTool(AgentTool):
     """Agent tool for summarizing documents.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
     """
 
     _type: ClassVar[str] = "summarizeDocument"
@@ -224,8 +224,8 @@ class SummarizeDocumentAgentToolUpsert(AgentToolUpsert):
     """Upsert version of document summarization agent tool.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
     """
 
     _type: ClassVar[str] = "summarizeDocument"
@@ -243,8 +243,8 @@ class AskDocumentAgentTool(AgentTool):
     """Agent tool for asking questions about documents.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
     """
 
     _type: ClassVar[str] = "askDocument"
@@ -268,8 +268,8 @@ class AskDocumentAgentToolUpsert(AgentToolUpsert):
     """Upsert version of document question agent tool.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
     """
 
     _type: ClassVar[str] = "askDocument"
@@ -287,9 +287,9 @@ class QueryKnowledgeGraphAgentTool(AgentTool):
     """Agent tool for querying knowledge graphs.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
-        configuration (QueryKnowledgeGraphAgentToolConfiguration | None): The configuration of the knowledge graph query agent tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
+        configuration: The configuration of the knowledge graph query agent tool.
     """
 
     _type: ClassVar[str] = "queryKnowledgeGraph"
@@ -322,9 +322,9 @@ class QueryKnowledgeGraphAgentToolUpsert(AgentToolUpsert):
     """Upsert version of knowledge graph query agent tool.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
-        configuration (QueryKnowledgeGraphAgentToolConfiguration | None): The configuration of the knowledge graph query agent tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
+        configuration: The configuration of the knowledge graph query agent tool.
     """
 
     _type: ClassVar[str] = "queryKnowledgeGraph"
@@ -350,8 +350,8 @@ class QueryTimeSeriesDatapointsAgentTool(AgentTool):
     """Agent tool for querying time series datapoints.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
     """
 
     _type: ClassVar[str] = "queryTimeSeriesDatapoints"
@@ -375,8 +375,8 @@ class QueryTimeSeriesDatapointsAgentToolUpsert(AgentToolUpsert):
     """Upsert version of time series datapoints query agent tool.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
     """
 
     _type: ClassVar[str] = "queryTimeSeriesDatapoints"
@@ -394,10 +394,10 @@ class UnknownAgentTool(AgentTool):
     """Agent tool for unknown/unrecognized tool types.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
-        type (str): The type of the agent tool.
-        configuration (dict[str, Any] | None): The configuration of the agent tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
+        type: The type of the agent tool.
+        configuration: The configuration of the agent tool.
     """
 
     type: str
@@ -426,10 +426,10 @@ class UnknownAgentToolUpsert(AgentToolUpsert):
     """Upsert version of unknown agent tool.
 
     Args:
-        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        type (str): The type of the agent tool.
-        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
-        configuration (dict[str, Any] | None): The configuration of the agent tool.
+        name: The name of the agent tool. Used by the agent to decide when to use this tool.
+        type: The type of the agent tool.
+        description: The description of the agent tool. Used by the agent to decide when to use this tool.
+        configuration: The configuration of the agent tool.
     """
 
     type: str

@@ -67,16 +67,16 @@ class DataSetsAPI(APIClient):
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
 
         Args:
-            chunk_size (int | None): Number of data sets to return in each chunk. Defaults to yielding one data set a time.
-            metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
-            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-            write_protected (bool | None): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
-            limit (int | None): Maximum number of data sets to return. Defaults to return all items.
+            chunk_size: Number of data sets to return in each chunk. Defaults to yielding one data set a time.
+            metadata: Custom, application-specific metadata. String key -> String value.
+            created_time: Range between two timestamps.
+            last_updated_time: Range between two timestamps.
+            external_id_prefix: Filter by this (case-sensitive) prefix for the external ID.
+            write_protected: Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
+            limit: Maximum number of data sets to return. Defaults to return all items.
 
         Yields:
-            DataSet | DataSetList: yields DataSet one by one if chunk is not specified, else DataSetList objects.
+            yields DataSet one by one if chunk is not specified, else DataSetList objects.
         """  # noqa: DOC404
         filter = DataSetFilter(
             metadata=metadata,
@@ -102,10 +102,10 @@ class DataSetsAPI(APIClient):
         """`Create one or more data sets. <https://developer.cognite.com/api#tag/Data-sets/operation/createDataSets>`_
 
         Args:
-            data_set (DataSet | DataSetWrite | Sequence[DataSet] | Sequence[DataSetWrite]): Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
+            data_set: Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
 
         Returns:
-            DataSet | DataSetList: Created data set(s)
+            Created data set(s)
 
         Examples:
 
@@ -126,11 +126,11 @@ class DataSetsAPI(APIClient):
         """`Retrieve a single data set by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
 
         Args:
-            id (int | None): ID
-            external_id (str | None): External ID
+            id: ID
+            external_id: External ID
 
         Returns:
-            DataSet | None: Requested data set or None if it does not exist.
+            Requested data set or None if it does not exist.
 
         Examples:
 
@@ -157,12 +157,12 @@ class DataSetsAPI(APIClient):
         """`Retrieve multiple data sets by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
 
         Args:
-            ids (Sequence[int] | None): IDs
-            external_ids (SequenceNotStr[str] | None): External IDs
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            ids: IDs
+            external_ids: External IDs
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            DataSetList: The requested data sets.
+            The requested data sets.
 
         Examples:
 
@@ -186,10 +186,10 @@ class DataSetsAPI(APIClient):
         """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
 
         Args:
-            filter (DataSetFilter | dict[str, Any] | None): Filter on data set filter with exact match
+            filter: Filter on data set filter with exact match
 
         Returns:
-            int: Count of data sets matching the filter.
+            Count of data sets matching the filter.
 
         Examples:
 
@@ -226,11 +226,11 @@ class DataSetsAPI(APIClient):
         """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
 
         Args:
-            item (DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate]): Data set(s) to update
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (DataSet or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: Data set(s) to update
+            mode: How to update data when a non-update object is given (DataSet or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            DataSet | DataSetList: Updated data set(s)
+            Updated data set(s)
 
         Examples:
 
@@ -265,15 +265,15 @@ class DataSetsAPI(APIClient):
         """`List data sets <https://developer.cognite.com/api#tag/Data-sets/operation/listDataSets>`_
 
         Args:
-            metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
-            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-            write_protected (bool | None): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
-            limit (int | None): Maximum number of data sets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            metadata: Custom, application-specific metadata. String key -> String value.
+            created_time: Range between two timestamps.
+            last_updated_time: Range between two timestamps.
+            external_id_prefix: Filter by this (case-sensitive) prefix for the external ID.
+            write_protected: Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
+            limit: Maximum number of data sets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            DataSetList: List of requested data sets
+            List of requested data sets
 
         Examples:
 

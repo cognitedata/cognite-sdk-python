@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d64b96268879e7c9ac231f45c7982679
+90bb7a312aaf1bad9e12486593e81ddb
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -29,8 +29,7 @@ class SyncPrincipalsAPI(SyncAPIClient):
         `Get the current caller's information. <https://developer.cognite.com/api#tag/Principals/operation/getMe>`_
 
         Returns:
-            Principal: The principal of the user running the code, i.e. the
-                principal *this* AsyncCogniteClient was instantiated with.
+            The principal of the user running the code, i.e. the principal *this* AsyncCogniteClient was instantiated with.
 
         Examples:
             Get your own principal:
@@ -72,12 +71,12 @@ class SyncPrincipalsAPI(SyncAPIClient):
         `Retrieve principal by reference in the organization <https://developer.cognite.com/api#tag/Principals/operation/getPrincipalsById>`_
 
         Args:
-            id (str | SequenceNotStr[str] | None): The ID(s) of the principal(s) to retrieve.
-            external_id (str | SequenceNotStr[str] | None): The external ID(s) of the principal to retrieve.
-            ignore_unknown_ids (bool): This is only relevant when retrieving multiple principals. If set to True, the method will return the principals that were found and ignore the ones that were not found. If set to False, the method will raise a CogniteAPIError if any of the specified principals were not found. Defaults to False.
+            id: The ID(s) of the principal(s) to retrieve.
+            external_id: The external ID(s) of the principal to retrieve.
+            ignore_unknown_ids: This is only relevant when retrieving multiple principals. If set to True, the method will return the principals that were found and ignore the ones that were not found. If set to False, the method will raise a CogniteAPIError if any of the specified principals were not found. Defaults to False.
 
         Returns:
-            Principal | PrincipalList | None: The principal(s) with the specified ID(s) or external ID(s).
+            The principal(s) with the specified ID(s) or external ID(s).
 
         Examples:
             Retrieve a principal by ID:
@@ -102,11 +101,11 @@ class SyncPrincipalsAPI(SyncAPIClient):
         `List principals in the organization <https://developer.cognite.com/api#tag/Principals/operation/listPrincipals>`_
 
         Args:
-            types (str | Sequence[str] | None): Filter by principal type(s). Defaults to None, which means no filtering.
-            limit (int): The maximum number of principals to return. Defaults to 25.
+            types: Filter by principal type(s). Defaults to None, which means no filtering.
+            limit: The maximum number of principals to return. Defaults to 25.
 
         Returns:
-            PrincipalList: The principal of the user running the code, i.e. the principal *this* CogniteClient was instantiated with.
+            The principal of the user running the code, i.e. the principal *this* CogniteClient was instantiated with.
 
         Examples:
             List principals in the organization:

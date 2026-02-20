@@ -65,3 +65,6 @@ repos:
           - --quiet  # otherwise prints all checked files that are ok...
           - --skip-checking-raises=true
           - --check-class-attributes=false
+          - --arg-type-hints-in-docstring=False
+          - --check-return-types=False
+          - --check-yield-types=False

@@ -12,9 +12,9 @@ class TimestampRange(CogniteResource):
     """Range between two timestamps.
 
     Args:
-        max (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        min (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        **_ (Any): No description.
+        max: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        min: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        **_: No description.
     """
 
     def __init__(self, max: int | None = None, min: int | None = None, **_: Any) -> None:
@@ -30,7 +30,7 @@ class AggregateResult(CogniteResource):
     """Aggregation group
 
     Args:
-        count (int): Size of the aggregation group
+        count: Size of the aggregation group
     """
 
     def __init__(self, count: int) -> None:
@@ -45,8 +45,8 @@ class AggregateUniqueValuesResult(AggregateResult):
     """Aggregation group
 
     Args:
-        count (int): Size of the aggregation group
-        value (int | str | None): A unique value from the requested field
+        count: Size of the aggregation group
+        value: A unique value from the requested field
     """
 
     def __init__(self, count: int, value: int | str | None) -> None:
@@ -62,9 +62,9 @@ class Geometry(CogniteResource):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
-        type (Literal['Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon']): The geometry type.
-        coordinates (list): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
-        geometries (Collection[Geometry] | None): No description.
+        type: The geometry type.
+        coordinates: An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+        geometries: No description.
 
     Examples:
         Point:
@@ -139,8 +139,8 @@ class GeometryFilter(CogniteFilter):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
-        type (Literal['Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon']): The geometry type.
-        coordinates (Sequence[float] | Sequence[Sequence[float]] | Sequence[Sequence[Sequence[float]]] | Sequence[Sequence[Sequence[Sequence[float]]]]): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+        type: The geometry type.
+        coordinates: An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
 
     Point:
         Coordinates of a point in 2D space, described as an array of 2 numbers.
@@ -214,9 +214,9 @@ class GeoLocation(CogniteResource):
     """A GeoLocation object conforming to the GeoJSON spec.
 
     Args:
-        type (Literal['Feature']): The GeoJSON type. Currently only 'Feature' is supported.
-        geometry (Geometry): The geometry. One of 'Point', 'MultiPoint, 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
-        properties (dict | None): Optional additional properties in a String key -> Object value format.
+        type: The GeoJSON type. Currently only 'Feature' is supported.
+        geometry: The geometry. One of 'Point', 'MultiPoint, 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
+        properties: Optional additional properties in a String key -> Object value format.
     """
 
     _VALID_TYPES = frozenset({"Feature"})
@@ -250,8 +250,8 @@ class GeoLocationFilter(CogniteResource):
     """Return only the resource matching the specified geographic relation.
 
     Args:
-        relation (str): One of the following supported queries: INTERSECTS, DISJOINT, WITHIN.
-        shape (GeometryFilter): Represents the points, curves and surfaces in the coordinate space.
+        relation: One of the following supported queries: INTERSECTS, DISJOINT, WITHIN.
+        shape: Represents the points, curves and surfaces in the coordinate space.
     """
 
     def __init__(self, relation: str, shape: GeometryFilter) -> None:

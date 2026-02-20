@@ -47,12 +47,12 @@ class TransformationSchedulesAPI(APIClient):
         """Iterate over transformation schedules
 
         Args:
-            chunk_size (int | None): The number of schedules to return in each chunk. Defaults to yielding one schedule a time.
-            include_public (bool):  Whether public transformations should be included in the results. (default true).
-            limit (int | None):  Limits the number of results to be returned. Defaults to yielding all schedules.
+            chunk_size: The number of schedules to return in each chunk. Defaults to yielding one schedule a time.
+            include_public:  Whether public transformations should be included in the results. (default true).
+            limit:  Limits the number of results to be returned. Defaults to yielding all schedules.
 
         Yields:
-            TransformationSchedule | TransformationScheduleList: Yields schedules one by one if chunk_size is None, otherwise yields lists of schedules.
+            Yields schedules one by one if chunk_size is None, otherwise yields lists of schedules.
         """  # noqa: DOC404
         async for item in self._list_generator(
             method="GET",
@@ -84,10 +84,10 @@ class TransformationSchedulesAPI(APIClient):
         """`Schedule the specified transformation with the specified configuration(s). <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/createTransformationSchedules>`_
 
         Args:
-            schedule (TransformationSchedule | TransformationScheduleWrite | Sequence[TransformationSchedule] | Sequence[TransformationScheduleWrite]): Configuration or list of configurations of the schedules to create.
+            schedule: Configuration or list of configurations of the schedules to create.
 
         Returns:
-            TransformationSchedule | TransformationScheduleList: Created schedule(s)
+            Created schedule(s)
 
         Examples:
 
@@ -113,11 +113,11 @@ class TransformationSchedulesAPI(APIClient):
         """`Retrieve a single transformation schedule by the id or external id of its transformation. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
 
         Args:
-            id (int | None): transformation ID
-            external_id (str | None): transformation External ID
+            id: transformation ID
+            external_id: transformation External ID
 
         Returns:
-            TransformationSchedule | None: Requested transformation schedule or None if it does not exist.
+            Requested transformation schedule or None if it does not exist.
 
         Examples:
 
@@ -146,12 +146,12 @@ class TransformationSchedulesAPI(APIClient):
         """`Retrieve multiple transformation schedules by the ids or external ids of the corresponding transformations. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
 
         Args:
-            ids (Sequence[int] | None): transformation IDs
-            external_ids (SequenceNotStr[str] | None): transformation External IDs
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            ids: transformation IDs
+            external_ids: transformation External IDs
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            TransformationScheduleList: Requested transformation schedules.
+            Requested transformation schedules.
 
         Examples:
 
@@ -180,11 +180,11 @@ class TransformationSchedulesAPI(APIClient):
         """`List all transformation schedules. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedules>`_
 
         Args:
-            include_public (bool): Whether public transformations should be included in the results. (default true).
-            limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            include_public: Whether public transformations should be included in the results. (default true).
+            limit: Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
         Returns:
-            TransformationScheduleList: List of schedules
+            List of schedules
 
         Example:
 
@@ -214,9 +214,9 @@ class TransformationSchedulesAPI(APIClient):
         """`Unschedule one or more transformations <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/deleteTransformationSchedules>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            id: Id or list of ids
+            external_id: External ID or list of external ids
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
 
@@ -258,11 +258,11 @@ class TransformationSchedulesAPI(APIClient):
         """`Update one or more transformation schedules <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/updateTransformationSchedules>`_
 
         Args:
-            item (TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate | Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate]): Transformation schedule(s) to update
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (TransformationSchedule or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+            item: Transformation schedule(s) to update
+            mode: How to update data when a non-update object is given (TransformationSchedule or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
-            TransformationSchedule | TransformationScheduleList: Updated transformation schedule(s)
+            Updated transformation schedule(s)
 
         Examples:
 

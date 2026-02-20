@@ -36,13 +36,13 @@ class ContainerCore(DataModelingSchemaResource["ContainerApply"], ABC):
     """Represent the physical storage of data. This is the base class for the read and write version.
 
     Args:
-        space (str): The workspace for the container, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the container.
-        properties (Mapping[str, ContainerPropertyCore]): We index the property by a local unique identifier.
-        description (str | None): Textual description of the container
-        name (str | None): Human readable name for the container.
-        constraints (Mapping[str, ConstraintCore] | None): Set of constraints to apply to the container
-        indexes (Mapping[str, IndexCore] | None): Set of indexes to apply to the container.
+        space: The workspace for the container, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the container.
+        properties: We index the property by a local unique identifier.
+        description: Textual description of the container
+        name: Human readable name for the container.
+        constraints: Set of constraints to apply to the container
+        indexes: Set of indexes to apply to the container.
     """
 
     space: str
@@ -100,14 +100,14 @@ class ContainerApply(ContainerCore):
     """Represent the physical storage of data. This is the write format of the container
 
     Args:
-        space (str): The workspace for the container, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the container.
-        properties (Mapping[str, ContainerPropertyApply]): We index the property by a local unique identifier.
-        description (str | None): Textual description of the container
-        name (str | None): Human readable name for the container.
-        used_for (Literal['node', 'edge', 'all'] | None): Should this operation apply to nodes, edges or both.
-        constraints (Mapping[str, ConstraintApply] | None): Set of constraints to apply to the container
-        indexes (Mapping[str, IndexApply] | None): Set of indexes to apply to the container.
+        space: The workspace for the container, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the container.
+        properties: We index the property by a local unique identifier.
+        description: Textual description of the container
+        name: Human readable name for the container.
+        used_for: Should this operation apply to nodes, edges or both.
+        constraints: Set of constraints to apply to the container
+        indexes: Set of indexes to apply to the container.
     """
 
     properties: Mapping[str, ContainerPropertyApply]
@@ -139,17 +139,17 @@ class Container(ContainerCore):
     """Represent the physical storage of data. This is the read format of the container
 
     Args:
-        space (str): The workspace for the container, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the container.
-        properties (Mapping[str, ContainerProperty]): We index the property by a local unique identifier.
-        is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        description (str | None): Textual description of the container
-        name (str | None): Human readable name for the container.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
-        constraints (Mapping[str, Constraint] | None): Set of constraints to apply to the container
-        indexes (Mapping[str, Index] | None): Set of indexes to apply to the container.
+        space: The workspace for the container, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the container.
+        properties: We index the property by a local unique identifier.
+        is_global: Whether this is a global container, i.e., one of the out-of-the-box models.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description: Textual description of the container
+        name: Human readable name for the container.
+        used_for: Should this operation apply to nodes, edges or both.
+        constraints: Set of constraints to apply to the container
+        indexes: Set of indexes to apply to the container.
     """
 
     properties: Mapping[str, ContainerProperty]
@@ -197,7 +197,7 @@ class ContainerApplyList(CogniteResourceList[ContainerApply]):
         """Convert to a container id list.
 
         Returns:
-            list[ContainerId]: The container id list.
+            The container id list.
         """
         return [v.as_id() for v in self]
 
@@ -209,7 +209,7 @@ class ContainerList(WriteableCogniteResourceList[ContainerApply, Container]):
         """Convert to a ContainerApply list.
 
         Returns:
-            ContainerApplyList: The container apply list.
+            The container apply list.
         """
         return ContainerApplyList([v.as_apply() for v in self])
 
@@ -217,7 +217,7 @@ class ContainerList(WriteableCogniteResourceList[ContainerApply, Container]):
         """Convert to a container id list.
 
         Returns:
-            list[ContainerId]: The container id list.
+            The container id list.
         """
         return [v.as_id() for v in self]
 

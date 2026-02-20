@@ -599,13 +599,13 @@ class DatapointsAPI(APIClient):
             No empty chunk is ever returned.
 
         Args:
-            queries (DatapointsQuery | Sequence[DatapointsQuery]): Query, or queries, using id, external_id or instance_id for the time series to fetch data for, with individual settings specified. The options 'limit' and 'include_outside_points' are not supported when iterating.
-            chunk_size_datapoints (int): The number of datapoints per time series to yield per iteration. Must evenly divide 100k OR be an integer multiple of 100k. Default: 100_000.
-            chunk_size_time_series (int | None): The max number of time series to yield per iteration (varies as time series get exhausted, but is never empty). Default: None (all given queries are iterated at the same time).
-            return_arrays (bool): Whether to return the datapoints as numpy arrays. Default: True.
+            queries: Query, or queries, using id, external_id or instance_id for the time series to fetch data for, with individual settings specified. The options 'limit' and 'include_outside_points' are not supported when iterating.
+            chunk_size_datapoints: The number of datapoints per time series to yield per iteration. Must evenly divide 100k OR be an integer multiple of 100k. Default: 100_000.
+            chunk_size_time_series: The max number of time series to yield per iteration (varies as time series get exhausted, but is never empty). Default: None (all given queries are iterated at the same time).
+            return_arrays: Whether to return the datapoints as numpy arrays. Default: True.
 
         Yields:
-            DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList: If return_arrays=True, a ``DatapointsArray`` object containing the datapoints chunk, or a ``DatapointsArrayList`` if multiple time series were asked for. When False, a ``Datapoints`` object containing the datapoints chunk, or a ``DatapointsList`` if multiple time series were asked for.
+            If return_arrays=True, a ``DatapointsArray`` object containing the datapoints chunk, or a ``DatapointsArrayList`` if multiple time series were asked for. When False, a ``Datapoints`` object containing the datapoints chunk, or a ``DatapointsList`` if multiple time series were asked for.
 
         Examples:
 
@@ -1005,25 +1005,25 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
-            start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
-            end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
-            granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
-            timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
-            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
-            limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
-            include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
-            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, and the object aggregates ``min_datapoint`` and ``max_datapoint``.
-            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
-            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
+            id: Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id: External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            instance_id: Instance id or sequence of instance ids.
+            start: Inclusive start. Default: 1970-01-01 UTC.
+            end: Exclusive end. Default: "now"
+            aggregates: Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
+            granularity: The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
+            timezone: For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
+            target_unit: The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system: The unit system of the datapoints returned. Cannot be used with target_unit.
+            limit: Maximum number of datapoints to return for each time series. Default: None (no limit)
+            include_outside_points: Whether to include outside points. Not allowed when fetching aggregates. Default: False
+            ignore_unknown_ids: Whether to ignore missing time series rather than raising an exception. Default: False
+            include_status: Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, and the object aggregates ``min_datapoint`` and ``max_datapoint``.
+            ignore_bad_datapoints: Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            treat_uncertain_as_bad: Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
 
         Returns:
-            Datapoints | DatapointsList | None: A ``Datapoints`` object containing the requested data, or a ``DatapointsList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            A ``Datapoints`` object containing the requested data, or a ``DatapointsList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -1356,25 +1356,25 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
-            start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
-            end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
-            granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
-            timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
-            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
-            limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
-            include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
-            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, and the object aggregates ``min_datapoint`` and ``max_datapoint``.
-            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
-            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
+            id: Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id: External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            instance_id: Instance id or sequence of instance ids.
+            start: Inclusive start. Default: 1970-01-01 UTC.
+            end: Exclusive end. Default: "now"
+            aggregates: Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
+            granularity: The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
+            timezone: For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
+            target_unit: The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system: The unit system of the datapoints returned. Cannot be used with target_unit.
+            limit: Maximum number of datapoints to return for each time series. Default: None (no limit)
+            include_outside_points: Whether to include outside points. Not allowed when fetching aggregates. Default: False
+            ignore_unknown_ids: Whether to ignore missing time series rather than raising an exception. Default: False
+            include_status: Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, and the object aggregates ``min_datapoint`` and ``max_datapoint``.
+            ignore_bad_datapoints: Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            treat_uncertain_as_bad: Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
 
         Returns:
-            DatapointsArray | DatapointsArrayList | None: A ``DatapointsArray`` object containing the requested data, or a ``DatapointsArrayList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            A ``DatapointsArray`` object containing the requested data, or a ``DatapointsArrayList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Note:
             For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
@@ -1491,29 +1491,29 @@ class DatapointsAPI(APIClient):
             For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
 
         Args:
-            id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, DatapointsQuery or (mixed) sequence of these. See examples.
-            external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, DatapointsQuery or (mixed) sequence of these. See examples.
-            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id, DatapointsQuery or (mixed) sequence of these. See examples.
-            start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
-            end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
-            granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
-            timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, -day or -month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
-            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
-            limit (int | None): Maximum number of datapoints to return for each time series. Default: None (no limit)
-            include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
-            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
-            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
-            uniform_index (bool): If only querying aggregates AND a single granularity is used (that's NOT a calendar granularity like month/quarter/year) AND no limit is used AND no timezone is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
-            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, and the object aggregates ``min_datapoint`` and ``max_datapoint``. Also adds the status info as a separate level in the columns (MultiIndex).
-            include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
-            include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
-            include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            id: Id, DatapointsQuery or (mixed) sequence of these. See examples.
+            external_id: External id, DatapointsQuery or (mixed) sequence of these. See examples.
+            instance_id: Instance id, DatapointsQuery or (mixed) sequence of these. See examples.
+            start: Inclusive start. Default: 1970-01-01 UTC.
+            end: Exclusive end. Default: "now"
+            aggregates: Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
+            granularity: The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
+            timezone: For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, -day or -month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
+            target_unit: The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system: The unit system of the datapoints returned. Cannot be used with target_unit.
+            limit: Maximum number of datapoints to return for each time series. Default: None (no limit)
+            include_outside_points: Whether to include outside points. Not allowed when fetching aggregates. Default: False
+            ignore_unknown_ids: Whether to ignore missing time series rather than raising an exception. Default: False
+            ignore_bad_datapoints: Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            treat_uncertain_as_bad: Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
+            uniform_index: If only querying aggregates AND a single granularity is used (that's NOT a calendar granularity like month/quarter/year) AND no limit is used AND no timezone is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
+            include_status: Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, and the object aggregates ``min_datapoint`` and ``max_datapoint``. Also adds the status info as a separate level in the columns (MultiIndex).
+            include_unit: Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
+            include_aggregate_name: Include aggregate in the dataframe columns, if present (separate MultiIndex level)
+            include_granularity_name: Include granularity in the dataframe columns, if present (separate MultiIndex level)
 
         Returns:
-            pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids, and lastly instance_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
+            A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids, and lastly instance_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
 
         Tip:
             Pandas DataFrames have one shared index, so when you fetch datapoints from multiple time series, the final index will be
@@ -1819,19 +1819,19 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            id (int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None): Id or list of ids.
-            external_id (str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None): External id or list of external ids.
-            instance_id (NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None): Instance id or list of instance ids.
-            before (None | int | str | datetime.datetime): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
-            target_unit (str | None): The unit_external_id of the datapoint returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the datapoint returned. Cannot be used with target_unit.
-            include_status (bool): Also return the status code, an integer, for each datapoint in the response.
-            ignore_bad_datapoints (bool): Prevent datapoints with a bad status code to be returned. Default: True.
-            treat_uncertain_as_bad (bool): Treat uncertain status codes as bad. If false, treat uncertain as good. Default: True.
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            id: Id or list of ids.
+            external_id: External id or list of external ids.
+            instance_id: Instance id or list of instance ids.
+            before: Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
+            target_unit: The unit_external_id of the datapoint returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system: The unit system of the datapoint returned. Cannot be used with target_unit.
+            include_status: Also return the status code, an integer, for each datapoint in the response.
+            ignore_bad_datapoints: Prevent datapoints with a bad status code to be returned. Default: True.
+            treat_uncertain_as_bad: Treat uncertain status codes as bad. If false, treat uncertain as good. Default: True.
+            ignore_unknown_ids: Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            Datapoints | DatapointsList | None: A Datapoints object containing the requested data, or a DatapointsList if multiple were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            A Datapoints object containing the requested data, or a DatapointsList if multiple were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -1937,10 +1937,10 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime.datetime]] | Sequence[tuple[int | float | datetime.datetime, int | float | str] | tuple[int | float | datetime.datetime, int | float | str, int]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
-            id (int | None): Id of time series to insert datapoints into.
-            external_id (str | None): External id of time series to insert datapoint into.
-            instance_id (NodeId | None): Instance ID of time series to insert datapoints into.
+            datapoints: The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
+            id: Id of time series to insert datapoints into.
+            external_id: External id of time series to insert datapoint into.
+            instance_id: Instance ID of time series to insert datapoints into.
 
         Note:
             All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
@@ -2024,7 +2024,7 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray | NodeId]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
+            datapoints: The datapoints you wish to insert along with the ids of the time series. See examples below.
 
         Note:
             All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
@@ -2097,11 +2097,11 @@ class DatapointsAPI(APIClient):
         """Delete a range of datapoints from a time series.
 
         Args:
-            start (int | str | datetime.datetime): Inclusive start of delete range
-            end (int | str | datetime.datetime): Exclusive end of delete range
-            id (int | None): Id of time series to delete data from
-            external_id (str | None): External id of time series to delete data from
-            instance_id (NodeId | None): Instance ID of time series to delete data from
+            start: Inclusive start of delete range
+            end: Exclusive end of delete range
+            id: Id of time series to delete data from
+            external_id: External id of time series to delete data from
+            instance_id: Instance ID of time series to delete data from
 
         Examples:
 
@@ -2129,7 +2129,7 @@ class DatapointsAPI(APIClient):
         """`Delete a range of datapoints from multiple time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteDatapoints>`_
 
         Args:
-            ranges (list[dict[str, Any]]): The list of datapoint ids along with time range to delete. See examples below.
+            ranges: The list of datapoint ids along with time range to delete. See examples below.
 
         Examples:
 
@@ -2171,8 +2171,8 @@ class DatapointsAPI(APIClient):
             The column identifiers must be unique.
 
         Args:
-            df (pd.DataFrame):  Pandas DataFrame object containing the time series.
-            dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
+            df:  Pandas DataFrame object containing the time series.
+            dropna: Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
 
         Warning:
             You can not insert datapoints with status codes using this method (``insert_dataframe``), you'll need

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-86ee1f4bac46e6594633a1ea5591447e
+1065966c29f66e91017a12cbfb4025d4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -47,12 +47,12 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
         Retrieves a list of simulator models that match the given criteria.
 
         Args:
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
-            simulator_external_ids (str | SequenceNotStr[str] | None): Filter by simulator external id(s).
-            sort (PropertySort | None): The criteria to sort by.
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
+            simulator_external_ids: Filter by simulator external id(s).
+            sort: The criteria to sort by.
 
         Returns:
-            SimulatorModelList: List of simulator models
+            List of simulator models
 
         Examples:
             List simulator models:
@@ -102,11 +102,11 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
         Retrieve one or more simulator models by ID(s) or external ID(s).
 
         Args:
-            ids (int | Sequence[int] | None): The id of the simulator model(s).
-            external_ids (str | SequenceNotStr[str] | None): The external id of the simulator model(s).
+            ids: The id of the simulator model(s).
+            external_ids: The external id of the simulator model(s).
 
         Returns:
-            SimulatorModel | SimulatorModelList | None: Requested simulator model(s)
+            Requested simulator model(s)
 
         Examples:
             Get simulator model by id:
@@ -163,13 +163,13 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
         Fetches simulator models as they are iterated over, so you keep a limited number of simulator models in memory.
 
         Args:
-            chunk_size (int | None): Number of simulator models to return in each chunk. Defaults to yielding one simulator model a time.
-            simulator_external_ids (str | SequenceNotStr[str] | None): Filter by simulator external id(s).
-            sort (PropertySort | None): The criteria to sort by.
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
+            chunk_size: Number of simulator models to return in each chunk. Defaults to yielding one simulator model a time.
+            simulator_external_ids: Filter by simulator external id(s).
+            sort: The criteria to sort by.
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
         Yields:
-            SimulatorModel | SimulatorModelList: yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
+            yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.simulators.models(
@@ -188,10 +188,10 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
         `Create simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
 
         Args:
-            items (SimulatorModelWrite | Sequence[SimulatorModelWrite]): The model(s) to create.
+            items: The model(s) to create.
 
         Returns:
-            SimulatorModel | SimulatorModelList: Created simulator model(s)
+            Created simulator model(s)
 
         Examples:
             Create new simulator models:
@@ -220,8 +220,8 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
         `Delete simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/delete_simulator_model_simulators_models_delete_post>`_
 
         Args:
-            ids (int | Sequence[int] | None): id (or sequence of ids) for the model(s) to delete.
-            external_ids (str | SequenceNotStr[str] | None): external id (or sequence of external ids) for the model(s) to delete.
+            ids: id (or sequence of ids) for the model(s) to delete.
+            external_ids: external id (or sequence of external ids) for the model(s) to delete.
 
         Examples:
             Delete simulator models by id or external id:
@@ -251,10 +251,10 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
         `Update simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/update_simulator_model_simulators_models_update_post>`_
 
         Args:
-            items (SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate | Sequence[SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate]): The model to update.
+            items: The model to update.
 
         Returns:
-            SimulatorModel | SimulatorModelList: Updated simulator model(s)
+            Updated simulator model(s)
 
         Examples:
             Update a simulator model that you have fetched. This will perform a full update of the model:

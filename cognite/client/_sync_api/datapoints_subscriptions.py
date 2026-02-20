@@ -1,6 +1,6 @@
 """
 ===============================================================================
-85e289f5eaf4fab3b555c4c777a0fb48
+4c3b1ef16e410f6894347a773b11ccaa
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -47,11 +47,11 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
         Iterate over all datapoint subscriptions.
 
         Args:
-            chunk_size (int | None): The number of datapoint subscriptions to fetch per request. Defaults to yielding one datapoint subscription at a time.
-            limit (int | None): Maximum number of items to return. Defaults to return all datapoint subscriptions.
+            chunk_size: The number of datapoint subscriptions to fetch per request. Defaults to yielding one datapoint subscription at a time.
+            limit: Maximum number of items to return. Defaults to return all datapoint subscriptions.
 
         Yields:
-            DatapointSubscription | DatapointSubscriptionList: Yields datapoint subscriptions one by one if chunk is not specified, otherwise returns a list of datapoint subscriptions.
+            Yields datapoint subscriptions one by one if chunk is not specified, otherwise returns a list of datapoint subscriptions.
         """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.time_series.subscriptions(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
@@ -62,10 +62,10 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
         Create a subscription that can be used to listen for changes in data points for a set of time series.
 
         Args:
-            subscription (DataPointSubscriptionWrite): Subscription to create.
+            subscription: Subscription to create.
 
         Returns:
-            DatapointSubscription: Created subscription
+            Created subscription
 
         Examples:
 
@@ -116,8 +116,8 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
         `Delete subscription(s). This operation cannot be undone. <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/deleteSubscriptions>`_
 
         Args:
-            external_id (str | SequenceNotStr[str]): External ID or list of external IDs of subscriptions to delete.
-            ignore_unknown_ids (bool): Whether to ignore IDs and external IDs that are not found rather than throw an exception.
+            external_id: External ID or list of external IDs of subscriptions to delete.
+            ignore_unknown_ids: Whether to ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
 
@@ -139,10 +139,10 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
         `Retrieve one subscription by external ID. <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/getSubscriptionsByIds>`_
 
         Args:
-            external_id (str): External ID of the subscription to retrieve.
+            external_id: External ID of the subscription to retrieve.
 
         Returns:
-            DatapointSubscription | None: The requested subscription.
+            The requested subscription.
 
         Examples:
 
@@ -162,11 +162,11 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
         Retrieve a list of time series (IDs) that the subscription is currently retrieving updates from
 
         Args:
-            external_id (str): External ID of the subscription to retrieve members of.
-            limit (int | None): Maximum number of time series to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            external_id: External ID of the subscription to retrieve members of.
+            limit: Maximum number of time series to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            TimeSeriesIDList: List of time series in the subscription.
+            List of time series in the subscription.
 
         Examples:
 
@@ -195,11 +195,11 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
         Furthermore, the subscription partition cannot be changed.
 
         Args:
-            update (DataPointSubscriptionUpdate | DataPointSubscriptionWrite): The subscription update.
-            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (DataPointSubscriptionWrite). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing.
+            update: The subscription update.
+            mode: How to update data when a non-update object is given (DataPointSubscriptionWrite). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing.
 
         Returns:
-            DatapointSubscription: Updated subscription.
+            Updated subscription.
 
         Examples:
 
@@ -244,18 +244,18 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
             older than 7 days may be discarded.
 
         Args:
-            external_id (str): The external ID of the subscription.
-            start (str | None): When to start the iteration. If set to None, the iteration will start from the beginning. The format is "N[timeunit]-ago", where timeunit is w,d,h,m (week, day, hour, minute). For example, "12h-ago" will start the iteration from 12 hours ago. You can also set it to "now" to jump straight to the end. Defaults to None.
-            limit (int): Approximate number of results to return across all partitions.
-            partition (int): The partition to iterate over. Defaults to 0.
-            poll_timeout (int): How many seconds to wait for new data, until an empty response is sent. Defaults to 5.
-            cursor (str | None): Optional cursor to start iterating from.
-            include_status (bool): Also return the status code, an integer, for each datapoint in the response.
-            ignore_bad_datapoints (bool): Do not return bad datapoints. Default: True.
-            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Default: True.
+            external_id: The external ID of the subscription.
+            start: When to start the iteration. If set to None, the iteration will start from the beginning. The format is "N[timeunit]-ago", where timeunit is w,d,h,m (week, day, hour, minute). For example, "12h-ago" will start the iteration from 12 hours ago. You can also set it to "now" to jump straight to the end. Defaults to None.
+            limit: Approximate number of results to return across all partitions.
+            partition: The partition to iterate over. Defaults to 0.
+            poll_timeout: How many seconds to wait for new data, until an empty response is sent. Defaults to 5.
+            cursor: Optional cursor to start iterating from.
+            include_status: Also return the status code, an integer, for each datapoint in the response.
+            ignore_bad_datapoints: Do not return bad datapoints. Default: True.
+            treat_uncertain_as_bad: Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Default: True.
 
         Yields:
-            DatapointSubscriptionBatch: Changes to the subscription and data in the subscribed time series.
+            Changes to the subscription and data in the subscribed time series.
 
         Examples:
 
@@ -301,9 +301,9 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
         `List data point subscriptions <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/listSubscriptions>`_
 
         Args:
-            limit (int | None): Maximum number of subscriptions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit: Maximum number of subscriptions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
         Returns:
-            DatapointSubscriptionList: List of requested datapoint subscriptions
+            List of requested datapoint subscriptions
 
         Examples:
 

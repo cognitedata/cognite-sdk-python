@@ -52,14 +52,14 @@ class UserPrincipal(Principal):
     """Represents a user principal in Cognite Data Fusion (CDF).
 
     Arguments:
-        id (str): The ID of an organization user
-        name (str): Human-readable name of the principal
-        picture_url (str): URL to a picture of the principal
-        email (str | None): User email. Do not use this to uniquely identify a user, as it can be changed
+        id: The ID of an organization user
+        name: Human-readable name of the principal
+        picture_url: URL to a picture of the principal
+        email: User email. Do not use this to uniquely identify a user, as it can be changed
             and is not guaranteed to be unique. Use the id field instead.
-        given_name (str | None): The given name of the user
-        middle_name (str | None): The middle name of the user
-        family_name (str | None): The family name of the user
+        given_name: The given name of the user
+        middle_name: The middle name of the user
+        family_name: The family name of the user
 
     """
 
@@ -101,8 +101,8 @@ class ServiceAccountCreator(CogniteResource):
     """The creator of a service account.
 
     Arguments:
-        org_id (str): The ID of an organization.
-        user_id (str): The ID of an organization user
+        org_id: The ID of an organization.
+        user_id: The ID of an organization user
 
     """
 
@@ -118,16 +118,16 @@ class ServicePrincipal(Principal):
     """Represents a service account principal in Cognite Data Fusion (CDF).
 
     Arguments:
-        id (str): Unique identifier of a service account
-        name (str): Human-readable name of the service account
-        created_by (ServiceAccountCreator): The creator of the service account
-        created_time (int): When the principal was created. It is given as the number of milliseconds
+        id: Unique identifier of a service account
+        name: Human-readable name of the service account
+        created_by: The creator of the service account
+        created_time: When the principal was created. It is given as the number of milliseconds
             since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): When the principal was last updated.  It is given as the number of milliseconds
+        last_updated_time: When the principal was last updated.  It is given as the number of milliseconds
             since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        picture_url (str): URL to a picture of the principal.
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        description (str | None): A description of the service account.
+        picture_url: URL to a picture of the principal.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        description: A description of the service account.
 
     """
 
@@ -179,9 +179,9 @@ class UnknownPrincipal(Principal):
     Typically, this can happen when a new type of principal is introduced in CDF that is not yet supported by the SDK.
 
     Arguments:
-        id (str): Unique identifier of the principal.
-        type (str): The type of the principal, which is not recognized by the SDK.
-        data (dict[str, Any]): Additional data associated with the principal, excluding the 'id' and 'type' fields.
+        id: Unique identifier of the principal.
+        type: The type of the principal, which is not recognized by the SDK.
+        data: Additional data associated with the principal, excluding the 'id' and 'type' fields.
 
     """
 

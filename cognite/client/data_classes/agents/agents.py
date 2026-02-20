@@ -23,12 +23,12 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
     """Core representation of an AI agent.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the agent.
-        description (str | None): The description of the agent.
-        instructions (str | None): Instructions for the agent.
-        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
-        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: The name of the agent.
+        description: The description of the agent.
+        instructions: Instructions for the agent.
+        model: Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        labels: Labels for the agent. For example, ["published"] to mark an agent as published.
     """
 
     external_id: str
@@ -44,13 +44,13 @@ class AgentUpsert(AgentCore):
     This is the write format of an agent.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the agent, for use in user interfaces.
-        description (str | None): The human readable description of the agent.
-        instructions (str | None): Instructions for the agent.
-        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
-        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
-        tools (Sequence[AgentToolUpsert] | None): List of tools for the agent.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: The name of the agent, for use in user interfaces.
+        description: The human readable description of the agent.
+        instructions: Instructions for the agent.
+        model: Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        labels: Labels for the agent. For example, ["published"] to mark an agent as published.
+        tools: List of tools for the agent.
 
     """
 
@@ -117,16 +117,16 @@ class Agent(AgentCore):
     This is the read format of an agent.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the agent, for use in user interfaces.
-        description (str | None): The human readable description of the agent. Always present in API responses.
-        instructions (str | None): Instructions for the agent. Always present in API responses.
-        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
-        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
-        tools (Sequence[AgentTool] | None): List of tools for the agent.
-        created_time (int): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
-        last_updated_time (int): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
-        owner_id (str | None): The ID of the user who owns the agent.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: The name of the agent, for use in user interfaces.
+        description: The human readable description of the agent. Always present in API responses.
+        instructions: Instructions for the agent. Always present in API responses.
+        model: Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
+        labels: Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
+        tools: List of tools for the agent.
+        created_time: The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        last_updated_time: The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        owner_id: The ID of the user who owns the agent.
     """
 
     def __init__(

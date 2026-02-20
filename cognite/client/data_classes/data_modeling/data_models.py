@@ -22,11 +22,11 @@ class DataModelCore(DataModelingSchemaResource["DataModelApply"], ABC):
     """A group of views.
 
     Args:
-        space (str): The workspace for the data model, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the data model.
-        version (str): DMS version.
-        description (str | None): Textual description of the data model
-        name (str | None): Human readable name for the data model.
+        space: The workspace for the data model, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the data model.
+        version: DMS version.
+        description: Textual description of the data model
+        name: Human readable name for the data model.
     """
 
     def __init__(
@@ -48,12 +48,12 @@ class DataModelApply(DataModelCore):
     """A group of views. This is the write version of a Data Model.
 
     Args:
-        space (str): The workspace for the data model, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the data model.
-        version (str): DMS version.
-        description (str | None): Textual description of the data model
-        name (str | None): Human readable name for the data model.
-        views (Sequence[ViewId | ViewApply] | None): List of views included in this data model.
+        space: The workspace for the data model, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the data model.
+        version: DMS version.
+        description: Textual description of the data model
+        name: Human readable name for the data model.
+        views: List of views included in this data model.
     """
 
     def __init__(
@@ -107,15 +107,15 @@ class DataModel(DataModelCore, Generic[T_View]):
     """A group of views. This is the read version of a Data Model
 
     Args:
-        space (str): The workspace for the data model, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the data model.
-        version (str): DMS version.
-        is_global (bool): Whether this is a global data model.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        description (str | None): Textual description of the data model
-        name (str | None): Human readable name for the data model.
-        views (list[T_View] | None): List of views included in this data model.
+        space: The workspace for the data model, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the data model.
+        version: DMS version.
+        is_global: Whether this is a global data model.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description: Textual description of the data model
+        name: Human readable name for the data model.
+        views: List of views included in this data model.
     """
 
     def __init__(
@@ -196,7 +196,7 @@ class DataModelApplyList(CogniteResourceList[DataModelApply]):
         Convert the list of data models to a list of data model ids.
 
         Returns:
-            list[DataModelId]: The list of data model ids.
+            The list of data model ids.
         """
         return [d.as_id() for d in self]
 
@@ -210,7 +210,7 @@ class DataModelList(WriteableCogniteResourceList[DataModelApply, DataModel[T_Vie
         Convert the list of data models to a list of data model applies.
 
         Returns:
-            DataModelApplyList: The list of data model applies.
+            The list of data model applies.
         """
         return DataModelApplyList([d.as_apply() for d in self])
 
@@ -220,10 +220,10 @@ class DataModelList(WriteableCogniteResourceList[DataModelApply, DataModel[T_Vie
         created_time or last_updated_time field.
 
         Args:
-            key (Literal['created_time', 'last_updated_time']): The field to use for determining the latest version.
+            key: The field to use for determining the latest version.
 
         Returns:
-            DataModel[T_View]: The data model with the latest version.
+            The data model with the latest version.
         """
         if not self:
             raise ValueError("No data models in list")
@@ -236,7 +236,7 @@ class DataModelList(WriteableCogniteResourceList[DataModelApply, DataModel[T_Vie
         Convert the list of data models to a list of data model ids.
 
         Returns:
-            list[DataModelId]: The list of data model ids.
+            The list of data model ids.
         """
         return [d.as_id() for d in self]
 
@@ -248,10 +248,10 @@ class DataModelFilter(CogniteFilter):
     """Represent the filer arguments for the list endpoint.
 
     Args:
-        space (str | None): The space to query
-        inline_views (bool): Whether to expand the referenced views inline in the returned result.
-        all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
-        include_global (bool): Whether to include global views.
+        space: The space to query
+        inline_views: Whether to expand the referenced views inline in the returned result.
+        all_versions: Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
+        include_global: Whether to include global views.
     """
 
     def __init__(

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-b379199cc5dd6e5f8027cc521220e0d6
+726fd1c5f651769c35b0572f58c41192
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -39,11 +39,11 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
         `Create or update a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_
 
         Args:
-            workflow_trigger (WorkflowTriggerUpsert): The workflow trigger specification.
-            client_credentials (ClientCredentials | dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
+            workflow_trigger: The workflow trigger specification.
+            client_credentials: Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
-            WorkflowTrigger: The created or updated workflow trigger specification.
+            The created or updated workflow trigger specification.
 
         Examples:
 
@@ -99,7 +99,7 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
         `Delete one or more triggers for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
 
         Args:
-            external_id (str | SequenceNotStr[str]): The external id(s) of the trigger(s) to delete.
+            external_id: The external id(s) of the trigger(s) to delete.
 
         Examples:
 
@@ -121,10 +121,10 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
         `List the workflow triggers. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
 
         Args:
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            WorkflowTriggerList: The list of triggers.
+            The list of triggers.
 
         Examples:
 
@@ -142,11 +142,11 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
         `List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggerHistory>`_
 
         Args:
-            external_id (str): The external id of the trigger to list runs for.
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            external_id: The external id of the trigger to list runs for.
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            WorkflowTriggerRunList: The requested trigger runs.
+            The requested trigger runs.
 
         Examples:
 
@@ -167,7 +167,7 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
         This operation is idempotent - pausing an already paused trigger has no effect.
 
         Args:
-            external_id (str): The external id of the trigger to pause.
+            external_id: The external id of the trigger to pause.
 
         Examples:
 
@@ -188,7 +188,7 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
         This operation is idempotent - resuming an already active trigger has no effect.
 
         Args:
-            external_id (str): The external id of the trigger to resume.
+            external_id: The external id of the trigger to resume.
 
         Examples:
 

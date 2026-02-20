@@ -38,7 +38,7 @@ class UserWrite(_UserCore):
     This is the write/request format of the user.
 
     Args:
-        credentials (SessionCredentials | None): Credentials for authenticating towards CDF using a CDF session.
+        credentials: Credentials for authenticating towards CDF using a CDF session.
 
     """
 
@@ -68,10 +68,10 @@ class User(_UserCore):
     This is the read/response format of the user for list and retrieve endpoints.
 
     Args:
-        username (str): Username to authenticate the user on the DB.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        session_id (int | None): ID of the session tied to this user.
+        username: Username to authenticate the user on the DB.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        session_id: ID of the session tied to this user.
 
     """
 
@@ -106,12 +106,12 @@ class UserCreated(User):
     This is the read/response format of the user for the create endpoint
 
     Args:
-        host(str): Host of the DB.
-        username (str): Username to authenticate the user on the DB.
-        password (str): Password to authenticate the user on the DB.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        session_id (int | None): ID of the session tied to this user.
+        host: Host of the DB.
+        username: Username to authenticate the user on the DB.
+        password: Password to authenticate the user on the DB.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        session_id: ID of the session tied to this user.
 
     """
 
@@ -166,9 +166,9 @@ class UserUpdate(CogniteUpdate):
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (Literal[True]): No description.
+            camel_case: No description.
         Returns:
-            dict[str, Any]: A dictionary representation of the instance.
+            A dictionary representation of the instance.
         """
         return {"update": self._update_object, "username": self.username}
 
