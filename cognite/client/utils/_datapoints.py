@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import operator as op
+import warnings
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from itertools import chain
@@ -10,7 +11,12 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
-from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
+from cognite.client._proto.data_point_list_response_pb2 import (
+    TIMESERIES_TYPE_NUMERIC,
+    TIMESERIES_TYPE_STRING,
+    DataPointListItem,
+    TimeSeriesType,
+)
 from cognite.client._proto.data_points_pb2 import (
     AggregateDatapoint,
     NumericDatapoint,
@@ -220,6 +226,25 @@ def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
     return cast(DatapointsAny, [])
 
 
+def proto_type_to_str(ts_type: TimeSeriesType) -> Literal["numeric", "string"]:
+    if ts_type == TIMESERIES_TYPE_NUMERIC:  # 1
+        return "numeric"
+    elif ts_type == TIMESERIES_TYPE_STRING:  # 2
+        return "string"
+    elif ts_type >= 3:
+        from cognite.client._version import __version__
+
+        warnings.warn(
+            f"Unknown time series type ({ts_type}) received from the API. "
+            "Please upgrade to a newer version of the Cognite SDK to handle this type "
+            f"(current version={__version__!r}).",
+            UserWarning,
+            stacklevel=3,
+        )
+    # We also return 'unknown' for TIMESERIES_TYPE_UNSPECIFIED (0):
+    return "unknown"  # type: ignore [return-value]
+
+
 def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool | NodeId | None]:
     # Note: When 'unit_external_id' is returned, regular 'unit' is ditched
     if res.instanceId and res.instanceId.space:  # res.instanceId evaluates to True even when empty :eyes:
@@ -231,6 +256,7 @@ def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool
         "external_id": res.externalId,
         "is_string": res.isString,
         "is_step": res.isStep,
+        "type": proto_type_to_str(res.type),
         "unit": res.unit,
         "unit_external_id": res.unitExternalId,
         "instance_id": instance_id,

@@ -12,7 +12,6 @@ https://github.com/protocolbuffers/protobuf/releases
 """
 
 import os
-import shlex
 import subprocess
 import tempfile
 from pathlib import Path
@@ -30,8 +29,7 @@ def download_proto_files_and_compile():
         for file in map(Path, FILES):
             file.touch()
             file.write_bytes(requests.get(f"{URL_BASE}{file}").content)
-        protoc_command = " ".join(("protoc", *FILES, f"--python_out={PROTO_DIR}", f"--pyi_out={PROTO_DIR}"))
-        subprocess.run(shlex.split(protoc_command), check=True)
+        subprocess.run(["protoc", *FILES, f"--python_out={PROTO_DIR}", f"--pyi_out={PROTO_DIR}"], check=True)
 
 
 def patch_bad_imports():

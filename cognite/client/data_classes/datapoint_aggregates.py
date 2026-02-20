@@ -47,7 +47,7 @@ _ALL_AGGREGATES = frozenset(ALL_SORTED_DP_AGGS)
 ALL_SORTED_NUMERIC_DP_AGGS = [agg for agg in ALL_SORTED_DP_AGGS if agg not in ("min_datapoint", "max_datapoint")]
 
 # When we add unit info to dataframe columns, we need to know if the physical unit should be included or not.
-# Some, like variance, is techinally the unit squared, but we still include them (as opposed to count):
+# Some, like variance, is technically the unit squared, but we still include them (as opposed to count):
 _AGGREGATES_WITH_UNIT = frozenset(
     {
         "average",
