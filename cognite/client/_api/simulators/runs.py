@@ -196,8 +196,8 @@ class SimulatorRunsAPI(APIClient):
             Filter runs by time ranges:
                 >>> from cognite.client.data_classes.shared import TimestampRange
                 >>> res = client.simulators.runs.list(
-                ...     created_time=TimestampRange(min=0, max=1_700_000_000_000),
-                ...     simulation_time=TimestampRange(min=0, max=1_700_000_000_000),
+                ...     created_time=TimestampRange(min="1d-ago", max="now"),
+                ...     simulation_time=TimestampRange(min="1d-ago", max="now"),
                 ... )
         """
 
