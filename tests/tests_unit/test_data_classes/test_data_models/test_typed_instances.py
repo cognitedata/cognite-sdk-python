@@ -298,25 +298,25 @@ class TestTypedNode:
         persons = NodeList[PersonRead]([person_read])
         df = persons.to_pandas(expand_properties=True)
 
-        pd.testing.assert_frame_equal(
-            df,
-            pd.DataFrame(
-                {
-                    "space": ["sp_my_fixed_space"],
-                    "external_id": ["my_external_id"],
-                    "version": [1],
-                    "last_updated_time": [pd.Timestamp("1970-01-01 00:00:00")],
-                    "created_time": [pd.Timestamp("1970-01-01 00:00:00")],
-                    "instance_type": ["node"],
-                    "type": [{"space": "sp_model_space", "external_id": "person"}],
-                    "name": ["John Doe"],
-                    "birth_date": ["1990-01-01"],
-                    "email": ["john@doe.com"],
-                    "siblings": None,
-                    "conflicting_with_reserved_property": None,
-                }
-            ),
+        expected_df = pd.DataFrame(
+            {
+                "space": ["sp_my_fixed_space"],
+                "external_id": ["my_external_id"],
+                "version": [1],
+                "last_updated_time": [pd.Timestamp("1970-01-01 00:00:00")],
+                "created_time": [pd.Timestamp("1970-01-01 00:00:00")],
+                "instance_type": ["node"],
+                "type": [{"space": "sp_model_space", "external_id": "person"}],
+                "name": ["John Doe"],
+                "birth_date": ["1990-01-01"],
+                "email": ["john@doe.com"],
+                "siblings": None,
+                "conflicting_with_reserved_property": None,
+            }
         )
+        expected_df.created_time = expected_df.created_time.astype("datetime64[ms]")
+        expected_df.last_updated_time = expected_df.last_updated_time.astype("datetime64[ms]")
+        pd.testing.assert_frame_equal(df, expected_df)
 
 
 class TestTypedEdge:

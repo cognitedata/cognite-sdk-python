@@ -487,6 +487,8 @@ class TestCogniteResourceList:
                 "varB": [None, 3],
             },
         )
+        # NOTE: Pandas v3 is able to infer the datetime type without this explicit conversion
+        expected_df.lastUpdatedTime = expected_df.lastUpdatedTime.astype("datetime64[ms]")
         pd.testing.assert_frame_equal(resource_list.to_pandas(camel_case=True), expected_df)
 
     @pytest.mark.dsl
