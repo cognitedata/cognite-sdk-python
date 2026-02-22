@@ -165,7 +165,7 @@ class SimulatorRunsAPI(APIClient):
         simulation_time: TimestampRange | None = None,
         sort: SimulationRunsSort | None = None,
     ) -> SimulationRunList:
-        """`Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
+        """`Filter simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
 
         Retrieves a list of simulation runs that match the given criteria.
 
@@ -271,7 +271,7 @@ class SimulatorRunsAPI(APIClient):
     def create(self, items: Sequence[SimulationRunWrite]) -> SimulationRunList: ...
 
     def create(self, items: SimulationRunWrite | Sequence[SimulationRunWrite]) -> SimulationRun | SimulationRunList:
-        """`Create simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
+        """`Create simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
 
         Args:
             items (SimulationRunWrite | Sequence[SimulationRunWrite]): The simulation run(s) to execute.
@@ -307,7 +307,7 @@ class SimulatorRunsAPI(APIClient):
         self,
         run_id: int,
     ) -> SimulationRunDataList:
-        """`Get simulation run data <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
+        """`Get simulation run data <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
 
         Retrieve data associated with a simulation run by ID.
 

@@ -99,7 +99,7 @@ class DocumentsAPI(APIClient):
         return cast(Iterator[Document], self())
 
     def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
-        """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Count of documents matching the specified filters and search. <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
             query (str | None): The free text search query, for details see the documentation referenced above.
@@ -145,7 +145,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Find approximate property count for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Find approximate property count for documents. <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
             property (DocumentProperty | SourceFileProperty | list[str] | str): The property to count the cardinality of.
@@ -197,7 +197,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Find approximate paths count for documents.  <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Find approximate paths count for documents.  <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
             path (SourceFileProperty | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["sourceFile", "metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -234,7 +234,7 @@ class DocumentsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> UniqueResultList:
-        """`Get unique properties with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Get unique properties with counts for documents. <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
             property (DocumentProperty | SourceFileProperty | list[str] | str): The property to group by.
@@ -291,7 +291,7 @@ class DocumentsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> UniqueResultList:
-        """`Get unique paths with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Get unique paths with counts for documents. <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
             path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -326,7 +326,7 @@ class DocumentsAPI(APIClient):
         )
 
     def retrieve_content(self, id: int) -> bytes:
-        """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
+        """`Retrieve document content <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
 
@@ -356,7 +356,7 @@ class DocumentsAPI(APIClient):
         return response.content
 
     def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
-        """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
+        """`Retrieve document content into buffer <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
 
@@ -415,7 +415,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentList | DocumentHighlightList:
-        """`Search documents <https://developer.cognite.com/api#tag/Documents/operation/documentsSearch>`_
+        """`Search documents <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsSearch>`_
 
         This endpoint lets you search for documents by using advanced filters and free text queries.
         Free text queries are matched against the documents' filenames and contents. For more information, see
@@ -484,7 +484,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> DocumentList:
-        """`List documents <https://developer.cognite.com/api#tag/Documents/operation/documentsList>`_
+        """`List documents <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsList>`_
 
         You can use filters to narrow down the list. Unlike the search method, list does not restrict the number
         of documents to return, meaning that setting the limit to -1 will return all the documents in your

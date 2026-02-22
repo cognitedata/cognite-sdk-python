@@ -47,7 +47,7 @@ class FunctionCallsAPI(APIClient):
         end_time: dict[str, int] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionCallList:
-        """`List all calls associated with a specific function id. <https://developer.cognite.com/api#tag/Function-calls/operation/listFunctionCalls>`_ Either function_id or function_external_id must be specified.
+        """`List all calls associated with a specific function id. <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/listFunctionCalls>`_ Either function_id or function_external_id must be specified.
 
         Args:
             function_id (int | None): ID of the function on which the calls were made.
@@ -99,7 +99,7 @@ class FunctionCallsAPI(APIClient):
         function_id: int | None = None,
         function_external_id: str | None = None,
     ) -> FunctionCall | None:
-        """`Retrieve a single function call by id. <https://developer.cognite.com/api#tag/Function-calls/operation/byIdsFunctionCalls>`_
+        """`Retrieve a single function call by id. <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/byIdsFunctionCalls>`_
 
         Args:
             call_id (int): ID of the call.
@@ -140,7 +140,7 @@ class FunctionCallsAPI(APIClient):
         function_id: int | None = None,
         function_external_id: str | None = None,
     ) -> dict[str, object] | None:
-        """`Retrieve the response from a function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCallResponse>`_
+        """`Retrieve the response from a function call. <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/getFunctionCallResponse>`_
 
         Args:
             call_id (int): ID of the call.
@@ -176,7 +176,7 @@ class FunctionCallsAPI(APIClient):
         function_id: int | None = None,
         function_external_id: str | None = None,
     ) -> FunctionCallLog:
-        """`Retrieve logs for function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCalls>`_
+        """`Retrieve logs for function call. <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/getFunctionCalls>`_
 
         Args:
             call_id (int): ID of the call.

@@ -29,7 +29,7 @@ class ThreeDAssetMappingAPI(APIClient):
         intersects_bounding_box: BoundingBox3D | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ThreeDAssetMappingList:
-        """`List 3D node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/get3DMappings>`_
+        """`List 3D node asset mappings. <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/get3DMappings>`_
 
         Args:
             model_id (int): Id of the model.
@@ -92,7 +92,7 @@ class ThreeDAssetMappingAPI(APIClient):
         | Sequence[ThreeDAssetMapping]
         | Sequence[ThreeDAssetMappingWrite],
     ) -> ThreeDAssetMapping | ThreeDAssetMappingList:
-        """`Create 3d node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/create3DMappings>`_
+        """`Create 3d node asset mappings. <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/create3DMappings>`_
 
         Args:
             model_id (int): Id of the model.
@@ -124,7 +124,7 @@ class ThreeDAssetMappingAPI(APIClient):
     def delete(
         self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | Sequence[ThreeDAssetMapping]
     ) -> None:
-        """`Delete 3d node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/delete3DMappings>`_
+        """`Delete 3d node asset mappings. <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/delete3DMappings>`_
 
         Args:
             model_id (int): Id of the model.
