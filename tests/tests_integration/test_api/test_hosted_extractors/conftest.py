@@ -11,7 +11,6 @@ from cognite.client.data_classes.hosted_extractors import (
     SessionWrite,
     Source,
 )
-from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
@@ -31,16 +30,18 @@ def a_data_set(cognite_client: CogniteClient) -> DataSet:
     return created
 
 
-@pytest.fixture
-def one_destination(cognite_client: CogniteClient, fresh_session: SessionWrite) -> Destination:
+@pytest.fixture(scope="session")
+def one_destination(cognite_client: CogniteClient, os_and_py_version: str) -> Destination:
+    external_id = f"myNewDestination-{os_and_py_version}"
+    retrieved = cognite_client.hosted_extractors.destinations.retrieve(external_id, ignore_unknown_ids=True)
+    if retrieved:
+        return retrieved
+    new_session = cognite_client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
     my_dest = DestinationWrite(
-        external_id=f"myNewDestination-{random_string(10)}",
-        credentials=fresh_session,
+        external_id=external_id,
+        credentials=SessionWrite(nonce=new_session.nonce),
     )
-    created = cognite_client.hosted_extractors.destinations.create(my_dest)
-    yield created
-
-    cognite_client.hosted_extractors.destinations.delete(created.external_id, ignore_unknown_ids=True)
+    return cognite_client.hosted_extractors.destinations.create(my_dest)
 
 
 @pytest.fixture(scope="session")
