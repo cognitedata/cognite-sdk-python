@@ -4,6 +4,7 @@ import pytest
 
 from cognite.client.data_classes.agents.agent_tools import (
     AgentTool,
+    AgentToolList,
     AgentToolUpsert,
     AskDocumentAgentTool,
     SummarizeDocumentAgentTool,
@@ -19,6 +20,7 @@ def agent_upsert_dump() -> dict:
         "description": "A test agent",
         "instructions": "Test instructions",
         "model": "gpt-4",
+        "labels": [],
         "tools": [
             {  # Valid queryKnowledgeGraph tool
                 "name": "test_tool",
@@ -50,14 +52,6 @@ def agent_dump(agent_upsert_dump: dict) -> dict:
     }
 
 
-@pytest.fixture
-def agent_minimal_dump() -> dict:
-    return {
-        "externalId": "test_agent",
-        "name": "Test Agent",
-    }
-
-
 class TestAgentUpsert:
     def test_load_dump(self, agent_upsert_dump: dict) -> None:
         agent = AgentUpsert._load(agent_upsert_dump)
@@ -66,6 +60,7 @@ class TestAgentUpsert:
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
+        assert agent.tools is not None
         assert len(agent.tools) == 1
         assert isinstance(agent.tools[0], AgentToolUpsert)
         assert agent.tools[0].name == "test_tool"
@@ -115,6 +110,53 @@ class TestAgentUpsert:
         )
         assert agent_upsert is agent_upsert.as_write()
 
+    def test_agent_upsert_immutability(self) -> None:
+        """Test that AgentUpsert is immutable (frozen=True)."""
+        agent = AgentUpsert(
+            external_id="test_agent",
+            name="Test Agent",
+        )
+        with pytest.raises(Exception):  # FrozenInstanceError or AttributeError
+            agent.name = "new name"  # type: ignore[misc]
+
+    def test_agent_upsert_tools_transformation(self) -> None:
+        """Test that tools are transformed to AgentToolUpsertList in __post_init__."""
+        from cognite.client.data_classes.agents.agent_tools import (
+            AgentToolUpsertList,
+            DataModelInfo,
+            InstanceSpaces,
+            QueryKnowledgeGraphAgentToolConfiguration,
+            QueryKnowledgeGraphAgentToolUpsert,
+        )
+
+        # Pass a regular list - should be transformed to AgentToolUpsertList
+        tools = [
+            QueryKnowledgeGraphAgentToolUpsert(
+                name="test_tool",
+                description="A test tool",
+                configuration=QueryKnowledgeGraphAgentToolConfiguration(
+                    data_models=[
+                        DataModelInfo(
+                            space="cdf_cdm",
+                            external_id="CogniteCore",
+                            version="v1",
+                            view_external_ids=["CogniteAsset"],
+                        )
+                    ],
+                    instance_spaces=InstanceSpaces(type="all"),
+                ),
+            )
+        ]
+        agent = AgentUpsert(
+            external_id="test_agent",
+            name="Test Agent",
+            tools=tools,
+        )
+        # Verify transformation happened
+        assert isinstance(agent.tools, AgentToolUpsertList)
+        assert len(agent.tools) == 1
+        assert agent.tools[0].name == "test_tool"
+
 
 class TestAgent:
     def test_load_dump(self, agent_dump: dict) -> None:
@@ -134,23 +176,19 @@ class TestAgent:
         dumped = agent.dump(camel_case=True)
         assert agent_dump == dumped
 
-    def test_load_dump_minimal(self, agent_minimal_dump: dict) -> None:
-        agent = Agent._load(agent_minimal_dump)
-        assert agent.external_id == "test_agent"
-        assert agent.name == "Test Agent"
-        assert agent.description is None
-        assert agent.instructions is None
-        assert agent.model is None
-        assert agent.tools is None
-
-        dumped = agent.dump(camel_case=True)
-        assert agent_minimal_dump == dumped
-
     def test_load_dump_maintain_unknown_properties(self) -> None:
         """Test that unknown properties are maintained in the dump."""
         agent_data = {
             "externalId": "test_agent",
             "name": "Test Agent",
+            "description": "Test description",
+            "instructions": "Test instructions",
+            "model": "gpt-4",
+            "labels": [],
+            "tools": [],
+            "createdTime": 667008000000,
+            "lastUpdatedTime": 667008000001,
+            "ownerId": "test-owner-id",
             "unknownProperty": "unknown_value",
         }
         dumped = Agent._load(agent_data).dump(camel_case=True)
@@ -158,48 +196,44 @@ class TestAgent:
         assert dumped == agent_data
 
     def test_tools_handling(self) -> None:
-        # Test with no tools
-        agent = Agent(external_id="test_agent", name="Test Agent")
-        assert agent.tools is None
-
-        # Test with an empty list of tools
-        agent = Agent(external_id="test_agent", name="Test Agent", tools=[])
-        assert agent.tools == []
-
         # Test with list of tools
         tools_list = [
             SummarizeDocumentAgentTool(name="test_tool1", description="A test tool"),
             AskDocumentAgentTool(name="test_tool2", description="Another test tool"),
         ]
-        agent = Agent(external_id="test_agent", name="Test Agent", tools=tools_list)
+        agent = Agent(
+            external_id="test_agent",
+            name="Test Agent",
+            description="Test description",
+            instructions="Test instructions",
+            model="gpt-4",
+            labels=[],
+            tools=AgentToolList(tools_list),
+            created_time=667008000000,
+            last_updated_time=667008000001,
+            owner_id="test-owner-id",
+        )
         assert len(agent.tools) == 2
         assert all(isinstance(tool, AgentTool) for tool in agent.tools)
         assert agent.tools[0].name == "test_tool1"
         assert agent.tools[1].name == "test_tool2"
 
-        # Test with empty list of tools
-        agent = Agent(external_id="test_agent", name="Test Agent", tools=[])
-        assert agent.tools == []
-
     def test_agent_with_empty_tools_list(self) -> None:
         """Test agent creation with empty tools list."""
-        agent = Agent(external_id="test", name="test", tools=[])
+        agent = Agent(
+            external_id="test",
+            name="test",
+            description="Test description",
+            instructions="Test instructions",
+            model="gpt-4",
+            labels=[],
+            tools=AgentToolList([]),
+            created_time=667008000000,
+            last_updated_time=667008000001,
+            owner_id="test-owner-id",
+        )
         assert agent.tools == []
         assert not agent.tools  # Should be falsy
-
-    def test_agent_with_none_tools(self) -> None:
-        """Test agent creation with None tools."""
-        agent = Agent(external_id="test", name="test", tools=None)
-        assert agent.tools is None
-
-    def test_post_init_tools_validation(self) -> None:
-        # Test with invalid tool type
-        with pytest.raises(TypeError):
-            Agent(
-                external_id="test_agent",
-                name="Test Agent",
-                tools=[{"name": "test_tool", "type": "test_type", "description": "A test tool"}],
-            )
 
     def test_as_write(self) -> None:
         agent = Agent(
@@ -209,7 +243,10 @@ class TestAgent:
             instructions="Test instructions",
             model="gpt-4",
             labels=["published"],
-            tools=[SummarizeDocumentAgentTool(name="test_tool", description="A test tool")],
+            tools=AgentToolList([SummarizeDocumentAgentTool(name="test_tool", description="A test tool")]),
+            created_time=667008000000,
+            last_updated_time=667008000001,
+            owner_id="test-owner-id",
         )
 
         write_agent = agent.as_write()
@@ -221,6 +258,7 @@ class TestAgent:
         assert write_agent.model == agent.model
         assert write_agent.labels == agent.labels
         assert write_agent.labels == ["published"]
+        assert write_agent.tools is not None
         assert len(write_agent.tools) == 1
         assert isinstance(write_agent.tools[0], AgentToolUpsert)
         assert write_agent.tools[0].name == "test_tool"
@@ -230,7 +268,14 @@ class TestAgent:
         agent = Agent(
             external_id="test_agent",
             name="Test Agent",
+            description="Test description",
+            instructions="Test instructions",
+            model="gpt-4",
             labels=["published", "charts"],
+            tools=AgentToolList([]),
+            created_time=667008000000,
+            last_updated_time=667008000001,
+            owner_id="test-owner-id",
         )
         assert agent.labels == ["published", "charts"]
 
@@ -238,12 +283,51 @@ class TestAgent:
         write_agent = agent.as_write()
         assert write_agent.labels == ["published", "charts"]
 
+    def test_agent_immutability(self) -> None:
+        """Test that Agent is immutable (frozen=True)."""
+        agent = Agent(
+            external_id="test_agent",
+            name="Test Agent",
+            description="Test description",
+            instructions="Test instructions",
+            model="gpt-4",
+            labels=[],
+            tools=AgentToolList([]),
+            created_time=667008000000,
+            last_updated_time=667008000001,
+            owner_id="test-owner-id",
+        )
+        with pytest.raises(Exception):  # FrozenInstanceError or AttributeError
+            agent.name = "new name"  # type: ignore[misc]
+
 
 class TestAgentList:
     def test_as_write(self) -> None:
         agents = [
-            Agent(external_id="agent1", name="Agent 1"),
-            Agent(external_id="agent2", name="Agent 2"),
+            Agent(
+                external_id="agent1",
+                name="Agent 1",
+                description="Test description",
+                instructions="Test instructions",
+                model="gpt-4",
+                labels=[],
+                tools=AgentToolList([]),
+                created_time=667008000000,
+                last_updated_time=667008000001,
+                owner_id="test-owner-id",
+            ),
+            Agent(
+                external_id="agent2",
+                name="Agent 2",
+                description="Test description",
+                instructions="Test instructions",
+                model="gpt-4",
+                labels=[],
+                tools=AgentToolList([]),
+                created_time=667008000000,
+                last_updated_time=667008000001,
+                owner_id="test-owner-id",
+            ),
         ]
         agent_list = AgentList(agents)
 
@@ -255,13 +339,13 @@ class TestAgentList:
         assert write_list[1].external_id == "agent2"
 
 
-def test_load_with_missing_required_fields():
+def test_load_with_missing_required_fields() -> None:
     """Test that loading fails gracefully with missing required fields."""
     with pytest.raises(KeyError):
         AgentTool._load({"type": "askDocument"})  # Missing name and description
 
 
-def test_load_with_invalid_tool_type():
+def test_load_with_invalid_tool_type() -> None:
     """Test handling of completely invalid tool data."""
     with pytest.raises(KeyError):
         AgentTool._load({"name": "test", "description": "test"})  # Missing type
