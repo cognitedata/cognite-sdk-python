@@ -577,12 +577,9 @@ class TestWorkflowExecutions:
         listed = cognite_client.workflows.executions.list(
             workflow_version_ids=workflow_execution_list[0].as_workflow_id()
         )
-
-        # Compare by ID only: the cancel() response may return before async fields
-        # (e.g. end_time) are populated server-side, so full-object equality is flaky.
-        listed_ids = {e.id for e in listed}
-        expected_ids = {e.id for e in workflow_execution_list}
-        assert expected_ids <= listed_ids
+        # Compare by ID: cancel() can return before fields like end_time are
+        # finalized server-side, so full-object equality is flaky.
+        assert {e.id for e in listed} == {e.id for e in workflow_execution_list}
 
     def test_list_workflow_executions_by_status(
         self,
