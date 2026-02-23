@@ -326,7 +326,7 @@ class DocumentsAPI(APIClient):
         )
 
     def retrieve_content(self, id: int) -> bytes:
-        """`Retrieve document content <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsContent>`_
+        """`Retrieve document content <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsContentPost>`_
 
         Returns extracted textual information for the given document.
 
@@ -356,7 +356,7 @@ class DocumentsAPI(APIClient):
         return response.content
 
     def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
-        """`Retrieve document content into buffer <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsContent>`_
+        """`Retrieve document content into buffer <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsContentPost>`_
 
         Returns extracted textual information for the given document.
 
