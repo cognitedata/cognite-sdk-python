@@ -961,7 +961,7 @@ class DatapointsAPI(APIClient):
             It allows you to iterate through datapoints in chunks, and also control how many time series to iterate at the same time.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+        `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes>`_
 
         Args:
             id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
@@ -1313,7 +1313,7 @@ class DatapointsAPI(APIClient):
             This method requires ``numpy`` to be installed.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+        `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes>`_
 
         Args:
             id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
@@ -1444,7 +1444,7 @@ class DatapointsAPI(APIClient):
         """Get datapoints directly in a pandas dataframe.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+        `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes>`_
 
         Note:
             For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
@@ -1900,7 +1900,7 @@ class DatapointsAPI(APIClient):
         """`Get the latest datapoint for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getLatest>`_
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+        `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes>`_
 
         Args:
             id (int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None): Id or list of ids.
@@ -2017,7 +2017,7 @@ class DatapointsAPI(APIClient):
         are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+        `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes>`_
 
         Args:
             datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime.datetime]] | Sequence[tuple[int | float | datetime.datetime, int | float | str] | tuple[int | float | datetime.datetime, int | float | str, int]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
@@ -2103,7 +2103,7 @@ class DatapointsAPI(APIClient):
         are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+        `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes>`_
 
         Args:
             datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray | NodeId]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
