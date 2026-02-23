@@ -7,10 +7,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import (
-    SequenceRows,
-    SequenceRowsList,
-)
+from cognite.client.data_classes import SequenceRows, SequenceRowsList
 from cognite.client.utils._auxiliary import handle_renamed_argument
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
@@ -291,38 +288,38 @@ class SequencesDataAPI(APIClient):
 
     def retrieve_last_row(
         self,
-        id: int | None = None,
-        external_id: str | None = None,
+        id: int | typing.Sequence[int] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
         columns: SequenceNotStr[str] | None = None,
         before: int | None = None,
         **kwargs: Any,
-    ) -> SequenceRows:
+    ) -> SequenceRows | SequenceRowsList:
         """`Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://developer.cognite.com/api#tag/Sequences/operation/getLatestSequenceRow>`_
-
         Args:
-            id (int | None): Id or list of ids.
-            external_id (str | None): External id or list of external ids.
+            id (int | typing.Sequence[int] | None): Id or list of ids.
+            external_id (str | SequenceNotStr[str] | None): External id or list of external ids.
             columns (SequenceNotStr[str] | None): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
             before (int | None): (optional, int): Get latest datapoint before this row number.
             **kwargs (Any): To support deprecated argument 'column_external_ids', will be removed in the next major version. Use 'columns' instead.
-
         Returns:
-            SequenceRows: A Datapoints object containing the requested data, or a list of such objects.
-
-        Examples:
-
-            Getting the latest row in a sequence before row number 1000:
-
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> res = client.sequences.data.retrieve_last_row(id=1, before=1000)
+            SequenceRows | SequenceRowsList: SequenceRows if a single identifier was given, else SequenceRowsList.
         """
         columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
-        identifier = Identifier.of_either(id, external_id).as_dict()
-        res = self._do_request(
-            "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns}
-        ).json()
-        return SequenceRows._load(res)
+        ident_sequence = IdentifierSequence.load(id, external_id)
+        identifiers = ident_sequence.as_dicts()
+
+        def _fetch_latest(post_obj: dict[str, Any]) -> SequenceRows:
+            post_obj.update(self._wrap_columns(column_external_ids=columns))
+            payload = {**post_obj, "before": before}
+            res = self._do_request("POST", self._DATA_PATH + "/latest", json=payload).json()
+            return SequenceRows._load(res)
+
+        tasks_summary = execute_tasks(_fetch_latest, list(zip(identifiers)), max_workers=self._config.max_workers)
+        tasks_summary.raise_compound_exception_if_failed_tasks(
+            task_list_element_unwrap_fn=ident_sequence.extract_identifiers
+        )
+        results = tasks_summary.joined_results()
+        return results[0] if ident_sequence.is_singleton() else SequenceRowsList(results)
 
     def retrieve_dataframe(
         self,

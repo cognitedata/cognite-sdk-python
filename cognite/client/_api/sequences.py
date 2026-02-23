@@ -17,7 +17,11 @@ from cognite.client.data_classes import (
     filters,
 )
 from cognite.client.data_classes._base import CogniteResource, PropertySpec
-from cognite.client.data_classes.aggregations import AggregationFilter, CountAggregate, UniqueResultList
+from cognite.client.data_classes.aggregations import (
+    AggregationFilter,
+    CountAggregate,
+    UniqueResultList,
+)
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.data_classes.sequences import (
     SequenceColumnUpdate,
