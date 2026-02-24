@@ -553,7 +553,7 @@ class DatapointsAPI(APIClient):
         chunk_size_time_series: int | None = None,
         return_arrays: bool = True,
     ) -> Iterator[DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList]:
-        """`Iterate through datapoints in chunks, for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+        """`Iterate through datapoints in chunks, for one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
         Note:
             Control memory usage by specifying ``chunk_size_time_series``, how many time series to iterate simultaneously and ``chunk_size_datapoints``,
@@ -944,7 +944,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
     ) -> Datapoints | DatapointsList | None:
-        """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+        """`Retrieve datapoints for one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
         **Performance guide**:
             In order to retrieve millions of datapoints as efficiently as possible, here are a few guidelines:
@@ -961,7 +961,7 @@ class DatapointsAPI(APIClient):
             It allows you to iterate through datapoints in chunks, and also control how many time series to iterate at the same time.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+        `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes>`_
 
         Args:
             id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
@@ -1307,13 +1307,13 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
     ) -> DatapointsArray | DatapointsArrayList | None:
-        """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+        """`Retrieve datapoints for one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
         Note:
             This method requires ``numpy`` to be installed.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+        `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes>`_
 
         Args:
             id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
@@ -1444,7 +1444,7 @@ class DatapointsAPI(APIClient):
         """Get datapoints directly in a pandas dataframe.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+        `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes>`_
 
         Note:
             For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
@@ -1897,10 +1897,10 @@ class DatapointsAPI(APIClient):
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
     ) -> Datapoints | DatapointsList | None:
-        """`Get the latest datapoint for one or more time series <https://developer.cognite.com/api#tag/Time-series/operation/getLatest>`_
+        """`Get the latest datapoint for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getLatest>`_
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+        `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes>`_
 
         Args:
             id (int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None): Id or list of ids.
@@ -2017,7 +2017,7 @@ class DatapointsAPI(APIClient):
         are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+        `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes>`_
 
         Args:
             datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime.datetime]] | Sequence[tuple[int | float | datetime.datetime, int | float | str] | tuple[int | float | datetime.datetime, int | float | str, int]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
@@ -2097,13 +2097,13 @@ class DatapointsAPI(APIClient):
     def insert_multiple(
         self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray | NodeId]]
     ) -> None:
-        """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
+        """`Insert datapoints into multiple time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
 
         Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
         are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
-        `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
+        `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes>`_
 
         Args:
             datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray | NodeId]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
@@ -2206,7 +2206,7 @@ class DatapointsAPI(APIClient):
         self._delete_datapoints_ranges([delete_dps_object])
 
     def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
-        """`Delete a range of datapoints from multiple time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteDatapoints>`_
+        """`Delete a range of datapoints from multiple time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/deleteDatapoints>`_
 
         Args:
             ranges (list[dict[str, Any]]): The list of datapoint ids along with time range to delete. See examples below.

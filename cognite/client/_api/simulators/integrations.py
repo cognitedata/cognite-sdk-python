@@ -93,7 +93,7 @@ class SimulatorIntegrationsAPI(APIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
     ) -> SimulatorIntegrationList:
-        """`Filter simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/filter_simulator_integrations_simulators_integrations_list_post>`_
+        """`Filter simulator integrations <https://api-docs.cognite.com/20230101/tag/Simulator-Integrations/operation/filter_simulator_integrations_simulators_integrations_list_post>`_
 
         Retrieves a list of simulator integrations that match the given criteria.
 
@@ -132,7 +132,7 @@ class SimulatorIntegrationsAPI(APIClient):
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
     ) -> None:
-        """`Delete simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
+        """`Delete simulator integrations <https://api-docs.cognite.com/20230101/tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
 
         Args:
             ids (int | Sequence[int] | None): Id(s) of simulator integrations to delete

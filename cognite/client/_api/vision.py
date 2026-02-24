@@ -19,6 +19,16 @@ class VisionAPI(APIClient):
     _RESOURCE_PATH = "/context/vision"
 
     @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            "The Vision API will be removed in a future version of the SDK. "
+            "Please migrate to the recommended alternative. "
+            "Read more at: https://docs.cognite.com/cdf/deprecated#deprecated-and-retired-features",
+            UserWarning,
+            stacklevel=3,
+        )
+
+    @staticmethod
     def _process_file_ids(ids: list[int] | int | None, external_ids: list[str] | str | None) -> list:
         """
         Utility for sanitizing a given lists of ids and external ids.
@@ -66,7 +76,7 @@ class VisionAPI(APIClient):
         file_external_ids: list[str] | None = None,
         parameters: FeatureParameters | None = None,
     ) -> VisionExtractJob:
-        """`Start an asynchronous job to extract features from image files. <https://developer.cognite.com/api#tag/Vision/operation/postVisionExtract>`_
+        """`Start an asynchronous job to extract features from image files. <https://api-docs.cognite.com/20230101/tag/Vision/operation/postVisionExtract>`_
 
         Args:
             features (VisionFeature | list[VisionFeature]): The feature(s) to extract from the provided image files.
@@ -90,6 +100,7 @@ class VisionAPI(APIClient):
                 >>> # Save predictions in CDF using Annotations API:
                 >>> extract_job.save_predictions()
         """
+        VisionAPI._deprecation_warning()
         # Sanitize input(s)
         assert_type(features, "features", [VisionFeature, list], allow_none=False)
         if isinstance(features, list):
@@ -117,7 +128,7 @@ class VisionAPI(APIClient):
         )
 
     def get_extract_job(self, job_id: int) -> VisionExtractJob:
-        """`Retrieve an existing extract job by ID. <https://developer.cognite.com/api#tag/Vision/operation/getVisionExtract>`_
+        """`Retrieve an existing extract job by ID. <https://api-docs.cognite.com/20230101/tag/Vision/operation/getVisionExtract>`_
 
         Args:
             job_id (int): ID of an existing feature extraction job.
@@ -136,6 +147,7 @@ class VisionAPI(APIClient):
                 ...     predictions = item.predictions
                 ...     # do something with the predictions
         """
+        VisionAPI._deprecation_warning()
         job = VisionExtractJob(
             job_id=job_id,
             status_path=f"{self._RESOURCE_PATH}/extract/",

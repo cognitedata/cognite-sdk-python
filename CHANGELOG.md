@@ -13,6 +13,20 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.92.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.91.2...cognite-sdk-python-v7.92.0) (2026-02-18)
+
+
+### Features
+
+* **SyntheticTimeSeries:** add optional timezone argument to the query method ([#2465](https://github.com/cognitedata/cognite-sdk-python/issues/2465)) ([5093814](https://github.com/cognitedata/cognite-sdk-python/commit/5093814213686c91850ad534900fb9a2b889e49c))
+* **workflows:** add maxConcurrentExecutions support ([#2479](https://github.com/cognitedata/cognite-sdk-python/issues/2479)) ([baecf3d](https://github.com/cognitedata/cognite-sdk-python/commit/baecf3dbeafb6e7bebcf418cf28061b9d511eb39))
+
+
+### Documentation
+
+* add data modelling debugging data classes to the docs ([#2476](https://github.com/cognitedata/cognite-sdk-python/issues/2476)) ([c523322](https://github.com/cognitedata/cognite-sdk-python/commit/c523322efc23594e36cd6819b8b19783b93dedf5))
+* improve readability of API method signatures ([#2460](https://github.com/cognitedata/cognite-sdk-python/issues/2460)) ([f9cf998](https://github.com/cognitedata/cognite-sdk-python/commit/f9cf998d261a2da6cc1609feaa6ab6055ad137b0))
+
 ## [7.91.2](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.91.1...cognite-sdk-python-v7.91.2) (2026-01-23)
 
 

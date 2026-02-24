@@ -1,8 +1,8 @@
 Data Organization
 =================
 
-Annotations
------------
+Annotations (legacy)
+--------------------
 
 Retrieve an annotation by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -99,8 +99,8 @@ Labels Data classes
     :members:
     :show-inheritance:
 
-Relationships
--------------
+Relationships (legacy)
+----------------------
 Retrieve a relationship by external id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve

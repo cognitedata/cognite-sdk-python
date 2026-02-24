@@ -203,7 +203,7 @@ class TimeSeriesAPI(APIClient):
     def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> TimeSeries | None:
-        """`Retrieve a single time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
+        """`Retrieve a single time series by id. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getTimeSeriesByIds>`_
 
         Args:
             id (int | None): ID
@@ -239,7 +239,7 @@ class TimeSeriesAPI(APIClient):
         instance_ids: Sequence[NodeId] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TimeSeriesList:
-        """`Retrieve multiple time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
+        """`Retrieve multiple time series by id. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getTimeSeriesByIds>`_
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -271,7 +271,7 @@ class TimeSeriesAPI(APIClient):
         )
 
     def aggregate(self, filter: TimeSeriesFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
-        """`Aggregate time series <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Aggregate time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             filter (TimeSeriesFilter | dict[str, Any] | None): Filter on time series filter with exact match
@@ -297,7 +297,7 @@ class TimeSeriesAPI(APIClient):
         advanced_filter: Filter | dict[str, Any] | None = None,
         filter: TimeSeriesFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Count of time series matching the specified filters and search. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Count of time series matching the specified filters and search. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count.
@@ -336,7 +336,7 @@ class TimeSeriesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         filter: TimeSeriesFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Find approximate property count for time series. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Find approximate property count for time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             property (TimeSeriesProperty | str | list[str]): The property to count the cardinality of.
@@ -384,7 +384,7 @@ class TimeSeriesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         filter: TimeSeriesFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Find approximate paths count for time series.  <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Find approximate paths count for time series.  <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -419,7 +419,7 @@ class TimeSeriesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         filter: TimeSeriesFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
-        """`Get unique properties with counts for time series. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Get unique properties with counts for time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             property (TimeSeriesProperty | str | list[str]): The property to group by.
@@ -476,7 +476,7 @@ class TimeSeriesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         filter: TimeSeriesFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
-        """`Get unique paths with counts for time series. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Get unique paths with counts for time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -514,7 +514,7 @@ class TimeSeriesAPI(APIClient):
     def create(
         self, time_series: TimeSeries | TimeSeriesWrite | Sequence[TimeSeries] | Sequence[TimeSeriesWrite]
     ) -> TimeSeries | TimeSeriesList:
-        """`Create one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/postTimeSeries>`_
+        """`Create one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/postTimeSeries>`_
 
         Args:
             time_series (TimeSeries | TimeSeriesWrite | Sequence[TimeSeries] | Sequence[TimeSeriesWrite]): TimeSeries or list of TimeSeries to create.
@@ -544,7 +544,7 @@ class TimeSeriesAPI(APIClient):
         external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteTimeSeries>`_
+        """`Delete one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/deleteTimeSeries>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -587,7 +587,7 @@ class TimeSeriesAPI(APIClient):
         | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TimeSeries | TimeSeriesList:
-        """`Update one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/alterTimeSeries>`_
+        """`Update one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/alterTimeSeries>`_
 
         Args:
             item (TimeSeries | TimeSeriesWrite | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]): Time series to update
@@ -688,7 +688,7 @@ class TimeSeriesAPI(APIClient):
         filter: TimeSeriesFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> TimeSeriesList:
-        """`Search for time series. <https://developer.cognite.com/api#tag/Time-series/operation/searchTimeSeries>`_
+        """`Search for time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/searchTimeSeries>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -727,7 +727,7 @@ class TimeSeriesAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TimeSeriesList:
-        """`Advanced filter time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
+        """`Advanced filter time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/listTimeSeries>`_
 
         Advanced filter lets you create complex filtering expressions that combine simple operations,
         such as equals, prefix, exists, etc., using boolean operators and, or, and not.
@@ -803,7 +803,7 @@ class TimeSeriesAPI(APIClient):
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> TimeSeriesList:
-        """`List time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
+        """`List time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/listTimeSeries>`_
 
         Args:
             name (str | None): Name of the time series. Often referred to as tag.

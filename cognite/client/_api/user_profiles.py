@@ -23,7 +23,7 @@ class UserProfilesAPI(APIClient):
         return UserProfilesConfiguration._load(res.json()["userProfilesConfiguration"])
 
     def me(self) -> UserProfile:
-        """`Retrieve your own user profile <https://developer.cognite.com/api#tag/User-profiles/operation/getRequesterUserProfile>`_
+        """`Retrieve your own user profile <https://api-docs.cognite.com/20230101/tag/User-profiles/operation/getRequesterUserProfile>`_
 
         Retrieves the user profile of the principal issuing the request, i.e. the principal *this* CogniteClient was instantiated with.
 
@@ -50,7 +50,7 @@ class UserProfilesAPI(APIClient):
     def retrieve(self, user_identifier: SequenceNotStr[str]) -> UserProfileList: ...
 
     def retrieve(self, user_identifier: str | SequenceNotStr[str]) -> UserProfile | UserProfileList | None:
-        """`Retrieve user profiles by user identifier. <https://developer.cognite.com/api#tag/User-profiles/operation/getUserProfilesByIds>`_
+        """`Retrieve user profiles by user identifier. <https://api-docs.cognite.com/20230101/tag/User-profiles/operation/getUserProfilesByIds>`_
 
         Retrieves one or more user profiles indexed by the user identifier in the same CDF project.
 
@@ -83,7 +83,7 @@ class UserProfilesAPI(APIClient):
         )
 
     def search(self, name: str, limit: int = DEFAULT_LIMIT_READ) -> UserProfileList:
-        """`Search for user profiles <https://developer.cognite.com/api#tag/User-profiles/operation/userProfilesSearch>`_
+        """`Search for user profiles <https://api-docs.cognite.com/20230101/tag/User-profiles/operation/userProfilesSearch>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, as the result set ordering and match criteria threshold may change over time.
 
         Args:
@@ -109,7 +109,7 @@ class UserProfilesAPI(APIClient):
         )
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> UserProfileList:
-        """`List user profiles <https://developer.cognite.com/api#tag/User-profiles/operation/listUserProfiles>`_
+        """`List user profiles <https://api-docs.cognite.com/20230101/tag/User-profiles/operation/listUserProfiles>`_
 
         List all user profiles in the current CDF project. The results are ordered alphabetically by name.
 
