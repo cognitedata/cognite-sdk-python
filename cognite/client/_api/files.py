@@ -230,7 +230,7 @@ class FilesAPI(APIClient):
     def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> FileMetadata | None:
-        """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
+        """`Retrieve a single file metadata by id. <https://api-docs.cognite.com/20230101/tag/Files/operation/getFileByInternalId>`_
 
         Args:
             id (int | None): ID
@@ -262,7 +262,7 @@ class FilesAPI(APIClient):
         instance_ids: Sequence[NodeId] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
-        """`Retrieve multiple file metadatas by id. <https://developer.cognite.com/api#tag/Files/operation/byIdsFiles>`_
+        """`Retrieve multiple file metadatas by id. <https://api-docs.cognite.com/20230101/tag/Files/operation/byIdsFiles>`_
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -294,7 +294,7 @@ class FilesAPI(APIClient):
         )
 
     def aggregate(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
-        """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
+        """`Aggregate files <https://api-docs.cognite.com/20230101/tag/Files/operation/aggregateFiles>`_
 
         Args:
             filter (FileMetadataFilter | dict[str, Any] | None): Filter on file metadata filter with exact match
@@ -319,7 +319,7 @@ class FilesAPI(APIClient):
         external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
+        """`Delete files <https://api-docs.cognite.com/20230101/tag/Files/operation/deleteFiles>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -362,7 +362,7 @@ class FilesAPI(APIClient):
         | Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> FileMetadata | FileMetadataList:
-        """`Update files <https://developer.cognite.com/api#tag/Files/operation/updateFiles>`_
+        """`Update files <https://api-docs.cognite.com/20230101/tag/Files/operation/updateFiles>`_
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
@@ -415,7 +415,7 @@ class FilesAPI(APIClient):
         filter: FileMetadataFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> FileMetadataList:
-        """`Search for files. <https://developer.cognite.com/api#tag/Files/operation/searchFiles>`_
+        """`Search for files. <https://api-docs.cognite.com/20230101/tag/Files/operation/searchFiles>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -447,7 +447,7 @@ class FilesAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> FileMetadata:
-        """`Upload a file content <https://developer.cognite.com/api#tag/Files/operation/getUploadLink>`_
+        """`Upload a file content <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_
 
         Args:
             path (str): Path to the file you wish to upload.
@@ -487,7 +487,7 @@ class FilesAPI(APIClient):
         recursive: bool = False,
         overwrite: bool = False,
     ) -> FileMetadata | FileMetadataList:
-        """`Upload a file <https://developer.cognite.com/api#tag/Files/operation/initFileUpload>`_
+        """`Upload a file <https://api-docs.cognite.com/20230101/tag/Files/operation/initFileUpload>`_
 
         Args:
             path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
@@ -1017,7 +1017,7 @@ class FilesAPI(APIClient):
         keep_directory_structure: bool = False,
         resolve_duplicate_file_names: bool = False,
     ) -> None:
-        """`Download files by id or external id. <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_
+        """`Download files by id or external id. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
 
         This method will stream all files to disk, never keeping more than 2MB in memory per worker.
         The files will be stored in the provided directory using the file name retrieved from the file metadata in CDF.
@@ -1239,7 +1239,7 @@ class FilesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         partitions: int | None = None,
     ) -> FileMetadataList:
-        """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
+        """`List files <https://api-docs.cognite.com/20230101/tag/Files/operation/advancedListFiles>`_
 
         Args:
             name (str | None): Name of the file.

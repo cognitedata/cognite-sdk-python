@@ -34,7 +34,7 @@ class DiagramsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        # https://developer.cognite.com/api#tag/Engineering-diagrams/operation/diagramDetect
+        # https://api-docs.cognite.com/20230101/tag/Engineering-diagrams/operation/diagramDetect
         self._DETECT_API_FILE_LIMIT = 50
         self._DETECT_API_STATUS_JOB_LIMIT = 1000
         self._detect_beta_params_warning = FeaturePreviewWarning(
@@ -190,7 +190,7 @@ class DiagramsAPI(APIClient):
         *,
         multiple_jobs: bool = False,
     ) -> DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]:
-        """`Detect annotations in engineering diagrams <https://developer.cognite.com/api#tag/Engineering-diagrams/operation/diagramDetect>`_
+        """`Detect annotations in engineering diagrams <https://api-docs.cognite.com/20230101/tag/Engineering-diagrams/operation/diagramDetect>`_
 
         Note:
             All users on this CDF subscription with assets read-all and files read-all capabilities in the project,

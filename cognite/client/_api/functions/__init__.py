@@ -187,7 +187,7 @@ class FunctionsAPI(APIClient):
         skip_folder_validation: bool = False,
         data_set_id: int | None = None,
     ) -> Function:
-        '''`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
+        '''`When creating a function, <https://api-docs.cognite.com/20230101/tag/Functions/operation/postFunctions>`_
         the source code can be specified in one of three ways:
 
         - Via the `folder` argument, which is the path to the folder where the source code is located. `function_path` must point to a python file in the folder within which a function named `handle` must be defined.
@@ -215,8 +215,8 @@ class FunctionsAPI(APIClient):
             owner (str | None): Owner of this function. Typically used to know who created it.
             secrets (dict[str, str] | None): Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
             env_vars (dict[str, str] | None): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
-            cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
             runtime (RunTime | None): The function runtime. Valid values are ["py310", "py311", "py312", `None`], and `None` translates to the API default which will change over time. The runtime "py312" resolves to the latest version of the Python 3.12 series.
             metadata (dict[str, str] | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
@@ -356,7 +356,7 @@ class FunctionsAPI(APIClient):
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
     ) -> None:
-        """`Delete one or more functions. <https://developer.cognite.com/api#tag/Functions/operation/deleteFunctions>`_
+        """`Delete one or more functions. <https://api-docs.cognite.com/20230101/tag/Functions/operation/deleteFunctions>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
@@ -386,7 +386,7 @@ class FunctionsAPI(APIClient):
         metadata: dict[str, str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionList:
-        """`List all functions. <https://developer.cognite.com/api#tag/Functions/operation/listFunctions>`_
+        """`List all functions. <https://api-docs.cognite.com/20230101/tag/Functions/operation/listFunctions>`_
 
         Args:
             name (str | None): The name of the function.
@@ -433,7 +433,7 @@ class FunctionsAPI(APIClient):
         return FunctionList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
-        """`Retrieve a single function by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
+        """`Retrieve a single function by id. <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_
 
         Args:
             id (int | None): ID
@@ -463,7 +463,7 @@ class FunctionsAPI(APIClient):
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> FunctionList:
-        """`Retrieve multiple functions by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
+        """`Retrieve multiple functions by id. <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -502,7 +502,7 @@ class FunctionsAPI(APIClient):
         wait: bool = True,
         nonce: str | None = None,
     ) -> FunctionCall:
-        """`Call a function by its ID or external ID. <https://developer.cognite.com/api#tag/Function-calls/operation/postFunctionsCall>`_.
+        """`Call a function by its ID or external ID. <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/postFunctionsCall>`_.
 
         Args:
             id (int | None): ID
@@ -545,7 +545,7 @@ class FunctionsAPI(APIClient):
         return function_call
 
     def limits(self) -> FunctionsLimits:
-        """`Get service limits. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_.
+        """`Get service limits. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_.
 
         Returns:
             FunctionsLimits: A function limits object.
@@ -653,7 +653,7 @@ class FunctionsAPI(APIClient):
             )
 
     def activate(self) -> FunctionsStatus:
-        """`Activate functions for the Project. <https://developer.cognite.com/api#tag/Functions/operation/postFunctionsStatus>`_.
+        """`Activate functions for the Project. <https://api-docs.cognite.com/20230101/tag/Functions/operation/postFunctionsStatus>`_.
 
         Returns:
             FunctionsStatus: A function activation status.
@@ -670,7 +670,7 @@ class FunctionsAPI(APIClient):
         return FunctionsStatus.load(res.json())
 
     def status(self) -> FunctionsStatus:
-        """`Functions activation status for the Project. <https://developer.cognite.com/api#tag/Functions/operation/getFunctionsStatus>`_.
+        """`Functions activation status for the Project. <https://api-docs.cognite.com/20230101/tag/Functions/operation/getFunctionsStatus>`_.
 
         Returns:
             FunctionsStatus: A function activation status.

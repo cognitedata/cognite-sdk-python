@@ -196,7 +196,7 @@ class RelationshipsAPI(APIClient):
     def retrieve_multiple(
         self, external_ids: SequenceNotStr[str], fetch_resources: bool = False, ignore_unknown_ids: bool = False
     ) -> RelationshipList:
-        """`Retrieve multiple relationships by external id.  <https://developer.cognite.com/api#tag/Relationships/operation/byidsRelationships>`_
+        """`Retrieve multiple relationships by external id.  <https://api-docs.cognite.com/20230101/tag/Relationships/operation/byidsRelationships>`_
 
         Args:
             external_ids (SequenceNotStr[str]): External IDs
@@ -243,7 +243,7 @@ class RelationshipsAPI(APIClient):
         partitions: int | None = None,
         fetch_resources: bool = False,
     ) -> RelationshipList:
-        """`Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://developer.cognite.com/api#tag/Relationships/operation/listRelationships>`_
+        """`Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://api-docs.cognite.com/20230101/tag/Relationships/operation/listRelationships>`_
 
         Args:
             source_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their source External Id field
@@ -356,7 +356,7 @@ class RelationshipsAPI(APIClient):
     def create(
         self, relationship: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]
     ) -> Relationship | RelationshipList:
-        """`Create one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/createRelationships>`_
+        """`Create one or more relationships. <https://api-docs.cognite.com/20230101/tag/Relationships/operation/createRelationships>`_
 
         Args:
             relationship (Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]): Relationship or list of relationships to create.
@@ -422,7 +422,7 @@ class RelationshipsAPI(APIClient):
         | Sequence[Relationship | RelationshipWrite | RelationshipUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Relationship | RelationshipList:
-        """`Update one or more relationships <https://developer.cognite.com/api#tag/Relationships/operation/updateRelationships>`_
+        """`Update one or more relationships <https://api-docs.cognite.com/20230101/tag/Relationships/operation/updateRelationships>`_
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
@@ -516,7 +516,7 @@ class RelationshipsAPI(APIClient):
         )
 
     def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
-        """`Delete one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/deleteRelationships>`_
+        """`Delete one or more relationships. <https://api-docs.cognite.com/20230101/tag/Relationships/operation/deleteRelationships>`_
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external ids
