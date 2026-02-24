@@ -476,6 +476,7 @@ class TestCogniteResource:
         with pytest.raises(CogniteMissingClientError):
             mr.use()
 
+    @pytest.mark.dsl
     def test_to_pandas_time_dtype_if_single_valued_resource(self) -> None:
         import pandas as pd
 
