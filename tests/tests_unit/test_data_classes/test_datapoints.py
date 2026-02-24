@@ -69,6 +69,7 @@ class TestDatapointsArray:
 
         params: dict = dict(
             id=123,
+            is_string=False,
             timestamp=np.array([1, 2, 3], dtype=np.int64),
             value=np.array([-1, None, 2.5], dtype=np.float64),
         )
@@ -91,8 +92,8 @@ class TestToPandas:
         df = dps_lst_cls(
             [
                 dps_cls(timestamp=ts, value=[2.0], id=123, is_string=False),
-                dps_cls(timestamp=ts, value=[4.0], external_id="foo", is_string=False),
-                dps_cls(timestamp=ts, value=[6.0], instance_id=NodeId("s", "x"), is_string=False),
+                dps_cls(timestamp=ts, value=[4.0], id=456, external_id="foo", is_string=False),
+                dps_cls(timestamp=ts, value=[6.0], id=789, instance_id=NodeId("s", "x"), is_string=False),
             ]
         ).to_pandas()
 

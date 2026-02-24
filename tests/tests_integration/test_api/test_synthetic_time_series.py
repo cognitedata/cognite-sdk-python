@@ -43,6 +43,8 @@ def test_time_series(cognite_client: CogniteClient) -> dict[int, TimeSeries]:
                 {
                     "external_id": name,
                     "datapoints": Datapoints(
+                        id=0,
+                        is_string=False,
                         external_id=name,
                         timestamp=timestamps,
                         value=np.random.uniform(number - 0.1, number + 0.1, size).tolist(),
