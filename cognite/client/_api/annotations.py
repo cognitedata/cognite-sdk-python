@@ -39,7 +39,7 @@ class AnnotationsAPI(APIClient):
     def create(
         self, annotations: Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]
     ) -> Annotation | AnnotationList:
-        """`Create annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsCreate>`_
+        """`Create annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsCreate>`_
 
         Args:
             annotations (Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]): Annotation(s) to create
@@ -64,7 +64,7 @@ class AnnotationsAPI(APIClient):
     def suggest(self, annotations: Sequence[Annotation]) -> AnnotationList: ...
 
     def suggest(self, annotations: Annotation | Sequence[Annotation]) -> Annotation | AnnotationList:
-        """`Suggest annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsSuggest>`_
+        """`Suggest annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsSuggest>`_
 
         Args:
             annotations (Annotation | Sequence[Annotation]): annotation(s) to suggest. They must have status set to "suggested".
@@ -136,7 +136,7 @@ class AnnotationsAPI(APIClient):
         | Sequence[Annotation | AnnotationWrite | AnnotationUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Annotation | AnnotationList:
-        """`Update annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsUpdate>`_
+        """`Update annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsUpdate>`_
 
         Args:
             item (Annotation | AnnotationWrite | AnnotationUpdate | Sequence[Annotation | AnnotationWrite | AnnotationUpdate]): Annotation or list of annotations to update (or patch or list of patches to apply)
@@ -149,7 +149,7 @@ class AnnotationsAPI(APIClient):
         )
 
     def delete(self, id: int | Sequence[int]) -> None:
-        """`Delete annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsDelete>`_
+        """`Delete annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsDelete>`_
 
         Args:
             id (int | Sequence[int]): ID or list of IDs to be deleted
@@ -157,7 +157,7 @@ class AnnotationsAPI(APIClient):
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
     def retrieve_multiple(self, ids: Sequence[int]) -> AnnotationList:
-        """`Retrieve annotations by IDs <https://developer.cognite.com/api#tag/Annotations/operation/annotationsByids>`_`
+        """`Retrieve annotations by IDs <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsByids>`_`
 
         Args:
             ids (Sequence[int]): list of IDs to be retrieved
@@ -169,7 +169,7 @@ class AnnotationsAPI(APIClient):
         return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
     def retrieve(self, id: int) -> Annotation | None:
-        """`Retrieve an annotation by id <https://developer.cognite.com/api#tag/Annotations/operation/annotationsGet>`_
+        """`Retrieve an annotation by id <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsGet>`_
 
         Args:
             id (int): id of the annotation to be retrieved
@@ -214,7 +214,7 @@ class AnnotationsAPI(APIClient):
         )
 
     def list(self, filter: AnnotationFilter | dict, limit: int | None = DEFAULT_LIMIT_READ) -> AnnotationList:
-        """`List annotations. <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_
+        """`List annotations. <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsFilter>`_
 
         Note:
             Passing a filter with both 'annotated_resource_type' and 'annotated_resource_ids' is always required.

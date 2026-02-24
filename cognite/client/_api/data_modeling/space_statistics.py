@@ -32,7 +32,7 @@ class SpaceStatisticsAPI(APIClient):
         self,
         space: str | SequenceNotStr[str],
     ) -> SpaceStatistics | SpaceStatisticsList | None:
-        """`Retrieve usage data and limits per space <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatisticsByIds>`_
+        """`Retrieve usage data and limits per space <https://api-docs.cognite.com/20230101/tag/Statistics/operation/getSpaceStatisticsByIds>`_
 
         Args:
             space (str | SequenceNotStr[str]): The space or spaces to retrieve statistics for.
@@ -62,7 +62,7 @@ class SpaceStatisticsAPI(APIClient):
         )
 
     def list(self) -> SpaceStatisticsList:
-        """`Retrieve usage for all spaces <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatistics>`_
+        """`Retrieve usage for all spaces <https://api-docs.cognite.com/20230101/tag/Statistics/operation/getSpaceStatistics>`_
 
         Returns statistics for data modeling resources grouped by each space in the project.
 

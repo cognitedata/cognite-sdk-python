@@ -63,7 +63,7 @@ class GeospatialAPI(APIClient):
         self, feature_type: FeatureType | FeatureTypeWrite | Sequence[FeatureType] | Sequence[FeatureTypeWrite]
     ) -> FeatureType | FeatureTypeList:
         """`Creates feature types`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/createFeatureTypes>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createFeatureTypes>
 
         Args:
             feature_type (FeatureType | FeatureTypeWrite | Sequence[FeatureType] | Sequence[FeatureTypeWrite]): feature type definition or list of feature type definitions to create.
@@ -98,7 +98,7 @@ class GeospatialAPI(APIClient):
 
     def delete_feature_types(self, external_id: str | SequenceNotStr[str], recursive: bool = False) -> None:
         """`Delete one or more feature type`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/GeospatialDeleteFeatureTypes>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/GeospatialDeleteFeatureTypes>
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external ids
@@ -122,7 +122,7 @@ class GeospatialAPI(APIClient):
 
     def list_feature_types(self) -> FeatureTypeList:
         """`List feature types`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/listFeatureTypes>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listFeatureTypes>
 
         Returns:
             FeatureTypeList: List of feature types
@@ -151,7 +151,7 @@ class GeospatialAPI(APIClient):
 
     def retrieve_feature_types(self, external_id: str | list[str]) -> FeatureType | FeatureTypeList:
         """`Retrieve feature types`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/getFeatureTypesByIds>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getFeatureTypesByIds>
 
         Args:
             external_id (str | list[str]): External ID
@@ -177,7 +177,7 @@ class GeospatialAPI(APIClient):
 
     def patch_feature_types(self, patch: FeatureTypePatch | Sequence[FeatureTypePatch]) -> FeatureTypeList:
         """`Patch feature types`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatureTypes>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/updateFeatureTypes>
 
         Args:
             patch (FeatureTypePatch | Sequence[FeatureTypePatch]): the patch to apply
@@ -255,7 +255,7 @@ class GeospatialAPI(APIClient):
         chunk_size: int | None = None,
     ) -> Feature | FeatureList:
         """`Creates features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/createFeatures>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createFeatures>
 
         Args:
             feature_type_external_id (str): Feature type definition for the features to create.
@@ -313,7 +313,7 @@ class GeospatialAPI(APIClient):
         self, feature_type_external_id: str, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
         """`Delete one or more feature`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/deleteFeatures>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteFeatures>
 
         Args:
             feature_type_external_id (str): No description.
@@ -358,7 +358,7 @@ class GeospatialAPI(APIClient):
         properties: dict[str, Any] | None = None,
     ) -> FeatureList | Feature:
         """`Retrieve features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/getFeaturesByIds>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getFeaturesByIds>
 
         Args:
             feature_type_external_id (str): No description.
@@ -397,7 +397,7 @@ class GeospatialAPI(APIClient):
         chunk_size: int | None = None,
     ) -> FeatureList:
         """`Update features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatures>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/updateFeatures>
 
         Args:
             feature_type_external_id (str): No description.
@@ -452,7 +452,7 @@ class GeospatialAPI(APIClient):
         allow_crs_transformation: bool = False,
     ) -> FeatureList:
         """`List features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/listFeatures>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listFeatures>
 
         This method allows to filter all features.
 
@@ -532,7 +532,7 @@ class GeospatialAPI(APIClient):
         allow_dimensionality_mismatch: bool = False,
     ) -> FeatureList:
         """`Search for features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeatures>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/searchFeatures>
 
         This method allows to order the result by one or more of the properties of the feature type.
         However, the number of items returned is limited to 1000 and there is no support for cursors yet.
@@ -658,7 +658,7 @@ class GeospatialAPI(APIClient):
         allow_dimensionality_mismatch: bool = False,
     ) -> Iterator[Feature]:
         """`Stream features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeaturesStreaming>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/searchFeaturesStreaming>
 
         This method allows to return any number of items until the underlying
         api calls times out. The order of the result items is not deterministic.
@@ -725,7 +725,7 @@ class GeospatialAPI(APIClient):
         output: dict[str, Any] | None = None,
     ) -> FeatureAggregateList:
         """`Aggregate filtered features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/aggregateFeatures>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/aggregateFeatures>
 
         Args:
             feature_type_external_id (str): the feature type to filter features from
@@ -774,7 +774,7 @@ class GeospatialAPI(APIClient):
 
     def get_coordinate_reference_systems(self, srids: int | Sequence[int]) -> CoordinateReferenceSystemList:
         """`Get Coordinate Reference Systems`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/getCoordinateReferenceSystem>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getCoordinateReferenceSystem>
 
         Args:
             srids (int | Sequence[int]): (Union[int, Sequence[int]]): SRID or list of SRIDs
@@ -802,7 +802,7 @@ class GeospatialAPI(APIClient):
 
     def list_coordinate_reference_systems(self, only_custom: bool = False) -> CoordinateReferenceSystemList:
         """`List Coordinate Reference Systems`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/listGeospatialCoordinateReferenceSystems>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listGeospatialCoordinateReferenceSystems>
 
         Args:
             only_custom (bool): list only custom CRSs or not
@@ -829,7 +829,7 @@ class GeospatialAPI(APIClient):
         | Sequence[CoordinateReferenceSystemWrite],
     ) -> CoordinateReferenceSystemList:
         """`Create Coordinate Reference System`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/createGeospatialCoordinateReferenceSystems>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createGeospatialCoordinateReferenceSystems>
 
         Args:
             crs (CoordinateReferenceSystem | CoordinateReferenceSystemWrite | Sequence[CoordinateReferenceSystem] | Sequence[CoordinateReferenceSystemWrite]): a CoordinateReferenceSystem or a list of CoordinateReferenceSystem
@@ -893,7 +893,7 @@ class GeospatialAPI(APIClient):
 
     def delete_coordinate_reference_systems(self, srids: int | Sequence[int]) -> None:
         """`Delete Coordinate Reference System`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/deleteGeospatialCoordinateReferenceSystems>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteGeospatialCoordinateReferenceSystems>
 
         Args:
             srids (int | Sequence[int]): (Union[int, Sequence[int]]): SRID or list of SRIDs
@@ -927,7 +927,7 @@ class GeospatialAPI(APIClient):
         raster_scale_x: float | None = None,
         raster_scale_y: float | None = None,
     ) -> RasterMetadata:
-        """`Put raster <https://developer.cognite.com/api#tag/Geospatial/operation/putRaster>`
+        """`Put raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/putRaster>`
 
         Args:
             feature_type_external_id (str): No description.
@@ -983,7 +983,7 @@ class GeospatialAPI(APIClient):
         feature_external_id: str,
         raster_property_name: str,
     ) -> None:
-        """`Delete raster <https://developer.cognite.com/api#tag/Geospatial/operation/deleteRaster>`
+        """`Delete raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteRaster>`
 
         Args:
             feature_type_external_id (str): No description.
@@ -1022,7 +1022,7 @@ class GeospatialAPI(APIClient):
         raster_scale_y: float | None = None,
         allow_crs_transformation: bool = False,
     ) -> bytes:
-        """`Get raster <https://developer.cognite.com/api#tag/Geospatial/operation/getRaster>`
+        """`Get raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getRaster>`
 
         Args:
             feature_type_external_id (str): Feature type definition for the features to create.
@@ -1070,7 +1070,7 @@ class GeospatialAPI(APIClient):
         self,
         output: dict[str, GeospatialComputeFunction],
     ) -> GeospatialComputedResponse:
-        """`Compute <https://developer.cognite.com/api#tag/Geospatial/operation/compute>`
+        """`Compute <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/compute>`
 
         Args:
             output (dict[str, GeospatialComputeFunction]): No description.

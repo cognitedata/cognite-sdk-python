@@ -149,7 +149,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
     ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionList | None:
-        """`Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
+        """`Retrieve simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
 
         Retrieve simulator routine revisions by ID or External Id.
 
@@ -327,7 +327,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         limit: int | None = None,
         sort: PropertySort | None = None,
     ) -> SimulatorRoutineRevisionList:
-        """`Filter simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
+        """`Filter simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
 
         Retrieves a list of simulator routine revisions that match the given criteria.
 

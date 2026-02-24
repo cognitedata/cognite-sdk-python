@@ -94,7 +94,7 @@ class RawRowsAPI(APIClient):
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to not use concurrency.
                 The setting is capped at ``global_config.max_workers`` and _can_ be used with a finite limit. To prevent unexpected
-                problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
+                problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://api-docs.cognite.com/20230101/tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
             Iterator[Row] | Iterator[RowList]: An iterator yielding the requested row or rows.
@@ -224,7 +224,7 @@ class RawRowsAPI(APIClient):
         row: Sequence[Row] | Sequence[RowWrite] | Row | RowWrite | dict,
         ensure_parent: bool = False,
     ) -> None:
-        """`Insert one or more rows into a table. <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
+        """`Insert one or more rows into a table. <https://api-docs.cognite.com/20230101/tag/Raw/operation/postRows>`_
 
         Args:
             db_name (str): Name of the database.
@@ -272,7 +272,7 @@ class RawRowsAPI(APIClient):
         ensure_parent: bool = False,
         dropna: bool = True,
     ) -> None:
-        """`Insert pandas dataframe into a table <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
+        """`Insert pandas dataframe into a table <https://api-docs.cognite.com/20230101/tag/Raw/operation/postRows>`_
 
         Uses index for row keys.
 
@@ -344,7 +344,7 @@ class RawRowsAPI(APIClient):
         return split_into_chunks(rows, self._CREATE_LIMIT)
 
     def delete(self, db_name: str, table_name: str, key: str | SequenceNotStr[str]) -> None:
-        """`Delete rows from a table. <https://developer.cognite.com/api#tag/Raw/operation/deleteRows>`_
+        """`Delete rows from a table. <https://api-docs.cognite.com/20230101/tag/Raw/operation/deleteRows>`_
 
         Args:
             db_name (str): Name of the database.
@@ -377,7 +377,7 @@ class RawRowsAPI(APIClient):
         )
 
     def retrieve(self, db_name: str, table_name: str, key: str) -> Row | None:
-        """`Retrieve a single row by key. <https://developer.cognite.com/api#tag/Raw/operation/getRow>`_
+        """`Retrieve a single row by key. <https://api-docs.cognite.com/20230101/tag/Raw/operation/getRow>`_
 
         Args:
             db_name (str): Name of the database.
@@ -429,7 +429,7 @@ class RawRowsAPI(APIClient):
         last_updated_time_in_index: bool = False,
         infer_dtypes: bool = True,
     ) -> pd.DataFrame:
-        """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
+        """`Retrieve rows in a table as a pandas dataframe. <https://api-docs.cognite.com/20230101/tag/Raw/operation/getRows>`_
 
         Rowkeys are used as the index.
 
@@ -443,7 +443,7 @@ class RawRowsAPI(APIClient):
             partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used together with a (large) finite limit.
                 When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and ``global_config.max_workers`` for an unlimited query
                 (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
-                `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
+                `concurrency limits in the API documentation. <https://api-docs.cognite.com/20230101/tag/Raw/#section/Request-and-concurrency-limits>`_
             last_updated_time_in_index (bool): Use a MultiIndex with row keys and last_updated_time as index.
             infer_dtypes (bool): If True, pandas will try to infer dtypes of the columns. Defaults to True.
 
@@ -497,7 +497,7 @@ class RawRowsAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         partitions: int | None = None,
     ) -> RowList:
-        """`List rows in a table. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
+        """`List rows in a table. <https://api-docs.cognite.com/20230101/tag/Raw/operation/getRows>`_
 
         Args:
             db_name (str): Name of the database.
@@ -509,7 +509,7 @@ class RawRowsAPI(APIClient):
             partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used together with a (large) finite limit.
                 When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and ``global_config.max_workers`` for an unlimited query
                 (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
-                `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
+                `concurrency limits in the API documentation. <https://api-docs.cognite.com/20230101/tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
             RowList: The requested rows.

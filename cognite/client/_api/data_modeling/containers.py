@@ -99,7 +99,7 @@ class ContainersAPI(APIClient):
     def retrieve(self, ids: Sequence[ContainerIdentifier]) -> ContainerList: ...
 
     def retrieve(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> Container | ContainerList | None:
-        """`Retrieve one or more container by id(s). <https://developer.cognite.com/api#tag/Containers/operation/byExternalIdsContainers>`_
+        """`Retrieve one or more container by id(s). <https://api-docs.cognite.com/20230101/tag/Containers/operation/byExternalIdsContainers>`_
 
         Args:
             ids (ContainerIdentifier | Sequence[ContainerIdentifier]): Identifier for container(s).
@@ -128,7 +128,7 @@ class ContainersAPI(APIClient):
         )
 
     def delete(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
-        """`Delete one or more containers <https://developer.cognite.com/api#tag/Containers/operation/deleteContainers>`_
+        """`Delete one or more containers <https://api-docs.cognite.com/20230101/tag/Containers/operation/deleteContainers>`_
 
         Args:
             ids (ContainerIdentifier | Sequence[ContainerIdentifier]): The container identifier(s).
@@ -154,7 +154,7 @@ class ContainersAPI(APIClient):
         return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
     def delete_constraints(self, ids: Sequence[ConstraintIdentifier]) -> list[ConstraintIdentifier]:
-        """`Delete one or more constraints <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerConstraints>`_
+        """`Delete one or more constraints <https://api-docs.cognite.com/20230101/tag/Containers/operation/deleteContainerConstraints>`_
 
         Args:
             ids (Sequence[ConstraintIdentifier]): The constraint identifier(s).
@@ -173,7 +173,7 @@ class ContainersAPI(APIClient):
         return self._delete_constraints_or_indexes(ids, "constraints")
 
     def delete_indexes(self, ids: Sequence[IndexIdentifier]) -> list[IndexIdentifier]:
-        """`Delete one or more indexes <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerIndexes>`_
+        """`Delete one or more indexes <https://api-docs.cognite.com/20230101/tag/Containers/operation/deleteContainerIndexes>`_
 
         Args:
             ids (Sequence[IndexIdentifier]): The index identifier(s).
@@ -223,7 +223,7 @@ class ContainersAPI(APIClient):
         limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         include_global: bool = False,
     ) -> ContainerList:
-        """`List containers <https://developer.cognite.com/api#tag/Containers/operation/listContainers>`_
+        """`List containers <https://api-docs.cognite.com/20230101/tag/Containers/operation/listContainers>`_
 
         Args:
             space (str | None): The space to query
@@ -267,7 +267,7 @@ class ContainersAPI(APIClient):
     def apply(self, container: ContainerApply) -> Container: ...
 
     def apply(self, container: ContainerApply | Sequence[ContainerApply]) -> Container | ContainerList:
-        """`Add or update (upsert) containers. <https://developer.cognite.com/api#tag/Containers/operation/ApplyContainers>`_
+        """`Add or update (upsert) containers. <https://api-docs.cognite.com/20230101/tag/Containers/operation/ApplyContainers>`_
 
         Args:
             container (ContainerApply | Sequence[ContainerApply]): Container(s) to create or update.
