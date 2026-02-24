@@ -477,17 +477,20 @@ class TestCogniteResource:
             mr.use()
 
     @pytest.mark.dsl
-    def test_to_pandas_time_dtype_if_single_valued_resource(self) -> None:
+    def test_to_pandas_time_dtype_if_only_timestamp_attributes(self) -> None:
         import pandas as pd
 
         class SomeResource(CogniteResource):
-            def __init__(self, created_time: int = 1) -> None:
+            def __init__(self, created_time: int = 1, last_updated_time: int = 1) -> None:
                 self.created_time = created_time
+                self.last_updated_time = last_updated_time
 
             _load = None  # type: ignore [assignment]
 
         expected_df = pd.DataFrame(
-            {"value": [pd.Timestamp(1, unit="ms")]}, index=["created_time"], dtype="datetime64[ms]"
+            {"value": [pd.Timestamp(1, unit="ms"), pd.Timestamp(1, unit="ms")]},
+            index=["created_time", "last_updated_time"],
+            dtype="datetime64[ms]",
         )
 
         actual_df = SomeResource().to_pandas()

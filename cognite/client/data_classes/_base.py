@@ -163,17 +163,15 @@ class CogniteResource(ABC):
         for element in ignore or []:
             dumped.pop(element, None)
 
-        has_time_attribute = False
         if convert_timestamps:
             for k in TIME_ATTRIBUTES.intersection(dumped):
                 dumped[k] = pd.Timestamp(dumped[k], unit="ms")
-                has_time_attribute = True
 
         if expand_metadata and "metadata" in dumped and isinstance(dumped["metadata"], dict):
             dumped.update({f"{metadata_prefix}{k}": v for k, v in dumped.pop("metadata").items()})
 
         df = pd.Series(dumped).to_frame(name="value")
-        if len(dumped) == 1 and has_time_attribute:
+        if TIME_ATTRIBUTES.intersection(dumped) == dumped.keys():
             df.value = df.value.astype("datetime64[ms]")
         return df
 
