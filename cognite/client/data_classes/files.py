@@ -117,10 +117,10 @@ class FileMetadata(FileMetadataCore):
         uploaded (bool): Whether the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name (str): Name of the file.
         uploaded_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         instance_id (NodeId | None): The Instance ID for the file. (Only applicable for files created in DMS)
-        name (str): Name of the file.
         source (str | None): The source of the file.
         mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -140,21 +140,21 @@ class FileMetadata(FileMetadataCore):
         uploaded: bool,
         created_time: int,
         last_updated_time: int,
-        uploaded_time: int | None,
-        external_id: str | None,
-        instance_id: NodeId | None,
         name: str,
-        source: str | None,
-        mime_type: str | None,
-        metadata: dict[str, str] | None,
-        directory: str | None,
-        asset_ids: Sequence[int] | None,
-        data_set_id: int | None,
-        labels: Sequence[Label] | None,
-        geo_location: GeoLocation | None,
-        source_created_time: int | None,
-        source_modified_time: int | None,
-        security_categories: Sequence[int] | None,
+        uploaded_time: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+        source: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        directory: str | None = None,
+        asset_ids: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        labels: Sequence[Label] | None = None,
+        geo_location: GeoLocation | None = None,
+        source_created_time: int | None = None,
+        source_modified_time: int | None = None,
+        security_categories: Sequence[int] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -205,9 +205,6 @@ class FileMetadata(FileMetadataCore):
 
     def as_write(self) -> FileMetadataWrite:
         """Returns this FileMetadata in its writing format."""
-        if self.name is None:
-            raise ValueError("FileMetadata must have a name to be written")
-
         return FileMetadataWrite(
             external_id=self.external_id,
             instance_id=self.instance_id,
