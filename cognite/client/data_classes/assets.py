@@ -70,9 +70,9 @@ class AggregateResultItem(CogniteResource):
 
     def __init__(
         self,
-        child_count: int | None,
-        depth: int | None,
-        path: list[dict[str, Any]] | None,
+        child_count: int | None = None,
+        depth: int | None = None,
+        path: list[dict[str, Any]] | None = None,
         **_: Any,
     ) -> None:
         self.child_count = child_count
@@ -96,8 +96,9 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         id (int): A server-generated ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        root_id (int): ID of the root asset.
+        name (str): The name of the asset.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        name (str | None): The name of the asset.
         parent_id (int | None): The parent of the node, null if it is the root node.
         parent_external_id (str | None): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
         description (str | None): The description of the asset.
@@ -106,7 +107,6 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         source (str | None): The source of the asset.
         labels (list[Label] | None): A list of the labels associated with this resource item.
         geo_location (GeoLocation | None): The geographic metadata of the asset.
-        root_id (int | None): ID of the root asset.
         aggregates (AggregateResultItem | None): Aggregated metrics of the asset
     """
 
@@ -115,18 +115,18 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         id: int,
         created_time: int,
         last_updated_time: int,
-        external_id: str | None,
-        name: str | None,
-        parent_id: int | None,
-        parent_external_id: str | None,
-        description: str | None,
-        data_set_id: int | None,
-        metadata: dict[str, str] | None,
-        source: str | None,
-        labels: list[Label] | None,
-        geo_location: GeoLocation | None,
-        root_id: int | None,
-        aggregates: AggregateResultItem | None,
+        root_id: int,
+        name: str,
+        external_id: str | None = None,
+        parent_id: int | None = None,
+        parent_external_id: str | None = None,
+        description: str | None = None,
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+        source: str | None = None,
+        labels: list[Label] | None = None,
+        geo_location: GeoLocation | None = None,
+        aggregates: AggregateResultItem | None = None,
     ) -> None:
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("Asset.geo_location should be of type GeoLocation")
@@ -153,8 +153,9 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
             id=resource["id"],
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
+            root_id=resource["rootId"],
+            name=resource["name"],
             external_id=resource.get("externalId"),
-            name=resource.get("name"),
             parent_id=resource.get("parentId"),
             parent_external_id=resource.get("parentExternalId"),
             description=resource.get("description"),
@@ -163,15 +164,11 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
             source=resource.get("source"),
             labels=Label._load_list(resource.get("labels")),
             geo_location=GeoLocation._load_if(resource.get("geoLocation")),
-            root_id=resource.get("rootId"),
             aggregates=AggregateResultItem._load_if(resource.get("aggregates")),
         )
 
     def as_write(self) -> AssetWrite:
         """Returns this Asset in its write version."""
-        if self.name is None:
-            raise ValueError("Unable to convert Asset to write format: 'name' is a required field")
-
         return AssetWrite(
             external_id=self.external_id,
             name=self.name,

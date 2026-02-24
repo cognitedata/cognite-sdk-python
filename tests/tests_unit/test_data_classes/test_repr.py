@@ -76,7 +76,7 @@ class TestRepr:
                         metadata=None,
                         source=None,
                         geo_location=None,
-                        root_id=None,
+                        root_id=4,
                         aggregates=None,
                         labels=None,
                     )

@@ -48,7 +48,11 @@ def mock_ts_by_ids_response(
 def mock_asset_by_ids_response(
     httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[HTTPXMock]:
-    res = {"items": [{"id": 1, "externalId": "1", "name": "assetname", "createdTime": 0, "lastUpdatedTime": 0}]}
+    res = {
+        "items": [
+            {"id": 1, "externalId": "1", "name": "assetname", "rootId": 1, "createdTime": 0, "lastUpdatedTime": 0}
+        ]
+    }
     httpx_mock.add_response(
         method="POST", url=get_url(async_client.time_series) + "/assets/byids", status_code=200, json=res
     )
