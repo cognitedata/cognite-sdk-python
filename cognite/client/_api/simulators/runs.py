@@ -241,7 +241,7 @@ class SimulatorRunsAPI(APIClient):
         self,
         ids: int | Sequence[int],
     ) -> SimulationRun | SimulationRunList | None:
-        """`Retrieve simulation runs by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_by_id_simulators_runs_byids_post>`_
+        """`Retrieve simulation runs by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/retrieve_simulation_run_by_id>`_
 
         Args:
             ids (int | Sequence[int]): The ID(s) of the simulation run(s) to retrieve.
