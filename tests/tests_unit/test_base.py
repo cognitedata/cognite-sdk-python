@@ -413,7 +413,14 @@ class TestCogniteResource:
 
         class SomeResource(CogniteResource):
             def __init__(
-                self, a_list: list, ob: dict, metadata: dict, ob_ignore: dict, prim: str, prim_ignore: int
+                self,
+                a_list: list,
+                ob: dict,
+                metadata: dict,
+                ob_ignore: dict,
+                prim: str,
+                prim_ignore: int,
+                created_time: int,
             ) -> None:
                 self.a_list = a_list
                 self.ob = ob
@@ -421,14 +428,15 @@ class TestCogniteResource:
                 self.ob_ignore = ob_ignore
                 self.prim = prim
                 self.prim_ignore = prim_ignore
+                self.created_time = created_time
 
             _load = None  # type: ignore [assignment]
 
         expected_df = pd.DataFrame(
-            {"value": ["abc", [1, 2, 3], {"x": "y"}, "md_value"]},
-            index=["prim", "aList", "ob", "md_key"],
+            {"value": ["abc", [1, 2, 3], {"x": "y"}, "md_value", pd.Timestamp(1, unit="ms")]},
+            index=["prim", "aList", "ob", "md_key", "createdTime"],
         )
-        res = SomeResource([1, 2, 3], {"x": "y"}, {"md_key": "md_value"}, {"bla": "bla"}, "abc", 1)
+        res = SomeResource([1, 2, 3], {"x": "y"}, {"md_key": "md_value"}, {"bla": "bla"}, "abc", 1, 1)
         actual_df = res.to_pandas(
             expand_metadata=True, metadata_prefix="", ignore=["primIgnore", "obIgnore"], camel_case=True
         )
@@ -467,6 +475,22 @@ class TestCogniteResource:
         mr = MyResource()
         with pytest.raises(CogniteMissingClientError):
             mr.use()
+
+    def test_to_pandas_time_dtype_if_single_valued_resource(self) -> None:
+        import pandas as pd
+
+        class SomeResource(CogniteResource):
+            def __init__(self, created_time: int = 1) -> None:
+                self.created_time = created_time
+
+            _load = None  # type: ignore [assignment]
+
+        expected_df = pd.DataFrame(
+            {"value": [pd.Timestamp(1, unit="ms")]}, index=["created_time"], dtype="datetime64[ms]"
+        )
+
+        actual_df = SomeResource().to_pandas()
+        pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
 
 class TestCogniteResourceList:
