@@ -69,7 +69,7 @@ Changes are grouped as follows:
 - Extending a `Datapoints` instance is no longer supported.
 - **ClientConfig**:
   - `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`.
-    See the `Settings documentation <https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings>`_ for details.
+    See the `Settings documentation <https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings>`_ for details.
   - `timeout`: default has been increased from 30 sec to 60 sec
 - **global_config**:
   - New setting `follow_redirects` that controls whether or not to follow redirects. Defaults to `False`.
