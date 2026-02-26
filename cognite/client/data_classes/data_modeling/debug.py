@@ -57,8 +57,8 @@ class TranslatedQuery(CogniteResource):
     Internal representation of query. Depends on postgres-controlled output, hence the generic dict types.
 
     Args:
-        query (object): Parameterized query.
-        parameters (object): Parameter values for query.
+        query (dict[str, Any]): Parameterized query.
+        parameters (dict[str, Any]): Parameter values for query.
     """
 
     query: dict[str, Any]

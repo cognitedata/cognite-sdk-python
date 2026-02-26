@@ -511,16 +511,12 @@ class EdgeConnection(ConnectionDefinition, ABC):
     A connection has a max distance of one hop.
 
     Args:
-        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference
-            consists of a space and an external-id.
+        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference consists of a space and an external-id.
         source (ViewId): The target node(s) of this connection can be read through the view specified in 'source'.
         name (str | None): Readable property name.
         description (str | None): Description of the content and suggested use for this property.
-        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in
-            'edgeSource'.
-        direction (Literal["outwards", "inwards"]): The direction of the edge. The outward direction is used to
-            indicate that the edge points from the source to the target. The inward direction is used to indicate
-            that the edge points from the target to the source.
+        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in 'edgeSource'.
+        direction (Literal['outwards', 'inwards']): The direction of the edge. The outward direction is used to indicate that the edge points from the source to the target. The inward direction is used to indicate that the edge points from the target to the source.
     """
 
     type: DirectRelationReference
@@ -718,16 +714,12 @@ class EdgeConnectionApply(ConnectionDefinitionApply, ABC):
     It is called 'EdgeConnection' in the API spec.
 
     Args:
-        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference
-            consists of a space and an external-id.
+        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference consists of a space and an external-id.
         source (ViewId): The target node(s) of this connection can be read through the view specified in 'source'.
         name (str | None): Readable property name.
         description (str | None): Description of the content and suggested use for this property.
-        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in
-            'edgeSource'.
-        direction (Literal["outwards", "inwards"]): The direction of the edge. The outward direction is used to
-            indicate that the edge points from the source to the target. The inward direction is used to indicate
-            that the edge points from the target to the source.
+        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in 'edgeSource'.
+        direction (Literal['outwards', 'inwards']): The direction of the edge. The outward direction is used to indicate that the edge points from the source to the target. The inward direction is used to indicate that the edge points from the target to the source.
     """
 
     type: DirectRelationReference
