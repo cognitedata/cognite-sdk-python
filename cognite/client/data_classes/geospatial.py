@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     import geopandas
 
 
-RESERVED_PROPERTIES = {"externalId", "dataSetId", "assetIds", "createdTime", "lastUpdatedTime"}
+RESERVED_PROPERTIES = frozenset({"externalId", "dataSetId", "assetIds", "createdTime", "lastUpdatedTime"})
 
 
 class FeatureTypeCore(WriteableCogniteResource["FeatureTypeWrite"], ABC):
@@ -29,7 +29,7 @@ class FeatureTypeCore(WriteableCogniteResource["FeatureTypeWrite"], ABC):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         data_set_id (int | None): The ID of the dataset this feature type belongs to.
-        properties (dict[str, Any] | None): The properties of the feature type.
+        properties (dict[str, Any]): The properties of the feature type.
         search_spec (dict[str, Any] | None): The search spec of the feature type.
     """
 
@@ -37,7 +37,7 @@ class FeatureTypeCore(WriteableCogniteResource["FeatureTypeWrite"], ABC):
         self,
         external_id: str,
         data_set_id: int | None,
-        properties: dict[str, Any] | None,
+        properties: dict[str, Any],
         search_spec: dict[str, Any] | None,
     ) -> None:
         self.external_id = external_id
@@ -52,21 +52,21 @@ class FeatureType(FeatureTypeCore):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        data_set_id (int | None): The ID of the dataset this feature type belongs to.
         created_time (int): The created time of the feature type.
         last_updated_time (int): The last updated time of the feature type.
-        properties (dict[str, Any] | None): The properties of the feature type.
+        properties (dict[str, Any]): The properties of the feature type.
+        data_set_id (int | None): The ID of the dataset this feature type belongs to.
         search_spec (dict[str, Any] | None): The search spec of the feature type.
     """
 
     def __init__(
         self,
         external_id: str,
-        data_set_id: int | None,
         created_time: int,
         last_updated_time: int,
-        properties: dict[str, Any] | None,
-        search_spec: dict[str, Any] | None,
+        properties: dict[str, Any],
+        data_set_id: int | None = None,
+        search_spec: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -84,15 +84,12 @@ class FeatureType(FeatureTypeCore):
             data_set_id=resource.get("dataSetId"),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
-            properties=resource.get("properties"),
+            properties=resource["properties"],
             search_spec=resource.get("searchSpec"),
         )
 
     def as_write(self) -> FeatureTypeWrite:
         """Returns a write version of this feature type."""
-        if self.external_id is None or self.properties is None:
-            raise ValueError("External ID and properties must be set to create a feature type")
-
         return FeatureTypeWrite(
             external_id=self.external_id,
             properties=self.properties,
@@ -525,14 +522,6 @@ class CoordinateReferenceSystem(CoordinateReferenceSystemCore):
         proj_string (str): The projection specification string as described in https://proj.org/usage/quickstart.html
     """
 
-    def __init__(
-        self,
-        srid: int,
-        wkt: str,
-        proj_string: str,
-    ) -> None:
-        super().__init__(srid=srid, wkt=wkt, proj_string=proj_string)
-
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> CoordinateReferenceSystem:
         return cls(
@@ -543,9 +532,6 @@ class CoordinateReferenceSystem(CoordinateReferenceSystemCore):
 
     def as_write(self) -> CoordinateReferenceSystemWrite:
         """Returns a write version of this coordinate reference system."""
-        if self.srid is None or self.wkt is None or self.proj_string is None:
-            raise ValueError("SRID, WKT, and projString must be set to create a coordinate reference system")
-
         return CoordinateReferenceSystemWrite(srid=self.srid, wkt=self.wkt, proj_string=self.proj_string)
 
 
@@ -557,9 +543,6 @@ class CoordinateReferenceSystemWrite(CoordinateReferenceSystemCore):
         wkt (str): Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
         proj_string (str): The projection specification string as described in https://proj.org/usage/quickstart.html
     """
-
-    def __init__(self, srid: int, wkt: str, proj_string: str) -> None:
-        super().__init__(srid=srid, wkt=wkt, proj_string=proj_string)
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> CoordinateReferenceSystemWrite:
