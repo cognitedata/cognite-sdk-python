@@ -789,7 +789,7 @@ class TestDateTimeAligner:
         assert expected == MonthAligner.ceil(dt)
 
     def test_month_aligner_ceil__invalid_date(self) -> None:
-        with pytest.raises(ValueError, match=r"^day is out of range for month$"):
+        with pytest.raises(ValueError, match=r"day.+range"):
             MonthAligner.add_units(datetime(2023, 7, 31), 2)  # sept has 30 days
 
     @pytest.mark.parametrize(
@@ -808,7 +808,7 @@ class TestDateTimeAligner:
         assert expected == MonthAligner.add_units(dt, n_units)
 
     def test_month_aligner_add_unites__invalid_date(self) -> None:
-        with pytest.raises(ValueError, match=r"^day is out of range for month$"):
+        with pytest.raises(ValueError, match=r"day.+range"):
             MonthAligner.add_units(datetime(2023, 1, 29), 1)  # 2023 = non-leap year
 
 
