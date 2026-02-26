@@ -755,10 +755,18 @@ class TestWorkflowTriggers:
         cognite_client: CogniteClient,
         permanent_scheduled_trigger: WorkflowTrigger,
     ) -> None:
-        history = cognite_client.workflows.triggers.get_trigger_run_history(
-            external_id=permanent_scheduled_trigger.external_id
-        )
-        assert len(history) > 0
+        # The trigger fires every minute; wait up to 90 s for the first execution.
+        deadline = time.monotonic() + 90
+        while True:
+            history = cognite_client.workflows.triggers.get_trigger_run_history(
+                external_id=permanent_scheduled_trigger.external_id
+            )
+            if len(history) > 0:
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("Timed out waiting for scheduled trigger to fire")
+            time.sleep(5)
+
         assert history[0].external_id == permanent_scheduled_trigger.external_id
         assert history[0].workflow_external_id == permanent_scheduled_trigger.workflow_external_id
         assert history[0].workflow_version == permanent_scheduled_trigger.workflow_version
