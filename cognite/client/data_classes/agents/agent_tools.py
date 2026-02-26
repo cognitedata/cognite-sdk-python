@@ -138,7 +138,7 @@ class InstanceSpaces(WriteableCogniteResource):
     """Configuration for instance spaces in knowledge graph queries.
 
     Args:
-        type (Literal["manual", "all"]): The type of instance spaces.
+        type (Literal['manual', 'all']): The type of instance spaces.
         spaces (Sequence[str] | None): The spaces of the instance spaces.
     """
 
@@ -163,7 +163,7 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     Args:
         data_models (Sequence[DataModelInfo]): The data models and views to query.
         instance_spaces (InstanceSpaces | None): The instance spaces to query.
-        version (str | None): The version of the query generation strategy to use. A higher number does not necessarily mean a better query. Supported values are "v1" and "v2".
+        version (Literal['v1', 'v2'] | str | None): The version of the query generation strategy to use. A higher number does not necessarily mean a better query. Supported values are "v1" and "v2".
     """
 
     data_models: Sequence[DataModelInfo]
@@ -427,8 +427,8 @@ class UnknownAgentToolUpsert(AgentToolUpsert):
 
     Args:
         name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        type (str): The type of the agent tool.
         description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        type (str): The type of the agent tool.
         configuration (dict[str, Any] | None): The configuration of the agent tool.
     """
 

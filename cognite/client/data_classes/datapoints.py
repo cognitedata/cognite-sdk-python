@@ -402,15 +402,15 @@ class LatestDatapointQuery:
         Pass either ID or external ID.
 
     Args:
-        id (Optional[int]): The internal ID of the time series to query.
-        external_id (Optional[str]): The external ID of the time series to query.
-        instance_id (Optional[NodeId]): The instance ID of the time series to query.
-        before (Union[None, int, str, datetime]): Get latest datapoint before this time. None means 'now'.
+        id (InitVar[int | None]): The internal ID of the time series to query.
+        external_id (InitVar[str | None]): The external ID of the time series to query.
+        instance_id (InitVar[NodeId | None]): The instance ID of the time series to query.
+        before (None | int | str | datetime.datetime): Get latest datapoint before this time. None means 'now'.
         target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
         target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
-        include_status (bool): Also return the status code, an integer, for each datapoint in the response.
-        ignore_bad_datapoints (bool): Prevent data points with a bad status code to be returned. Default: True.
-        treat_uncertain_as_bad (bool): Treat uncertain status codes as bad. If false, treat uncertain as good. Default: True.
+        include_status (bool | None): Also return the status code, an integer, for each datapoint in the response.
+        ignore_bad_datapoints (bool | None): Prevent data points with a bad status code to be returned. Default: True.
+        treat_uncertain_as_bad (bool | None): Treat uncertain status codes as bad. If false, treat uncertain as good. Default: True.
     """
 
     id: InitVar[int | None] = None

@@ -1270,7 +1270,7 @@ class WorkflowVersionId:
 
     Args:
         workflow_external_id (str): The external ID of the workflow.
-        version (str, optional): The version of the workflow. Defaults to None.
+        version (str | None): The version of the workflow. Defaults to None.
     """
 
     workflow_external_id: str
