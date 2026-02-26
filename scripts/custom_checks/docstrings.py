@@ -16,7 +16,6 @@ import inspect
 import itertools
 import re
 import types
-from dataclasses import is_dataclass
 from pathlib import Path
 
 import numpy as np
@@ -90,7 +89,7 @@ class ReturnParam(Param):
             self.annotation, self.description = line.split(": ", 1)
 
     def __repr__(self):
-        return f"Param({self.annotation!r}, {self.description!r})"
+        return f"ReturnParam({self.annotation!r}, {self.description!r})"
 
 
 def count_indent(s):
@@ -236,7 +235,7 @@ class DocstrFormatter:
             self.add_space_after_args = not self.line_args_group[-1].strip()
 
         if self.line_return_group is not None:
-            self.return_parameter = DocstrFormatter._parse_returns_section(self.line_return_group, indentation)
+            self.return_parameter = DocstrFormatter._parse_returns_section(self.line_return_group)
             self.add_space_after_returns = not self.line_return_group[-1].strip()
 
     @staticmethod
@@ -260,7 +259,7 @@ class DocstrFormatter:
         return parameters
 
     @staticmethod
-    def _parse_returns_section(lines, indent):
+    def _parse_returns_section(lines):
         line = lines[1].strip()
         for extra_line in lines[2:]:
             # Assume multilines regardless of (missing extra) indentation belongs:
@@ -268,12 +267,15 @@ class DocstrFormatter:
         return ReturnParam(line)
 
     def docstring_is_correct(self):
-        return_annot_is_correct = False
-        if self.actual_return_annotation == "None":
-            # If the function returns None, we don't want a returns-section:
+        if self.actual_return_annotation in (None, "None"):
+            # If the function returns None (or is an `__init__`), the docstring should not have a `Returns:` section:
             return_annot_is_correct = self.return_parameter is None
         elif self.return_parameter is not None:
+            # If the function has a return value, and the docstring has a `Returns:` section, the annotations must match:
             return_annot_is_correct = self.actual_return_annotation == self.return_parameter.annotation
+        else:
+            # If the function has a return value but no `Returns:` section, the docstring is incorrect:
+            return_annot_is_correct = False
 
         parsed_annotations = dict((p.var_name, p.annotation) for p in self.parameters)
         parameters_are_correct = (
@@ -302,7 +304,8 @@ class DocstrFormatter:
         return fixed_lines
 
     def _create_docstring_return_description(self):
-        if self.actual_return_annotation == "None":
+        # dataclasses auto-created __init__ doesn't use stringified annotations:
+        if self.actual_return_annotation in ("None", None):
             return []
 
         description = "No description."
@@ -361,9 +364,9 @@ class DocstrFormatter:
         if self.original_doc == new_docstr:
             # Shouldn't be possible, but surely it will happen :D
             raise RuntimeError(
-                "Existing docstring was considered wrong, but the newly generated one was identical... "
-                "If pre-commit does not report any other errors, consider committing using '--no-verify' "
-                "and create an issue on github!"
+                f"Existing docstring was considered wrong for class/function: {cls_or_fn} (method description: "
+                f"{method_description}), but the newly generated one was identical... If pre-commit does not "
+                "report any other errors, consider committing using '--no-verify' and create an issue on github!"
             )
 
         # Note: We can have multiple matches for generic docstrings, e.g. 'dump'. So to avoid next update failing
@@ -398,7 +401,7 @@ def format_docstring_class_methods(cls) -> list[str]:
         doc = cls.__doc__ if is_init else method.__doc__
         method_description = f"{cls.__name__}.{attr}"
 
-        if not doc or (is_init and is_dataclass(cls)):
+        if not doc:
             continue
 
         try:
