@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from typing_extensions import Self
 
@@ -62,17 +62,18 @@ class TransformationJob(CogniteResourceWithClientRef):
 
     Args:
         id (int): A server-generated ID for the object.
+        uuid (str): A server-generated UUID for the object.
         status (TransformationJobStatus): Status of the job.
         transformation_id (int): Server-generated ID of the transformation.
         transformation_external_id (str): external ID of the transformation.
         source_project (str): Name of the CDF project the data will be read from.
         destination_project (str): Name of the CDF project the data will be written to.
         destination (TransformationDestination): No description.
-        conflict_mode (str): What to do in case of id collisions: either "abort", "upsert", "update" or "delete".
+        conflict_mode (Literal['abort', 'delete', 'update', 'upsert']): What to do in case of id collisions: either "abort", "upsert", "update" or "delete".
         query (str): Query of the transformation that is being executed.
-        error (str | None): Error message from the server.
         ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
-        created_time (int | None): Time when the job was created.
+        created_time (int): Time when the job was created.
+        error (str | None): Error message from the server.
         started_time (int | None): Time when the job started running.
         finished_time (int | None): Time when the job finished running.
         last_seen_time (int | None): Time of the last status update from the job.
@@ -81,22 +82,24 @@ class TransformationJob(CogniteResourceWithClientRef):
     def __init__(
         self,
         id: int,
+        uuid: str,
         status: TransformationJobStatus,
         transformation_id: int,
         transformation_external_id: str,
         source_project: str,
         destination_project: str,
         destination: TransformationDestination,
-        conflict_mode: str,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"],
         query: str,
-        error: str | None,
         ignore_null_fields: bool,
-        created_time: int | None,
-        started_time: int | None,
-        finished_time: int | None,
-        last_seen_time: int | None,
+        created_time: int,
+        error: str | None = None,
+        started_time: int | None = None,
+        finished_time: int | None = None,
+        last_seen_time: int | None = None,
     ) -> None:
         self.id = id
+        self.uuid = uuid
         self.status = status
         self.transformation_id = transformation_id
         self.transformation_external_id = transformation_external_id
@@ -223,6 +226,7 @@ class TransformationJob(CogniteResourceWithClientRef):
             destination = TransformationDestination(type=resource["destination"])
         return cls(
             id=resource["id"],
+            uuid=resource["uuid"],
             status=TransformationJobStatus(resource["status"]),
             transformation_id=resource["transformationId"],
             transformation_external_id=resource["transformationExternalId"],
@@ -233,7 +237,7 @@ class TransformationJob(CogniteResourceWithClientRef):
             query=resource["query"],
             error=resource.get("error"),
             ignore_null_fields=resource["ignoreNullFields"],
-            created_time=resource.get("createdTime"),
+            created_time=resource["createdTime"],
             started_time=resource.get("startedTime"),
             finished_time=resource.get("finishedTime"),
             last_seen_time=resource.get("lastSeenTime"),

@@ -18,7 +18,7 @@ class TransformationSchemaType(CogniteResource):
 
 
 class TransformationSchemaArrayType(TransformationSchemaType):
-    def __init__(self, type: str, element_type: str | None, contains_null: bool) -> None:
+    def __init__(self, type: str, contains_null: bool, element_type: str | None = None) -> None:
         super().__init__(type=type)
         self.element_type = element_type
         self.contains_null = contains_null
@@ -34,7 +34,7 @@ class TransformationSchemaArrayType(TransformationSchemaType):
 
 class TransformationSchemaStructType(TransformationSchemaType):
     # TODO: Fields should probably be translated into an object
-    def __init__(self, type: str, fields: list[dict[str, Any]] | None) -> None:
+    def __init__(self, type: str, fields: list[dict[str, Any]] | None = None) -> None:
         super().__init__(type=type)
         self.fields = fields
 
