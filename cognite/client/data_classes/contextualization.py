@@ -96,7 +96,7 @@ class ContextualizationJob(CogniteResourceWithClientRef, ABC):
         status: str,
         status_time: int,
         created_time: int,
-        error_message: str | None,
+        error_message: str | None = None,
     ) -> None:
         self.job_id = job_id
         self.status = status
@@ -503,7 +503,7 @@ class DiagramConvertResults(ContextualizationJob):
         created_time: int,
         items: list[DiagramConvertItem],
         start_time: int,
-        error_message: str | None,
+        error_message: str | None = None,
     ) -> None:
         super().__init__(
             job_id=job_id,
@@ -579,11 +579,11 @@ class DiagramDetectItem(CogniteResource):
     def __init__(
         self,
         file_id: int,
-        file_external_id: str | None,
-        file_instance_id: dict[str, str] | None,
-        annotations: list[dict[str, Any]] | None,
-        page_range: dict[str, int] | None,
-        page_count: int | None,
+        file_external_id: str | None = None,
+        file_instance_id: dict[str, str] | None = None,
+        annotations: list[dict[str, Any]] | None = None,
+        page_range: dict[str, int] | None = None,
+        page_count: int | None = None,
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -627,7 +627,7 @@ class DiagramDetectResults(ContextualizationJob):
         created_time: int,
         items: list[DiagramDetectItem],
         start_time: int,
-        error_message: str | None,
+        error_message: str | None = None,
     ) -> None:
         super().__init__(
             job_id=job_id,
@@ -1111,8 +1111,8 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
         status_time: int,
         created_time: int,
         items: list[VisionExtractItem],
-        start_time: int | None,
-        error_message: str | None,
+        start_time: int | None = None,
+        error_message: str | None = None,
     ) -> None:
         super().__init__(
             job_id=job_id,
@@ -1270,7 +1270,7 @@ class EntityMatchingPredictionResult(ContextualizationJob):
         status_time: int,
         created_time: int,
         start_time: int,
-        error_message: str | None,
+        error_message: str | None = None,
     ) -> None:
         super().__init__(
             job_id=job_id,
