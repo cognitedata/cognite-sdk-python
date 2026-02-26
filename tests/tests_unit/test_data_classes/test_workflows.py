@@ -12,6 +12,7 @@ from cognite.client.data_classes.workflows import (
     FunctionTaskParameters,
     SimulationInputOverride,
     SimulationTaskParameters,
+    TagDetectionTaskOutput,
     TransformationTaskOutput,
     TransformationTaskParameters,
     WorkflowDefinition,
@@ -48,6 +49,49 @@ class TestWorkflowTaskOutput:
     )
     def test_serialization(self, output: WorkflowTaskOutput, expected: dict):
         assert output.dump(camel_case=True) == expected
+
+    @pytest.mark.parametrize(
+        ["data", "cls"],
+        [
+            (
+                {
+                    "taskType": "function",
+                    "output": {"callId": 123, "functionId": 3456, "response": {"test": 1}},
+                },
+                FunctionTaskOutput,
+            ),
+            ({"taskType": "dynamic", "output": {}}, DynamicTaskOutput),
+            ({"taskType": "cdf", "output": {"response": {"test": 1}, "statusCode": 200}}, CDFTaskOutput),
+            ({"taskType": "transformation", "output": {"jobId": 789}}, TransformationTaskOutput),
+            (
+                {
+                    "taskType": "tagDetection",
+                    "output": {
+                        "jobs": [
+                            {
+                                "jobId": 321,
+                                "status": "Completed",
+                                "filePageRanges": [
+                                    {
+                                        "instanceId": {"space": "sp", "externalId": "id", "type": "node"},
+                                        "pageRange": {"begin": 1, "end": 5},
+                                        "errorMessage": None,
+                                    }
+                                ],
+                                "errorMessage": None,
+                            }
+                        ]
+                    },
+                },
+                TagDetectionTaskOutput,
+            ),
+        ],
+        ids=["function", "dynamic", "cdf", "transformation", "tagDetection"],
+    )
+    def test_serialization_roundtrip(self, data: dict, cls: type[WorkflowTaskOutput]):
+        task_output = WorkflowTaskOutput.load_output(data)
+        assert isinstance(task_output, cls)
+        assert task_output.dump(camel_case=True) == data["output"]
 
 
 class TestWorkflowId:
