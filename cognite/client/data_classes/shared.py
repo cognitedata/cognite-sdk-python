@@ -49,7 +49,7 @@ class AggregateUniqueValuesResult(AggregateResult):
         value (int | str | None): A unique value from the requested field
     """
 
-    def __init__(self, count: int, value: int | str | None) -> None:
+    def __init__(self, count: int, value: int | str | None = None) -> None:
         super().__init__(count=count)
         self.value = value
 
