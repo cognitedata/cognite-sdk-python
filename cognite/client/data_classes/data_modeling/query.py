@@ -185,10 +185,10 @@ class Query(QueryBase["ResultSetExpression", Select]):
     r"""Query allows you to do advanced queries on the data model.
 
     Args:
-        with_ (Mapping[str, ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
-        select (Mapping[str, Select]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
-        parameters (Mapping[str, PropertyValue] | None): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
-        cursors (Mapping[str, str | None] | None): A dictionary of cursors to use in the query. These allow for pagination.
+        with_ (MutableMapping[str, ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
+        select (MutableMapping[str, Select]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
+        parameters (Mapping[str, PropertyValue]): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
+        cursors (Mapping[str, str | None]): A dictionary of cursors to use in the query. These allow for pagination.
     """
 
     @classmethod
@@ -201,8 +201,8 @@ class QuerySync(QueryBase["ResultSetExpressionSync", SelectSync]):
     r"""Sync allows you to do subscribe to changes in instances.
 
     Args:
-        with_ (MutableMapping[str, _T_ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
-        select (MutableMapping[str, _T_Select]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
+        with_ (MutableMapping[str, ResultSetExpressionSync]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select and parameters.
+        select (MutableMapping[str, SelectSync]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
         parameters (Mapping[str, PropertyValue]): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
         cursors (Mapping[str, str | None]): A dictionary of cursors to use in the query. These allow for pagination.
         allow_expired_cursors_and_accept_missed_deletes (bool): Sync cursors expire after 3 days because soft-deleted instances are cleaned up after this grace period, so a client using a cursor older than that risks missing deletes. If set to True, the API will allow the use of expired cursors.
