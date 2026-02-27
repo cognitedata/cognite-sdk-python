@@ -29,9 +29,6 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
-
-    Returns:
-        None: No description.
     """
 
     external_id: str
