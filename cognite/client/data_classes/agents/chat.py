@@ -56,8 +56,8 @@ class UnknownContent(MessageContent):
     """Unknown content type for forward compatibility.
 
     Args:
-        data (dict[str, Any]): The raw content data.
         type (str): The content type.
+        data (dict[str, Any]): The raw content data.
     """
 
     type: str
@@ -321,9 +321,8 @@ class Message(CogniteResource):
     """A message to send to an agent.
 
     Args:
-        content (str | MessageContent): The message content. If a string is provided,
-            it will be converted to TextContent.
-        role (Literal["user"]): The role of the message sender. Defaults to "user".
+        content (str | MessageContent): The message content. If a string is provided, it will be converted to TextContent.
+        role (Literal['user']): The role of the message sender. Defaults to "user".
     """
 
     content: MessageContent
@@ -408,7 +407,7 @@ class ToolConfirmationResult(ActionResult):
 
     Args:
         action_id (str): The ID of the action being responded to.
-        status (Literal["ALLOW", "DENY"]): Whether to allow or deny the tool execution.
+        status (Literal['ALLOW', 'DENY']): Whether to allow or deny the tool execution.
     """
 
     _type: ClassVar[str] = "toolConfirmation"
@@ -486,7 +485,7 @@ class AgentMessage(CogniteResource):
         data (list[AgentDataItem] | None): Data items in the response.
         reasoning (list[AgentReasoningItem] | None): Reasoning items in the response.
         actions (list[ActionCall] | None): Action calls requested by the agent.
-        role (Literal["agent"]): The role of the message sender.
+        role (Literal['agent']): The role of the message sender.
     """
 
     content: MessageContent | None = None

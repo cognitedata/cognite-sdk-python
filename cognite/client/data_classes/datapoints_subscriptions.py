@@ -402,9 +402,9 @@ class _DatapointSubscriptionBatchWithPartitions:
 
     Args:
         updates (list[DatapointsUpdate]): List of updates from the subscription, sorted by point in time they were applied to the time series. Every update contains a time series along with a set of changes to that time series.
-        partitions (list[DatapointSubscriptionPartition]): Which partitions/cursors to use for the next request. Map from partition index to cursor.
-        has_next (bool): Whether there is more data available at the time of the query. In rare cases, we may return true, even if there is no data available. If that is the case, just continue to query with the updated cursors, and it will eventually return false.
         subscription_changes (SubscriptionTimeSeriesUpdate): If present, this object represents changes to the subscription definition. The subscription will now start/stop listening to changes from the time series listed here.
+        has_next (bool): Whether there is more data available at the time of the query. In rare cases, we may return true, even if there is no data available. If that is the case, just continue to query with the updated cursors, and it will eventually return false.
+        partitions (list[DatapointSubscriptionPartition]): Which partitions/cursors to use for the next request. Map from partition index to cursor.
     """
 
     updates: list[DatapointsUpdate]
