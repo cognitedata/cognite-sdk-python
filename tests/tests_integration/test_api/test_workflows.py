@@ -53,12 +53,16 @@ def workflow_simint_routine(cognite_client: CogniteClient) -> str:
 
 
 @pytest.fixture(autouse=True, scope="module")
-def wf_setup_module(cognite_client: CogniteClient) -> None:
+def wf_setup_module(cognite_client: CogniteClient, permanent_wf_ext_id: str) -> None:
     """setup any state specific to the execution of the given module."""
     resource_age = timestamp_to_ms("30m-ago")
 
     wf_triggers = cognite_client.workflows.triggers.list(limit=None)
-    wf_triggers_to_delete = [wf.external_id for wf in wf_triggers if wf.last_updated_time < resource_age]
+    wf_triggers_to_delete = [
+        wft.external_id
+        for wft in wf_triggers
+        if wft.last_updated_time < resource_age and wft.workflow_external_id != permanent_wf_ext_id
+    ]
     if wf_triggers_to_delete:
         cognite_client.workflows.triggers.delete(wf_triggers_to_delete)
 
@@ -70,7 +74,9 @@ def wf_setup_module(cognite_client: CogniteClient) -> None:
         cognite_client.workflows.versions.delete(wf_versions_to_delete)
 
     wfs = cognite_client.workflows.list(limit=None)
-    wfs_to_delete = [wf.external_id for wf in wfs if wf.last_updated_time < resource_age]
+    wfs_to_delete = [
+        wf.external_id for wf in wfs if wf.last_updated_time < resource_age and wf.external_id != permanent_wf_ext_id
+    ]
     if wfs_to_delete:
         cognite_client.workflows.delete(wfs_to_delete)
 
@@ -330,10 +336,16 @@ def workflow_execution_list_test_scoped(
 
 
 @pytest.fixture(scope="session")
-def permanent_workflow_for_triggers(cognite_client: CogniteClient, os_and_py_version: str) -> WorkflowVersion:
-    workflow = WorkflowUpsert(
-        external_id="integ_test_wf_trigger" + os_and_py_version,
-    )
+def permanent_wf_ext_id(os_and_py_version: str, sdk_version: tuple[str, str, str]) -> str:
+    return f"integ_test_wf_trigger_{os_and_py_version}_{sdk_version[0]}"
+
+
+@pytest.fixture(scope="session")
+def permanent_workflow_for_triggers(
+    cognite_client: CogniteClient,
+    permanent_wf_ext_id: str,
+) -> WorkflowVersion:
+    workflow = WorkflowUpsert(external_id=permanent_wf_ext_id, description="Permanent workflow for trigger testing")
     cognite_client.workflows.upsert(workflow)
     version = WorkflowVersionUpsert(
         workflow_external_id=workflow.external_id,
