@@ -170,7 +170,10 @@ class CogniteResource(ABC):
         if expand_metadata and "metadata" in dumped and isinstance(dumped["metadata"], dict):
             dumped.update({f"{metadata_prefix}{k}": v for k, v in dumped.pop("metadata").items()})
 
-        return pd.Series(dumped).to_frame(name="value")
+        df = pd.Series(dumped).to_frame(name="value")
+        if TIME_ATTRIBUTES.intersection(dumped) == dumped.keys():
+            df.value = df.value.astype("datetime64[ms]")
+        return df
 
     def _repr_html_(self) -> str:
         from cognite.client.utils._pandas_helpers import notebook_display_with_fallback

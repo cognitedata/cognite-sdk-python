@@ -145,7 +145,7 @@ def convert_nullable_int_cols(df: pd.DataFrame) -> pd.DataFrame:
 
 def convert_timestamp_columns_to_datetime(df: pd.DataFrame) -> pd.DataFrame:
     to_convert = df.columns.intersection(TIME_ATTRIBUTES)
-    df[to_convert] = (1_000_000 * df[to_convert]).astype("datetime64[ns]")
+    df[to_convert] = df[to_convert].astype("datetime64[ms]")
     return df
 
 
