@@ -76,11 +76,11 @@ class DatapointSubscription(DatapointSubscriptionCore):
         partition_count: int,
         created_time: int,
         last_updated_time: int,
-        time_series_count: int | None,
-        filter: Filter | None,
-        name: str | None,
-        description: str | None,
-        data_set_id: int | None,
+        time_series_count: int | None = None,
+        filter: Filter | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        data_set_id: int | None = None,
     ) -> None:
         super().__init__(external_id, partition_count, filter, name, description, data_set_id)
         self.time_series_count = time_series_count

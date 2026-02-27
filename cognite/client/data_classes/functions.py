@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, Protocol, TypeAlias
 
 from typing_extensions import Self
 
@@ -136,11 +136,11 @@ class Function(FunctionCore):
         id (int): ID of the function.
         created_time (int): Created time in UNIX.
         name (str): Name of the function.
+        status (str): Status of the function.
+        file_id (int): File id of the code represented by this object.
         external_id (str | None): External id of the function.
         description (str | None): Description of the function.
         owner (str | None): Owner of the function.
-        status (str): Status of the function.
-        file_id (int): File id of the code represented by this object.
         function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
         secrets (dict[str, str] | None): Secrets attached to the function ((key, value) pairs).
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
@@ -158,21 +158,21 @@ class Function(FunctionCore):
         id: int,
         created_time: int,
         name: str,
-        external_id: str | None,
-        description: str | None,
-        owner: str | None,
         status: str,
         file_id: int,
-        function_path: str,
-        secrets: dict[str, str] | None,
-        env_vars: dict[str, str] | None,
-        cpu: float | None,
-        memory: float | None,
-        runtime: RunTime | None,
-        runtime_version: str | None,
-        metadata: dict[str, str] | None,
-        error: dict | None,
-        last_called: int | None,
+        external_id: str | None = None,
+        description: str | None = None,
+        owner: str | None = None,
+        function_path: str = HANDLER_FILE_NAME,
+        secrets: dict[str, str] | None = None,
+        env_vars: dict[str, str] | None = None,
+        cpu: float | None = None,
+        memory: float | None = None,
+        runtime: RunTime | None = None,
+        runtime_version: str | None = None,
+        metadata: dict[str, str] | None = None,
+        error: dict | None = None,
+        last_called: int | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -220,8 +220,6 @@ class Function(FunctionCore):
 
     def as_write(self) -> FunctionWrite:
         """Returns a writeable version of this function."""
-        if self.file_id is None or self.name is None:
-            raise ValueError("file_id and name are required to create a function")
         return FunctionWrite(
             name=self.name,
             external_id=self.external_id,
@@ -494,26 +492,26 @@ class FunctionSchedule(FunctionScheduleCore):
     Args:
         id (int): ID of the schedule.
         name (str): Name of the function schedule.
-        function_id (int | None): ID of the function.
-        function_external_id (str | None): External id of the function.
-        description (str | None): Description of the function schedule.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cron_expression (str): Cron expression
         session_id (int): ID of the session running with the schedule.
         when (str): When the schedule will trigger, in human readable text (server generated from cron_expression).
+        function_id (int | None): ID of the function.
+        function_external_id (str | None): External id of the function.
+        description (str | None): Description of the function schedule.
     """
 
     def __init__(
         self,
         id: int,
         name: str,
-        function_id: int | None,
-        function_external_id: str | None,
-        description: str | None,
         created_time: int,
         cron_expression: str,
         session_id: int,
         when: str,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        description: str | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -543,9 +541,6 @@ class FunctionSchedule(FunctionScheduleCore):
 
     def as_write(self) -> FunctionScheduleWrite:
         """Returns a writeable version of this function schedule."""
-        if self.cron_expression is None or self.name is None:
-            raise ValueError("cron_expression or name are required to create a FunctionSchedule")
-
         return FunctionScheduleWrite(
             name=self.name,
             cron_expression=self.cron_expression,
@@ -674,24 +669,24 @@ class FunctionCall(CogniteResourceWithClientRef):
     Args:
         id (int): A server-generated ID for the object.
         start_time (int): Start time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        status (str): Status of the function call ("Running", "Completed" or "Failed").
+        function_id (int): No description.
         end_time (int | None): End time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         scheduled_time (int | None): Scheduled time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (str): Status of the function call ("Running", "Completed" or "Failed").
         schedule_id (int | None): The schedule id belonging to the call.
         error (dict | None): Error from the function call. It contains an error message and the stack trace.
-        function_id (int): No description.
     """
 
     def __init__(
         self,
         id: int,
         start_time: int,
-        end_time: int | None,
-        scheduled_time: int | None,
         status: str,
-        schedule_id: int | None,
-        error: dict | None,
         function_id: int,
+        end_time: int | None = None,
+        scheduled_time: int | None = None,
+        schedule_id: int | None = None,
+        error: dict | None = None,
     ) -> None:
         self.id = id
         self.start_time = start_time
@@ -714,6 +709,9 @@ class FunctionCall(CogniteResourceWithClientRef):
             error=resource.get("error"),
             function_id=resource["functionId"],
         )
+
+    def as_write(self) -> NoReturn:
+        raise RuntimeError("FunctionCall is purely a read/response object and cannot be converted to a write object")
 
     async def get_response_async(self) -> dict[str, object] | None:
         """Retrieve the response from this function call.
@@ -782,14 +780,14 @@ class FunctionCallLogEntry(CogniteResource):
     """A log entry for a function call.
 
     Args:
-        timestamp (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         message (str): Single line from stdout / stderr.
+        timestamp (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
         self,
-        timestamp: int | None,
         message: str,
+        timestamp: int | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.message = message

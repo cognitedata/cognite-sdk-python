@@ -22,11 +22,11 @@ class TransformationScheduleCore(WriteableCogniteResource["TransformationSchedul
     """The transformation schedules resource allows running recurrent transformations.
 
     Args:
-        interval (str | None): Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
+        interval (str): Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
         is_paused (bool): If true, the transformation is not scheduled.
     """
 
-    def __init__(self, interval: str | None, is_paused: bool) -> None:
+    def __init__(self, interval: str, is_paused: bool) -> None:
         self.interval = interval
         self.is_paused = is_paused
 
@@ -67,20 +67,14 @@ class TransformationSchedule(TransformationScheduleCore):
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             interval=resource["interval"],
-            is_paused=resource.get("isPaused", False),
+            is_paused=resource["isPaused"],
         )
 
     def as_write(self) -> TransformationScheduleWrite:
         """Returns this TransformationSchedule as a TransformationScheduleWrite"""
-        if self.interval is None:
-            raise ValueError("interval is required to create a TransformationSchedule")
-        id_: int | None = self.id
-        external_id = self.external_id
-        if id_ is not None and external_id is not None:
-            id_ = None
         return TransformationScheduleWrite(
-            id=id_,
-            external_id=external_id,
+            id=None,  # Must provide one of id or external_id
+            external_id=self.external_id,
             interval=self.interval,
             is_paused=self.is_paused,
         )

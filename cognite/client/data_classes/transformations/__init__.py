@@ -182,15 +182,15 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
         name (str): The name of the Transformation.
         query (str): SQL query of the transformation.
         destination (TransformationDestination): see TransformationDestination for options.
-        conflict_mode (str): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
+        conflict_mode (Literal['abort', 'delete', 'update', 'upsert']): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
         is_public (bool): Indicates if the transformation is visible to all in project or only to the owner.
         ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
-        source_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials key on the destination.
-        destination_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials on the destination.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         owner (str): Owner of the transformation: requester's identity.
         owner_is_current_user (bool): Indicates if the transformation belongs to the current user.
+        source_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials key on the destination.
+        destination_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials on the destination.
         running_job (TransformationJob | None): Details for the job of this transformation currently running.
         last_finished_job (TransformationJob | None): Details for the last finished job of this transformation.
         blocked (TransformationBlockedInfo | None): Provides reason and time if the transformation is blocked.
@@ -210,24 +210,24 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
         name: str,
         query: str,
         destination: TransformationDestination,
-        conflict_mode: str,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"],
         is_public: bool,
         ignore_null_fields: bool,
-        source_oidc_credentials: OidcCredentials | None,
-        destination_oidc_credentials: OidcCredentials | None,
         created_time: int,
         last_updated_time: int,
         owner: str,
         owner_is_current_user: bool,
-        running_job: TransformationJob | None,
-        last_finished_job: TransformationJob | None,
-        blocked: TransformationBlockedInfo | None,
-        schedule: TransformationSchedule | None,
-        data_set_id: int | None,
-        source_nonce: NonceCredentials | None,
-        destination_nonce: NonceCredentials | None,
-        source_session: SessionDetails | None,
-        destination_session: SessionDetails | None,
+        source_oidc_credentials: OidcCredentials | None = None,
+        destination_oidc_credentials: OidcCredentials | None = None,
+        running_job: TransformationJob | None = None,
+        last_finished_job: TransformationJob | None = None,
+        blocked: TransformationBlockedInfo | None = None,
+        schedule: TransformationSchedule | None = None,
+        data_set_id: int | None = None,
+        source_nonce: NonceCredentials | None = None,
+        destination_nonce: NonceCredentials | None = None,
+        source_session: SessionDetails | None = None,
+        destination_session: SessionDetails | None = None,
         tags: list[str] | None = None,
     ) -> None:
         self.external_id = external_id
@@ -273,15 +273,13 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
 
     def as_write(self) -> TransformationWrite:
         """Returns a writeable version of this transformation."""
-        if self.external_id is None or self.name is None or self.ignore_null_fields is None:
-            raise ValueError("External ID, name and ignore null fields are required to create a transformation.")
         return TransformationWrite(
             external_id=self.external_id,
             name=self.name,
             ignore_null_fields=self.ignore_null_fields,
             query=self.query,
             destination=self.destination,
-            conflict_mode=cast(Literal["abort", "delete", "update", "upsert"], self.conflict_mode),
+            conflict_mode=self.conflict_mode,
             is_public=self.is_public,
             source_oidc_credentials=self.source_oidc_credentials,
             destination_oidc_credentials=self.destination_oidc_credentials,
@@ -662,7 +660,7 @@ class TransformationFilter(CogniteFilter):
         name_regex (str | None): Regex expression to match the transformation name
         query_regex (str | None): Regex expression to match the transformation query
         destination_type (str | None): Transformation destination resource name to filter by.
-        conflict_mode (str | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
+        conflict_mode (Literal['abort', 'delete', 'update', 'upsert'] | None): Filters by a selected transformation action type: abort, upsert, update, delete
         cdf_project_name (str | None): Project name to filter by configured source and destination project
         has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
@@ -677,7 +675,7 @@ class TransformationFilter(CogniteFilter):
         name_regex: str | None = None,
         query_regex: str | None = None,
         destination_type: str | None = None,
-        conflict_mode: str | None = None,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"] | None = None,
         cdf_project_name: str | None = None,
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,

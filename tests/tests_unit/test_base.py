@@ -692,9 +692,19 @@ class TestCogniteResourceList:
                     "A test asset",
                     123,
                     [{"external_id": "ROTATING_EQUIPMENT"}],
+                    2,
                 ]
             },
-            index=["id", "external_id", "name", "parent_external_id", "description", "data_set_id", "labels"],
+            index=[
+                "id",
+                "external_id",
+                "name",
+                "parent_external_id",
+                "description",
+                "data_set_id",
+                "labels",
+                "root_id",
+            ],
         )
         pd.testing.assert_frame_equal(result_df, expected_df)
 

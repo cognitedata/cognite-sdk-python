@@ -1326,7 +1326,7 @@ class TestRetrieveRawDatapointsAPI:
         res = retrieve_method(external_id=ts.external_id, end=3, **kwargs)
 
         if isinstance(res, pd.DataFrame):
-            res = DatapointsArray(value=res.values.ravel())
+            res = DatapointsArray(id=0, is_string=False, value=res.values.ravel())
 
         assert math.isclose(res.value[0], -40)
         assert math.isclose(res.value[1], 32)
@@ -2101,7 +2101,7 @@ class TestRetrieveAggregateDatapointsAPI:
         for retrieve_method in all_retrieve_endpoints:
             res = retrieve_method(external_id=ts.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
             if isinstance(res, pd.DataFrame):
-                res = DatapointsArray(max=res.values.ravel())
+                res = DatapointsArray(id=0, is_string=False, max=res.values.ravel())
             assert math.isclose(res.max[0], 212)
 
     def test_status_codes_affect_aggregate_calculations(

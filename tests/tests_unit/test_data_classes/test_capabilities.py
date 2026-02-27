@@ -463,6 +463,7 @@ def mock_groups_resp(
             {
                 "name": "my name",
                 "id": 123,
+                "isDeleted": False,
                 "source_id": "something-uuid-like",
                 "capabilities": [unknown],
             }

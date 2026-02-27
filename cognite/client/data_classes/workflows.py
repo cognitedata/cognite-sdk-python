@@ -1572,10 +1572,10 @@ class WorkflowTrigger(WorkflowTriggerCore):
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
         is_paused (bool): Whether the trigger is paused.
-        input (dict | None): The input data passed to the workflow when an execution is started.
-        metadata (dict | None): Application specific metadata.
         created_time (int): The time when the workflow version trigger was created. Unix timestamp in milliseconds.
         last_updated_time (int): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds.
+        input (dict | None): The input data passed to the workflow when an execution is started.
+        metadata (dict | None): Application specific metadata.
     """
 
     def __init__(
@@ -1585,10 +1585,10 @@ class WorkflowTrigger(WorkflowTriggerCore):
         workflow_external_id: str,
         workflow_version: str,
         is_paused: bool,
-        input: dict | None,
-        metadata: dict | None,
         created_time: int,
         last_updated_time: int,
+        input: dict | None = None,
+        metadata: dict | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -1608,16 +1608,14 @@ class WorkflowTrigger(WorkflowTriggerCore):
             "trigger_rule": self.trigger_rule.dump(camel_case=camel_case),
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
+            "created_time": self.created_time,
+            "last_updated_time": self.last_updated_time,
+            "is_paused": self.is_paused,
         }
         if self.input:
             item["input"] = self.input
         if self.metadata:
             item["metadata"] = self.metadata
-        if self.created_time:
-            item["created_time"] = self.created_time
-        if self.last_updated_time:
-            item["last_updated_time"] = self.last_updated_time
-        item["is_paused"] = self.is_paused
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item
@@ -1678,8 +1676,8 @@ class WorkflowTriggerRun(CogniteResource):
         workflow_external_id: str,
         workflow_version: str,
         status: Literal["success", "failed"],
-        workflow_execution_id: str | None,
-        reason_for_failure: str | None,
+        workflow_execution_id: str | None = None,
+        reason_for_failure: str | None = None,
     ) -> None:
         self.external_id = external_id
         self.fire_time = fire_time

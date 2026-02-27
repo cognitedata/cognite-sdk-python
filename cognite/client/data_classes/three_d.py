@@ -99,8 +99,8 @@ class ThreeDModel(ThreeDModelCore):
         name: str,
         id: int,
         created_time: int,
-        data_set_id: int | None,
-        metadata: dict[str, str] | None,
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -122,8 +122,6 @@ class ThreeDModel(ThreeDModelCore):
 
     def as_write(self) -> ThreeDModelWrite:
         """Returns this ThreedModel in a write version."""
-        if self.name is None:
-            raise ValueError("ThreeDModel must have a name to be writable")
         return ThreeDModelWrite(
             name=self.name,
             data_set_id=self.data_set_id,
@@ -244,8 +242,8 @@ class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite
     """No description.
 
     Args:
-        file_id (int | None): The file id.
-        published (bool | None): True if the revision is marked as published.
+        file_id (int): The file id.
+        published (bool): True if the revision is marked as published.
         rotation (list[float] | None): No description.
         scale (list[float] | None): Scale of 3D model in directions X,Y and Z. Should be uniform.
         translation (list[float] | None): 3D offset of the model.
@@ -255,8 +253,8 @@ class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite
 
     def __init__(
         self,
-        file_id: int | None = None,
-        published: bool | None = None,
+        file_id: int,
+        published: bool,
         rotation: list[float] | None = None,
         scale: list[float] | None = None,
         translation: list[float] | None = None,
@@ -270,18 +268,6 @@ class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite
         self.translation = translation
         self.camera = camera
         self.metadata = metadata
-
-    @classmethod
-    def _load(cls, resource: dict) -> Self:
-        return cls(
-            file_id=resource.get("fileId"),
-            published=resource.get("published"),
-            rotation=resource.get("rotation"),
-            scale=resource.get("scale"),
-            translation=resource.get("translation"),
-            camera=RevisionCameraProperties._load_if(resource.get("camera")),
-            metadata=resource.get("metadata"),
-        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
@@ -298,16 +284,16 @@ class ThreeDModelRevision(ThreeDModelRevisionCore):
         id (int): The ID of the revision.
         file_id (int): The file id.
         published (bool): True if the revision is marked as published.
+        status (str): The status of the revision.
+        asset_mapping_count (int): The number of asset mappings for this revision.
+        created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
         rotation (list[float] | None): No description.
         scale (list[float] | None): Scale of 3D model in directions X,Y and Z. Should be uniform.
         translation (list[float] | None): 3D offset of the model.
         camera (RevisionCameraProperties | None): Initial camera position and target.
-        status (str): The status of the revision.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         thumbnail_threed_file_id (int | None): The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
         thumbnail_url (str | None): The URL of a thumbnail for the revision.
-        asset_mapping_count (int): The number of asset mappings for this revision.
-        created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
     """
 
     def __init__(
@@ -315,16 +301,16 @@ class ThreeDModelRevision(ThreeDModelRevisionCore):
         id: int,
         file_id: int,
         published: bool,
-        rotation: list[float] | None,
-        scale: list[float] | None,
-        translation: list[float] | None,
-        camera: RevisionCameraProperties | None,
         status: str,
-        metadata: dict[str, str] | None,
-        thumbnail_threed_file_id: int | None,
-        thumbnail_url: str | None,
         asset_mapping_count: int,
         created_time: int,
+        rotation: list[float] | None = None,
+        scale: list[float] | None = None,
+        translation: list[float] | None = None,
+        camera: RevisionCameraProperties | None = None,
+        metadata: dict[str, str] | None = None,
+        thumbnail_threed_file_id: int | None = None,
+        thumbnail_url: str | None = None,
     ) -> None:
         super().__init__(
             file_id=file_id,
@@ -362,11 +348,9 @@ class ThreeDModelRevision(ThreeDModelRevisionCore):
 
     def as_write(self) -> ThreeDModelRevisionWrite:
         """Returns this ThreedModelRevision in a write version."""
-        if self.file_id is None:
-            raise ValueError("ThreeDModelRevision must have a file_id to be writable")
         return ThreeDModelRevisionWrite(
             file_id=self.file_id,
-            published=self.published or False,
+            published=self.published,
             rotation=self.rotation,
             scale=self.scale,
             translation=self.translation,
@@ -520,10 +504,10 @@ class ThreeDNode(CogniteResource):
     Args:
         id (int): The ID of the node.
         tree_index (int): The index of the node in the 3D model hierarchy, starting from 0. The tree is traversed in a depth-first order.
-        parent_id (int | None): The parent of the node, null if it is the root node.
         depth (int): The depth of the node in the tree, starting from 0 at the root node.
         name (str): The name of the node.
         subtree_size (int): The number of descendants of the node, plus one (counting itself).
+        parent_id (int | None): The parent of the node, null if it is the root node.
         properties (dict[str, dict[str, str]] | None): Properties extracted from 3D model, with property categories containing key/value string pairs.
         bounding_box (BoundingBox3D | None): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
     """
@@ -532,12 +516,12 @@ class ThreeDNode(CogniteResource):
         self,
         id: int,
         tree_index: int,
-        parent_id: int | None,
         depth: int,
         name: str,
         subtree_size: int,
-        properties: dict[str, dict[str, str]] | None,
-        bounding_box: BoundingBox3D | None,
+        parent_id: int | None = None,
+        properties: dict[str, dict[str, str]] | None = None,
+        bounding_box: BoundingBox3D | None = None,
     ) -> None:
         self.id = id
         self.tree_index = tree_index
@@ -603,9 +587,9 @@ class ThreeDAssetMapping(ThreeDAssetMappingCore):
     def __init__(
         self,
         node_id: int,
-        asset_id: int | None,
-        tree_index: int | None,
-        subtree_size: int | None,
+        asset_id: int | None = None,
+        tree_index: int | None = None,
+        subtree_size: int | None = None,
     ) -> None:
         super().__init__(
             node_id=node_id,
@@ -625,8 +609,6 @@ class ThreeDAssetMapping(ThreeDAssetMappingCore):
 
     def as_write(self) -> ThreeDAssetMappingWrite:
         """Returns this ThreedAssetMapping in a write version."""
-        if self.node_id is None or self.asset_id is None:
-            raise ValueError("ThreeDAssetMapping must have a node_id and asset_id to be writable")
         return ThreeDAssetMappingWrite(
             node_id=self.node_id,
             asset_id=self.asset_id,

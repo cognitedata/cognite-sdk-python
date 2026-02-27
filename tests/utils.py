@@ -416,10 +416,13 @@ class FakeCogniteResourceGenerator:
             keyword_arguments.pop("is_null", None)
         elif resource_cls is Transformation:
             # schedule and jobs must match external id and id
-            keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
-            keyword_arguments["schedule"].id = keyword_arguments["id"]
-            keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
-            keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
+            if "schedule" in keyword_arguments:
+                keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
+                keyword_arguments["schedule"].id = keyword_arguments["id"]
+            if "running_job" in keyword_arguments:
+                keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
+            if "last_finished_job" in keyword_arguments:
+                keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
         elif resource_cls is TransformationScheduleWrite:
             # TransformationScheduleWrite requires either id or external_id
             keyword_arguments.pop("id", None)

@@ -45,7 +45,7 @@ class TransformationsAPI(APIClient):
         name_regex: str | None = None,
         query_regex: str | None = None,
         destination_type: str | None = None,
-        conflict_mode: str | None = None,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"] | None = None,
         cdf_project_name: str | None = None,
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
@@ -64,7 +64,7 @@ class TransformationsAPI(APIClient):
         name_regex: str | None = None,
         query_regex: str | None = None,
         destination_type: str | None = None,
-        conflict_mode: str | None = None,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"] | None = None,
         cdf_project_name: str | None = None,
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
@@ -82,7 +82,7 @@ class TransformationsAPI(APIClient):
         name_regex: str | None = None,
         query_regex: str | None = None,
         destination_type: str | None = None,
-        conflict_mode: str | None = None,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"] | None = None,
         cdf_project_name: str | None = None,
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
@@ -100,7 +100,7 @@ class TransformationsAPI(APIClient):
             name_regex (str | None): Regex expression to match the transformation name
             query_regex (str | None): Regex expression to match the transformation query
             destination_type (str | None): Transformation destination resource name to filter by.
-            conflict_mode (str | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
+            conflict_mode (Literal['abort', 'delete', 'update', 'upsert'] | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
             cdf_project_name (str | None): Project name to filter by configured source and destination project
             has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
             created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
@@ -282,7 +282,7 @@ class TransformationsAPI(APIClient):
         name_regex: str | None = None,
         query_regex: str | None = None,
         destination_type: str | None = None,
-        conflict_mode: str | None = None,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"] | None = None,
         cdf_project_name: str | None = None,
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
@@ -299,7 +299,7 @@ class TransformationsAPI(APIClient):
             name_regex (str | None): Regex expression to match the transformation name
             query_regex (str | None): Regex expression to match the transformation query
             destination_type (str | None): Transformation destination resource name to filter by.
-            conflict_mode (str | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
+            conflict_mode (Literal['abort', 'delete', 'update', 'upsert'] | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
             cdf_project_name (str | None): Project name to filter by configured source and destination project
             has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
             created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps

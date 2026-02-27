@@ -16,6 +16,7 @@ from cognite.client.data_classes.agents import (
     QueryTimeSeriesDatapointsAgentToolUpsert,
     SummarizeDocumentAgentToolUpsert,
 )
+from cognite.client.data_classes.agents.agent_tools import InstanceSpaces
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._text import random_string
 
@@ -83,7 +84,7 @@ class TestAgentsAPI:
                                 view_external_ids=["CogniteAsset"],
                             )
                         ],
-                        instance_spaces=None,
+                        instance_spaces=InstanceSpaces(type="all"),
                         version="v2",
                     ),
                 ),

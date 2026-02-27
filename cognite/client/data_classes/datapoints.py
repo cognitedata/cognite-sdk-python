@@ -606,10 +606,10 @@ class DatapointsArray(CogniteResource):
 
     def __init__(
         self,
-        id: int | None = None,
+        id: int,
+        is_string: bool,
         external_id: str | None = None,
         instance_id: NodeId | None = None,
-        is_string: bool | None = None,
         is_step: bool | None = None,
         unit: str | None = None,
         unit_external_id: str | None = None,
@@ -729,11 +729,11 @@ class DatapointsArray(CogniteResource):
             with contextlib.suppress(ValueError):  # Dont fail load if invalid (TODO: warn?)
                 timezone = parse_str_timezone(timezone)
         return cls(
-            id=dps_dct.get("id"),
+            id=dps_dct["id"],
             external_id=dps_dct.get("externalId"),
             instance_id=NodeId._load_if(dps_dct.get("instanceId")),
             is_step=dps_dct.get("isStep"),
-            is_string=dps_dct.get("isString"),
+            is_string=dps_dct["isString"],
             unit=dps_dct.get("unit"),
             granularity=dps_dct.get("granularity"),
             unit_external_id=dps_dct.get("unitExternalId"),
@@ -919,9 +919,9 @@ class Datapoints(CogniteResource):
 
     Args:
         id (int | None): Id of the time series the datapoints belong to
+        is_string (bool): Whether the time series contains numerical or string data.
         external_id (str | None): External id of the time series the datapoints belong to
         instance_id (NodeId | None): The instance id of the time series the datapoints belong to
-        is_string (bool | None): Whether the time series contains numerical or string data.
         is_step (bool | None): Whether the time series is stepwise or continuous.
         unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
         unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
@@ -954,10 +954,11 @@ class Datapoints(CogniteResource):
 
     def __init__(
         self,
-        id: int | None = None,
+        *,
+        id: int | None = None,  # TODO: When we stop misusing this for synthetic datapoints
+        is_string: bool,
         external_id: str | None = None,
         instance_id: NodeId | None = None,
-        is_string: bool | None = None,
         is_step: bool | None = None,
         unit: str | None = None,
         unit_external_id: str | None = None,
@@ -987,7 +988,7 @@ class Datapoints(CogniteResource):
         error: list[None | str] | None = None,
         timezone: datetime.timezone | ZoneInfo | None = None,
     ) -> None:
-        self.id = id
+        self.id: int = id  # type: ignore [assignment]
         self.external_id = external_id
         self.instance_id = instance_id
         self.is_string = is_string
@@ -1153,7 +1154,7 @@ class Datapoints(CogniteResource):
             id=dps_object.get("id"),
             external_id=dps_object.get("externalId"),
             instance_id=NodeId._load_if(dps_object.get("instanceId")),
-            is_string=dps_object.get("isString"),
+            is_string=dps_object["isString"],
             is_step=dps_object.get("isStep"),
             unit=dps_object.get("unit"),
             unit_external_id=dps_object.get("unitExternalId"),
