@@ -62,7 +62,7 @@ class SimulatorsAPI(APIClient):
             yield item
 
     async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SimulatorList:
-        """`List all simulators <https://developer.cognite.com/api#tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+        """`List all simulators <https://api-docs.cognite.com/20230101/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
         Args:
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.

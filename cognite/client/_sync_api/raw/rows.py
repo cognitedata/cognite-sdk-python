@@ -1,6 +1,6 @@
 """
 ===============================================================================
-65855d21c810dfa250de3af741093053
+0989d001b864f38f2765c784ab0b6bbc
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -106,7 +106,7 @@ class SyncRawRowsAPI(SyncAPIClient):
                 Note: When used together with 'partitions' the default is 10000 (matching the API limit) and there's an implicit minimum of 1000 rows.
             partitions (int | None): Retrieve rows in parallel using this number of workers. Defaults to not use concurrency.
                 The setting is capped at ``global_config.concurrency_settings.raw.read`` and _can_ be used with a finite limit. To prevent unexpected problems
-                and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
+                and maximize read throughput, check out `concurrency limits in the API documentation. <https://api-docs.cognite.com/20230101/tag/Raw/#section/Request-and-concurrency-limits>`_
             limit (int | None): Maximum number of rows to return. Can be used with partitions. Defaults to returning all items.
             min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). Milliseconds since epoch.
             max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). Milliseconds since epoch.
@@ -136,7 +136,7 @@ class SyncRawRowsAPI(SyncAPIClient):
         ensure_parent: bool = False,
     ) -> None:
         """
-        `Insert one or more rows into a table. <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
+        `Insert one or more rows into a table. <https://api-docs.cognite.com/20230101/tag/Raw/operation/postRows>`_
 
         Args:
             db_name (str): Name of the database.
@@ -174,7 +174,7 @@ class SyncRawRowsAPI(SyncAPIClient):
         self, db_name: str, table_name: str, dataframe: pd.DataFrame, ensure_parent: bool = False, dropna: bool = True
     ) -> None:
         """
-        `Insert pandas dataframe into a table <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
+        `Insert pandas dataframe into a table <https://api-docs.cognite.com/20230101/tag/Raw/operation/postRows>`_
 
         Uses index for row keys.
 
@@ -208,7 +208,7 @@ class SyncRawRowsAPI(SyncAPIClient):
 
     def delete(self, db_name: str, table_name: str, key: str | SequenceNotStr[str]) -> None:
         """
-        `Delete rows from a table. <https://developer.cognite.com/api#tag/Raw/operation/deleteRows>`_
+        `Delete rows from a table. <https://api-docs.cognite.com/20230101/tag/Raw/operation/deleteRows>`_
 
         Args:
             db_name (str): Name of the database.
@@ -229,7 +229,7 @@ class SyncRawRowsAPI(SyncAPIClient):
 
     def retrieve(self, db_name: str, table_name: str, key: str) -> Row | None:
         """
-        `Retrieve a single row by key. <https://developer.cognite.com/api#tag/Raw/operation/getRow>`_
+        `Retrieve a single row by key. <https://api-docs.cognite.com/20230101/tag/Raw/operation/getRow>`_
 
         Args:
             db_name (str): Name of the database.
@@ -268,7 +268,7 @@ class SyncRawRowsAPI(SyncAPIClient):
         infer_dtypes: bool = True,
     ) -> pd.DataFrame:
         """
-        `Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
+        `Retrieve rows in a table as a pandas dataframe. <https://api-docs.cognite.com/20230101/tag/Raw/operation/getRows>`_
 
         Rowkeys are used as the index.
 
@@ -282,7 +282,7 @@ class SyncRawRowsAPI(SyncAPIClient):
             partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used together with a (large) finite limit.
                 When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and ``global_config.concurrency_settings.raw.read``
                 for an unlimited query (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
-                `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
+                `concurrency limits in the API documentation. <https://api-docs.cognite.com/20230101/tag/Raw/#section/Request-and-concurrency-limits>`_
             last_updated_time_in_index (bool): Use a MultiIndex with row keys and last_updated_time as index.
             infer_dtypes (bool): If True, pandas will try to infer dtypes of the columns. Defaults to True.
 
@@ -323,7 +323,7 @@ class SyncRawRowsAPI(SyncAPIClient):
         partitions: int | None = None,
     ) -> RowList:
         """
-        `List rows in a table. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
+        `List rows in a table. <https://api-docs.cognite.com/20230101/tag/Raw/operation/getRows>`_
 
         Args:
             db_name (str): Name of the database.
@@ -335,7 +335,7 @@ class SyncRawRowsAPI(SyncAPIClient):
             partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used together with a (large) finite limit.
                 When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and ``global_config.concurrency_settings.raw.read``
                 for an unlimited query (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
-                `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
+                `concurrency limits in the API documentation. <https://api-docs.cognite.com/20230101/tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
             RowList: The requested rows.

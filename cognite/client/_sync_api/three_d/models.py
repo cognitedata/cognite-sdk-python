@@ -1,6 +1,6 @@
 """
 ===============================================================================
-548e0609338f18fa22fa7745a576bd52
+c0fdd9917d4201cf971771159e7740c9
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -56,7 +56,7 @@ class Sync3DModelsAPI(SyncAPIClient):
 
     def retrieve(self, id: int) -> ThreeDModel | None:
         """
-        `Retrieve a 3d model by id <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModel>`_
+        `Retrieve a 3d model by id <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/get3DModel>`_
 
         Args:
             id (int): Get the model with this id.
@@ -77,7 +77,7 @@ class Sync3DModelsAPI(SyncAPIClient):
 
     def list(self, published: bool | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> ThreeDModelList:
         """
-        `List 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModels>`_
+        `List 3d models. <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/get3DModels>`_
 
         Args:
             published (bool | None): Filter based on whether or not the model has published revisions.
@@ -127,7 +127,7 @@ class Sync3DModelsAPI(SyncAPIClient):
         metadata: dict[str, str] | None = None,
     ) -> ThreeDModel | ThreeDModelList:
         """
-        `Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
+        `Create new 3d models. <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/create3DModels>`_
 
         Args:
             name (str | ThreeDModelWrite | SequenceNotStr[str | ThreeDModelWrite]): The name of the 3d model(s) or 3D
@@ -182,7 +182,7 @@ class Sync3DModelsAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModel | ThreeDModelList:
         """
-        `Update 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_
+        `Update 3d models. <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/update3DModels>`_
 
         Args:
             item (ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]): ThreeDModel(s) to update
@@ -212,7 +212,7 @@ class Sync3DModelsAPI(SyncAPIClient):
 
     def delete(self, id: int | Sequence[int]) -> None:
         """
-        `Delete 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/delete3DModels>`_
+        `Delete 3d models. <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/delete3DModels>`_
 
         Args:
             id (int | Sequence[int]): ID or list of IDs to delete.

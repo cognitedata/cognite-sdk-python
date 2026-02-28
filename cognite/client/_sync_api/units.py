@@ -1,6 +1,6 @@
 """
 ===============================================================================
-341c216ca7805041eb8b81051219edd4
+dbc2ed4a0d0352b8e5b0712b0e53cd61
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -37,7 +37,7 @@ class SyncUnitAPI(SyncAPIClient):
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Unit | UnitList | None:
         """
-        `Retrieve one or more unit <https://developer.cognite.com/api#tag/Units/operation/byIdsUnits>`_
+        `Retrieve one or more unit <https://api-docs.cognite.com/20230101/tag/Units/operation/byIdsUnits>`_
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external IDs
@@ -140,7 +140,7 @@ class SyncUnitAPI(SyncAPIClient):
 
     def list(self) -> UnitList:
         """
-        `List all supported units <https://developer.cognite.com/api#tag/Units/operation/listUnits>`_
+        `List all supported units <https://api-docs.cognite.com/20230101/tag/Units/operation/listUnits>`_
 
         Returns:
             UnitList: List of units

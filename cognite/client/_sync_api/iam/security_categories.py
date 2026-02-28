@@ -1,6 +1,6 @@
 """
 ===============================================================================
-fea2e0196dbe6a2804d937ee40ff61e9
+262ee1d44f5324c5b287f896f43f7ee5
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -26,7 +26,7 @@ class SyncSecurityCategoriesAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SecurityCategoryList:
         """
-        `List security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/getSecurityCategories>`_
+        `List security categories. <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:
             limit (int | None): Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -61,7 +61,7 @@ class SyncSecurityCategoriesAPI(SyncAPIClient):
         | Sequence[SecurityCategoryWrite],
     ) -> SecurityCategory | SecurityCategoryList:
         """
-        `Create one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/createSecurityCategories>`_
+        `Create one or more security categories. <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/createSecurityCategories>`_
 
         Args:
             security_category (SecurityCategory | SecurityCategoryWrite | Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]): Security category or list of categories to create.
@@ -84,7 +84,7 @@ class SyncSecurityCategoriesAPI(SyncAPIClient):
 
     def delete(self, id: int | Sequence[int]) -> None:
         """
-        `Delete one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/deleteSecurityCategories>`_
+        `Delete one or more security categories. <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/deleteSecurityCategories>`_
 
         Args:
             id (int | Sequence[int]): ID or list of IDs of security categories to delete.

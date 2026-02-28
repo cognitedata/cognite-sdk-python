@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ff594df7d1b2db4d55aa175696b87157
+cc8143e90a00dbc0d1a9bde49d575f7f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -131,7 +131,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         self, *, ids: int | Sequence[int] | None = None, external_ids: str | SequenceNotStr[str] | None = None
     ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionList | None:
         """
-        `Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
+        `Retrieve simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
 
         Retrieve simulator routine revisions by ID or External Id.
 
@@ -296,7 +296,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         sort: PropertySort | None = None,
     ) -> SimulatorRoutineRevisionList:
         """
-        `Filter simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
+        `Filter simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
 
         Retrieves a list of simulator routine revisions that match the given criteria.
 

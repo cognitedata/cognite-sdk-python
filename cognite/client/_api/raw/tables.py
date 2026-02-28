@@ -63,7 +63,7 @@ class RawTablesAPI(APIClient):
     async def create(self, db_name: str, name: list[str]) -> raw.TableList: ...
 
     async def create(self, db_name: str, name: str | list[str]) -> raw.Table | raw.TableList:
-        """`Create one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/createTables>`_
+        """`Create one or more tables. <https://api-docs.cognite.com/20230101/tag/Raw/operation/createTables>`_
 
         Args:
             db_name (str): Database to create the tables in.
@@ -96,7 +96,7 @@ class RawTablesAPI(APIClient):
         return self._set_db_name_on_tables(tb, db_name)
 
     async def delete(self, db_name: str, name: str | SequenceNotStr[str]) -> None:
-        """`Delete one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/deleteTables>`_
+        """`Delete one or more tables. <https://api-docs.cognite.com/20230101/tag/Raw/operation/deleteTables>`_
 
         Args:
             db_name (str): Database to delete tables from.
@@ -151,7 +151,7 @@ class RawTablesAPI(APIClient):
             yield self._set_db_name_on_tables(tbl, db_name)
 
     async def list(self, db_name: str, limit: int | None = DEFAULT_LIMIT_READ) -> raw.TableList:
-        """`List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_
+        """`List tables <https://api-docs.cognite.com/20230101/tag/Raw/operation/getTables>`_
 
         Args:
             db_name (str): The database to list tables from.

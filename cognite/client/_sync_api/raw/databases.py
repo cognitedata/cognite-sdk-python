@@ -1,6 +1,6 @@
 """
 ===============================================================================
-85ec28c30c20632fe6f6730bab7663fb
+d71668f67fe505fcc40cf96d04515217
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -55,7 +55,7 @@ class SyncRawDatabasesAPI(SyncAPIClient):
 
     def create(self, name: str | list[str]) -> Database | DatabaseList:
         """
-        `Create one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/createDBs>`_
+        `Create one or more databases. <https://api-docs.cognite.com/20230101/tag/Raw/operation/createDBs>`_
 
         Args:
             name (str | list[str]): A db name or list of db names to create.
@@ -76,7 +76,7 @@ class SyncRawDatabasesAPI(SyncAPIClient):
 
     def delete(self, name: str | SequenceNotStr[str], recursive: bool = False) -> None:
         """
-        `Delete one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/deleteDBs>`_
+        `Delete one or more databases. <https://api-docs.cognite.com/20230101/tag/Raw/operation/deleteDBs>`_
 
         Args:
             name (str | SequenceNotStr[str]): A db name or list of db names to delete.
@@ -95,7 +95,7 @@ class SyncRawDatabasesAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatabaseList:
         """
-        `List databases <https://developer.cognite.com/api#tag/Raw/operation/getDBs>`_
+        `List databases <https://api-docs.cognite.com/20230101/tag/Raw/operation/getDBs>`_
 
         Args:
             limit (int | None): Maximum number of databases to return. Defaults to 25. Set to -1, float("inf") or None to return all items.

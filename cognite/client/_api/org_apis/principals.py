@@ -15,7 +15,7 @@ class PrincipalsAPI(OrgAPIClient):
     _RESOURCE_PATH = "/principals"
 
     async def me(self) -> Principal:
-        """`Get the current caller's information. <https://developer.cognite.com/api#tag/Principals/operation/getMe>`_
+        """`Get the current caller's information. <https://api-docs.cognite.com/20230101/tag/Principals/operation/getMe>`_
 
         Returns:
             Principal: The principal of the user running the code, i.e. the
@@ -82,7 +82,7 @@ class PrincipalsAPI(OrgAPIClient):
         external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> Principal | PrincipalList | None:
-        """`Retrieve principal by reference in the organization <https://developer.cognite.com/api#tag/Principals/operation/getPrincipalsById>`_
+        """`Retrieve principal by reference in the organization <https://api-docs.cognite.com/20230101/tag/Principals/operation/getPrincipalsById>`_
 
         Args:
             id (str | SequenceNotStr[str] | None): The ID(s) of the principal(s) to retrieve.
@@ -111,7 +111,7 @@ class PrincipalsAPI(OrgAPIClient):
         )
 
     async def list(self, types: str | Sequence[str] | None = None, limit: int = DEFAULT_LIMIT_READ) -> PrincipalList:
-        """`List principals in the organization <https://developer.cognite.com/api#tag/Principals/operation/listPrincipals>`_
+        """`List principals in the organization <https://api-docs.cognite.com/20230101/tag/Principals/operation/listPrincipals>`_
 
         Args:
             types (str | Sequence[str] | None): Filter by principal type(s). Defaults to None, which means no filtering.
