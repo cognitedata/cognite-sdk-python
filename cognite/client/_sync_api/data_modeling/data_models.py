@@ -1,6 +1,6 @@
 """
 ===============================================================================
-4084f19e9d60803a93ffa88c0ac39ad0
+c0954d6bae1380177776758fc555f3c8
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -104,7 +104,7 @@ class SyncDataModelsAPI(SyncAPIClient):
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: bool = False
     ) -> DataModelList[ViewId] | DataModelList[View]:
         """
-        `Retrieve data_model(s) by id(s). <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_
+        `Retrieve data_model(s) by id(s). <https://api-docs.cognite.com/20230101/tag/Data-models/operation/byExternalIdsDataModels>`_
 
         Args:
             ids (DataModelIdentifier | Sequence[DataModelIdentifier]): Data Model identifier(s).
@@ -128,7 +128,7 @@ class SyncDataModelsAPI(SyncAPIClient):
 
     def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
         """
-        `Delete one or more data model <https://developer.cognite.com/api#tag/Data-models/operation/deleteDataModels>`_
+        `Delete one or more data model <https://api-docs.cognite.com/20230101/tag/Data-models/operation/deleteDataModels>`_
 
         Args:
             ids (DataModelIdentifier | Sequence[DataModelIdentifier]): Data Model identifier(s).
@@ -174,7 +174,7 @@ class SyncDataModelsAPI(SyncAPIClient):
         include_global: bool = False,
     ) -> DataModelList[View] | DataModelList[ViewId]:
         """
-        `List data models <https://developer.cognite.com/api#tag/Data-models/operation/listDataModels>`_
+        `List data models <https://api-docs.cognite.com/20230101/tag/Data-models/operation/listDataModels>`_
 
         Args:
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
@@ -223,7 +223,7 @@ class SyncDataModelsAPI(SyncAPIClient):
 
     def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
         """
-        `Create or update one or more data model. <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_
+        `Create or update one or more data model. <https://api-docs.cognite.com/20230101/tag/Data-models/operation/createDataModels>`_
 
         Args:
             data_model (DataModelApply | Sequence[DataModelApply]): Data model(s) to create or update (upsert).

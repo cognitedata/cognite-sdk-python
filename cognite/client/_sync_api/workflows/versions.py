@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c89364f15d0ee4178e12fb002ea38399
+362d76a56f7ddf064d938ced60fd759e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -82,7 +82,7 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
         self, version: WorkflowVersionUpsert | Sequence[WorkflowVersionUpsert], mode: Literal["replace"] = "replace"
     ) -> WorkflowVersion | WorkflowVersionList:
         """
-        `Create one or more workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
+        `Create one or more workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflows/operation/CreateOrUpdateWorkflowVersion>`_
 
         Note this is an upsert endpoint, so workflow versions that already exist will be updated, and new ones will be created.
 

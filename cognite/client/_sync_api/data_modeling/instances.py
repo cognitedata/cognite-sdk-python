@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e9ec879b211d48e1aa0e9d7c871a6f05
+1a6f5bf3b92a38c80ab64f4a1d9f01c1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -142,7 +142,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
         Yields:
             Edge | EdgeList | Node | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.data_modeling.instances(
                 chunk_size=chunk_size,
@@ -186,12 +186,12 @@ class SyncInstancesAPI(SyncAPIClient):
     def retrieve_edges(
         self,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
-        edge_cls: type[T_Edge] = Edge,  # type: ignore [assignment]
+        edge_cls: type[T_Edge] = Edge,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> EdgeList[T_Edge] | T_Edge | Edge | None:
         """
-        `Retrieve one or more edges by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+        `Retrieve one or more edges by id(s). <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
 
         Note:
             This method should be used for retrieving edges with a custom edge class. You can use it
@@ -251,7 +251,7 @@ class SyncInstancesAPI(SyncAPIClient):
         return run_sync(
             self.__async_client.data_modeling.instances.retrieve_edges(
                 edges=edges, edge_cls=edge_cls, sources=sources, include_typing=include_typing
-            )  # type: ignore [call-overload]
+            )
         )
 
     @overload
@@ -283,12 +283,12 @@ class SyncInstancesAPI(SyncAPIClient):
     def retrieve_nodes(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
-        node_cls: type[T_Node] = Node,  # type: ignore [assignment]
+        node_cls: type[T_Node] = Node,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> NodeList[T_Node] | T_Node | Node | None:
         """
-        `Retrieve one or more nodes by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+        `Retrieve one or more nodes by id(s). <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
 
         Note:
             This method should be used for retrieving nodes with a custom node class. You can use it
@@ -353,7 +353,7 @@ class SyncInstancesAPI(SyncAPIClient):
         return run_sync(
             self.__async_client.data_modeling.instances.retrieve_nodes(
                 nodes=nodes, node_cls=node_cls, sources=sources, include_typing=include_typing
-            )  # type: ignore [call-overload]
+            )
         )
 
     def retrieve(
@@ -364,7 +364,7 @@ class SyncInstancesAPI(SyncAPIClient):
         include_typing: bool = False,
     ) -> InstancesResult[Node, Edge]:
         """
-        `Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+        `Retrieve one or more instance by id(s). <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
 
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
@@ -415,7 +415,7 @@ class SyncInstancesAPI(SyncAPIClient):
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
     ) -> InstancesDeleteResult:
         """
-        `Delete one or more instances <https://developer.cognite.com/api#tag/Instances/operation/deleteBulk>`_
+        `Delete one or more instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/deleteBulk>`_
 
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
@@ -566,7 +566,7 @@ class SyncInstancesAPI(SyncAPIClient):
         replace: bool = False,
     ) -> InstancesApplyResult:
         """
-        `Add or update (upsert) instances. <https://developer.cognite.com/api#tag/Instances/operation/applyNodeAndEdges>`_
+        `Add or update (upsert) instances. <https://api-docs.cognite.com/20230101/tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
             nodes (NodeApply | Sequence[NodeApply] | None): Nodes to apply
@@ -576,6 +576,7 @@ class SyncInstancesAPI(SyncAPIClient):
             auto_create_direct_relations (bool): Whether to create missing direct relation targets when ingesting.
             skip_on_version_conflict (bool): If existingVersion is specified on any of the nodes/edges in the input, the default behaviour is that the entire ingestion will fail when version conflicts occur. If skipOnVersionConflict is set to true, items with version conflicts will be skipped instead. If no version is specified for nodes/edges, it will do the writing directly.
             replace (bool): How do we behave when a property value exists? Do we replace all matching and existing values with the supplied values (true)? Or should we merge in new values for properties together with the existing values (false)? Note: This setting applies for all nodes or edges specified in the ingestion call.
+
         Returns:
             InstancesApplyResult: Created instance(s)
 
@@ -1220,7 +1221,7 @@ class SyncInstancesAPI(SyncAPIClient):
         debug: DebugParameters | None = None,
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
         """
-        `List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
+        `List instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/advancedListInstance>`_
 
         Args:
             instance_type (Literal['node', 'edge'] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
@@ -1300,7 +1301,7 @@ class SyncInstancesAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.instances.list(
-                instance_type=instance_type,  # type: ignore [arg-type]
+                instance_type=instance_type,
                 include_typing=include_typing,
                 sources=sources,
                 space=space,
@@ -1308,5 +1309,5 @@ class SyncInstancesAPI(SyncAPIClient):
                 sort=sort,
                 filter=filter,
                 debug=debug,
-            )  # type: ignore [misc]
+            )
         )

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-3956adaf54aea2b5291a5c6ceea13e2d
+0eb88d958406c07c70a3a70bb4b168c9
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -61,7 +61,7 @@ class SyncSimulatorsAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SimulatorList:
         """
-        `List all simulators <https://developer.cognite.com/api#tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+        `List all simulators <https://api-docs.cognite.com/20230101/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
         Args:
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.

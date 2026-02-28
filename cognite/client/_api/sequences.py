@@ -176,7 +176,7 @@ class SequencesAPI(APIClient):
             yield item
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
-        """`Retrieve a single sequence by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
+        """`Retrieve a single sequence by id. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceById>`_
 
         Args:
             id (int | None): ID
@@ -207,7 +207,7 @@ class SequencesAPI(APIClient):
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> SequenceList:
-        """`Retrieve multiple sequences by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
+        """`Retrieve multiple sequences by id. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceById>`_
 
         Args:
             ids (typing.Sequence[int] | None): IDs
@@ -240,7 +240,7 @@ class SequencesAPI(APIClient):
         advanced_filter: Filter | dict[str, Any] | None = None,
         filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Count of sequences matching the specified filters and search. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Count of sequences matching the specified filters and search. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count.
@@ -281,7 +281,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Find approximate property count for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Find approximate property count for sequences. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             property (SequenceProperty | str | list[str]): The property to count the cardinality of.
@@ -331,7 +331,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Find approximate paths count for sequences.  <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Find approximate paths count for sequences.  <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -369,7 +369,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
-        """`Get unique paths with counts for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Get unique paths with counts for sequences. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             property (SequenceProperty | str | list[str]): The property to group by.
@@ -437,7 +437,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
-        """`Find approximate unique sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Find approximate unique sequence properties. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -477,7 +477,7 @@ class SequencesAPI(APIClient):
     async def create(
         self, sequence: Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]
     ) -> Sequence | SequenceList:
-        """`Create one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/createSequence>`_
+        """`Create one or more sequences. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/createSequence>`_
 
         Args:
             sequence (Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]): Sequence or list of Sequence to create. The Sequence columns parameter is a list of objects with fields `externalId` (external id of the column, when omitted, they will be given ids of 'column0, column1, ...'), `valueType` (data type of the column, either STRING, LONG, or DOUBLE, with default DOUBLE), `name`, `description`, `metadata` (optional fields to describe and store information about the data in the column). Other fields will be removed automatically, so a columns definition from a different sequence object can be passed here.
@@ -516,7 +516,7 @@ class SequencesAPI(APIClient):
         external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequences>`_
+        """`Delete one or more sequences. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequences>`_
 
         Args:
             id (int | typing.Sequence[int] | None): Id or list of ids
@@ -557,7 +557,7 @@ class SequencesAPI(APIClient):
         item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Sequence | SequenceList:
-        """`Update one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/updateSequences>`_
+        """`Update one or more sequences. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/updateSequences>`_
 
         Args:
             item (Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]): Sequences to update
@@ -791,7 +791,7 @@ class SequencesAPI(APIClient):
         filter: SequenceFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> SequenceList:
-        """`Search for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/searchSequences>`_
+        """`Search for sequences. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/searchSequences>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -840,7 +840,7 @@ class SequencesAPI(APIClient):
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> SequenceList:
-        """`List sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
+        """`List sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/advancedListSequences>`_
 
         Args:
             name (str | None): Filter out sequences that do not have this *exact* name.

@@ -157,7 +157,7 @@ class SimulatorModelRevision(WriteableCogniteResourceWithClientRef["SimulatorMod
         )
 
     async def get_data_async(self) -> SimulatorModelRevisionData | None:
-        """`Retrieve data associated with this simulator model revision. <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revision_data>`_
+        """`Retrieve data associated with this simulator model revision. <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/retrieve_simulator_model_revision_data>`_
 
         Returns:
             SimulatorModelRevisionData | None: Data for the simulator model revision.

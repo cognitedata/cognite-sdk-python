@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a0924757f3aa2b1e9014f5bc1247ee5f
+3a63b48aa34c1c2710c70aa92a3cb7b6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -33,7 +33,7 @@ class SyncSimulatorLogsAPI(SyncAPIClient):
 
     def retrieve(self, ids: int | Sequence[int]) -> SimulatorLogList | SimulatorLog | None:
         """
-        `Retrieve simulator logs <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
+        `Retrieve simulator logs <https://api-docs.cognite.com/20230101/tag/Simulator-Logs/operation/retrieve_simulator_logs>`_
 
         Simulator logs track what happens during simulation runs, model parsing, and generic connector logic.
         They provide valuable information for monitoring, debugging, and auditing.

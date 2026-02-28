@@ -101,7 +101,7 @@ class FunctionSchedulesAPI(APIClient):
     async def retrieve(
         self, id: int | Sequence[int], ignore_unknown_ids: bool = False
     ) -> FunctionSchedule | None | FunctionSchedulesList:
-        """`Retrieve a single function schedule by id. <https://developer.cognite.com/api#tag/Function-schedules/operation/byIdsFunctionSchedules>`_
+        """`Retrieve a single function schedule by id. <https://api-docs.cognite.com/20230101/tag/Function-schedules/operation/byIdsFunctionSchedules>`_
 
         Args:
             id (int | Sequence[int]): Schedule ID
@@ -137,7 +137,7 @@ class FunctionSchedulesAPI(APIClient):
         cron_expression: str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionSchedulesList:
-        """`List all schedules associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/listFunctionSchedules>`_
+        """`List all schedules associated with a specific project. <https://api-docs.cognite.com/20230101/tag/Function-schedules/operation/listFunctionSchedules>`_
 
         Args:
             name (str | None): Name of the function schedule.
@@ -195,7 +195,7 @@ class FunctionSchedulesAPI(APIClient):
         description: str | None = None,
         data: dict[str, object] | None = None,
     ) -> FunctionSchedule:
-        """`Create a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/postFunctionSchedules>`_
+        """`Create a schedule associated with a specific project. <https://api-docs.cognite.com/20230101/tag/Function-schedules/operation/postFunctionSchedules>`_
 
         Args:
             name (str | FunctionScheduleWrite): Name of the schedule or FunctionSchedule object. If a function schedule object is passed, the other arguments are ignored except for the client_credentials argument.
@@ -312,7 +312,7 @@ class FunctionSchedulesAPI(APIClient):
         )
 
     async def delete(self, id: int) -> None:
-        """`Delete a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/deleteFunctionSchedules>`_
+        """`Delete a schedule associated with a specific project. <https://api-docs.cognite.com/20230101/tag/Function-schedules/operation/deleteFunctionSchedules>`_
 
         Args:
             id (int): Id of the schedule
@@ -331,7 +331,7 @@ class FunctionSchedulesAPI(APIClient):
         await self._post(url, json={"items": [{"id": id}]}, semaphore=self._get_semaphore("delete"))
 
     async def get_input_data(self, id: int) -> dict[str, object] | None:
-        """`Retrieve the input data to the associated function. <https://developer.cognite.com/api#tag/Function-schedules/operation/getFunctionScheduleInputData>`_
+        """`Retrieve the input data to the associated function. <https://api-docs.cognite.com/20230101/tag/Function-schedules/operation/getFunctionScheduleInputData>`_
 
         Args:
             id (int): Id of the schedule
