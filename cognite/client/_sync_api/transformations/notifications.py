@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ffb8afc8b8e4dd416046292bf4dddc81
+573a554ba19bfee47533a4650862530e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -96,7 +96,7 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
         | Sequence[TransformationNotificationWrite],
     ) -> TransformationNotification | TransformationNotificationList:
         """
-        `Subscribe for notifications on the transformation errors. <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/createTransformationNotifications>`_
+        `Subscribe for notifications on the transformation errors. <https://api-docs.cognite.com/20230101/tag/Transformation-Notifications/operation/createTransformationNotifications>`_
 
         Args:
             notification (TransformationNotification | TransformationNotificationWrite | Sequence[TransformationNotification] | Sequence[TransformationNotificationWrite]): Notification or list of notifications to create.
@@ -125,7 +125,7 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TransformationNotificationList:
         """
-        `List notification subscriptions. <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/getTransformationNotifications>`_
+        `List notification subscriptions. <https://api-docs.cognite.com/20230101/tag/Transformation-Notifications/operation/getTransformationNotifications>`_
 
         Args:
             transformation_id (int | None): Filter by transformation internal numeric ID.
@@ -163,7 +163,7 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
 
     def delete(self, id: int | Sequence[int] | None = None) -> None:
         """
-        `Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/deleteTransformationNotifications>`_
+        `Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://api-docs.cognite.com/20230101/tag/Transformation-Notifications/operation/deleteTransformationNotifications>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of transformation notification ids

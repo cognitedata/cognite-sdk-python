@@ -94,7 +94,7 @@ class LabelsAPI(APIClient):
     async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> LabelDefinition | LabelDefinitionList | None:
-        """`Retrieve one or more label definitions by external id. <https://developer.cognite.com/api#tag/Labels/operation/byIdsLabels>`_
+        """`Retrieve one or more label definitions by external id. <https://api-docs.cognite.com/20230101/tag/Labels/operation/byIdsLabels>`_
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external ids
@@ -134,7 +134,7 @@ class LabelsAPI(APIClient):
         data_set_external_ids: str | SequenceNotStr[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> LabelDefinitionList:
-        """`List Labels <https://developer.cognite.com/api#tag/Labels/operation/listLabels>`_
+        """`List Labels <https://api-docs.cognite.com/20230101/tag/Labels/operation/listLabels>`_
 
         Args:
             name (str | None): returns the label definitions matching that name
@@ -183,7 +183,7 @@ class LabelsAPI(APIClient):
     async def create(
         self, label: LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]
     ) -> LabelDefinition | LabelDefinitionList:
-        """`Create one or more label definitions. <https://developer.cognite.com/api#tag/Labels/operation/createLabelDefinitions>`_
+        """`Create one or more label definitions. <https://api-docs.cognite.com/20230101/tag/Labels/operation/createLabelDefinitions>`_
 
         Args:
             label (LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]): The label definition(s) to create.
@@ -214,7 +214,7 @@ class LabelsAPI(APIClient):
         return await self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
 
     async def delete(self, external_id: str | SequenceNotStr[str] | None = None) -> None:
-        """`Delete one or more label definitions <https://developer.cognite.com/api#tag/Labels/operation/deleteLabels>`_
+        """`Delete one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels/operation/deleteLabels>`_
 
         Args:
             external_id (str | SequenceNotStr[str] | None): One or more label external ids

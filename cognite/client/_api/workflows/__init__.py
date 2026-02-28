@@ -82,7 +82,7 @@ class WorkflowAPI(APIClient):
     async def upsert(
         self, workflow: WorkflowUpsert | Sequence[WorkflowUpsert], mode: Literal["replace"] = "replace"
     ) -> Workflow | WorkflowList:
-        """`Create one or more workflow(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
+        """`Create one or more workflow(s). <https://api-docs.cognite.com/20230101/tag/Workflows/operation/CreateOrUpdateWorkflow>`_
 
         Note this is an upsert endpoint, so workflows that already exist will be updated, and new ones will be created.
 

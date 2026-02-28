@@ -1,6 +1,6 @@
 """
 ===============================================================================
-465f322855aba108f265e3ba8b07c9aa
+e0f9860956a1f01ae406c4ed41f27818
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -78,7 +78,7 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
         | Sequence[TransformationScheduleWrite],
     ) -> TransformationSchedule | TransformationScheduleList:
         """
-        `Schedule the specified transformation with the specified configuration(s). <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/createTransformationSchedules>`_
+        `Schedule the specified transformation with the specified configuration(s). <https://api-docs.cognite.com/20230101/tag/Transformation-Schedules/operation/createTransformationSchedules>`_
 
         Args:
             schedule (TransformationSchedule | TransformationScheduleWrite | Sequence[TransformationSchedule] | Sequence[TransformationScheduleWrite]): Configuration or list of configurations of the schedules to create.
@@ -101,7 +101,7 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> TransformationSchedule | None:
         """
-        `Retrieve a single transformation schedule by the id or external id of its transformation. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
+        `Retrieve a single transformation schedule by the id or external id of its transformation. <https://api-docs.cognite.com/20230101/tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
 
         Args:
             id (int | None): transformation ID
@@ -132,7 +132,7 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> TransformationScheduleList:
         """
-        `Retrieve multiple transformation schedules by the ids or external ids of the corresponding transformations. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
+        `Retrieve multiple transformation schedules by the ids or external ids of the corresponding transformations. <https://api-docs.cognite.com/20230101/tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
 
         Args:
             ids (Sequence[int] | None): transformation IDs
@@ -163,7 +163,7 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
 
     def list(self, include_public: bool = True, limit: int | None = DEFAULT_LIMIT_READ) -> TransformationScheduleList:
         """
-        `List all transformation schedules. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedules>`_
+        `List all transformation schedules. <https://api-docs.cognite.com/20230101/tag/Transformation-Schedules/operation/getTransformationSchedules>`_
 
         Args:
             include_public (bool): Whether public transformations should be included in the results. (default true).
@@ -190,7 +190,7 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> None:
         """
-        `Unschedule one or more transformations <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/deleteTransformationSchedules>`_
+        `Unschedule one or more transformations <https://api-docs.cognite.com/20230101/tag/Transformation-Schedules/operation/deleteTransformationSchedules>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -235,7 +235,7 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TransformationSchedule | TransformationScheduleList:
         """
-        `Update one or more transformation schedules <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/updateTransformationSchedules>`_
+        `Update one or more transformation schedules <https://api-docs.cognite.com/20230101/tag/Transformation-Schedules/operation/updateTransformationSchedules>`_
 
         Args:
             item (TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate | Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate]): Transformation schedule(s) to update

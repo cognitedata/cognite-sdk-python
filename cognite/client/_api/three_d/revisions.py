@@ -56,7 +56,7 @@ class ThreeDRevisionsAPI(APIClient):
             yield item
 
     async def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision | None:
-        """`Retrieve a 3d model revision by id <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevision>`_
+        """`Retrieve a 3d model revision by id <https://api-docs.cognite.com/20230101/tag/3D-Model-Revisions/operation/get3DRevision>`_
 
         Args:
             model_id (int): Get the revision under the model with this id.
@@ -98,7 +98,7 @@ class ThreeDRevisionsAPI(APIClient):
         | Sequence[ThreeDModelRevision]
         | Sequence[ThreeDModelRevisionWrite],
     ) -> ThreeDModelRevision | ThreeDModelRevisionList:
-        """`Create a revisions for a specified 3d model. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/create3DRevisions>`_
+        """`Create a revisions for a specified 3d model. <https://api-docs.cognite.com/20230101/tag/3D-Model-Revisions/operation/create3DRevisions>`_
 
         Args:
             model_id (int): Create revisions for this model.
@@ -129,7 +129,7 @@ class ThreeDRevisionsAPI(APIClient):
     async def list(
         self, model_id: int, published: bool = False, limit: int | None = DEFAULT_LIMIT_READ
     ) -> ThreeDModelRevisionList:
-        """`List 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevisions>`_
+        """`List 3d model revisions. <https://api-docs.cognite.com/20230101/tag/3D-Model-Revisions/operation/get3DRevisions>`_
 
         Args:
             model_id (int): List revisions under the model with this id.
@@ -165,7 +165,7 @@ class ThreeDRevisionsAPI(APIClient):
         | Sequence[ThreeDModelRevision | ThreeDModelRevisionUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModelRevision | ThreeDModelRevisionList:
-        """`Update 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/update3DRevisions>`_
+        """`Update 3d model revisions. <https://api-docs.cognite.com/20230101/tag/3D-Model-Revisions/operation/update3DRevisions>`_
 
         Args:
             model_id (int): Update the revision under the model with this id.
@@ -202,7 +202,7 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     async def delete(self, model_id: int, id: int | Sequence[int]) -> None:
-        """`Delete 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/delete3DRevisions>`_
+        """`Delete 3d model revisions. <https://api-docs.cognite.com/20230101/tag/3D-Model-Revisions/operation/delete3DRevisions>`_
 
         Args:
             model_id (int): Delete the revision under the model with this id.
@@ -224,7 +224,7 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     async def update_thumbnail(self, model_id: int, revision_id: int, file_id: int) -> None:
-        """`Update a revision thumbnail. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/updateThumbnail>`_
+        """`Update a revision thumbnail. <https://api-docs.cognite.com/20230101/tag/3D-Model-Revisions/operation/updateThumbnail>`_
 
         Args:
             model_id (int): Id of the model.
@@ -253,7 +253,7 @@ class ThreeDRevisionsAPI(APIClient):
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ThreeDNodeList:
-        """`Retrieves a list of nodes from the hierarchy in the 3D Model. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodes>`_
+        """`Retrieves a list of nodes from the hierarchy in the 3D Model. <https://api-docs.cognite.com/20230101/tag/3D-Model-Revisions/operation/get3DNodes>`_
 
         You can also request a specific subtree with the 'nodeId' query parameter and limit the depth of
         the resulting subtree with the 'depth' query parameter.
@@ -299,7 +299,7 @@ class ThreeDRevisionsAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         partitions: int | None = None,
     ) -> ThreeDNodeList:
-        """`List nodes in a revision, filtered by node property values. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/filter3DNodes>`_
+        """`List nodes in a revision, filtered by node property values. <https://api-docs.cognite.com/20230101/tag/3D-Model-Revisions/operation/filter3DNodes>`_
 
         Args:
             model_id (int): Id of the model.
@@ -334,7 +334,7 @@ class ThreeDRevisionsAPI(APIClient):
     async def list_ancestor_nodes(
         self, model_id: int, revision_id: int, node_id: int | None = None, limit: int | None = DEFAULT_LIMIT_READ
     ) -> ThreeDNodeList:
-        """`Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodeAncestors>`_
+        """`Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model <https://api-docs.cognite.com/20230101/tag/3D-Model-Revisions/operation/get3DNodeAncestors>`_
 
         Args:
             model_id (int): Id of the model.

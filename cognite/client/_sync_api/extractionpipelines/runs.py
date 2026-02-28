@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c7e0250a7afdf41370a375942043efcf
+d399a8a45c39407e7217371176777da7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -41,7 +41,7 @@ class SyncExtractionPipelineRunsAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ExtractionPipelineRunList:
         """
-        `List runs for an extraction pipeline with given external_id <https://developer.cognite.com/api#tag/Extraction-Pipelines-Runs/operation/filterRuns>`_
+        `List runs for an extraction pipeline with given external_id <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines-Runs/operation/filterRuns>`_
 
         Args:
             external_id (str): Extraction pipeline external Id.
@@ -103,7 +103,7 @@ class SyncExtractionPipelineRunsAPI(SyncAPIClient):
         | Sequence[ExtractionPipelineRunWrite],
     ) -> ExtractionPipelineRun | ExtractionPipelineRunList:
         """
-        `Create one or more extraction pipeline runs. <https://developer.cognite.com/api#tag/Extraction-Pipelines-Runs/operation/createRuns>`_
+        `Create one or more extraction pipeline runs. <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines-Runs/operation/createRuns>`_
 
         You can create an arbitrary number of extraction pipeline runs, and the SDK will split the request into multiple requests.
 

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-4fc58be818b3c0f31dea52d2572478db
+05d5d71f1fec9f95dd16fc44e599c4a3
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -33,7 +33,7 @@ class SyncSpaceStatisticsAPI(SyncAPIClient):
 
     def retrieve(self, space: str | SequenceNotStr[str]) -> SpaceStatistics | SpaceStatisticsList | None:
         """
-        `Retrieve usage data and limits per space <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatisticsByIds>`_
+        `Retrieve usage data and limits per space <https://api-docs.cognite.com/20230101/tag/Statistics/operation/getSpaceStatisticsByIds>`_
 
         Args:
             space (str | SequenceNotStr[str]): The space or spaces to retrieve statistics for.
@@ -59,7 +59,7 @@ class SyncSpaceStatisticsAPI(SyncAPIClient):
 
     def list(self) -> SpaceStatisticsList:
         """
-        `Retrieve usage for all spaces <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatistics>`_
+        `Retrieve usage for all spaces <https://api-docs.cognite.com/20230101/tag/Statistics/operation/getSpaceStatistics>`_
 
         Returns statistics for data modeling resources grouped by each space in the project.
 

@@ -8,7 +8,7 @@ class ThreeDFilesAPI(APIClient):
     _RESOURCE_PATH = "/3d/files"
 
     async def retrieve(self, id: int) -> bytes:
-        """`Retrieve the contents of a 3d file by id. <https://developer.cognite.com/api#tag/3D-Files/operation/get3DFile>`_
+        """`Retrieve the contents of a 3d file by id. <https://api-docs.cognite.com/20230101/tag/3D-Files/operation/get3DFile>`_
 
         Args:
             id (int): The id of the file to retrieve.

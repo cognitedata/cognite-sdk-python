@@ -360,7 +360,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> EdgeList[T_Edge] | T_Edge | Edge | None:
-        """`Retrieve one or more edges by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+        """`Retrieve one or more edges by id(s). <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
 
         Note:
             This method should be used for retrieving edges with a custom edge class. You can use it
@@ -465,7 +465,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> NodeList[T_Node] | T_Node | Node | None:
-        """`Retrieve one or more nodes by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+        """`Retrieve one or more nodes by id(s). <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
 
         Note:
             This method should be used for retrieving nodes with a custom node class. You can use it
@@ -541,7 +541,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> InstancesResult[Node, Edge]:
-        """`Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+        """`Retrieve one or more instance by id(s). <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
 
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
@@ -689,7 +689,7 @@ class InstancesAPI(APIClient):
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
     ) -> InstancesDeleteResult:
-        """`Delete one or more instances <https://developer.cognite.com/api#tag/Instances/operation/deleteBulk>`_
+        """`Delete one or more instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/deleteBulk>`_
 
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
@@ -952,7 +952,7 @@ class InstancesAPI(APIClient):
         skip_on_version_conflict: bool = False,
         replace: bool = False,
     ) -> InstancesApplyResult:
-        """`Add or update (upsert) instances. <https://developer.cognite.com/api#tag/Instances/operation/applyNodeAndEdges>`_
+        """`Add or update (upsert) instances. <https://api-docs.cognite.com/20230101/tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
             nodes (NodeApply | Sequence[NodeApply] | None): Nodes to apply
@@ -1731,7 +1731,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         debug: DebugParameters | None = None,
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
-        """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
+        """`List instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/advancedListInstance>`_
 
         Args:
             instance_type (Literal['node', 'edge'] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.

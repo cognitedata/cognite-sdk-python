@@ -106,7 +106,7 @@ class SimulatorRoutinesAPI(APIClient):
         self,
         routine: SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite],
     ) -> SimulatorRoutine | SimulatorRoutineList:
-        """`Create simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
+        """`Create simulator routines <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
 
         Args:
             routine (SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]): Simulator routine(s) to create.
@@ -153,7 +153,7 @@ class SimulatorRoutinesAPI(APIClient):
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
     ) -> None:
-        """`Delete simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
+        """`Delete simulator routines <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
 
         Args:
             ids (int | Sequence[int] | None): ids (or sequence of ids) for the routine(s) to delete.
@@ -180,7 +180,7 @@ class SimulatorRoutinesAPI(APIClient):
         kind: Literal["long"] | None = None,
         sort: PropertySort | None = None,
     ) -> SimulatorRoutineList:
-        """`Filter simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_
+        """`Filter simulator routines <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_
 
         Retrieves a list of simulator routines that match the given criteria.
 
@@ -278,7 +278,7 @@ class SimulatorRoutinesAPI(APIClient):
         wait: bool = True,
         timeout: float = 60,
     ) -> SimulationRun:
-        """`Run a simulation <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
+        """`Run a simulation <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
 
         Run a simulation for a given simulator routine. Supports two modes:
         1. By routine external ID only

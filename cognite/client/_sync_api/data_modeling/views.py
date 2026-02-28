@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0a26300de7d736aa782c880e1002e02e
+0c976425b581eb02458eccf3d09054bb
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -92,7 +92,7 @@ class SyncViewsAPI(SyncAPIClient):
         all_versions: bool = True,
     ) -> ViewList:
         """
-        `Retrieve a single view by id. <https://developer.cognite.com/api#tag/Views/operation/byExternalIdsViews>`_
+        `Retrieve a single view by id. <https://api-docs.cognite.com/20230101/tag/Views/operation/byExternalIdsViews>`_
 
         Args:
             ids (ViewIdentifier | Sequence[ViewIdentifier]): The view identifier(s). This can be given as a tuple of
@@ -120,7 +120,7 @@ class SyncViewsAPI(SyncAPIClient):
 
     def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
         """
-        `Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_
+        `Delete one or more views <https://api-docs.cognite.com/20230101/tag/Views/operation/deleteViews>`_
 
         Args:
             ids (ViewIdentifier | Sequence[ViewIdentifier]): View identifier(s)
@@ -146,7 +146,7 @@ class SyncViewsAPI(SyncAPIClient):
         include_global: bool = False,
     ) -> ViewList:
         """
-        `List views <https://developer.cognite.com/api#tag/Views/operation/listViews>`_
+        `List views <https://api-docs.cognite.com/20230101/tag/Views/operation/listViews>`_
 
         Args:
             limit (int | None): Maximum number of views to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
@@ -195,7 +195,7 @@ class SyncViewsAPI(SyncAPIClient):
 
     def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
         """
-        `Create or update (upsert) one or more views. <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_
+        `Create or update (upsert) one or more views. <https://api-docs.cognite.com/20230101/tag/Views/operation/ApplyViews>`_
 
         Args:
             view (ViewApply | Sequence[ViewApply]): View(s) to create or update.
