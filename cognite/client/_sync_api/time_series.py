@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d9423864e159891509f044b2d1b292d2
+50c24126e5e02623a6ba1aca2667303f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -548,7 +548,11 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.time_series.update(my_update)
 
-            Perform a partial update on a time series by instance id:
+            Perform a partial update on a time series by instance id.
+
+            **Warning**: It is not recommended to update a time series with an instance_id through the Time Series API.
+            Only a very limited set of legacy properties can be updated this way; the majority must be updated
+            via the Data Modeling API (the same API that was used to create the time series in the first place).
 
                 >>> from cognite.client.data_classes import TimeSeriesUpdate
                 >>> from cognite.client.data_classes.data_modeling import NodeId

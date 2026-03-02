@@ -301,7 +301,10 @@ class TestTimeSeriesAPI:
             assert retrieved is not None
             assert retrieved.instance_id == my_ts.as_id()
 
-            update_writable = retrieved.as_write()
+            with pytest.raises(ValueError, match=r"cannot be created via the Time Series API"):
+                retrieved.as_write()
+
+            update_writable = retrieved
             update_writable.metadata = {"c": "d"}
             update_writable.external_id = external_id
             update_writable.data_set_id = ts_test_dataset.id

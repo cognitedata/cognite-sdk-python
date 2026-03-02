@@ -255,7 +255,8 @@ class SyntheticDatapointsAPI(APIClient):
         for k, v in variables.items():
             if isinstance(v, TimeSeries | TimeSeriesWrite):
                 try:
-                    v = Identifier.load(external_id=v.external_id, instance_id=v.instance_id).as_primitive()
+                    instance_id = getattr(v, "instance_id", None)
+                    v = Identifier.load(external_id=v.external_id, instance_id=instance_id).as_primitive()
                 except ValueError:
                     # ^error message wrongly says id is accepted, which it is not
                     raise ValueError(

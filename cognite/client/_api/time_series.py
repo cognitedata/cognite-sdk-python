@@ -587,7 +587,11 @@ class TimeSeriesAPI(APIClient):
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.time_series.update(my_update)
 
-            Perform a partial update on a time series by instance id:
+            Perform a partial update on a time series by instance id.
+
+            **Warning**: It is not recommended to update a time series with an instance_id through the Time Series API.
+            Only a very limited set of legacy properties can be updated this way; the majority must be updated
+            via the Data Modeling API (the same API that was used to create the time series in the first place).
 
                 >>> from cognite.client.data_classes import TimeSeriesUpdate
                 >>> from cognite.client.data_classes.data_modeling import NodeId

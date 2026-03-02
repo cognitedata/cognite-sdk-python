@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 from datetime import datetime
 from enum import auto
@@ -123,10 +124,21 @@ class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
         return output
 
     def as_write(self) -> TimeSeriesWrite:
-        """Returns a TimeSeriesWrite object with the same properties as this TimeSeries."""
+        """Convert the time series to a writeable version.
+
+        Returns:
+            TimeSeriesWrite: A writeable version of this time series.
+
+        Raises:
+            ValueError: If the time series has an instance_id as these must be created via the Data Modeling API.
+        """
+        if self.instance_id is not None:
+            raise ValueError(
+                "Time series with an `instance_id` cannot be created via the Time Series API. "
+                "These must be created/updated/deleted via the Data Modeling API."
+            )
         return TimeSeriesWrite(
             external_id=self.external_id,
-            instance_id=self.instance_id,
             name=self.name,
             is_string=self.is_string,
             metadata=self.metadata,
@@ -224,7 +236,6 @@ class TimeSeriesWrite(WriteableCogniteResource["TimeSeriesWrite"]):
 
     Args:
         external_id (str | None): The externally supplied ID for the time series.
-        instance_id (NodeId | None): The Instance ID for the time series. (Only applicable for time series created in DMS)
         name (str | None): The display short name of the time series.
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -240,7 +251,6 @@ class TimeSeriesWrite(WriteableCogniteResource["TimeSeriesWrite"]):
     def __init__(
         self,
         external_id: str | None = None,
-        instance_id: NodeId | None = None,
         name: str | None = None,
         is_string: bool | None = None,
         metadata: dict[str, str] | None = None,
@@ -253,7 +263,6 @@ class TimeSeriesWrite(WriteableCogniteResource["TimeSeriesWrite"]):
         data_set_id: int | None = None,
     ) -> None:
         self.external_id = external_id
-        self.instance_id = instance_id
         self.name = name
         self.is_string = is_string
         self.metadata = metadata
@@ -269,7 +278,6 @@ class TimeSeriesWrite(WriteableCogniteResource["TimeSeriesWrite"]):
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource.get("externalId"),
-            instance_id=NodeId._load_if(resource.get("instanceId")),
             name=resource.get("name"),
             is_string=resource.get("isString"),
             metadata=resource.get("metadata"),
@@ -281,14 +289,6 @@ class TimeSeriesWrite(WriteableCogniteResource["TimeSeriesWrite"]):
             security_categories=resource.get("securityCategories"),
             data_set_id=resource.get("dataSetId"),
         )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case=camel_case)
-        if self.instance_id is not None:
-            output["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
-                camel_case=camel_case, include_instance_type=False
-            )
-        return output
 
     def as_write(self) -> TimeSeriesWrite:
         """Returns this TimeSeriesWrite object."""
@@ -365,6 +365,8 @@ class TimeSeriesUpdate(CogniteUpdate):
 
         super().__init__(id=id, external_id=external_id)
         self.instance_id = instance_id
+        if instance_id is not None:
+            self.warn_on_instance_id_update()
 
     def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
@@ -373,6 +375,16 @@ class TimeSeriesUpdate(CogniteUpdate):
                 camel_case=camel_case, include_instance_type=False
             )
         return output
+
+    @staticmethod
+    def warn_on_instance_id_update() -> None:
+        warnings.warn(
+            "It is not recommended to update a time series with an instance_id through the Time Series API. "
+            "Only a very limited set of legacy properties can be updated this way, the majority must be updated via "
+            "the Data Modeling API (the same API that was used to create the time series in the first place)",
+            UserWarning,
+            stacklevel=3,
+        )
 
     class _PrimitiveTimeSeriesUpdate(CognitePrimitiveUpdate):
         def set(self, value: Any) -> TimeSeriesUpdate:
@@ -447,7 +459,8 @@ class TimeSeriesUpdate(CogniteUpdate):
 
     @classmethod
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
-        if isinstance(item, (TimeSeries, TimeSeriesWrite)) and item.instance_id:
+        if isinstance(item, TimeSeries) and item.instance_id:
+            cls.warn_on_instance_id_update()
             return [
                 # If Instance ID is set, the time series was created in DMS. Then, it is
                 # limited which properties can be updated. (Only the ones that are not in DMS + security categories)
