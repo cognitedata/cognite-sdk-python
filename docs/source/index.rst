@@ -100,28 +100,29 @@ Contents
    data_modeling
    agents
    ai
-   limits
    assets
    events
+   documents
    files
    time_series
    sequences
-   geospatial
    3d
    contextualization
-   documents
    data_ingestion
+   transformations
+   functions
+   data_workflows
+   simulators
+   geospatial
+   unit_catalog
    hosted_extractors
    postgres_gateway
    data_organization
-   transformations
-   functions
-   simulators
-   data_workflows
-   unit_catalog
+   limits
    filters
-   base_data_classes
+   deprecated
    exceptions
-   utils
    testing
+   utils
+   base_data_classes
    appendix
