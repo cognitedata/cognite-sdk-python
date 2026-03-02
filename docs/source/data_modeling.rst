@@ -234,6 +234,8 @@ Example on syncing instances to local sqlite
                     "INSERT INTO instance VALUES (?, ?, ?) ON CONFLICT DO UPDATE SET data=excluded.data",
                     inserts,
                 )
+                # Wipe existing cursor and insert new one
+                connection.execute("DELETE FROM cursor")
                 connection.execute(
                     "INSERT INTO cursor VALUES (?)", [result.cursors["nodes"]]
                 )
