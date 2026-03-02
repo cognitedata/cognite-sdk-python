@@ -1,6 +1,6 @@
 """
 ===============================================================================
-b379199cc5dd6e5f8027cc521220e0d6
+a808b1b2149cbf64dad167875d606403
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -118,7 +118,7 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
         """
-        `List the workflow triggers. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
+        `List the workflow triggers. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/FetchAllTriggers>`_
 
         Args:
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.

@@ -227,7 +227,7 @@ class WorkflowExecutionAPI(APIClient):
         return WorkflowExecution._load(response.json())
 
     async def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
-        """`Retry a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionRetryn>`_
+        """`Retry a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionRetry>`_
 
         Args:
             id (str): The server-generated id of the workflow execution.

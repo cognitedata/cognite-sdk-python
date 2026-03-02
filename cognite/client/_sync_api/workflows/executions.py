@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8b4f255ab67b6c0158613854048ba3d2
+395576730bb3f216eef02cbe72b628ea
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -203,7 +203,7 @@ class SyncWorkflowExecutionAPI(SyncAPIClient):
 
     def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
         """
-        `Retry a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionRetryn>`_
+        `Retry a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionRetry>`_
 
         Args:
             id (str): The server-generated id of the workflow execution.

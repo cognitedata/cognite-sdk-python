@@ -1,6 +1,6 @@
 """
 ===============================================================================
-89cb2979c8c928e5dbdc38ec14974271
+56d3a886b113ba35e8c796fe69e7a7b9
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -165,7 +165,7 @@ class SyncEventsAPI(SyncAPIClient):
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
         """
-        `Retrieve a single event by id. <https://developer.cognite.com/api#tag/Events/operation/getEventByInternalId>`_
+        `Retrieve a single event by id. <https://api-docs.cognite.com/20230101/tag/Events/operation/getEventByInternalId>`_
 
         Args:
             id (int | None): ID
@@ -196,7 +196,7 @@ class SyncEventsAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> EventList:
         """
-        `Retrieve multiple events by id. <https://developer.cognite.com/api#tag/Events/operation/byIdsEvents>`_
+        `Retrieve multiple events by id. <https://api-docs.cognite.com/20230101/tag/Events/operation/byIdsEvents>`_
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -233,7 +233,7 @@ class SyncEventsAPI(SyncAPIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """
-        `Get unique properties with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        `Get unique properties with counts for events. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
 
         Args:
             filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
@@ -289,7 +289,7 @@ class SyncEventsAPI(SyncAPIClient):
         filter: EventFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Count of event matching the specified filters. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        `Count of event matching the specified filters. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
 
         Args:
             property (EventPropertyLike | None): If specified, Get an approximate number of Events with a specific property
@@ -330,7 +330,7 @@ class SyncEventsAPI(SyncAPIClient):
         filter: EventFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Find approximate property count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        `Find approximate property count for events. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
 
         Args:
             property (EventPropertyLike): The property to count the cardinality of.
@@ -371,7 +371,7 @@ class SyncEventsAPI(SyncAPIClient):
         filter: EventFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Find approximate paths count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        `Find approximate paths count for events. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
 
         Args:
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
@@ -406,7 +406,7 @@ class SyncEventsAPI(SyncAPIClient):
         filter: EventFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """
-        `Get unique paths with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        `Get unique paths with counts for events. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
 
         Args:
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
@@ -443,7 +443,7 @@ class SyncEventsAPI(SyncAPIClient):
 
     def create(self, event: Event | EventWrite | Sequence[Event] | Sequence[EventWrite]) -> Event | EventList:
         """
-        `Create one or more events. <https://developer.cognite.com/api#tag/Events/operation/createEvents>`_
+        `Create one or more events. <https://api-docs.cognite.com/20230101/tag/Events/operation/createEvents>`_
 
         Args:
             event (Event | EventWrite | Sequence[Event] | Sequence[EventWrite]): Event or list of events to create.
@@ -471,7 +471,7 @@ class SyncEventsAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> None:
         """
-        `Delete one or more events <https://developer.cognite.com/api#tag/Events/operation/deleteEvents>`_
+        `Delete one or more events <https://api-docs.cognite.com/20230101/tag/Events/operation/deleteEvents>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -511,7 +511,7 @@ class SyncEventsAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Event | EventList:
         """
-        `Update one or more events <https://developer.cognite.com/api#tag/Events/operation/updateEvents>`_
+        `Update one or more events <https://api-docs.cognite.com/20230101/tag/Events/operation/updateEvents>`_
 
         Args:
             item (Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]): Event(s) to update
@@ -546,7 +546,7 @@ class SyncEventsAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> EventList:
         """
-        `Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_
+        `Search for events <https://api-docs.cognite.com/20230101/tag/Events/operation/searchEvents>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -630,7 +630,7 @@ class SyncEventsAPI(SyncAPIClient):
         advanced_filter: Filter | dict[str, Any] | None = None,
     ) -> EventList:
         """
-        `List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
+        `List events <https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents>`_
 
         Args:
             start_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.

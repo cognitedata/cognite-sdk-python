@@ -1,6 +1,6 @@
 """
 ===============================================================================
-2d35b7bf30842fb0d4d5423ee14f3110
+57229c9ea704a67803cbabb095076fd7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -60,7 +60,7 @@ class SyncSourcesAPI(SyncAPIClient):
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Source | SourceList:
         """
-        `Retrieve one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/retrieve_sources>`_
+        `Retrieve one or more sources. <https://api-docs.cognite.com/20230101/tag/Sources/operation/retrieve_sources>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -90,7 +90,7 @@ class SyncSourcesAPI(SyncAPIClient):
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
         """
-        `Delete one or more sources  <https://developer.cognite.com/api#tag/Sources/operation/delete_sources>`_
+        `Delete one or more sources  <https://api-docs.cognite.com/20230101/tag/Sources/operation/delete_sources>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -119,7 +119,7 @@ class SyncSourcesAPI(SyncAPIClient):
 
     def create(self, items: SourceWrite | Sequence[SourceWrite]) -> Source | SourceList:
         """
-        `Create one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/create_sources>`_
+        `Create one or more sources. <https://api-docs.cognite.com/20230101/tag/Sources/operation/create_sources>`_
 
         Args:
             items (SourceWrite | Sequence[SourceWrite]): Source(s) to create.
@@ -160,7 +160,7 @@ class SyncSourcesAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Source | SourceList:
         """
-        `Update one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/update_sources>`_
+        `Update one or more sources. <https://api-docs.cognite.com/20230101/tag/Sources/operation/update_sources>`_
 
         Args:
             items (SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate]): Source(s) to update.
@@ -184,7 +184,7 @@ class SyncSourcesAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SourceList:
         """
-        `List sources <https://developer.cognite.com/api#tag/Sources/operation/list_sources>`_
+        `List sources <https://api-docs.cognite.com/20230101/tag/Sources/operation/list_sources>`_
 
         Args:
             limit (int | None): Maximum number of sources to return. Defaults to 25. Set to -1, float("inf") or None to return all items.

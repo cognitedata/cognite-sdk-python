@@ -46,7 +46,7 @@ class GroupsAPI(APIClient):
     _RESOURCE_PATH = "/groups"
 
     async def list(self, all: bool = False) -> GroupList:
-        """`List groups. <https://developer.cognite.com/api#tag/Groups/operation/getGroups>`_
+        """`List groups. <https://api-docs.cognite.com/20230101/tag/Groups/operation/getGroups>`_
 
         Args:
             all (bool): Whether to get all groups, only available with the groups:list acl.
@@ -79,7 +79,7 @@ class GroupsAPI(APIClient):
     async def create(self, group: Sequence[Group] | Sequence[GroupWrite]) -> GroupList: ...
 
     async def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
-        """`Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
+        """`Create one or more groups. <https://api-docs.cognite.com/20230101/tag/Groups/operation/createGroups>`_
 
         Args:
             group (Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]): Group or list of groups to create.
@@ -146,7 +146,7 @@ class GroupsAPI(APIClient):
         )
 
     async def delete(self, id: int | Sequence[int]) -> None:
-        """`Delete one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_
+        """`Delete one or more groups. <https://api-docs.cognite.com/20230101/tag/Groups/operation/deleteGroups>`_
 
         Args:
             id (int | Sequence[int]): ID or list of IDs of groups to delete.

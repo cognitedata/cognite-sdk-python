@@ -99,7 +99,7 @@ class DataSetsAPI(APIClient):
     async def create(
         self, data_set: DataSet | DataSetWrite | Sequence[DataSet] | Sequence[DataSetWrite]
     ) -> DataSet | DataSetList:
-        """`Create one or more data sets. <https://developer.cognite.com/api#tag/Data-sets/operation/createDataSets>`_
+        """`Create one or more data sets. <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/createDataSets>`_
 
         Args:
             data_set (DataSet | DataSetWrite | Sequence[DataSet] | Sequence[DataSetWrite]): Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
@@ -123,7 +123,7 @@ class DataSetsAPI(APIClient):
         )
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> DataSet | None:
-        """`Retrieve a single data set by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
+        """`Retrieve a single data set by id. <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/getDataSets>`_
 
         Args:
             id (int | None): ID
@@ -154,7 +154,7 @@ class DataSetsAPI(APIClient):
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> DataSetList:
-        """`Retrieve multiple data sets by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
+        """`Retrieve multiple data sets by id. <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/getDataSets>`_
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -183,7 +183,7 @@ class DataSetsAPI(APIClient):
         )
 
     async def aggregate_count(self, filter: DataSetFilter | dict[str, Any] | None = None) -> int:
-        """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
+        """`Aggregate data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/aggregateDataSets>`_
 
         Args:
             filter (DataSetFilter | dict[str, Any] | None): Filter on data set filter with exact match
@@ -223,7 +223,7 @@ class DataSetsAPI(APIClient):
         item: DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> DataSet | DataSetList:
-        """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
+        """`Update one or more data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/updateDataSets>`_
 
         Args:
             item (DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate]): Data set(s) to update
@@ -262,7 +262,7 @@ class DataSetsAPI(APIClient):
         write_protected: bool | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> DataSetList:
-        """`List data sets <https://developer.cognite.com/api#tag/Data-sets/operation/listDataSets>`_
+        """`List data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/listDataSets>`_
 
         Args:
             metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
