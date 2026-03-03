@@ -51,25 +51,45 @@ def workflow_simint_routine(cognite_client: CogniteClient) -> str:
     return ensure_workflow_simint_routine(cognite_client)
 
 
+@pytest.fixture(scope="session")
+def permanent_wf_ext_id_prefix(os_and_py_version: str) -> str:
+    return f"integ_test_wf_trigger_{os_and_py_version}"
+
+
+@pytest.fixture(scope="session")
+def permanent_wf_ext_id(permanent_wf_ext_id_prefix: str, sdk_version: tuple[str, str, str]) -> str:
+    return f"{permanent_wf_ext_id_prefix}_{sdk_version[0]}"
+
+
 @pytest.fixture(autouse=True, scope="module")
-def wf_setup_module(cognite_client: CogniteClient) -> None:
+def wf_setup_module(cognite_client: CogniteClient, permanent_wf_ext_id_prefix: str) -> None:
     """setup any state specific to the execution of the given module."""
     resource_age = timestamp_to_ms("30m-ago")
 
     wf_triggers = cognite_client.workflows.triggers.list(limit=None)
-    wf_triggers_to_delete = [wf.external_id for wf in wf_triggers if wf.last_updated_time < resource_age]
+    wf_triggers_to_delete = [
+        wft.external_id
+        for wft in wf_triggers
+        if wft.last_updated_time < resource_age and not wft.workflow_external_id.startswith(permanent_wf_ext_id_prefix)
+    ]
     if wf_triggers_to_delete:
         cognite_client.workflows.triggers.delete(wf_triggers_to_delete)
 
     wf_versions = cognite_client.workflows.versions.list(limit=None)
     wf_versions_to_delete = [
-        (wf.workflow_external_id, wf.version) for wf in wf_versions if wf.last_updated_time < resource_age
+        (wf.workflow_external_id, wf.version)
+        for wf in wf_versions
+        if wf.last_updated_time < resource_age and not wf.workflow_external_id.startswith(permanent_wf_ext_id_prefix)
     ]
     if wf_versions_to_delete:
         cognite_client.workflows.versions.delete(wf_versions_to_delete)
 
     wfs = cognite_client.workflows.list(limit=None)
-    wfs_to_delete = [wf.external_id for wf in wfs if wf.last_updated_time < resource_age]
+    wfs_to_delete = [
+        wf.external_id
+        for wf in wfs
+        if wf.last_updated_time < resource_age and not wf.external_id.startswith(permanent_wf_ext_id_prefix)
+    ]
     if wfs_to_delete:
         cognite_client.workflows.delete(wfs_to_delete)
 
@@ -325,10 +345,8 @@ ALMOST_NEVER_TRIGGER_CRON_EXPRESSION = "0 0 29 2 *"
 
 
 @pytest.fixture(scope="session")
-def permanent_workflow_for_triggers(cognite_client: CogniteClient):
-    workflow = WorkflowUpsert(
-        external_id="integration_test-workflow_for_triggers",
-    )
+def permanent_workflow_for_triggers(cognite_client: CogniteClient, permanent_wf_ext_id: str):
+    workflow = WorkflowUpsert(external_id=permanent_wf_ext_id)
     cognite_client.workflows.upsert(workflow)
     version = WorkflowVersionUpsert(
         workflow_external_id=workflow.external_id,
@@ -365,9 +383,8 @@ def permanent_scheduled_trigger(
     cognite_client: CogniteClient, permanent_workflow_for_triggers: WorkflowVersion
 ) -> Iterator[WorkflowTrigger]:
     version = permanent_workflow_for_triggers
-    every_minute_expression = "* * * * *"
-
-    on_the_minute = _create_scheduled_trigger(version, every_minute_expression)
+    every_15min = "*/15 * * * *"
+    on_the_minute = _create_scheduled_trigger(version, every_15min)
 
     yield cognite_client.workflows.triggers.upsert(on_the_minute)
 
@@ -680,9 +697,12 @@ class TestWorkflowTriggers:
         self,
         cognite_client: CogniteClient,
         permanent_data_modeling_trigger: WorkflowTrigger,
+        permanent_wf_ext_id_prefix: str,
     ) -> None:
         assert permanent_data_modeling_trigger is not None
-        assert permanent_data_modeling_trigger.external_id.startswith("data-modeling-trigger_integration_test-workflow")
+        assert permanent_data_modeling_trigger.external_id.startswith(
+            f"data-modeling-trigger_{permanent_wf_ext_id_prefix}"
+        )
         actual = permanent_data_modeling_trigger.trigger_rule
         expected = WorkflowDataModelingTriggerRule(
             data_modeling_query=WorkflowTriggerDataModelingQuery(
@@ -697,7 +717,7 @@ class TestWorkflowTriggers:
             batch_timeout=300,
         )
         assert actual.dump() == expected.dump()
-        assert permanent_data_modeling_trigger.workflow_external_id.startswith("integration_test-workflow_")
+        assert permanent_data_modeling_trigger.workflow_external_id.startswith(permanent_wf_ext_id_prefix)
         assert permanent_data_modeling_trigger.workflow_version == "v1"
         assert permanent_data_modeling_trigger.created_time is not None
         assert permanent_data_modeling_trigger.last_updated_time is not None
