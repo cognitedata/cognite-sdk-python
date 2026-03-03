@@ -52,8 +52,18 @@ def workflow_simint_routine(cognite_client: CogniteClient) -> str:
     return ensure_workflow_simint_routine(cognite_client)
 
 
+@pytest.fixture(scope="session")
+def permanent_wf_ext_id_prefix(os_and_py_version: str) -> str:
+    return f"integ_test_wf_trigger_{os_and_py_version}"
+
+
+@pytest.fixture(scope="session")
+def permanent_wf_ext_id(permanent_wf_ext_id_prefix: str, sdk_version: tuple[str, str, str]) -> str:
+    return f"{permanent_wf_ext_id_prefix}_{sdk_version[0]}"
+
+
 @pytest.fixture(autouse=True, scope="module")
-def wf_setup_module(cognite_client: CogniteClient, permanent_wf_ext_id: str) -> None:
+def wf_setup_module(cognite_client: CogniteClient, permanent_wf_ext_id_prefix: str) -> None:
     """setup any state specific to the execution of the given module."""
     resource_age = timestamp_to_ms("30m-ago")
 
@@ -61,21 +71,25 @@ def wf_setup_module(cognite_client: CogniteClient, permanent_wf_ext_id: str) -> 
     wf_triggers_to_delete = [
         wft.external_id
         for wft in wf_triggers
-        if wft.last_updated_time < resource_age and wft.workflow_external_id != permanent_wf_ext_id
+        if wft.last_updated_time < resource_age and not wft.workflow_external_id.startswith(permanent_wf_ext_id_prefix)
     ]
     if wf_triggers_to_delete:
         cognite_client.workflows.triggers.delete(wf_triggers_to_delete)
 
     wf_versions = cognite_client.workflows.versions.list(limit=None)
     wf_versions_to_delete = [
-        (wf.workflow_external_id, wf.version) for wf in wf_versions if wf.last_updated_time < resource_age
+        (wf.workflow_external_id, wf.version)
+        for wf in wf_versions
+        if wf.last_updated_time < resource_age and not wf.workflow_external_id.startswith(permanent_wf_ext_id_prefix)
     ]
     if wf_versions_to_delete:
         cognite_client.workflows.versions.delete(wf_versions_to_delete)
 
     wfs = cognite_client.workflows.list(limit=None)
     wfs_to_delete = [
-        wf.external_id for wf in wfs if wf.last_updated_time < resource_age and wf.external_id != permanent_wf_ext_id
+        wf.external_id
+        for wf in wfs
+        if wf.last_updated_time < resource_age and not wf.external_id.startswith(permanent_wf_ext_id_prefix)
     ]
     if wfs_to_delete:
         cognite_client.workflows.delete(wfs_to_delete)
@@ -333,11 +347,6 @@ def workflow_execution_list_test_scoped(
     cognite_client: CogniteClient, new_workflow_version_test_scoped: WorkflowVersion
 ) -> WorkflowExecutionList:
     return _new_workflow_execution_list(cognite_client, new_workflow_version_test_scoped)
-
-
-@pytest.fixture(scope="session")
-def permanent_wf_ext_id(os_and_py_version: str, sdk_version: tuple[str, str, str]) -> str:
-    return f"integ_test_wf_trigger_{os_and_py_version}_{sdk_version[0]}"
 
 
 @pytest.fixture(scope="session")
