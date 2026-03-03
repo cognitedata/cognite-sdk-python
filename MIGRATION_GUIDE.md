@@ -41,6 +41,8 @@ Changes are grouped as follows:
 - All references to `legacy_name` on time series data classes and API have been removed.
 - The write class for classic time series, `TimeSeriesWrite` no longer has the field `instance_id`. All time
   series with instance ID must be created through the Data Modeling API, so this was confusing.
+- The write class for classic file, `FileMetadataWrite` no longer has the field `instance_id`. All
+  files with instance ID must be created through the Data Modeling API, so this was confusing.
 - The helper methods on `client.iam`, `compare_capabilities` and `verify_capabilities` no longer support the `ignore_allscope_meaning` parameter.
 - The method `load_yaml` on the data class `Query` has been removed. Use `load` instead.
 - The Templates API has been completely removed from the SDK (the API service has already been shut off)
