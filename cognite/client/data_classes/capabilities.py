@@ -1197,6 +1197,21 @@ class StreamRecordsAcl(Capability):
 
 
 @dataclass
+class SubscribeSignalsAcl(Capability):
+    _capability_name = "subscribeSignalsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | CurrentUserScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+        CurrentUser = CurrentUserScope
+
+
+@dataclass
 class DataModelInstancesAcl(Capability):
     _capability_name = "dataModelInstancesAcl"
     actions: Sequence[Action]
