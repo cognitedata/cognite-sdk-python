@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC
 from collections.abc import Sequence
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
@@ -40,7 +41,6 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        instance_id (NodeId | None): The instance ID for the file. (Only applicable for files created in DMS)
         name (str): Name of the file.
         source (str | None): The source of the file.
         mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
@@ -58,7 +58,6 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
     def __init__(
         self,
         external_id: str | None,
-        instance_id: NodeId | None,
         name: str,
         source: str | None,
         mime_type: str | None,
@@ -78,7 +77,6 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
             if not isinstance(geo_location, GeoLocation):
                 raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id
-        self.instance_id = instance_id
         self.name = name
         self.directory = directory
         self.source = source
@@ -98,10 +96,6 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
             result["labels"] = [label.dump(camel_case) for label in self.labels]
         if self.geo_location:
             result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
-        if self.instance_id is not None:
-            result["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
-                camel_case=camel_case, include_instance_type=False
-            )
         return result
 
 
@@ -158,7 +152,6 @@ class FileMetadata(FileMetadataCore):
     ) -> None:
         super().__init__(
             external_id=external_id,
-            instance_id=instance_id,
             name=name,
             directory=directory,
             source=source,
@@ -173,10 +166,19 @@ class FileMetadata(FileMetadataCore):
             security_categories=security_categories,
         )
         self.id = id
+        self.instance_id = instance_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.uploaded = uploaded
         self.uploaded_time = uploaded_time
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case)
+        if self.instance_id is not None:
+            result["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
+                camel_case=camel_case, include_instance_type=False
+            )
+        return result
 
     @classmethod
     def _load(cls, resource: dict) -> Self:
@@ -204,10 +206,21 @@ class FileMetadata(FileMetadataCore):
         )
 
     def as_write(self) -> FileMetadataWrite:
-        """Returns this FileMetadata in its writing format."""
+        """Convert the file to a writeable version.
+
+        Returns:
+            FileMetadataWrite: A writeable version of this file.
+
+        Raises:
+            ValueError: If the file has an instance_id as these must be created via the Data Modeling API.
+        """
+        if self.instance_id is not None:
+            raise ValueError(
+                "File with an `instance_id` cannot be created via the Files API. "
+                "These must be created/updated/deleted via the Data Modeling API."
+            )
         return FileMetadataWrite(
             external_id=self.external_id,
-            instance_id=self.instance_id,
             name=self.name,
             directory=self.directory,
             source=self.source,
@@ -230,7 +243,6 @@ class FileMetadataWrite(FileMetadataCore):
     Args:
         name (str): Name of the file.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        instance_id (NodeId | None): The Instance ID for the file. (Only applicable for files created in DMS)
         source (str | None): The source of the file.
         mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -248,7 +260,6 @@ class FileMetadataWrite(FileMetadataCore):
         self,
         name: str,
         external_id: str | None = None,
-        instance_id: NodeId | None = None,
         source: str | None = None,
         mime_type: str | None = None,
         metadata: dict[str, str] | None = None,
@@ -264,7 +275,6 @@ class FileMetadataWrite(FileMetadataCore):
         super().__init__(
             external_id=external_id,
             name=name,
-            instance_id=instance_id,
             directory=directory,
             source=source,
             mime_type=mime_type,
@@ -284,7 +294,6 @@ class FileMetadataWrite(FileMetadataCore):
         return cls(
             name=resource["name"],
             external_id=resource.get("externalId"),
-            instance_id=NodeId._load_if(resource.get("instanceId")),
             directory=resource.get("directory"),
             source=resource.get("source"),
             mime_type=resource.get("mimeType"),
@@ -405,6 +414,8 @@ class FileMetadataUpdate(CogniteUpdate):
 
         super().__init__(id=id, external_id=external_id)
         self.instance_id = instance_id
+        if instance_id is not None:
+            self.warn_on_instance_id_update()
 
     def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
@@ -413,6 +424,16 @@ class FileMetadataUpdate(CogniteUpdate):
                 camel_case=camel_case, include_instance_type=False
             )
         return output
+
+    @staticmethod
+    def warn_on_instance_id_update() -> None:
+        warnings.warn(
+            "It is not recommended to update a file with an instance_id through the Files API. "
+            "Only a limited set of legacy properties can be updated this way, the majority must be updated via "
+            "the Data Modeling API (the same API that was used to create the file in the first place)",
+            UserWarning,
+            stacklevel=3,
+        )
 
     class _PrimitiveFileMetadataUpdate(CognitePrimitiveUpdate):
         def set(self, value: Any) -> FileMetadataUpdate:
@@ -495,7 +516,8 @@ class FileMetadataUpdate(CogniteUpdate):
 
     @classmethod
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
-        if isinstance(item, (FileMetadata, FileMetadataWrite)) and item.instance_id:
+        if isinstance(item, FileMetadata) and item.instance_id:
+            cls.warn_on_instance_id_update()
             return [
                 # If Instance ID is set, the file was created in DMS. Then, it is
                 # limited which properties can be updated. (Only the ones that are not in DMS + security categories)
@@ -506,7 +528,6 @@ class FileMetadataUpdate(CogniteUpdate):
                 PropertySpec("labels", is_list=True),
                 PropertySpec("geo_location"),
             ]
-
         return [
             # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
             PropertySpec("external_id", is_nullable=False),

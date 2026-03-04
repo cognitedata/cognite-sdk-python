@@ -556,8 +556,11 @@ class Datapoint(CogniteResource):
 
         timezone = None
         if (raw_timezone := resource.get("timezone")) is not None:
-            with contextlib.suppress(ValueError):
-                timezone = parse_str_timezone(raw_timezone)
+            if isinstance(raw_timezone, (datetime.timezone, ZoneInfo)):
+                timezone = raw_timezone
+            else:
+                with contextlib.suppress(ValueError):
+                    timezone = parse_str_timezone(raw_timezone)
 
         return cls(
             timestamp=resource["timestamp"],

@@ -39,6 +39,10 @@ Changes are grouped as follows:
 - The methods `insert`, `retrieve`, `retrieve_last_row` and `retrieve_dataframe` on the Sequence Data API no longer support the parameter `column_external_ids`. Use `columns` instead.
 - The `__iter__` method has been removed from all APIs. Use `__call__` instead: `for ts in client.time_series()`. This makes it seamless to pass one or more parameters.
 - All references to `legacy_name` on time series data classes and API have been removed.
+- The write class for classic time series, `TimeSeriesWrite` no longer has the field `instance_id`. All time
+  series with instance ID must be created through the Data Modeling API, so this was confusing.
+- The write class for classic file, `FileMetadataWrite` no longer has the field `instance_id`. All
+  files with instance ID must be created through the Data Modeling API, so this was confusing.
 - The helper methods on `client.iam`, `compare_capabilities` and `verify_capabilities` no longer support the `ignore_allscope_meaning` parameter.
 - The method `load_yaml` on the data class `Query` has been removed. Use `load` instead.
 - The Templates API has been completely removed from the SDK (the API service has already been shut off)
@@ -69,7 +73,7 @@ Changes are grouped as follows:
 - Extending a `Datapoints` instance is no longer supported.
 - **ClientConfig**:
   - `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`.
-    See the `Settings documentation <https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings>`_ for details.
+    See the `Settings documentation <https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings>`_ for details.
   - `timeout`: default has been increased from 30 sec to 60 sec
 - **global_config**:
   - New setting `follow_redirects` that controls whether or not to follow redirects. Defaults to `False`.

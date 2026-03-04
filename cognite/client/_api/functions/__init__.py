@@ -275,7 +275,7 @@ class FunctionsAPI(APIClient):
             json={"items": [function_input.dump(camel_case=True)]},
             semaphore=self._get_semaphore("write"),
         )
-        return Function._load(res.json()["items"][0])
+        return Function._load(res.json()["items"][0]).set_client_ref(self._cognite_client)
 
     async def _create_function_obj(
         self,
@@ -419,7 +419,7 @@ class FunctionsAPI(APIClient):
             semaphore=self._get_semaphore("read"),
         )
 
-        return FunctionList._load(res.json()["items"])
+        return FunctionList._load(res.json()["items"])._maybe_set_client_ref(self._cognite_client)
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
         """`Retrieve a single function by id. <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_

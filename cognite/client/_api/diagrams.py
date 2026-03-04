@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from math import ceil
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from cognite.client._api_client import APIClient
@@ -15,6 +14,7 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._auxiliary import split_into_chunks
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -235,16 +235,15 @@ class DiagramsAPI(APIClient):
                 configuration=configuration,
             )
 
-        num_new_jobs = ceil(len(items) / self._DETECT_API_FILE_LIMIT)
-        if num_new_jobs > self._DETECT_API_STATUS_JOB_LIMIT:
+        batches = split_into_chunks(items, self._DETECT_API_FILE_LIMIT)
+        if len(batches) > self._DETECT_API_STATUS_JOB_LIMIT:
             raise ValueError(
-                f"Number of jobs exceed limit of: '{self._DETECT_API_STATUS_JOB_LIMIT}'. Number of jobs: '{num_new_jobs}'"
+                f"Number of jobs exceed limit of: '{self._DETECT_API_STATUS_JOB_LIMIT}'. Number of jobs: '{len(batches)}'"
             )
 
         jobs: list[DiagramDetectResults] = []
         unposted_files: list[dict[str, Any]] = []
-        for i in range(num_new_jobs):
-            batch = items[(self._DETECT_API_FILE_LIMIT * i) : self._DETECT_API_FILE_LIMIT * (i + 1)]
+        for batch in batches:
             try:
                 job = await self.__run_detect_job(
                     items=items,
@@ -337,7 +336,8 @@ class DiagramsAPI(APIClient):
         """
         result = await detect_job.get_result_async()
         if any(item.get("page_range") is not None for item in result["items"]):
-            raise NotImplementedError("Can not run convert on a detect job that used the page range feature")
+            raise RuntimeError("Can not run convert on a detect job that used the page range feature")
+
         items = [{"annotations": item.get("annotations"), "fileId": item.get("fileId")} for item in result["items"]]
         response = await self._post(
             f"{self._RESOURCE_PATH}/convert", json={"items": items}, semaphore=self._get_semaphore("write")

@@ -73,9 +73,7 @@ def parse_str_timezone_offset(tz: str) -> timezone:
     return cast(timezone, datetime.strptime(tz, "%z").tzinfo)
 
 
-def parse_str_timezone(tz: str | ZoneInfo | timezone) -> timezone | ZoneInfo:
-    if isinstance(tz, (ZoneInfo, timezone)):
-        return tz
+def parse_str_timezone(tz: str) -> timezone | ZoneInfo:
     try:
         return ZoneInfo(tz)
     except ZoneInfoNotFoundError:

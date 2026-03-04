@@ -216,7 +216,7 @@ class ConcurrencySettings:
     The total concurrency budget, i.e. the maximum number of concurrent requests in flight,
     is the sum of all categories (e.g. general) and operation types (e.g. read or write).
 
-    See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
+    See: https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings
 
     Note:
         The settings apply on a per-project level, thus if you have multiple clients
@@ -258,7 +258,7 @@ class ConcurrencySettings:
             raise RuntimeError(
                 f"Cannot modify '{api_name}.{name}' after concurrency settings have been used to create semaphores. "
                 "Concurrency settings must be configured before sending any API requests. "
-                "See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings"
+                "See: https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings"
             )
 
     def _freeze(self) -> None:
