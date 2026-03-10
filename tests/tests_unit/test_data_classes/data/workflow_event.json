@@ -1,0 +1,18 @@
+{
+    "eventId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "executionId": "f0e1d2c3-b4a5-9687-fedc-ba0987654321",
+    "eventTime": 1710000000000,
+    "eventType": "WORKFLOW_EXECUTION",
+    "executionType": "SCHEDULED_TRIGGER",
+    "workflowExternalId": "my_workflow",
+    "workflowVersion": "v1",
+    "status": "COMPLETED",
+    "triggerExternalId": "my_trigger",
+    "engineExecutionId": "conductor-exec-123",
+    "reasonForError": null,
+    "metadata": {
+        "key": "value"
+    },
+    "initiatedByUserId": "user@example.com",
+    "runningAsUserId": "service-account@example.com"
+}

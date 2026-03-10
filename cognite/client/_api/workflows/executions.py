@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Any
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.workflows import (
+    WorkflowEvent,
+    WorkflowEventList,
     WorkflowExecution,
     WorkflowExecutionDetailed,
     WorkflowExecutionList,
@@ -266,3 +268,66 @@ class WorkflowExecutionAPI(APIClient):
             json={"authentication": {"nonce": nonce}},
         )
         return WorkflowExecution._load(response.json())
+
+    def list_events(
+        self,
+        workflow_version_ids: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None = None,
+        event_time_start: int | None = None,
+        event_time_end: int | None = None,
+        statuses: WorkflowStatus | MutableSequence[WorkflowStatus] | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+    ) -> WorkflowEventList:
+        """`List workflow execution events (audit history). <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ListWorkflowEvents>`_
+
+        Returns an audit trail of workflow events covering both successful execution starts
+        and trigger failures that never produced an execution.
+
+        Args:
+            workflow_version_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
+            event_time_start (int | None): Filter out events that occurred before this time. Time is in milliseconds since epoch.
+            event_time_end (int | None): Filter out events that occurred after this time. Time is in milliseconds since epoch.
+            statuses (WorkflowStatus | MutableSequence[WorkflowStatus] | None): Workflow status or list of workflow statuses to filter on.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            WorkflowEventList: The requested workflow events.
+
+        Examples:
+
+            List all workflow events for workflow 'my_workflow' version '1':
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.workflows.executions.list_events(("my_workflow", "1"))
+
+            List all failed workflow events from the last 24 hours:
+
+                >>> from cognite.client.utils import timestamp_to_ms
+                >>> res = client.workflows.executions.list_events(
+                ...     event_time_start=timestamp_to_ms("1d-ago"),
+                ...     statuses="failed",
+                ... )
+        """
+        filter_: dict[str, Any] = {}
+        if workflow_version_ids is not None:
+            filter_["workflowFilters"] = WorkflowIds.load(workflow_version_ids).dump(
+                camel_case=True, as_external_id=True
+            )
+        if event_time_start is not None:
+            filter_["eventTimeStart"] = event_time_start
+        if event_time_end is not None:
+            filter_["eventTimeEnd"] = event_time_end
+        if statuses is not None:
+            if isinstance(statuses, MutableSequence):
+                filter_["status"] = [status.upper() for status in statuses]
+            else:
+                filter_["status"] = [statuses.upper()]
+
+        return self._list(
+            method="POST",
+            url_path=f"{self._RESOURCE_PATH}/history",
+            resource_cls=WorkflowEvent,
+            list_cls=WorkflowEventList,
+            filter=filter_,
+            limit=limit,
+        )

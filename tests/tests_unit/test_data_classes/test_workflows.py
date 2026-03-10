@@ -16,6 +16,7 @@ from cognite.client.data_classes.workflows import (
     TransformationTaskParameters,
     WorkflowDefinition,
     WorkflowDefinitionUpsert,
+    WorkflowEvent,
     WorkflowExecutionDetailed,
     WorkflowIds,
     WorkflowTask,
@@ -248,3 +249,46 @@ class TestWorkflowTask:
     def test_serialization(self, raw: dict):
         loaded = WorkflowTask._load(raw)
         assert loaded.dump() == raw
+
+
+class TestWorkflowEvent:
+    @pytest.fixture(scope="class")
+    def event_data(self) -> dict:
+        test_data = Path(__file__).parent / "data/workflow_event.json"
+        with test_data.open() as f:
+            return json.load(f)
+
+    def test_load(self, event_data: dict):
+        event = WorkflowEvent._load(event_data)
+        assert event.event_id == "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        assert event.execution_id == "f0e1d2c3-b4a5-9687-fedc-ba0987654321"
+        assert event.event_time == 1710000000000
+        assert event.event_type == "workflow_execution"
+        assert event.execution_type == "scheduled_trigger"
+        assert event.workflow_external_id == "my_workflow"
+        assert event.workflow_version == "v1"
+        assert event.status == "completed"
+        assert event.trigger_external_id == "my_trigger"
+        assert event.engine_execution_id == "conductor-exec-123"
+        assert event.reason_for_error is None
+        assert event.metadata == {"key": "value"}
+        assert event.initiated_by_user_id == "user@example.com"
+        assert event.running_as_user_id == "service-account@example.com"
+
+    def test_load_trigger_attempt(self):
+        raw = {
+            "eventId": "abc-123",
+            "eventTime": 1710000000000,
+            "eventType": "TRIGGER_ATTEMPT",
+            "executionType": "DATA_MODELING_TRIGGER",
+            "workflowExternalId": "wf-1",
+            "workflowVersion": "v2",
+            "status": "FAILED",
+            "reasonForError": "concurrent execution limit reached",
+        }
+        event = WorkflowEvent._load(raw)
+        assert event.event_type == "trigger_attempt"
+        assert event.execution_type == "data_modeling_trigger"
+        assert event.status == "failed"
+        assert event.execution_id is None
+        assert event.reason_for_error == "concurrent execution limit reached"

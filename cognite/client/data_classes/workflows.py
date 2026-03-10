@@ -1747,3 +1747,91 @@ class WorkflowTriggerRunList(CogniteResourceList[WorkflowTriggerRun], ExternalID
     """This class represents a list of workflow trigger runs."""
 
     _RESOURCE = WorkflowTriggerRun
+
+
+WorkflowEventType: TypeAlias = Literal["workflow_execution", "trigger_attempt"]
+
+WorkflowExecutionType: TypeAlias = Literal[
+    "manual", "scheduled_trigger", "data_modeling_trigger", "record_stream_trigger"
+]
+
+
+class WorkflowEvent(CogniteResource):
+    """This class represents a workflow event from the execution history.
+
+    Workflow events provide an audit trail that covers both workflow executions and trigger
+    attempts (including failures where an execution was never started).
+
+    Args:
+        event_id (str): The server-generated id of the event.
+        event_time (int): The time of the event. Unix timestamp in milliseconds.
+        event_type (WorkflowEventType): The type of event.
+        execution_type (WorkflowExecutionType): How the execution was initiated.
+        workflow_external_id (str): The external ID of the workflow.
+        workflow_version (str): The version of the workflow.
+        status (WorkflowStatus): The status of the event.
+        execution_id (str | None): The id of the associated execution, if any. Defaults to None.
+        trigger_external_id (str | None): The external ID of the trigger, if triggered. Defaults to None.
+        engine_execution_id (str | None): The Conductor execution id. Defaults to None.
+        reason_for_error (str | None): The reason if the event represents a failure. Defaults to None.
+        metadata (dict | None): Application-specific metadata. Defaults to None.
+        initiated_by_user_id (str | None): The user who initiated the execution. Defaults to None.
+        running_as_user_id (str | None): The user the execution is running as. Defaults to None.
+    """
+
+    def __init__(
+        self,
+        event_id: str,
+        event_time: int,
+        event_type: WorkflowEventType,
+        execution_type: WorkflowExecutionType,
+        workflow_external_id: str,
+        workflow_version: str,
+        status: WorkflowStatus,
+        execution_id: str | None = None,
+        trigger_external_id: str | None = None,
+        engine_execution_id: str | None = None,
+        reason_for_error: str | None = None,
+        metadata: dict | None = None,
+        initiated_by_user_id: str | None = None,
+        running_as_user_id: str | None = None,
+    ) -> None:
+        self.event_id = event_id
+        self.event_time = event_time
+        self.event_type = event_type
+        self.execution_type = execution_type
+        self.workflow_external_id = workflow_external_id
+        self.workflow_version = workflow_version
+        self.status = status
+        self.execution_id = execution_id
+        self.trigger_external_id = trigger_external_id
+        self.engine_execution_id = engine_execution_id
+        self.reason_for_error = reason_for_error
+        self.metadata = metadata
+        self.initiated_by_user_id = initiated_by_user_id
+        self.running_as_user_id = running_as_user_id
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowEvent:
+        return cls(
+            event_id=resource["eventId"],
+            event_time=resource["eventTime"],
+            event_type=cast(WorkflowEventType, to_snake_case(resource["eventType"])),
+            execution_type=cast(WorkflowExecutionType, to_snake_case(resource["executionType"])),
+            workflow_external_id=resource["workflowExternalId"],
+            workflow_version=resource["workflowVersion"],
+            status=cast(WorkflowStatus, to_snake_case(resource["status"])),
+            execution_id=resource.get("executionId"),
+            trigger_external_id=resource.get("triggerExternalId"),
+            engine_execution_id=resource.get("engineExecutionId"),
+            reason_for_error=resource.get("reasonForError"),
+            metadata=resource.get("metadata"),
+            initiated_by_user_id=resource.get("initiatedByUserId"),
+            running_as_user_id=resource.get("runningAsUserId"),
+        )
+
+
+class WorkflowEventList(CogniteResourceList[WorkflowEvent]):
+    """This class represents a list of workflow events."""
+
+    _RESOURCE = WorkflowEvent
