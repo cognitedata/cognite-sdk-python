@@ -1,6 +1,5 @@
 [run]
 source=cognite
-relative_files = true
 omit =
     cognite/client/_proto/*
 
