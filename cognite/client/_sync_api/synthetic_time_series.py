@@ -1,6 +1,6 @@
 """
 ===============================================================================
-bd5cab77c508fda6bf75a378b2c1abbb
+ab726051b4211c47ec54ff723645aee3
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite
+from cognite.client.data_classes import SyntheticDatapoints, SyntheticDatapointsList, TimeSeries, TimeSeriesWrite
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -42,7 +42,7 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         timezone: str | datetime.timezone | ZoneInfo | None = None,
-    ) -> DatapointsList: ...
+    ) -> SyntheticDatapointsList: ...
 
     @overload
     def query(
@@ -57,7 +57,7 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         timezone: str | datetime.timezone | ZoneInfo | None = None,
-    ) -> Datapoints: ...
+    ) -> SyntheticDatapoints: ...
 
     def query(
         self,
@@ -71,7 +71,7 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         timezone: str | datetime.timezone | ZoneInfo | None = None,
-    ) -> Datapoints | DatapointsList:
+    ) -> SyntheticDatapoints | SyntheticDatapointsList:
         """
         `Calculate the result of a function on time series. <https://api-docs.cognite.com/20230101/tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
@@ -93,7 +93,7 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
                 the aggregate duration can vary, typically due to daylight saving time. For time zones of type UTC+/-HH:MM, use increments of 15 minutes. Default: "UTC" (None)
 
         Returns:
-            Datapoints | DatapointsList: A DatapointsList object containing the calculated data.
+            SyntheticDatapoints | SyntheticDatapointsList: A SyntheticDatapointsList object containing the calculated data.
 
         Examples:
 
