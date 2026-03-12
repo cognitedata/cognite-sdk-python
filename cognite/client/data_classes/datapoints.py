@@ -1142,24 +1142,6 @@ class Datapoints(CogniteResource):
         )
 
     @classmethod
-    def _load_from_synthetic(
-        cls,
-        dps_object: dict[str, Any],
-    ) -> Datapoints:
-        # The Synthetic Datapoints API doesn't return the type field, but is always numeric according to docs:
-        # TODO: Remove when we add specialized classes for synthetic datapoints...
-        dps_object.setdefault("type", "numeric")
-        if dps := dps_object["datapoints"]:
-            for dp in dps:
-                dp.setdefault("error", None)
-                dp.setdefault("value", None)
-            return cls._load(dps_object)
-
-        instance = cls._load(dps_object)
-        instance.error, instance.value = [], []
-        return instance
-
-    @classmethod
     def _load(
         cls,
         dps_object: dict[str, Any],
@@ -1268,6 +1250,146 @@ class Datapoints(CogniteResource):
     def _repr_html_(self) -> str:
         is_synthetic_dps = self.error is not None
         return notebook_display_with_fallback(self, include_errors=is_synthetic_dps)
+
+
+class SyntheticDatapoints(CogniteResource):
+    def __init__(
+        self,
+        expression: str,
+        timestamp: list[int],
+        value: list[float | None],
+        error: list[str | None],
+        is_string: bool,
+        timezone: datetime.timezone | ZoneInfo | None = None,
+    ) -> None:
+        self.expression = expression
+        self.timestamp = timestamp
+        self.value = value
+        self.error = error
+        self.is_string = is_string
+        self.timezone = timezone
+
+    def __len__(self) -> int:
+        return len(self.timestamp)
+
+    def __eq__(self, other: Any) -> bool:
+        raise NotImplementedError(
+            "Equality comparison is not implemented for SyntheticDatapoints because it most likely involves "
+            "float comparisons."
+        )
+
+    @classmethod
+    def _load(cls, dps_object: dict[str, Any]) -> Self:
+        ts, value, errors = [], [], []
+        for dp in dps_object["datapoints"]:
+            ts.append(dp["timestamp"])
+            # Each element is either a "value" or an "error", never both:
+            value.append(dp.get("value"))
+            errors.append(dp.get("error"))
+
+        if (tz := dps_object.get("timezone")) is not None:
+            tz = parse_str_timezone(tz)
+        return cls(
+            # Expression is not actually part of the API response for synthetic datapoints, so we add it in manually
+            # to e.g. have a column name when converting to pandas
+            expression=dps_object["expression"],
+            timestamp=ts,
+            value=value,
+            error=errors,
+            is_string=dps_object["isString"],
+            timezone=tz,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the synthetic datapoints into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+
+        Returns:
+            dict[str, Any]: A dictionary representing the instance.
+        """
+        dumped = {
+            "expression": self.expression,
+            "isString" if camel_case else "is_string": self.is_string,
+            # Since SyntheticDatapoints is a pure read-class, we don't care that we don't exactly follow
+            # the API response format (which has exactly one of "value" or "error" per datapoint):
+            "datapoints": [
+                {"timestamp": ts, "value": val, "error": err}
+                for ts, val, err in zip(self.timestamp, self.value, self.error)
+            ],
+        }
+        if self.timezone is not None:
+            dumped["timezone"] = convert_timezone_to_str(self.timezone)
+        return dumped
+
+    def to_pandas(self, include_errors: bool = True) -> pandas.DataFrame:  # type: ignore[override]
+        """Convert the synthetic datapoints into a pandas DataFrame.
+
+        Note:
+            The error column will only be included if ``include_errors=True`` AND there is at least
+            one error exists.
+
+        Args:
+            include_errors (bool): Whether to include the error column. Defaults to True, but will be skipped if there are no errors.
+
+        Returns:
+            pandas.DataFrame: A DataFrame with timestamp as index and columns for the expression value and optionally error.
+        """
+        pd = local_import("pandas")
+
+        tz = convert_tz_for_pandas(self.timezone)
+        index = pd.to_datetime(self.timestamp, unit="ms", utc=True)
+        if tz is not None:
+            index = index.tz_convert(tz)
+
+        data: dict[str, Any] = {self.expression: self.value}
+        # Only include error column if requested AND there's at least one non-null error
+        if include_errors and any(self.error):
+            data["error"] = [e or "" for e in self.error]
+
+        df = pd.DataFrame(data, index=index)
+        df.index.name = "timestamp"
+        return df
+
+
+class SyntheticDatapointsList(CogniteResourceList[SyntheticDatapoints]):
+    """A list of SyntheticDatapoints objects representing multiple expressions.
+
+    Each SyntheticDatapoints in the list represents the result of evaluating one expression.
+    """
+
+    _RESOURCE = SyntheticDatapoints
+
+    def get(self, *args: Any, **kwargs: Any) -> NoReturn:
+        raise NotImplementedError
+
+    def to_pandas(self, include_errors: bool = True) -> pandas.DataFrame:  # type: ignore[override]
+        """Convert the list of synthetic datapoints into a single pandas DataFrame.
+
+        Each expression becomes a column in the resulting DataFrame, with timestamps as the index.
+        Error columns are only included for expressions that have at least one error.
+
+        Args:
+            include_errors (bool): Whether to include error columns. Defaults to True.
+
+        Returns:
+            pandas.DataFrame: A DataFrame with timestamp as index and columns for each expression and optionally errors.
+        """
+        pd = local_import("pandas")
+
+        if not self.data:
+            # Return empty DataFrame with proper structure
+            return pd.DataFrame()
+
+        # Convert each SyntheticDatapoints to a DataFrame and concat horizontally
+        dfs = [item.to_pandas(include_errors=include_errors) for item in self.data]
+
+        # Concatenate along columns (axis=1), aligning on timestamp index
+        return pd.concat(dfs, axis=1)
+
+    def dump(self, camel_case: bool = True) -> NoReturn:
+        raise NotImplementedError
 
 
 class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):

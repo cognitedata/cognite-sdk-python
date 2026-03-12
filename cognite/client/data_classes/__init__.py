@@ -46,6 +46,8 @@ from cognite.client.data_classes.datapoints import (
     DatapointsQuery,
     LatestDatapointQuery,
     StatusCode,
+    SyntheticDatapoints,
+    SyntheticDatapointsList,
 )
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
@@ -482,6 +484,8 @@ __all__ = [
     "SourceFile",
     "StatusCode",
     "SubworkflowTaskParameters",
+    "SyntheticDatapoints",
+    "SyntheticDatapointsList",
     "Table",
     "TableList",
     "TableWrite",
