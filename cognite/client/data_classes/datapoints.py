@@ -618,10 +618,10 @@ class DatapointsArray(CogniteResource):
         self,
         id: int,
         is_string: bool,
+        is_step: bool,
         type: Literal["numeric", "string", "state"],
         external_id: str | None = None,
         instance_id: NodeId | None = None,
-        is_step: bool | None = None,
         unit: str | None = None,
         unit_external_id: str | None = None,
         granularity: str | None = None,
@@ -745,7 +745,7 @@ class DatapointsArray(CogniteResource):
             id=dps_dct["id"],
             external_id=dps_dct.get("externalId"),
             instance_id=NodeId._load_if(dps_dct.get("instanceId")),
-            is_step=dps_dct.get("isStep"),
+            is_step=dps_dct["isStep"],
             is_string=dps_dct["isString"],
             unit=dps_dct.get("unit"),
             type=dps_dct["type"],
@@ -934,10 +934,10 @@ class Datapoints(CogniteResource):
     Args:
         id (int): Id of the time series the datapoints belong to
         is_string (bool): Whether the time series contains numerical or string data.
+        is_step (bool): Whether the time series is stepwise or continuous.
         type (Literal['numeric', 'string', 'state']): The type of the time series.
         external_id (str | None): External id of the time series the datapoints belong to
         instance_id (NodeId | None): The instance id of the time series the datapoints belong to
-        is_step (bool | None): Whether the time series is stepwise or continuous.
         unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
         unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
@@ -970,10 +970,10 @@ class Datapoints(CogniteResource):
         self,
         id: int,
         is_string: bool,
+        is_step: bool,
         type: Literal["numeric", "string", "state"],
         external_id: str | None = None,
         instance_id: NodeId | None = None,
-        is_step: bool | None = None,
         unit: str | None = None,
         unit_external_id: str | None = None,
         granularity: str | None = None,
@@ -1151,20 +1151,19 @@ class Datapoints(CogniteResource):
             external_id=dps_object.get("externalId"),
             instance_id=NodeId._load_if(dps_object.get("instanceId")),
             is_string=dps_object["isString"],
-            is_step=dps_object.get("isStep"),
+            is_step=dps_object["isStep"],
             type=dps_object["type"],
             unit=dps_object.get("unit"),
             unit_external_id=dps_object.get("unitExternalId"),
         )
         if len(dps_object["datapoints"]) == 0:
-            for key in ["value", "timestamp"]:
-                snake_key = to_snake_case(key)
-                setattr(instance, snake_key, [])
+            instance.value = []
+            instance.timestamp = []
             return instance
 
         data_lists = defaultdict(list)
-        for row in dps_object["datapoints"]:
-            for attr, value in row.items():
+        for dp in dps_object["datapoints"]:
+            for attr, value in dp.items():
                 data_lists[attr].append(value)
         if (timezone := dps_object.get("timezone")) is not None:
             instance.timezone = parse_str_timezone(timezone)
