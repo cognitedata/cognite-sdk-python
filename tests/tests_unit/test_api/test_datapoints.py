@@ -42,6 +42,7 @@ def mock_retrieve_latest(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
                     "externalId": external_id,
                     "isString": False,
                     "isStep": False,
+                    "type": "numeric",
                     "datapoints": [{"timestamp": before - 1, "value": random()}],
                 }
             )
@@ -64,8 +65,8 @@ def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, async_client: AsyncCognite
         status_code=200,
         json={
             "items": [
-                {"id": 1, "externalId": "1", "isString": False, "isStep": True, "datapoints": []},
-                {"id": 2, "isString": False, "isStep": False, "externalId": "2", "datapoints": []},
+                {"id": 1, "externalId": "1", "isString": False, "isStep": True, "type": "numeric", "datapoints": []},
+                {"id": 2, "isString": False, "isStep": False, "externalId": "2", "type": "numeric", "datapoints": []},
             ]
         },
     )
@@ -80,8 +81,8 @@ def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, async_client: Async
         status_code=200,
         json={
             "items": [
-                {"id": 1, "externalId": "1", "isString": False, "isStep": False, "datapoints": []},
-                {"id": 2, "externalId": "2", "isString": False, "isStep": False, "datapoints": []},
+                {"id": 1, "externalId": "1", "isString": False, "isStep": False, "type": "numeric", "datapoints": []},
+                {"id": 2, "externalId": "2", "isString": False, "isStep": False, "type": "numeric", "datapoints": []},
             ]
         },
     )
@@ -275,7 +276,9 @@ class TestInsertDatapoints:
             "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(6, 11)]}]
         } in request_bodies
 
-    @pytest.mark.parametrize("datapoints, id", [([], 1), (Datapoints(id=1, is_string=False), 1)])
+    @pytest.mark.parametrize(
+        "datapoints, id", [([], 1), (Datapoints(id=1, is_string=False, is_step=False, type="numeric"), 1)]
+    )
     def test_insert_datapoints_no_data(
         self, cognite_client: CogniteClient, datapoints: list | Datapoints, id: int | None
     ) -> None:
@@ -423,52 +426,80 @@ class TestDeleteDatapoints:
 
 class TestDatapointsObject:
     def test_len(self) -> None:
-        assert 3 == len(Datapoints(id=1, is_string=False, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]))
+        assert 3 == len(
+            Datapoints(id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0])
+        )
 
     def test_get_non_empty_data_fields(self) -> None:
         assert sorted([("timestamp", [1, 2, 3]), ("value", [1.0, 2.0, 3.0])]) == sorted(
-            Datapoints(id=1, is_string=False, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0])._get_non_empty_data_fields()
+            Datapoints(
+                id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]
+            )._get_non_empty_data_fields()
         )
         assert sorted([("timestamp", [1, 2, 3]), ("max", [1.0, 2.0, 3.0]), ("sum", [1.0, 2.0, 3.0])]) == sorted(
             Datapoints(
-                id=1, is_string=False, timestamp=[1, 2, 3], sum=[1.0, 2.0, 3.0], max=[1.0, 2.0, 3.0]
+                id=1,
+                is_string=False,
+                is_step=False,
+                type="numeric",
+                timestamp=[1, 2, 3],
+                sum=[1.0, 2.0, 3.0],
+                max=[1.0, 2.0, 3.0],
             )._get_non_empty_data_fields()
         )
         assert sorted([("timestamp", [1, 2, 3]), ("max", [1, 2, 3])]) == sorted(
-            Datapoints(id=1, is_string=False, timestamp=[1, 2, 3], sum=[], max=[1, 2, 3])._get_non_empty_data_fields()
+            Datapoints(
+                id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], sum=[], max=[1, 2, 3]
+            )._get_non_empty_data_fields()
         )
         assert sorted([("timestamp", [1, 2, 3]), ("max", [1, 2, 3]), ("sum", [])]) == sorted(
-            Datapoints(id=1, is_string=False, timestamp=[1, 2, 3], sum=[], max=[1, 2, 3])._get_non_empty_data_fields(
-                get_empty_lists=True
-            )
+            Datapoints(
+                id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], sum=[], max=[1, 2, 3]
+            )._get_non_empty_data_fields(get_empty_lists=True)
         )
-        assert [("timestamp", [])] == list(Datapoints(id=1, is_string=False)._get_non_empty_data_fields())
+        assert [("timestamp", [])] == list(
+            Datapoints(id=1, is_string=False, is_step=False, type="numeric")._get_non_empty_data_fields()
+        )
 
     def test_iter(self) -> None:
-        for dp in Datapoints(id=1, is_string=False, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]):
+        for dp in Datapoints(
+            id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]
+        ):
             assert dp.timestamp in [1, 2, 3]
             assert dp.value in [1.0, 2.0, 3.0]
 
     def test_eq(self) -> None:
-        assert Datapoints(id=1, is_string=False) == Datapoints(id=1, is_string=False)
-        assert Datapoints(id=1, is_string=False, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]) == Datapoints(
-            id=1, is_string=False, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]
+        assert Datapoints(id=1, is_string=False, is_step=False, type="numeric") == Datapoints(
+            id=1, is_string=False, is_step=False, type="numeric"
         )
-        assert Datapoints(id=1, is_string=False) != Datapoints(id=0, is_string=False)
-        assert Datapoints(id=1, is_string=False, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]) != Datapoints(
-            id=1, is_string=False, timestamp=[1, 2, 3], max=[1.0, 2.0, 3.0]
+        assert Datapoints(
+            id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]
+        ) == Datapoints(
+            id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]
         )
-        assert Datapoints(id=1, is_string=False, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]) != Datapoints(
-            id=1, is_string=False, timestamp=[1, 2, 3], value=[1.0, 2.0, 4.0]
+        assert Datapoints(id=1, is_string=False, is_step=False, type="numeric") != Datapoints(
+            id=0, is_string=False, is_step=False, type="numeric"
+        )
+        assert Datapoints(
+            id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]
+        ) != Datapoints(id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], max=[1.0, 2.0, 3.0])
+        assert Datapoints(
+            id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]
+        ) != Datapoints(
+            id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], value=[1.0, 2.0, 4.0]
         )
 
     def test_get_item(self) -> None:
-        dps = Datapoints(id=1, is_string=False, timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0])
+        dps = Datapoints(
+            id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0]
+        )
 
         assert Datapoint(timestamp=1, value=1.0) == dps[0]
         assert Datapoint(timestamp=2, value=2.0) == dps[1]
         assert Datapoint(timestamp=3, value=3.0) == dps[2]
-        assert Datapoints(id=1, is_string=False, timestamp=[1, 2], value=[1.0, 2.0]) == dps[:2]
+
+        exp = Datapoints(id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2], value=[1.0, 2.0])
+        assert exp == dps[:2]
 
     def test_load(self) -> None:
         res = Datapoints.load(
@@ -477,6 +508,7 @@ class TestDatapointsObject:
                 "externalId": "1",
                 "isString": False,
                 "isStep": False,
+                "type": "numeric",
                 "unit": "kPa",
                 "datapoints": [{"timestamp": 1, "value": 1}, {"timestamp": 2, "value": 2}],
             }
@@ -496,24 +528,35 @@ class TestDatapointsObject:
                 "externalId": "1",
                 "isStep": False,
                 "isString": True,
-                "datapoints": [{"timestamp": 1, "value": 1}, {"timestamp": 2, "value": 2}],
+                "type": "string",
+                "datapoints": [{"timestamp": 1, "value": "a"}, {"timestamp": 2, "value": "b"}],
             }
         )
         assert 1 == res.id
         assert "1" == res.external_id
         assert [1, 2] == res.timestamp
-        assert [1, 2] == res.value
+        assert ["a", "b"] == res.value
         assert res.is_string is True
         assert res.is_step is False
         assert res.unit is None
 
     def test_slice(self) -> None:
-        res = Datapoints(id=1, is_string=False, timestamp=[1, 2, 3])._slice(slice(None, 1))
+        res = Datapoints(id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3])._slice(
+            slice(None, 1)
+        )
         assert [1] == res.timestamp
 
     def test__extend(self) -> None:  # test _extend, not extend
-        d0 = Datapoints(id=0, is_string=False)
-        d1 = Datapoints(id=1, is_string=False, external_id="1", timestamp=[1, 2, 3], value=[1.0, 2.0, 3.0])
+        d0 = Datapoints(id=0, is_string=False, is_step=False, type="numeric")
+        d1 = Datapoints(
+            id=1,
+            is_string=False,
+            is_step=False,
+            type="numeric",
+            external_id="1",
+            timestamp=[1, 2, 3],
+            value=[1.0, 2.0, 3.0],
+        )
 
         with pytest.raises(NotImplementedError, match="Extending Datapoints is not supported"):
             d0._extend(d1)
@@ -531,7 +574,15 @@ class TestPandasIntegration:
     def test_datapoints(self) -> None:
         import pandas as pd
 
-        d = Datapoints(id=1, is_string=False, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
+        d = Datapoints(
+            id=1,
+            is_string=False,
+            is_step=False,
+            type="numeric",
+            timestamp=[1, 2, 3],
+            average=[2, 3, 4],
+            step_interpolation=[3, 4, 5],
+        )
         expected_df = pd.DataFrame(
             # Since ID is not unique, we use stand-in column names initially, then replace:
             {"first-col": [2, 3, 4.0], "second-col": [3, 4, 5.0]},
@@ -546,7 +597,7 @@ class TestPandasIntegration:
     def test_datapoints_no_names(self) -> None:
         import pandas as pd
 
-        d = Datapoints(id=1, is_string=False, timestamp=[1, 2, 3], average=[2, 3, 4])
+        d = Datapoints(id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], average=[2, 3, 4])
         expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
         expected_df.columns = pd.MultiIndex.from_tuples([(1,)], names=["identifier"])
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=False))
@@ -561,6 +612,8 @@ class TestPandasIntegration:
         d = Datapoints(
             id=0,
             is_string=False,
+            is_step=False,
+            type="numeric",
             external_id="abc",
             timestamp=[1, 2, 3],
             average=[2, 3, 4],
@@ -577,17 +630,32 @@ class TestPandasIntegration:
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
 
     def test_datapoints_empty(self) -> None:
-        d = Datapoints(id=0, is_string=False, external_id="1", timestamp=[], value=[])
+        d = Datapoints(id=0, is_string=False, is_step=False, type="numeric", external_id="1", timestamp=[], value=[])
         assert d.to_pandas().empty
 
     def test_datapoints_list(self) -> None:
         import pandas as pd
 
-        d1 = Datapoints(id=1, is_string=False, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
-        d2 = Datapoints(
-            id=2, is_string=False, external_id="foo", timestamp=[1, 2, 3], count=[2, 3, 4], step_interpolation=[3, 4, 5]
+        d1 = Datapoints(
+            id=1,
+            is_string=False,
+            is_step=False,
+            type="numeric",
+            timestamp=[1, 2, 3],
+            average=[2, 3, 4],
+            step_interpolation=[3, 4, 5],
         )
-        d3 = Datapoints(id=3, timestamp=[1, 3, 4], value=[1, 3, 4.0], is_string=False)
+        d2 = Datapoints(
+            id=0,
+            is_string=False,
+            is_step=False,
+            type="numeric",
+            external_id="foo",
+            timestamp=[1, 2, 3],
+            count=[2, 3, 4],
+            step_interpolation=[3, 4, 5],
+        )
+        d3 = Datapoints(id=3, is_string=False, is_step=False, type="numeric", timestamp=[1, 3, 4], value=[1, 3, 4.0])
         dps_list = DatapointsList([d1, d2, d3])
         expected_df = pd.DataFrame(
             {
@@ -608,8 +676,8 @@ class TestPandasIntegration:
     def test_datapoints_list_names(self) -> None:
         import pandas as pd
 
-        d1 = Datapoints(id=2, is_string=False, timestamp=[1, 2, 3], max=[2, 3, 4])
-        d2 = Datapoints(id=3, is_string=False, timestamp=[1, 3], average=[1, 3])
+        d1 = Datapoints(id=2, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], max=[2, 3, 4])
+        d2 = Datapoints(id=3, is_string=False, is_step=False, type="numeric", timestamp=[1, 3], average=[1, 3])
         dps_list = DatapointsList([d1, d2])
         expected_df = pd.DataFrame({1: [2, 3, 4.0], 2: [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms"))
         expected_df.columns = pd.MultiIndex.from_tuples([(2, "max"), (3, "average")], names=["identifier", "aggregate"])
@@ -620,8 +688,8 @@ class TestPandasIntegration:
     def test_datapoints_list_names_dup(self) -> None:
         import pandas as pd
 
-        d1 = Datapoints(id=2, is_string=False, timestamp=[1, 2, 3], max=[2, 3, 4])
-        d2 = Datapoints(id=2, is_string=False, timestamp=[1, 3], average=[1, 3])
+        d1 = Datapoints(id=2, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], max=[2, 3, 4])
+        d2 = Datapoints(id=2, is_string=False, is_step=False, type="numeric", timestamp=[1, 3], average=[1, 3])
         dps_list = DatapointsList([d1, d2])
         expected_df = pd.DataFrame(
             {1: [2, 3, 4.0], 2: [1, None, 3]},
@@ -635,8 +703,8 @@ class TestPandasIntegration:
     def test_datapoints_list_non_aligned(self) -> None:
         import pandas as pd
 
-        d1 = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3.0], is_string=False)
-        d2 = Datapoints(id=2, timestamp=[3, 4, 5], value=[3, 4, 5.0], is_string=False)
+        d1 = Datapoints(id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], value=[1, 2, 3.0])
+        d2 = Datapoints(id=2, is_string=False, is_step=False, type="numeric", timestamp=[3, 4, 5], value=[3, 4, 5.0])
 
         dps_list = DatapointsList([d1, d2])
 

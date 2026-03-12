@@ -44,7 +44,7 @@ def mock_get_datapoints(
 
             dps = generate_datapoints(start, end)
             dps = dps[:limit]
-            items.append({"isString": False, "datapoints": dps})
+            items.append({"isString": False, "type": "numeric", "datapoints": dps})
         return Response(200, headers={}, json={"items": items})
 
     httpx_mock.add_callback(
@@ -65,7 +65,7 @@ def mock_get_datapoints_empty(
         method="POST",
         url=re.compile(re.escape(get_url(async_client.time_series.data.synthetic)) + "/timeseries/synthetic/.*"),
         status_code=200,
-        json={"items": [{"isString": False, "datapoints": []}]},
+        json={"items": [{"isString": False, "type": "numeric", "datapoints": []}]},
     )
     return httpx_mock
 

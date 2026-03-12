@@ -340,7 +340,10 @@ class DatapointsUpdate:
                     dp["value"] = _json.convert_to_float(dp["value"])
         return cls(
             time_series=identifier,
-            upserts=Datapoints._load({**identifier.dump(), "isString": is_string, "datapoints": data["upserts"]}),
+            upserts=Datapoints._load(
+                identifier.dump()
+                | {"isString": is_string, "type": data["timeSeries"]["type"], "datapoints": data["upserts"]}
+            ),
             deletes=[DataDeletion.load(value) for value in data["deletes"]],
         )
 

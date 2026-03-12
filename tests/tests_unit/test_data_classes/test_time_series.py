@@ -97,6 +97,7 @@ def mock_get_latest_dp_in_ts(
                     "externalId": "1",
                     "isString": False,
                     "isStep": False,
+                    "type": "numeric",
                     "datapoints": [{"timestamp": 1, "value": 10}],
                 }
             ]
