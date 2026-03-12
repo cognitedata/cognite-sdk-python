@@ -925,7 +925,7 @@ class Datapoints(CogniteResource):
     """An object representing a list of datapoints.
 
     Args:
-        id (int | None): Id of the time series the datapoints belong to
+        id (int): Id of the time series the datapoints belong to
         is_string (bool): Whether the time series contains numerical or string data.
         type (Literal['numeric', 'string', 'state']): The type of the time series.
         external_id (str | None): External id of the time series the datapoints belong to
@@ -956,14 +956,12 @@ class Datapoints(CogniteResource):
         duration_uncertain (list[int] | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
         status_code (list[int] | None): The status codes for the raw datapoints.
         status_symbol (list[str] | None): The status symbols for the raw datapoints.
-        error (list[None | str] | None): Human readable strings with description of what went wrong (returned by synthetic datapoints queries).
         timezone (datetime.timezone | ZoneInfo | None): The timezone to use when displaying the datapoints.
     """
 
     def __init__(
         self,
-        *,
-        id: int | None = None,  # TODO: When we stop misusing this for synthetic datapoints
+        id: int,
         is_string: bool,
         type: Literal["numeric", "string", "state"],
         external_id: str | None = None,
@@ -994,10 +992,9 @@ class Datapoints(CogniteResource):
         duration_uncertain: list[int] | None = None,
         status_code: list[int] | None = None,
         status_symbol: list[str] | None = None,
-        error: list[None | str] | None = None,
         timezone: datetime.timezone | ZoneInfo | None = None,
     ) -> None:
-        self.id: int = id  # type: ignore [assignment]
+        self.id = id
         self.external_id = external_id
         self.instance_id = instance_id
         self.is_string = is_string
@@ -1028,7 +1025,6 @@ class Datapoints(CogniteResource):
         self.duration_uncertain = duration_uncertain
         self.status_code = status_code
         self.status_symbol = status_symbol
-        self.error = error
         self.timezone = timezone
 
         self.__datapoint_objects: list[Datapoint] | None = None
@@ -1114,7 +1110,6 @@ class Datapoints(CogniteResource):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_unit: bool = True,
-        include_errors: bool = False,
         include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
@@ -1123,7 +1118,6 @@ class Datapoints(CogniteResource):
             include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
             include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
-            include_errors (bool): For synthetic datapoint queries, include a column with errors.
             include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
                 as a separate level in the columns (MultiIndex).
 
@@ -1138,7 +1132,6 @@ class Datapoints(CogniteResource):
             include_granularity_name=include_granularity_name,
             include_status=include_status,
             include_unit=include_unit,
-            include_errors=include_errors,
         )
 
     @classmethod
@@ -1147,7 +1140,7 @@ class Datapoints(CogniteResource):
         dps_object: dict[str, Any],
     ) -> Datapoints:
         instance = cls(
-            id=dps_object.get("id"),
+            id=dps_object["id"],
             external_id=dps_object.get("externalId"),
             instance_id=NodeId._load_if(dps_object.get("instanceId")),
             is_string=dps_object["isString"],
@@ -1184,9 +1177,7 @@ class Datapoints(CogniteResource):
     def _extend(self, other_dps: Datapoints) -> None:
         raise NotImplementedError("Extending Datapoints is not supported.")
 
-    def _get_non_empty_data_fields(
-        self, get_empty_lists: bool = False, get_error: bool = True
-    ) -> list[tuple[str, Any]]:
+    def _get_non_empty_data_fields(self, get_empty_lists: bool = False) -> list[tuple[str, Any]]:
         non_empty_data_fields = []
         skip_attrs = {
             "id",
@@ -1203,7 +1194,7 @@ class Datapoints(CogniteResource):
             "timezone",
         }
         for attr, value in self.__dict__.copy().items():
-            if attr not in skip_attrs and attr[0] != "_" and (attr != "error" or get_error):
+            if attr not in skip_attrs and attr[0] != "_":
                 if value is not None or attr == "timestamp":
                     if len(value) > 0 or get_empty_lists or attr == "timestamp":
                         non_empty_data_fields.append((attr, value))
@@ -1212,7 +1203,7 @@ class Datapoints(CogniteResource):
     def __get_datapoint_objects(self) -> list[Datapoint]:
         if self.__datapoint_objects is not None:
             return self.__datapoint_objects
-        fields = self._get_non_empty_data_fields(get_error=False)
+        fields = self._get_non_empty_data_fields()
         new_dps_objects = []
         for i in range(len(self)):
             dp_args: dict[str, Any] = {"timezone": self.timezone}
@@ -1248,8 +1239,7 @@ class Datapoints(CogniteResource):
         return truncated_datapoints
 
     def _repr_html_(self) -> str:
-        is_synthetic_dps = self.error is not None
-        return notebook_display_with_fallback(self, include_errors=is_synthetic_dps)
+        return notebook_display_with_fallback(self)
 
 
 class SyntheticDatapoints(CogniteResource):
