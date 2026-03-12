@@ -16,7 +16,12 @@ from zoneinfo import ZoneInfo
 from typing_extensions import Self
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceListWithClientRef
+from cognite.client.data_classes._base import (
+    CogniteResource,
+    CogniteResourceList,
+    CogniteResourceListWithClientRef,
+    IdTransformerMixin,
+)
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
@@ -43,6 +48,8 @@ from cognite.client.utils._text import (
 from cognite.client.utils._time import (
     convert_and_isoformat_timestamp,
     convert_timezone_to_str,
+    datetime_to_ms,
+    ms_to_datetime,
     parse_str_timezone,
 )
 
@@ -399,7 +406,7 @@ class LatestDatapointQuery:
     """Parameters describing a query for the latest datapoint from a time series.
 
     Note:
-        Pass either ID or external ID.
+        Pass either ID, external ID or instance ID.
 
     Args:
         id (InitVar[int | None]): The internal ID of the time series to query.
@@ -424,7 +431,7 @@ class LatestDatapointQuery:
     treat_uncertain_as_bad: bool | None = None
 
     def __post_init__(self, id: int | None, external_id: str | None, instance_id: NodeId | None) -> None:
-        # Ensure user have just specified one of id/xid:
+        # Ensure user have just specified one of id/external_id/instance_id:
         object.__setattr__(self, "_identifier", Identifier.of_either(id, external_id, instance_id))
 
     @property
@@ -1532,3 +1539,279 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
             include_status=include_status,
             include_unit=include_unit,
         )
+
+
+class LatestDatapoint(CogniteResource):
+    """An object representing the latest datapoint for a time series.
+
+    This class combines time series metadata with at most one datapoint, optimized for the
+    ``retrieve_latest`` method response.
+
+    Args:
+        id (int): Id of the time series the datapoint belongs to
+        timestamp (datetime.datetime | None): The data timestamp. None if no datapoint exists.
+        value (str | float | None): The data value. Can be string or numeric, or None if no datapoint exists or value is missing.
+        is_string (bool): Whether the time series contains numerical or string data.
+        type (Literal['numeric', 'string', 'state']): The type of the time series.
+        before (datetime.datetime | None): The timestamp used as the 'before' parameter in the query that retrieved this datapoint.
+        is_step (bool | None): Whether the time series is stepwise or continuous.
+        external_id (str | None): External id of the time series the datapoint belongs to
+        instance_id (NodeId | None): The instance id of the time series the datapoint belongs to
+        unit (str | None): The physical unit of the time series (free-text field).
+        unit_external_id (str | None): The unit_external_id of the returned data points.
+        status_code (int | None): The status code for the datapoint.
+        status_symbol (str | None): The status symbol for the datapoint.
+    """
+
+    def __init__(
+        self,
+        id: int,
+        timestamp: datetime.datetime | None,
+        value: str | float | None,
+        is_string: bool,
+        type: Literal["numeric", "string", "state"],
+        before: datetime.datetime | None,
+        is_step: bool | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+        unit: str | None = None,
+        unit_external_id: str | None = None,
+        status_code: int | None = None,
+        status_symbol: str | None = None,
+    ) -> None:
+        self.id = id
+        self.external_id = external_id
+        self.instance_id = instance_id
+        self.is_string = is_string
+        self.is_step = is_step
+        self.type = type
+        self.before = before
+        self.unit = unit
+        self.unit_external_id = unit_external_id
+        self.timestamp = timestamp
+        self.value = value
+        self.status_code = status_code
+        self.status_symbol = status_symbol
+
+    def __str__(self) -> str:
+        dumped = self.dump(camel_case=False)
+        if self.timestamp is not None:
+            dumped["timestamp"] = self.timestamp.isoformat(sep=" ", timespec="milliseconds")
+        return _json.dumps(dumped, indent=4)
+
+    def __bool__(self) -> bool:
+        """Returns True if the latest datapoint exists (has a timestamp)."""
+        return self.timestamp is not None
+
+    def __eq__(self, other: Any) -> bool:
+        raise NotImplementedError(
+            "Equality comparison is not implemented for LatestDatapoint because it most likely involves "
+            "a float comparison."
+        )
+
+    @property
+    def has_datapoint(self) -> bool:
+        """Whether a datapoint exists for this time series."""
+        return bool(self)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the latest datapoint into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+
+        Returns:
+            dict[str, Any]: A dictionary representing the instance.
+        """
+        dumped: dict[str, Any] = {
+            "id": self.id,
+            "is_string": self.is_string,
+            "is_step": self.is_step,
+            "type": self.type,
+            "before": datetime_to_ms(self.before) if self.before is not None else None,
+            "unit": self.unit,
+            "unit_external_id": self.unit_external_id,
+        }
+        if self.instance_id is not None:
+            dumped["instance_id"] = self.instance_id.dump(camel_case=camel_case, include_instance_type=False)
+        if self.external_id is not None:
+            dumped["external_id"] = self.external_id
+
+        if self.timestamp is None:
+            dumped["datapoints"] = []
+        else:
+            dp: dict[str, Any] = {"timestamp": datetime_to_ms(self.timestamp), "value": self.value}
+            if self.status_code is not None:
+                dp["status"] = {"code": self.status_code, "symbol": self.status_symbol}
+            dumped["datapoints"] = [dp]
+
+        if camel_case:
+            dumped = convert_all_keys_to_camel_case(dumped)
+        return dumped
+
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
+        """Convert the latest datapoint into a pandas DataFrame.
+
+        Args:
+            camel_case (bool): Convert column names to camel case. Defaults to False.
+
+        Returns:
+            pandas.DataFrame: The DataFrame representation of the latest datapoint.
+        """
+        pd = local_import("pandas")
+        # Some of these may be None (and dump will remove them), but we want them always present:
+        dumped = {"value": self.value, "timestamp": self.timestamp, "before": self.before}
+        for k, v in self.dump(camel_case=camel_case).items():
+            if k not in dumped:
+                dumped[k] = v
+        return pd.Series(dumped).to_frame(name="value")
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        status_code = None
+        status_symbol = None
+
+        match resource["datapoints"]:
+            case []:
+                timestamp: datetime.datetime | None = None
+                value: str | float | None = None
+            case [dict() as dp]:
+                timestamp = ms_to_datetime(dp["timestamp"])
+                value = dp.get("value")
+                if status := dp.get("status"):
+                    status_code = status.get("code")
+                    status_symbol = status.get("symbol")
+            case _ as dps:
+                raise ValueError(f"Expected at most one datapoint for LatestDatapoint, got: {dps!r}")
+
+        # Before is not part of the API payload, and only a convenience property we add:
+        if (before := resource.get("before")) is not None:
+            before = ms_to_datetime(before)
+        return cls(
+            id=resource["id"],
+            timestamp=timestamp,
+            value=value,
+            external_id=resource.get("externalId"),
+            instance_id=NodeId._load_if(resource.get("instanceId")),
+            type=resource["type"],
+            is_string=resource["isString"],
+            is_step=resource["isStep"],
+            unit=resource.get("unit"),
+            unit_external_id=resource.get("unitExternalId"),
+            status_code=status_code,
+            status_symbol=status_symbol,
+            before=before,
+        )
+
+
+class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdTransformerMixin):
+    """A list of LatestDatapoint objects.
+
+    This list is optimized for the ``retrieve_latest`` method, providing a ``to_pandas()``
+    method that creates a DataFrame with time series identifiers as index and timestamp/value
+    as columns, avoiding sparse DataFrames when timestamps differ across time series.
+    """
+
+    _RESOURCE = LatestDatapoint
+
+    @cached_property
+    def _id_to_item(self) -> dict[int, LatestDatapoint | list[LatestDatapoint]]:  # type: ignore [override]
+        return build_id_mapping_with_duplicates(self.data, "id")
+
+    @cached_property
+    def _external_id_to_item(self) -> dict[str, LatestDatapoint | list[LatestDatapoint]]:  # type: ignore [override]
+        return build_id_mapping_with_duplicates(self.data, "external_id")
+
+    @cached_property
+    def _instance_id_to_item(self) -> dict[InstanceId, LatestDatapoint | list[LatestDatapoint]]:  # type: ignore [override]
+        return build_id_mapping_with_duplicates(self.data, "instance_id")
+
+    def get(  # type: ignore [override]
+        self,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: InstanceId | tuple[str, str] | None = None,
+    ) -> LatestDatapoint | list[LatestDatapoint] | None:
+        """Get a specific LatestDatapoint from this list by id, external_id or instance_id.
+
+        Note:
+            For duplicated time series, returns a list of LatestDatapoint.
+
+        Args:
+            id (int | None): The id of the item(s) to get.
+            external_id (str | None): The external_id of the item(s) to get.
+            instance_id (InstanceId | tuple[str, str] | None): The instance_id of the item(s) to get.
+
+        Returns:
+            LatestDatapoint | list[LatestDatapoint] | None: The requested item(s)
+        """
+        return super().get(id, external_id, instance_id)
+
+    def __str__(self) -> str:
+        dumped = self.dump(camel_case=False)
+        for item in dumped:
+            if item.get("timestamp") is not None:
+                item["timestamp"] = convert_and_isoformat_timestamp(item["timestamp"], None)
+        return _json.dumps(dumped, indent=4)
+
+    def to_pandas(  # type: ignore [override]
+        self,
+        include_status: bool = True,
+    ) -> pandas.DataFrame:
+        """Convert the latest datapoints list into a pandas DataFrame.
+
+        Creates a DataFrame with time series identifiers (preferring external_id, then id)
+        as the index, and timestamp/value as columns. This format avoids sparse DataFrames
+        when timestamps differ across time series.
+
+        Args:
+            include_status (bool): Include status_code and status_symbol columns if available. Default: True
+
+        Returns:
+            pandas.DataFrame: A DataFrame with columns 'timestamp', 'value' (and optionally
+                'status_code', 'status_symbol') with time series identifiers as the index.
+
+        Examples:
+
+            Get the latest datapoint for multiple time series and convert to DataFrame:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> latest = client.time_series.data.retrieve_latest(external_id=["ts1", "ts2", "ts3"])
+                >>> df = latest.to_pandas()
+        """
+        pd = local_import("pandas")
+
+        rows = []
+        index_values: list[int | str | InstanceId] = []
+
+        for item in self:
+            # Prefer instance_id, then external_id, then id for the index
+            if item.instance_id is not None:
+                index_values.append(item.instance_id)
+            elif item.external_id is not None:
+                index_values.append(item.external_id)
+            else:
+                index_values.append(item.id)
+
+            row: dict[str, Any] = {
+                "value": item.value,
+                "timestamp": item.timestamp if item.timestamp is not None else pd.NaT,
+                "before": item.before,
+            }
+            if item.unit_external_id is not None:
+                row["unit_external_id"] = item.unit_external_id
+            if include_status:
+                row["status_code"] = item.status_code
+                row["status_symbol"] = item.status_symbol
+            rows.append(row)
+
+        df = pd.DataFrame(rows, index=index_values)
+        df.index.name = "identifier"
+
+        # Drop status columns if they are all null
+        if include_status:
+            if df["status_code"].isna().all():  # symbol column will also be null
+                df = df.drop(columns=["status_code", "status_symbol"])
+
+        return df
