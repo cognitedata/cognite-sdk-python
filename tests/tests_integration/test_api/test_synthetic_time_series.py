@@ -10,8 +10,9 @@ import numpy as np
 import pytest
 
 from cognite.client import AsyncCogniteClient, CogniteClient
-from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite, TimeSeriesWriteList
+from cognite.client.data_classes import Datapoints, TimeSeries, TimeSeriesWrite, TimeSeriesWriteList
 from cognite.client.data_classes.data_modeling.ids import NodeId
+from cognite.client.data_classes.datapoints import SyntheticDatapoints, SyntheticDatapointsList
 from cognite.client.utils._time import datetime_to_ms
 from tests.utils import get_or_raise
 
@@ -126,11 +127,12 @@ class TestSyntheticDatapointsAPI:
             variables={"A": test_time_series[0], "B": test_time_series[1]},
         )[0]
         assert 100 == len(dps)
-        assert 100 == len(dps.error or [])
-        assert 100 == len(dps.value or [])
-        assert all(x is not None for x in (dps.error or []))
-        assert all(x is None for x in (dps.value or []))
-        assert (100, 1) == dps.to_pandas().shape
+        assert 100 == len(dps.error)
+        assert 100 == len(dps.value)
+        assert all(x is not None for x in dps.error)
+        assert all(x is None for x in dps.value)
+        assert (100, 2) == dps.to_pandas().shape
+        assert (100, 1) == dps.to_pandas(include_errors=False).shape
         assert (100, 2) == dps.to_pandas(include_errors=True).shape
 
     def test_query_using_time_series_objs__missing_external_id(
@@ -170,8 +172,8 @@ class TestSyntheticDatapointsAPI:
             limit=n_dps,
         )
         assert len(res) == n_dps
-        assert all(err is None for err in (res.error or []))
-        assert all(x == 0.0 for x in (res.value or []))  # float, plz
+        assert all(err is None for err in res.error)
+        assert all(x == 0.0 for x in res.value)
 
     @pytest.mark.dsl
     def test_expression_builder_time_series_vs_string(
@@ -186,18 +188,20 @@ class TestSyntheticDatapointsAPI:
             limit=100,
             variables={"a": get_or_raise(test_time_series[0].external_id)},
         )
-        dps2 = cognite_client.time_series.data.synthetic.query(
-            expressions=cast(list[str], [symbols("a"), symbols("b")]),
+        dps_lst = cognite_client.time_series.data.synthetic.query(
+            expressions=[symbols("a"), symbols("b")],
             start=datetime(2017, 1, 1),
             end="now",
             limit=100,
             variables={"a": test_time_series[0], "b": get_or_raise(test_time_series[0].external_id)},
         )
         assert 100 == len(dps1)
-        assert 100 == len(dps2[0])
-        assert dps1 == dps2.get(external_id="a")
-        assert isinstance(dps1, Datapoints)
-        assert isinstance(dps2, DatapointsList)
+        assert 100 == len(dps_lst[0])
+        assert isinstance(dps1, SyntheticDatapoints)
+        assert isinstance(dps_lst, SyntheticDatapointsList)
+
+        with pytest.raises(NotImplementedError, match="involves float comparisons"):
+            dps1 == dps_lst[0]
 
     @pytest.mark.dsl
     def test_expression_builder_complex(
