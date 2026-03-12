@@ -88,3 +88,50 @@ class TestPNIDParsingUnit:
             job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
                 file_ids=file_ids, entities=entities, multiple_jobs=True
             )
+
+
+class TestDiagramDownloadConvertedFile:
+    @patch.object(DiagramsAPI, "_do_request")
+    def test_download_converted_file_with_file_id(
+        self, mocked_do_request: MagicMock, cognite_client: CogniteClient
+    ) -> None:
+        mock_response = Mock()
+        mock_response.content = b"fake-png-bytes"
+        mocked_do_request.return_value = mock_response
+
+        result = cognite_client.diagrams.download_converted_file(
+            job_id=123, file_id=456, page=2, mime_type="image/png"
+        )
+
+        assert result == b"fake-png-bytes"
+        mocked_do_request.assert_called_once()
+        call_kwargs = mocked_do_request.call_args[1]
+        assert call_kwargs["accept"] == "image/png"
+        assert call_kwargs["params"] == {"fileId": 456, "page": 2}
+
+    @patch.object(DiagramsAPI, "_do_request")
+    def test_download_converted_file_with_file_external_id(
+        self, mocked_do_request: MagicMock, cognite_client: CogniteClient
+    ) -> None:
+        mock_response = Mock()
+        mock_response.content = b"fake-svg-bytes"
+        mocked_do_request.return_value = mock_response
+
+        result = cognite_client.diagrams.download_converted_file(
+            job_id=789, file_external_id="my-diagram.pdf", mime_type="image/svg+xml"
+        )
+
+        assert result == b"fake-svg-bytes"
+        mocked_do_request.assert_called_once()
+        call_kwargs = mocked_do_request.call_args[1]
+        assert call_kwargs["accept"] == "image/svg+xml"
+        assert call_kwargs["params"] == {"fileExternalId": "my-diagram.pdf", "page": 1}
+
+    def test_download_converted_file_requires_file_identifier(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(ValueError, match="Exactly one of file_id or file_external_id must be provided"):
+            cognite_client.diagrams.download_converted_file(job_id=123)
+
+        with pytest.raises(ValueError, match="Exactly one of file_id or file_external_id must be provided"):
+            cognite_client.diagrams.download_converted_file(
+                job_id=123, file_id=456, file_external_id="both-provided"
+            )
