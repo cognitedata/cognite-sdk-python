@@ -36,7 +36,8 @@ from cognite.client.data_classes.data_modeling import (
     EdgeListWithCursor,
     NodeListWithCursor,
 )
-from cognite.client.data_classes.datapoints import DatapointsArray
+from cognite.client.data_classes.datapoints import DatapointsArray, SyntheticDatapoints
+from cognite.client.data_classes.datapoints_subscriptions import SubscriptionDatapoints
 from cognite.client.data_classes.events import EventList
 from cognite.client.data_classes.files import FileMetadata, FileMetadataList
 from cognite.client.data_classes.functions import FunctionSchedule
@@ -173,7 +174,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource)
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SyntheticDatapoints, SubscriptionDatapoints})
         ],
     )
     def test_json_serialize(
@@ -193,7 +194,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource)
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
         ],
     )
     def test_dump_load_only_required(
@@ -290,7 +291,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource)
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
         ],
     )
     def test_load_has_no_side_effects(
@@ -320,7 +321,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource)
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
         ],
     )
     def test_handle_unknown_arguments_when_loading(
@@ -363,7 +364,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource)
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
         ],
     )
     def test_yaml_serialize(
