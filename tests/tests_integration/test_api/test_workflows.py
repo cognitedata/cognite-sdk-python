@@ -350,10 +350,7 @@ def workflow_execution_list_test_scoped(
 
 
 @pytest.fixture(scope="session")
-def permanent_workflow_for_triggers(
-    cognite_client: CogniteClient,
-    permanent_wf_ext_id: str,
-) -> WorkflowVersion:
+def permanent_workflow_for_triggers(cognite_client: CogniteClient, permanent_wf_ext_id: str) -> WorkflowVersion:
     workflow = WorkflowUpsert(external_id=permanent_wf_ext_id, description="Permanent workflow for trigger testing")
     cognite_client.workflows.upsert(workflow)
     version = WorkflowVersionUpsert(
@@ -716,9 +713,12 @@ class TestWorkflowTriggers:
         self,
         cognite_client: CogniteClient,
         permanent_data_modeling_trigger: WorkflowTrigger,
+        permanent_wf_ext_id_prefix: str,
     ) -> None:
         assert permanent_data_modeling_trigger is not None
-        assert permanent_data_modeling_trigger.external_id.startswith("data-modeling-trigger_integ_test_wf")
+        assert permanent_data_modeling_trigger.external_id.startswith(
+            f"data-modeling-trigger_{permanent_wf_ext_id_prefix}"
+        )
         actual = permanent_data_modeling_trigger.trigger_rule
         expected = WorkflowDataModelingTriggerRule(
             data_modeling_query=WorkflowTriggerDataModelingQuery(
@@ -733,7 +733,7 @@ class TestWorkflowTriggers:
             batch_timeout=300,
         )
         assert actual.dump() == expected.dump()
-        assert permanent_data_modeling_trigger.workflow_external_id.startswith("integ_test_wf_")
+        assert permanent_data_modeling_trigger.workflow_external_id.startswith(permanent_wf_ext_id_prefix)
         assert permanent_data_modeling_trigger.workflow_version == "v1"
         assert permanent_data_modeling_trigger.created_time is not None
         assert permanent_data_modeling_trigger.last_updated_time is not None
