@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._api_client import APIClient
 from cognite.client._sync_api.agents.agents import SyncAgentsAPI
 from cognite.client._sync_api.ai import SyncAIAPI
 from cognite.client._sync_api.annotations import SyncAnnotationsAPI
@@ -136,6 +137,15 @@ class CogniteClient:
             ClientConfig: The configuration object.
         """
         return self.__async_client._config
+
+    @property
+    def api_client(self) -> APIClient:
+        """Returns the underlying API client used for HTTP requests.
+
+        Returns:
+            APIClient: The API client instance.
+        """
+        return self.__async_client._api_client
 
     @classmethod
     def default(

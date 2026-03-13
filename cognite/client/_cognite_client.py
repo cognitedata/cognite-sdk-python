@@ -94,6 +94,15 @@ class AsyncCogniteClient:
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 
+    @property
+    def api_client(self) -> APIClient:
+        """Returns the underlying API client used for HTTP requests.
+
+        Returns:
+            APIClient: The API client instance.
+        """
+        return self._api_client
+
     async def get(
         self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
     ) -> CogniteHTTPResponse:
