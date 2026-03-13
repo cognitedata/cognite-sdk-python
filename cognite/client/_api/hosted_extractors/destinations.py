@@ -110,7 +110,7 @@ class DestinationsAPI(APIClient):
     async def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
-        """`Delete one or more destsinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/delete_destinations>`_
+        """`Delete one or more destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/delete_destinations>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.

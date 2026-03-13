@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import httpx
+from cognite.client._api_client import APIClient
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
 from cognite.client.utils._auxiliary import load_resource_to_dict
 from cognite.client import AsyncCogniteClient
@@ -80,6 +81,15 @@ class CogniteClient:
             ClientConfig: The configuration object.
         """
         return self.__async_client._config
+
+    @property
+    def api_client(self) -> APIClient:
+        """Returns the underlying API client used for HTTP requests.
+
+        Returns:
+            APIClient: The API client instance.
+        """
+        return self.__async_client._api_client
 
     @classmethod
     def default(

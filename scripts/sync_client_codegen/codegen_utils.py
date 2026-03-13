@@ -235,6 +235,15 @@ def run_ruff(file_paths: list[Path], verbose: bool = False) -> None:
     subprocess.run(command, check=False, capture_output=True)
 
 
+def run_ruff_direct(file_path: Path) -> None:
+    """Run ruff directly on a file, bypassing pre-commit.
+
+    This is needed for temp files outside the repo, where pre-commit hooks don't apply.
+    """
+    subprocess.run(["poetry", "run", "ruff", "check", "--fix", str(file_path)], check=False, capture_output=True)
+    subprocess.run(["poetry", "run", "ruff", "format", str(file_path)], check=False, capture_output=True)
+
+
 def get_dot_path_lookup(async_client: AsyncCogniteClient) -> tuple[dict[str, str], dict[str, str]]:
     api_cls_lookup = get_api_class_by_attribute(async_client)
     dot_path_lookup = {v.__name__: k for k, v in api_cls_lookup.items()}

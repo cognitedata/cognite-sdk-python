@@ -6,7 +6,7 @@ from scripts.sync_client_codegen.codegen_utils import (
     foolish_cls_name_rewrite,
     get_canonical_source,
     path_as_importable,
-    run_ruff,
+    run_ruff_direct,
 )
 from scripts.sync_client_codegen.constants import (
     ASYNC_API_DIR,
@@ -39,10 +39,11 @@ def create_sync_cognite_client(
 
 
 def verify_cognite_client_is_up_to_date(new_source: str) -> bool:
-    with NamedTemporaryFile(mode="w+") as f:
+    with NamedTemporaryFile(mode="w+", suffix=".py") as f:
         f.write(new_source)
+        f.flush()  # Ensure content is written before ruff reads it
         path = Path(f.name)
-        run_ruff([path], verbose=False)
+        run_ruff_direct(path)
         new_file_ast = get_canonical_source(path)
 
     current_ast = get_canonical_source(SYNC_CLIENT_PATH)

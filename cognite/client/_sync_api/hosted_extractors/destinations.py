@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e357a5685b77fbbefe2a7f72f8929ba0
+895b73fbf30659992b85ce9503f7339f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -96,7 +96,7 @@ class SyncDestinationsAPI(SyncAPIClient):
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
         """
-        `Delete one or more destsinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/delete_destinations>`_
+        `Delete one or more destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/delete_destinations>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.

@@ -379,7 +379,7 @@ def _run_files(
 
     # Gather all sync APIs into the CogniteClient class itself and check if up-to-date:
     new_client_source_code = create_sync_cognite_client(dot_path_lookup, file_path_lookup)
-    client_has_changed = verify_cognite_client_is_up_to_date(new_client_source_code)
+    client_has_changed = not verify_cognite_client_is_up_to_date(new_client_source_code)
 
     if verify:
         return _report_after_verification(all_expected_files, files_to_update, something_failed, client_has_changed)
