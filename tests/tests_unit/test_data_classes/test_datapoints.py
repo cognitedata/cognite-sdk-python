@@ -70,6 +70,7 @@ class TestDatapointsArray:
         params: dict = dict(
             id=123,
             is_string=False,
+            is_step=False,
             type="numeric",
             timestamp=np.array([1, 2, 3], dtype=np.int64),
             value=np.array([-1, None, 2.5], dtype=np.float64),
@@ -92,10 +93,18 @@ class TestToPandas:
         dps_cls = dps_lst_cls._RESOURCE
         df = dps_lst_cls(
             [
-                dps_cls(timestamp=ts, value=[2.0], id=123, is_string=False, type="numeric"),
-                dps_cls(timestamp=ts, value=[4.0], id=456, external_id="foo", is_string=False, type="numeric"),
+                dps_cls(timestamp=ts, value=[2.0], id=123, is_string=False, is_step=False, type="numeric"),
                 dps_cls(
-                    timestamp=ts, value=[6.0], id=789, instance_id=NodeId("s", "x"), is_string=False, type="numeric"
+                    timestamp=ts, value=[4.0], id=456, external_id="foo", is_string=False, is_step=False, type="numeric"
+                ),
+                dps_cls(
+                    timestamp=ts,
+                    value=[6.0],
+                    id=789,
+                    instance_id=NodeId("s", "x"),
+                    is_string=False,
+                    is_step=False,
+                    type="numeric",
                 ),
             ]
         ).to_pandas()

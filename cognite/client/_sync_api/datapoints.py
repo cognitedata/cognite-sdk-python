@@ -1,6 +1,6 @@
 """
 ===============================================================================
-59576134bc85388b50b689e0f98eed35
+c12d4b792acc40a524035e96f591caa6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -22,6 +22,8 @@ from cognite.client.data_classes import (
     DatapointsArrayList,
     DatapointsList,
     DatapointsQuery,
+    LatestDatapoint,
+    LatestDatapointList,
     LatestDatapointQuery,
 )
 from cognite.client.data_classes.data_modeling.ids import NodeId
@@ -167,14 +169,14 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     target_client.time_series.data.insert_multiple(
                 ...         [{"external_id": dps.external_id, "datapoints": dps} for dps in dps_chunk]
                 ...     )
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
-            self.__async_client.time_series.data(  # type: ignore [call-overload]
+            self.__async_client.time_series.data(
                 queries=queries,
                 chunk_size_datapoints=chunk_size_datapoints,
                 chunk_size_time_series=chunk_size_time_series,
                 return_arrays=return_arrays,
-            )
+            )  # type: ignore [call-overload]
         )
 
     @overload
@@ -846,7 +848,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> series = pd.Series(dps.value, index=dps.timestamp)
         """
         return run_sync(
-            self.__async_client.time_series.data.retrieve_arrays(  # type: ignore [call-overload, misc]
+            self.__async_client.time_series.data.retrieve_arrays(
                 id=id,
                 external_id=external_id,
                 instance_id=instance_id,
@@ -863,7 +865,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 include_status=include_status,
                 ignore_bad_datapoints=ignore_bad_datapoints,
                 treat_uncertain_as_bad=treat_uncertain_as_bad,
-            )
+            )  # type: ignore [misc, call-overload]
         )
 
     def retrieve_dataframe(
@@ -1018,7 +1020,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> Datapoints | None: ...
+    ) -> LatestDatapoint | None: ...
 
     @overload
     def retrieve_latest(
@@ -1032,7 +1034,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     def retrieve_latest(
@@ -1046,7 +1048,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> Datapoints | None: ...
+    ) -> LatestDatapoint | None: ...
 
     @overload
     def retrieve_latest(
@@ -1060,7 +1062,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     def retrieve_latest(
@@ -1074,7 +1076,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> Datapoints | None: ...
+    ) -> LatestDatapoint | None: ...
 
     @overload
     def retrieve_latest(
@@ -1088,7 +1090,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     def retrieve_latest(
@@ -1102,7 +1104,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> Datapoints | None: ...
+    ) -> LatestDatapoint | None: ...
 
     @overload
     def retrieve_latest(
@@ -1117,7 +1119,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     def retrieve_latest(
@@ -1133,7 +1135,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     def retrieve_latest(
@@ -1148,7 +1150,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     def retrieve_latest(
@@ -1163,7 +1165,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     def retrieve_latest(
@@ -1178,7 +1180,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     def retrieve_latest(
         self,
@@ -1192,7 +1194,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> Datapoints | DatapointsList | None:
+    ) -> LatestDatapoint | LatestDatapointList | None:
         """
         `Get the latest datapoint for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getLatest>`_
 
@@ -1212,17 +1214,18 @@ class SyncDatapointsAPI(SyncAPIClient):
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            Datapoints | DatapointsList | None: A Datapoints object containing the requested data, or a DatapointsList if multiple were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            LatestDatapoint | LatestDatapointList | None: A LatestDatapoint object containing the latest datapoint (if it exists), or a LatestDatapointList if multiple time series were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
-            Getting the latest datapoint in a time series. This method returns a Datapoints object, so the datapoint
-            (if it exists) will be the first element:
+            Getting the latest datapoint in a time series:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.time_series.data.retrieve_latest(id=1)[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1)
+                >>> if res:  # Check if datapoint exists
+                ...     print(res.timestamp, res.value)
 
             You can also use external_id or instance_id; single identifier or list of identifiers:
 
@@ -1231,30 +1234,30 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     external_id=["foo", "bar"],
                 ...     instance_id=NodeId("my-space", "my-ts-xid"))
 
-            You can also get the first datapoint before a specific time:
+            You can also get the latest datapoint before a specific time:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")
 
-            You can also get the first datapoint before a specific time in the future e.g. forecast data:
+            You can also get the latest datapoint before a specific time in the future e.g. forecast data:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ahead")[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ahead")
 
             You can also retrieve the datapoint in a different unit or unit system:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")[0]
-                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")
+                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")
 
             You may also pass an instance of LatestDatapointQuery:
 
                 >>> from cognite.client.data_classes import LatestDatapointQuery
-                >>> res = client.time_series.data.retrieve_latest(id=LatestDatapointQuery(id=1, before=60_000))[0]
+                >>> res = client.time_series.data.retrieve_latest(id=LatestDatapointQuery(id=1, before=60_000))
 
             If you need the latest datapoint for multiple time series, simply give a list of ids. Note that we are
             using external ids here, but either will work:
 
                 >>> res = client.time_series.data.retrieve_latest(external_id=["abc", "def"])
-                >>> latest_abc = res[0][0]
-                >>> latest_def = res[1][0]
+                >>> latest_abc = res[0]
+                >>> latest_def = res[1]
 
             If you for example need to specify a different value of 'before' for each time series, you may pass several
             LatestDatapointQuery objects. These will override any parameter passed directly to the function and also allows

@@ -19,8 +19,10 @@ from cognite.client import AsyncCogniteClient
 from cognite.client._api.datapoints import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.data_classes.data_modeling.ids import NodeId
+from cognite.client.data_classes.datapoints import LatestDatapoint, LatestDatapointList
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from tests.utils import get_url, jsgz_load, random_gamma_dist_integer
+from cognite.client.utils._time import datetime_to_ms
+from tests.utils import get_or_raise, get_url, jsgz_load, random_gamma_dist_integer
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -98,45 +100,46 @@ def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, async_client: Async
 class TestGetLatest:
     def test_retrieve_latest(self, cognite_client: CogniteClient, mock_retrieve_latest: Any) -> None:
         res = cognite_client.time_series.data.retrieve_latest(id=1)
-        assert isinstance(res, Datapoints)
-        assert 10000 == res[0].timestamp
-        assert isinstance(res[0].value, float)
+        assert isinstance(res, LatestDatapoint)
+        assert res.has_datapoint
+        assert isinstance(res.timestamp, datetime)
+        assert isinstance(res.value, float)
 
     def test_retrieve_latest_multiple_ts(self, cognite_client: CogniteClient, mock_retrieve_latest: Any) -> None:
         res = cognite_client.time_series.data.retrieve_latest(id=1, external_id="2")
-        assert isinstance(res, DatapointsList)
-        for dps in res:
-            assert 10000 == dps[0].timestamp
-            assert isinstance(dps[0].value, float)
+        assert isinstance(res, LatestDatapointList)
+        for dp in res:
+            assert isinstance(dp.timestamp, datetime)
+            assert isinstance(dp.value, float)
 
     def test_retrieve_latest_with_before(self, cognite_client: CogniteClient, mock_retrieve_latest: Any) -> None:
         res = cognite_client.time_series.data.retrieve_latest(id=1, before=10)
-        assert isinstance(res, Datapoints)
-        assert 9 == res[0].timestamp
-        assert isinstance(res[0].value, float)
+        assert isinstance(res, LatestDatapoint)
+        assert 9 == datetime_to_ms(get_or_raise(res.timestamp))
+        assert isinstance(res.value, float)
 
     def test_retrieve_latest_multiple_ts_with_before(
         self, cognite_client: CogniteClient, mock_retrieve_latest: Any
     ) -> None:
         res = cognite_client.time_series.data.retrieve_latest(id=[1, 2], external_id=["1", "2"], before=10)
-        assert isinstance(res, DatapointsList)
-        for dps in res:
-            assert 9 == dps[0].timestamp
-            assert isinstance(dps[0].value, float)
+        assert isinstance(res, LatestDatapointList)
+        for dp in res:
+            assert 9 == datetime_to_ms(get_or_raise(dp.timestamp))
+            assert isinstance(dp.value, float)
 
     def test_retrieve_latest_empty(self, cognite_client: CogniteClient, mock_retrieve_latest_empty: HTTPXMock) -> None:
         res = cognite_client.time_series.data.retrieve_latest(id=1)
-        assert isinstance(res, Datapoints)
-        assert 0 == len(res)
+        assert isinstance(res, LatestDatapoint)
+        assert not res.has_datapoint
 
     def test_retrieve_latest_multiple_ts_empty(
         self, cognite_client: CogniteClient, mock_retrieve_latest_empty: HTTPXMock
     ) -> None:
         res_list = cognite_client.time_series.data.retrieve_latest(id=[1, 2])
-        assert isinstance(res_list, DatapointsList)
+        assert isinstance(res_list, LatestDatapointList)
         assert 2 == len(res_list)
         for res in res_list:
-            assert 0 == len(res)
+            assert not res.has_datapoint
 
     def test_retrieve_latest_concurrent_fails(
         self,

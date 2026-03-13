@@ -16,7 +16,12 @@ from zoneinfo import ZoneInfo
 from typing_extensions import Self
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceListWithClientRef
+from cognite.client.data_classes._base import (
+    CogniteResource,
+    CogniteResourceList,
+    CogniteResourceListWithClientRef,
+    IdTransformerMixin,
+)
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
@@ -43,6 +48,8 @@ from cognite.client.utils._text import (
 from cognite.client.utils._time import (
     convert_and_isoformat_timestamp,
     convert_timezone_to_str,
+    datetime_to_ms,
+    ms_to_datetime,
     parse_str_timezone,
 )
 
@@ -399,7 +406,7 @@ class LatestDatapointQuery:
     """Parameters describing a query for the latest datapoint from a time series.
 
     Note:
-        Pass either ID or external ID.
+        Pass either ID, external ID or instance ID.
 
     Args:
         id (InitVar[int | None]): The internal ID of the time series to query.
@@ -424,7 +431,7 @@ class LatestDatapointQuery:
     treat_uncertain_as_bad: bool | None = None
 
     def __post_init__(self, id: int | None, external_id: str | None, instance_id: NodeId | None) -> None:
-        # Ensure user have just specified one of id/xid:
+        # Ensure user have just specified one of id/external_id/instance_id:
         object.__setattr__(self, "_identifier", Identifier.of_either(id, external_id, instance_id))
 
     @property
@@ -611,10 +618,10 @@ class DatapointsArray(CogniteResource):
         self,
         id: int,
         is_string: bool,
+        is_step: bool,
         type: Literal["numeric", "string", "state"],
         external_id: str | None = None,
         instance_id: NodeId | None = None,
-        is_step: bool | None = None,
         unit: str | None = None,
         unit_external_id: str | None = None,
         granularity: str | None = None,
@@ -738,7 +745,7 @@ class DatapointsArray(CogniteResource):
             id=dps_dct["id"],
             external_id=dps_dct.get("externalId"),
             instance_id=NodeId._load_if(dps_dct.get("instanceId")),
-            is_step=dps_dct.get("isStep"),
+            is_step=dps_dct["isStep"],
             is_string=dps_dct["isString"],
             unit=dps_dct.get("unit"),
             type=dps_dct["type"],
@@ -925,12 +932,12 @@ class Datapoints(CogniteResource):
     """An object representing a list of datapoints.
 
     Args:
-        id (int | None): Id of the time series the datapoints belong to
+        id (int): Id of the time series the datapoints belong to
         is_string (bool): Whether the time series contains numerical or string data.
+        is_step (bool): Whether the time series is stepwise or continuous.
         type (Literal['numeric', 'string', 'state']): The type of the time series.
         external_id (str | None): External id of the time series the datapoints belong to
         instance_id (NodeId | None): The instance id of the time series the datapoints belong to
-        is_step (bool | None): Whether the time series is stepwise or continuous.
         unit (str | None): The physical unit of the time series (free-text field). Omitted if the datapoints were converted to another unit.
         unit_external_id (str | None): The unit_external_id (as defined in the unit catalog) of the returned data points. If the datapoints were converted to a compatible unit, this will equal the converted unit, not the one defined on the time series.
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
@@ -956,19 +963,17 @@ class Datapoints(CogniteResource):
         duration_uncertain (list[int] | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
         status_code (list[int] | None): The status codes for the raw datapoints.
         status_symbol (list[str] | None): The status symbols for the raw datapoints.
-        error (list[None | str] | None): Human readable strings with description of what went wrong (returned by synthetic datapoints queries).
         timezone (datetime.timezone | ZoneInfo | None): The timezone to use when displaying the datapoints.
     """
 
     def __init__(
         self,
-        *,
-        id: int | None = None,  # TODO: When we stop misusing this for synthetic datapoints
+        id: int,
         is_string: bool,
+        is_step: bool,
         type: Literal["numeric", "string", "state"],
         external_id: str | None = None,
         instance_id: NodeId | None = None,
-        is_step: bool | None = None,
         unit: str | None = None,
         unit_external_id: str | None = None,
         granularity: str | None = None,
@@ -994,10 +999,9 @@ class Datapoints(CogniteResource):
         duration_uncertain: list[int] | None = None,
         status_code: list[int] | None = None,
         status_symbol: list[str] | None = None,
-        error: list[None | str] | None = None,
         timezone: datetime.timezone | ZoneInfo | None = None,
     ) -> None:
-        self.id: int = id  # type: ignore [assignment]
+        self.id = id
         self.external_id = external_id
         self.instance_id = instance_id
         self.is_string = is_string
@@ -1028,7 +1032,6 @@ class Datapoints(CogniteResource):
         self.duration_uncertain = duration_uncertain
         self.status_code = status_code
         self.status_symbol = status_symbol
-        self.error = error
         self.timezone = timezone
 
         self.__datapoint_objects: list[Datapoint] | None = None
@@ -1114,7 +1117,6 @@ class Datapoints(CogniteResource):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_unit: bool = True,
-        include_errors: bool = False,
         include_status: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
@@ -1123,7 +1125,6 @@ class Datapoints(CogniteResource):
             include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
             include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
-            include_errors (bool): For synthetic datapoint queries, include a column with errors.
             include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
                 as a separate level in the columns (MultiIndex).
 
@@ -1138,26 +1139,7 @@ class Datapoints(CogniteResource):
             include_granularity_name=include_granularity_name,
             include_status=include_status,
             include_unit=include_unit,
-            include_errors=include_errors,
         )
-
-    @classmethod
-    def _load_from_synthetic(
-        cls,
-        dps_object: dict[str, Any],
-    ) -> Datapoints:
-        # The Synthetic Datapoints API doesn't return the type field, but is always numeric according to docs:
-        # TODO: Remove when we add specialized classes for synthetic datapoints...
-        dps_object.setdefault("type", "numeric")
-        if dps := dps_object["datapoints"]:
-            for dp in dps:
-                dp.setdefault("error", None)
-                dp.setdefault("value", None)
-            return cls._load(dps_object)
-
-        instance = cls._load(dps_object)
-        instance.error, instance.value = [], []
-        return instance
 
     @classmethod
     def _load(
@@ -1165,24 +1147,23 @@ class Datapoints(CogniteResource):
         dps_object: dict[str, Any],
     ) -> Datapoints:
         instance = cls(
-            id=dps_object.get("id"),
+            id=dps_object["id"],
             external_id=dps_object.get("externalId"),
             instance_id=NodeId._load_if(dps_object.get("instanceId")),
             is_string=dps_object["isString"],
-            is_step=dps_object.get("isStep"),
+            is_step=dps_object["isStep"],
             type=dps_object["type"],
             unit=dps_object.get("unit"),
             unit_external_id=dps_object.get("unitExternalId"),
         )
         if len(dps_object["datapoints"]) == 0:
-            for key in ["value", "timestamp"]:
-                snake_key = to_snake_case(key)
-                setattr(instance, snake_key, [])
+            instance.value = []
+            instance.timestamp = []
             return instance
 
         data_lists = defaultdict(list)
-        for row in dps_object["datapoints"]:
-            for attr, value in row.items():
+        for dp in dps_object["datapoints"]:
+            for attr, value in dp.items():
                 data_lists[attr].append(value)
         if (timezone := dps_object.get("timezone")) is not None:
             instance.timezone = parse_str_timezone(timezone)
@@ -1202,9 +1183,7 @@ class Datapoints(CogniteResource):
     def _extend(self, other_dps: Datapoints) -> None:
         raise NotImplementedError("Extending Datapoints is not supported.")
 
-    def _get_non_empty_data_fields(
-        self, get_empty_lists: bool = False, get_error: bool = True
-    ) -> list[tuple[str, Any]]:
+    def _get_non_empty_data_fields(self, get_empty_lists: bool = False) -> list[tuple[str, Any]]:
         non_empty_data_fields = []
         skip_attrs = {
             "id",
@@ -1221,7 +1200,7 @@ class Datapoints(CogniteResource):
             "timezone",
         }
         for attr, value in self.__dict__.copy().items():
-            if attr not in skip_attrs and attr[0] != "_" and (attr != "error" or get_error):
+            if attr not in skip_attrs and attr[0] != "_":
                 if value is not None or attr == "timestamp":
                     if len(value) > 0 or get_empty_lists or attr == "timestamp":
                         non_empty_data_fields.append((attr, value))
@@ -1230,7 +1209,7 @@ class Datapoints(CogniteResource):
     def __get_datapoint_objects(self) -> list[Datapoint]:
         if self.__datapoint_objects is not None:
             return self.__datapoint_objects
-        fields = self._get_non_empty_data_fields(get_error=False)
+        fields = self._get_non_empty_data_fields()
         new_dps_objects = []
         for i in range(len(self)):
             dp_args: dict[str, Any] = {"timezone": self.timezone}
@@ -1266,8 +1245,147 @@ class Datapoints(CogniteResource):
         return truncated_datapoints
 
     def _repr_html_(self) -> str:
-        is_synthetic_dps = self.error is not None
-        return notebook_display_with_fallback(self, include_errors=is_synthetic_dps)
+        return notebook_display_with_fallback(self)
+
+
+class SyntheticDatapoints(CogniteResource):
+    def __init__(
+        self,
+        expression: str,
+        timestamp: list[int],
+        value: list[float | None],
+        error: list[str | None],
+        is_string: bool,
+        timezone: datetime.timezone | ZoneInfo | None = None,
+    ) -> None:
+        self.expression = expression
+        self.timestamp = timestamp
+        self.value = value
+        self.error = error
+        self.is_string = is_string
+        self.timezone = timezone
+
+    def __len__(self) -> int:
+        return len(self.timestamp)
+
+    def __eq__(self, other: Any) -> bool:
+        raise NotImplementedError(
+            "Equality comparison is not implemented for SyntheticDatapoints because it most likely involves "
+            "float comparisons."
+        )
+
+    @classmethod
+    def _load(cls, dps_object: dict[str, Any]) -> Self:
+        ts, value, errors = [], [], []
+        for dp in dps_object["datapoints"]:
+            ts.append(dp["timestamp"])
+            # Each element is either a "value" or an "error", never both:
+            value.append(dp.get("value"))
+            errors.append(dp.get("error"))
+
+        if (tz := dps_object.get("timezone")) is not None:
+            tz = parse_str_timezone(tz)
+        return cls(
+            # Expression is not actually part of the API response for synthetic datapoints, so we add it in manually
+            # to e.g. have a column name when converting to pandas
+            expression=dps_object["expression"],
+            timestamp=ts,
+            value=value,
+            error=errors,
+            is_string=dps_object["isString"],
+            timezone=tz,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the synthetic datapoints into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+
+        Returns:
+            dict[str, Any]: A dictionary representing the instance.
+        """
+        dumped = {
+            "expression": self.expression,
+            "isString" if camel_case else "is_string": self.is_string,
+            # Since SyntheticDatapoints is a pure read-class, we don't care that we don't exactly follow
+            # the API response format (which has exactly one of "value" or "error" per datapoint):
+            "datapoints": [
+                {"timestamp": ts, "value": val, "error": err}
+                for ts, val, err in zip(self.timestamp, self.value, self.error)
+            ],
+        }
+        if self.timezone is not None:
+            dumped["timezone"] = convert_timezone_to_str(self.timezone)
+        return dumped
+
+    def to_pandas(self, include_errors: bool = True) -> pandas.DataFrame:  # type: ignore[override]
+        """Convert the synthetic datapoints into a pandas DataFrame.
+
+        Note:
+            The error column will only be included if ``include_errors=True`` AND there is at least
+            one error exists.
+
+        Args:
+            include_errors (bool): Whether to include the error column. Defaults to True, but will be skipped if there are no errors.
+
+        Returns:
+            pandas.DataFrame: A DataFrame with timestamp as index and columns for the expression value and optionally error.
+        """
+        pd = local_import("pandas")
+
+        tz = convert_tz_for_pandas(self.timezone)
+        index = pd.to_datetime(self.timestamp, unit="ms", utc=True)
+        if tz is not None:
+            index = index.tz_convert(tz)
+
+        data: dict[str, Any] = {self.expression: self.value}
+        # Only include error column if requested AND there's at least one non-null error
+        if include_errors and any(self.error):
+            data["error"] = [e or "" for e in self.error]
+
+        df = pd.DataFrame(data, index=index)
+        df.index.name = "timestamp"
+        return df
+
+
+class SyntheticDatapointsList(CogniteResourceList[SyntheticDatapoints]):
+    """A list of SyntheticDatapoints objects representing multiple expressions.
+
+    Each SyntheticDatapoints in the list represents the result of evaluating one expression.
+    """
+
+    _RESOURCE = SyntheticDatapoints
+
+    def get(self, *args: Any, **kwargs: Any) -> NoReturn:
+        raise NotImplementedError
+
+    def to_pandas(self, include_errors: bool = True) -> pandas.DataFrame:  # type: ignore[override]
+        """Convert the list of synthetic datapoints into a single pandas DataFrame.
+
+        Each expression becomes a column in the resulting DataFrame, with timestamps as the index.
+        Error columns are only included for expressions that have at least one error.
+
+        Args:
+            include_errors (bool): Whether to include error columns. Defaults to True.
+
+        Returns:
+            pandas.DataFrame: A DataFrame with timestamp as index and columns for each expression and optionally errors.
+        """
+        pd = local_import("pandas")
+
+        if not self.data:
+            # Return empty DataFrame with proper structure
+            return pd.DataFrame()
+
+        # Convert each SyntheticDatapoints to a DataFrame and concat horizontally
+        dfs = [item.to_pandas(include_errors=include_errors) for item in self.data]
+
+        # Concatenate along columns (axis=1), aligning on timestamp index
+        return pd.concat(dfs, axis=1)
+
+    def dump(self, camel_case: bool = True) -> NoReturn:
+        raise NotImplementedError
 
 
 class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
@@ -1420,3 +1538,279 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
             include_status=include_status,
             include_unit=include_unit,
         )
+
+
+class LatestDatapoint(CogniteResource):
+    """An object representing the latest datapoint for a time series.
+
+    This class combines time series metadata with at most one datapoint, optimized for the
+    ``retrieve_latest`` method response.
+
+    Args:
+        id (int): Id of the time series the datapoint belongs to
+        timestamp (datetime.datetime | None): The data timestamp. None if no datapoint exists.
+        value (str | float | None): The data value. Can be string or numeric, or None if no datapoint exists or value is missing.
+        is_string (bool): Whether the time series contains numerical or string data.
+        type (Literal['numeric', 'string', 'state']): The type of the time series.
+        before (datetime.datetime | None): The timestamp used as the 'before' parameter in the query that retrieved this datapoint.
+        is_step (bool | None): Whether the time series is stepwise or continuous.
+        external_id (str | None): External id of the time series the datapoint belongs to
+        instance_id (NodeId | None): The instance id of the time series the datapoint belongs to
+        unit (str | None): The physical unit of the time series (free-text field).
+        unit_external_id (str | None): The unit_external_id of the returned data points.
+        status_code (int | None): The status code for the datapoint.
+        status_symbol (str | None): The status symbol for the datapoint.
+    """
+
+    def __init__(
+        self,
+        id: int,
+        timestamp: datetime.datetime | None,
+        value: str | float | None,
+        is_string: bool,
+        type: Literal["numeric", "string", "state"],
+        before: datetime.datetime | None,
+        is_step: bool | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+        unit: str | None = None,
+        unit_external_id: str | None = None,
+        status_code: int | None = None,
+        status_symbol: str | None = None,
+    ) -> None:
+        self.id = id
+        self.external_id = external_id
+        self.instance_id = instance_id
+        self.is_string = is_string
+        self.is_step = is_step
+        self.type = type
+        self.before = before
+        self.unit = unit
+        self.unit_external_id = unit_external_id
+        self.timestamp = timestamp
+        self.value = value
+        self.status_code = status_code
+        self.status_symbol = status_symbol
+
+    def __str__(self) -> str:
+        dumped = self.dump(camel_case=False)
+        if self.timestamp is not None:
+            dumped["timestamp"] = self.timestamp.isoformat(sep=" ", timespec="milliseconds")
+        return _json.dumps(dumped, indent=4)
+
+    def __bool__(self) -> bool:
+        """Returns True if the latest datapoint exists (has a timestamp)."""
+        return self.timestamp is not None
+
+    def __eq__(self, other: Any) -> bool:
+        raise NotImplementedError(
+            "Equality comparison is not implemented for LatestDatapoint because it most likely involves "
+            "a float comparison."
+        )
+
+    @property
+    def has_datapoint(self) -> bool:
+        """Whether a datapoint exists for this time series."""
+        return bool(self)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the latest datapoint into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+
+        Returns:
+            dict[str, Any]: A dictionary representing the instance.
+        """
+        dumped: dict[str, Any] = {
+            "id": self.id,
+            "is_string": self.is_string,
+            "is_step": self.is_step,
+            "type": self.type,
+            "before": datetime_to_ms(self.before) if self.before is not None else None,
+            "unit": self.unit,
+            "unit_external_id": self.unit_external_id,
+        }
+        if self.instance_id is not None:
+            dumped["instance_id"] = self.instance_id.dump(camel_case=camel_case, include_instance_type=False)
+        if self.external_id is not None:
+            dumped["external_id"] = self.external_id
+
+        if self.timestamp is None:
+            dumped["datapoints"] = []
+        else:
+            dp: dict[str, Any] = {"timestamp": datetime_to_ms(self.timestamp), "value": self.value}
+            if self.status_code is not None:
+                dp["status"] = {"code": self.status_code, "symbol": self.status_symbol}
+            dumped["datapoints"] = [dp]
+
+        if camel_case:
+            dumped = convert_all_keys_to_camel_case(dumped)
+        return dumped
+
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
+        """Convert the latest datapoint into a pandas DataFrame.
+
+        Args:
+            camel_case (bool): Convert column names to camel case. Defaults to False.
+
+        Returns:
+            pandas.DataFrame: The DataFrame representation of the latest datapoint.
+        """
+        pd = local_import("pandas")
+        # Some of these may be None (and dump will remove them), but we want them always present:
+        dumped = {"value": self.value, "timestamp": self.timestamp, "before": self.before}
+        for k, v in self.dump(camel_case=camel_case).items():
+            if k not in dumped:
+                dumped[k] = v
+        return pd.Series(dumped).to_frame(name="value")
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        status_code = None
+        status_symbol = None
+
+        match resource["datapoints"]:
+            case []:
+                timestamp: datetime.datetime | None = None
+                value: str | float | None = None
+            case [dict() as dp]:
+                timestamp = ms_to_datetime(dp["timestamp"])
+                value = dp.get("value")
+                if status := dp.get("status"):
+                    status_code = status.get("code")
+                    status_symbol = status.get("symbol")
+            case _ as dps:
+                raise ValueError(f"Expected at most one datapoint for LatestDatapoint, got: {dps!r}")
+
+        # Before is not part of the API payload, and only a convenience property we add:
+        if (before := resource.get("before")) is not None:
+            before = ms_to_datetime(before)
+        return cls(
+            id=resource["id"],
+            timestamp=timestamp,
+            value=value,
+            external_id=resource.get("externalId"),
+            instance_id=NodeId._load_if(resource.get("instanceId")),
+            type=resource["type"],
+            is_string=resource["isString"],
+            is_step=resource["isStep"],
+            unit=resource.get("unit"),
+            unit_external_id=resource.get("unitExternalId"),
+            status_code=status_code,
+            status_symbol=status_symbol,
+            before=before,
+        )
+
+
+class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdTransformerMixin):
+    """A list of LatestDatapoint objects.
+
+    This list is optimized for the ``retrieve_latest`` method, providing a ``to_pandas()``
+    method that creates a DataFrame with time series identifiers as index and timestamp/value
+    as columns, avoiding sparse DataFrames when timestamps differ across time series.
+    """
+
+    _RESOURCE = LatestDatapoint
+
+    @cached_property
+    def _id_to_item(self) -> dict[int, LatestDatapoint | list[LatestDatapoint]]:  # type: ignore [override]
+        return build_id_mapping_with_duplicates(self.data, "id")
+
+    @cached_property
+    def _external_id_to_item(self) -> dict[str, LatestDatapoint | list[LatestDatapoint]]:  # type: ignore [override]
+        return build_id_mapping_with_duplicates(self.data, "external_id")
+
+    @cached_property
+    def _instance_id_to_item(self) -> dict[InstanceId, LatestDatapoint | list[LatestDatapoint]]:  # type: ignore [override]
+        return build_id_mapping_with_duplicates(self.data, "instance_id")
+
+    def get(  # type: ignore [override]
+        self,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: InstanceId | tuple[str, str] | None = None,
+    ) -> LatestDatapoint | list[LatestDatapoint] | None:
+        """Get a specific LatestDatapoint from this list by id, external_id or instance_id.
+
+        Note:
+            For duplicated time series, returns a list of LatestDatapoint.
+
+        Args:
+            id (int | None): The id of the item(s) to get.
+            external_id (str | None): The external_id of the item(s) to get.
+            instance_id (InstanceId | tuple[str, str] | None): The instance_id of the item(s) to get.
+
+        Returns:
+            LatestDatapoint | list[LatestDatapoint] | None: The requested item(s)
+        """
+        return super().get(id, external_id, instance_id)
+
+    def __str__(self) -> str:
+        dumped = self.dump(camel_case=False)
+        for item in dumped:
+            if item.get("timestamp") is not None:
+                item["timestamp"] = convert_and_isoformat_timestamp(item["timestamp"], None)
+        return _json.dumps(dumped, indent=4)
+
+    def to_pandas(  # type: ignore [override]
+        self,
+        include_status: bool = True,
+    ) -> pandas.DataFrame:
+        """Convert the latest datapoints list into a pandas DataFrame.
+
+        Creates a DataFrame with time series identifiers (preferring external_id, then id)
+        as the index, and timestamp/value as columns. This format avoids sparse DataFrames
+        when timestamps differ across time series.
+
+        Args:
+            include_status (bool): Include status_code and status_symbol columns if available. Default: True
+
+        Returns:
+            pandas.DataFrame: A DataFrame with columns 'timestamp', 'value' (and optionally
+                'status_code', 'status_symbol') with time series identifiers as the index.
+
+        Examples:
+
+            Get the latest datapoint for multiple time series and convert to DataFrame:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> latest = client.time_series.data.retrieve_latest(external_id=["ts1", "ts2", "ts3"])
+                >>> df = latest.to_pandas()
+        """
+        pd = local_import("pandas")
+
+        rows = []
+        index_values: list[int | str | InstanceId] = []
+
+        for item in self:
+            # Prefer instance_id, then external_id, then id for the index
+            if item.instance_id is not None:
+                index_values.append(item.instance_id)
+            elif item.external_id is not None:
+                index_values.append(item.external_id)
+            else:
+                index_values.append(item.id)
+
+            row: dict[str, Any] = {
+                "value": item.value,
+                "timestamp": item.timestamp if item.timestamp is not None else pd.NaT,
+                "before": item.before,
+            }
+            if item.unit_external_id is not None:
+                row["unit_external_id"] = item.unit_external_id
+            if include_status:
+                row["status_code"] = item.status_code
+                row["status_symbol"] = item.status_symbol
+            rows.append(row)
+
+        df = pd.DataFrame(rows, index=index_values)
+        df.index.name = "identifier"
+
+        # Drop status columns if they are all null
+        if include_status:
+            if df["status_code"].isna().all():  # symbol column will also be null
+                df = df.drop(columns=["status_code", "status_symbol"])
+
+        return df

@@ -27,6 +27,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceWithClientRef,
 )
 from cognite.client.data_classes.data_modeling import NodeId
+from cognite.client.data_classes.datapoints import LatestDatapoint
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._identifier import Identifier
@@ -179,21 +180,19 @@ class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
         return run_sync(self.count_async())
 
     # TODO: Should support bad/unknown dps + status codes?
-    async def latest_async(self, before: int | str | datetime | None = None) -> Datapoint | None:
-        """Returns the latest datapoint in this time series. If empty, returns None.
+    async def latest_async(self, before: int | str | datetime | None = None) -> LatestDatapoint:
+        """Returns the latest datapoint in this time series.
 
         Args:
             before (int | str | datetime | None): Get latest datapoint before this time.
         Returns:
-            Datapoint | None: A datapoint object containing the value and timestamp of the latest datapoint.
+            LatestDatapoint: A datapoint object containing the value and timestamp of the latest datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id, self.instance_id).as_dict()
-        if dps := await self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before):
-            return dps[0]
-        return None
+        return await self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before)
 
     @copy_doc_from_async(latest_async)
-    def latest(self, before: int | str | datetime | None = None) -> Datapoint | None:
+    def latest(self, before: int | str | datetime | None = None) -> LatestDatapoint:
         return run_sync(self.latest_async(before=before))
 
     async def first_async(self) -> Datapoint | None:
@@ -203,10 +202,9 @@ class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
             Datapoint | None: A datapoint object containing the value and timestamp of the first datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id, self.instance_id).as_dict()
-        dps = await self._cognite_client.time_series.data.retrieve(
+        if dps := await self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, limit=1
-        )
-        if dps:
+        ):
             return dps[0]
         return None
 

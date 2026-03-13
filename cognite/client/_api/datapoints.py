@@ -41,6 +41,8 @@ from cognite.client.data_classes import (
     DatapointsArrayList,
     DatapointsList,
     DatapointsQuery,
+    LatestDatapoint,
+    LatestDatapointList,
     LatestDatapointQuery,
 )
 from cognite.client.data_classes.data_modeling.ids import NodeId
@@ -1638,7 +1640,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> Datapoints | None: ...
+    ) -> LatestDatapoint | None: ...
 
     @overload
     async def retrieve_latest(
@@ -1652,7 +1654,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     async def retrieve_latest(
@@ -1666,7 +1668,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> Datapoints | None: ...
+    ) -> LatestDatapoint | None: ...
 
     @overload
     async def retrieve_latest(
@@ -1680,7 +1682,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     async def retrieve_latest(
@@ -1694,7 +1696,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> Datapoints | None: ...
+    ) -> LatestDatapoint | None: ...
 
     @overload
     async def retrieve_latest(
@@ -1708,7 +1710,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     async def retrieve_latest(
@@ -1722,7 +1724,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> Datapoints | None: ...
+    ) -> LatestDatapoint | None: ...
 
     @overload
     async def retrieve_latest(
@@ -1737,7 +1739,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     async def retrieve_latest(
@@ -1753,7 +1755,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     async def retrieve_latest(
@@ -1768,7 +1770,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     async def retrieve_latest(
@@ -1783,7 +1785,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     @overload
     async def retrieve_latest(
@@ -1798,7 +1800,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> DatapointsList: ...
+    ) -> LatestDatapointList: ...
 
     async def retrieve_latest(
         self,
@@ -1812,7 +1814,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
-    ) -> Datapoints | DatapointsList | None:
+    ) -> LatestDatapoint | LatestDatapointList | None:
         """`Get the latest datapoint for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getLatest>`_
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
@@ -1831,17 +1833,18 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            Datapoints | DatapointsList | None: A Datapoints object containing the requested data, or a DatapointsList if multiple were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            LatestDatapoint | LatestDatapointList | None: A LatestDatapoint object containing the latest datapoint (if it exists), or a LatestDatapointList if multiple time series were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
-            Getting the latest datapoint in a time series. This method returns a Datapoints object, so the datapoint
-            (if it exists) will be the first element:
+            Getting the latest datapoint in a time series:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.time_series.data.retrieve_latest(id=1)[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1)
+                >>> if res:  # Check if datapoint exists
+                ...     print(res.timestamp, res.value)
 
             You can also use external_id or instance_id; single identifier or list of identifiers:
 
@@ -1850,30 +1853,30 @@ class DatapointsAPI(APIClient):
                 ...     external_id=["foo", "bar"],
                 ...     instance_id=NodeId("my-space", "my-ts-xid"))
 
-            You can also get the first datapoint before a specific time:
+            You can also get the latest datapoint before a specific time:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")
 
-            You can also get the first datapoint before a specific time in the future e.g. forecast data:
+            You can also get the latest datapoint before a specific time in the future e.g. forecast data:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ahead")[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ahead")
 
             You can also retrieve the datapoint in a different unit or unit system:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")[0]
-                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")[0]
+                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")
+                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")
 
             You may also pass an instance of LatestDatapointQuery:
 
                 >>> from cognite.client.data_classes import LatestDatapointQuery
-                >>> res = client.time_series.data.retrieve_latest(id=LatestDatapointQuery(id=1, before=60_000))[0]
+                >>> res = client.time_series.data.retrieve_latest(id=LatestDatapointQuery(id=1, before=60_000))
 
             If you need the latest datapoint for multiple time series, simply give a list of ids. Note that we are
             using external ids here, but either will work:
 
                 >>> res = client.time_series.data.retrieve_latest(external_id=["abc", "def"])
-                >>> latest_abc = res[0][0]
-                >>> latest_def = res[1][0]
+                >>> latest_abc = res[0]
+                >>> latest_def = res[1]
 
             If you for example need to specify a different value of 'before' for each time series, you may pass several
             LatestDatapointQuery objects. These will override any parameter passed directly to the function and also allows
@@ -1910,10 +1913,10 @@ class DatapointsAPI(APIClient):
         )
         res = await fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
-            return DatapointsList._load(res)
+            return LatestDatapointList._load(res)
         elif not res:
             return None
-        return Datapoints._load(res[0])
+        return LatestDatapoint._load(res[0])
 
     async def insert(
         self,
@@ -2522,15 +2525,19 @@ class RetrieveLatestDpsFetcher:
         if parsed_inst_ids is not None:
             all_inst_ids = IdentifierSequence.load(None, None, parsed_inst_ids).as_dicts()
 
-        # In the API, missing 'before' defaults to 'now'. As we want to get the most up-to-date datapoint, we don't
-        # specify a particular timestamp for 'now' in order to possibly get a datapoint a few hundred ms fresher:
+        # We want all before = "now" (and those using the same relative time specifiers, like "4d-ago")
+        # queries to get the same time domain to fetch:
+        frozen_time_now = timestamp_to_ms("now")
+
         for identifiers, identifier_type in zip(
             [all_ids, all_xids, all_inst_ids], ["id", "external_id", "instance_id"]
         ):
             for i, dct in enumerate(identifiers):
                 idx = (identifier_type, i)
                 i_before = self.settings_before.get(idx) or self.default_before
-                if "now" != i_before is not None:  # mypy doesn't understand 'i_before not in {"now", None}'
+                if i_before is None or i_before == "now":
+                    dct["before"] = frozen_time_now
+                else:
                     dct["before"] = timestamp_to_ms(i_before)
 
                 i_target_unit = self.settings_target_unit.get(idx) or self.default_unit
@@ -2563,7 +2570,9 @@ class RetrieveLatestDpsFetcher:
         all_ids.extend(all_inst_ids)
         return all_ids
 
-    def _post_fix_status_codes_and_stringified_floats(self, result: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _post_fix_status_codes_and_stringified_floats_and_add_before(
+        self, result: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         # Due to 'ignore_unknown_ids', we can't just zip queries & results and iterate... sadness
         if self.ignore_unknown_ids and len(result) < len(self._all_identifiers):
             # Duplicates can come from different identifier types, but they will have the same 'id':
@@ -2592,8 +2601,10 @@ class RetrieveLatestDpsFetcher:
                 )
             ]
         for query, res in zip(self._all_identifiers, result):
+            res["before"] = query["before"]
             if not (dps := res["datapoints"]):
                 continue
+
             (dp,) = dps
             if query.get("includeStatus") is True:
                 dp.setdefault("status", {"code": 0, "symbol": "Good"})  # Not returned from API by default
@@ -2620,4 +2631,4 @@ class RetrieveLatestDpsFetcher:
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
         result = tasks_summary.joined_results(unpack_items)
-        return self._post_fix_status_codes_and_stringified_floats(result)
+        return self._post_fix_status_codes_and_stringified_floats_and_add_before(result)
