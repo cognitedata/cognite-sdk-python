@@ -7,8 +7,7 @@
   "packageRules": [
     {
       "enabled": false,
-      "matchManagers": ["poetry"],
-      "matchPackagePatterns": ["*"]
+      "matchManagers": ["poetry"]
     },
     {
       "enabled": false,

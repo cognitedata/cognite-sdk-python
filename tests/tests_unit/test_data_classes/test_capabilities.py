@@ -150,6 +150,8 @@ def all_acls() -> Iterator[dict[str, Any]]:
                 "scope": {"spaceIdScope": {"spaceIds": ["space-1", "space-2", "prod-space"]}},
             }
         },
+        {"subscribeSignalsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"subscribeSignalsAcl": {"actions": ["READ"], "scope": {"currentuserscope": {}}}},
         {"templateGroupsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"templateGroupsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["1", "42"]}}}},
         {"templateInstancesAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["4", "365"]}}}},
