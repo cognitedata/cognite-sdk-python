@@ -12,14 +12,17 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 import requests
-from authlib.integrations.httpx_client import OAuth2Client, OAuthError
 from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
 
 from cognite.client.exceptions import CogniteAuthError, CogniteOAuthError
 from cognite.client.utils._auxiliary import at_least_one_is_not_none, exactly_one_is_not_none, load_resource_to_dict
+
+if TYPE_CHECKING:
+    from authlib.integrations.httpx_client import OAuth2Client
+
 
 _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
 
@@ -415,7 +418,6 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         Returns:
             dict[str, Any]: The device flow object containing device_code, user_code, etc.
         """
-
         try:
             device_flow_response = self.__app.http_client.post(
                 device_auth_endpoint,
@@ -837,6 +839,8 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         self._validate_token_custom_args()
 
     def _create_oauth_client(self) -> OAuth2Client:
+        from authlib.integrations.httpx_client import OAuth2Client
+
         from cognite.client.config import global_config
 
         return OAuth2Client(client_id=self.__client_id, scope=self.__scopes, verify=not global_config.disable_ssl)
@@ -883,6 +887,8 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         return self.__token_custom_args
 
     def _refresh_access_token(self) -> tuple[str, float]:
+        from authlib.integrations.httpx_client import OAuthError
+
         try:
             credentials = self.__oauth.fetch_token(
                 url=self.__token_url, client_secret=self.__client_secret, **self.__token_custom_args
