@@ -9,6 +9,8 @@ from cognite.client.credentials import CredentialProvider
 
 logger = logging.getLogger(__name__)
 
+_TASK_REF_TZDATA: object = None  # We need a global ref
+
 
 def _apply_legacy_pyodide_httpx_patch() -> None:
     try:
@@ -76,10 +78,13 @@ def patch_sdk_for_pyodide() -> None:
     #   internally for e.g. datapoints and workflows.
     #   Note: This convenience will only work in chromium-based browsers (as of Sept 2025)
     try:
-        import micropip  # type: ignore [import-not-found]
-        from pyodide.ffi import run_sync  # type: ignore [import-not-found]
+        import asyncio
 
-        run_sync(micropip.install("tzdata"))
+        import micropip  # type: ignore [import-not-found]
+
+        global _TASK_REF_TZDATA  # keep the gc at bay
+        _TASK_REF_TZDATA = asyncio.ensure_future(micropip.install("tzdata"))
+
     except Exception:
         logger.debug(
             "Could not load 'tzdata' package automatically in pyodide. You may need to do this manually:"
