@@ -19,6 +19,9 @@ from cognite.client.data_classes.data_modeling import (
     SingleHopConnectionDefinition,
     Space,
     SpaceApply,
+    Stream,
+    StreamWrite,
+    StreamWriteSettings,
     View,
     ViewApply,
     ViewList,
@@ -43,6 +46,32 @@ def integration_test_space(cognite_client: CogniteClient) -> Space:
         return space
     new_space = SpaceApply(space_id, name="Integration Test Space", description="The space used for integration tests.")
     return cognite_client.data_modeling.spaces.apply(new_space)
+
+
+@pytest.fixture(scope="session")
+def immutable_test_stream(cognite_client: CogniteClient) -> Stream:
+    stream_id = "sdk_test_immutable_stream"
+    stream = cognite_client.data_modeling.streams.retrieve(stream_id)
+    if stream is not None:
+        return stream
+    new_stream = StreamWrite(
+        external_id=stream_id,
+        settings=StreamWriteSettings(template_name="ImmutableTestStream"),
+    )
+    return cognite_client.data_modeling.streams.create(new_stream)
+
+
+@pytest.fixture(scope="session")
+def mutable_test_stream(cognite_client: CogniteClient) -> Stream:
+    stream_id = "sdk_test_mutable_stream"
+    stream = cognite_client.data_modeling.streams.retrieve(stream_id)
+    if stream is not None:
+        return stream
+    new_stream = StreamWrite(
+        external_id=stream_id,
+        settings=StreamWriteSettings(template_name="BasicLiveData"),
+    )
+    return cognite_client.data_modeling.streams.create(new_stream)
 
 
 @pytest.fixture(scope="session")
