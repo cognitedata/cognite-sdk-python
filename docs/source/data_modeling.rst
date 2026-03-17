@@ -298,6 +298,30 @@ Data modeling statistics data classes
     :members:
     :show-inheritance:
 
+Streams
+-------
+Create a stream
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.streams.StreamsAPI.create
+
+Retrieve a stream
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.streams.StreamsAPI.retrieve
+
+List streams
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.streams.StreamsAPI.list
+
+Delete a stream
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.streams.StreamsAPI.delete
+
+Streams data classes
+^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.data_modeling.streams
+    :members:
+    :show-inheritance:
+
 GraphQL
 -------
 Apply DML
