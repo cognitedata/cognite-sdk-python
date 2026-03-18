@@ -51,25 +51,43 @@ def workflow_simint_routine(cognite_client: CogniteClient) -> str:
     return ensure_workflow_simint_routine(cognite_client)
 
 
+# Permanent resources used by permanent_* fixtures; excluded from cleanup so
+# test_trigger_run_history can rely on accumulated run history.
+_PERMANENT_WORKFLOW = "integration_test-workflow_for_triggers"
+_PERMANENT_TRIGGERS = frozenset({
+    f"scheduled-trigger_{_PERMANENT_WORKFLOW}",
+    f"data-modeling-trigger_{_PERMANENT_WORKFLOW}",
+})
+_PERMANENT_VERSION = (_PERMANENT_WORKFLOW, "v1")
+
+
 @pytest.fixture(autouse=True, scope="module")
 def wf_setup_module(cognite_client: CogniteClient) -> None:
     """setup any state specific to the execution of the given module."""
     resource_age = timestamp_to_ms("30m-ago")
 
     wf_triggers = cognite_client.workflows.triggers.list(limit=None)
-    wf_triggers_to_delete = [wf.external_id for wf in wf_triggers if wf.last_updated_time < resource_age]
+    wf_triggers_to_delete = [
+        wf.external_id
+        for wf in wf_triggers
+        if wf.last_updated_time < resource_age and wf.external_id not in _PERMANENT_TRIGGERS
+    ]
     if wf_triggers_to_delete:
         cognite_client.workflows.triggers.delete(wf_triggers_to_delete)
 
     wf_versions = cognite_client.workflows.versions.list(limit=None)
     wf_versions_to_delete = [
-        (wf.workflow_external_id, wf.version) for wf in wf_versions if wf.last_updated_time < resource_age
+        (wf.workflow_external_id, wf.version)
+        for wf in wf_versions
+        if wf.last_updated_time < resource_age and (wf.workflow_external_id, wf.version) != _PERMANENT_VERSION
     ]
     if wf_versions_to_delete:
         cognite_client.workflows.versions.delete(wf_versions_to_delete)
 
     wfs = cognite_client.workflows.list(limit=None)
-    wfs_to_delete = [wf.external_id for wf in wfs if wf.last_updated_time < resource_age]
+    wfs_to_delete = [
+        wf.external_id for wf in wfs if wf.last_updated_time < resource_age and wf.external_id != _PERMANENT_WORKFLOW
+    ]
     if wfs_to_delete:
         cognite_client.workflows.delete(wfs_to_delete)
 
