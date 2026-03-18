@@ -51,8 +51,7 @@ def workflow_simint_routine(cognite_client: CogniteClient) -> str:
     return ensure_workflow_simint_routine(cognite_client)
 
 
-# Permanent resources used by permanent_* fixtures; excluded from cleanup so
-# test_trigger_run_history can rely on accumulated run history.
+# Permanent resources used by permanent_* fixtures; excluded from cleanup.
 _PERMANENT_WORKFLOW = "integration_test-workflow_for_triggers"
 _PERMANENT_TRIGGERS = frozenset({
     f"scheduled-trigger_{_PERMANENT_WORKFLOW}",
