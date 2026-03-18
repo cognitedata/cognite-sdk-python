@@ -63,7 +63,7 @@ Changes are grouped as follows:
 - For `class Transformation`, which used to have an async `run` method, this is now named `run_async` to unify the overall interface. The same applies to the `cancel` and `jobs` methods for the same class, and `update` and `wait` on `TransformationJob`.
 - **ClientConfig**:
   - `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`.
-    See the `Settings documentation <https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings>`_ for details.
+    See the [Settings documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings) for details.
   - `timeout`: default has been increased from 30 sec to 60 sec
 - **global_config**:
   - New setting `follow_redirects` that controls whether or not to follow redirects. Defaults to `False`.
@@ -106,7 +106,7 @@ Changes are grouped as follows:
   - **Synthetic datapoints queries**: Now return `SyntheticDatapoints` or `SyntheticDatapointsList` instead of `Datapoints` or `DatapointsList`. The `error` field only exists on `SyntheticDatapoints` (where it belongs). Use `to_pandas(include_errors=True)` on `SyntheticDatapoints` to include the error column.
   - **Datapoint subscriptions**: `DatapointsUpdate.upserts` is now `SubscriptionDatapoints` instead of `Datapoints`.
 - `Datapoints` class no longer has the `error` attribute (moved to `SyntheticDatapoints`).
-- `Datapoints` and `DatapointsArray` now require `id` and `is_step, `is_string` and `type`.
+- `Datapoints` and `DatapointsArray` now require `id` and `is_step`, `is_string` and `type`.
 - Removed `include_errors` parameter from `Datapoints.to_pandas()`. This parameter only applies to `SyntheticDatapoints.to_pandas()`.
 - Iterating through a `DatapointsArray` is no longer supported. Access the numpy arrays directly and use vectorised operations instead.
 - Extending a `Datapoints` instance is no longer supported.
