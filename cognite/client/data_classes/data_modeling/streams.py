@@ -17,7 +17,7 @@ class StreamWriteSettings(CogniteResource):
     """Settings for creating a stream.
 
     Args:
-        template_name (str): The name of the stream template. Templates are project-specific and should be retrieved from your CDF project configuration.
+        template_name (str): The name of the stream template which should be used to define initial settings for the stream.
     """
 
     def __init__(self, template_name: str) -> None:
@@ -160,7 +160,7 @@ class StreamWrite(WriteableCogniteResource["StreamWrite"]):
 
     Args:
         external_id (str): A unique identifier for the stream.
-        settings (StreamWriteSettings): The settings for the stream, including the template.
+        settings (StreamWriteSettings): The settings for the stream.
     """
 
     def __init__(self, external_id: str, settings: StreamWriteSettings) -> None:
@@ -237,11 +237,6 @@ class Stream(WriteableCogniteResource["StreamWrite"]):
 
     def as_write(self) -> StreamWrite:
         """Returns a StreamWrite object with the same external_id and template.
-
-        Note: Since streams are immutable and cannot be updated, this method creates
-        a StreamWrite suitable for creating a NEW stream with the same template settings,
-        not for updating the existing stream. To create a new stream, you must provide
-        a different external_id.
 
         Returns:
             StreamWrite: A write object based on this stream's template.
