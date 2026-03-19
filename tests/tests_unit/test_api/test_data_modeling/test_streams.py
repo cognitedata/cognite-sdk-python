@@ -56,5 +56,16 @@ class TestStreams:
         assert result.external_id == "test_stream"
         assert result.type == "Immutable"
 
+        assert len(mock_streams_create_response.calls) == 1
+        sent_payload = mock_streams_create_response.calls[0].request.json()
+        assert sent_payload["items"][0] == {
+            "externalId": "test_stream",
+            "settings": {"template": {"name": "ImmutableTestStream"}},
+        }
+
     def test_delete_stream(self, cognite_client: CogniteClient, mock_streams_delete_response: RequestsMock) -> None:
         cognite_client.data_modeling.streams.delete(external_id="test_stream")
+
+        assert len(mock_streams_delete_response.calls) == 1
+        sent_payload = mock_streams_delete_response.calls[0].request.json()
+        assert sent_payload == {"items": [{"externalId": "test_stream"}]}
