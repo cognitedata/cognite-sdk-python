@@ -20,6 +20,7 @@ from cognite.client._api.data_modeling.instances import InstancesAPI
 from cognite.client._api.data_modeling.space_statistics import SpaceStatisticsAPI
 from cognite.client._api.data_modeling.spaces import SpacesAPI
 from cognite.client._api.data_modeling.statistics import StatisticsAPI
+from cognite.client._api.data_modeling.streams import StreamsAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
@@ -103,6 +104,7 @@ from cognite.client._sync_api.data_modeling.instances import SyncInstancesAPI
 from cognite.client._sync_api.data_modeling.space_statistics import SyncSpaceStatisticsAPI
 from cognite.client._sync_api.data_modeling.spaces import SyncSpacesAPI
 from cognite.client._sync_api.data_modeling.statistics import SyncStatisticsAPI
+from cognite.client._sync_api.data_modeling.streams import SyncStreamsAPI
 from cognite.client._sync_api.data_modeling.views import SyncViewsAPI
 from cognite.client._sync_api.data_sets import SyncDataSetsAPI
 from cognite.client._sync_api.datapoints import SyncDatapointsAPI
@@ -224,6 +226,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         dm_views = create_autospec(ViewsAPI, instance=True, spec_set=True)
         dm_instances = create_autospec(InstancesAPI, instance=True, spec_set=True)
         dm_graphql = create_autospec(DataModelingGraphQLAPI, instance=True, spec_set=True)
+        dm_streams = create_autospec(StreamsAPI, instance=True, spec_set=True)
         self.data_modeling = create_autospec(
             DataModelingAPI,
             instance=True,
@@ -234,6 +237,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             instances=dm_instances,
             graphql=dm_graphql,
             statistics=dm_statistics,
+            streams=dm_streams,
         )
         flip_spec_set_on(self.data_modeling, dm_statistics)
 
@@ -423,6 +427,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         dm_views = create_autospec(SyncViewsAPI, instance=True, spec_set=True)
         dm_instances = create_autospec(SyncInstancesAPI, instance=True, spec_set=True)
         dm_graphql = create_autospec(SyncDataModelingGraphQLAPI, instance=True, spec_set=True)
+        dm_streams = create_autospec(SyncStreamsAPI, instance=True, spec_set=True)
         self.data_modeling = create_autospec(
             SyncDataModelingAPI,
             instance=True,
@@ -433,6 +438,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             instances=dm_instances,
             graphql=dm_graphql,
             statistics=dm_statistics,
+            streams=dm_streams,
         )
         flip_spec_set_on(self.data_modeling, dm_statistics)
 

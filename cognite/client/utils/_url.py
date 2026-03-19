@@ -39,6 +39,7 @@ NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS: tuple[str, ...] = (
     "simulators/models/revisions",
     "simulators/models/routines",
     "simulators/models/routines/revisions",
+    "streams",
     "timeseries",
     "transformations",
     "transformations/schedules",
