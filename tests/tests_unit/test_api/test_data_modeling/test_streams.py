@@ -6,6 +6,7 @@ from responses import RequestsMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import Stream, StreamWrite, StreamWriteSettings
+from tests.utils import jsgz_load
 
 
 class TestStreams:
@@ -57,7 +58,7 @@ class TestStreams:
         assert result.type == "Immutable"
 
         assert len(mock_streams_create_response.calls) == 1
-        sent_payload = mock_streams_create_response.calls[0].request.json()
+        sent_payload = jsgz_load(mock_streams_create_response.calls[0].request.body)
         assert sent_payload["items"][0] == {
             "externalId": "test_stream",
             "settings": {"template": {"name": "ImmutableTestStream"}},
@@ -67,5 +68,5 @@ class TestStreams:
         cognite_client.data_modeling.streams.delete(external_id="test_stream")
 
         assert len(mock_streams_delete_response.calls) == 1
-        sent_payload = mock_streams_delete_response.calls[0].request.json()
+        sent_payload = jsgz_load(mock_streams_delete_response.calls[0].request.body)
         assert sent_payload == {"items": [{"externalId": "test_stream"}]}
