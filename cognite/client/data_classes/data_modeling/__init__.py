@@ -114,6 +114,17 @@ from cognite.client.data_classes.data_modeling.query import (
     UnionAll,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
+from cognite.client.data_classes.data_modeling.streams import (
+    Stream,
+    StreamLifecycleSettings,
+    StreamLimit,
+    StreamLimitSettings,
+    StreamList,
+    StreamSettings,
+    StreamWrite,
+    StreamWriteList,
+    StreamWriteSettings,
+)
 from cognite.client.data_classes.data_modeling.sync import SubscriptionContext
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
@@ -233,6 +244,15 @@ __all__ = [
     "SpaceApply",
     "SpaceApplyList",
     "SpaceList",
+    "Stream",
+    "StreamLifecycleSettings",
+    "StreamLimit",
+    "StreamLimitSettings",
+    "StreamList",
+    "StreamSettings",
+    "StreamWrite",
+    "StreamWriteList",
+    "StreamWriteSettings",
     "SubscriptionContext",
     "Text",
     "TimeSeriesReference",
