@@ -1,6 +1,6 @@
 """
 ===============================================================================
-5249b52d0fdba5befd01c862f3e7ce5d
+3fb2bb1e260073e2d54317794dab4d4d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -177,8 +177,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
             Filter runs by status and simulator external ids:
                 >>> res = client.simulators.runs.list(
-                ...     simulator_external_ids=["PROSPER", "DWSIM"],
-                ...     status="success"
+                ...     simulator_external_ids=["PROSPER", "DWSIM"], status="success"
                 ... )
 
             Filter runs by time ranges:

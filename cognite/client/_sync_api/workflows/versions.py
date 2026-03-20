@@ -1,6 +1,6 @@
 """
 ===============================================================================
-362d76a56f7ddf064d938ced60fd759e
+e7b1d109b027b1cc8c22065d4ac11838
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -99,8 +99,10 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import (
-                ...     WorkflowVersionUpsert, WorkflowDefinitionUpsert,
-                ...     WorkflowTask, FunctionTaskParameters,
+                ...     WorkflowVersionUpsert,
+                ...     WorkflowDefinitionUpsert,
+                ...     WorkflowTask,
+                ...     FunctionTaskParameters,
                 ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
@@ -112,12 +114,12 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
                 ...     ),
                 ... )
                 >>> new_version = WorkflowVersionUpsert(
-                ...    workflow_external_id="my_workflow",
-                ...    version="1",
-                ...    workflow_definition=WorkflowDefinitionUpsert(
-                ...        tasks=[function_task],
-                ...        description="This workflow has one step",
-                ...    ),
+                ...     workflow_external_id="my_workflow",
+                ...     version="1",
+                ...     workflow_definition=WorkflowDefinitionUpsert(
+                ...         tasks=[function_task],
+                ...         description="This workflow has one step",
+                ...     ),
                 ... )
                 >>> res = client.workflows.versions.upsert(new_version)
         """
@@ -151,7 +153,9 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
             Delete workflow version "1" of workflow "my workflow" and workflow version "2" of workflow "my workflow 2" using the WorkflowVersionId class:
 
                 >>> from cognite.client.data_classes import WorkflowVersionId
-                >>> client.workflows.versions.delete([WorkflowVersionId("my workflow", "1"), WorkflowVersionId("my workflow 2", "2")])
+                >>> client.workflows.versions.delete(
+                ...     [WorkflowVersionId("my workflow", "1"), WorkflowVersionId("my workflow 2", "2")]
+                ... )
         """
         return run_sync(
             self.__async_client.workflows.versions.delete(
@@ -236,12 +240,12 @@ class SyncWorkflowVersionAPI(SyncAPIClient):
 
                 >>> from cognite.client.data_classes import WorkflowVersionId
                 >>> res = client.workflows.versions.list(
-                ...     [WorkflowVersionId("my_workflow"), WorkflowVersionId("my_workflow_2")])
+                ...     [WorkflowVersionId("my_workflow"), WorkflowVersionId("my_workflow_2")]
+                ... )
 
             Get all workflow versions for workflows 'my_workflow' version '1' and 'my_workflow_2' version '2' using tuples:
 
-                >>> res = client.workflows.versions.list(
-                ...     [("my_workflow", "1"), ("my_workflow_2", "2")])
+                >>> res = client.workflows.versions.list([("my_workflow", "1"), ("my_workflow_2", "2")])
         """
         return run_sync(
             self.__async_client.workflows.versions.list(workflow_version_ids=workflow_version_ids, limit=limit)

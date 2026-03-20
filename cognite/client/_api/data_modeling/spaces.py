@@ -82,11 +82,13 @@ class SpacesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.data_modeling.spaces.retrieve(spaces='mySpace')
+                >>> res = client.data_modeling.spaces.retrieve(spaces="mySpace")
 
             Get multiple spaces by id:
 
-                >>> res = client.data_modeling.spaces.retrieve(spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
+                >>> res = client.data_modeling.spaces.retrieve(
+                ...     spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"]
+                ... )
 
         """
         identifier = _load_space_identifier(spaces)
@@ -155,7 +157,7 @@ class SpacesAPI(APIClient):
             Iterate over chunks of spaces to reduce memory load:
 
                 >>> for space_list in client.data_modeling.spaces(chunk_size=2500):
-                ...     space_list # do something with the spaces
+                ...     space_list  # do something with the spaces
         """
         return await self._list(
             list_cls=SpaceList,
@@ -189,8 +191,12 @@ class SpacesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling import SpaceApply
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> spaces = [SpaceApply(space="mySpace", description="My first space", name="My Space"),
-                ... SpaceApply(space="myOtherSpace", description="My second space", name="My Other Space")]
+                >>> spaces = [
+                ...     SpaceApply(space="mySpace", description="My first space", name="My Space"),
+                ...     SpaceApply(
+                ...         space="myOtherSpace", description="My second space", name="My Other Space"
+                ...     ),
+                ... ]
                 >>> res = client.data_modeling.spaces.apply(spaces)
         """
         return await self._create_multiple(

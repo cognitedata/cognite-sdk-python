@@ -163,7 +163,7 @@ class LabelsAPI(APIClient):
             Iterate over chunks of label definitions to reduce memory load:
 
                 >>> for label_list in client.labels(chunk_size=2500):
-                ...     label_list # do something with the type definitions
+                ...     label_list  # do something with the type definitions
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -202,7 +202,12 @@ class LabelsAPI(APIClient):
                 >>> from cognite.client.data_classes import LabelDefinitionWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> labels = [LabelDefinitionWrite(external_id="ROTATING_EQUIPMENT", name="Rotating equipment"), LabelDefinitionWrite(external_id="PUMP", name="pump")]
+                >>> labels = [
+                ...     LabelDefinitionWrite(
+                ...         external_id="ROTATING_EQUIPMENT", name="Rotating equipment"
+                ...     ),
+                ...     LabelDefinitionWrite(external_id="PUMP", name="pump"),
+                ... ]
                 >>> res = client.labels.create(labels)
         """
         if isinstance(label, Sequence):

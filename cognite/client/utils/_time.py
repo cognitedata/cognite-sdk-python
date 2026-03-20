@@ -243,8 +243,8 @@ def timestamp_to_ms(timestamp: int | float | str | datetime) -> int:
             >>> from datetime import datetime
             >>> timestamp_to_ms(datetime(2021, 1, 7, 12, 0, 0))
             >>> timestamp_to_ms("now")
-            >>> timestamp_to_ms("2w-ago") # 2 weeks ago
-            >>> timestamp_to_ms("3d-ahead") # 3 days ahead from now
+            >>> timestamp_to_ms("2w-ago")  # 2 weeks ago
+            >>> timestamp_to_ms("3d-ahead")  # 3 days ahead from now
     """
     if isinstance(timestamp, numbers.Number):  # float, int, int64 etc
         ms = int(timestamp)  # type: ignore[arg-type]

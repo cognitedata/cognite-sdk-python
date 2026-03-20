@@ -1,6 +1,6 @@
 """
 ===============================================================================
-00f698c970d43d29fc5df777446fe4f3
+2fcd5b66981917f57fcec085afc04f32
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -47,11 +47,15 @@ class SyncWorkflowTaskAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "completed")
+                >>> res = client.workflows.tasks.update(
+                ...     "000560bc-9080-4286-b242-a27bb4819253", "completed"
+                ... )
 
             Update task with id '000560bc-9080-4286-b242-a27bb4819253' to status 'failed' with output '{"a": 1, "b": 2}':
 
-                >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "failed", output={"a": 1, "b": 2})
+                >>> res = client.workflows.tasks.update(
+                ...     "000560bc-9080-4286-b242-a27bb4819253", "failed", output={"a": 1, "b": 2}
+                ... )
 
             Trigger workflow, retrieve detailed task execution and update status of the second task (assumed to be async) to 'completed':
 

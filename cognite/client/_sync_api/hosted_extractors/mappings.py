@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d93326405938df60470510da7470796c
+7284c8ddb0de35ee8b871e9aae3bb31e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -75,11 +75,13 @@ class SyncMappingsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.hosted_extractors.mappings.retrieve('myMapping')
+                >>> res = client.hosted_extractors.mappings.retrieve("myMapping")
 
             Get multiple mappings by id:
 
-                >>> res = client.hosted_extractors.mappings.retrieve(["myMapping", "myMapping2"], ignore_unknown_ids=True)
+                >>> res = client.hosted_extractors.mappings.retrieve(
+                ...     ["myMapping", "myMapping2"], ignore_unknown_ids=True
+                ... )
         """
         return run_sync(
             self.__async_client.hosted_extractors.mappings.retrieve(
@@ -137,7 +139,12 @@ class SyncMappingsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import MappingWrite, CustomMapping
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> mapping = MappingWrite(external_id="my_mapping", mapping=CustomMapping("some expression"), published=True, input="json")
+                >>> mapping = MappingWrite(
+                ...     external_id="my_mapping",
+                ...     mapping=CustomMapping("some expression"),
+                ...     published=True,
+                ...     input="json",
+                ... )
                 >>> res = client.hosted_extractors.mappings.create(mapping)
         """
         return run_sync(self.__async_client.hosted_extractors.mappings.create(items=items))
@@ -168,7 +175,7 @@ class SyncMappingsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import MappingUpdate
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> mapping = MappingUpdate('my_mapping').published.set(False)
+                >>> mapping = MappingUpdate("my_mapping").published.set(False)
                 >>> res = client.hosted_extractors.mappings.update(mapping)
         """
         return run_sync(self.__async_client.hosted_extractors.mappings.update(items=items))
@@ -200,6 +207,6 @@ class SyncMappingsAPI(SyncAPIClient):
             Iterate over chunks of mappings to reduce memory load:
 
                 >>> for mapping_list in client.hosted_extractors.mappings(chunk_size=25):
-                ...     mapping_list # do something with the mappings
+                ...     mapping_list  # do something with the mappings
         """
         return run_sync(self.__async_client.hosted_extractors.mappings.list(limit=limit))

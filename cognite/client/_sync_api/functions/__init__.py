@@ -1,6 +1,6 @@
 """
 ===============================================================================
-2ef5734f88e1142ea7c9e90a631fd14d
+e7f4764857e771bb7ae576073fda06ad
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -186,14 +186,14 @@ class SyncFunctionsAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> function = client.functions.create(
-                ...     name="myfunction",
-                ...     folder="path/to/code",
-                ...     function_path="path/to/function.py")
+                ...     name="myfunction", folder="path/to/code", function_path="path/to/function.py"
+                ... )
 
             Create function with file_id from already uploaded source code:
 
                 >>> function = client.functions.create(
-                ...     name="myfunction", file_id=123, function_path="path/to/function.py")
+                ...     name="myfunction", file_id=123, function_path="path/to/function.py"
+                ... )
 
             Create function with predefined function object named `handle`:
 

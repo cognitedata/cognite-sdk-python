@@ -1,6 +1,6 @@
 """
 ===============================================================================
-bd17aab24c1acbcf37ae90452f8d16b4
+d312d8c2fd7c416d293c1d77ad653809
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -79,11 +79,13 @@ class SyncJobsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.hosted_extractors.jobs.retrieve('myJob')
+                >>> res = client.hosted_extractors.jobs.retrieve("myJob")
 
             Get multiple jobs by id:
 
-                >>> res = client.hosted_extractors.jobs.retrieve(["myJob", "myOtherJob"], ignore_unknown_ids=True)
+                >>> res = client.hosted_extractors.jobs.retrieve(
+                ...     ["myJob", "myOtherJob"], ignore_unknown_ids=True
+                ... )
         """
         return run_sync(
             self.__async_client.hosted_extractors.jobs.retrieve(
@@ -137,7 +139,9 @@ class SyncJobsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> job_write = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
+                >>> job_write = EventHubSourceWrite(
+                ...     "my_event_hub", "http://myeventhub.com", "My EventHub", "my_key", "my_value"
+                ... )
                 >>> job = client.hosted_extractors.jobs.create(job_write)
         """
         return run_sync(self.__async_client.hosted_extractors.jobs.create(items=items))
@@ -179,7 +183,7 @@ class SyncJobsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceUpdate
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> job = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
+                >>> job = EventHubSourceUpdate("my_event_hub").event_hub_name.set("My Updated EventHub")
                 >>> updated_job = client.hosted_extractors.jobs.update(job)
         """
         return run_sync(self.__async_client.hosted_extractors.jobs.update(items=items, mode=mode))
@@ -211,7 +215,7 @@ class SyncJobsAPI(SyncAPIClient):
             Iterate over chunks of jobs to reduce memory load:
 
                 >>> for job_list in client.hosted_extractors.jobs(chunk_size=25):
-                ...     job_list # do something with the jobs
+                ...     job_list  # do something with the jobs
         """
         return run_sync(self.__async_client.hosted_extractors.jobs.list(limit=limit))
 

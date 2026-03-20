@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d534ac15730b4ed878bf7f7c57078053
+d1feeb34081c9b8719db7769e1dc00a7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -123,6 +123,6 @@ class SyncRawTablesAPI(SyncAPIClient):
             Iterate over chunks of tables to reduce memory load:
 
                 >>> for table_list in client.raw.tables(db_name="db1", chunk_size=25):
-                ...     table_list # do something with the tables
+                ...     table_list  # do something with the tables
         """
         return run_sync(self.__async_client.raw.tables.list(db_name=db_name, limit=limit))

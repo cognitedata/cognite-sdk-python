@@ -172,8 +172,8 @@ class TransformationJob(CogniteResourceWithClientRef):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>>
-                >>> job1 = client.transformations.run(id = 1, wait = False)
-                >>> job2 = client.transformations.run(id = 2, wait = False)
+                >>> job1 = client.transformations.run(id=1, wait=False)
+                >>> job2 = client.transformations.run(id=2, wait=False)
                 >>> job1.wait()
                 >>> job2.wait()
                 >>> if TransformationJobStatus.FAILED not in [job1.status, job2.status]:
@@ -182,15 +182,15 @@ class TransformationJob(CogniteResourceWithClientRef):
             Wait on transformation for 5 minutes and do something if still running:
 
                 >>>
-                >>> job = client.transformations.run(id = 1, wait = False)
-                >>> job.wait(timeout = 5.0*60)
+                >>> job = client.transformations.run(id=1, wait=False)
+                >>> job.wait(timeout=5.0 * 60)
                 >>> match job.status:
                 >>>     case TransformationJobStatus.FAILED:
-                >>>         # do something if job failed
+                >>> # do something if job failed
                 >>>     case TransformationJobStatus.COMPLETED:
-                >>>         # do something if job completed successfully
+                >>> # do something if job completed successfully
                 >>>     case _:
-                >>>         # do something if job is still running
+                >>> # do something if job is still running
         """
         await self.update_async()
         if timeout is None:

@@ -31,6 +31,11 @@ external = ["DOC"]
 # let scripts use print statements
 "scripts/*" = ["T201"]
 
+[tool.ruff.format]
+# format code examples in docstrings to avoid users scrolling horizontally
+docstring-code-format = true
+docstring-code-line-length = 85
+
 [tool.poetry.dependencies]
 python = "^3.10"
 

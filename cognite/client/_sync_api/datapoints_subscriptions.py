@@ -1,6 +1,6 @@
 """
 ===============================================================================
-85e289f5eaf4fab3b555c4c777a0fb48
+1f89e9a889e39eb80722528f530f6678
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -79,7 +79,8 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
                 ...     external_id="my_subscription",
                 ...     name="My subscription",
                 ...     partition_count=1,
-                ...     time_series_ids=["myFistTimeSeries", "mySecondTimeSeries"])
+                ...     time_series_ids=["myFistTimeSeries", "mySecondTimeSeries"],
+                ... )
                 >>> created = client.time_series.subscriptions.create(sub)
 
             Create a subscription with explicit time series IDs given as Node IDs
@@ -91,22 +92,30 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
                 ...     external_id="my_subscription",
                 ...     name="My subscription with Data Model Ids",
                 ...     partition_count=1,
-                ...     instance_ids=[NodeId("my_space", "myFistTimeSeries"), NodeId("my_space", "mySecondTimeSeries")])
+                ...     instance_ids=[
+                ...         NodeId("my_space", "myFistTimeSeries"),
+                ...         NodeId("my_space", "mySecondTimeSeries"),
+                ...     ],
+                ... )
                 >>> created = client.time_series.subscriptions.create(sub)
 
             Create a filter defined subscription for all numeric time series that are stepwise:
 
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> from cognite.client.data_classes import filters as flt
-                >>> from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscriptionProperty
+                >>> from cognite.client.data_classes.datapoints_subscriptions import (
+                ...     DatapointSubscriptionProperty,
+                ... )
                 >>> is_numeric_stepwise = flt.And(
                 ...     flt.Equals(DatapointSubscriptionProperty.is_string, False),
-                ...     flt.Equals(DatapointSubscriptionProperty.is_step, True))
+                ...     flt.Equals(DatapointSubscriptionProperty.is_step, True),
+                ... )
                 >>> sub = DataPointSubscriptionWrite(
                 ...     external_id="my_subscription",
                 ...     name="My subscription for numeric, stepwise time series",
                 ...     partition_count=1,
-                ...     filter=is_numeric_stepwise)
+                ...     filter=is_numeric_stepwise,
+                ... )
                 >>> created = client.time_series.subscriptions.create(sub)
         """
         return run_sync(self.__async_client.time_series.subscriptions.create(subscription=subscription))
@@ -216,7 +225,9 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
             Add a time series to a preexisting subscription:
 
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
-                >>> update = DataPointSubscriptionUpdate("my_subscription").time_series_ids.add(["MyNewTimeSeriesExternalId"])
+                >>> update = DataPointSubscriptionUpdate("my_subscription").time_series_ids.add(
+                ...     ["MyNewTimeSeriesExternalId"]
+                ... )
                 >>> updated = client.time_series.subscriptions.update(update)
         """
         return run_sync(self.__async_client.time_series.subscriptions.update(update=update, mode=mode))
@@ -279,7 +290,9 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
 
             Iterate continuously over all changes to the subscription newer than 3 days:
 
-                >>> for batch in client.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
+                >>> for batch in client.time_series.subscriptions.iterate_data(
+                ...     "my_subscription", "3d-ago"
+                ... ):
                 ...     pass  # do something
         """
         yield from SyncIterator(

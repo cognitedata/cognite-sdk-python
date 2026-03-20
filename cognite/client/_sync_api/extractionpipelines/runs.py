@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d399a8a45c39407e7217371176777da7
+87c5631796b06cbb4946c5e196e0b698
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -70,12 +70,16 @@ class SyncExtractionPipelineRunsAPI(SyncAPIClient):
 
             Filter extraction pipeline runs on a given status:
 
-                >>> runs_list = client.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], limit=5)
+                >>> runs_list = client.extraction_pipelines.runs.list(
+                ...     external_id="test ext id", statuses=["seen"], limit=5
+                ... )
 
             Get all failed pipeline runs in the last 24 hours for pipeline 'extId':
 
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
-                >>> res = client.extraction_pipelines.runs.list(external_id="extId", statuses="failure", created_time="24h-ago")
+                >>> res = client.extraction_pipelines.runs.list(
+                ...     external_id="extId", statuses="failure", created_time="24h-ago"
+                ... )
         """
         return run_sync(
             self.__async_client.extraction_pipelines.runs.list(
@@ -121,6 +125,7 @@ class SyncExtractionPipelineRunsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import ExtractionPipelineRunWrite
                 >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.runs.create(
-                ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId"))
+                ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId")
+                ... )
         """
         return run_sync(self.__async_client.extraction_pipelines.runs.create(run=run))

@@ -119,7 +119,9 @@ class ExtractionPipelinesAPI(APIClient):
 
             Get assets by external id:
 
-                >>> res = client.extraction_pipelines.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
+                >>> res = client.extraction_pipelines.retrieve_multiple(
+                ...     external_ids=["abc", "def"], ignore_unknown_ids=True
+                ... )
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return await self._retrieve_multiple(
@@ -213,7 +215,7 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.extraction_pipelines.delete(id=[1,2,3], external_id="3")
+                >>> client.extraction_pipelines.delete(id=[1, 2, 3], external_id="3")
         """
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(id, external_id), wrap_ids=True, extra_body_fields={}

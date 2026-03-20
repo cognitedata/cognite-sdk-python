@@ -1,6 +1,6 @@
 """
 ===============================================================================
-cc89586f372d9253c2922ea011bb2271
+8fd9acfa00bfb4f96ba621c65e7fa11f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -258,7 +258,9 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> count = client.sequences.aggregate_cardinality_values(SequenceProperty.metadata_key("efficiency"))
+                >>> count = client.sequences.aggregate_cardinality_values(
+                ...     SequenceProperty.metadata_key("efficiency")
+                ... )
 
             Count the number of timezones (metadata key) for sequences with the word "critical" in the description
             in your CDF project, but exclude timezones from america:
@@ -270,7 +272,8 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> timezone_count = client.sequences.aggregate_cardinality_values(
                 ...     SequenceProperty.metadata_key("timezone"),
                 ...     advanced_filter=is_critical,
-                ...     aggregate_filter=not_america)
+                ...     aggregate_filter=not_america,
+                ... )
         """
         return run_sync(
             self.__async_client.sequences.aggregate_cardinality_values(
@@ -340,7 +343,9 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> result = client.sequences.aggregate_unique_values(SequenceProperty.metadata_key("timezone"))
+                >>> result = client.sequences.aggregate_unique_values(
+                ...     SequenceProperty.metadata_key("timezone")
+                ... )
                 >>> print(result.unique)
 
             Get the different metadata keys with count used for sequences created after 2020-01-01 in your CDF project:
@@ -349,8 +354,12 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> from cognite.client.utils import timestamp_to_ms
                 >>> from datetime import datetime
-                >>> created_after_2020 = filters.Range(SequenceProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-                >>> result = client.sequences.aggregate_unique_values(SequenceProperty.metadata, advanced_filter=created_after_2020)
+                >>> created_after_2020 = filters.Range(
+                ...     SequenceProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+                ... )
+                >>> result = client.sequences.aggregate_unique_values(
+                ...     SequenceProperty.metadata, advanced_filter=created_after_2020
+                ... )
                 >>> print(result.unique)
 
             Get the different metadata keys with count for sequences updated after 2020-01-01 in your CDF project, but exclude all metadata keys that
@@ -359,8 +368,14 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> from cognite.client.data_classes import aggregations as aggs, filters
                 >>> not_test = aggs.Not(aggs.Prefix("test"))
-                >>> created_after_2020 = filters.Range(SequenceProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-                >>> result = client.sequences.aggregate_unique_values(SequenceProperty.metadata, advanced_filter=created_after_2020, aggregate_filter=not_test)
+                >>> created_after_2020 = filters.Range(
+                ...     SequenceProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+                ... )
+                >>> result = client.sequences.aggregate_unique_values(
+                ...     SequenceProperty.metadata,
+                ...     advanced_filter=created_after_2020,
+                ...     aggregate_filter=not_test,
+                ... )
                 >>> print(result.unique)
         """
         return run_sync(
@@ -431,14 +446,20 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> column_def = [
-                ...     SequenceColumnWrite(value_type="STRING", external_id="user", description="some description"),
-                ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount")
+                ...     SequenceColumnWrite(
+                ...         value_type="STRING", external_id="user", description="some description"
+                ...     ),
+                ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount"),
                 ... ]
-                >>> seq = client.sequences.create(SequenceWrite(external_id="my_sequence", columns=column_def))
+                >>> seq = client.sequences.create(
+                ...     SequenceWrite(external_id="my_sequence", columns=column_def)
+                ... )
 
             Create a new sequence with the same column specifications as an existing sequence:
 
-                >>> seq2 = client.sequences.create(SequenceWrite(external_id="my_copied_sequence", columns=column_def))
+                >>> seq2 = client.sequences.create(
+                ...     SequenceWrite(external_id="my_copied_sequence", columns=column_def)
+                ... )
         """
         return run_sync(self.__async_client.sequences.create(sequence=sequence))
 
@@ -463,7 +484,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.sequences.delete(id=[1,2,3], external_id="3")
+                >>> client.sequences.delete(id=[1, 2, 3], external_id="3")
         """
         return run_sync(
             self.__async_client.sequences.delete(id=id, external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)
@@ -512,7 +533,11 @@ class SyncSequencesAPI(SyncAPIClient):
             Perform a partial update on a sequence, updating the description and adding a new field to metadata:
 
                 >>> from cognite.client.data_classes import SequenceUpdate
-                >>> my_update = SequenceUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> my_update = (
+                ...     SequenceUpdate(id=1)
+                ...     .description.set("New description")
+                ...     .metadata.add({"key": "value"})
+                ... )
                 >>> res = client.sequences.update(my_update)
 
             **Updating column definitions**
@@ -524,7 +549,9 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnWrite
                 >>>
                 >>> my_update = SequenceUpdate(id=1).columns.add(
-                ...     SequenceColumnWrite(value_type ="STRING",external_id="user", description ="some description")
+                ...     SequenceColumnWrite(
+                ...         value_type="STRING", external_id="user", description="some description"
+                ...     )
                 ... )
                 >>> res = client.sequences.update(my_update)
 
@@ -533,8 +560,10 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnWrite
                 >>>
                 >>> column_def = [
-                ...     SequenceColumnWrite(value_type ="STRING",external_id="user", description ="some description"),
-                ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount")
+                ...     SequenceColumnWrite(
+                ...         value_type="STRING", external_id="user", description="some description"
+                ...     ),
+                ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount"),
                 ... ]
                 >>> my_update = SequenceUpdate(id=1).columns.add(column_def)
                 >>> res = client.sequences.update(my_update)
@@ -550,7 +579,9 @@ class SyncSequencesAPI(SyncAPIClient):
 
                 >>> from cognite.client.data_classes import SequenceUpdate
                 >>>
-                >>> my_update = SequenceUpdate(id=1).columns.remove(["col_external_id1","col_external_id2"])
+                >>> my_update = SequenceUpdate(id=1).columns.remove(
+                ...     ["col_external_id1", "col_external_id2"]
+                ... )
                 >>> res = client.sequences.update(my_update)
 
             Update existing columns:
@@ -558,8 +589,12 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnUpdate
                 >>>
                 >>> column_updates = [
-                ...     SequenceColumnUpdate(external_id="col_external_id_1").external_id.set("new_col_external_id"),
-                ...     SequenceColumnUpdate(external_id="col_external_id_2").description.set("my new description"),
+                ...     SequenceColumnUpdate(external_id="col_external_id_1").external_id.set(
+                ...         "new_col_external_id"
+                ...     ),
+                ...     SequenceColumnUpdate(external_id="col_external_id_2").description.set(
+                ...         "my new description"
+                ...     ),
                 ... ]
                 >>> my_update = SequenceUpdate(id=1).columns.modify(column_updates)
                 >>> res = client.sequences.update(my_update)
@@ -606,7 +641,7 @@ class SyncSequencesAPI(SyncAPIClient):
                 >>> new_sequence = SequenceWrite(
                 ...     external_id="new_sequence",
                 ...     description="New sequence",
-                ...     columns=[SequenceColumnWrite(external_id="col1", value_type="STRING")]
+                ...     columns=[SequenceColumnWrite(external_id="col1", value_type="STRING")],
                 ... )
                 >>> res = client.sequences.upsert([existing_sequence, new_sequence], mode="replace")
         """
@@ -712,7 +747,7 @@ class SyncSequencesAPI(SyncAPIClient):
             Iterate over chunks of sequences to reduce memory load:
 
                 >>> for seq_list in client.sequences(chunk_size=2500):
-                ...     seq_list # do something with the sequences
+                ...     seq_list  # do something with the sequences
 
             Using advanced filter, find all sequences that have a metadata key 'timezone' starting with 'Europe',
             and sort by external id ascending:
@@ -728,20 +763,25 @@ class SyncSequencesAPI(SyncAPIClient):
             for filtering and sorting, you can also use the `SequenceProperty` and `SortableSequenceProperty` Enums.
 
                 >>> from cognite.client.data_classes import filters
-                >>> from cognite.client.data_classes.sequences import SequenceProperty, SortableSequenceProperty
+                >>> from cognite.client.data_classes.sequences import (
+                ...     SequenceProperty,
+                ...     SortableSequenceProperty,
+                ... )
                 >>> in_timezone = filters.Prefix(SequenceProperty.metadata_key("timezone"), "Europe")
                 >>> res = client.sequences.list(
-                ...     advanced_filter=in_timezone,
-                ...     sort=(SortableSequenceProperty.external_id, "asc"))
+                ...     advanced_filter=in_timezone, sort=(SortableSequenceProperty.external_id, "asc")
+                ... )
 
             Combine filter and advanced filter:
 
                 >>> from cognite.client.data_classes import filters
                 >>> not_instrument_lvl5 = filters.And(
-                ...    filters.ContainsAny("labels", ["Level5"]),
-                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
+                ...     filters.ContainsAny("labels", ["Level5"]),
+                ...     filters.Not(filters.ContainsAny("labels", ["Instrument"])),
                 ... )
-                >>> res = client.sequences.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+                >>> res = client.sequences.list(
+                ...     asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5
+                ... )
         """
         return run_sync(
             self.__async_client.sequences.list(

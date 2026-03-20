@@ -1,6 +1,6 @@
 """
 ===============================================================================
-dbc2ed4a0d0352b8e5b0712b0e53cd61
+79aaab7ac35c746786d31b7b7fcbc43c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -53,11 +53,11 @@ class SyncUnitAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.units.retrieve('temperature:deg_c')
+                >>> res = client.units.retrieve("temperature:deg_c")
 
             Retrive units 'temperature:deg_c' and 'pressure:bar':
 
-                >>> res = client.units.retrieve(['temperature:deg_c', 'pressure:bar'])
+                >>> res = client.units.retrieve(["temperature:deg_c", "pressure:bar"])
         """
         return run_sync(
             self.__async_client.units.retrieve(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)
@@ -119,11 +119,11 @@ class SyncUnitAPI(SyncAPIClient):
                     >>> from cognite.client import CogniteClient, AsyncCogniteClient
                     >>> client = CogniteClient()
                     >>> # async_client = AsyncCogniteClient()  # another option
-                    >>> unit = client.units.from_alias('cmol / L')
+                    >>> unit = client.units.from_alias("cmol / L")
 
                 Look up ambiguous alias 'F' by passing quantity 'Temperature':
 
-                    >>> unit = client.units.from_alias('F', 'Temperature')
+                    >>> unit = client.units.from_alias("F", "Temperature")
 
                 Search for the closest matching unit of 'kilo watt' (should be 'kilowatt'):
 

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e0f9860956a1f01ae406c4ed41f27818
+9acb6f16c3d6ea331c279305cedaf162
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -204,7 +204,7 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.transformations.schedules.delete(id=[1,2,3], external_id="3")
+                >>> client.transformations.schedules.delete(id=[1, 2, 3], external_id="3")
         """
         return run_sync(
             self.__async_client.transformations.schedules.delete(
@@ -258,7 +258,9 @@ class SyncTransformationSchedulesAPI(SyncAPIClient):
             Perform a partial update on a transformation schedule, updating the interval and unpausing it:
 
                 >>> from cognite.client.data_classes import TransformationScheduleUpdate
-                >>> my_update = TransformationScheduleUpdate(id=1).interval.set("0 * * * *").is_paused.set(False)
+                >>> my_update = (
+                ...     TransformationScheduleUpdate(id=1).interval.set("0 * * * *").is_paused.set(False)
+                ... )
                 >>> res = client.transformations.schedules.update(my_update)
         """
         return run_sync(self.__async_client.transformations.schedules.update(item=item, mode=mode))

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c0fdd9917d4201cf971771159e7740c9
+bbf19ca65eaac5dabe7ab700b5da116c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -103,7 +103,7 @@ class Sync3DModelsAPI(SyncAPIClient):
             Iterate over chunks of 3d models to reduce memory load:
 
                 >>> for model in client.three_d.models(chunk_size=50):
-                ...     model # do something with the 3d model
+                ...     model  # do something with the 3d model
         """
         return run_sync(self.__async_client.three_d.models.list(published=published, limit=limit))
 
@@ -146,7 +146,9 @@ class Sync3DModelsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
+                >>> res = client.three_d.models.create(
+                ...     name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"}
+                ... )
 
             Create multiple new 3D Models:
 
@@ -154,8 +156,14 @@ class Sync3DModelsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import ThreeDModelWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> my_model = ThreeDModelWrite(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
-                >>> my_other_model = ThreeDModelWrite(name="My Other Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
+                >>> my_model = ThreeDModelWrite(
+                ...     name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"}
+                ... )
+                >>> my_other_model = ThreeDModelWrite(
+                ...     name="My Other Model",
+                ...     data_set_id=1,
+                ...     metadata={"key1": "value1", "key2": "value2"},
+                ... )
                 >>> res = client.three_d.models.create([my_model, my_other_model])
         """
         return run_sync(

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-44a68cea70b8d3050b8d645d272a0a1d
+f999f64709f94d34e77af1c36a037561
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -45,7 +45,9 @@ class SyncDocumentPreviewAPI(SyncAPIClient):
             Download an image preview and display using IPython.display.Image (for example in a Jupyter Notebook):
 
                 >>> from IPython.display import Image
-                >>> binary_png = client.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
+                >>> binary_png = client.documents.previews.download_page_as_png_bytes(
+                ...     id=123, page_number=5
+                ... )
                 >>> Image(binary_png)
         """
         return run_sync(
