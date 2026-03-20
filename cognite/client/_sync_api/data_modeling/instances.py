@@ -1,6 +1,6 @@
 """
 ===============================================================================
-1a6f5bf3b92a38c80ab64f4a1d9f01c1
+77ddb197a6a73314c704dafacbe56215
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -481,7 +481,7 @@ class SyncInstancesAPI(SyncAPIClient):
         involved_containers: InvolvedContainers | None = None,
     ) -> InstanceInspectResults:
         """
-        `Reverse lookup for instances. <https://api-docs.cognite.com/20230101/tag/Instances/operation/instanceInspect>`_
+        `Reverse lookup for instances. <https://developer.cognite.com/api/v1/#tag/Instances/operation/instanceInspect>`_
 
         This method will return the involved views and containers for the given nodes and edges.
 
@@ -605,6 +605,7 @@ class SyncInstancesAPI(SyncAPIClient):
             auto_create_direct_relations (bool): Whether to create missing direct relation targets when ingesting.
             skip_on_version_conflict (bool): If existingVersion is specified on any of the nodes/edges in the input, the default behaviour is that the entire ingestion will fail when version conflicts occur. If skipOnVersionConflict is set to true, items with version conflicts will be skipped instead. If no version is specified for nodes/edges, it will do the writing directly.
             replace (bool): How do we behave when a property value exists? Do we replace all matching and existing values with the supplied values (true)? Or should we merge in new values for properties together with the existing values (false)? Note: This setting applies for all nodes or edges specified in the ingestion call.
+
         Returns:
             InstancesApplyResult: Created instance(s)
 
@@ -803,7 +804,7 @@ class SyncInstancesAPI(SyncAPIClient):
         operator: Literal["AND", "OR"] = "AND",
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
         """
-        `Search instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/searchInstances>`_
+        `Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
         Args:
             view (ViewId): View to search in.
@@ -929,7 +930,7 @@ class SyncInstancesAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList:
         """
-        `Aggregate data across nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/aggregateInstances>`_
+        `Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
         Args:
             view (ViewId): View to aggregate over.
@@ -1018,7 +1019,7 @@ class SyncInstancesAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue | list[HistogramValue]:
         """
-        `Produces histograms for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/aggregateInstances>`_
+        `Produces histograms for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
         Args:
             view (ViewId): View to to aggregate over.
@@ -1063,7 +1064,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
     def query(self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
         """
-        `Advanced query interface for nodes/edges. <https://api-docs.cognite.com/20230101/tag/Instances/operation/queryContent>`_
+        `Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
         recursive edge traversal, chaining of result sets, and granular property selection.
@@ -1158,7 +1159,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
     def sync(self, query: QuerySync, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
         """
-        `Subscription to changes for nodes/edges. <https://api-docs.cognite.com/20230101/tag/Instances/operation/syncContent>`_
+        `Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
