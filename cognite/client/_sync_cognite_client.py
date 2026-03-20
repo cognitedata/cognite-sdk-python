@@ -147,6 +147,14 @@ class CogniteClient:
         """
         return self.__async_client._api_client
 
+    def get_async_client(self) -> AsyncCogniteClient:
+        """Returns the underlying async client.
+
+        Returns:
+            AsyncCogniteClient: The async client instance.
+        """
+        return self.__async_client
+
     @classmethod
     def default(
         cls,
