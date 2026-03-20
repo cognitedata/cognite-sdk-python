@@ -7,7 +7,8 @@ from __future__ import annotations
 
 import random
 from collections.abc import Iterator
-from unittest.mock import patch
+from typing import Any
+from unittest.mock import call, patch
 
 import pytest
 from pytest import MonkeyPatch
@@ -376,20 +377,33 @@ class TestAPIClientRetrieveMultiple:
     ) -> None:
         # Between SDK version 7.0.0 and 7.33.1, ordering of results was broken when >> 1k elements
         # was requested (meaning multiple requests were used):
+        # This bug came back in version 8.0.0, and was fixed in 8.0.3.
+        total_events = 3000  # Warning: Do not lower this number!! Too valuable test!!
         random_prefix = random_string(10)
-        num_items = 2000
+        ext_ids = [f"{random_prefix}:{i}" for i in range(total_events)]
+        to_create = [EventWrite(external_id=eid) for eid in ext_ids]
+
+        # Some setup to ensure we use concurrency - because without it, the bug may not manifest:
+        monkeypatch.setattr(async_client.events, "_RETRIEVE_LIMIT", 334)  # Force several requests
+        orig_get_sem = async_client.events._get_semaphore
+        sem_returns: list = []
+
+        def _capture_get_sem_call(*a: Any, **kw: Any) -> Any:
+            sem_returns.append(res := orig_get_sem(*a, **kw))
+            return res
+
         try:
-            cognite_client.events.create([EventWrite(external_id=f"{random_prefix}:{i}") for i in range(num_items)])
-            event_ids = cognite_client.events.list(
-                limit=num_items, sort="createdTime:asc", external_id_prefix=random_prefix
-            ).as_ids()
-            random.shuffle(event_ids)
-            monkeypatch.setattr(async_client.events, "_RETRIEVE_LIMIT", 334)  # Force several requests
-            res = cognite_client.events.retrieve_multiple(ids=event_ids)
-            assert res.as_ids() == event_ids
+            cognite_client.events.create(to_create)
+            random.shuffle(ext_ids)
+            with patch.object(async_client.events, "_get_semaphore", side_effect=_capture_get_sem_call) as get_sem_spy:
+                res = cognite_client.events.retrieve_multiple(external_ids=ext_ids)
+
+            assert get_sem_spy.call_args_list == [call("read")]
+            assert sem_returns[0] is async_client.events._get_semaphore("read")
+            assert sem_returns[0]._value >= 3, "Expected to use at least 3 concurrent requests to trigger the bug."
+            assert ext_ids == res.as_external_ids()
         finally:
-            event_ids = cognite_client.events.list(limit=num_items, external_id_prefix=random_prefix).as_ids()
-            cognite_client.events.delete(id=event_ids, ignore_unknown_ids=True)
+            cognite_client.events.delete(external_id=ext_ids, ignore_unknown_ids=True)
 
 
 class TestAPIClientDelete:
