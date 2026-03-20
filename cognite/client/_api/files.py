@@ -327,7 +327,7 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.files.delete(id=[1,2,3], external_id="3")
+                >>> client.files.delete(id=[1, 2, 3], external_id="3")
         """
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
@@ -381,7 +381,9 @@ class FilesAPI(APIClient):
             Perform a partial update on file metadata, updating the source and adding a new field to metadata:
 
                 >>> from cognite.client.data_classes import FileMetadataUpdate
-                >>> my_update = FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
+                >>> my_update = (
+                ...     FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
+                ... )
                 >>> res = client.files.update(my_update)
 
             Attach labels to a files:
@@ -434,7 +436,9 @@ class FilesAPI(APIClient):
             Search for an asset with an attached label:
 
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
-                >>> res = client.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
+                >>> res = client.assets.search(
+                ...     name="xyz", filter=FileMetadataFilter(labels=my_label_filter)
+                ... )
         """
         return await self._search(list_cls=FileMetadataList, search={"name": name}, filter=filter or {}, limit=limit)
 
@@ -531,13 +535,17 @@ class FilesAPI(APIClient):
             Upload a file with a label:
 
                 >>> from cognite.client.data_classes import Label
-                >>> res = client.files.upload(my_file, name="my_file", labels=[Label(external_id="WELL LOG")])
+                >>> res = client.files.upload(
+                ...     my_file, name="my_file", labels=[Label(external_id="WELL LOG")]
+                ... )
 
             Upload a file with a geo_location:
 
                 >>> from cognite.client.data_classes import GeoLocation, Geometry
                 >>> geometry = Geometry(type="LineString", coordinates=[[30, 10], [10, 30], [40, 40]])
-                >>> res = client.files.upload(my_file, geo_location=GeoLocation(type="Feature", geometry=geometry))
+                >>> res = client.files.upload(
+                ...     my_file, geo_location=GeoLocation(type="Feature", geometry=geometry)
+                ... )
 
         """
         file_metadata = FileMetadataWrite(
@@ -608,14 +616,14 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.files.upload_content_bytes(
-                ...     b"some content", external_id="my_file_xid")
+                >>> res = client.files.upload_content_bytes(b"some content", external_id="my_file_xid")
 
             ...or by using instance_id:
 
                 >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> res = client.files.upload_content_bytes(
-                ...     b"some content", instance_id=NodeId("my-space", "my_file_xid"))
+                ...     b"some content", instance_id=NodeId("my-space", "my_file_xid")
+                ... )
         """
         identifiers = IdentifierSequence.load(external_ids=external_id, instance_ids=instance_id).as_singleton()
 
@@ -719,7 +727,7 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
+                >>> res = client.files.upload_bytes(b"some content", name="my_file", asset_ids=[1, 2, 3])
         """
         file_metadata = FileMetadataWrite(
             name=name,
@@ -892,7 +900,9 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> with client.files.multipart_upload_content_session(external_id="external-id", parts=2) as session:
+                >>> with client.files.multipart_upload_content_session(
+                ...     external_id="external-id", parts=2
+                ... ) as session:
                 ...     # Note that the minimum chunk size is 5 MiB.
                 ...     session.upload_part(0, "hello" * 1_200_000)
                 ...     session.upload_part(1, " world")
@@ -1067,11 +1077,13 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
+                >>> client.files.download(
+                ...     directory="my_directory", id=[1, 2, 3], external_id=["abc", "def"]
+                ... )
 
             Download files by id to the current directory:
 
-                >>> client.files.download(directory=".", id=[1,2,3])
+                >>> client.files.download(directory=".", id=[1, 2, 3])
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id)
 
@@ -1324,7 +1336,7 @@ class FilesAPI(APIClient):
             Iterate over chunks of files metadata to reduce memory load:
 
                 >>> for file_list in client.files(chunk_size=2500):
-                ...     file_list # do something with the files
+                ...     file_list  # do something with the files
 
             Filter files based on labels:
 
@@ -1335,7 +1347,9 @@ class FilesAPI(APIClient):
             Filter files based on geoLocation:
 
                 >>> from cognite.client.data_classes import GeoLocationFilter, GeometryFilter
-                >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
+                >>> my_geo_location_filter = GeoLocationFilter(
+                ...     relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35, 10])
+                ... )
                 >>> file_list = client.files.list(geo_location=my_geo_location_filter)
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)

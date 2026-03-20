@@ -139,6 +139,6 @@ class RawDatabasesAPI(APIClient):
             Iterate over chunks of databases to reduce memory load:
 
                 >>> for db_list in client.raw.databases(chunk_size=2500):
-                ...     db_list # do something with the dbs
+                ...     db_list  # do something with the dbs
         """
         return await self._list(list_cls=DatabaseList, resource_cls=Database, method="GET", limit=limit)

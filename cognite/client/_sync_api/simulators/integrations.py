@@ -129,6 +129,6 @@ class SyncSimulatorIntegrationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.simulators.integrations.delete(ids=[1,2,3], external_ids="foo")
+                >>> client.simulators.integrations.delete(ids=[1, 2, 3], external_ids="foo")
         """
         return run_sync(self.__async_client.simulators.integrations.delete(ids=ids, external_ids=external_ids))

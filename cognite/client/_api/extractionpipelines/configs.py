@@ -86,7 +86,9 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineConfigWrite
                 >>> client = CogniteClient()
-                >>> res = client.extraction_pipelines.config.create(ExtractionPipelineConfigWrite(external_id="extId", config="my config contents"))
+                >>> res = client.extraction_pipelines.config.create(
+                ...     ExtractionPipelineConfigWrite(external_id="extId", config="my config contents")
+                ... )
         """
         if isinstance(config, ExtractionPipelineConfig):
             config = config.as_write()

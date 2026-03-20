@@ -307,7 +307,8 @@ class SyncTimeSeriesAPI(SyncAPIClient):
             >>> timezone_count = client.time_series.aggregate_cardinality_values(
             ...     TimeSeriesProperty.metadata_key("timezone"),
             ...     advanced_filter=is_critical,
-            ...     aggregate_filter=not_america)
+            ...     aggregate_filter=not_america,
+            ... )
         """
         return run_sync(
             self.__async_client.time_series.aggregate_cardinality_values(
@@ -341,7 +342,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> key_count = client.time_series.aggregate_cardinality_properties(TimeSeriesProperty.metadata)
+                >>> key_count = client.time_series.aggregate_cardinality_properties(
+                ...     TimeSeriesProperty.metadata
+                ... )
         """
         return run_sync(
             self.__async_client.time_series.aggregate_cardinality_properties(
@@ -376,7 +379,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.metadata_key("timezone"))
+                >>> result = client.time_series.aggregate_unique_values(
+                ...     TimeSeriesProperty.metadata_key("timezone")
+                ... )
                 >>> print(result.unique)
 
             Get the different units with count used for time series created after 2020-01-01 in your CDF project:
@@ -385,8 +390,12 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> from cognite.client.utils import timestamp_to_ms
                 >>> from datetime import datetime
-                >>> created_after_2020 = filters.Range(TimeSeriesProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-                >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020)
+                >>> created_after_2020 = filters.Range(
+                ...     TimeSeriesProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+                ... )
+                >>> result = client.time_series.aggregate_unique_values(
+                ...     TimeSeriesProperty.unit, advanced_filter=created_after_2020
+                ... )
                 >>> print(result.unique)
 
             Get the different units with count for time series updated after 2020-01-01 in your CDF project, but exclude all units that
@@ -395,8 +404,14 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> from cognite.client.data_classes import aggregations as aggs, filters
                 >>> not_test = aggs.Not(aggs.Prefix("test"))
-                >>> created_after_2020 = filters.Range(TimeSeriesProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-                >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020, aggregate_filter=not_test)
+                >>> created_after_2020 = filters.Range(
+                ...     TimeSeriesProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+                ... )
+                >>> result = client.time_series.aggregate_unique_values(
+                ...     TimeSeriesProperty.unit,
+                ...     advanced_filter=created_after_2020,
+                ...     aggregate_filter=not_test,
+                ... )
                 >>> print(result.unique)
         """
         return run_sync(
@@ -466,7 +481,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import TimeSeriesWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> ts = client.time_series.create(TimeSeriesWrite(name="my_ts", data_set_id=123, external_id="foo"))
+                >>> ts = client.time_series.create(
+                ...     TimeSeriesWrite(name="my_ts", data_set_id=123, external_id="foo")
+                ... )
         """
         return run_sync(self.__async_client.time_series.create(time_series=time_series))
 
@@ -491,7 +508,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.time_series.delete(id=[1,2,3], external_id="3")
+                >>> client.time_series.delete(id=[1, 2, 3], external_id="3")
         """
         return run_sync(
             self.__async_client.time_series.delete(
@@ -545,7 +562,11 @@ class SyncTimeSeriesAPI(SyncAPIClient):
             Perform a partial update on a time series, updating the description and adding a new field to metadata:
 
                 >>> from cognite.client.data_classes import TimeSeriesUpdate
-                >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> my_update = (
+                ...     TimeSeriesUpdate(id=1)
+                ...     .description.set("New description")
+                ...     .metadata.add({"key": "value"})
+                ... )
                 >>> res = client.time_series.update(my_update)
 
             Perform a partial update on a time series by instance id.
@@ -603,8 +624,12 @@ class SyncTimeSeriesAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_time_series = client.time_series.retrieve(id=1)
                 >>> existing_time_series.description = "New description"
-                >>> new_time_series = TimeSeriesWrite(external_id="new_timeSeries", description="New timeSeries")
-                >>> res = client.time_series.upsert([existing_time_series, new_time_series], mode="replace")
+                >>> new_time_series = TimeSeriesWrite(
+                ...     external_id="new_timeSeries", description="New timeSeries"
+                ... )
+                >>> res = client.time_series.upsert(
+                ...     [existing_time_series, new_time_series], mode="replace"
+                ... )
         """
         return run_sync(self.__async_client.time_series.upsert(item=item, mode=mode))
 
@@ -641,7 +666,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
 
             Search for all time series connected to asset with id 123:
 
-                >>> res = client.time_series.search(filter={"asset_ids":[123]})
+                >>> res = client.time_series.search(filter={"asset_ids": [123]})
         """
         return run_sync(
             self.__async_client.time_series.search(
@@ -723,14 +748,16 @@ class SyncTimeSeriesAPI(SyncAPIClient):
             Iterate over chunks of time series to reduce memory load:
 
                 >>> for ts_list in client.time_series(chunk_size=2500):
-                ...     ts_list # do something with the time series
+                ...     ts_list  # do something with the time series
 
             Using advanced filter, find all time series that have a metadata key 'timezone' starting with 'Europe',
             and sort by external id ascending:
 
                 >>> from cognite.client.data_classes import filters
                 >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
-                >>> res = client.time_series.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
+                >>> res = client.time_series.list(
+                ...     advanced_filter=in_timezone, sort=("external_id", "asc")
+                ... )
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -739,20 +766,25 @@ class SyncTimeSeriesAPI(SyncAPIClient):
             for filtering and sorting, you can also use the `TimeSeriesProperty` and `SortableTimeSeriesProperty` Enums.
 
                 >>> from cognite.client.data_classes import filters
-                >>> from cognite.client.data_classes.time_series import TimeSeriesProperty, SortableTimeSeriesProperty
+                >>> from cognite.client.data_classes.time_series import (
+                ...     TimeSeriesProperty,
+                ...     SortableTimeSeriesProperty,
+                ... )
                 >>> in_timezone = filters.Prefix(TimeSeriesProperty.metadata_key("timezone"), "Europe")
                 >>> res = client.time_series.list(
-                ...     advanced_filter=in_timezone,
-                ...     sort=(SortableTimeSeriesProperty.external_id, "asc"))
+                ...     advanced_filter=in_timezone, sort=(SortableTimeSeriesProperty.external_id, "asc")
+                ... )
 
             Combine filter and advanced filter:
 
                 >>> from cognite.client.data_classes import filters
                 >>> not_instrument_lvl5 = filters.And(
-                ...    filters.ContainsAny("labels", ["Level5"]),
-                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
+                ...     filters.ContainsAny("labels", ["Level5"]),
+                ...     filters.Not(filters.ContainsAny("labels", ["Instrument"])),
                 ... )
-                >>> res = client.time_series.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+                >>> res = client.time_series.list(
+                ...     asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5
+                ... )
         """
         return run_sync(
             self.__async_client.time_series.list(

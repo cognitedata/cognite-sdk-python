@@ -80,11 +80,13 @@ class SyncDestinationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.hosted_extractors.destinations.retrieve('myDestination')
+                >>> res = client.hosted_extractors.destinations.retrieve("myDestination")
 
             Get multiple destinations by id:
 
-                >>> res = client.hosted_extractors.destinations.retrieve(["myDestination", "myDestination2"], ignore_unknown_ids=True)
+                >>> res = client.hosted_extractors.destinations.retrieve(
+                ...     ["myDestination", "myDestination2"], ignore_unknown_ids=True
+                ... )
         """
         return run_sync(
             self.__async_client.hosted_extractors.destinations.retrieve(
@@ -139,10 +141,17 @@ class SyncDestinationsAPI(SyncAPIClient):
             Create new destination:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.hosted_extractors import DestinationWrite, SessionWrite
+                >>> from cognite.client.data_classes.hosted_extractors import (
+                ...     DestinationWrite,
+                ...     SessionWrite,
+                ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> destination = DestinationWrite(external_id='my_dest', credentials=SessionWrite("my_nonce"), target_data_set_id=123)
+                >>> destination = DestinationWrite(
+                ...     external_id="my_dest",
+                ...     credentials=SessionWrite("my_nonce"),
+                ...     target_data_set_id=123,
+                ... )
                 >>> res = client.hosted_extractors.destinations.create(destination)
         """
         return run_sync(self.__async_client.hosted_extractors.destinations.create(items=items))
@@ -184,7 +193,7 @@ class SyncDestinationsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import DestinationUpdate
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> destination = DestinationUpdate('my_dest').target_data_set_id.set(123)
+                >>> destination = DestinationUpdate("my_dest").target_data_set_id.set(123)
                 >>> res = client.hosted_extractors.destinations.update(destination)
         """
         return run_sync(self.__async_client.hosted_extractors.destinations.update(items=items, mode=mode))
@@ -216,6 +225,6 @@ class SyncDestinationsAPI(SyncAPIClient):
             Iterate over chunks of destinations to reduce memory load:
 
                 >>> for destination_list in client.hosted_extractors.destinations(chunk_size=25):
-                ...     destination_list # do something with the destinationss
+                ...     destination_list  # do something with the destinationss
         """
         return run_sync(self.__async_client.hosted_extractors.destinations.list(limit=limit))

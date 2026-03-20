@@ -69,7 +69,7 @@ class SyncDataModelingGraphQLAPI(SyncAPIClient):
                 ...     id=("mySpaceExternalId", "myModelExternalId", "1"),
                 ...     dml="type MyType { id: String! }",
                 ...     name="My model name",
-                ...     description="My model description"
+                ...     description="My model description",
                 ... )
         """
         return run_sync(

@@ -175,6 +175,6 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.transformations.notifications.delete(id=[1,2,3])
+                >>> client.transformations.notifications.delete(id=[1, 2, 3])
         """
         return run_sync(self.__async_client.transformations.notifications.delete(id=id))

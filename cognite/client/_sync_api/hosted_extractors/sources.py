@@ -74,11 +74,13 @@ class SyncSourcesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.hosted_extractors.sources.retrieve('myMQTTSource')
+                >>> res = client.hosted_extractors.sources.retrieve("myMQTTSource")
 
             Get multiple sources by id:
 
-                >>> res = client.hosted_extractors.sources.retrieve(["myMQTTSource", "MyEventHubSource"], ignore_unknown_ids=True)
+                >>> res = client.hosted_extractors.sources.retrieve(
+                ...     ["myMQTTSource", "MyEventHubSource"], ignore_unknown_ids=True
+                ... )
         """
         return run_sync(
             self.__async_client.hosted_extractors.sources.retrieve(
@@ -135,7 +137,9 @@ class SyncSourcesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> source = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
+                >>> source = EventHubSourceWrite(
+                ...     "my_event_hub", "http://myeventhub.com", "My EventHub", "my_key", "my_value"
+                ... )
                 >>> res = client.hosted_extractors.sources.create(source)
         """
         return run_sync(self.__async_client.hosted_extractors.sources.create(items=items))
@@ -177,7 +181,9 @@ class SyncSourcesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceUpdate
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> source = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
+                >>> source = EventHubSourceUpdate("my_event_hub").event_hub_name.set(
+                ...     "My Updated EventHub"
+                ... )
                 >>> res = client.hosted_extractors.sources.update(source)
         """
         return run_sync(self.__async_client.hosted_extractors.sources.update(items=items, mode=mode))
@@ -209,6 +215,6 @@ class SyncSourcesAPI(SyncAPIClient):
             Iterate over chunks of sources to reduce memory load:
 
                 >>> for source_list in client.hosted_extractors.sources(chunk_size=25):
-                ...     source_list # do something with the sources
+                ...     source_list  # do something with the sources
         """
         return run_sync(self.__async_client.hosted_extractors.sources.list(limit=limit))

@@ -123,6 +123,6 @@ class SyncRawTablesAPI(SyncAPIClient):
             Iterate over chunks of tables to reduce memory load:
 
                 >>> for table_list in client.raw.tables(db_name="db1", chunk_size=25):
-                ...     table_list # do something with the tables
+                ...     table_list  # do something with the tables
         """
         return run_sync(self.__async_client.raw.tables.list(db_name=db_name, limit=limit))

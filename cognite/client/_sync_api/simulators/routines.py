@@ -125,7 +125,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 ...         simulator_integration_external_id="integration_ext_id_2",
                 ...         model_external_id="model_ext_id_2",
                 ...         kind="long",
-                ...     )
+                ...     ),
                 ... ]
                 >>> res = client.simulators.routines.create(routines)
         """
@@ -148,7 +148,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.simulators.routines.delete(ids=[1,2,3], external_ids="foo")
+                >>> client.simulators.routines.delete(ids=[1, 2, 3], external_ids="foo")
         """
         return run_sync(self.__async_client.simulators.routines.delete(ids=ids, external_ids=external_ids))
 
@@ -190,16 +190,11 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> res = client.simulators.routines.list(
                 ...     simulator_integration_external_ids=["integration_ext_id"],
-                ...     sort=PropertySort(
-                ...         property="createdTime",
-                ...         order="desc"
-                ...     )
+                ...     sort=PropertySort(property="createdTime", order="desc"),
                 ... )
 
             Filter on routine kind:
-                >>> res = client.simulators.routines.list(
-                ...     kind="long"
-                ... )
+                >>> res = client.simulators.routines.list(kind="long")
         """
         return run_sync(
             self.__async_client.simulators.routines.list(
@@ -280,8 +275,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> run = client.simulators.routines.run(
-                ...     routine_external_id="routine1",
-                ...     log_severity="Debug"
+                ...     routine_external_id="routine1", log_severity="Debug"
                 ... )
 
             Create new simulation run using routine and model revision external IDs:

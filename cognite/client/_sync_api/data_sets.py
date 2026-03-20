@@ -175,7 +175,9 @@ class SyncDataSetsAPI(SyncAPIClient):
 
             Get data sets by external id:
 
-                >>> res = client.data_sets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
+                >>> res = client.data_sets.retrieve_multiple(
+                ...     external_ids=["abc", "def"], ignore_unknown_ids=True
+                ... )
         """
         return run_sync(
             self.__async_client.data_sets.retrieve_multiple(
@@ -249,7 +251,9 @@ class SyncDataSetsAPI(SyncAPIClient):
             Perform a partial update on a data set, updating the description and removing a field from metadata:
 
                 >>> from cognite.client.data_classes import DataSetUpdate
-                >>> my_update = DataSetUpdate(id=1).description.set("New description").metadata.remove(["key"])
+                >>> my_update = (
+                ...     DataSetUpdate(id=1).description.set("New description").metadata.remove(["key"])
+                ... )
                 >>> res = client.data_sets.update(my_update)
         """
         return run_sync(self.__async_client.data_sets.update(item=item, mode=mode))
@@ -294,7 +298,7 @@ class SyncDataSetsAPI(SyncAPIClient):
             Iterate over chunks of data sets to reduce memory load:
 
                 >>> for data_set_list in client.data_sets(chunk_size=2500):
-                ...     data_set_list # do something with the list
+                ...     data_set_list  # do something with the list
         """
         return run_sync(
             self.__async_client.data_sets.list(

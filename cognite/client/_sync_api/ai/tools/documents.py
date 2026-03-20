@@ -53,9 +53,7 @@ class SyncAIDocumentsAPI(SyncAPIClient):
             You can also use external ID or instance ID:
 
                 >>> from cognite.client.data_classes.data_modeling import NodeId
-                >>> client.ai.tools.documents.summarize(
-                ...     instance_id=NodeId("my-space", "my-xid")
-                ... )
+                >>> client.ai.tools.documents.summarize(instance_id=NodeId("my-space", "my-xid"))
         """
         return run_sync(
             self.__async_client.ai.tools.documents.summarize(id=id, external_id=external_id, instance_id=instance_id)

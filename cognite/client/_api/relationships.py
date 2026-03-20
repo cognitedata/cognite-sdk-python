@@ -373,7 +373,7 @@ class RelationshipsAPI(APIClient):
                 ...     target_external_id="target_ext_id",
                 ...     target_type="event",
                 ...     confidence=0.1,
-                ...     data_set_id=1234
+                ...     data_set_id=1234,
                 ... )
                 >>> flowrel2 = RelationshipWrite(
                 ...     external_id="flow_2",
@@ -382,9 +382,9 @@ class RelationshipsAPI(APIClient):
                 ...     target_external_id="target_ext_id",
                 ...     target_type="event",
                 ...     confidence=0.1,
-                ...     data_set_id=1234
+                ...     data_set_id=1234,
                 ... )
-                >>> res = client.relationships.create([flowrel1,flowrel2])
+                >>> res = client.relationships.create([flowrel1, flowrel2])
         """
         assert_type(relationship, "relationship", [RelationshipCore, Sequence])
         if isinstance(relationship, Sequence):
@@ -438,7 +438,11 @@ class RelationshipsAPI(APIClient):
             Perform a partial update on a relationship, setting a source_external_id and a confidence:
 
                 >>> from cognite.client.data_classes import RelationshipUpdate
-                >>> my_update = RelationshipUpdate(external_id="flow_1").source_external_id.set("alternate_source").confidence.set(0.97)
+                >>> my_update = (
+                ...     RelationshipUpdate(external_id="flow_1")
+                ...     .source_external_id.set("alternate_source")
+                ...     .confidence.set(0.97)
+                ... )
                 >>> res1 = client.relationships.update(my_update)
                 >>> # Remove an already set optional field like so
                 >>> another_update = RelationshipUpdate(external_id="flow_1").confidence.set(None)
@@ -503,9 +507,11 @@ class RelationshipsAPI(APIClient):
                 ...     source_external_id="new_source",
                 ...     source_type="asset",
                 ...     target_external_id="new_target",
-                ...     target_type="event"
+                ...     target_type="event",
                 ... )
-                >>> res = client.relationships.upsert([existing_relationship, new_relationship], mode="replace")
+                >>> res = client.relationships.upsert(
+                ...     [existing_relationship, new_relationship], mode="replace"
+                ... )
         """
         return await self._upsert_multiple(
             item,
@@ -529,7 +535,7 @@ class RelationshipsAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.relationships.delete(external_id=["a","b"])
+                >>> client.relationships.delete(external_id=["a", "b"])
         """
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),

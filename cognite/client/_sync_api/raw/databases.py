@@ -120,6 +120,6 @@ class SyncRawDatabasesAPI(SyncAPIClient):
             Iterate over chunks of databases to reduce memory load:
 
                 >>> for db_list in client.raw.databases(chunk_size=2500):
-                ...     db_list # do something with the dbs
+                ...     db_list  # do something with the dbs
         """
         return run_sync(self.__async_client.raw.databases.list(limit=limit))

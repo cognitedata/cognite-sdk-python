@@ -222,7 +222,9 @@ class SyncAssetsAPI(SyncAPIClient):
 
             Get assets by external id:
 
-                >>> res = client.assets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
+                >>> res = client.assets.retrieve_multiple(
+                ...     external_ids=["abc", "def"], ignore_unknown_ids=True
+                ... )
         """
         return run_sync(
             self.__async_client.assets.retrieve_multiple(
@@ -303,8 +305,8 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.assets import AssetProperty
                 >>> is_critical = Search(AssetProperty.description, "critical")
                 >>> critical_assets = client.assets.aggregate_cardinality_values(
-                ...     AssetProperty.metadata_key("timezone"),
-                ...     advanced_filter=is_critical)
+                ...     AssetProperty.metadata_key("timezone"), advanced_filter=is_critical
+                ... )
         """
         return run_sync(
             self.__async_client.assets.aggregate_cardinality_values(
@@ -377,7 +379,9 @@ class SyncAssetsAPI(SyncAPIClient):
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> client = CogniteClient()
             >>> # async_client = AsyncCogniteClient()  # another option
-            >>> result = client.assets.aggregate_unique_values(AssetProperty.metadata_key("timezone"))
+            >>> result = client.assets.aggregate_unique_values(
+            ...     AssetProperty.metadata_key("timezone")
+            ... )
             >>> print(result.unique)
 
         Get the different labels with count used for assets created after 2020-01-01 in your CDF project:
@@ -386,8 +390,12 @@ class SyncAssetsAPI(SyncAPIClient):
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> from cognite.client.utils import timestamp_to_ms
             >>> from datetime import datetime
-            >>> created_after_2020 = filters.Range(AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = client.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020)
+            >>> created_after_2020 = filters.Range(
+            ...     AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+            ... )
+            >>> result = client.assets.aggregate_unique_values(
+            ...     AssetProperty.labels, advanced_filter=created_after_2020
+            ... )
             >>> print(result.unique)
 
         Get the different labels with count for assets updated after 2020-01-01 in your CDF project, but exclude all labels that
@@ -397,8 +405,14 @@ class SyncAssetsAPI(SyncAPIClient):
             >>> from cognite.client.data_classes import aggregations
             >>> from cognite.client.data_classes import filters
             >>> not_test = aggregations.Not(aggregations.Prefix("test"))
-            >>> created_after_2020 = filters.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = client.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
+            >>> created_after_2020 = filters.Range(
+            ...     AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+            ... )
+            >>> result = client.assets.aggregate_unique_values(
+            ...     AssetProperty.labels,
+            ...     advanced_filter=created_after_2020,
+            ...     aggregate_filter=not_test,
+            ... )
             >>> print(result.unique)
         """
         return run_sync(
@@ -548,7 +562,8 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> assets = [
                 ...     AssetWrite(external_id="root", name="root"),
                 ...     AssetWrite(external_id="child1", parent_external_id="root", name="child1"),
-                ...     AssetWrite(external_id="child2", parent_external_id="root", name="child2")]
+                ...     AssetWrite(external_id="child2", parent_external_id="root", name="child2"),
+                ... ]
                 >>> res = client.assets.create_hierarchy(assets)
 
             Create an asset hierarchy, but run update for existing assets:
@@ -636,7 +651,7 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.assets.delete(id=[1,2,3], external_id="3")
+                >>> client.assets.delete(id=[1, 2, 3], external_id="3")
         """
         return run_sync(
             self.__async_client.assets.delete(
@@ -680,7 +695,11 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import AssetUpdate
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> my_update = (
+                ...     AssetUpdate(id=1)
+                ...     .description.set("New description")
+                ...     .metadata.add({"key": "value"})
+                ... )
                 >>> res1 = client.assets.update(my_update)
                 >>> # Remove an already set field like so
                 >>> another_update = AssetUpdate(id=1).description.set(None)
@@ -749,7 +768,9 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_asset = client.assets.retrieve(id=1)
                 >>> existing_asset.description = "New description"
-                >>> new_asset = AssetWrite(external_id="new_asset", name="my asset", description="New asset")
+                >>> new_asset = AssetWrite(
+                ...     external_id="new_asset", name="my asset", description="New asset"
+                ... )
                 >>> res = client.assets.upsert([existing_asset, new_asset], mode="replace")
         """
         return run_sync(self.__async_client.assets.upsert(item=item, mode=mode))
@@ -795,12 +816,14 @@ class SyncAssetsAPI(SyncAPIClient):
 
             Search for assets using multiple filters, finding all assets with name similar to `xyz` with parent asset `123` or `456` with source `some source`:
 
-                >>> res = client.assets.search(name="xyz",filter={"parent_ids": [123,456],"source": "some source"})
+                >>> res = client.assets.search(
+                ...     name="xyz", filter={"parent_ids": [123, 456], "source": "some source"}
+                ... )
 
             Search for an asset with an attached label:
 
                 >>> my_label_filter = LabelFilter(contains_all=["PUMP"])
-                >>> res = client.assets.search(name="xyz",filter=AssetFilter(labels=my_label_filter))
+                >>> res = client.assets.search(name="xyz", filter=AssetFilter(labels=my_label_filter))
         """
         return run_sync(
             self.__async_client.assets.search(
@@ -898,7 +921,7 @@ class SyncAssetsAPI(SyncAPIClient):
             Iterate over chunks of assets to reduce memory load:
 
                 >>> for asset_list in client.assets(chunk_size=2500):
-                ...     asset_list # do something with the assets
+                ...     asset_list  # do something with the assets
 
             Filter assets based on labels:
 
@@ -923,17 +946,19 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
                 >>> in_timezone = filters.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
                 >>> res = client.assets.list(
-                ...     advanced_filter=in_timezone,
-                ...     sort=(SortableAssetProperty.external_id, "asc"))
+                ...     advanced_filter=in_timezone, sort=(SortableAssetProperty.external_id, "asc")
+                ... )
 
             Combine filter and advanced filter:
 
                 >>> from cognite.client.data_classes import filters
                 >>> not_instrument_lvl5 = filters.And(
-                ...    filters.ContainsAny("labels", ["Level5"]),
-                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
+                ...     filters.ContainsAny("labels", ["Level5"]),
+                ...     filters.Not(filters.ContainsAny("labels", ["Instrument"])),
                 ... )
-                >>> res = client.assets.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+                >>> res = client.assets.list(
+                ...     asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5
+                ... )
         """
         return run_sync(
             self.__async_client.assets.list(

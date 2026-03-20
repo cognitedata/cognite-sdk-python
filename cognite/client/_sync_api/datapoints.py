@@ -134,7 +134,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> queries = [
                 ...     DatapointsQuery(id=123),
                 ...     DatapointsQuery(external_id="foo"),
-                ...     DatapointsQuery(instance_id=NodeId("my-space", "my-ts-xid"))
+                ...     DatapointsQuery(instance_id=NodeId("my-space", "my-ts-xid")),
                 ... ]
                 >>> for chunk_lst in client.time_series.data(query, return_arrays=False):
                 ...     if chunk_lst.get(id=123) is None:
@@ -468,11 +468,12 @@ class SyncDatapointsAPI(SyncAPIClient):
             (milliseconds after epoch). In the below example, we fetch them using their external ids:
 
                 >>> dps_lst = client.time_series.data.retrieve(
-                ...    external_id=["foo", "bar"],
-                ...    start=1514764800000,
-                ...    end=1546300800000,
-                ...    aggregates=["max", "average"],
-                ...    granularity="1d")
+                ...     external_id=["foo", "bar"],
+                ...     start=1514764800000,
+                ...     end=1546300800000,
+                ...     aggregates=["max", "average"],
+                ...     granularity="1d",
+                ... )
 
             In the two code examples above, we have a `dps` object (an instance of ``Datapoints``), and a `dps_lst` object (an instance of ``DatapointsList``).
             On `dps`, which in this case contains raw datapoints, you may access the underlying data directly by using the `.value` attribute. This works for
@@ -509,7 +510,8 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     ],
                 ...     external_id=DatapointsQuery(external_id="foo", aggregates="max"),
                 ...     start="5d-ago",
-                ...     granularity="1h")
+                ...     granularity="1h",
+                ... )
 
             Certain aggregates are very useful when they follow the calendar, for example electricity consumption per day, week, month
             or year. You may request such calendar-based aggregates in a specific timezone to make them even more useful: daylight savings (DST)
@@ -517,10 +519,8 @@ class SyncDatapointsAPI(SyncAPIClient):
             can be used independently. To get monthly local aggregates in Oslo, Norway you can do:
 
                 >>> dps = client.time_series.data.retrieve(
-                ...     id=123,
-                ...     aggregates="sum",
-                ...     granularity="1month",
-                ...     timezone="Europe/Oslo")
+                ...     id=123, aggregates="sum", granularity="1month", timezone="Europe/Oslo"
+                ... )
 
             When requesting multiple time series, an easy way to get the datapoints of a specific one is to use the `.get` method
             on the returned ``DatapointsList`` object, then specify if you want `id` or `external_id`. Note: If you fetch a time series
@@ -550,9 +550,12 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     external_id=[
                 ...         DatapointsQuery(external_id=sensor_xid, start=ev.start_time, end=ev.end_time)
                 ...         for ev in periods
-                ...     ])
+                ...     ],
+                ... )
                 >>> ts_44 = dps_lst.get(id=44)  # Single ``Datapoints`` object
-                >>> ts_lst = dps_lst.get(external_id=sensor_xid)  # List of ``len(periods)`` ``Datapoints`` objects
+                >>> ts_lst = dps_lst.get(
+                ...     external_id=sensor_xid
+                ... )  # List of ``len(periods)`` ``Datapoints`` objects
 
             The API has an endpoint to :py:meth:`~DatapointsAPI.retrieve_latest`, i.e. "before", but not "after". Luckily, we can emulate that behaviour easily.
             Let's say we have a very dense time series and do not want to fetch all of the available raw data (or fetch less precise
@@ -561,10 +564,14 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> import itertools
                 >>> month_starts = [
                 ...     datetime(year, month, 1, tzinfo=utc)
-                ...     for year, month in itertools.product(range(2000, 2011), range(1, 13))]
+                ...     for year, month in itertools.product(range(2000, 2011), range(1, 13))
+                ... ]
                 >>> dps_lst = client.time_series.data.retrieve(
-                ...     external_id=[DatapointsQuery(external_id="foo", start=start) for start in month_starts],
-                ...     limit=1)
+                ...     external_id=[
+                ...         DatapointsQuery(external_id="foo", start=start) for start in month_starts
+                ...     ],
+                ...     limit=1,
+                ... )
 
             To get *all* historic and future datapoints for a time series, e.g. to do a backup, you may want to import the two integer
             constants: ``MIN_TIMESTAMP_MS`` and ``MAX_TIMESTAMP_MS``, to make sure you do not miss any. **Performance warning**: This pattern of
@@ -572,28 +579,30 @@ class SyncDatapointsAPI(SyncAPIClient):
 
                 >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
                 >>> dps_backup = client.time_series.data.retrieve(
-                ...     id=123,
-                ...     start=MIN_TIMESTAMP_MS,
-                ...     end=MAX_TIMESTAMP_MS + 1)  # end is exclusive
+                ...     id=123, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1
+                ... )  # end is exclusive
 
             If you have a time series with 'unit_external_id' set, you can use the 'target_unit' parameter to convert the datapoints
             to the desired unit. In the example below, we are converting temperature readings from a sensor measured and stored in Celsius,
             to Fahrenheit (we're assuming that the time series has e.g. ``unit_external_id="temperature:deg_c"`` ):
 
                 >>> client.time_series.data.retrieve(
-                ...   id=42, start="2w-ago", target_unit="temperature:deg_f")
+                ...     id=42, start="2w-ago", target_unit="temperature:deg_f"
+                ... )
 
             Or alternatively, you can use the 'target_unit_system' parameter to convert the datapoints to the desired unit system:
 
                 >>> client.time_series.data.retrieve(
-                ...   id=42, start="2w-ago", target_unit_system="Imperial")
+                ...     id=42, start="2w-ago", target_unit_system="Imperial"
+                ... )
 
             To retrieve status codes for a time series, pass ``include_status=True``. This is only possible for raw datapoint queries.
             You would typically also pass ``ignore_bad_datapoints=False`` to not hide all the datapoints that are marked as uncertain or bad,
             which is the API's default behaviour. You may also use ``treat_uncertain_as_bad`` to control how uncertain values are interpreted.
 
                 >>> dps = client.time_series.data.retrieve(
-                ...   id=42, include_status=True, ignore_bad_datapoints=False)
+                ...     id=42, include_status=True, ignore_bad_datapoints=False
+                ... )
                 >>> dps.status_code  # list of integer codes, e.g.: [0, 1073741824, 2147483648]
                 >>> dps.status_symbol  # list of symbolic representations, e.g. [Good, Uncertain, Bad]
 
@@ -815,7 +824,8 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     id=42,
                 ...     start=datetime(2020, 1, 1, tzinfo=timezone.utc),
                 ...     aggregates=["min", "max"],
-                ...     granularity="7d")
+                ...     granularity="7d",
+                ... )
                 >>> weekly_range = dps.max - dps.min
 
             Get up-to 2 million raw datapoints for the last 48 hours for a noisy time series with external_id="ts-noisy",
@@ -823,9 +833,8 @@ class SyncDatapointsAPI(SyncAPIClient):
 
                 >>> import numpy as np
                 >>> dps = client.time_series.data.retrieve_arrays(
-                ...     external_id="ts-noisy",
-                ...     start="2d-ago",
-                ...     limit=2_000_000)
+                ...     external_id="ts-noisy", start="2d-ago", limit=2_000_000
+                ... )
                 >>> smooth = np.convolve(dps.value, np.ones(5) / 5)  # doctest: +SKIP
                 >>> smoother = np.convolve(dps.value, np.ones(20) / 20)  # doctest: +SKIP
 
@@ -834,10 +843,8 @@ class SyncDatapointsAPI(SyncAPIClient):
 
                 >>> id_lst = [42, 43, 44]
                 >>> dps_lst = client.time_series.data.retrieve_arrays(
-                ...     id=id_lst,
-                ...     start="2h-ago",
-                ...     include_outside_points=True,
-                ...     ignore_unknown_ids=True)
+                ...     id=id_lst, start="2h-ago", include_outside_points=True, ignore_unknown_ids=True
+                ... )
                 >>> largest_gaps = [np.max(np.diff(dps.timestamp)) for dps in dps_lst]
 
             Get raw datapoints for a time series with external_id="bar" from the last 10 weeks, then convert to a ``pandas.Series``
@@ -946,10 +953,8 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     external_id="foo",
-                ...     start="2w-ago",
-                ...     end="now",
-                ...     limit=100)
+                ...     external_id="foo", start="2w-ago", end="now", limit=100
+                ... )
 
             Get the pandas dataframe with a uniform index (fixed spacing between points) of 1 day, for two time series with
             individually specified aggregates, from 1990 through 2020:
@@ -959,12 +964,15 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id=[
                 ...         DatapointsQuery(external_id="foo", aggregates="discrete_variance"),
-                ...         DatapointsQuery(external_id="bar", aggregates=["total_variation", "continuous_variance"]),
+                ...         DatapointsQuery(
+                ...             external_id="bar", aggregates=["total_variation", "continuous_variance"]
+                ...         ),
                 ...     ],
                 ...     granularity="1d",
                 ...     start=datetime(1990, 1, 1, tzinfo=timezone.utc),
                 ...     end=datetime(2020, 12, 31, tzinfo=timezone.utc),
-                ...     uniform_index=True)
+                ...     uniform_index=True,
+                ... )
 
             Get a pandas dataframe containing the 'average' aggregate for two time series using a monthly granularity,
             starting Jan 1, 1970 all the way up to present, without having the aggregate name in the columns:
@@ -973,7 +981,8 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     external_id=["foo", "bar"],
                 ...     aggregates="average",
                 ...     granularity="1mo",
-                ...     include_aggregate_name=False)
+                ...     include_aggregate_name=False,
+                ... )
 
             You may also use ``pandas.Timestamp`` to define start and end. Here we fetch using instance_id:
 
@@ -981,7 +990,8 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     instance_id=NodeId("my-space", "my-ts-xid"),
                 ...     start=pd.Timestamp("2023-01-01"),
-                ...     end=pd.Timestamp("2023-02-01"))
+                ...     end=pd.Timestamp("2023-02-01"),
+                ... )
         """
         return run_sync(
             self.__async_client.time_series.data.retrieve_dataframe(
@@ -1231,8 +1241,8 @@ class SyncDatapointsAPI(SyncAPIClient):
 
                 >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> res = client.time_series.data.retrieve_latest(
-                ...     external_id=["foo", "bar"],
-                ...     instance_id=NodeId("my-space", "my-ts-xid"))
+                ...     external_id=["foo", "bar"], instance_id=NodeId("my-space", "my-ts-xid")
+                ... )
 
             You can also get the latest datapoint before a specific time:
 
@@ -1250,7 +1260,9 @@ class SyncDatapointsAPI(SyncAPIClient):
             You may also pass an instance of LatestDatapointQuery:
 
                 >>> from cognite.client.data_classes import LatestDatapointQuery
-                >>> res = client.time_series.data.retrieve_latest(id=LatestDatapointQuery(id=1, before=60_000))
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     id=LatestDatapointQuery(id=1, before=60_000)
+                ... )
 
             If you need the latest datapoint for multiple time series, simply give a list of ids. Note that we are
             using external ids here, but either will work:
@@ -1268,16 +1280,23 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> id_queries = [
                 ...     123,
                 ...     LatestDatapointQuery(id=456, before="1w-ago"),
-                ...     LatestDatapointQuery(id=789, before=datetime(2018,1,1, tzinfo=timezone.utc)),
-                ...     LatestDatapointQuery(id=987, target_unit="temperature:deg_f")]
+                ...     LatestDatapointQuery(id=789, before=datetime(2018, 1, 1, tzinfo=timezone.utc)),
+                ...     LatestDatapointQuery(id=987, target_unit="temperature:deg_f"),
+                ... ]
                 >>> ext_id_queries = [
                 ...     "foo",
-                ...     LatestDatapointQuery(external_id="abc", before="3h-ago", target_unit_system="Imperial"),
+                ...     LatestDatapointQuery(
+                ...         external_id="abc", before="3h-ago", target_unit_system="Imperial"
+                ...     ),
                 ...     LatestDatapointQuery(external_id="def", include_status=True),
                 ...     LatestDatapointQuery(external_id="ghi", treat_uncertain_as_bad=False),
-                ...     LatestDatapointQuery(external_id="jkl", include_status=True, ignore_bad_datapoints=False)]
+                ...     LatestDatapointQuery(
+                ...         external_id="jkl", include_status=True, ignore_bad_datapoints=False
+                ...     ),
+                ... ]
                 >>> res = client.time_series.data.retrieve_latest(
-                ...     id=id_queries, external_id=ext_id_queries)
+                ...     id=id_queries, external_id=ext_id_queries
+                ... )
         """
         return run_sync(
             self.__async_client.time_series.data.retrieve_latest(
@@ -1341,10 +1360,10 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> datapoints = [
-                ...     (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
-                ...     (datetime(2018,1,2, tzinfo=timezone.utc), 2000, StatusCode.Good),
-                ...     (datetime(2018,1,3, tzinfo=timezone.utc), 3000, StatusCode.Uncertain),
-                ...     (datetime(2018,1,4, tzinfo=timezone.utc), None, StatusCode.Bad),
+                ...     (datetime(2018, 1, 1, tzinfo=timezone.utc), 1000),
+                ...     (datetime(2018, 1, 2, tzinfo=timezone.utc), 2000, StatusCode.Good),
+                ...     (datetime(2018, 1, 3, tzinfo=timezone.utc), 3000, StatusCode.Uncertain),
+                ...     (datetime(2018, 1, 4, tzinfo=timezone.utc), None, StatusCode.Bad),
                 ... ]
                 >>> client.time_series.data.insert(datapoints, id=1)
 
@@ -1357,7 +1376,9 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     (160000000000, 2000, 3145728),
                 ...     (170000000000, 2000, 2147483648),  # Same as StatusCode.Bad
                 ... ]
-                >>> client.time_series.data.insert(datapoints, instance_id=NodeId("my-space", "my-ts-xid"))
+                >>> client.time_series.data.insert(
+                ...     datapoints, instance_id=NodeId("my-space", "my-ts-xid")
+                ... )
 
             Or they can be a list of dictionaries:
 
@@ -1367,7 +1388,11 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     {"timestamp": 160000000000, "value": 2000},
                 ...     {"timestamp": 170000000000, "value": 3000, "status": {"code": 0}},
                 ...     {"timestamp": 180000000000, "value": 4000, "status": {"symbol": "Uncertain"}},
-                ...     {"timestamp": 190000000000, "value": math.nan, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
+                ...     {
+                ...         "timestamp": 190000000000,
+                ...         "value": math.nan,
+                ...         "status": {"code": StatusCode.Bad, "symbol": "Bad"},
+                ...     },
                 ... ]
                 >>> client.time_series.data.insert(datapoints, external_id="abcd")
 
@@ -1432,35 +1457,61 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> to_insert = [
-                ...     {"id": 1, "datapoints": [
-                ...         (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
-                ...         (datetime(2018,1,2, tzinfo=timezone.utc), 2000, StatusCode.Good)],
+                ...     {
+                ...         "id": 1,
+                ...         "datapoints": [
+                ...             (datetime(2018, 1, 1, tzinfo=timezone.utc), 1000),
+                ...             (datetime(2018, 1, 2, tzinfo=timezone.utc), 2000, StatusCode.Good),
+                ...         ],
                 ...     },
-                ...     {"external_id": "foo", "datapoints": [
-                ...         (datetime(2018,1,3, tzinfo=timezone.utc), 3000),
-                ...         (datetime(2018,1,4, tzinfo=timezone.utc), 4000, StatusCode.Uncertain)],
+                ...     {
+                ...         "external_id": "foo",
+                ...         "datapoints": [
+                ...             (datetime(2018, 1, 3, tzinfo=timezone.utc), 3000),
+                ...             (datetime(2018, 1, 4, tzinfo=timezone.utc), 4000, StatusCode.Uncertain),
+                ...         ],
                 ...     },
-                ...     {"instance_id": NodeId("my-space", "my-ts-xid"), "datapoints": [
-                ...         (datetime(2018,1,5, tzinfo=timezone.utc), 5000),
-                ...         (datetime(2018,1,6, tzinfo=timezone.utc), None, StatusCode.Bad)],
-                ...     }
+                ...     {
+                ...         "instance_id": NodeId("my-space", "my-ts-xid"),
+                ...         "datapoints": [
+                ...             (datetime(2018, 1, 5, tzinfo=timezone.utc), 5000),
+                ...             (datetime(2018, 1, 6, tzinfo=timezone.utc), None, StatusCode.Bad),
+                ...         ],
+                ...     },
                 ... ]
 
             Passing datapoints using the dictionary format with timestamp given in milliseconds since epoch:
 
                 >>> import math
                 >>> to_insert.append(
-                ...     {"external_id": "bar", "datapoints": [
-                ...         {"timestamp": 170000000, "value": 7000},
-                ...         {"timestamp": 180000000, "value": 8000, "status": {"symbol": "Uncertain"}},
-                ...         {"timestamp": 190000000, "value": None, "status": {"code": StatusCode.Bad}},
-                ...         {"timestamp": 200000000, "value": math.inf, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
-                ... ]})
+                ...     {
+                ...         "external_id": "bar",
+                ...         "datapoints": [
+                ...             {"timestamp": 170000000, "value": 7000},
+                ...             {
+                ...                 "timestamp": 180000000,
+                ...                 "value": 8000,
+                ...                 "status": {"symbol": "Uncertain"},
+                ...             },
+                ...             {
+                ...                 "timestamp": 190000000,
+                ...                 "value": None,
+                ...                 "status": {"code": StatusCode.Bad},
+                ...             },
+                ...             {
+                ...                 "timestamp": 200000000,
+                ...                 "value": math.inf,
+                ...                 "status": {"code": StatusCode.Bad, "symbol": "Bad"},
+                ...             },
+                ...         ],
+                ...     }
+                ... )
 
             If the Datapoints or DatapointsArray are fetched with status codes, these will be automatically used in the insert:
 
                 >>> data_to_clone = client.time_series.data.retrieve(
-                ...     external_id="bar", include_status=True, ignore_bad_datapoints=False)
+                ...     external_id="bar", include_status=True, ignore_bad_datapoints=False
+                ... )
                 >>> to_insert.append({"external_id": "bar-clone", "datapoints": data_to_clone})
                 >>> client.time_series.data.insert_multiple(to_insert)
         """
@@ -1517,8 +1568,10 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> ranges = [{"id": 1, "start": "2d-ago", "end": "now"},
-                ...           {"external_id": "abc", "start": "2d-ago", "end": "2d-ahead"}]
+                >>> ranges = [
+                ...     {"id": 1, "start": "2d-ago", "end": "now"},
+                ...     {"external_id": "abc", "start": "2d-ago", "end": "2d-ahead"},
+                ... ]
                 >>> client.time_series.data.delete_ranges(ranges)
         """
         return run_sync(self.__async_client.time_series.data.delete_ranges(ranges=ranges))
@@ -1559,7 +1612,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...         "foo": np.random.normal(0, 1, 100),
                 ...         node_id: np.random.normal(0, 1, 100),
                 ...     },
-                ...     index=pd.date_range(start="2018-01-01", periods=100, freq="1d")
+                ...     index=pd.date_range(start="2018-01-01", periods=100, freq="1d"),
                 ... )
                 >>> client.time_series.data.insert_dataframe(df)
         """

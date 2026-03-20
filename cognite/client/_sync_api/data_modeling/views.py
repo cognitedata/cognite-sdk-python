@@ -110,7 +110,7 @@ class SyncViewsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
+                >>> res = client.data_modeling.views.retrieve(("mySpace", "myView", "v1"))
         """
         return run_sync(
             self.__async_client.data_modeling.views.retrieve(
@@ -133,7 +133,7 @@ class SyncViewsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.data_modeling.views.delete(('mySpace', 'myView', 'v1'))
+                >>> client.data_modeling.views.delete(("mySpace", "myView", "v1"))
         """
         return run_sync(self.__async_client.data_modeling.views.delete(ids=ids))
 
@@ -175,7 +175,7 @@ class SyncViewsAPI(SyncAPIClient):
             Iterate over chunks of views to reduce memory load:
 
                 >>> for view_list in client.data_modeling.views(chunk_size=10):
-                ...     view_list # do something with the views
+                ...     view_list  # do something with the views
         """
         return run_sync(
             self.__async_client.data_modeling.views.list(
@@ -208,7 +208,11 @@ class SyncViewsAPI(SyncAPIClient):
             Create new views:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import ViewApply, MappedPropertyApply, ContainerId
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     ViewApply,
+                ...     MappedPropertyApply,
+                ...     ContainerId,
+                ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> views = [
@@ -221,8 +225,8 @@ class SyncViewsAPI(SyncAPIClient):
                 ...                 container=ContainerId("mySpace", "myContainer"),
                 ...                 container_property_identifier="someProperty",
                 ...             ),
-                ...         }
-                ...    )
+                ...         },
+                ...     )
                 ... ]
                 >>> res = client.data_modeling.views.apply(views)
 
@@ -235,9 +239,11 @@ class SyncViewsAPI(SyncAPIClient):
                 ...     MappedPropertyApply,
                 ...     MultiEdgeConnectionApply,
                 ...     ViewApply,
-                ...     ViewId
+                ...     ViewId,
                 ... )
-                >>> work_order_for_asset = DirectRelationReference(space="mySpace", external_id="work_order_for_asset")
+                >>> work_order_for_asset = DirectRelationReference(
+                ...     space="mySpace", external_id="work_order_for_asset"
+                ... )
                 >>> work_order_view = ViewApply(
                 ...     space="mySpace",
                 ...     external_id="WorkOrder",
@@ -254,7 +260,7 @@ class SyncViewsAPI(SyncAPIClient):
                 ...             source=ViewId("mySpace", "Asset", "v1"),
                 ...             name="asset",
                 ...         ),
-                ...     }
+                ...     },
                 ... )
                 >>> asset_view = ViewApply(
                 ...     space="mySpace",
@@ -273,7 +279,7 @@ class SyncViewsAPI(SyncAPIClient):
                 ...             source=ViewId("mySpace", "WorkOrder", "v1"),
                 ...             name="work_orders",
                 ...         ),
-                ...     }
+                ...     },
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
         """

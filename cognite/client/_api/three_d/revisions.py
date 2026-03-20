@@ -189,7 +189,11 @@ class ThreeDRevisionsAPI(APIClient):
             Perform a partial update on a revision, updating the published property and adding a new field to metadata:
 
                 >>> from cognite.client.data_classes import ThreeDModelRevisionUpdate
-                >>> my_update = ThreeDModelRevisionUpdate(id=1).published.set(False).metadata.add({"key": "value"})
+                >>> my_update = (
+                ...     ThreeDModelRevisionUpdate(id=1)
+                ...     .published.set(False)
+                ...     .metadata.add({"key": "value"})
+                ... )
                 >>> res = client.three_d.revisions.update(model_id=1, item=my_update)
         """
         return await self._update_multiple(
@@ -318,7 +322,17 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.three_d.revisions.filter_nodes(model_id=1, revision_id=1, properties={ "PDMS": { "Area": ["AB76", "AB77", "AB78"], "Type": ["PIPE", "BEND", "PIPESUP"] } }, limit=10)
+                >>> res = client.three_d.revisions.filter_nodes(
+                ...     model_id=1,
+                ...     revision_id=1,
+                ...     properties={
+                ...         "PDMS": {
+                ...             "Area": ["AB76", "AB77", "AB78"],
+                ...             "Type": ["PIPE", "BEND", "PIPESUP"],
+                ...         }
+                ...     },
+                ...     limit=10,
+                ... )
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
         return await self._list(
@@ -352,7 +366,9 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.three_d.revisions.list_ancestor_nodes(model_id=1, revision_id=1, node_id=5, limit=10)
+                >>> res = client.three_d.revisions.list_ancestor_nodes(
+                ...     model_id=1, revision_id=1, node_id=5, limit=10
+                ... )
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
         return await self._list(

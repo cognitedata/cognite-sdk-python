@@ -327,13 +327,11 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
                 ...     routine_external_ids=["routine_1"],
                 ...     all_versions=True,
                 ...     sort=PropertySort(order="asc", property="createdTime"),
-                ...     include_all_fields=True
+                ...     include_all_fields=True,
                 ... )
 
             List simulator routine revisions by kind:
-                >>> res = client.simulators.routines.revisions.list(
-                ...     kind="long"
-                ... )
+                >>> res = client.simulators.routines.revisions.list(kind="long")
         """
         return run_sync(
             self.__async_client.simulators.routines.revisions.list(

@@ -89,7 +89,9 @@ class SyncExtractionPipelineConfigsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineConfigWrite
                 >>> client = CogniteClient()
-                >>> res = client.extraction_pipelines.config.create(ExtractionPipelineConfigWrite(external_id="extId", config="my config contents"))
+                >>> res = client.extraction_pipelines.config.create(
+                ...     ExtractionPipelineConfigWrite(external_id="extId", config="my config contents")
+                ... )
         """
         return run_sync(self.__async_client.extraction_pipelines.config.create(config=config))
 

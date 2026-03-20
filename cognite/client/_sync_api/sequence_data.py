@@ -56,27 +56,32 @@ class SyncSequencesDataAPI(SyncAPIClient):
                 ...     SequenceWrite(
                 ...         columns=[
                 ...             SequenceColumnWrite(value_type="STRING", external_id="col_a"),
-                ...             SequenceColumnWrite(value_type="DOUBLE", external_id ="col_b")
+                ...             SequenceColumnWrite(value_type="DOUBLE", external_id="col_b"),
                 ...         ],
                 ...     )
                 ... )
-                >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
-                >>> client.sequences.data.insert(columns=["col_a","col_b"], rows=data, id=1)
+                >>> data = [(1, ["pi", 3.14]), (2, ["e", 2.72])]
+                >>> client.sequences.data.insert(columns=["col_a", "col_b"], rows=data, id=1)
 
             They can also be provided as a list of API-style objects with a rowNumber and values field:
 
-                >>> data = [{"rowNumber": 123, "values": ['str',3]}, {"rowNumber": 456, "values": ["bar",42]} ]
-                >>> client.sequences.data.insert(data, id=1, columns=["col_a","col_b"]) # implicit columns are retrieved from metadata
+                >>> data = [
+                ...     {"rowNumber": 123, "values": ["str", 3]},
+                ...     {"rowNumber": 456, "values": ["bar", 42]},
+                ... ]
+                >>> client.sequences.data.insert(
+                ...     data, id=1, columns=["col_a", "col_b"]
+                ... )  # implicit columns are retrieved from metadata
 
             Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row:
 
-                >>> data = {123 : ['str',3], 456 : ['bar',42] }
-                >>> client.sequences.data.insert(columns=['stringColumn','intColumn'], rows=data, id=1)
+                >>> data = {123: ["str", 3], 456: ["bar", 42]}
+                >>> client.sequences.data.insert(columns=["stringColumn", "intColumn"], rows=data, id=1)
 
             Finally, they can be a SequenceData object retrieved from another request. In this case columns from this object are used as well.
 
-                >>> data = client.sequences.data.retrieve(id=2,start=0,end=10)
-                >>> client.sequences.data.insert(rows=data, id=1,columns=None)
+                >>> data = client.sequences.data.retrieve(id=2, start=0, end=10)
+                >>> client.sequences.data.insert(rows=data, id=1, columns=None)
         """
         return run_sync(
             self.__async_client.sequences.data.insert(rows=rows, columns=columns, id=id, external_id=external_id)
@@ -104,7 +109,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
                 >>> import pandas as pd
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> df = pd.DataFrame({'col_a': [1, 2, 3], 'col_b': [4, 5, 6]}, index=[1, 2, 3])
+                >>> df = pd.DataFrame({"col_a": [1, 2, 3], "col_b": [4, 5, 6]}, index=[1, 2, 3])
                 >>> client.sequences.data.insert_dataframe(df, id=123)
         """
         return run_sync(
@@ -129,7 +134,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.sequences.data.delete(id=1, rows=[1,2,42])
+                >>> client.sequences.data.delete(id=1, rows=[1, 2, 42])
         """
         return run_sync(self.__async_client.sequences.data.delete(rows=rows, id=id, external_id=external_id))
 
@@ -251,10 +256,14 @@ class SyncSequencesDataAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.data.retrieve(id=1)
-                >>> tuples = [(r,v) for r,v in res.items()] # You can use this iterator in for loops and list comprehensions,
-                >>> single_value = res[23] # ... get the values at a single row number,
-                >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
-                >>> df = res.to_pandas() # ... or convert the result to a dataframe
+                >>> tuples = [
+                ...     (r, v) for r, v in res.items()
+                ... ]  # You can use this iterator in for loops and list comprehensions,
+                >>> single_value = res[23]  # ... get the values at a single row number,
+                >>> col = res.get_column(
+                ...     external_id="columnExtId"
+                ... )  # ... get the array of values for a specific column,
+                >>> df = res.to_pandas()  # ... or convert the result to a dataframe
         """
         return run_sync(
             self.__async_client.sequences.data.retrieve(

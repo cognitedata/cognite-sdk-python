@@ -67,11 +67,11 @@ class UnitAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.units.retrieve('temperature:deg_c')
+                >>> res = client.units.retrieve("temperature:deg_c")
 
             Retrive units 'temperature:deg_c' and 'pressure:bar':
 
-                >>> res = client.units.retrieve(['temperature:deg_c', 'pressure:bar'])
+                >>> res = client.units.retrieve(["temperature:deg_c", "pressure:bar"])
 
         """
         identifier = IdentifierSequence.load(external_ids=external_id)
@@ -137,11 +137,11 @@ class UnitAPI(APIClient):
                     >>> from cognite.client import CogniteClient, AsyncCogniteClient
                     >>> client = CogniteClient()
                     >>> # async_client = AsyncCogniteClient()  # another option
-                    >>> unit = client.units.from_alias('cmol / L')
+                    >>> unit = client.units.from_alias("cmol / L")
 
                 Look up ambiguous alias 'F' by passing quantity 'Temperature':
 
-                    >>> unit = client.units.from_alias('F', 'Temperature')
+                    >>> unit = client.units.from_alias("F", "Temperature")
 
                 Search for the closest matching unit of 'kilo watt' (should be 'kilowatt'):
 

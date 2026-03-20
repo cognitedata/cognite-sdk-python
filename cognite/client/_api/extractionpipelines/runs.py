@@ -63,12 +63,16 @@ class ExtractionPipelineRunsAPI(APIClient):
 
             Filter extraction pipeline runs on a given status:
 
-                >>> runs_list = client.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], limit=5)
+                >>> runs_list = client.extraction_pipelines.runs.list(
+                ...     external_id="test ext id", statuses=["seen"], limit=5
+                ... )
 
             Get all failed pipeline runs in the last 24 hours for pipeline 'extId':
 
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
-                >>> res = client.extraction_pipelines.runs.list(external_id="extId", statuses="failure", created_time="24h-ago")
+                >>> res = client.extraction_pipelines.runs.list(
+                ...     external_id="extId", statuses="failure", created_time="24h-ago"
+                ... )
         """
         if isinstance(created_time, str):
             created_time = TimestampRange(min=timestamp_to_ms(created_time))
@@ -129,7 +133,8 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> from cognite.client.data_classes import ExtractionPipelineRunWrite
                 >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.runs.create(
-                ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId"))
+                ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId")
+                ... )
         """
         assert_type(run, "run", [ExtractionPipelineRunCore, Sequence])
         return await self._create_multiple(

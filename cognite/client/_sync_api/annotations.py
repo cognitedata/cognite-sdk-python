@@ -181,7 +181,9 @@ class SyncAnnotationsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import AnnotationFilter
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> flt = AnnotationFilter(annotated_resource_type="file", annotated_resource_ids=[{"id": 123}])
+                >>> flt = AnnotationFilter(
+                ...     annotated_resource_type="file", annotated_resource_ids=[{"id": 123}]
+                ... )
                 >>> res = client.annotations.list(flt, limit=None)
         """
         return run_sync(self.__async_client.annotations.list(filter=filter, limit=limit))

@@ -63,7 +63,7 @@ class EntityMatchingAPI(APIClient):
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
             >>> # async_client = AsyncCogniteClient()  # another option
-            >>> retrieved_models = client.entity_matching.retrieve_multiple([1,2,3])
+            >>> retrieved_models = client.entity_matching.retrieve_multiple([1, 2, 3])
 
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
@@ -223,14 +223,16 @@ class EntityMatchingAPI(APIClient):
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
             >>> # async_client = AsyncCogniteClient()  # another option
-            >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
-            >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
+            >>> sources = [
+            ...     {"id": 101, "name": "ChildAsset1", "description": "Child of ParentAsset1"}
+            ... ]
+            >>> targets = [{"id": 1, "name": "ParentAsset1", "description": "Parent to ChildAsset1"}]
             >>> true_matches = [(1, 101)]
             >>> model = client.entity_matching.fit(
             ...     sources=sources,
             ...     targets=targets,
             ...     true_matches=true_matches,
-            ...     description="AssetMatchingJob1"
+            ...     description="AssetMatchingJob1",
             ... )
         """
 
@@ -293,15 +295,11 @@ class EntityMatchingAPI(APIClient):
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
             >>> # async_client = AsyncCogniteClient()  # another option
-            >>> sources = {'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}
-            >>> targets = {'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}
+            >>> sources = {"id": 101, "name": "ChildAsset1", "description": "Child of ParentAsset1"}
+            >>> targets = {"id": 1, "name": "ParentAsset1", "description": "Parent to ChildAsset1"}
             >>> true_matches = [(1, 101)]
             >>> model = client.entity_matching.predict(
-            ...     sources = sources,
-            ...     targets = targets,
-            ...     num_matches = 1,
-            ...     score_threshold = 0.6,
-            ...     id=1
+            ...     sources=sources, targets=targets, num_matches=1, score_threshold=0.6, id=1
             ... )
         """
         model = await self._get_model_or_raise(id, external_id)
@@ -344,8 +342,10 @@ class EntityMatchingAPI(APIClient):
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
             >>> # async_client = AsyncCogniteClient()  # another option
-            >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
-            >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
+            >>> sources = [
+            ...     {"id": 101, "name": "ChildAsset1", "description": "Child of ParentAsset1"}
+            ... ]
+            >>> targets = [{"id": 1, "name": "ParentAsset1", "description": "Parent to ChildAsset1"}]
             >>> true_matches = [(1, 101)]
             >>> model = client.entity_matching.refit(true_matches=true_matches, id=1)
         """

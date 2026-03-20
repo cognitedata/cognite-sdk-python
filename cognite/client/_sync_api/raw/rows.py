@@ -152,8 +152,10 @@ class SyncRawRowsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import RowWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> rows = [RowWrite(key="r1", columns={"col1": "val1", "col2": "val1"}),
-                ...         RowWrite(key="r2", columns={"col1": "val2", "col2": "val2"})]
+                >>> rows = [
+                ...     RowWrite(key="r1", columns={"col1": "val1", "col2": "val1"}),
+                ...     RowWrite(key="r2", columns={"col1": "val2", "col2": "val2"}),
+                ... ]
                 >>> client.raw.rows.insert("db1", "table1", rows)
 
             You may also insert a dictionary directly:
@@ -195,10 +197,9 @@ class SyncRawRowsAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = pd.DataFrame(
-                ...     {"col-a": [1, 3, None], "col-b": [2, -1, 9]},
-                ...     index=["r1", "r2", "r3"])
-                >>> res = client.raw.rows.insert_dataframe(
-                ...     "db1", "table1", df, dropna=True)
+                ...     {"col-a": [1, 3, None], "col-b": [2, -1, 9]}, index=["r1", "r2", "r3"]
+                ... )
+                >>> res = client.raw.rows.insert_dataframe("db1", "table1", df, dropna=True)
         """
         return run_sync(
             self.__async_client.raw.rows.insert_dataframe(
@@ -355,7 +356,7 @@ class SyncRawRowsAPI(SyncAPIClient):
 
             Iterate through all rows one-by-one to reduce memory load (no concurrency used):
 
-                >>> for row in client.raw.rows("db1", "t1", columns=["col1","col2"]):
+                >>> for row in client.raw.rows("db1", "t1", columns=["col1", "col2"]):
                 ...     val1 = row["col1"]  # You may access the data directly
                 ...     val2 = row.get("col2")  # ...or use '.get' when keys can be missing
 
