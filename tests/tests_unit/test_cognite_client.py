@@ -144,3 +144,17 @@ class TestCogniteClient:
         assert creds.token_url == TOKEN_URL
         assert creds.scopes == ["https://test.com/.default", "https://test.com/.admin"]
         assert client.config.debug is False
+
+    def test_sync_client_get_async_client(self, client_config_w_token_factory: ClientConfig) -> None:
+        sync_client = CogniteClient(client_config_w_token_factory)
+        async_client = sync_client.get_async_client()
+
+        assert isinstance(async_client, AsyncCogniteClient)
+        assert async_client.config is sync_client.config
+
+    def test_async_client_to_sync_client(self, client_config_w_token_factory: ClientConfig) -> None:
+        async_client = AsyncCogniteClient(client_config_w_token_factory)
+        sync_client = async_client.get_sync_client()
+
+        assert isinstance(sync_client, CogniteClient)
+        assert sync_client.config is async_client.config
