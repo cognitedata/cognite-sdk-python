@@ -145,7 +145,7 @@ def convert_nullable_int_cols(df: pd.DataFrame) -> pd.DataFrame:
 
 def convert_timestamp_columns_to_datetime(df: pd.DataFrame) -> pd.DataFrame:
     to_convert = df.columns.intersection(TIME_ATTRIBUTES)
-    df[to_convert] = (1_000_000 * df[to_convert]).astype("datetime64[ns]")
+    df[to_convert] = df[to_convert].astype("datetime64[ms]")
     return df
 
 
@@ -381,12 +381,16 @@ def _create_timestamp_index(
 
     match timestamps, timezone:
         case list(), None:
-            return pd.to_datetime(timestamps, unit="ms")
+            return pd.to_datetime(timestamps, unit="ms").as_unit("ms")
         case list(), _:
-            return pd.to_datetime(timestamps, unit="ms", utc=True).tz_convert(convert_tz_for_pandas(timezone))
+            return (
+                pd.to_datetime(timestamps, unit="ms", utc=True)
+                .tz_convert(convert_tz_for_pandas(timezone))
+                .as_unit("ms")
+            )
         case np.ndarray(), None:
-            return pd.to_datetime(timestamps)
+            return pd.to_datetime(timestamps).as_unit("ms")
         case np.ndarray(), _:
-            return pd.to_datetime(timestamps, utc=True).tz_convert(convert_tz_for_pandas(timezone))
+            return pd.to_datetime(timestamps, utc=True).as_unit("ms").tz_convert(convert_tz_for_pandas(timezone))
         case _:
             raise TypeError("Timestamps must be either list[int] or numpy.ndarray")
