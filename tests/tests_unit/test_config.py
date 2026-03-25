@@ -1,4 +1,5 @@
 from contextlib import nullcontext as does_not_raise
+from unittest.mock import patch
 
 import pytest
 
@@ -131,3 +132,25 @@ class TestClientConfig:
     def test_extract_invalid_url(self, client_config: ClientConfig) -> None:
         client_config.base_url = "invalid"
         assert client_config.cdf_cluster is None
+
+    @pytest.mark.parametrize("env_value", ("1", "true", "TRUE", "yes", "on"))
+    def test_pypi_version_check_skipped_when_env_set(self, monkeypatch, env_value: str) -> None:
+        monkeypatch.setattr(global_config, "disable_pypi_version_check", False)
+        monkeypatch.setenv("COGNITE_DISABLE_PYPI_VERSION_CHECK", env_value)
+        with patch("cognite.client.utils._version_checker.check_client_is_running_latest_version") as check_fn:
+            ClientConfig(client_name="t", project="p", credentials=Token("x"))
+            check_fn.assert_not_called()
+
+    def test_pypi_version_check_runs_when_env_unset(self, monkeypatch) -> None:
+        monkeypatch.setattr(global_config, "disable_pypi_version_check", False)
+        monkeypatch.delenv("COGNITE_DISABLE_PYPI_VERSION_CHECK", raising=False)
+        with patch("cognite.client.utils._version_checker.check_client_is_running_latest_version") as check_fn:
+            ClientConfig(client_name="t", project="p", credentials=Token("x"))
+            check_fn.assert_called_once()
+
+    def test_pypi_version_check_skipped_when_global_config_true_despite_env(self, monkeypatch) -> None:
+        monkeypatch.setattr(global_config, "disable_pypi_version_check", True)
+        monkeypatch.delenv("COGNITE_DISABLE_PYPI_VERSION_CHECK", raising=False)
+        with patch("cognite.client.utils._version_checker.check_client_is_running_latest_version") as check_fn:
+            ClientConfig(client_name="t", project="p", credentials=Token("x"))
+            check_fn.assert_not_called()
