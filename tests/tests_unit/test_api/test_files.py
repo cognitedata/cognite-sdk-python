@@ -13,6 +13,7 @@ from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import GeoLocation, GeoLocationFilter, Geometry, GeometryFilter, TimestampRange
+from cognite.client.data_classes._base import UnknownCogniteResource
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.files import (
     FileMetadata,
@@ -385,6 +386,18 @@ class TestFilesAPI:
         res = cognite_client.files.retrieve(id=1)
         assert isinstance(res, FileMetadata)
         assert mock_files_response["items"][0] == res.dump(camel_case=True)
+
+    def test_create_with_invalid_geoLocation(self, cognite_client: CogniteClient) -> None:
+        invalid_geo_location = {"foo": "bar"}
+        file_metadata = FileMetadata(
+            id=1,
+            uploaded=False,
+            created_time=0,
+            last_updated_time=0,
+            name="bla",
+            geo_location=invalid_geo_location,  # type: ignore[arg-type]
+        )
+        assert isinstance(file_metadata.geo_location, UnknownCogniteResource)
 
     def test_retrieve_multiple(self, cognite_client: CogniteClient, mock_files_response: dict[str, Any]) -> None:
         res = cognite_client.files.retrieve_multiple(ids=[1])
