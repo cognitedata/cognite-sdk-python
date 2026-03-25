@@ -46,6 +46,8 @@ class InstanceId:
             return None
         return cls.load(data)
 
+    load_if = _load_if  # InstanceId has no private load method so these are the same
+
     @classmethod
     def load(cls, data: dict[str, str] | tuple[str, str] | Self) -> Self:
         if isinstance(data, cls):

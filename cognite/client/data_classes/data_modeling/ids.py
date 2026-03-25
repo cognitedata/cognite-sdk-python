@@ -58,6 +58,8 @@ class DataModelingId(AbstractDataclass):
             return None
         return cls.load(data)
 
+    load_if = _load_if  # DataModelingId has no private load method so these are the same
+
 
 T_DataModelingId = TypeVar("T_DataModelingId", bound=DataModelingId)
 
@@ -99,6 +101,8 @@ class VersionedDataModelingId(AbstractDataclass):
         if data is None:
             return None
         return cls.load(data)
+
+    load_if = _load_if  # VersionedDataModelingId has no private load method so these are the same
 
 
 T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=VersionedDataModelingId)

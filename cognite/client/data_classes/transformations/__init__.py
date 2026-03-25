@@ -68,6 +68,8 @@ class SessionDetails:
     def _load_if(cls, data: dict[str, Any] | None) -> SessionDetails | None:
         return cls.load(data) if data is not None else None
 
+    load_if = _load_if  # SessionDetails has no private load method, so these are the same
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 

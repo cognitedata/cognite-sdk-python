@@ -148,6 +148,8 @@ class Filter(ABC):
             return None
         return cls.load(flt)
 
+    load_if = _load_if  # Filter has no private load method, so these are the same
+
     @classmethod
     @abstractmethod
     def _load(cls, resource: Any) -> Self: ...
