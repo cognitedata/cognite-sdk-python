@@ -12,6 +12,7 @@ from cognite.client.utils._identifier import (
     DataModelingIdentifier,
     DataModelingIdentifierSequence,
     InstanceId,
+    _resolve_data_modeling_id,
 )
 from cognite.client.utils._text import convert_all_keys_recursive
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -44,11 +45,8 @@ class DataModelingId(AbstractDataclass):
     def load(cls: type[T_DataModelingId], data: dict | T_DataModelingId | tuple[str, str]) -> T_DataModelingId:
         if isinstance(data, cls):
             return data
-        elif isinstance(data, tuple):
-            return cls(space=data[0], external_id=data[1])
-        elif isinstance(data, dict):
-            return cls(space=data["space"], external_id=data["externalId"])
-        raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
+        space, xid, _ = _resolve_data_modeling_id(data, cls, allow_version=False)
+        return cls(space=space, external_id=xid)
 
     @classmethod
     def _load_if(
@@ -87,11 +85,8 @@ class VersionedDataModelingId(AbstractDataclass):
     ) -> T_Versioned_DataModeling_Id:
         if isinstance(data, cls):
             return data
-        elif isinstance(data, tuple):
-            return cls(space=data[0], external_id=data[1], version=data[2] if len(data) == 3 else None)
-        elif isinstance(data, dict):
-            return cls(space=data["space"], external_id=data["externalId"], version=data.get("version"))
-        raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
+        space, xid, version = _resolve_data_modeling_id(data, cls, allow_version=True)
+        return cls(space=space, external_id=xid, version=version)
 
     @classmethod
     def _load_if(

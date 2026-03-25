@@ -23,6 +23,29 @@ from cognite.client.utils._auxiliary import exactly_one_is_not_none, split_into_
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
+def _resolve_data_modeling_id(data: Any, cls: type, *, allow_version: bool) -> tuple[str, str, str | None]:
+    match data:
+        # Attempt loading of sequence-like input:
+        case (space, xid):
+            return space, xid, None
+        case (space, xid, version) if allow_version:
+            return space, xid, version
+        case (*_,):
+            expected = "2 or 3" if allow_version else "2"
+            raise ValueError(f"Cannot load {data} into {cls}, expected exactly {expected} elements, got {len(data)}")
+
+        # Attempt loading of mapping-like input:
+        case {"space": space, "externalId": xid}:
+            return space, xid, data.get("version") if allow_version else None
+        case {"space": space, "external_id": xid}:
+            return space, xid, data.get("version") if allow_version else None
+        case {**_unused}:
+            raise KeyError("Missing one or more keys 'space' and/or 'externalId' / 'external_id'")
+
+        case _:
+            raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
+
+
 @dataclass(frozen=True)
 class InstanceId:
     _instance_type: ClassVar[Literal["node", "edge"]]
@@ -52,19 +75,8 @@ class InstanceId:
     def load(cls, data: dict[str, str] | tuple[str, str] | Self) -> Self:
         if isinstance(data, cls):
             return data
-        elif isinstance(data, tuple):
-            if len(data) == 2:
-                return cls(*data)
-            raise ValueError(
-                f"Cannot load {data} into {cls}, expected exactly two elements in the tuple, got {len(data)}"
-            )
-
-        elif isinstance(data, dict):
-            if "externalId" in data:
-                return cls(space=data["space"], external_id=data["externalId"])
-            if "external_id" in data:
-                return cls(space=data["space"], external_id=data["external_id"])
-        raise KeyError(f"Cannot load {data} into {cls}, missing 'externalId' or 'external_id' key")
+        space, xid, _ = _resolve_data_modeling_id(data, cls, allow_version=False)
+        return cls(space=space, external_id=xid)
 
     @property
     def instance_type(self) -> Literal["node", "edge"]:
