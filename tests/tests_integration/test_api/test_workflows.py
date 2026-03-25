@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import time
 import unittest
 from collections.abc import Iterator
@@ -786,6 +787,10 @@ class TestWorkflowTriggers:
         assert permanent_scheduled_trigger.external_id in external_ids
         assert permanent_data_modeling_trigger.external_id in external_ids
 
+    @pytest.mark.skipif(
+        datetime.date.today() < datetime.date(2026, 6, 1),
+        reason="Skip until 2026-06-01",
+    )
     def test_trigger_run_history(
         self,
         cognite_client: CogniteClient,

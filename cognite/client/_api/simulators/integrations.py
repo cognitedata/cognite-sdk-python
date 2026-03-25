@@ -136,7 +136,7 @@ class SimulatorIntegrationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.simulators.integrations.delete(ids=[1,2,3], external_ids="foo")
+                >>> client.simulators.integrations.delete(ids=[1, 2, 3], external_ids="foo")
         """
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),

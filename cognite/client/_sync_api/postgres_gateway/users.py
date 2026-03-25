@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8e339ffece20e9f0685104f8b625f982
+e35accda8afad8bee55794434a18f65c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -79,13 +79,16 @@ class SyncUsersAPI(SyncAPIClient):
 
                 >>> import os
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.postgres_gateway import UserWrite, SessionCredentials
+                >>> from cognite.client.data_classes.postgres_gateway import (
+                ...     UserWrite,
+                ...     SessionCredentials,
+                ... )
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> session = client.iam.sessions.create(
                 ...     ClientCredentials(os.environ["IDP_CLIENT_ID"], os.environ["IDP_CLIENT_SECRET"]),
-                ...     session_type="CLIENT_CREDENTIALS"
+                ...     session_type="CLIENT_CREDENTIALS",
                 ... )
                 >>> user = UserWrite(credentials=SessionCredentials(nonce=session.nonce))
                 >>> res = client.postgres_gateway.users.create(user)
@@ -116,15 +119,20 @@ class SyncUsersAPI(SyncAPIClient):
 
                 >>> import os
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.postgres_gateway import UserUpdate, SessionCredentials
+                >>> from cognite.client.data_classes.postgres_gateway import (
+                ...     UserUpdate,
+                ...     SessionCredentials,
+                ... )
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> session = client.iam.sessions.create(
                 ...     ClientCredentials(os.environ["IDP_CLIENT_ID"], os.environ["IDP_CLIENT_SECRET"]),
-                ...     session_type="CLIENT_CREDENTIALS"
+                ...     session_type="CLIENT_CREDENTIALS",
                 ... )
-                >>> update = UserUpdate('myUser').credentials.set(SessionCredentials(nonce=session.nonce))
+                >>> update = UserUpdate("myUser").credentials.set(
+                ...     SessionCredentials(nonce=session.nonce)
+                ... )
                 >>> res = client.postgres_gateway.users.update(update)
         """
         return run_sync(self.__async_client.postgres_gateway.users.update(items=items))
@@ -216,6 +224,6 @@ class SyncUsersAPI(SyncAPIClient):
             Iterate over chunks of users to reduce memory load:
 
                 >>> for user_list in client.postgres_gateway.users(chunk_size=25):
-                ...     user_list # do something with the users
+                ...     user_list  # do something with the users
         """
         return run_sync(self.__async_client.postgres_gateway.users.list(limit=limit))

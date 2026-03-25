@@ -57,7 +57,8 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> from cognite.client.data_classes import BoundingBox3D
                 >>> bbox = BoundingBox3D(min=[0.0, 0.0, 0.0], max=[1.0, 1.0, 1.0])
                 >>> res = client.three_d.asset_mappings.list(
-                ...     model_id=1, revision_id=1, intersects_bounding_box=bbox)
+                ...     model_id=1, revision_id=1, intersects_bounding_box=bbox
+                ... )
         """
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         flt: dict[str, str | int | None] = {"nodeId": node_id, "assetId": asset_id}
@@ -113,7 +114,9 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> my_mapping = ThreeDAssetMappingWrite(node_id=1, asset_id=1)
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.three_d.asset_mappings.create(model_id=1, revision_id=1, asset_mapping=my_mapping)
+                >>> res = client.three_d.asset_mappings.create(
+                ...     model_id=1, revision_id=1, asset_mapping=my_mapping
+                ... )
         """
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         return await self._create_multiple(
@@ -142,7 +145,9 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> mapping_to_delete = client.three_d.asset_mappings.list(model_id=1, revision_id=1)[0]
-                >>> res = client.three_d.asset_mappings.delete(model_id=1, revision_id=1, asset_mapping=mapping_to_delete)
+                >>> res = client.three_d.asset_mappings.delete(
+                ...     model_id=1, revision_id=1, asset_mapping=mapping_to_delete
+                ... )
         """
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         assert_type(asset_mapping, "asset_mapping", [Sequence, ThreeDAssetMapping])

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-dc8a46cd5a243f74255baac0d3c5a05c
+d31286ebf278cd9c14c11d678adddd33
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -310,7 +310,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 ...     target_external_id="target_ext_id",
                 ...     target_type="event",
                 ...     confidence=0.1,
-                ...     data_set_id=1234
+                ...     data_set_id=1234,
                 ... )
                 >>> flowrel2 = RelationshipWrite(
                 ...     external_id="flow_2",
@@ -319,9 +319,9 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 ...     target_external_id="target_ext_id",
                 ...     target_type="event",
                 ...     confidence=0.1,
-                ...     data_set_id=1234
+                ...     data_set_id=1234,
                 ... )
-                >>> res = client.relationships.create([flowrel1,flowrel2])
+                >>> res = client.relationships.create([flowrel1, flowrel2])
         """
         return run_sync(self.__async_client.relationships.create(relationship=relationship))
 
@@ -363,7 +363,11 @@ class SyncRelationshipsAPI(SyncAPIClient):
             Perform a partial update on a relationship, setting a source_external_id and a confidence:
 
                 >>> from cognite.client.data_classes import RelationshipUpdate
-                >>> my_update = RelationshipUpdate(external_id="flow_1").source_external_id.set("alternate_source").confidence.set(0.97)
+                >>> my_update = (
+                ...     RelationshipUpdate(external_id="flow_1")
+                ...     .source_external_id.set("alternate_source")
+                ...     .confidence.set(0.97)
+                ... )
                 >>> res1 = client.relationships.update(my_update)
                 >>> # Remove an already set optional field like so
                 >>> another_update = RelationshipUpdate(external_id="flow_1").confidence.set(None)
@@ -427,9 +431,11 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 ...     source_external_id="new_source",
                 ...     source_type="asset",
                 ...     target_external_id="new_target",
-                ...     target_type="event"
+                ...     target_type="event",
                 ... )
-                >>> res = client.relationships.upsert([existing_relationship, new_relationship], mode="replace")
+                >>> res = client.relationships.upsert(
+                ...     [existing_relationship, new_relationship], mode="replace"
+                ... )
         """
         return run_sync(self.__async_client.relationships.upsert(item=item, mode=mode))
 
@@ -447,7 +453,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.relationships.delete(external_id=["a","b"])
+                >>> client.relationships.delete(external_id=["a", "b"])
         """
         return run_sync(
             self.__async_client.relationships.delete(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)

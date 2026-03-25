@@ -32,7 +32,9 @@ class DocumentPreviewAPI(APIClient):
             Download an image preview and display using IPython.display.Image (for example in a Jupyter Notebook):
 
                 >>> from IPython.display import Image
-                >>> binary_png = client.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
+                >>> binary_png = client.documents.previews.download_page_as_png_bytes(
+                ...     id=123, page_number=5
+                ... )
                 >>> Image(binary_png)
         """
         response = await self._get(

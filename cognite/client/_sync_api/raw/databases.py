@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d71668f67fe505fcc40cf96d04515217
+d108ba3a9714d425527ed7e4bbab9413
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -120,6 +120,6 @@ class SyncRawDatabasesAPI(SyncAPIClient):
             Iterate over chunks of databases to reduce memory load:
 
                 >>> for db_list in client.raw.databases(chunk_size=2500):
-                ...     db_list # do something with the dbs
+                ...     db_list  # do something with the dbs
         """
         return run_sync(self.__async_client.raw.databases.list(limit=limit))

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-80d047bf302bcef2d84542d426c1f78d
+3ec6c9ff3cd20cbefde273d76514a0b0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -115,7 +115,7 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> client.documents.aggregate_count(
                 ...     filter=filters.InAssetSubtree(
                 ...         property=DocumentProperty.asset_external_ids,
-                ...         values=['Plant_1', 'Plant_2'],
+                ...         values=["Plant_1", "Plant_2"],
                 ...     )
                 ... )
         """
@@ -155,7 +155,9 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
-                >>> plain_text_author_count = client.documents.aggregate_cardinality_values(DocumentProperty.author, filter=is_plain_text)
+                >>> plain_text_author_count = client.documents.aggregate_cardinality_values(
+                ...     DocumentProperty.author, filter=is_plain_text
+                ... )
 
             Count the number of types of documents in your CDF project but exclude documents that start with "text":
 
@@ -163,7 +165,9 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import aggregations
                 >>> agg = aggregations
                 >>> is_not_text = agg.Not(agg.Prefix("text"))
-                >>> type_count_excluded_text = client.documents.aggregate_cardinality_values(DocumentProperty.type, aggregate_filter=is_not_text)
+                >>> type_count_excluded_text = client.documents.aggregate_cardinality_values(
+                ...     DocumentProperty.type, aggregate_filter=is_not_text
+                ... )
         """
         return run_sync(
             self.__async_client.documents.aggregate_cardinality_values(
@@ -242,7 +246,9 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> is_abc = filters.Prefix(DocumentProperty.external_id, "abc")
-                >>> result = client.documents.aggregate_unique_values(DocumentProperty.language, filter=is_abc)
+                >>> result = client.documents.aggregate_unique_values(
+                ...     DocumentProperty.language, filter=is_abc
+                ... )
                 >>> unique_languages = result.unique
 
             Get the unique mime types with count of documents, but exclude mime types that start with text:
@@ -251,7 +257,9 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import aggregations
                 >>> agg = aggregations
                 >>> is_not_text = agg.Not(agg.Prefix("text"))
-                >>> result = client.documents.aggregate_unique_values(DocumentProperty.mime_type, aggregate_filter=is_not_text)
+                >>> result = client.documents.aggregate_unique_values(
+                ...     DocumentProperty.mime_type, aggregate_filter=is_not_text
+                ... )
                 >>> unique_mime_types = result.unique
         """
         return run_sync(
@@ -447,11 +455,15 @@ class SyncDocumentsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> from cognite.client.utils import timestamp_to_ms
                 >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
-                >>> last_week = filters.Range(DocumentProperty.created_time,
-                ...     gt=timestamp_to_ms(datetime.now() - timedelta(days=7)))
-                >>> documents = client.documents.search('"CPLEX Error 1217: No Solution exists."',
+                >>> last_week = filters.Range(
+                ...     DocumentProperty.created_time,
+                ...     gt=timestamp_to_ms(datetime.now() - timedelta(days=7)),
+                ... )
+                >>> documents = client.documents.search(
+                ...     '"CPLEX Error 1217: No Solution exists."',
                 ...     highlight=True,
-                ...     filter=filters.And(is_plain_text, last_week))
+                ...     filter=filters.And(is_plain_text, last_week),
+                ... )
         """
         return run_sync(
             self.__async_client.documents.search(  # type: ignore [call-overload]

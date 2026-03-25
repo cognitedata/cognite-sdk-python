@@ -177,7 +177,7 @@ class RawTablesAPI(APIClient):
             Iterate over chunks of tables to reduce memory load:
 
                 >>> for table_list in client.raw.tables(db_name="db1", chunk_size=25):
-                ...     table_list # do something with the tables
+                ...     table_list  # do something with the tables
         """
         tb = await self._list(
             list_cls=raw.TableList,

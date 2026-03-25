@@ -1,6 +1,6 @@
 """
 ===============================================================================
-33bc1c77d566344c6095061469b6c5a8
+91c009d17e4fc01099ebce8bf198babf
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -181,7 +181,9 @@ class SyncAnnotationsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import AnnotationFilter
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> flt = AnnotationFilter(annotated_resource_type="file", annotated_resource_ids=[{"id": 123}])
+                >>> flt = AnnotationFilter(
+                ...     annotated_resource_type="file", annotated_resource_ids=[{"id": 123}]
+                ... )
                 >>> res = client.annotations.list(flt, limit=None)
         """
         return run_sync(self.__async_client.annotations.list(filter=filter, limit=limit))

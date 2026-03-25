@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ab726051b4211c47ec54ff723645aee3
+33d39ce5b3cd74e806a3d511931e65f1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -110,9 +110,8 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
                 ...     + ts{space:'my-space',externalId:'my-ts-xid'}
                 ... '''
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions=expression,
-                ...     start="2w-ago",
-                ...     end="now")
+                ...     expressions=expression, start="2w-ago", end="now"
+                ... )
 
             You can also specify variables for an easier query syntax:
 
@@ -124,14 +123,15 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
                 ...     "C": NodeId("my-space", "my-ts-xid"),
                 ... }
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions="A+B+C", start="2w-ago", end="2w-ahead", variables=variables)
+                ...     expressions="A+B+C", start="2w-ago", end="2w-ahead", variables=variables
+                ... )
 
             Use sympy to build complex expressions:
 
                 >>> from sympy import symbols, cos, sin
                 >>> x, y = symbols("x y")
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     [sin(x), y*cos(x)],
+                ...     [sin(x), y * cos(x)],
                 ...     start="2w-ago",
                 ...     end="now",
                 ...     variables={x: "foo", y: "bar"},

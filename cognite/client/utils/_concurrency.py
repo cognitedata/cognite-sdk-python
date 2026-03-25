@@ -627,7 +627,7 @@ async def execute_async_tasks_with_fail_fast(tasks: list[AsyncSDKTask]) -> Tasks
         return_when=asyncio.FIRST_EXCEPTION,
     )
     if all(task.exception() is None for task in done):
-        return TasksSummary([task.result() for task in done], successful_tasks=tasks)
+        return TasksSummary([task.result() for task in tasks], successful_tasks=tasks)
 
     # Something failed, and because of fail-fast, we (attempt to) cancel all pending tasks:
     if pending:  # while we are waiting on 3.11 and asyncio.TaskGroup...

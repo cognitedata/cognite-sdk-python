@@ -218,7 +218,7 @@ class DataModelsAPI(APIClient):
             Iterate over chunks of data model to reduce memory load:
 
                 >>> for data_model_list in client.data_modeling.data_models(chunk_size=10):
-                ...     data_model_list # do something with the data model
+                ...     data_model_list  # do something with the data model
         """
         filter = DataModelFilter(space, inline_views, all_versions, include_global)
 
@@ -255,8 +255,19 @@ class DataModelsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> data_models = [
-                ...     DataModelApply(space="mySpace",external_id="myDataModel",version="v1",views=[ViewId("mySpace","myView","v1")]),
-                ...     DataModelApply(space="mySpace",external_id="myOtherDataModel",version="v1",views=[ViewId("mySpace","myView","v1")])]
+                ...     DataModelApply(
+                ...         space="mySpace",
+                ...         external_id="myDataModel",
+                ...         version="v1",
+                ...         views=[ViewId("mySpace", "myView", "v1")],
+                ...     ),
+                ...     DataModelApply(
+                ...         space="mySpace",
+                ...         external_id="myOtherDataModel",
+                ...         version="v1",
+                ...         views=[ViewId("mySpace", "myView", "v1")],
+                ...     ),
+                ... ]
                 >>> res = client.data_modeling.data_models.apply(data_models)
         """
         return await self._create_multiple(

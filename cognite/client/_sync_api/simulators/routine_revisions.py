@@ -1,6 +1,6 @@
 """
 ===============================================================================
-cc8143e90a00dbc0d1a9bde49d575f7f
+a4f7d5db770f623f0487f34ba9a253b4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -327,13 +327,11 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
                 ...     routine_external_ids=["routine_1"],
                 ...     all_versions=True,
                 ...     sort=PropertySort(order="asc", property="createdTime"),
-                ...     include_all_fields=True
+                ...     include_all_fields=True,
                 ... )
 
             List simulator routine revisions by kind:
-                >>> res = client.simulators.routines.revisions.list(
-                ...     kind="long"
-                ... )
+                >>> res = client.simulators.routines.revisions.list(kind="long")
         """
         return run_sync(
             self.__async_client.simulators.routines.revisions.list(

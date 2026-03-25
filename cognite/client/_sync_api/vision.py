@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8ad053d3d1c03509fe940908997aa93f
+ef3951b05d4235a59e1c676636514dfa
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -44,7 +44,9 @@ class SyncVisionAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.contextualization import VisionFeature
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> extract_job = client.vision.extract(features=VisionFeature.ASSET_TAG_DETECTION, file_ids=[1])
+                >>> extract_job = client.vision.extract(
+                ...     features=VisionFeature.ASSET_TAG_DETECTION, file_ids=[1]
+                ... )
                 >>> extract_job.wait_for_completion()
                 >>> for item in extract_job.items:
                 ...     predictions = item.predictions

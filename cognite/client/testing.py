@@ -626,7 +626,7 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>>     c_mock.iam.token.inspect.return_value = TokenInspection(
             >>>         subject="subject", projects=[], capabilities=[]
             >>>     )
-            >>>     # Init. a new client yields the same mocked client:
+            >>> # Init. a new client yields the same mocked client:
             >>>     client = CogniteClient()
             >>>     res = client.iam.token.inspect()
             >>>     assert "subject" == res.subject
@@ -679,7 +679,7 @@ def monkeypatch_async_cognite_client() -> Iterator[AsyncCogniteClientMock]:
             >>>     c_mock.iam.token.inspect.return_value = TokenInspection(
             >>>         subject="subject", projects=[], capabilities=[]
             >>>     )
-            >>>     # Init. a new client yields the same mocked client:
+            >>> # Init. a new client yields the same mocked client:
             >>>     client = AsyncCogniteClient()
             >>>     res = await client.iam.token.inspect()
             >>>     assert "subject" == res.subject

@@ -816,7 +816,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             ...     client_secret=os.environ["OAUTH_CLIENT_SECRET"],
             ...     scopes=["https://greenfield.cognitedata.com/.default"],
             ...     # Any additional IDP-specific token args. e.g.
-            ...     audience="some-audience"
+            ...     audience="some-audience",
             ... )
     """
 
@@ -918,7 +918,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             ...     "client_id": "abcd",
             ...     "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
             ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
-            ...     "audience": "some-audience"
+            ...     "audience": "some-audience",
             ... }
             >>> credentials = OAuthClientCredentials.load(config)
         """

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-765bcd562409805c3100a5a77572f779
+eb1faa194c1dca8c8c3162a77f4117bd
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -160,7 +160,7 @@ class SyncLabelsAPI(SyncAPIClient):
             Iterate over chunks of label definitions to reduce memory load:
 
                 >>> for label_list in client.labels(chunk_size=2500):
-                ...     label_list # do something with the type definitions
+                ...     label_list  # do something with the type definitions
         """
         return run_sync(
             self.__async_client.labels.list(
@@ -201,7 +201,12 @@ class SyncLabelsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import LabelDefinitionWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> labels = [LabelDefinitionWrite(external_id="ROTATING_EQUIPMENT", name="Rotating equipment"), LabelDefinitionWrite(external_id="PUMP", name="pump")]
+                >>> labels = [
+                ...     LabelDefinitionWrite(
+                ...         external_id="ROTATING_EQUIPMENT", name="Rotating equipment"
+                ...     ),
+                ...     LabelDefinitionWrite(external_id="PUMP", name="pump"),
+                ... ]
                 >>> res = client.labels.create(labels)
         """
         return run_sync(self.__async_client.labels.create(label=label))

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-3f683d6b90598c40be474b7f0a5f045d
+6aea66afa91ba4af7b9d6663e4e72411
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -89,7 +89,9 @@ class SyncExtractionPipelineConfigsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineConfigWrite
                 >>> client = CogniteClient()
-                >>> res = client.extraction_pipelines.config.create(ExtractionPipelineConfigWrite(external_id="extId", config="my config contents"))
+                >>> res = client.extraction_pipelines.config.create(
+                ...     ExtractionPipelineConfigWrite(external_id="extId", config="my config contents")
+                ... )
         """
         return run_sync(self.__async_client.extraction_pipelines.config.create(config=config))
 

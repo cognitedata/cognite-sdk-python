@@ -1,6 +1,6 @@
 """
 ===============================================================================
-789d58776aa258529e2d0c9453d9e029
+7126db36cdba09e20f2eb5a35e329670
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -74,8 +74,11 @@ class SyncTablesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.postgres_gateway import ViewTableWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> table = ViewTableWrite(tablename="myCustom", options=ViewId(space="mySpace", external_id="myExternalId", version="v1"))
-                >>> res = client.postgres_gateway.tables.create("myUserName",table)
+                >>> table = ViewTableWrite(
+                ...     tablename="myCustom",
+                ...     options=ViewId(space="mySpace", external_id="myExternalId", version="v1"),
+                ... )
+                >>> res = client.postgres_gateway.tables.create("myUserName", table)
         """
         return run_sync(self.__async_client.postgres_gateway.tables.create(username=username, items=items))
 
@@ -113,11 +116,13 @@ class SyncTablesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.postgres_gateway.tables.retrieve("myUserName", 'myCustom')
+                >>> res = client.postgres_gateway.tables.retrieve("myUserName", "myCustom")
 
             Get multiple custom tables by id:
 
-                >>> res = client.postgres_gateway.tables.retrieve("myUserName", ["myCustom", "myCustom2"])
+                >>> res = client.postgres_gateway.tables.retrieve(
+                ...     "myUserName", ["myCustom", "myCustom2"]
+                ... )
         """
         return run_sync(
             self.__async_client.postgres_gateway.tables.retrieve(
@@ -187,7 +192,7 @@ class SyncTablesAPI(SyncAPIClient):
             Iterate over chunks of tables to reduce memory load:
 
                 >>> for table_list in client.postgres_gateway.tables(chunk_size=25):
-                ...     table_list # do something with the custom tables
+                ...     table_list  # do something with the custom tables
         """
         return run_sync(
             self.__async_client.postgres_gateway.tables.list(

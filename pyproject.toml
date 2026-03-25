@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cognite-sdk"
-version = "8.0.2"
+version = "8.0.4"
 
 description = "Cognite Python SDK"
 readme = "README.md"
@@ -30,6 +30,11 @@ external = ["DOC"]
 [tool.ruff.lint.per-file-ignores]
 # let scripts use print statements
 "scripts/*" = ["T201"]
+
+[tool.ruff.format]
+# format code examples in docstrings to avoid users scrolling horizontally
+docstring-code-format = true
+docstring-code-line-length = 85
 
 [tool.poetry.dependencies]
 python = "^3.10"

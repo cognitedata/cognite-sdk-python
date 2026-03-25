@@ -41,7 +41,9 @@ class WorkflowExecutionAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.workflows.executions.retrieve_detailed("000560bc-9080-4286-b242-a27bb4819253")
+                >>> res = client.workflows.executions.retrieve_detailed(
+                ...     "000560bc-9080-4286-b242-a27bb4819253"
+                ... )
 
             List workflow executions and retrieve detailed information for the first one:
 
@@ -85,7 +87,9 @@ class WorkflowExecutionAPI(APIClient):
                 ...     external_id="my_workflow-task1",
                 ...     parameters=FunctionTaskParameters(
                 ...         external_id="cdf_deployed_function:my_function",
-                ...         data={"workflow_data": "${workflow.input}"}))
+                ...         data={"workflow_data": "${workflow.input}"},
+                ...     ),
+                ... )
 
         Tip:
             You can create a session via the Sessions API, using the client.iam.session.create() method.
@@ -161,8 +165,7 @@ class WorkflowExecutionAPI(APIClient):
             Get all workflow executions from the last 24 hours:
 
                 >>> from cognite.client.utils import timestamp_to_ms
-                >>> res = client.workflows.executions.list(
-                ...     created_time_start=timestamp_to_ms("1d-ago"))
+                >>> res = client.workflows.executions.list(created_time_start=timestamp_to_ms("1d-ago"))
 
         """
         # Passing at least one filter criterion is required:

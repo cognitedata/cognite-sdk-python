@@ -1436,6 +1436,8 @@ class ConnectionFlags:
             return None
         return cls.load(resource)
 
+    load_if = _load_if  # ConnectionFlags has no private load method, so these are the same
+
 
 class DiagramDetectConfig(CogniteResource):
     """`Configuration options for the diagrams/detect endpoint <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
@@ -1458,7 +1460,10 @@ class DiagramDetectConfig(CogniteResource):
         Configure a call to digrams detect endpoint:
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.contextualization import ConnectionFlags, DiagramDetectConfig
+            >>> from cognite.client.data_classes.contextualization import (
+            ...     ConnectionFlags,
+            ...     DiagramDetectConfig,
+            ... )
             >>> client = CogniteClient()
             >>> # async_client = AsyncCogniteClient()  # another option
             >>> config = DiagramDetectConfig(
@@ -1466,7 +1471,7 @@ class DiagramDetectConfig(CogniteResource):
             ...     connection_flags=ConnectionFlags(
             ...         no_text_inbetween=True,
             ...         natural_reading_order=True,
-            ...     )
+            ...     ),
             ... )
             >>> job = client.diagrams.detect(entities=[{"name": "A1"}], file_id=123, config=config)
 

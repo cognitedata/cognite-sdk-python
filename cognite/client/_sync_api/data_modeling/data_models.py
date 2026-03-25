@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c0954d6bae1380177776758fc555f3c8
+059bf0313b1b78487b9d7972593f9de2
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -203,7 +203,7 @@ class SyncDataModelsAPI(SyncAPIClient):
             Iterate over chunks of data model to reduce memory load:
 
                 >>> for data_model_list in client.data_modeling.data_models(chunk_size=10):
-                ...     data_model_list # do something with the data model
+                ...     data_model_list  # do something with the data model
         """
         return run_sync(
             self.__async_client.data_modeling.data_models.list(  # type: ignore [call-overload]
@@ -240,8 +240,19 @@ class SyncDataModelsAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> data_models = [
-                ...     DataModelApply(space="mySpace",external_id="myDataModel",version="v1",views=[ViewId("mySpace","myView","v1")]),
-                ...     DataModelApply(space="mySpace",external_id="myOtherDataModel",version="v1",views=[ViewId("mySpace","myView","v1")])]
+                ...     DataModelApply(
+                ...         space="mySpace",
+                ...         external_id="myDataModel",
+                ...         version="v1",
+                ...         views=[ViewId("mySpace", "myView", "v1")],
+                ...     ),
+                ...     DataModelApply(
+                ...         space="mySpace",
+                ...         external_id="myOtherDataModel",
+                ...         version="v1",
+                ...         views=[ViewId("mySpace", "myView", "v1")],
+                ...     ),
+                ... ]
                 >>> res = client.data_modeling.data_models.apply(data_models)
         """
         return run_sync(self.__async_client.data_modeling.data_models.apply(data_model=data_model))

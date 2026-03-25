@@ -1,6 +1,6 @@
 """
 ===============================================================================
-573a554ba19bfee47533a4650862530e
+e0f66a6e5f58b8b52270420ca7ab3d38
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -175,6 +175,6 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.transformations.notifications.delete(id=[1,2,3])
+                >>> client.transformations.notifications.delete(id=[1, 2, 3])
         """
         return run_sync(self.__async_client.transformations.notifications.delete(id=id))

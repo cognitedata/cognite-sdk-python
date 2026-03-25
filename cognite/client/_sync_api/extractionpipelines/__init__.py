@@ -1,6 +1,6 @@
 """
 ===============================================================================
-990fd1dcf9185a7f006b22b1245e506e
+a137ea2563d43bc87d9193fab4a98294
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -107,7 +107,9 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
 
             Get assets by external id:
 
-                >>> res = client.extraction_pipelines.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
+                >>> res = client.extraction_pipelines.retrieve_multiple(
+                ...     external_ids=["abc", "def"], ignore_unknown_ids=True
+                ... )
         """
         return run_sync(
             self.__async_client.extraction_pipelines.retrieve_multiple(
@@ -192,7 +194,7 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.extraction_pipelines.delete(id=[1,2,3], external_id="3")
+                >>> client.extraction_pipelines.delete(id=[1, 2, 3], external_id="3")
         """
         return run_sync(self.__async_client.extraction_pipelines.delete(id=id, external_id=external_id))
 

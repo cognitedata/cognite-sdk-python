@@ -238,7 +238,9 @@ class FunctionSchedulesAPI(APIClient):
                 ...     name="My schedule",
                 ...     function_id=123,
                 ...     cron_expression="*/5 * * * *",
-                ...     client_credentials=ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"]),
+                ...     client_credentials=ClientCredentials(
+                ...         "my-client-id", os.environ["MY_CLIENT_SECRET"]
+                ...     ),
                 ...     description="This schedule does magic stuff.",
                 ...     data={"magic": "stuff"},
                 ... )
@@ -265,7 +267,7 @@ class FunctionSchedulesAPI(APIClient):
                 ...         function_id=456,
                 ...         cron_expression="*/5 * * * *",
                 ...         description="A schedule just used for some temporary testing.",
-                ...         nonce=session.nonce
+                ...         nonce=session.nonce,
                 ...     ),
                 ... )
 
@@ -324,7 +326,7 @@ class FunctionSchedulesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.functions.schedules.delete(id = 123)
+                >>> client.functions.schedules.delete(id=123)
 
         """
         url = f"{self._RESOURCE_PATH}/delete"

@@ -84,11 +84,13 @@ class MappingsAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.hosted_extractors.mappings.retrieve('myMapping')
+                >>> res = client.hosted_extractors.mappings.retrieve("myMapping")
 
             Get multiple mappings by id:
 
-                >>> res = client.hosted_extractors.mappings.retrieve(["myMapping", "myMapping2"], ignore_unknown_ids=True)
+                >>> res = client.hosted_extractors.mappings.retrieve(
+                ...     ["myMapping", "myMapping2"], ignore_unknown_ids=True
+                ... )
 
         """
         self._warning.warn()
@@ -156,7 +158,12 @@ class MappingsAPI(APIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import MappingWrite, CustomMapping
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> mapping = MappingWrite(external_id="my_mapping", mapping=CustomMapping("some expression"), published=True, input="json")
+                >>> mapping = MappingWrite(
+                ...     external_id="my_mapping",
+                ...     mapping=CustomMapping("some expression"),
+                ...     published=True,
+                ...     input="json",
+                ... )
                 >>> res = client.hosted_extractors.mappings.create(mapping)
         """
         self._warning.warn()
@@ -193,7 +200,7 @@ class MappingsAPI(APIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import MappingUpdate
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> mapping = MappingUpdate('my_mapping').published.set(False)
+                >>> mapping = MappingUpdate("my_mapping").published.set(False)
                 >>> res = client.hosted_extractors.mappings.update(mapping)
         """
         self._warning.warn()
@@ -234,7 +241,7 @@ class MappingsAPI(APIClient):
             Iterate over chunks of mappings to reduce memory load:
 
                 >>> for mapping_list in client.hosted_extractors.mappings(chunk_size=25):
-                ...     mapping_list # do something with the mappings
+                ...     mapping_list  # do something with the mappings
         """
         self._warning.warn()
         return await self._list(
