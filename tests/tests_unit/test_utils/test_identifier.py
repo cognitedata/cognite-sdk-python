@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
@@ -73,6 +75,55 @@ class TestIdentifier:
         assert hash(Identifier(1)) == hash(Identifier(1))
         assert hash(Identifier(1)) != hash(Identifier(2))
         assert hash(Identifier(InstanceId("s", "e1"))) != hash(Identifier(InstanceId("s", "e2")))
+
+
+class TestInstanceId:
+    @pytest.mark.parametrize(
+        "data",
+        [
+            InstanceId("my-space", "my-xid"),
+            ("my-space", "my-xid"),
+            ["my-space", "my-xid"],  # list or any sequence with 2 elements should work
+            {"space": "my-space", "externalId": "my-xid"},
+            {"space": "my-space", "external_id": "my-xid"},
+        ],
+    )
+    def test_load_valid(self, data: Any) -> None:
+        result = InstanceId.load(data)
+        assert result.space == "my-space"
+        assert result.external_id == "my-xid"
+
+    @pytest.mark.parametrize(
+        "data",
+        (
+            (),
+            ("only-one",),
+            ("too", "many", "elements"),
+            [],
+            ["single"],
+            ["too", "many", "elements"],
+        ),
+    )
+    def test_load_raises_value_error_for_wrong_length_sequence(self, data: Any) -> None:
+        with pytest.raises(ValueError, match="expected exactly 2 elements"):
+            InstanceId.load(data)
+
+    @pytest.mark.parametrize(
+        "data",
+        (
+            {},
+            {"space": "s"},
+            {"external_id": "x"},
+            {"externalId": "x"},
+        ),
+    )
+    def test_load_raises_key_error_for_dict_missing_keys(self, data: Any) -> None:
+        with pytest.raises(KeyError, match="Missing one or more keys"):
+            InstanceId.load(data)
+
+    def test_load_raises_type_error_for_invalid_type(self) -> None:
+        with pytest.raises(TypeError, match="invalid type="):
+            InstanceId.load("not-valid")  # type: ignore[arg-type]
 
 
 class TestIdentifierSequence:
