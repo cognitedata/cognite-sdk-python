@@ -17,6 +17,7 @@ from cognite.client.data_classes._base import (
     ExternalIDTransformerMixin,
     IdTransformerMixin,
     PropertySpec,
+    UnknownCogniteObject,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -70,7 +71,7 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
         if geo_location is not None:
             if isinstance(geo_location, dict):
                 geo_location = GeoLocation.load(geo_location)
-            if not isinstance(geo_location, GeoLocation):
+            if not isinstance(geo_location, GeoLocation | UnknownCogniteObject):
                 raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id
         self.instance_id = instance_id

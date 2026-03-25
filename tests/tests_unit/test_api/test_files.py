@@ -20,6 +20,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
+from cognite.client.data_classes._base import UnknownCogniteObject
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
 from tests.utils import jsgz_load, set_request_limit
@@ -272,6 +273,11 @@ class TestFilesAPI:
         assert all(
             body["geoLocation"] == mock_geo_location.dump(camel_case=True) for body in [request_body, response_body]
         )
+
+    def test_create_with_invalid_geoLocation(self, cognite_client):
+        invalid_geo_location = {"foo": "bar"}
+        file_metadata = FileMetadata(name="bla", geo_location=invalid_geo_location)
+        assert isinstance(file_metadata.geo_location, UnknownCogniteObject)
 
     def test_retrieve_single(self, cognite_client, mock_files_response):
         res = cognite_client.files.retrieve(id=1)
