@@ -68,6 +68,7 @@ from cognite.client._api.simulators.models_revisions import SimulatorModelRevisi
 from cognite.client._api.simulators.routine_revisions import SimulatorRoutineRevisionsAPI
 from cognite.client._api.simulators.routines import SimulatorRoutinesAPI
 from cognite.client._api.simulators.runs import SimulatorRunsAPI
+from cognite.client._api.streams import StreamsAPI
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.three_d.asset_mapping import ThreeDAssetMappingAPI
@@ -151,6 +152,7 @@ from cognite.client._sync_api.simulators.models_revisions import SyncSimulatorMo
 from cognite.client._sync_api.simulators.routine_revisions import SyncSimulatorRoutineRevisionsAPI
 from cognite.client._sync_api.simulators.routines import SyncSimulatorRoutinesAPI
 from cognite.client._sync_api.simulators.runs import SyncSimulatorRunsAPI
+from cognite.client._sync_api.streams import SyncStreamsAPI
 from cognite.client._sync_api.synthetic_time_series import SyncSyntheticDatapointsAPI
 from cognite.client._sync_api.three_d import Sync3DAPI
 from cognite.client._sync_api.three_d.asset_mapping import Sync3DAssetMappingAPI
@@ -308,6 +310,8 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             logs=sim_logs,
         )
         flip_spec_set_on(self.simulators, sim_models, sim_routines)
+
+        self.streams = create_autospec(StreamsAPI, instance=True, spec_set=True)
 
         sequences_data = create_autospec(SequencesDataAPI, instance=True, spec_set=True)
         self.sequences = create_autospec(SequencesAPI, instance=True, data=sequences_data)
@@ -507,6 +511,8 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             logs=sim_logs,
         )
         flip_spec_set_on(self.simulators, sim_models)
+
+        self.streams = create_autospec(SyncStreamsAPI, instance=True, spec_set=True)
 
         sequences_data = create_autospec(SyncSequencesDataAPI, instance=True, spec_set=True)
         self.sequences = create_autospec(SyncSequencesAPI, instance=True, data=sequences_data)

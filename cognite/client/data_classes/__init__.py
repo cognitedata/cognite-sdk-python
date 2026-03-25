@@ -206,6 +206,16 @@ from cognite.client.data_classes.shared import (
     GeometryFilter,
     TimestampRange,
 )
+from cognite.client.data_classes.streams import (
+    Stream,
+    StreamDeleteItem,
+    StreamLifecycleSettings,
+    StreamLimit,
+    StreamLimitSettings,
+    StreamList,
+    StreamSettings,
+    StreamWrite,
+)
 from cognite.client.data_classes.three_d import (
     BoundingBox3D,
     RevisionCameraProperties,
@@ -487,6 +497,14 @@ __all__ = [
     "SimulationTaskParameters",
     "SourceFile",
     "StatusCode",
+    "Stream",
+    "StreamDeleteItem",
+    "StreamLifecycleSettings",
+    "StreamLimit",
+    "StreamLimitSettings",
+    "StreamList",
+    "StreamSettings",
+    "StreamWrite",
     "SubworkflowTaskParameters",
     "SyntheticDatapoints",
     "SyntheticDatapointsList",
