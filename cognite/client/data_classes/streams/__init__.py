@@ -1,0 +1,41 @@
+from cognite.client.data_classes.streams.stream import (
+    Stream,
+    StreamDeleteItem,
+    StreamLifecycleSettings,
+    StreamLimit,
+    StreamLimitSettings,
+    StreamList,
+    StreamSettings,
+    StreamWrite,
+)
+from cognite.client.data_classes.streams.stream_record import (
+    Record,
+    RecordList,
+    RecordsAggregateResponse,
+    RecordsDeleteResponse,
+    RecordsFilterResponse,
+    RecordsIngestResponse,
+    RecordsSyncResponse,
+    SyncRecord,
+    SyncRecordList,
+)
+
+__all__ = [
+    "Record",
+    "RecordList",
+    "RecordsAggregateResponse",
+    "RecordsDeleteResponse",
+    "RecordsFilterResponse",
+    "RecordsIngestResponse",
+    "RecordsSyncResponse",
+    "Stream",
+    "StreamDeleteItem",
+    "StreamLifecycleSettings",
+    "StreamLimit",
+    "StreamLimitSettings",
+    "StreamList",
+    "StreamSettings",
+    "StreamWrite",
+    "SyncRecord",
+    "SyncRecordList",
+]

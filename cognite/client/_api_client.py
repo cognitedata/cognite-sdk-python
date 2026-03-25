@@ -104,6 +104,7 @@ class APIClient:
         "raw/dbs/[^/]+/tables$",
         "relationships",
         "sequences",
+        "streams",
         "simulators",
         "simulators/models",
         "simulators/models/revisions",
@@ -129,6 +130,10 @@ class APIClient:
                 "transformations/cancel",
                 "transformations/notifications",
                 "transformations/run",
+                # ILA streams: write record batches (create/delete stream use __NON_RETRYABLE "streams"; read POSTs stay retryable)
+                r"streams/[^/]+/records",
+                r"streams/[^/]+/records/upsert",
+                r"streams/[^/]+/records/delete",
             )
         )
     )
