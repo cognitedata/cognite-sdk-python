@@ -740,8 +740,8 @@ class TestSequencesPandasIntegration:
         df = seq.to_pandas(expand_metadata=True, metadata_prefix="")
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
-        assert "string" == df.loc["description"][0]
-        assert "metadata-value" == df.loc["metadata-key"][0]
+        assert "string" == df.loc["description"].iloc[0]
+        assert "metadata-value" == df.loc["metadata-key"].iloc[0]
 
     def test_insert_dataframe_extids(self, cognite_client: CogniteClient, mock_post_sequence_data: HTTPXMock) -> None:
         import pandas as pd

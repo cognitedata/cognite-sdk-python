@@ -259,5 +259,5 @@ class TestPandasIntegration:
         df = ts.to_pandas(expand_metadata=True, metadata_prefix="", camel_case=True)
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
-        assert [0] == df.loc["securityCategories"][0]
-        assert "metadata-value" == df.loc["metadata-key"][0]
+        assert [0] == df.loc["securityCategories"].iloc[0]
+        assert "metadata-value" == df.loc["metadata-key"].iloc[0]
