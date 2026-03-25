@@ -1436,6 +1436,8 @@ class ConnectionFlags:
             return None
         return cls.load(resource)
 
+    load_if = _load_if  # ConnectionFlags has no private load method, so these are the same
+
 
 class DiagramDetectConfig(CogniteResource):
     """`Configuration options for the diagrams/detect endpoint <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.

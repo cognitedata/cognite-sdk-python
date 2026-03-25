@@ -250,6 +250,8 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
             return None
         return cls.load(data)
 
+    load_if = _load_if  # Properties does not have a private load method, so these are the same
+
     def dump(self) -> dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]]:
         props: dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]] = defaultdict(dict)
         for view_id, properties in self.data.items():
