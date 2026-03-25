@@ -681,7 +681,8 @@ class TestPandasIntegration:
             pd.DataFrame({"name": ["kar", "car", "dar"]}), db_list.to_pandas().drop("created_time", axis=1)
         )
         pd.testing.assert_frame_equal(
-            pd.DataFrame({"value": ["kar"]}, index=["name"]), db_list[0].to_pandas().drop("created_time")
+            pd.DataFrame({"value": ["kar"]}, index=["name"], dtype=object),
+            db_list[0].to_pandas().drop("created_time"),
         )
 
     def test_tables_to_pandas(self) -> None:
@@ -695,7 +696,8 @@ class TestPandasIntegration:
             pd.DataFrame({"name": ["kar", "car", "dar"]}), table_list.to_pandas().drop("created_time", axis=1)
         )
         pd.testing.assert_frame_equal(
-            pd.DataFrame({"value": ["kar"]}, index=["name"]), table_list[0].to_pandas().drop("created_time")
+            pd.DataFrame({"value": ["kar"]}, index=["name"], dtype=object),
+            table_list[0].to_pandas().drop("created_time"),
         )
 
     def test_rows_to_pandas(self) -> None:
