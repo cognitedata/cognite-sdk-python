@@ -6,7 +6,11 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
-from cognite.client.data_classes.streams import StreamList, StreamWrite
+from cognite.client.data_classes.streams import (
+    RecordsIngestResponse,
+    StreamList,
+    StreamWrite,
+)
 
 
 @pytest.fixture
@@ -110,3 +114,20 @@ class TestStreamsAPI:
 
         with pytest.raises(ValueError, match="exactly one"):
             cognite_client.streams.delete([StreamDeleteItem("a"), StreamDeleteItem("b")])
+
+    def test_records_ingest_posts(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        streams_base_url: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=re.compile(re.escape(streams_base_url) + r"/my-stream/records$"),
+            json={},
+        )
+        out = cognite_client.streams.records.ingest("my-stream", {"items": []})
+        assert isinstance(out, RecordsIngestResponse)
+        requests = httpx_mock.get_requests()
+        assert len(requests) == 1
+        assert requests[0].url.path.endswith("/streams/my-stream/records")

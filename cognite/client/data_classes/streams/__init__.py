@@ -8,8 +8,26 @@ from cognite.client.data_classes.streams.stream import (
     StreamSettings,
     StreamWrite,
 )
+from cognite.client.data_classes.streams.stream_record import (
+    Record,
+    RecordList,
+    RecordsAggregateResponse,
+    RecordsDeleteResponse,
+    RecordsFilterResponse,
+    RecordsIngestResponse,
+    RecordsSyncResponse,
+    SyncRecord,
+    SyncRecordList,
+)
 
 __all__ = [
+    "Record",
+    "RecordList",
+    "RecordsAggregateResponse",
+    "RecordsDeleteResponse",
+    "RecordsFilterResponse",
+    "RecordsIngestResponse",
+    "RecordsSyncResponse",
     "Stream",
     "StreamDeleteItem",
     "StreamLifecycleSettings",
@@ -18,4 +36,6 @@ __all__ = [
     "StreamList",
     "StreamSettings",
     "StreamWrite",
+    "SyncRecord",
+    "SyncRecordList",
 ]

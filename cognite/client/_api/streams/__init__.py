@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import MutableSequence, Sequence
 from typing import TYPE_CHECKING, Any
 
+from cognite.client._api.streams.records import StreamsRecordsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.streams.stream import (
     Stream,
@@ -30,12 +31,13 @@ def _dump_delete_item(obj: StreamDeleteItem | dict[str, Any]) -> dict[str, Any]:
 
 
 class StreamsAPI(APIClient):
-    """ILA Streams API (``/streams``): create, list, retrieve, delete."""
+    """ILA Streams API (``/streams``) and nested :class:`StreamsRecordsAPI` (``/streams/{id}/records``)."""
 
     _RESOURCE_PATH = "/streams"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self.records = StreamsRecordsAPI(config, api_version, cognite_client)
 
     async def create(self, items: Sequence[StreamWrite | dict[str, Any]]) -> StreamList:
         """`Create streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/createStream>`_.

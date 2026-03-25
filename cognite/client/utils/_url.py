@@ -59,6 +59,10 @@ NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN: re.Pattern[str] = re.compile(
             "transformations/cancel",
             "transformations/notifications",
             "transformations/run",
+            # ILA stream records: write batches (streams root is non-retryable; read POSTs stay retryable)
+            r"streams/[^/]+/records$",
+            r"streams/[^/]+/records/upsert$",
+            r"streams/[^/]+/records/delete$",
         )
     )
 )

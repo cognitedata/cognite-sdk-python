@@ -1,19 +1,29 @@
 """
 ===============================================================================
-9303ab5e6fadf932b93ee83f4fe9221e
+f780e4edf88535a6df4726a0958d12a7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
-from collections.abc import MutableSequence, Sequence
-from typing import Any
+from collections.abc import Coroutine, Iterator, MutableSequence, Sequence
+from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._api_client import APIClient
+from cognite.client._sync_api.streams.records import SyncStreamsRecordsAPI
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.streams.stream import Stream, StreamDeleteItem, StreamList, StreamWrite
-from cognite.client.utils._async_helpers import run_sync
+from cognite.client.utils._async_helpers import SyncIterator, run_sync
+from cognite.client.utils._concurrency import _get_event_loop_executor
+from cognite.client.utils._url import interpolate_and_url_encode
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+    from cognite.client import AsyncCogniteClient
+from cognite.client.config import ClientConfig
 
 
 class SyncStreamsAPI(SyncAPIClient):
@@ -21,6 +31,7 @@ class SyncStreamsAPI(SyncAPIClient):
 
     def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
+        self.records = SyncStreamsRecordsAPI(async_client)
 
     def create(self, items: Sequence[StreamWrite | dict[str, Any]]) -> StreamList:
         """
