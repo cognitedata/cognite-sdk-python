@@ -11,13 +11,6 @@ from cognite.client.data_classes.streams.stream import (
     StreamList,
     StreamWrite,
 )
-from cognite.client.data_classes.streams.stream_record import (
-    RecordsAggregateResponse,
-    RecordsDeleteResponse,
-    RecordsFilterResponse,
-    RecordsIngestResponse,
-    RecordsSyncResponse,
-)
 from cognite.client.utils._auxiliary import interpolate_and_url_encode
 
 if TYPE_CHECKING:
@@ -68,29 +61,3 @@ class StreamsAPI(APIClient):
     def delete(self, items: MutableSequence[StreamDeleteItem | dict[str, Any]]) -> None:
         """`Delete streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/deleteStreams>`_ (POST)."""
         self._post(f"{self._RESOURCE_PATH}/delete", json={"items": [_dump_delete_item(i) for i in items]})
-
-    def delete_deprecated(self, stream_external_id: str) -> dict[str, Any]:
-        """Deprecated ``DELETE`` stream — may yield **410**; see API docs."""
-        path = interpolate_and_url_encode(f"{self._RESOURCE_PATH}/{{}}", stream_external_id)
-        res = self._delete(path)
-        return res.json()
-
-    # --- Backwards-compatible names (delegate to :attr:`records`) ---
-
-    def ingest_records(self, stream_external_id: str, body: dict[str, Any]) -> RecordsIngestResponse:
-        return self.records.ingest(stream_external_id, body)
-
-    def upsert_records(self, stream_external_id: str, body: dict[str, Any]) -> RecordsIngestResponse:
-        return self.records.upsert(stream_external_id, body)
-
-    def delete_records(self, stream_external_id: str, body: dict[str, Any]) -> RecordsDeleteResponse:
-        return self.records.delete(stream_external_id, body)
-
-    def filter_records(self, stream_external_id: str, body: dict[str, Any]) -> RecordsFilterResponse:
-        return self.records.filter(stream_external_id, body)
-
-    def aggregate_records(self, stream_external_id: str, body: dict[str, Any]) -> RecordsAggregateResponse:
-        return self.records.aggregate(stream_external_id, body)
-
-    def sync_records(self, stream_external_id: str, body: dict[str, Any]) -> RecordsSyncResponse:
-        return self.records.sync(stream_external_id, body)

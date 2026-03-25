@@ -6,7 +6,7 @@ import pytest
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
-from cognite.client.data_classes.streams import StreamList, StreamWrite
+from cognite.client.data_classes.streams import RecordsIngestResponse, StreamList, StreamWrite
 
 
 @pytest.fixture
@@ -62,9 +62,7 @@ def test_streams_retrieve_include_statistics_query(client: CogniteClient) -> Non
     }
     client.streams._get = MagicMock(return_value=MagicMock(json=lambda: sample))
     client.streams.retrieve("st1", include_statistics=True)
-    client.streams._get.assert_called_once_with(
-        "/streams/st1", params={"includeStatistics": "true"}
-    )
+    client.streams._get.assert_called_once_with("/streams/st1", params={"includeStatistics": "true"})
 
 
 def test_streams_create_posts_items(client: CogniteClient) -> None:
@@ -94,7 +92,8 @@ def test_streams_create_posts_items(client: CogniteClient) -> None:
     assert call_kw[1]["json"]["items"][0]["externalId"] == "st1"
 
 
-def test_records_ingest_delegates(client: CogniteClient) -> None:
-    client.streams.records.ingest = MagicMock()
-    client.streams.ingest_records("my-stream", {"items": []})
-    client.streams.records.ingest.assert_called_once_with("my-stream", {"items": []})
+def test_records_ingest_posts(client: CogniteClient) -> None:
+    client.streams.records._post = MagicMock(return_value=MagicMock(json=lambda: {}))
+    out = client.streams.records.ingest("my-stream", {"items": []})
+    assert isinstance(out, RecordsIngestResponse)
+    client.streams.records._post.assert_called_once_with("/streams/my-stream/records", json={"items": []})
