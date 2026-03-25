@@ -1,6 +1,6 @@
 """
 ===============================================================================
-2e0c9681af3470230fe060510b978d92
+d5cc9b88dcf564328fbb78370c32cab7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -46,7 +46,9 @@ class SyncStreamsAPI(SyncAPIClient):
 
             Retrieve a stream with statistics:
 
-                >>> res = client.data_modeling.streams.retrieve(external_id="my_stream", include_statistics=True)
+                >>> res = client.data_modeling.streams.retrieve(
+                ...     external_id="my_stream", include_statistics=True
+                ... )
         """
         return run_sync(
             self.__async_client.data_modeling.streams.retrieve(
@@ -93,7 +95,7 @@ class SyncStreamsAPI(SyncAPIClient):
             Iterate over the returned list:
 
                 >>> for stream in stream_list:
-                ...     stream # do something with the stream
+                ...     stream  # do something with the stream
         """
         return run_sync(self.__async_client.data_modeling.streams.list())
 
@@ -112,12 +114,15 @@ class SyncStreamsAPI(SyncAPIClient):
             Create a new stream:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
-                >>> from cognite.client.data_classes.data_modeling import StreamWrite, StreamWriteSettings
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     StreamWrite,
+                ...     StreamWriteSettings,
+                ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> stream = StreamWrite(
                 ...     external_id="my_stream",
-                ...     settings=StreamWriteSettings(template_name="ImmutableTestStream")
+                ...     settings=StreamWriteSettings(template_name="ImmutableTestStream"),
                 ... )
                 >>> res = client.data_modeling.streams.create(stream)
         """

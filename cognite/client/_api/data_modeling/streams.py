@@ -52,7 +52,9 @@ class StreamsAPI(APIClient):
 
             Retrieve a stream with statistics:
 
-                >>> res = client.data_modeling.streams.retrieve(external_id="my_stream", include_statistics=True)
+                >>> res = client.data_modeling.streams.retrieve(
+                ...     external_id="my_stream", include_statistics=True
+                ... )
 
         """
         self._warning.warn()
@@ -111,7 +113,7 @@ class StreamsAPI(APIClient):
             Iterate over the returned list:
 
                 >>> for stream in stream_list:
-                ...     stream # do something with the stream
+                ...     stream  # do something with the stream
         """
         self._warning.warn()
         return await self._list(
@@ -136,12 +138,15 @@ class StreamsAPI(APIClient):
             Create a new stream:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
-                >>> from cognite.client.data_classes.data_modeling import StreamWrite, StreamWriteSettings
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     StreamWrite,
+                ...     StreamWriteSettings,
+                ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> stream = StreamWrite(
                 ...     external_id="my_stream",
-                ...     settings=StreamWriteSettings(template_name="ImmutableTestStream")
+                ...     settings=StreamWriteSettings(template_name="ImmutableTestStream"),
                 ... )
                 >>> res = client.data_modeling.streams.create(stream)
         """
