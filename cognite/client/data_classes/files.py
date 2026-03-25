@@ -71,7 +71,12 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
             if isinstance(geo_location, dict):
                 geo_location = GeoLocation.load(geo_location)
             if not isinstance(geo_location, GeoLocation):
-                raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
+                from cognite.client import global_config
+
+                if global_config.ignore_invalid_geo_locations:
+                    geo_location = None
+                else:
+                    raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id
         self.instance_id = instance_id
         self.name = name

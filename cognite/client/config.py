@@ -32,6 +32,8 @@ class GlobalConfig:
         max_workers (int | None): Max number of workers to spawn when parallelizing API calls. Defaults to 5.
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
+        ignore_invalid_geo_locations (bool): Whether or not to silently ignore invalid geo location data that may exist
+            on files in CDF. Defaults to False.
     """
 
     def __new__(cls) -> GlobalConfig:
@@ -58,6 +60,7 @@ class GlobalConfig:
         self.proxies: dict[str, str] | None = {}
         self.max_workers: int = 5
         self.silence_feature_preview_warnings: bool = False
+        self.ignore_invalid_geo_locations: bool = False
 
     def apply_settings(self, settings: dict[str, Any] | str) -> None:
         """Apply settings to the global configuration object from a YAML/JSON string or dict.

@@ -9,6 +9,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 
+from cognite.client import global_config
 from cognite.client._api.files import FileMetadata, FileMetadataList, FileMetadataUpdate
 from cognite.client.data_classes import (
     FileMetadataFilter,
@@ -272,6 +273,18 @@ class TestFilesAPI:
         assert all(
             body["geoLocation"] == mock_geo_location.dump(camel_case=True) for body in [request_body, response_body]
         )
+
+    def test_create_with_invalid_geoLocation(self, cognite_client):
+        invalid_geo_location = {"foo": "bar"}
+        with pytest.raises(TypeError):
+            FileMetadata(name="bla", geo_location=invalid_geo_location)
+
+        # Test that the ignore_invalid_geo_locations makes is possible to create the metadata
+        # object, but the geo_location field gets set to None
+        global_config.ignore_invalid_geo_locations = True
+        file_metadata = FileMetadata(name="bla", geo_location=invalid_geo_location)
+        assert file_metadata.geo_location is None
+        global_config.ignore_invalid_geo_locations = False
 
     def test_retrieve_single(self, cognite_client, mock_files_response):
         res = cognite_client.files.retrieve(id=1)
