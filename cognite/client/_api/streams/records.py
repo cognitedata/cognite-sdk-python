@@ -31,32 +31,44 @@ class StreamsRecordsAPI(APIClient):
 
     async def ingest(self, stream_external_id: str, body: dict[str, Any]) -> RecordsIngestResponse:
         """`Ingest records <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_ into a stream."""
-        res = await self._post(self._records_base(stream_external_id), json=body)
+        res = await self._post(
+            self._records_base(stream_external_id), json=body, semaphore=self._get_semaphore("write")
+        )
         return RecordsIngestResponse._load(res.json())
 
     async def upsert(self, stream_external_id: str, body: dict[str, Any]) -> RecordsIngestResponse:
         """`Upsert records <https://api-docs.cognite.com/20230101/tag/Records/operation/upsertRecords>`_ in a mutable stream."""
-        res = await self._post(self._records_base(stream_external_id) + "/upsert", json=body)
+        res = await self._post(
+            self._records_base(stream_external_id) + "/upsert", json=body, semaphore=self._get_semaphore("write")
+        )
         return RecordsIngestResponse._load(res.json())
 
     async def delete(self, stream_external_id: str, body: dict[str, Any]) -> RecordsDeleteResponse:
         """`Delete records <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_ from a mutable stream."""
-        res = await self._post(self._records_base(stream_external_id) + "/delete", json=body)
+        res = await self._post(
+            self._records_base(stream_external_id) + "/delete", json=body, semaphore=self._get_semaphore("write")
+        )
         return RecordsDeleteResponse._load(res.json())
 
     async def filter(self, stream_external_id: str, body: dict[str, Any]) -> RecordsFilterResponse:
         """`Filter records <https://api-docs.cognite.com/20230101/tag/Records/operation/filterRecords>`_."""
-        res = await self._post(self._records_base(stream_external_id) + "/filter", json=body)
+        res = await self._post(
+            self._records_base(stream_external_id) + "/filter", json=body, semaphore=self._get_semaphore("read")
+        )
         return RecordsFilterResponse._load(res.json())
 
     async def aggregate(self, stream_external_id: str, body: dict[str, Any]) -> RecordsAggregateResponse:
         """`Aggregate over records <https://api-docs.cognite.com/20230101/tag/Records/operation/aggregateRecords>`_."""
-        res = await self._post(self._records_base(stream_external_id) + "/aggregate", json=body)
+        res = await self._post(
+            self._records_base(stream_external_id) + "/aggregate", json=body, semaphore=self._get_semaphore("read")
+        )
         return RecordsAggregateResponse._load(res.json())
 
     async def sync(self, stream_external_id: str, body: dict[str, Any]) -> RecordsSyncResponse:
         """`Sync records <https://api-docs.cognite.com/20230101/tag/Records/operation/syncRecords>`_ (cursor-based read)."""
-        res = await self._post(self._records_base(stream_external_id) + "/sync", json=body)
+        res = await self._post(
+            self._records_base(stream_external_id) + "/sync", json=body, semaphore=self._get_semaphore("read")
+        )
         return RecordsSyncResponse._load(res.json())
 
     async def ingest_items(

@@ -7,23 +7,14 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 
 from __future__ import annotations
 
-from collections.abc import Coroutine, Iterator, MutableSequence, Sequence
-from typing import TYPE_CHECKING, Any, overload
+from collections.abc import MutableSequence, Sequence
+from typing import Any
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._api_client import APIClient
 from cognite.client._sync_api.streams.records import SyncStreamsRecordsAPI
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.streams.stream import Stream, StreamDeleteItem, StreamList, StreamWrite
-from cognite.client.utils._async_helpers import SyncIterator, run_sync
-from cognite.client.utils._concurrency import _get_event_loop_executor
-from cognite.client.utils._url import interpolate_and_url_encode
-
-if TYPE_CHECKING:
-    import pandas as pd
-
-    from cognite.client import AsyncCogniteClient
-from cognite.client.config import ClientConfig
+from cognite.client.utils._async_helpers import run_sync
 
 
 class SyncStreamsAPI(SyncAPIClient):
