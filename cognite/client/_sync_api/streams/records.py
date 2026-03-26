@@ -1,12 +1,13 @@
 """
 ===============================================================================
-badc14c34fd9b89351938c7cc2d98caf
+86c7abd2bc2e24d3de5f70fad8af583f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from cognite.client import AsyncCogniteClient
@@ -65,3 +66,30 @@ class SyncStreamsRecordsAPI(SyncAPIClient):
         `Sync records <https://api-docs.cognite.com/20230101/tag/Records/operation/syncRecords>`_ (cursor-based read).
         """
         return run_sync(self.__async_client.streams.records.sync(stream_external_id=stream_external_id, body=body))
+
+    def ingest_items(self, stream_external_id: str, items: Sequence[Mapping[str, Any]]) -> RecordsIngestResponse:
+        """
+        Ingest records using the ``items`` array shape (1-1000 records per request).
+
+        Each element must match the API ``recordItems`` object (``space``, ``externalId``, ``sources``, ...).
+        This is a thin wrapper around :meth:`ingest` that builds ``{"items": [...]}``.
+        """
+        return run_sync(
+            self.__async_client.streams.records.ingest_items(stream_external_id=stream_external_id, items=items)
+        )
+
+    def upsert_items(self, stream_external_id: str, items: Sequence[Mapping[str, Any]]) -> RecordsIngestResponse:
+        """
+        Upsert records using the ``items`` array (mutable streams). Same shape as :meth:`ingest_items`.
+        """
+        return run_sync(
+            self.__async_client.streams.records.upsert_items(stream_external_id=stream_external_id, items=items)
+        )
+
+    def delete_items(self, stream_external_id: str, items: Sequence[Mapping[str, Any]]) -> RecordsDeleteResponse:
+        """
+        Delete records by identifier (``space`` + ``externalId`` per item). Wrapper for :meth:`delete`.
+        """
+        return run_sync(
+            self.__async_client.streams.records.delete_items(stream_external_id=stream_external_id, items=items)
+        )
