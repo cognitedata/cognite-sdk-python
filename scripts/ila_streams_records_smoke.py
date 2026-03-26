@@ -1,23 +1,5 @@
 #!/usr/bin/env python3
-"""Verify ILA Streams + Records against a live CDF project (manual / local only).
-
-Configure credentials the same way as integration tests (see ``CONTRIBUTING.md``): ``.env`` with
-``LOGIN_FLOW``, ``COGNITE_PROJECT``, ``COGNITE_BASE_URL``, ``COGNITE_CLIENT_NAME``, and the auth
-fields for your chosen flow.
-
-**Always lists streams** (read). Optional steps use env vars:
-
-* ``ILA_STREAM_EXTERNAL_ID`` — target stream for record calls
-* ``ILA_RECORD_ITEM_JSON`` — single JSON object for one ingest row (``space``, ``externalId``, ``sources``, …)
-
-Examples::
-
-    poetry run python scripts/ila_streams_records_smoke.py
-    ILA_STREAM_EXTERNAL_ID=my-stream ILA_RECORD_ITEM_JSON='{"space":"...","externalId":"x","sources":[]}' \\
-        poetry run python scripts/ila_streams_records_smoke.py --ingest-one
-
-This script is not run in CI.
-"""
+"""Local smoke test: list ILA streams and optionally ingest one record (not run in CI)."""
 
 from __future__ import annotations
 
@@ -74,7 +56,24 @@ def _make_client() -> CogniteClient:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    epilog = """\
+Environment: same as integration tests (see CONTRIBUTING.md).
+  LOGIN_FLOW, COGNITE_PROJECT, COGNITE_BASE_URL, COGNITE_CLIENT_NAME, plus auth fields.
+
+Optional for --ingest-one:
+  ILA_STREAM_EXTERNAL_ID   - stream external id
+  ILA_RECORD_ITEM_JSON       - one JSON object: space, externalId, sources, ...
+
+Examples:
+  poetry run python scripts/ila_streams_records_smoke.py
+  ILA_STREAM_EXTERNAL_ID=my-stream ILA_RECORD_ITEM_JSON='{"space":"sp","externalId":"r1","sources":[]}' \\
+    poetry run python scripts/ila_streams_records_smoke.py --ingest-one
+"""
+    parser = argparse.ArgumentParser(
+        description="Verify ILA Streams + Records against a live CDF project.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=epilog,
+    )
     parser.add_argument(
         "--ingest-one",
         action="store_true",
