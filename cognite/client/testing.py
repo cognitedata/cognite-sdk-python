@@ -314,7 +314,8 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         flip_spec_set_on(self.simulators, sim_models, sim_routines)
 
         streams_records = create_autospec(StreamsRecordsAPI, instance=True, spec_set=True)
-        self.streams = create_autospec(StreamsAPI, instance=True, records=streams_records, spec_set=True)
+        self.streams = create_autospec(StreamsAPI, instance=True, spec_set=True)
+        object.__setattr__(self.streams, "records", streams_records)
 
         sequences_data = create_autospec(SequencesDataAPI, instance=True, spec_set=True)
         self.sequences = create_autospec(SequencesAPI, instance=True, data=sequences_data)
@@ -516,7 +517,8 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         flip_spec_set_on(self.simulators, sim_models)
 
         sync_streams_records = create_autospec(SyncStreamsRecordsAPI, instance=True, spec_set=True)
-        self.streams = create_autospec(SyncStreamsAPI, instance=True, records=sync_streams_records, spec_set=True)
+        self.streams = create_autospec(SyncStreamsAPI, instance=True, spec_set=True)
+        object.__setattr__(self.streams, "records", sync_streams_records)
 
         sequences_data = create_autospec(SyncSequencesDataAPI, instance=True, spec_set=True)
         self.sequences = create_autospec(SyncSequencesAPI, instance=True, data=sequences_data)
