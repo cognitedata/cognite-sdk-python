@@ -39,6 +39,7 @@ from cognite.client.data_classes._base import (
     T_CogniteResource,
     T_WriteClass,
     WriteableCogniteResourceList,
+    _RESOURCE_TO_LIST_CLASS,
 )
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
@@ -446,48 +447,25 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
+            ignore (list[str] | None): List of column keys to skip when converting to a data frame.
             camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect properties if expanded.
             convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
-            expand_properties (bool): Expand the properties into separate rows.
-            remove_property_prefix (bool): Attempt to remove the view ID prefix from row names of expanded properties (in index). Requires data to be from a single view and that all property names do not conflict with base properties (e.g. 'space' or 'type'). In such cases, a warning is issued and the prefix is kept.
+            expand_properties (bool): Expand the properties into separate columns.
+            remove_property_prefix (bool): Attempt to remove the view ID prefix from column names of expanded properties. Requires data to be from a single view and that all property names do not conflict with base properties (e.g. 'space' or 'type'). In such cases, a warning is issued and the prefix is kept.
 
         Returns:
             pd.DataFrame: The dataframe.
         """
-        df = super().to_pandas(
-            expand_metadata=False, ignore=ignore, camel_case=camel_case, convert_timestamps=convert_timestamps
+        list_cls = _RESOURCE_TO_LIST_CLASS[type(self)]
+        df = list_cls([self]).to_pandas(
+            camel_case=camel_case,
+            convert_timestamps=convert_timestamps,
+            expand_properties=expand_properties,
+            remove_property_prefix=remove_property_prefix,
         )
-        if not expand_properties or "properties" not in df.index:
-            return df
-
-        pd = local_import("pandas")
-        col = df.squeeze()
-        prop_df = pd.json_normalize(col.pop("properties"), max_level=2)
-        if remove_property_prefix and not prop_df.empty:
-            view_id, *extra = self.properties.keys()
-            # We only do/allow this if we have a single source:
-            if not extra:
-                prefix = "{}.{}/{}.".format(*view_id.as_tuple())
-                prop_df.columns = prop_df.columns.str.removeprefix(prefix)
-
-                if isinstance(self, TypedInstance):
-                    attr_name_mapping = self._get_descriptor_property_name_mapping()
-                    prop_df = prop_df.rename(columns=attr_name_mapping)
-
-                if any(overlapping := col.index.intersection(prop_df.columns)):
-                    warnings.warn(
-                        "One or more expanded property names overlapped with base properties. "
-                        f"These rows (index) will not have their view ID prefix removed: {sorted(overlapping)}",
-                        RuntimeWarning,
-                    )
-                    prop_df = prop_df.rename(columns={col: f"{prefix}{col}" for col in overlapping})
-            else:
-                warnings.warn(
-                    "Can't remove view ID prefix from expanded property rows as source was not unique",
-                    RuntimeWarning,
-                )
-        return pd.concat((col, prop_df.T.squeeze(axis=1))).to_frame(name="value")
+        if ignore:
+            df = df.drop(columns=[c for c in ignore if c in df.columns])
+        return df
 
     @abstractmethod
     def as_apply(self) -> InstanceApply:

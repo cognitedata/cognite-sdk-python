@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from cognite.client._api_client import APIClient
+from cognite.client._api.iam.groups import _GroupListAdapter
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
@@ -13,7 +14,23 @@ from cognite.client.data_classes._base import (
     ExternalIDTransformerMixin,
     IdTransformerMixin,
     InternalIdTransformerMixin,
+    WriteableCogniteResourceList,
+    WriteableCogniteResourceListWithClientRef,
+    _RESOURCE_TO_LIST_CLASS,
 )
+from cognite.client.data_classes.annotation_types.primitives import VisionResource
+from cognite.client.data_classes.contextualization import DiagramConvertItem, DiagramDetectItem
+from cognite.client.data_classes.data_modeling.instances import (
+    DataModelingInstancesList,
+    EdgeListWithCursor,
+    Instance,
+    NodeListWithCursor,
+    TypeInformation,
+)
+from cognite.client.data_classes.datapoints import Datapoint
+from cognite.client.data_classes.datapoints_subscriptions import SubscriptionDatapoints
+from cognite.client.data_classes.geospatial import FeatureListCore
+from cognite.client.data_classes.raw import RowCore, RowListCore
 from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
 from cognite.client.data_classes.principals import PrincipalList
 from cognite.client.utils._url import NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN
@@ -122,6 +139,83 @@ def test_POST_endpoint_idempotency_vs_retries(api: str, apis_matching_non_idempo
             "You'll need to either remove it from the whitelist or from "
             "NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN."
         )
+
+
+@pytest.fixture(scope="session")
+def list_classes_without_resource() -> set[type]:
+    return {
+        # Abstract intermediates — _RESOURCE is defined by their concrete subclasses instead:
+        CogniteResourceListWithClientRef,
+        WriteableCogniteResourceList,
+        WriteableCogniteResourceListWithClientRef,
+        DataModelingInstancesList,
+        FeatureListCore,
+        RowListCore,
+        # Cursor-bearing wrappers that inherit _RESOURCE from their parent:
+        NodeListWithCursor,
+        EdgeListWithCursor,
+        # Internal adapter used only within the IAM groups API client:
+        _GroupListAdapter,
+    }
+
+
+@pytest.mark.parametrize("list_cls", all_subclasses(CogniteResourceList))
+def test_all_list_classes_define_resource(list_cls: type, list_classes_without_resource: set[type]) -> None:
+    # We need to check __dict__ (not hasattr) to avoid picking up _RESOURCE via MRO inheritance:
+    if "_RESOURCE" not in list_cls.__dict__:
+        assert list_cls in list_classes_without_resource, (
+            f"{list_cls.__name__} does not define _RESOURCE — add it, "
+            f"or add it to list_classes_without_resource with a comment explaining why"
+        )
+        return
+
+    resource_cls = list_cls._RESOURCE
+    assert resource_cls in _RESOURCE_TO_LIST_CLASS, (
+        f"{list_cls.__name__}._RESOURCE = {resource_cls.__name__} is not registered in _RESOURCE_TO_LIST_CLASS"
+    )
+    assert _RESOURCE_TO_LIST_CLASS[resource_cls] is list_cls, (
+        f"{list_cls.__name__}._RESOURCE = {resource_cls.__name__}, "
+        f"but _RESOURCE_TO_LIST_CLASS[{resource_cls.__name__}] = {_RESOURCE_TO_LIST_CLASS[resource_cls].__name__}"
+    )
+
+
+def test_standalone_to_pandas_allowlist() -> None:
+    # Resource classes that define their own to_pandas without a registered list class to delegate to.
+    # These are intentional exceptions — domain-specific data shapes where the standard
+    # "delegate to list type" pattern doesn't apply. Adding a new class here requires justification.
+    expected_standalone = {
+        Datapoint,           # Time series datapoint — tabular layout, not a standard resource
+        DiagramConvertItem,  # Embedded inside DiagramConvertResults, no standalone list type
+        DiagramDetectItem,   # Embedded inside DiagramDetectResults, no standalone list type
+        Instance,            # Abstract base; delegates at runtime via _RESOURCE_TO_LIST_CLASS[type(self)]
+        RowCore,             # Raw table row — its to_pandas pivots columns, not a standard layout
+        SubscriptionDatapoints,  # Datapoint subscription batch item, no standalone list type
+        TypeInformation,     # DM type metadata embedded in query results, not a standard resource
+        VisionResource,      # Abstract base for annotation geometry types (Point, Polygon, etc.)
+    }
+    import cognite.client.utils._auxiliary as aux
+
+    actual_standalone = {
+        cls
+        for cls in aux.all_subclasses(CogniteResource)
+        if cls.__module__.startswith("cognite.client")
+        and "to_pandas" in cls.__dict__
+        and cls not in _RESOURCE_TO_LIST_CLASS
+    }
+    unexpected = actual_standalone - expected_standalone
+    assert not unexpected, (
+        f"New resource class(es) with a standalone to_pandas found: "
+        f"{sorted(c.__name__ for c in unexpected)}. "
+        f"Either add a list class and register it, or add to the allowlist above with a comment."
+    )
+
+
+@pytest.mark.parametrize("resource_cls,list_cls", list(_RESOURCE_TO_LIST_CLASS.items()))
+def test_registry_entries_are_consistent(resource_cls: type, list_cls: type) -> None:
+    assert list_cls._RESOURCE is resource_cls, (
+        f"_RESOURCE_TO_LIST_CLASS maps {resource_cls.__name__} → {list_cls.__name__}, "
+        f"but {list_cls.__name__}._RESOURCE = {list_cls._RESOURCE}"
+    )
 
 
 def test_constants_are_importable() -> None:

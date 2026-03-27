@@ -21,6 +21,7 @@ Changes are grouped as follows:
 - The SDK now ships with a new mock for the async client, namely `AsyncCogniteClientMock`. Both it and the previous `CogniteClientMock` are greatly improved and provide better type safety, checking of call signatures and spec_set=True is now enforced for all APIs (even the mocked client itself), through the use of `create_autospec` and bottom-up construction of nested APIs.
 - With the move to an async client, concurrency now works in Pyodide e.g. Jupyter-Lite in the browser. This also means that user interfaces like Streamlit won't freeze while resources from CDF are being fetched!
 - Good to know: File upload speeds are now significantly faster on Windows after `requests` are gone!
+- Classes from the SDK now has a new public load method that short-circuits on "optional" input, e.g. `NodeId.load_if(data.get("instance_id")) -> NodeId | None`.
 
 ### Removed
 - The generic `aggregate` method on classic CDF APIs has been removed (Assets, Events, Sequences and Time Series). Use one of the more specific `aggregate_count`, `aggregate_unique_values`, `aggregate_cardinality_values`, `aggregate_cardinality_properties`, or `aggregate_unique_properties` instead.
@@ -89,6 +90,7 @@ Changes are grouped as follows:
 - When using the Datapoints API to request datapoints, passing dictionaries with individual settings is no longer supported. Pass raw identifiers (`str`, `int`, `NodeId`) or `DatapointsQuery`.
 - When using the Datapoints API to ingest datapoints, empty containers no longer raise `ValueError`, but short-circuit.
 - Passing `column_names` to the Datapoints API method `retrieve_dataframe` or to `to_pandas` on any datapoints-container-like instance is no longer supported. The resolving is now dynamic with the precedence order: instance ID, then external ID and lastly (internal) ID.
+- All datetime columns now use millisecond precision (previosuly nanoseconds for pandas v2 users, variable for v3). This change comes after pandas v3 started inferring based on input leading to arbitrary precision (sec/ms/µs/ns).
 - The `Datapoints` class was previously (mis)used for several different API endpoints with different response structures. Dedicated classes have been introduced:
   - **retrieve_latest**: Now returns `LatestDatapoint` or `LatestDatapointList` instead of `Datapoints` or `DatapointsList`. `LatestDatapoint` has scalar values: `timestamp` is `datetime` (not `list[int]`), `value` is `float | str` (not a list). Use `has_datapoint` property to check if a datapoint was returned (or just `if dp: ...`).
     ```python

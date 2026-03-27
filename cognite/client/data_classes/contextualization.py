@@ -35,6 +35,7 @@ from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteModelFailedError
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_snake_case, copy_doc_from_async, to_camel_case
 
 if TYPE_CHECKING:
@@ -488,9 +489,10 @@ class DiagramConvertItem(CogniteResource):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        df = super().to_pandas(camel_case=camel_case)
-        df.loc["results"] = f"{len(df['results'])} pages"
-        return df
+        pd = local_import("pandas")
+        dumped = self.dump(camel_case=camel_case)
+        dumped["results"] = f"{len(dumped['results'])} pages"
+        return pd.Series(dumped).to_frame(name="value")
 
 
 @final
@@ -612,9 +614,10 @@ class DiagramDetectItem(CogniteResource):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        df = super().to_pandas(camel_case=camel_case)
-        df.loc["annotations"] = f"{len(self.annotations or [])} annotations"
-        return df
+        pd = local_import("pandas")
+        dumped = self.dump(camel_case=camel_case)
+        dumped["annotations"] = f"{len(self.annotations or [])} annotations"
+        return pd.Series(dumped).to_frame(name="value")
 
 
 @final
