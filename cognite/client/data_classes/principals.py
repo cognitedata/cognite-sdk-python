@@ -2,18 +2,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import Any, ClassVar, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CogniteResource,
     CogniteResourceList,
 )
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 
 class Principal(CogniteResource, ABC):
@@ -26,10 +22,10 @@ class Principal(CogniteResource, ABC):
     @abstractmethod
     def _load_principal(cls, resource: dict[str, Any]) -> Self:
         """Load a principal from a resource dictionary."""
-        raise NotImplementedError("This method should be implemented in subclasses.")
+        raise NotImplementedError
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -101,7 +97,7 @@ class UserPrincipal(Principal):
 
 
 @dataclass
-class ServiceAccountCreator(CogniteObject):
+class ServiceAccountCreator(CogniteResource):
     """The creator of a service account.
 
     Arguments:
@@ -114,7 +110,7 @@ class ServiceAccountCreator(CogniteObject):
     user_id: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(org_id=resource["orgId"], user_id=resource["userId"])
 
 
@@ -214,11 +210,6 @@ class PrincipalList(CogniteResourceList[Principal]):
     def as_ids(self) -> list[str]:
         """Returns a list of principal IDs."""
         return [principal.id for principal in self]
-
-    def _build_id_mappings(self) -> None:
-        # Override as the base implementation assumes that if the first element has an 'external_id' attribute,
-        # then all elements have it. This is not the case for principals.
-        return
 
 
 # Build the mapping AFTER all classes are defined

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -15,7 +17,7 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def one_mapping(cognite_client: CogniteClient) -> Mapping:
+def one_mapping(cognite_client: CogniteClient) -> Iterator[Mapping]:
     my_mapping = MappingWrite(
         external_id=f"myNewMapping-{random_string(10)}",
         mapping=CustomMapping("2 * 3"),

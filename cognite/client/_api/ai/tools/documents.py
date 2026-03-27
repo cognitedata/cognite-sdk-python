@@ -12,7 +12,7 @@ from cognite.client.utils._identifier import IdentifierSequenceWithInstanceId
 class AIDocumentsAPI(APIClient):
     _RESOURCE_PATH = "/ai/tools/documents"
 
-    def summarize(
+    async def summarize(
         self,
         id: int | None = None,
         external_id: str | None = None,
@@ -36,26 +36,27 @@ class AIDocumentsAPI(APIClient):
 
             Summarize a single document using ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.ai.tools.documents.summarize(id=123)
 
             You can also use external ID or instance ID:
 
                 >>> from cognite.client.data_classes.data_modeling import NodeId
-                >>> client.ai.tools.documents.summarize(
-                ...     instance_id=NodeId("my-space", "my-xid")
-                ... )
+                >>> client.ai.tools.documents.summarize(instance_id=NodeId("my-space", "my-xid"))
         """
         ident = IdentifierSequenceWithInstanceId.load(id, external_id, instance_id).as_singleton()
-        res = self._post(self._RESOURCE_PATH + "/summarize", json={"items": ident.as_dicts()})
+        res = await self._post(
+            self._RESOURCE_PATH + "/summarize", json={"items": ident.as_dicts()}, semaphore=self._get_semaphore("write")
+        )
         return Summary._load(res.json()["items"][0])
 
-    def ask_question(
+    async def ask_question(
         self,
         question: str,
         *,
-        id: int | None = None,
+        id: int | Sequence[int] | None = None,
         external_id: str | Sequence[str] | None = None,
         instance_id: NodeId | Sequence[NodeId] | None = None,
         language: AnswerLanguage
@@ -77,13 +78,13 @@ class AIDocumentsAPI(APIClient):
         additional_context: str | None = None,
         ignore_unknown_ids: bool = False,
     ) -> Answer:
-        """`Ask a question about one or more documents using a Large Language Model. <https://api-docs.cognite.com/20230101/tag/Document-AI/operation/documents_summary_ai_tools_documents_summarize_post>`_
+        """`Ask a question about one or more documents using a Large Language Model. <https://api-docs.cognite.com/20230101/tag/Document-AI/operation/documents_summary_api_v1_projects__projectName__ai_tools_documents_summarize_post>`_
 
         Supports up to 100 documents at a time.
 
         Args:
             question (str): The question.
-            id (int | None): The ID(s) of the document(s)
+            id (int | Sequence[int] | None): The ID(s) of the document(s)
             external_id (str | Sequence[str] | None): The external ID(s) of the document(s)
             instance_id (NodeId | Sequence[NodeId] | None): The instance ID(s) of the document(s)
             language (AnswerLanguage | Literal['Chinese', 'Dutch', 'English', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Latvian', 'Norwegian', 'Portuguese', 'Spanish', 'Swedish']): The desired language of the answer, defaults to English.
@@ -97,8 +98,9 @@ class AIDocumentsAPI(APIClient):
 
             Ask a question about a single document with id=123 and get the answer in English (default):
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.ai.tools.documents.ask_question(
                 ...     question="What model pump was used?",
                 ...     id=123,
@@ -136,5 +138,5 @@ class AIDocumentsAPI(APIClient):
                     # Probably an unknown language, but we let the API handle it (future-proofing)
                     body["language"] = language
 
-        response = self._post(self._RESOURCE_PATH + "/ask", json=body)
+        response = await self._post(self._RESOURCE_PATH + "/ask", json=body, semaphore=self._get_semaphore("write"))
         return Answer._load(response.json()["content"])

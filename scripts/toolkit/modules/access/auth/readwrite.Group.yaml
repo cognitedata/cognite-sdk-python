@@ -293,6 +293,12 @@ capabilities:
       - DELETE
       scope:
         all: {}
+  - subscribeSignalsAcl:
+      actions:
+      - WRITE
+      - READ
+      scope:
+        all: {}
   - templateGroupsAcl:
       actions:
       - WRITE

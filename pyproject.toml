@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cognite-sdk"
-version = "7.92.0"
+version = "8.0.5"
 
 description = "Cognite Python SDK"
 readme = "README.md"
@@ -22,33 +22,38 @@ exclude = ["cognite/client/_proto"]
 [tool.ruff.lint]
 # See https://beta.ruff.rs/docs/rules for an overview of ruff rules
 ignore = ["E731", "E501", "W605", "RUF059"]
-select = ["E", "W", "F", "I", "T", "RUF", "TID", "UP"]
-fixable = ["E", "W", "F", "I", "T", "RUF", "TID", "UP"]
+select = ["E", "W", "F", "I", "T", "RUF", "TID", "UP", "TC005"]
+fixable = ["E", "W", "F", "I", "T", "RUF", "TID", "UP", "TC005"]
+# These are used by pydoclint and we don't want 100 warnings:
+external = ["DOC"]
 
 [tool.ruff.lint.per-file-ignores]
 # let scripts use print statements
 "scripts/*" = ["T201"]
 
+[tool.ruff.format]
+# format code examples in docstrings to avoid users scrolling horizontally
+docstring-code-format = true
+docstring-code-line-length = 85
+
 [tool.poetry.dependencies]
 python = "^3.10"
 
-requests = "^2.27"
-requests_oauthlib = "^1"
+httpx = "^0"
 msal = "^1.31"
+authlib = "^1"
 protobuf = ">=4"
 packaging = ">=20"
 pip = ">=20.0.0"  # make optional once poetry doesn't auto-remove it on "simple install"
 typing_extensions = ">= 4"
-# Windows does not have a ANSI database and need tzdata... pyodide also needs it:
-tzdata = { version = ">=2024.1", markers = "platform_system == 'Windows' or platform_system == 'Emscripten'" }
+# Windows does not have a ANSI database and need tzdata...:
+tzdata = { version = ">=2024.1", markers = "platform_system == 'Windows'" }
 numpy = { version = ">=1.25", optional = true }
 sympy = { version = "*", optional = true }
 pandas = { version = ">=2.1", optional = true }
 geopandas = { version = ">=0.14", optional = true }
 shapely = { version = ">=1.7.0", optional = true }
-pyodide-http = { version = "^0.2.1", optional = true }
 PyYAML = { version = "^6.0", optional = true }
-httpx = "^0.28.1"
 
 [tool.poetry.extras]
 pandas = ["pandas"]
@@ -57,18 +62,17 @@ geo = ["geopandas", "shapely"]
 sympy = ["sympy"]
 functions = ["pip"]
 yaml = ["PyYAML"]
-pyodide = ["pyodide-http", "tzdata"]  # keep pyodide related dependencies outside of 'all'
+pyodide = ["tzdata", "anyio"]  # keep pyodide related dependencies outside of 'all'
 all = ["numpy", "pandas", "geopandas", "shapely", "sympy", "pip", "PyYAML"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7"
-pytest-cov = ">=3"
+pytest-cov = ">=3,<7"  # pytest-cov 7+ has issues with coverage measurement
+coverage = ">=7,<7.11"  # 7.11+ has issues with editable installs in parallel test execution
 pytest-rerunfailures = ">=10"
-pytest-asyncio = ">=0.23.5a0"
 pytest-xdist = ">=2"
 twine = ">=4.0.1"
-pre-commit = "^3"
-responses = "^0, <0.25.5"
+pre-commit = ">=3"
 toml = "^0"
 python-dotenv = "^1"
 mypy = "^1"
@@ -86,6 +90,9 @@ types-simplejson = "^3.19.0.20240801"
 types-pytz = "^2025.2.0.20250516"
 tenacity = "^9.1.2"
 ruff = "0.13.2"
+pytest-httpx = ">=0.35"
+types-authlib = "^1.6.2.20250825"
+anyio = "^4.11.0"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = ">=8.1"

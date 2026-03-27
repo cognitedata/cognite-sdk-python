@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+from typing import Any
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
@@ -42,6 +39,7 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
     labels: list[str] | None = None
 
 
+@dataclass
 class AgentUpsert(AgentCore):
     """Representation of an AI agent.
     This is the write format of an agent.
@@ -53,11 +51,11 @@ class AgentUpsert(AgentCore):
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
-        tools (Sequence[AgentToolUpsert] | None): List of tools for the agent.
+        tools (AgentToolUpsertList | Sequence[AgentToolUpsert] | None): List of tools for the agent.
 
     """
 
-    tools: Sequence[AgentToolUpsert] | None = None
+    tools: AgentToolUpsertList | Sequence[AgentToolUpsert] | None = None
 
     def __init__(
         self,
@@ -67,7 +65,7 @@ class AgentUpsert(AgentCore):
         instructions: str | None = None,
         model: str | None = None,
         labels: list[str] | None = None,
-        tools: Sequence[AgentToolUpsert] | None = None,
+        tools: AgentToolUpsertList | Sequence[AgentToolUpsert] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -77,7 +75,11 @@ class AgentUpsert(AgentCore):
             model=model,
             labels=labels,
         )
-        self.tools: AgentToolUpsertList | None = AgentToolUpsertList(tools) if tools is not None else None
+        self.tools = (
+            tools
+            if isinstance(tools, AgentToolUpsertList)
+            else (AgentToolUpsertList(tools) if tools is not None else None)
+        )
         # This stores any unknown properties that are not part of the defined fields.
         # This is useful while the API is evolving and new fields are added.
         self._unknown_properties: dict[str, object] = {}
@@ -95,13 +97,12 @@ class AgentUpsert(AgentCore):
         return self
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentUpsert:
+    def _load(cls, resource: dict[str, Any]) -> AgentUpsert:
         tools = (
-            [AgentTool._load(item, cognite_client).as_write() for item in resource.get("tools", [])]
-            if isinstance(resource.get("tools"), Sequence)
+            [AgentTool._load(item).as_write() for item in resource.get("tools", [])]
+            if isinstance(resource.get("tools"), list)
             else None
         )
-
         instances = cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -116,6 +117,7 @@ class AgentUpsert(AgentCore):
         return instances
 
 
+@dataclass
 class Agent(AgentCore):
     """Representation of an AI agent.
     This is the read format of an agent.
@@ -123,32 +125,27 @@ class Agent(AgentCore):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): The name of the agent, for use in user interfaces.
+        created_time (int): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        last_updated_time (int): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         description (str | None): The human readable description of the agent. Always present in API responses.
         instructions (str | None): Instructions for the agent. Always present in API responses.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
-        tools (Sequence[AgentTool] | None): List of tools for the agent.
-        created_time (int | None): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
-        last_updated_time (int | None): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        tools (AgentToolList | Sequence[AgentTool] | None): List of tools for the agent.
         owner_id (str | None): The ID of the user who owns the agent.
     """
-
-    tools: Sequence[AgentTool] | None = None
-    created_time: int | None = None
-    last_updated_time: int | None = None
-    owner_id: str | None = None
 
     def __init__(
         self,
         external_id: str,
         name: str,
+        created_time: int,
+        last_updated_time: int,
         description: str | None = None,
         instructions: str | None = None,
         model: str | None = None,
         labels: list[str] | None = None,
-        tools: Sequence[AgentTool] | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
+        tools: AgentToolList | Sequence[AgentTool] | None = None,
         owner_id: str | None = None,
     ) -> None:
         super().__init__(
@@ -159,13 +156,9 @@ class Agent(AgentCore):
             model=model,
             labels=labels,
         )
-        # These fields are always present in API responses, but optional when creating.
-        # Force the type to be non-optional for read instances.
-        self.description: str = description  # type: ignore[assignment]
-        self.instructions: str = instructions  # type: ignore[assignment]
-        self.model: str = model  # type: ignore[assignment]
-        self.labels: list[str] = labels  # type: ignore[assignment]
-        self.tools: AgentToolList | None = AgentToolList(tools) if tools is not None else None
+        self.tools = (
+            tools if isinstance(tools, AgentToolList) else (AgentToolList(tools) if tools is not None else None)
+        )
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.owner_id = owner_id
@@ -175,7 +168,7 @@ class Agent(AgentCore):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
-        if self.tools:
+        if self.tools is not None:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
         if self._unknown_properties:
             result.update(self._unknown_properties)
@@ -194,13 +187,8 @@ class Agent(AgentCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Agent:
-        tools = (
-            [AgentTool._load(item) for item in resource.get("tools", [])]
-            if isinstance(resource.get("tools"), Sequence)
-            else None
-        )
-
+    def _load(cls, resource: dict[str, Any]) -> Agent:
+        tools_data = resource.get("tools")
         instance = cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -208,9 +196,9 @@ class Agent(AgentCore):
             instructions=resource.get("instructions"),
             model=resource.get("model"),
             labels=resource.get("labels"),
-            tools=tools,
-            created_time=resource.get("createdTime"),
-            last_updated_time=resource.get("lastUpdatedTime"),
+            tools=[AgentTool._load(item) for item in tools_data] if tools_data else None,
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
             owner_id=resource.get("ownerId"),
         )
         existing = set(instance.dump(camel_case=True).keys())
@@ -230,4 +218,4 @@ class AgentList(
 
     def as_write(self) -> AgentUpsertList:
         """Returns this AgentList as writeableinstance"""
-        return AgentUpsertList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
+        return AgentUpsertList([item.as_write() for item in self.data])

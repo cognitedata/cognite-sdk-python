@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from abc import ABC
 from collections.abc import Sequence
 from enum import auto
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+from typing import Any, Literal, TypeAlias
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
     CogniteListUpdate,
-    CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
     CogniteResource,
@@ -22,25 +22,22 @@ from cognite.client.data_classes._base import (
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
+    WriteableCogniteResourceWithClientRef,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils.useful_types import SequenceNotStr
 
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
-
-class EndTimeFilter(CogniteObject):
+class EndTimeFilter(CogniteResource):
     """Either range between two timestamps or isNull filter condition.
 
     Args:
         max (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         min (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         is_null (bool | None): Set to true if you want to search for data with field value not set, false to search for cases where some value is present.
-        **_ (Any): No description.
     """
 
-    def __init__(self, max: int | None = None, min: int | None = None, is_null: bool | None = None, **_: Any) -> None:
+    def __init__(self, max: int | None = None, min: int | None = None, is_null: bool | None = None) -> None:
         if is_null is not None and (max is not None or min is not None):
             raise ValueError("is_null cannot be used with min or max values")
 
@@ -48,9 +45,102 @@ class EndTimeFilter(CogniteObject):
         self.min = min
         self.is_null = is_null
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            max=resource.get("max"),
+            min=resource.get("min"),
+            is_null=resource.get("isNull"),
+        )
 
-class EventCore(WriteableCogniteResource["EventWrite"], ABC):
+
+class Event(WriteableCogniteResourceWithClientRef["EventWrite"]):
     """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
+    This is the read version of the Event class. It is used when retrieving existing events.
+
+    Args:
+        id (int): A server-generated ID for the object.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        data_set_id (int | None): The id of the dataset this event belongs to.
+        start_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        end_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        type (str | None): Type of the event, e.g. 'failure'.
+        subtype (str | None): SubType of the event, e.g. 'electrical'.
+        description (str | None): Textual description of the event.
+        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
+        asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
+        source (str | None): The source of this event.
+    """
+
+    def __init__(
+        self,
+        id: int,
+        last_updated_time: int,
+        created_time: int,
+        external_id: str | None = None,
+        data_set_id: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        description: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        source: str | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.id = id
+        self.last_updated_time = last_updated_time
+        self.created_time = created_time
+        self.data_set_id = data_set_id
+        self.start_time = start_time
+        self.end_time = end_time
+        self.type = type
+        self.subtype = subtype
+        self.description = description
+        self.metadata = metadata
+        self.asset_ids = asset_ids
+        self.source = source
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            id=resource["id"],
+            last_updated_time=resource["lastUpdatedTime"],
+            created_time=resource["createdTime"],
+            external_id=resource.get("externalId"),
+            data_set_id=resource.get("dataSetId"),
+            start_time=resource.get("startTime"),
+            end_time=resource.get("endTime"),
+            type=resource.get("type"),
+            subtype=resource.get("subtype"),
+            description=resource.get("description"),
+            metadata=resource.get("metadata"),
+            asset_ids=resource.get("assetIds"),
+            source=resource.get("source"),
+        )
+
+    def as_write(self) -> EventWrite:
+        """Returns this Event in its write version."""
+        return EventWrite(
+            external_id=self.external_id,
+            data_set_id=self.data_set_id,
+            start_time=self.start_time,
+            end_time=self.end_time,
+            type=self.type,
+            subtype=self.subtype,
+            description=self.description,
+            metadata=self.metadata,
+            asset_ids=self.asset_ids,
+            source=self.source,
+        )
+
+
+class EventWrite(WriteableCogniteResource["EventWrite"]):
+    """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
+    This is the write version of the Event class. It is used when creating new events.
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
@@ -89,129 +179,23 @@ class EventCore(WriteableCogniteResource["EventWrite"], ABC):
         self.asset_ids = asset_ids
         self.source = source
 
-
-class Event(EventCore):
-    """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
-    This is the reading version of the Event class. It is used when retrieving existing events.
-
-    Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        data_set_id (int | None): The id of the dataset this event belongs to.
-        start_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        end_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        type (str | None): Type of the event, e.g. 'failure'.
-        subtype (str | None): SubType of the event, e.g. 'electrical'.
-        description (str | None): Textual description of the event.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
-        asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
-        source (str | None): The source of this event.
-        id (int | None): A server-generated ID for the object.
-        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient | None): The client to associate with this object.
-    """
-
-    def __init__(
-        self,
-        external_id: str | None = None,
-        data_set_id: int | None = None,
-        start_time: int | None = None,
-        end_time: int | None = None,
-        type: str | None = None,
-        subtype: str | None = None,
-        description: str | None = None,
-        metadata: dict[str, str] | None = None,
-        asset_ids: Sequence[int] | None = None,
-        source: str | None = None,
-        id: int | None = None,
-        last_updated_time: int | None = None,
-        created_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
-    ) -> None:
-        super().__init__(
-            external_id=external_id,
-            data_set_id=data_set_id,
-            start_time=start_time,
-            end_time=end_time,
-            type=type,
-            subtype=subtype,
-            description=description,
-            metadata=metadata,
-            asset_ids=asset_ids,
-            source=source,
-        )
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
     def as_write(self) -> EventWrite:
-        """Returns this Event in its writing version."""
-        return EventWrite(
-            external_id=self.external_id,
-            data_set_id=self.data_set_id,
-            start_time=self.start_time,
-            end_time=self.end_time,
-            type=self.type,
-            subtype=self.subtype,
-            description=self.description,
-            metadata=self.metadata,
-            asset_ids=self.asset_ids,
-            source=self.source,
-        )
-
-
-class EventWrite(EventCore):
-    """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
-    This is the writing version of the Event class. It is used when creating new events.
-
-    Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        data_set_id (int | None): The id of the dataset this event belongs to.
-        start_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        end_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        type (str | None): Type of the event, e.g. 'failure'.
-        subtype (str | None): SubType of the event, e.g. 'electrical'.
-        description (str | None): Textual description of the event.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
-        asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
-        source (str | None): The source of this event.
-    """
-
-    def __init__(
-        self,
-        external_id: str | None = None,
-        data_set_id: int | None = None,
-        start_time: int | None = None,
-        end_time: int | None = None,
-        type: str | None = None,
-        subtype: str | None = None,
-        description: str | None = None,
-        metadata: dict[str, str] | None = None,
-        asset_ids: Sequence[int] | None = None,
-        source: str | None = None,
-    ) -> None:
-        super().__init__(
-            external_id=external_id,
-            data_set_id=data_set_id,
-            start_time=start_time,
-            end_time=end_time,
-            type=type,
-            subtype=subtype,
-            description=description,
-            metadata=metadata,
-            asset_ids=asset_ids,
-            source=source,
-        )
-
-    def as_write(self) -> EventWrite:
-        """Returns self."""
         return self
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            external_id=resource.get("externalId"),
+            data_set_id=resource.get("dataSetId"),
+            start_time=resource.get("startTime"),
+            end_time=resource.get("endTime"),
+            type=resource.get("type"),
+            subtype=resource.get("subtype"),
+            description=resource.get("description"),
+            metadata=resource.get("metadata"),
+            asset_ids=resource.get("assetIds"),
+            source=resource.get("source"),
+        )
 
 
 class EventFilter(CogniteFilter):
@@ -385,7 +369,7 @@ class EventList(WriteableCogniteResourceList[EventWrite, Event], IdTransformerMi
     _RESOURCE = Event
 
     def as_write(self) -> EventWriteList:
-        return EventWriteList([event.as_write() for event in self.data], cognite_client=self._get_cognite_client())
+        return EventWriteList([event.as_write() for event in self.data])
 
 
 class EventProperty(EnumProperty):
