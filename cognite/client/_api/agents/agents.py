@@ -334,6 +334,27 @@ class AgentsAPI(APIClient):
                 ...             cursor=response.cursor,
                 ...             actions=[add_numbers_action]
                 ...         )
+
+            Handle tool confirmation for integration tools (Call Function, Run Python code, Call REST API):
+
+                >>> from cognite.client.data_classes.agents import ToolConfirmationCall, ToolConfirmationResult
+                >>> response = client.agents.chat(
+                ...     agent_external_id="my_agent",
+                ...     messages=Message("Run the data quality check function"),
+                ... )
+                >>> for action in response.action_calls:
+                ...     if isinstance(action, ToolConfirmationCall):
+                ...         # Inspect the tool call before deciding
+                ...         print(f"Tool: {action.tool_name}, type: {action.tool_type}")
+                ...         print(f"Arguments: {action.tool_arguments}")
+                ...         response = client.agents.chat(
+                ...             agent_external_id="my_agent",
+                ...             messages=ToolConfirmationResult(
+                ...                 action_id=action.action_id,
+                ...                 status="ALLOW",  # or "DENY" to cancel
+                ...             ),
+                ...             cursor=response.cursor,
+                ...         )
         """
         self._warnings.warn()
 
