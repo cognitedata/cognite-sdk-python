@@ -1,9 +1,9 @@
 name: release-please
 
+# Disabled: master is dormant pending v8 merge. Re-enable when v8 lands on master.
+# Previously triggered on push to master; moved to pysdk-release-v7 for ongoing v7 maintenance.
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
 
 jobs:
   release:
