@@ -394,3 +394,61 @@ class DiagramsAPI(APIClient):
             items=self._process_detect_job(detect_job),
             job_cls=DiagramConvertResults,
         )
+
+    def download_converted_file(
+        self,
+        job_id: int,
+        *,
+        file_id: int | None = None,
+        file_external_id: str | None = None,
+        page: int = 1,
+        mime_type: Literal["image/png", "image/svg+xml"] = "image/png",
+    ) -> bytes:
+        """Download a converted diagram file (PNG or SVG) for a specific page of a completed convert job.
+
+        The converted file is the output of a diagram convert job, which produces interactive
+        diagram images with detected annotations highlighted. Use this method to retrieve
+        the binary content of a specific page.
+
+        Args:
+            job_id (int): The ID of the completed diagram convert job.
+            file_id (int | None): The CDF file ID. Either file_id or file_external_id must be provided.
+            file_external_id (str | None): The CDF file external ID. Either file_id or file_external_id must be provided.
+            page (int): The page number to download (1-indexed). Defaults to 1.
+            mime_type (Literal["image/png", "image/svg+xml"]): The desired output format. Defaults to "image/png".
+
+        Returns:
+            bytes: The binary content of the converted diagram (PNG or SVG).
+
+        Raises:
+            ValueError: If neither file_id nor file_external_id is provided, or if both are provided.
+
+        Examples:
+            Download PNG of page 1 from a convert job:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> png_bytes = client.diagrams.download_converted_file(
+                ...     job_id=123, file_id=456, page=1
+                ... )
+
+            Download SVG using file external ID:
+
+                >>> svg_bytes = client.diagrams.download_converted_file(
+                ...     job_id=123, file_external_id="my-diagram.pdf", mime_type="image/svg+xml"
+                ... )
+        """
+        if (file_id is None) == (file_external_id is None):
+            raise ValueError("Exactly one of file_id or file_external_id must be provided")
+        params: dict[str, Any] = {"page": page}
+        if file_id is not None:
+            params["file_id"] = file_id
+        else:
+            params["file_external_id"] = file_external_id
+        res = self._do_request(
+            "GET",
+            f"{self._RESOURCE_PATH}/convert/{job_id}/download",
+            params={to_camel_case(k): v for k, v in params.items()},
+            accept=mime_type,
+        )
+        return res.content
