@@ -106,7 +106,7 @@ html_sidebars = {
 }
 
 html_favicon = "img/cognite_logo_black.png"
-html_logo = "img/cognite_logo_white.png"
+html_logo = "img/cognite_logo_white.svg"
 
 # -- Options for HTMLHelp output ------------------------------------------
 
