@@ -4,6 +4,7 @@ import pytest
 
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate
 from cognite.client.data_classes import AggregateResultItem, AssetFilter, Label, LabelFilter, TimestampRange
+from cognite.client.data_classes._base import UnknownCogniteObject
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 from tests.utils import jsgz_load
@@ -254,6 +255,11 @@ class TestAssets:
         assert {"name": "test", "labels": [{"externalId": "PUMP"}, {"externalId": "VERIFIED"}]} == jsgz_load(
             mock_assets_response.calls[0].request.body
         )["items"][0]
+
+    def test_create_with_invalid_geoLocation(self, cognite_client):
+        invalid_geo_location = {"foo": "bar"}
+        asset = Asset(name="bla", geo_location=invalid_geo_location)
+        assert isinstance(asset.geo_location, UnknownCogniteObject)
 
     def test_search(self, cognite_client, mock_assets_response):
         res = cognite_client.assets.search(filter=AssetFilter(name="1"))
