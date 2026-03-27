@@ -95,7 +95,7 @@ types-authlib = "^1.6.2.20250825"
 anyio = "^4.11.0"
 
 [tool.poetry.group.docs.dependencies]
-sphinx = ">=7.2"
+sphinx = ">=8.1"
 sphinx-rtd-theme = ">=1"
 
 [build-system]
