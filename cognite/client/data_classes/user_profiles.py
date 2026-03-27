@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, cast
+from collections.abc import Iterable
+from functools import cached_property
+from typing import Any
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import to_camel_case
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 
 class UserProfile(CogniteResource):
@@ -24,7 +22,6 @@ class UserProfile(CogniteResource):
         email (str | None): The user's email address (if any). The email address is is returned directly from the identity provider and not guaranteed to be verified. Note that the email is mutable and can be updated in the identity provider. It should not be used to uniquely identify as a user. Use the user_identifier property instead.
         display_name (str | None): The display name for the user.
         job_title (str | None): The user's job title.
-        cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
@@ -36,7 +33,6 @@ class UserProfile(CogniteResource):
         email: str | None = None,
         display_name: str | None = None,
         job_title: str | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.user_identifier = user_identifier
         self.last_updated_time = last_updated_time
@@ -45,10 +41,9 @@ class UserProfile(CogniteResource):
         self.email = email
         self.display_name = display_name
         self.job_title = job_title
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UserProfile:
+    def _load(cls, resource: dict[str, Any]) -> UserProfile:
         to_load = {
             "user_identifier": resource["userIdentifier"],
             "last_updated_time": resource["lastUpdatedTime"],
@@ -56,17 +51,15 @@ class UserProfile(CogniteResource):
         for param in ["given_name", "surname", "email", "display_name", "job_title"]:
             if (value := resource.get(to_camel_case(param))) is not None:
                 to_load[param] = value
-        return cls(**to_load, cognite_client=cognite_client)
+        return cls(**to_load)
 
 
 class UserProfileList(CogniteResourceList[UserProfile]):
     _RESOURCE = UserProfile
 
-    def __init__(self, resources: Sequence[UserProfile], cognite_client: CogniteClient | None = None) -> None:
-        super().__init__(resources, cognite_client)
-
-        del self._id_to_item, self._external_id_to_item
-        self._user_identifier_to_item = {item.user_identifier: item for item in self.data or []}
+    @cached_property
+    def _user_identifier_to_item(self) -> dict[str, UserProfile]:
+        return {item.user_identifier: item for item in self.data}
 
     def get(self, user_identifier: str) -> UserProfile | None:  # type: ignore [override]
         """Get an item from this list by user_identifier.
@@ -77,11 +70,14 @@ class UserProfileList(CogniteResourceList[UserProfile]):
         """
         return self._user_identifier_to_item.get(user_identifier)
 
+    def extend(self, other: Iterable[Any]) -> None:
+        raise NotImplementedError("UserProfileList does not support extend")
+
 
 class UserProfilesConfiguration(CogniteResource):
     def __init__(self, enabled: bool) -> None:
         self.enabled = enabled
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(enabled=resource["enabled"])

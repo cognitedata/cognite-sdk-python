@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
-from typing import Any, cast, overload
+import asyncio
+from collections.abc import AsyncIterator, Sequence
+from typing import Any, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import raw
-from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks, unpack_items_in_payload
-from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._auxiliary import split_into_chunks, unpack_items_in_payload
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -15,15 +17,22 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
 
-    @overload
-    def __call__(self, db_name: str, chunk_size: None = None, limit: int | None = None) -> Iterator[raw.Table]: ...
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        return global_config.concurrency_settings.raw._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
 
     @overload
-    def __call__(self, db_name: str, chunk_size: int, limit: int | None = None) -> Iterator[raw.TableList]: ...
+    def __call__(self, db_name: str, chunk_size: None = None) -> AsyncIterator[raw.Table]: ...
 
-    def __call__(
+    @overload
+    def __call__(self, db_name: str, chunk_size: int) -> AsyncIterator[raw.TableList]: ...
+
+    async def __call__(
         self, db_name: str, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[raw.Table] | Iterator[raw.TableList]:
+    ) -> AsyncIterator[raw.Table | raw.TableList]:
         """Iterate over tables
 
         Fetches tables as they are iterated over, so you keep a limited number of tables in memory.
@@ -33,8 +42,8 @@ class RawTablesAPI(APIClient):
             chunk_size (int | None): Number of tables to return in each chunk. Defaults to yielding one table a time.
             limit (int | None): Maximum number of tables to return. Defaults to return all items.
 
-        Returns:
-            Iterator[raw.Table] | Iterator[raw.TableList]: No description.
+        Yields:
+            raw.Table | raw.TableList: The tables in the database.
         """
         table_iterator = self._list_generator(
             list_cls=raw.TableList,
@@ -44,15 +53,16 @@ class RawTablesAPI(APIClient):
             method="GET",
             limit=limit,
         )
-        return self._set_db_name_on_tables_generator(table_iterator, db_name)
+        async for item in self._set_db_name_on_tables_generator(table_iterator, db_name):
+            yield item
 
     @overload
-    def create(self, db_name: str, name: str) -> raw.Table: ...
+    async def create(self, db_name: str, name: str) -> raw.Table: ...
 
     @overload
-    def create(self, db_name: str, name: list[str]) -> raw.TableList: ...
+    async def create(self, db_name: str, name: list[str]) -> raw.TableList: ...
 
-    def create(self, db_name: str, name: str | list[str]) -> raw.Table | raw.TableList:
+    async def create(self, db_name: str, name: str | list[str]) -> raw.Table | raw.TableList:
         """`Create one or more tables. <https://api-docs.cognite.com/20230101/tag/Raw/operation/createTables>`_
 
         Args:
@@ -66,8 +76,9 @@ class RawTablesAPI(APIClient):
 
             Create a new table in a database:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.raw.tables.create("db1", "table1")
         """
         assert_type(name, "name", [str, Sequence])
@@ -75,15 +86,16 @@ class RawTablesAPI(APIClient):
             items: dict[str, Any] | list[dict[str, Any]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
-        tb = self._create_multiple(
+        tb = await self._create_multiple(
             list_cls=raw.TableList,
             resource_cls=raw.Table,
+            input_resource_cls=raw.TableWrite,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             items=items,
         )
         return self._set_db_name_on_tables(tb, db_name)
 
-    def delete(self, db_name: str, name: str | SequenceNotStr[str]) -> None:
+    async def delete(self, db_name: str, name: str | SequenceNotStr[str]) -> None:
         """`Delete one or more tables. <https://api-docs.cognite.com/20230101/tag/Raw/operation/deleteTables>`_
 
         Args:
@@ -94,26 +106,33 @@ class RawTablesAPI(APIClient):
 
             Delete a list of tables:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.raw.tables.delete("db1", ["table1", "table2"])
         """
         assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
             name = [name]
-        items = [{"name": n} for n in name]
-        chunks = split_into_chunks(items, self._DELETE_LIMIT)
+
+        url_path = interpolate_and_url_encode(self._RESOURCE_PATH, db_name) + "/delete"
+        semaphore = self._get_semaphore("delete")
         tasks = [
-            {
-                "url_path": interpolate_and_url_encode(self._RESOURCE_PATH, db_name) + "/delete",
-                "json": {"items": chunk},
-            }
-            for chunk in chunks
+            AsyncSDKTask(
+                self._post, url_path=url_path, json={"items": [{"name": n} for n in chunk]}, semaphore=semaphore
+            )
+            for chunk in split_into_chunks(name, self._DELETE_LIMIT)
         ]
-        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["name"]
         )
+
+    @overload
+    def _set_db_name_on_tables(self, tb: raw.Table, db_name: str) -> raw.Table: ...
+
+    @overload
+    def _set_db_name_on_tables(self, tb: raw.TableList, db_name: str) -> raw.TableList: ...
 
     def _set_db_name_on_tables(self, tb: raw.Table | raw.TableList, db_name: str) -> raw.Table | raw.TableList:
         if isinstance(tb, raw.Table):
@@ -125,13 +144,13 @@ class RawTablesAPI(APIClient):
             return tb
         raise TypeError("tb must be raw.Table or raw.TableList")
 
-    def _set_db_name_on_tables_generator(
-        self, table_iterator: Iterator[raw.Table] | Iterator[raw.TableList], db_name: str
-    ) -> Iterator[raw.Table] | Iterator[raw.TableList]:
-        for tbl in table_iterator:
+    async def _set_db_name_on_tables_generator(
+        self, table_iterator: AsyncIterator[raw.Table | raw.TableList], db_name: str
+    ) -> AsyncIterator[raw.Table | raw.TableList]:
+        async for tbl in table_iterator:
             yield self._set_db_name_on_tables(tbl, db_name)
 
-    def list(self, db_name: str, limit: int | None = DEFAULT_LIMIT_READ) -> raw.TableList:
+    async def list(self, db_name: str, limit: int | None = DEFAULT_LIMIT_READ) -> raw.TableList:
         """`List tables <https://api-docs.cognite.com/20230101/tag/Raw/operation/getTables>`_
 
         Args:
@@ -145,25 +164,26 @@ class RawTablesAPI(APIClient):
 
             List the first 5 tables:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> table_list = client.raw.tables.list("db1", limit=5)
 
-            Iterate over tables:
+            Iterate over tables, one-by-one:
 
                 >>> for table in client.raw.tables(db_name="db1"):
-                ...     table # do something with the table
+                ...     table  # do something with the table
 
             Iterate over chunks of tables to reduce memory load:
 
-                >>> for table_list in client.raw.tables(db_name="db1", chunk_size=2500):
-                ...     table_list # do something with the tables
+                >>> for table_list in client.raw.tables(db_name="db1", chunk_size=25):
+                ...     table_list  # do something with the tables
         """
-        tb = self._list(
+        tb = await self._list(
             list_cls=raw.TableList,
             resource_cls=raw.Table,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             method="GET",
             limit=limit,
         )
-        return cast(raw.TableList, self._set_db_name_on_tables(tb, db_name))
+        return self._set_db_name_on_tables(tb, db_name)

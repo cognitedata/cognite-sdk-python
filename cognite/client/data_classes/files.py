@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC
 from collections.abc import Sequence
+from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, BinaryIO, Literal, TextIO, TypeVar, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, Literal, TypeVar
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -17,6 +21,7 @@ from cognite.client.data_classes._base import (
     ExternalIDTransformerMixin,
     IdTransformerMixin,
     PropertySpec,
+    UnknownCogniteResource,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -24,10 +29,12 @@ from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 from cognite.client.exceptions import CogniteFileUploadError
+from cognite.client.utils._async_helpers import run_sync
+from cognite.client.utils._text import copy_doc_from_async
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
 
 
 class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
@@ -35,8 +42,7 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        instance_id (NodeId | None): The instance ID for the file. (Only applicable for files created in DMS)
-        name (str | None): Name of the file.
+        name (str): Name of the file.
         source (str | None): The source of the file.
         mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -52,28 +58,26 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
 
     def __init__(
         self,
-        external_id: str | None = None,
-        instance_id: NodeId | None = None,
-        name: str | None = None,
-        source: str | None = None,
-        mime_type: str | None = None,
-        metadata: dict[str, str] | None = None,
-        directory: str | None = None,
-        asset_ids: Sequence[int] | None = None,
-        data_set_id: int | None = None,
-        labels: Sequence[Label] | None = None,
-        geo_location: GeoLocation | None = None,
-        source_created_time: int | None = None,
-        source_modified_time: int | None = None,
-        security_categories: Sequence[int] | None = None,
+        external_id: str | None,
+        name: str,
+        source: str | None,
+        mime_type: str | None,
+        metadata: dict[str, str] | None,
+        directory: str | None,
+        asset_ids: Sequence[int] | None,
+        data_set_id: int | None,
+        labels: Sequence[Label] | None,
+        geo_location: GeoLocation | None,
+        source_created_time: int | None,
+        source_modified_time: int | None,
+        security_categories: Sequence[int] | None,
     ) -> None:
         if geo_location is not None:
             if isinstance(geo_location, dict):
                 geo_location = GeoLocation.load(geo_location)
-            if not isinstance(geo_location, GeoLocation):
+            if not isinstance(geo_location, GeoLocation | UnknownCogniteResource):
                 raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id
-        self.instance_id = instance_id
         self.name = name
         self.directory = directory
         self.source = source
@@ -87,26 +91,12 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
         self.source_modified_time = source_modified_time
         self.security_categories = security_categories
 
-    @classmethod
-    def _load(cls: type[T_FileMetadata], resource: dict, cognite_client: CogniteClient | None = None) -> T_FileMetadata:
-        instance = super()._load(resource, cognite_client)
-        instance.labels = Label._load_list(instance.labels)
-        if isinstance(instance.geo_location, dict):
-            instance.geo_location = GeoLocation._load(instance.geo_location)
-        if isinstance(instance.instance_id, dict):
-            instance.instance_id = NodeId.load(instance.instance_id)
-        return instance
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
         if self.geo_location:
             result["geoLocation" if camel_case else "geo_location"] = self.geo_location.dump(camel_case)
-        if self.instance_id is not None:
-            result["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
-                camel_case=camel_case, include_instance_type=False
-            )
         return result
 
 
@@ -115,12 +105,17 @@ T_FileMetadata = TypeVar("T_FileMetadata", bound=FileMetadataCore)
 
 class FileMetadata(FileMetadataCore):
     """This represents the metadata for a file. It does not contain the actual file itself.
-    This is the reading version of FileMetadata, and it is used when retrieving from CDF.
+    This is the read version of FileMetadata, and it is used when retrieving from CDF.
 
     Args:
+        id (int): A server-generated ID for the object.
+        uploaded (bool): Whether the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name (str): Name of the file.
+        uploaded_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         instance_id (NodeId | None): The Instance ID for the file. (Only applicable for files created in DMS)
-        name (str | None): Name of the file.
         source (str | None): The source of the file.
         mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -132,19 +127,18 @@ class FileMetadata(FileMetadataCore):
         source_created_time (int | None): The timestamp for when the file was originally created in the source system.
         source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
         security_categories (Sequence[int] | None): The security category IDs required to access this file.
-        id (int | None): A server-generated ID for the object.
-        uploaded (bool | None): Whether the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-        uploaded_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
+        id: int,
+        uploaded: bool,
+        created_time: int,
+        last_updated_time: int,
+        name: str,
+        uploaded_time: int | None = None,
         external_id: str | None = None,
         instance_id: NodeId | None = None,
-        name: str | None = None,
         source: str | None = None,
         mime_type: str | None = None,
         metadata: dict[str, str] | None = None,
@@ -156,16 +150,9 @@ class FileMetadata(FileMetadataCore):
         source_created_time: int | None = None,
         source_modified_time: int | None = None,
         security_categories: Sequence[int] | None = None,
-        id: int | None = None,
-        uploaded: bool | None = None,
-        uploaded_time: int | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
-            instance_id=instance_id,
             name=name,
             directory=directory,
             source=source,
@@ -179,26 +166,62 @@ class FileMetadata(FileMetadataCore):
             source_modified_time=source_modified_time,
             security_categories=security_categories,
         )
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
+        self.id = id
+        self.instance_id = instance_id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
         self.uploaded = uploaded
         self.uploaded_time = uploaded_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case)
+        if self.instance_id is not None:
+            result["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
+                camel_case=camel_case, include_instance_type=False
+            )
+        return result
+
+    @classmethod
+    def _load(cls, resource: dict) -> Self:
+        labels = resource.get("labels")
+        return cls(
+            id=resource["id"],
+            uploaded=resource["uploaded"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            uploaded_time=resource.get("uploadedTime"),
+            external_id=resource.get("externalId"),
+            instance_id=NodeId._load_if(resource.get("instanceId")),
+            name=resource["name"],
+            directory=resource.get("directory"),
+            source=resource.get("source"),
+            mime_type=resource.get("mimeType"),
+            metadata=resource.get("metadata"),
+            asset_ids=resource.get("assetIds"),
+            data_set_id=resource.get("dataSetId"),
+            labels=Label._load_list(labels) if labels else None,
+            geo_location=GeoLocation._load_if(resource.get("geoLocation")),
+            source_created_time=resource.get("sourceCreatedTime"),
+            source_modified_time=resource.get("sourceModifiedTime"),
+            security_categories=resource.get("securityCategories"),
+        )
 
     def as_write(self) -> FileMetadataWrite:
-        """Returns this FileMetadata in its writing format."""
-        if self.name is None:
-            raise ValueError("FileMetadata must have a name to be written")
+        """Convert the file to a writeable version.
 
+        Returns:
+            FileMetadataWrite: A writeable version of this file.
+
+        Raises:
+            ValueError: If the file has an instance_id as these must be created via the Data Modeling API.
+        """
+        if self.instance_id is not None:
+            raise ValueError(
+                "File with an `instance_id` cannot be created via the Files API. "
+                "These must be created/updated/deleted via the Data Modeling API."
+            )
         return FileMetadataWrite(
             external_id=self.external_id,
-            instance_id=self.instance_id,
             name=self.name,
             directory=self.directory,
             source=self.source,
@@ -216,12 +239,11 @@ class FileMetadata(FileMetadataCore):
 
 class FileMetadataWrite(FileMetadataCore):
     """This represents the metadata for a file. It does not contain the actual file itself.
-    This is the writing version of FileMetadata, and it is used when inserting or updating files.
+    This is the write version of FileMetadata, and it is used when inserting or updating files.
 
     Args:
         name (str): Name of the file.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        instance_id (NodeId | None): The Instance ID for the file. (Only applicable for files created in DMS)
         source (str | None): The source of the file.
         mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -239,7 +261,6 @@ class FileMetadataWrite(FileMetadataCore):
         self,
         name: str,
         external_id: str | None = None,
-        instance_id: NodeId | None = None,
         source: str | None = None,
         mime_type: str | None = None,
         metadata: dict[str, str] | None = None,
@@ -255,7 +276,6 @@ class FileMetadataWrite(FileMetadataCore):
         super().__init__(
             external_id=external_id,
             name=name,
-            instance_id=instance_id,
             directory=directory,
             source=source,
             mime_type=mime_type,
@@ -270,26 +290,25 @@ class FileMetadataWrite(FileMetadataCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> FileMetadataWrite:
+    def _load(cls, resource: dict) -> FileMetadataWrite:
+        labels = resource.get("labels")
         return cls(
             name=resource["name"],
             external_id=resource.get("externalId"),
-            instance_id=(instance_id := resource.get("instanceId")) and NodeId.load(instance_id),
             directory=resource.get("directory"),
             source=resource.get("source"),
             mime_type=resource.get("mimeType"),
             metadata=resource.get("metadata"),
             asset_ids=resource.get("assetIds"),
             data_set_id=resource.get("dataSetId"),
-            labels=(labels := resource.get("labels")) and Label._load_list(labels),
-            geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
+            labels=Label._load_list(labels) if labels else None,
+            geo_location=GeoLocation._load_if(resource.get("geoLocation")),
             source_created_time=resource.get("sourceCreatedTime"),
             source_modified_time=resource.get("sourceModifiedTime"),
             security_categories=resource.get("securityCategories"),
         )
 
     def as_write(self) -> FileMetadataWrite:
-        """Returns self."""
         return self
 
 
@@ -396,6 +415,8 @@ class FileMetadataUpdate(CogniteUpdate):
 
         super().__init__(id=id, external_id=external_id)
         self.instance_id = instance_id
+        if instance_id is not None:
+            self.warn_on_instance_id_update()
 
     def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
@@ -404,6 +425,16 @@ class FileMetadataUpdate(CogniteUpdate):
                 camel_case=camel_case, include_instance_type=False
             )
         return output
+
+    @staticmethod
+    def warn_on_instance_id_update() -> None:
+        warnings.warn(
+            "It is not recommended to update a file with an instance_id through the Files API. "
+            "Only a limited set of legacy properties can be updated this way, the majority must be updated via "
+            "the Data Modeling API (the same API that was used to create the file in the first place)",
+            UserWarning,
+            stacklevel=3,
+        )
 
     class _PrimitiveFileMetadataUpdate(CognitePrimitiveUpdate):
         def set(self, value: Any) -> FileMetadataUpdate:
@@ -486,7 +517,8 @@ class FileMetadataUpdate(CogniteUpdate):
 
     @classmethod
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
-        if isinstance(item, (FileMetadata, FileMetadataWrite)) and item.instance_id:
+        if isinstance(item, FileMetadata) and item.instance_id:
+            cls.warn_on_instance_id_update()
             return [
                 # If Instance ID is set, the file was created in DMS. Then, it is
                 # limited which properties can be updated. (Only the ones that are not in DMS + security categories)
@@ -497,7 +529,6 @@ class FileMetadataUpdate(CogniteUpdate):
                 PropertySpec("labels", is_list=True),
                 PropertySpec("geo_location"),
             ]
-
         return [
             # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
             PropertySpec("external_id", is_nullable=False),
@@ -524,60 +555,93 @@ class FileMetadataList(WriteableCogniteResourceList[FileMetadataWrite, FileMetad
 
     def as_write(self) -> FileMetadataWriteList:
         """Returns this FileMetadataList in its writing format."""
-        return FileMetadataWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
+        return FileMetadataWriteList([item.as_write() for item in self.data])
 
 
-class FileMultipartUploadSession:
-    """Result of a call to `multipart_upload_session`
+class FileMultipartUploadSession(
+    AbstractContextManager["FileMultipartUploadSession"],
+    AbstractAsyncContextManager["FileMultipartUploadSession"],
+):
+    """
+    Result of a call to `multipart_upload_session`. Use `upload_part_async` or `upload_part` to
+    upload parts, then upon exiting the context manager, the upload will be marked as completed.
+
+    Note:
+        Can be used both as a regular and async context manager. Use
 
     Args:
         file_metadata (FileMetadata): The created file in CDF.
         upload_urls (list[str]): List of upload URLs for the file upload.
         upload_id (str): ID of the multipart upload, needed to complete the upload.
-        cognite_client (CogniteClient): Cognite client to use for completing the upload.
+        cognite_client (AsyncCogniteClient): Cognite client to use for completing the upload.
     """
 
     def __init__(
-        self, file_metadata: FileMetadata, upload_urls: list[str], upload_id: str, cognite_client: CogniteClient
+        self, file_metadata: FileMetadata, upload_urls: list[str], upload_id: str, cognite_client: AsyncCogniteClient
     ) -> None:
         self.file_metadata = file_metadata
         self._upload_urls = upload_urls
         self._upload_id = upload_id
         self._uploaded_urls = [False for _ in upload_urls]
-        self._in_context = False
         self._cognite_client = cognite_client
+        self._upload_is_finalized = False
 
-    def upload_part(self, part_no: int, content: str | bytes | TextIO | BinaryIO) -> None:
+    async def upload_part_async(self, part_no: int, content: str | bytes | BinaryIO) -> None:
         """Upload part of a file.
-        Note that if `content` does not somehow expose its length, this method may not work
-        on Azure. See `requests.utils.super_len`.
+
+        Note:
+            If `content` does not somehow expose its length, this method may not work on Azure or AWS.
 
         Args:
             part_no (int): Which part number this is, must be between 0 and `parts` given to `multipart_upload_session`
-            content (str | bytes | TextIO | BinaryIO): The content to upload.
+            content (str | bytes | BinaryIO): The content to upload.
         """
         if part_no < 0 or part_no > len(self._uploaded_urls):
-            raise ValueError(f"Index out of range: {part_no}, must be between 0 and {len(self._uploaded_urls)}")
+            raise IndexError(f"Index out of range: {part_no}, must be between 0 and {len(self._uploaded_urls)}")
         if self._uploaded_urls[part_no]:
-            raise CogniteFileUploadError(message="Attempted to upload an already uploaded part", code=400)
-        self._cognite_client.files._upload_multipart_part(self._upload_urls[part_no], content)
+            raise RuntimeError("Attempted to upload an already uploaded part")
+
+        await self._cognite_client.files._upload_multipart_part(self._upload_urls[part_no], content)
         self._uploaded_urls[part_no] = True
 
-    def __enter__(self) -> FileMultipartUploadSession:
-        self.in_context = True
+    @copy_doc_from_async(upload_part_async)
+    def upload_part(self, part_no: int, content: str | bytes | BinaryIO) -> None:
+        return run_sync(self.upload_part_async(part_no, content))
+
+    def _check_errors_before_completing(self, exc_type: type[BaseException] | None) -> None:
+        if not all(self._uploaded_urls):
+            raise CogniteFileUploadError(
+                message="Did not upload all parts of file during multipart upload",
+                code=400,
+            )
+
+    async def __aenter__(self) -> Self:
+        if self._upload_is_finalized:
+            raise RuntimeError("Multipart upload has already been finalized")
+        return self
+
+    async def __aexit__(
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
+    ) -> bool | None:
+        if exc_type is not None:
+            return False
+
+        self._check_errors_before_completing(exc_type)
+        await self._cognite_client.files._complete_multipart_upload(self)
+        self._upload_is_finalized = True
+        return None
+
+    def __enter__(self) -> Self:
+        if self._upload_is_finalized:
+            raise RuntimeError("Multipart upload has already been finalized")
         return self
 
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
-    ) -> bool:
-        self.in_context = False
-        # If we failed, do not call complete
+    ) -> None:
         if exc_type is not None:
-            return False
+            return
 
-        if not all(self._uploaded_urls):
-            raise CogniteFileUploadError(message="Did not upload all parts of file during multipart upload", code=400)
-
-        self._cognite_client.files._complete_multipart_upload(self)
-
-        return True
+        self._check_errors_before_completing(exc_type)
+        run_sync(self._cognite_client.files._complete_multipart_upload(self))
+        self._upload_is_finalized = True

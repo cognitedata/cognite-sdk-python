@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import warnings
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
+from typing import Any, Literal, TypeAlias, TypeVar, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
-    CogniteObject,
+    CogniteResource,
     CogniteResourceList,
-    UnknownCogniteObject,
+    UnknownCogniteResource,
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
@@ -25,9 +24,6 @@ from cognite.client.data_classes.data_modeling.data_types import (
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_camel_case, to_snake_case
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 
 class ViewCore(DataModelingSchemaResource["ViewApply"], ABC):
@@ -105,14 +101,14 @@ class ViewApply(ViewCore):
         self.properties = properties
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         properties = (
             {k: ViewPropertyApply.load(v) for k, v in resource["properties"].items()}
             if "properties" in resource
             else None
         )
         implements = [ViewId.load(v) for v in resource["implements"]] if "implements" in resource else None
-        filter = Filter.load(resource["filter"]) if "filter" in resource else None
+        filter = Filter._load_if(resource.get("filter"))
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -200,7 +196,7 @@ class View(ViewCore):
         self.created_time = created_time
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> View:
+    def _load(cls, resource: dict) -> View:
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
@@ -209,7 +205,7 @@ class View(ViewCore):
             name=resource.get("name"),
             last_updated_time=resource["lastUpdatedTime"],
             created_time=resource["createdTime"],
-            filter=Filter.load(resource["filter"]) if "filter" in resource else None,
+            filter=Filter._load_if(resource.get("filter")),
             implements=[ViewId.load(v) for v in resource["implements"]] if "implements" in resource else None,
             writable=resource["writable"],
             used_for=resource["usedFor"],
@@ -308,7 +304,7 @@ class ViewList(WriteableCogniteResourceList[ViewApply, View]):
         Returns:
             ViewApplyList: The view apply list.
         """
-        return ViewApplyList(resources=[v.as_apply() for v in self])
+        return ViewApplyList([v.as_apply() for v in self])
 
     def as_ids(self) -> list[ViewId]:
         """Returns the list of ViewIds
@@ -356,40 +352,30 @@ class ViewFilter(CogniteFilter):
         self.include_global = include_global
 
 
-class ViewProperty(CogniteObject, ABC):
+class ViewProperty(CogniteResource, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> ViewProperty:
         if "connectionType" in resource:
-            return cast(Self, ConnectionDefinition.load(resource))
+            return ConnectionDefinition.load(resource)
         elif "direction" in resource:
-            warnings.warn(
-                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection. "
-                "This will be required in the next major version",
-                DeprecationWarning,
-            )
-            return cast(Self, MultiEdgeConnection.load(resource))
+            raise ValueError("Connection Definition is missing field 'connectionType'")
         else:
-            return cast(Self, MappedProperty.load(resource))
+            return MappedProperty.load(resource)
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
 
-class ViewPropertyApply(CogniteObject, ABC):
+class ViewPropertyApply(CogniteResource, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> ViewPropertyApply:
         if "connectionType" in resource:
-            return cast(Self, ConnectionDefinitionApply.load(resource))
+            return ConnectionDefinitionApply.load(resource)
         elif "direction" in resource:
-            warnings.warn(
-                "Connection Definition is missing field 'connectionType'. Loading default MultiEdgeConnection. "
-                "This will be required in the next major version",
-                DeprecationWarning,
-            )
-            return cast(Self, MultiEdgeConnectionApply.load(resource))
+            raise ValueError("Connection Definition is missing field 'connectionType'")
         else:
-            return cast(Self, MappedPropertyApply.load(resource))
+            return MappedPropertyApply.load(resource)
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -405,13 +391,13 @@ class MappedPropertyApply(ViewPropertyApply):
     source: ViewId | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             container=ContainerId.load(resource["container"]),
             container_property_identifier=resource["containerPropertyIdentifier"],
             name=resource.get("name"),
             description=resource.get("description"),
-            source=ViewId.load(resource["source"]) if "source" in resource else None,
+            source=ViewId._load_if(resource.get("source")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -445,7 +431,7 @@ class MappedProperty(ViewProperty):
     constraint_state: PropertyConstraintState | None = field(default=None, init=False)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource["type"]
         source = type_.get("source", None) or resource.get("source")
 
@@ -497,21 +483,21 @@ class MappedProperty(ViewProperty):
 @dataclass
 class ConnectionDefinition(ViewProperty, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> ConnectionDefinition:
         if "connectionType" not in resource:
             raise ValueError(f"{cls.__name__} must have a connectionType")
         connection_type = to_snake_case(resource["connectionType"])
 
         if connection_type == "single_edge_connection":
-            return cast(Self, SingleEdgeConnection.load(resource))
+            return SingleEdgeConnection.load(resource)
         if connection_type == "multi_edge_connection":
-            return cast(Self, MultiEdgeConnection.load(resource))
+            return MultiEdgeConnection.load(resource)
         if connection_type == "single_reverse_direct_relation":
-            return cast(Self, SingleReverseDirectRelation.load(resource))
+            return SingleReverseDirectRelation.load(resource)
         if connection_type == "multi_reverse_direct_relation":
-            return cast(Self, MultiReverseDirectRelation.load(resource))
+            return MultiReverseDirectRelation.load(resource)
 
-        return cast(Self, UnknownCogniteObject(resource))
+        return cast(Self, UnknownCogniteResource(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -525,16 +511,12 @@ class EdgeConnection(ConnectionDefinition, ABC):
     A connection has a max distance of one hop.
 
     Args:
-        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference
-            consists of a space and an external-id.
+        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference consists of a space and an external-id.
         source (ViewId): The target node(s) of this connection can be read through the view specified in 'source'.
         name (str | None): Readable property name.
         description (str | None): Description of the content and suggested use for this property.
-        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in
-            'edgeSource'.
-        direction (Literal["outwards", "inwards"]): The direction of the edge. The outward direction is used to
-            indicate that the edge points from the source to the target. The inward direction is used to indicate
-            that the edge points from the target to the source.
+        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in 'edgeSource'.
+        direction (Literal['outwards', 'inwards']): The direction of the edge. The outward direction is used to indicate that the edge points from the source to the target. The inward direction is used to indicate that the edge points from the target to the source.
     """
 
     type: DirectRelationReference
@@ -545,13 +527,13 @@ class EdgeConnection(ConnectionDefinition, ABC):
     direction: Literal["outwards", "inwards"]
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         instance = cls(
             type=DirectRelationReference.load(resource["type"]),
             source=ViewId.load(resource["source"]),
             name=resource.get("name"),
             description=resource.get("description"),
-            edge_source=(edge_source := resource.get("edgeSource")) and ViewId.load(edge_source),
+            edge_source=ViewId._load_if(resource.get("edgeSource")),
             direction=resource["direction"],
         )
 
@@ -639,7 +621,7 @@ class ReverseDirectRelation(ConnectionDefinition, ABC):
     description: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             source=ViewId.load(resource["source"]),
             through=PropertyId.load(resource["through"]),
@@ -700,7 +682,7 @@ class MultiReverseDirectRelation(ReverseDirectRelation):
 @dataclass
 class ConnectionDefinitionApply(ViewPropertyApply, ABC):
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         if "connectionType" not in resource:
             raise ValueError(f"{cls.__name__} must have a connectionType")
         connection_type = to_snake_case(resource["connectionType"])
@@ -713,7 +695,7 @@ class ConnectionDefinitionApply(ViewPropertyApply, ABC):
             return cast(Self, SingleReverseDirectRelationApply.load(resource))
         if connection_type == "multi_reverse_direct_relation":
             return cast(Self, MultiReverseDirectRelationApply.load(resource))
-        return cast(Self, UnknownCogniteObject(resource))
+        return cast(Self, UnknownCogniteResource(resource))
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -732,16 +714,12 @@ class EdgeConnectionApply(ConnectionDefinitionApply, ABC):
     It is called 'EdgeConnection' in the API spec.
 
     Args:
-        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference
-            consists of a space and an external-id.
+        type (DirectRelationReference): Reference to the node pointed to by the direct relation. The reference consists of a space and an external-id.
         source (ViewId): The target node(s) of this connection can be read through the view specified in 'source'.
         name (str | None): Readable property name.
         description (str | None): Description of the content and suggested use for this property.
-        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in
-            'edgeSource'.
-        direction (Literal["outwards", "inwards"]): The direction of the edge. The outward direction is used to
-            indicate that the edge points from the source to the target. The inward direction is used to indicate
-            that the edge points from the target to the source.
+        edge_source (ViewId | None): The edge(s) of this connection can be read through the view specified in 'edgeSource'.
+        direction (Literal['outwards', 'inwards']): The direction of the edge. The outward direction is used to indicate that the edge points from the source to the target. The inward direction is used to indicate that the edge points from the target to the source.
     """
 
     type: DirectRelationReference
@@ -752,13 +730,13 @@ class EdgeConnectionApply(ConnectionDefinitionApply, ABC):
     direction: Literal["outwards", "inwards"] = "outwards"
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         instance = cls(
             type=DirectRelationReference.load(resource["type"]),
             source=ViewId.load(resource["source"]),
             name=resource.get("name"),
             description=resource.get("description"),
-            edge_source=(edge_source := resource.get("edgeSource")) and ViewId.load(edge_source),
+            edge_source=ViewId._load_if(resource.get("edgeSource")),
         )
         if "direction" in resource:
             instance.direction = resource["direction"]
@@ -832,7 +810,7 @@ class ReverseDirectRelationApply(ConnectionDefinitionApply, ABC):
     description: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         instance = cls(
             source=ViewId.load(resource["source"]),
             through=PropertyId.load(resource["through"]),

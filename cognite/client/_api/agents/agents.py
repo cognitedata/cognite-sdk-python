@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
@@ -16,14 +16,14 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
 class AgentsAPI(APIClient):
     _RESOURCE_PATH = "/ai/agents"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warnings = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Agents")
         self._api_subversion = "beta"
@@ -31,12 +31,12 @@ class AgentsAPI(APIClient):
         self._DELETE_LIMIT = 1
 
     @overload
-    def upsert(self, agents: AgentUpsert) -> Agent: ...
+    async def upsert(self, agents: AgentUpsert) -> Agent: ...
 
     @overload
-    def upsert(self, agents: Sequence[AgentUpsert]) -> AgentList: ...
+    async def upsert(self, agents: Sequence[AgentUpsert]) -> AgentList: ...
 
-    def upsert(self, agents: AgentUpsert | Sequence[AgentUpsert]) -> Agent | AgentList:
+    async def upsert(self, agents: AgentUpsert | Sequence[AgentUpsert]) -> Agent | AgentList:
         """`Create or update (upsert) one or more agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/main_ai_agents_post/>`_
 
         Args:
@@ -54,10 +54,9 @@ class AgentsAPI(APIClient):
                 ...     AgentUpsert,
                 ...     QueryKnowledgeGraphAgentToolUpsert,
                 ...     QueryKnowledgeGraphAgentToolConfiguration,
-                ...     DataModelInfo
+                ...     DataModelInfo,
                 ... )
                 >>> client = CogniteClient()
-                ...
                 >>> find_assets_tool = QueryKnowledgeGraphAgentToolUpsert(
                 ...     name="find assets",
                 ...     description="Use this tool to find assets",
@@ -70,13 +69,13 @@ class AgentsAPI(APIClient):
                 ...                 view_external_ids=["CogniteAsset"],
                 ...             )
                 ...         ]
-                ...     )
+                ...     ),
                 ... )
                 >>> agent = AgentUpsert(
                 ...     external_id="my_agent",
                 ...     name="My Agent",
                 ...     labels=["published"],
-                ...     tools=[find_assets_tool]
+                ...     tools=[find_assets_tool],
                 ... )
                 >>> client.agents.upsert(agents=[agent])
 
@@ -89,9 +88,8 @@ class AgentsAPI(APIClient):
                 ...     DataModelInfo,
                 ...     SummarizeDocumentAgentToolUpsert,
                 ...     AskDocumentAgentToolUpsert,
-                ...     QueryTimeSeriesDatapointsAgentToolUpsert
+                ...     QueryTimeSeriesDatapointsAgentToolUpsert,
                 ... )
-                ...
                 >>> find_assets_tool = QueryKnowledgeGraphAgentToolUpsert(
                 ...     name="find assets",
                 ...     description="Use this tool to query the knowledge graph for assets",
@@ -104,7 +102,7 @@ class AgentsAPI(APIClient):
                 ...                 view_external_ids=["CogniteAsset"],
                 ...             )
                 ...         ]
-                ...     )
+                ...     ),
                 ... )
                 >>> find_files_tool = QueryKnowledgeGraphAgentToolUpsert(
                 ...     name="find files",
@@ -118,7 +116,7 @@ class AgentsAPI(APIClient):
                 ...                 view_external_ids=["CogniteFile"],
                 ...             )
                 ...         ]
-                ...     )
+                ...     ),
                 ... )
                 >>> find_time_series_tool = QueryKnowledgeGraphAgentToolUpsert(
                 ...     name="find time series",
@@ -132,19 +130,19 @@ class AgentsAPI(APIClient):
                 ...                 view_external_ids=["CogniteTimeSeries"],
                 ...             )
                 ...         ]
-                ...     )
+                ...     ),
                 ... )
                 >>> summarize_tool = SummarizeDocumentAgentToolUpsert(
                 ...     name="summarize document",
-                ...     description="Use this tool to get a summary of a document"
+                ...     description="Use this tool to get a summary of a document",
                 ... )
                 >>> ask_doc_tool = AskDocumentAgentToolUpsert(
                 ...     name="ask document",
-                ...     description="Use this tool to ask questions about specific documents"
+                ...     description="Use this tool to ask questions about specific documents",
                 ... )
                 >>> ts_tool = QueryTimeSeriesDatapointsAgentToolUpsert(
                 ...     name="query time series",
-                ...     description="Use this tool to query time series data points"
+                ...     description="Use this tool to query time series data points",
                 ... )
                 >>> agent = AgentUpsert(
                 ...     external_id="my_agent",
@@ -152,14 +150,21 @@ class AgentsAPI(APIClient):
                 ...     description="An agent with many tools",
                 ...     instructions="You are a helpful assistant that can query knowledge graphs, summarize documents, answer questions about documents, and query time series data points.",
                 ...     labels=["published"],
-                ...     tools=[find_assets_tool, find_files_tool, find_time_series_tool, summarize_tool, ask_doc_tool, ts_tool]
+                ...     tools=[
+                ...         find_assets_tool,
+                ...         find_files_tool,
+                ...         find_time_series_tool,
+                ...         summarize_tool,
+                ...         ask_doc_tool,
+                ...         ts_tool,
+                ...     ],
                 ... )
                 >>> client.agents.upsert(agents=[agent])
 
 
         """
         self._warnings.warn()
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=AgentList,
             resource_cls=Agent,
             items=agents,
@@ -167,12 +172,12 @@ class AgentsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Agent | None: ...
+    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Agent | None: ...
 
     @overload
-    def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> AgentList: ...
+    async def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> AgentList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Agent | AgentList | None:
         """`Retrieve one or more agents by external ID. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/get_agents_by_ids_ai_agents_byids_post/>`_
@@ -188,8 +193,9 @@ class AgentsAPI(APIClient):
 
             Retrieve an agent by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.agents.retrieve(external_ids="my_agent")
 
             Retrieve multiple agents:
@@ -198,14 +204,14 @@ class AgentsAPI(APIClient):
         """
         self._warnings.warn()
         identifiers = IdentifierSequence.load(external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=AgentList,
             resource_cls=Agent,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
+    async def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_delete_ai_agents_delete_post/>`_
 
         Args:
@@ -216,19 +222,20 @@ class AgentsAPI(APIClient):
 
             Delete an agent by external id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.agents.delete(external_ids="my_agent")
 
         """
         self._warnings.warn()
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
-    def list(self) -> AgentList:  # The API does not yet support limit or pagination
+    async def list(self) -> AgentList:  # The API does not yet support limit or pagination
         """`List agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_list_ai_agents_get/>`_
 
         Returns:
@@ -238,16 +245,17 @@ class AgentsAPI(APIClient):
 
             List all agents:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> agent_list = client.agents.list()
 
         """
         self._warnings.warn()
-        res = self._get(url_path=self._RESOURCE_PATH)
-        return AgentList._load(res.json()["items"], cognite_client=self._cognite_client)
+        res = await self._get(url_path=self._RESOURCE_PATH, semaphore=self._get_semaphore("read"))
+        return AgentList._load(res.json()["items"])
 
-    def chat(
+    async def chat(
         self,
         agent_external_id: str,
         messages: Message | ActionResult | Sequence[Message | ActionResult],
@@ -276,9 +284,9 @@ class AgentsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.agents import Message
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> response = client.agents.chat(
-                ...     agent_external_id="my_agent",
-                ...     messages=Message("What can you help me with?")
+                ...     agent_external_id="my_agent", messages=Message("What can you help me with?")
                 ... )
                 >>> print(response.text)
 
@@ -287,7 +295,7 @@ class AgentsAPI(APIClient):
                 >>> follow_up = client.agents.chat(
                 ...     agent_external_id="my_agent",
                 ...     messages=Message("Tell me more about that"),
-                ...     cursor=response.cursor
+                ...     cursor=response.cursor,
                 ... )
 
             Send multiple messages at once:
@@ -296,8 +304,8 @@ class AgentsAPI(APIClient):
                 ...     agent_external_id="my_agent",
                 ...     messages=[
                 ...         Message("Help me find the 1st stage compressor."),
-                ...         Message("Once you have found it, find related time series.")
-                ...     ]
+                ...         Message("Once you have found it, find related time series."),
+                ...     ],
                 ... )
 
             Chat with client-side actions:
@@ -312,13 +320,13 @@ class AgentsAPI(APIClient):
                 ...             "a": {"type": "number", "description": "First number"},
                 ...             "b": {"type": "number", "description": "Second number"},
                 ...         },
-                ...         "required": ["a", "b"]
-                ...     }
+                ...         "required": ["a", "b"],
+                ...     },
                 ... )
                 >>> response = client.agents.chat(
                 ...     agent_external_id="my_agent",
                 ...     messages=Message("What is 42 plus 58?"),
-                ...     actions=[add_numbers_action]
+                ...     actions=[add_numbers_action],
                 ... )
                 >>> if response.action_calls:
                 ...     for call in response.action_calls:
@@ -328,35 +336,28 @@ class AgentsAPI(APIClient):
                 ...         response = client.agents.chat(
                 ...             agent_external_id="my_agent",
                 ...             messages=ClientToolResult(
-                ...                 action_id=call.action_id,
-                ...                 content=f"The result is {result}"
+                ...                 action_id=call.action_id, content=f"The result is {result}"
                 ...             ),
                 ...             cursor=response.cursor,
-                ...             actions=[add_numbers_action]
+                ...             actions=[add_numbers_action],
                 ...         )
         """
         self._warnings.warn()
 
-        # Convert single message to list
         if isinstance(messages, Message | ActionResult):
             messages = [messages]
 
-        # Build request body
-        body: dict[str, Any] = {
+        body = {
             "agentExternalId": agent_external_id,
             "messages": [msg.dump(camel_case=True) for msg in messages],
         }
-
         if cursor is not None:
             body["cursor"] = cursor
 
         if actions is not None:
             body["actions"] = [action.dump(camel_case=True) for action in actions]
 
-        # Make the API call
-        response = self._post(
-            url_path=self._RESOURCE_PATH + "/chat",
-            json=body,
+        response = await self._post(
+            url_path=self._RESOURCE_PATH + "/chat", json=body, semaphore=self._get_semaphore("write")
         )
-
-        return AgentChatResponse._load(response.json(), cognite_client=self._cognite_client)
+        return AgentChatResponse._load(response.json())
