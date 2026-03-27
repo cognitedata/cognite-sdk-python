@@ -2,7 +2,7 @@ name: cdf_auth
 
 on:
   push:
-    branches: [master]
+    branches: [pysdk-release-v7]
 
 jobs:
   cdf_auth:

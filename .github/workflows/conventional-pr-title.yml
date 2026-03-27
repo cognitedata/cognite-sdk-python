@@ -3,7 +3,7 @@ name: conventional-pr-title
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
-    branches: [master]
+    branches: [pysdk-release-v7]
 
 jobs:
   lint:
