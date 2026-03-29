@@ -185,25 +185,25 @@ class FunctionsAPI(APIClient):
         For help with troubleshooting, please see `this page. <https://docs.cognite.com/cdf/functions/known_issues/>`_
 
         Args:
-            name (str | FunctionWrite): The name of the function or a FunctionWrite object. If a FunctionWrite
+            name: The name of the function or a FunctionWrite object. If a FunctionWrite
                 object is passed, all other arguments are ignored.
-            folder (str | None): Path to the folder where the function source code is located.
-            file_id (int | None): File ID of the code uploaded to the Files API.
-            function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
-            function_handle (FunctionHandle | None): Reference to a function object, which must be named `handle`.
-            external_id (str | None): External id of the function.
-            description (str | None): Description of the function.
-            owner (str | None): Owner of this function. Typically used to know who created it.
-            secrets (dict[str, str] | None): Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
-            env_vars (dict[str, str] | None): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
-            cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            runtime (RunTime | None): The function runtime. Valid values are ["py310", "py311", "py312", `None`], and `None` translates to the API default which will change over time. The runtime "py312" resolves to the latest version of the Python 3.12 series.
-            metadata (dict[str, str] | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
-            index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-            extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-            skip_folder_validation (bool): When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
-            data_set_id (int | None): Data set to upload the function code to. Note: Does not affect the function itself.
+            folder: Path to the folder where the function source code is located.
+            file_id: File ID of the code uploaded to the Files API.
+            function_path: Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
+            function_handle: Reference to a function object, which must be named `handle`.
+            external_id: External id of the function.
+            description: Description of the function.
+            owner: Owner of this function. Typically used to know who created it.
+            secrets: Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
+            env_vars: Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
+            cpu: Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            memory: Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            runtime: The function runtime. Valid values are ["py310", "py311", "py312", `None`], and `None` translates to the API default which will change over time. The runtime "py312" resolves to the latest version of the Python 3.12 series.
+            metadata: Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
+            index_url: Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            extra_index_urls: Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            skip_folder_validation: When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
+            data_set_id: Data set to upload the function code to. Note: Does not affect the function itself.
 
         Returns:
             The created function.

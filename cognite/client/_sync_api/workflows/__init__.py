@@ -1,6 +1,6 @@
 """
 ===============================================================================
-eb71a981991379a2b94d7f78405b8255
+9258b9d63538c13a468cc3259034bb5f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -23,6 +23,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
+    from cognite.client import ClientConfig as ClientConfig
 
 
 class SyncWorkflowAPI(SyncAPIClient):

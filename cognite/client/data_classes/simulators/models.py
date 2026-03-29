@@ -368,8 +368,8 @@ class SimulatorModelRevisionDependency(CogniteResource):
     """
     Represents an external dependency for a simulator model revision.
     Args:
-        file (SimulatorModelDependencyFileReference): The file ID associated with the external dependency.
-        arguments (dict[str, str]): A dictionary that contains the key-value pairs (fields) for the external dependency.
+        file: The file ID associated with the external dependency.
+        arguments: A dictionary that contains the key-value pairs (fields) for the external dependency.
     """
 
     file: SimulatorModelDependencyFileReference

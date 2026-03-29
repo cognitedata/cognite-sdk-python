@@ -418,6 +418,8 @@ def format_docstring_class_methods(cls) -> list[str]:
             continue
 
         if not doc_fmt.docstring_is_correct():
+            print(doc_fmt.actual_return_annotation)
+            print(doc_fmt.return_parameter)
             if err_msg := doc_fmt.update_py_file(cls, method_description):
                 failed.append(err_msg)
     return failed

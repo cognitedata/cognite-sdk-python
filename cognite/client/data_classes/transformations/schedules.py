@@ -22,8 +22,8 @@ class TransformationScheduleCore(WriteableCogniteResource["TransformationSchedul
     """The transformation schedules resource allows running recurrent transformations.
 
     Args:
-        interval (str): Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
-        is_paused (bool): If true, the transformation is not scheduled.
+        interval: Cron expression controls when the transformation will be run. Use http://www.cronmaker.com to create one.
+        is_paused: If true, the transformation is not scheduled.
     """
 
     def __init__(self, interval: str, is_paused: bool) -> None:

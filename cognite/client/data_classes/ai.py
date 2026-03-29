@@ -31,10 +31,10 @@ class Summary:
     A summary object consisting of a textual summary plus the id of the summarized document
 
     Args:
-        summary (str): The textual summary of the document
-        id (int | None): The id of the document
-        external_id (str | None): The external id of the document
-        instance_id (NodeId | None): The instance id of the document
+        summary: The textual summary of the document
+        id: The id of the document
+        external_id: The external id of the document
+        instance_id: The instance id of the document
     """
 
     summary: str
@@ -135,8 +135,8 @@ class AnswerContent:
     the documents containing the source material for the answer.
 
     Args:
-        text (str): The extracted plain text
-        references (list[AnswerReference]): The list of references.
+        text: The extracted plain text
+        references: The list of references.
     """
 
     text: str

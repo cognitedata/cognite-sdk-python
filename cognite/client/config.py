@@ -38,8 +38,8 @@ class GlobalConfig:
         concurrency_settings: Settings controlling the maximum number of concurrent API requests
             for different API categories (general, raw, data_modeling etc.). These settings are frozen after the
             first API request is made. See https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings
-        follow_redirects (bool): Whether or not to follow redirects. Defaults to False.
-        file_download_chunk_size (int | None): Specify the file chunk size for streaming file downloads. When not specified
+        follow_redirects: Whether or not to follow redirects. Defaults to False.
+        file_download_chunk_size: Specify the file chunk size for streaming file downloads. When not specified
             (default is None), the actual chunk size is determined by the underlying transport, which in turn is based on the
             size of the data packets being read from the network socket. The chunks will be of a variable and unpredictable
             size, but optimized for network efficiency (best download speed).

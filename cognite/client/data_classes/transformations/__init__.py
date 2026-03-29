@@ -179,30 +179,30 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
     """The transformation resource allows transforming data in CDF.
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the Transformation.
-        query (str): SQL query of the transformation.
-        destination (TransformationDestination): see TransformationDestination for options.
-        conflict_mode (Literal['abort', 'delete', 'update', 'upsert']): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
-        is_public (bool): Indicates if the transformation is visible to all in project or only to the owner.
-        ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        owner (str): Owner of the transformation: requester's identity.
-        owner_is_current_user (bool): Indicates if the transformation belongs to the current user.
-        source_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials key on the destination.
-        destination_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials on the destination.
-        running_job (TransformationJob | None): Details for the job of this transformation currently running.
-        last_finished_job (TransformationJob | None): Details for the last finished job of this transformation.
-        blocked (TransformationBlockedInfo | None): Provides reason and time if the transformation is blocked.
-        schedule (TransformationSchedule | None): Details for the schedule if the transformation is scheduled.
-        data_set_id (int | None): No description.
-        source_nonce (NonceCredentials | None): Single use credentials to bind to a CDF session for reading.
-        destination_nonce (NonceCredentials | None): Single use credentials to bind to a CDF session for writing.
-        source_session (SessionDetails | None): Details for the session used to read from the source project.
-        destination_session (SessionDetails | None): Details for the session used to write to the destination project.
-        tags (list[str] | None): No description.
+        id: A server-generated ID for the object.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: The name of the Transformation.
+        query: SQL query of the transformation.
+        destination: see TransformationDestination for options.
+        conflict_mode: What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
+        is_public: Indicates if the transformation is visible to all in project or only to the owner.
+        ignore_null_fields: Indicates how null values are handled on updates: ignore or set null.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        owner: Owner of the transformation: requester's identity.
+        owner_is_current_user: Indicates if the transformation belongs to the current user.
+        source_oidc_credentials: Configure the transformation to authenticate with the given oidc credentials key on the destination.
+        destination_oidc_credentials: Configure the transformation to authenticate with the given oidc credentials on the destination.
+        running_job: Details for the job of this transformation currently running.
+        last_finished_job: Details for the last finished job of this transformation.
+        blocked: Provides reason and time if the transformation is blocked.
+        schedule: Details for the schedule if the transformation is scheduled.
+        data_set_id: No description.
+        source_nonce: Single use credentials to bind to a CDF session for reading.
+        destination_nonce: Single use credentials to bind to a CDF session for writing.
+        source_session: Details for the session used to read from the source project.
+        destination_session: Details for the session used to write to the destination project.
+        tags: No description.
     """
 
     def __init__(
@@ -658,17 +658,17 @@ class TransformationFilter(CogniteFilter):
     """No description.
 
     Args:
-        include_public (bool): Whether public transformations should be included in the results. The default is true.
-        name_regex (str | None): Regex expression to match the transformation name
-        query_regex (str | None): Regex expression to match the transformation query
-        destination_type (str | None): Transformation destination resource name to filter by.
-        conflict_mode (Literal['abort', 'delete', 'update', 'upsert'] | None): Filters by a selected transformation action type: abort, upsert, update, delete
-        cdf_project_name (str | None): Project name to filter by configured source and destination project
-        has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
-        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-        last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-        data_set_ids (list[dict[str, Any]] | None): Return only transformations in the specified data sets with these ids, e.g. [{"id": 1}, {"externalId": "foo"}].
-        tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+        include_public: Whether public transformations should be included in the results. The default is true.
+        name_regex: Regex expression to match the transformation name
+        query_regex: Regex expression to match the transformation query
+        destination_type: Transformation destination resource name to filter by.
+        conflict_mode: Filters by a selected transformation action type: abort, upsert, update, delete
+        cdf_project_name: Project name to filter by configured source and destination project
+        has_blocked_error: Whether only the blocked transformations should be included in the results.
+        created_time: Range between two timestamps
+        last_updated_time: Range between two timestamps
+        data_set_ids: Return only transformations in the specified data sets with these ids, e.g. [{"id": 1}, {"externalId": "foo"}].
+        tags: Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
     """
 
     def __init__(

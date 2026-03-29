@@ -119,15 +119,15 @@ class Group(GroupCore):
     Groups can either be managed through the external identity provider for the project or managed by CDF.
 
     Args:
-        id (int): No description.
-        name (str): Name of the group.
-        is_deleted (bool): No description.
-        source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
-        capabilities (list[Capability] | Capability | None): List of capabilities (acls) this group should grant its users.
-        attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
-        deleted_time (int | None): No description.
-        metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
-        members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
+        id: No description.
+        name: Name of the group.
+        is_deleted: No description.
+        source_id: ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
+        capabilities: List of capabilities (acls) this group should grant its users.
+        attributes: Attributes of the group, this scopes down access based on the attributes specified.
+        deleted_time: No description.
+        metadata: Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        members: Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
 
     def __init__(
@@ -297,7 +297,7 @@ class SecurityCategoryCore(WriteableCogniteResource["SecurityCategoryWrite"], AB
     """No description.
 
     Args:
-        name (str): Name of the security category
+        name: Name of the security category
     """
 
     def __init__(self, name: str) -> None:
@@ -309,8 +309,8 @@ class SecurityCategory(SecurityCategoryCore):
     This is the read version of a security category, which is used when retrieving security categories.
 
     Args:
-        id (int): Id of the security category
-        name (str): Name of the security category
+        id: Id of the security category
+        name: Name of the security category
     """
 
     def __init__(self, id: int, name: str) -> None:

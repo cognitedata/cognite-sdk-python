@@ -94,21 +94,21 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
     is the read version of the Asset class, it is used when retrieving assets from the Cognite API.
 
     Args:
-        id (int): A server-generated ID for the object.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        root_id (int): ID of the root asset.
-        name (str): The name of the asset.
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        parent_id (int | None): The parent of the node, null if it is the root node.
-        parent_external_id (str | None): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
-        description (str | None): The description of the asset.
-        data_set_id (int | None): The id of the dataset this asset belongs to.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str | None): The source of the asset.
-        labels (list[Label] | None): A list of the labels associated with this resource item.
-        geo_location (GeoLocation | None): The geographic metadata of the asset.
-        aggregates (AggregateResultItem | None): Aggregated metrics of the asset
+        id: A server-generated ID for the object.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        root_id: ID of the root asset.
+        name: The name of the asset.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        parent_id: The parent of the node, null if it is the root node.
+        parent_external_id: The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
+        description: The description of the asset.
+        data_set_id: The id of the dataset this asset belongs to.
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source: The source of the asset.
+        labels: A list of the labels associated with this resource item.
+        geo_location: The geographic metadata of the asset.
+        aggregates: Aggregated metrics of the asset
     """
 
     def __init__(

@@ -233,17 +233,17 @@ class TimeSeriesWrite(WriteableCogniteResource["TimeSeriesWrite"]):
     """This is the write version of TimeSeries, which is used when writing to CDF.
 
     Args:
-        external_id (str | None): The externally supplied ID for the time series.
-        name (str | None): The display short name of the time series.
-        is_string (bool | None): Whether the time series is string valued or not.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        unit (str | None): The physical unit of the time series.
-        unit_external_id (str | None): The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
-        asset_id (int | None): Asset ID of equipment linked to this time series.
-        is_step (bool | None): Whether the time series is a step series or not.
-        description (str | None): Description of the time series.
-        security_categories (Sequence[int] | None): The required security categories to access this time series.
-        data_set_id (int | None): The dataSet ID for the item.
+        external_id: The externally supplied ID for the time series.
+        name: The display short name of the time series.
+        is_string: Whether the time series is string valued or not.
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        unit: The physical unit of the time series.
+        unit_external_id: The physical unit of the time series (reference to unit catalog). Only available for numeric time series.
+        asset_id: Asset ID of equipment linked to this time series.
+        is_step: Whether the time series is a step series or not.
+        description: Description of the time series.
+        security_categories: The required security categories to access this time series.
+        data_set_id: The dataSet ID for the item.
     """
 
     def __init__(

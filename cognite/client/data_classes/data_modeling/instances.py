@@ -105,8 +105,8 @@ class NodeOrEdgeData(CogniteResource):
     """This represents the data values of a node or edge.
 
     Args:
-        source (ContainerId | ViewId): The container or view the node or edge property is in
-        properties (Mapping[str, PropertyValueWrite]): The properties of the node or edge.
+        source: The container or view the node or edge property is in
+        properties: The properties of the node or edge.
     """
 
     source: ContainerId | ViewId
@@ -1357,8 +1357,8 @@ class InstancesResult(Generic[T_Node, T_Edge]):
     """This represents the read result of an instance query
 
     Args:
-        nodes (NodeList[T_Node]): A list of nodes.
-        edges (EdgeList[T_Edge]): A list of edges.
+        nodes: A list of nodes.
+        edges: A list of edges.
 
     """
 

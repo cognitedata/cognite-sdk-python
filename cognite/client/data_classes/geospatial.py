@@ -27,10 +27,10 @@ class FeatureTypeCore(WriteableCogniteResource["FeatureTypeWrite"], ABC):
     """A representation of a feature type in the geospatial API.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        data_set_id (int | None): The ID of the dataset this feature type belongs to.
-        properties (dict[str, Any]): The properties of the feature type.
-        search_spec (dict[str, Any] | None): The search spec of the feature type.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        data_set_id: The ID of the dataset this feature type belongs to.
+        properties: The properties of the feature type.
+        search_spec: The search spec of the feature type.
     """
 
     def __init__(
@@ -51,12 +51,12 @@ class FeatureType(FeatureTypeCore):
     This is the read version of the FeatureType class, it is used when retrieving feature types from the api.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        created_time (int): The created time of the feature type.
-        last_updated_time (int): The last updated time of the feature type.
-        properties (dict[str, Any]): The properties of the feature type.
-        data_set_id (int | None): The ID of the dataset this feature type belongs to.
-        search_spec (dict[str, Any] | None): The search spec of the feature type.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        created_time: The created time of the feature type.
+        last_updated_time: The last updated time of the feature type.
+        properties: The properties of the feature type.
+        data_set_id: The ID of the dataset this feature type belongs to.
+        search_spec: The search spec of the feature type.
     """
 
     def __init__(

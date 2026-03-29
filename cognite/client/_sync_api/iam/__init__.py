@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f32424b35163317d66e8fca6f331c853
+8e60b149196ed53d8e2ccd9cb144f3f1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from cognite.client import AsyncCogniteClient
 from cognite.client._api.iam import ComparableCapability
 from cognite.client._sync_api.iam.groups import SyncGroupsAPI
 from cognite.client._sync_api.iam.security_categories import SyncSecurityCategoriesAPI

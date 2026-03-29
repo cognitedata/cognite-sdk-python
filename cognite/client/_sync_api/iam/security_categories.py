@@ -1,6 +1,6 @@
 """
 ===============================================================================
-603a6779be1a738cab2a9b44d73a33c7
+f654f21067441bbf6e0274e33a00a664
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,8 +31,8 @@ class SyncSecurityCategoriesAPI(SyncAPIClient):
         `List security categories. <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:
-            limit (int | None): Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            sort (Literal['ASC', 'DESC']): Sort order of the security categories. Defaults to "ASC".
+            limit: Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            sort: Sort order of the security categories. Defaults to "ASC".
 
         Returns:
             List of security categories

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-77ddb197a6a73314c704dafacbe56215
+bbe8beedf1a1aba670f9621629e2bcc5
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -598,13 +598,13 @@ class SyncInstancesAPI(SyncAPIClient):
         `Add or update (upsert) instances. <https://api-docs.cognite.com/20230101/tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
-            nodes (NodeApply | Sequence[NodeApply] | None): Nodes to apply
-            edges (EdgeApply | Sequence[EdgeApply] | None): Edges to apply
-            auto_create_start_nodes (bool): Whether to create missing start nodes for edges when ingesting. By default, the start node of an edge must exist before it can be ingested.
-            auto_create_end_nodes (bool): Whether to create missing end nodes for edges when ingesting. By default, the end node of an edge must exist before it can be ingested.
-            auto_create_direct_relations (bool): Whether to create missing direct relation targets when ingesting.
-            skip_on_version_conflict (bool): If existingVersion is specified on any of the nodes/edges in the input, the default behaviour is that the entire ingestion will fail when version conflicts occur. If skipOnVersionConflict is set to true, items with version conflicts will be skipped instead. If no version is specified for nodes/edges, it will do the writing directly.
-            replace (bool): How do we behave when a property value exists? Do we replace all matching and existing values with the supplied values (true)? Or should we merge in new values for properties together with the existing values (false)? Note: This setting applies for all nodes or edges specified in the ingestion call.
+            nodes: Nodes to apply
+            edges: Edges to apply
+            auto_create_start_nodes: Whether to create missing start nodes for edges when ingesting. By default, the start node of an edge must exist before it can be ingested.
+            auto_create_end_nodes: Whether to create missing end nodes for edges when ingesting. By default, the end node of an edge must exist before it can be ingested.
+            auto_create_direct_relations: Whether to create missing direct relation targets when ingesting.
+            skip_on_version_conflict: If existingVersion is specified on any of the nodes/edges in the input, the default behaviour is that the entire ingestion will fail when version conflicts occur. If skipOnVersionConflict is set to true, items with version conflicts will be skipped instead. If no version is specified for nodes/edges, it will do the writing directly.
+            replace: How do we behave when a property value exists? Do we replace all matching and existing values with the supplied values (true)? Or should we merge in new values for properties together with the existing values (false)? Note: This setting applies for all nodes or edges specified in the ingestion call.
 
         Returns:
             Created instance(s)

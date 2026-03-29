@@ -22,10 +22,10 @@ class LabelDefinitionCore(WriteableCogniteResource["LabelDefinitionWrite"], ABC)
     This is the parent for the reading and write versions.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): Name of the label.
-        description (str | None): Description of the label.
-        data_set_id (int | None): The id of the dataset this label belongs to.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        name: Name of the label.
+        description: Description of the label.
+        data_set_id: The id of the dataset this label belongs to.
     """
 
     def __init__(

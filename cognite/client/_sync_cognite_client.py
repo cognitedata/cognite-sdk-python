@@ -143,7 +143,7 @@ class CogniteClient:
         """Returns the underlying API client used for HTTP requests.
 
         Returns:
-            APIClient: The API client instance.
+            The API client instance.
         """
         return self.__async_client._api_client
 
@@ -151,7 +151,7 @@ class CogniteClient:
         """Returns the underlying async client.
 
         Returns:
-            AsyncCogniteClient: The async client instance.
+            The async client instance.
         """
         return self.__async_client
 

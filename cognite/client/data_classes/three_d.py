@@ -242,13 +242,13 @@ class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite
     """No description.
 
     Args:
-        file_id (int): The file id.
-        published (bool): True if the revision is marked as published.
-        rotation (list[float] | None): No description.
-        scale (list[float] | None): Scale of 3D model in directions X,Y and Z. Should be uniform.
-        translation (list[float] | None): 3D offset of the model.
-        camera (RevisionCameraProperties | dict[str, Any] | None): Initial camera position and target.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        file_id: The file id.
+        published: True if the revision is marked as published.
+        rotation: No description.
+        scale: Scale of 3D model in directions X,Y and Z. Should be uniform.
+        translation: 3D offset of the model.
+        camera: Initial camera position and target.
+        metadata: Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
     """
 
     def __init__(
@@ -281,19 +281,19 @@ class ThreeDModelRevision(ThreeDModelRevisionCore):
     This is the read version of ThreeDModelRevision, which is used when retrieving 3D model revisions.
 
     Args:
-        id (int): The ID of the revision.
-        file_id (int): The file id.
-        published (bool): True if the revision is marked as published.
-        status (str): The status of the revision.
-        asset_mapping_count (int): The number of asset mappings for this revision.
-        created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
-        rotation (list[float] | None): No description.
-        scale (list[float] | None): Scale of 3D model in directions X,Y and Z. Should be uniform.
-        translation (list[float] | None): 3D offset of the model.
-        camera (RevisionCameraProperties | None): Initial camera position and target.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        thumbnail_threed_file_id (int | None): The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
-        thumbnail_url (str | None): The URL of a thumbnail for the revision.
+        id: The ID of the revision.
+        file_id: The file id.
+        published: True if the revision is marked as published.
+        status: The status of the revision.
+        asset_mapping_count: The number of asset mappings for this revision.
+        created_time: The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
+        rotation: No description.
+        scale: Scale of 3D model in directions X,Y and Z. Should be uniform.
+        translation: 3D offset of the model.
+        camera: Initial camera position and target.
+        metadata: Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        thumbnail_threed_file_id: The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
+        thumbnail_url: The URL of a thumbnail for the revision.
     """
 
     def __init__(
@@ -502,14 +502,14 @@ class ThreeDNode(CogniteResource):
     """No description.
 
     Args:
-        id (int): The ID of the node.
-        tree_index (int): The index of the node in the 3D model hierarchy, starting from 0. The tree is traversed in a depth-first order.
-        depth (int): The depth of the node in the tree, starting from 0 at the root node.
-        name (str): The name of the node.
-        subtree_size (int): The number of descendants of the node, plus one (counting itself).
-        parent_id (int | None): The parent of the node, null if it is the root node.
-        properties (dict[str, dict[str, str]] | None): Properties extracted from 3D model, with property categories containing key/value string pairs.
-        bounding_box (BoundingBox3D | None): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+        id: The ID of the node.
+        tree_index: The index of the node in the 3D model hierarchy, starting from 0. The tree is traversed in a depth-first order.
+        depth: The depth of the node in the tree, starting from 0 at the root node.
+        name: The name of the node.
+        subtree_size: The number of descendants of the node, plus one (counting itself).
+        parent_id: The parent of the node, null if it is the root node.
+        properties: Properties extracted from 3D model, with property categories containing key/value string pairs.
+        bounding_box: The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
     """
 
     def __init__(

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c4bd2c89763bb5b23ad5f34db1671b96
+c9f4f0fab418c2a50743c6d21e3b85da
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -101,20 +101,20 @@ class SyncTransformationsAPI(SyncAPIClient):
         Iterate over transformations
 
         Args:
-            chunk_size (int | None): Number of transformations to return in each chunk. Defaults to yielding one transformation a time.
-            include_public (bool): Whether public transformations should be included in the results. (default true).
-            name_regex (str | None): Regex expression to match the transformation name
-            query_regex (str | None): Regex expression to match the transformation query
-            destination_type (str | None): Transformation destination resource name to filter by.
-            conflict_mode (Literal['abort', 'delete', 'update', 'upsert'] | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
-            cdf_project_name (str | None): Project name to filter by configured source and destination project
-            has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
-            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            data_set_ids (int | list[int] | None): Return only transformations in the specified data sets with these id(s).
-            data_set_external_ids (str | list[str] | None): Return only transformations in the specified data sets with these external id(s).
-            tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
-            limit (int | None): Limits the number of results to be returned. Defaults to yielding all transformations.
+            chunk_size: Number of transformations to return in each chunk. Defaults to yielding one transformation a time.
+            include_public: Whether public transformations should be included in the results. (default true).
+            name_regex: Regex expression to match the transformation name
+            query_regex: Regex expression to match the transformation query
+            destination_type: Transformation destination resource name to filter by.
+            conflict_mode: Filters by a selected transformation action type: abort/create, upsert, update, delete
+            cdf_project_name: Project name to filter by configured source and destination project
+            has_blocked_error: Whether only the blocked transformations should be included in the results.
+            created_time: Range between two timestamps
+            last_updated_time: Range between two timestamps
+            data_set_ids: Return only transformations in the specified data sets with these id(s).
+            data_set_external_ids: Return only transformations in the specified data sets with these external id(s).
+            tags: Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+            limit: Limits the number of results to be returned. Defaults to yielding all transformations.
 
         Yields:
             Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
@@ -277,19 +277,19 @@ class SyncTransformationsAPI(SyncAPIClient):
         `List all transformations. <https://api-docs.cognite.com/20230101/tag/Transformations/operation/filterTransformations>`_
 
         Args:
-            include_public (bool): Whether public transformations should be included in the results. (default true).
-            name_regex (str | None): Regex expression to match the transformation name
-            query_regex (str | None): Regex expression to match the transformation query
-            destination_type (str | None): Transformation destination resource name to filter by.
-            conflict_mode (Literal['abort', 'delete', 'update', 'upsert'] | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
-            cdf_project_name (str | None): Project name to filter by configured source and destination project
-            has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
-            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            data_set_ids (int | list[int] | None): Return only transformations in the specified data sets with these id(s).
-            data_set_external_ids (str | list[str] | None): Return only transformations in the specified data sets with these external id(s).
-            tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
-            limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            include_public: Whether public transformations should be included in the results. (default true).
+            name_regex: Regex expression to match the transformation name
+            query_regex: Regex expression to match the transformation query
+            destination_type: Transformation destination resource name to filter by.
+            conflict_mode: Filters by a selected transformation action type: abort/create, upsert, update, delete
+            cdf_project_name: Project name to filter by configured source and destination project
+            has_blocked_error: Whether only the blocked transformations should be included in the results.
+            created_time: Range between two timestamps
+            last_updated_time: Range between two timestamps
+            data_set_ids: Return only transformations in the specified data sets with these id(s).
+            data_set_external_ids: Return only transformations in the specified data sets with these external id(s).
+            tags: Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+            limit: Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
         Returns:
             List of transformations

@@ -66,7 +66,7 @@ class WorkflowUpsert(WorkflowCore):
                             If a dataSetId is provided, any operations on this workflow, or its versions, executions,
                             and triggers will require appropriate access to the data set. More information on data sets
                             and their configuration can be found here: https://docs.cognite.com/cdf/data_governance/concepts/datasets/
-        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to the
+        max_concurrent_executions: Maximum concurrent executions for this workflow. Defaults to the
                             project limit if not specified or explicitly set to None. Values exceeding the project limit
                             are dynamically capped at runtime.
     """
@@ -90,12 +90,12 @@ class Workflow(WorkflowCore):
     This class represents a workflow. This is the read version, used when reading or listing workflows.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        created_time (int): The time when the workflow was created. Unix timestamp in milliseconds.
-        last_updated_time (int): The time when the workflow was last updated. Unix timestamp in milliseconds.
-        description (str | None): Description of the workflow. Defaults to None.
-        data_set_id (int | None): The id of the data set this workflow belongs to.
-        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to the
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        created_time: The time when the workflow was created. Unix timestamp in milliseconds.
+        last_updated_time: The time when the workflow was last updated. Unix timestamp in milliseconds.
+        description: Description of the workflow. Defaults to None.
+        data_set_id: The id of the data set this workflow belongs to.
+        max_concurrent_executions: Maximum concurrent executions for this workflow. Defaults to the
                             project limit if not specified or explicitly set to None. Values exceeding the project limit
                             are dynamically capped at runtime.
     """
@@ -1265,8 +1265,8 @@ class WorkflowVersionId:
     This class represents a Workflow Version Identifier.
 
     Args:
-        workflow_external_id (str): The external ID of the workflow.
-        version (str | None): The version of the workflow. Defaults to None.
+        workflow_external_id: The external ID of the workflow.
+        version: The version of the workflow. Defaults to None.
     """
 
     workflow_external_id: str
@@ -1562,15 +1562,15 @@ class WorkflowTrigger(WorkflowTriggerCore):
     This class represents a workflow trigger.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
-        workflow_external_id (str): The external ID of the workflow.
-        workflow_version (str): The version of the workflow.
-        is_paused (bool): Whether the trigger is paused.
-        created_time (int): The time when the workflow version trigger was created. Unix timestamp in milliseconds.
-        last_updated_time (int): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds.
-        input (dict | None): The input data passed to the workflow when an execution is started.
-        metadata (dict | None): Application specific metadata.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        trigger_rule: The trigger rule of the workflow version trigger.
+        workflow_external_id: The external ID of the workflow.
+        workflow_version: The version of the workflow.
+        is_paused: Whether the trigger is paused.
+        created_time: The time when the workflow version trigger was created. Unix timestamp in milliseconds.
+        last_updated_time: The time when the workflow version trigger was last updated. Unix timestamp in milliseconds.
+        input: The input data passed to the workflow when an execution is started.
+        metadata: Application specific metadata.
     """
 
     def __init__(
