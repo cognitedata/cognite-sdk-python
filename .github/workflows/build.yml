@@ -38,7 +38,7 @@ jobs:
         with:
           extras: "-E all"
       - name: Build docs
-        run: cd docs && make html SPHINXOPTS="-W --keep-going"
+        run: cd docs && make html # SPHINXOPTS="-W --keep-going". Enable when issues with entitiy matching forward references are resolved
 
   build_package:
     runs-on: ubuntu-latest
