@@ -37,6 +37,7 @@ from cognite.client.credentials import CredentialProvider, OAuthClientCredential
 from cognite.client.utils._auxiliary import load_resource_to_dict
 
 if TYPE_CHECKING:
+    from cognite.client._sync_cognite_client import CogniteClient
     from cognite.client.response import CogniteHTTPResponse
 
 
@@ -93,6 +94,29 @@ class AsyncCogniteClient:
         self.simulators = SimulatorsAPI(self._config, self._API_VERSION, self)
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
+
+        self.__sync_client: CogniteClient | None = None
+
+    @property
+    def api_client(self) -> APIClient:
+        """Returns the underlying API client used for HTTP requests.
+
+        Returns:
+            APIClient: The API client instance.
+        """
+        return self._api_client
+
+    def get_sync_client(self) -> CogniteClient:
+        """Returns a synchronous CogniteClient with the same configuration.
+
+        Returns:
+            CogniteClient: A sync client with the same configuration.
+        """
+        from cognite.client._sync_cognite_client import CogniteClient
+
+        if self.__sync_client is None:
+            self.__sync_client = CogniteClient(self._config)
+        return self.__sync_client
 
     async def get(
         self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None

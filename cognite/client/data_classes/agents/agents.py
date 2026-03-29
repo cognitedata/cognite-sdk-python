@@ -39,22 +39,23 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
     labels: list[str] | None = None
 
 
+@dataclass
 class AgentUpsert(AgentCore):
     """Representation of an AI agent.
     This is the write format of an agent.
 
     Args:
-        external_id: The external ID provided by the client. Must be unique for the resource type.
-        name: The name of the agent, for use in user interfaces.
-        description: The human readable description of the agent.
-        instructions: Instructions for the agent.
-        model: Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
-        labels: Labels for the agent. For example, ["published"] to mark an agent as published.
-        tools: List of tools for the agent.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        name (str): The name of the agent, for use in user interfaces.
+        description (str | None): The human readable description of the agent.
+        instructions (str | None): Instructions for the agent.
+        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
+        tools (AgentToolUpsertList | Sequence[AgentToolUpsert] | None): List of tools for the agent.
 
     """
 
-    tools: Sequence[AgentToolUpsert] | None = None
+    tools: AgentToolUpsertList | Sequence[AgentToolUpsert] | None = None
 
     def __init__(
         self,
@@ -64,7 +65,7 @@ class AgentUpsert(AgentCore):
         instructions: str | None = None,
         model: str | None = None,
         labels: list[str] | None = None,
-        tools: Sequence[AgentToolUpsert] | None = None,
+        tools: AgentToolUpsertList | Sequence[AgentToolUpsert] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -74,7 +75,11 @@ class AgentUpsert(AgentCore):
             model=model,
             labels=labels,
         )
-        self.tools: AgentToolUpsertList | None = AgentToolUpsertList(tools) if tools is not None else None
+        self.tools = (
+            tools
+            if isinstance(tools, AgentToolUpsertList)
+            else (AgentToolUpsertList(tools) if tools is not None else None)
+        )
         # This stores any unknown properties that are not part of the defined fields.
         # This is useful while the API is evolving and new fields are added.
         self._unknown_properties: dict[str, object] = {}
@@ -112,35 +117,36 @@ class AgentUpsert(AgentCore):
         return instances
 
 
+@dataclass
 class Agent(AgentCore):
     """Representation of an AI agent.
     This is the read format of an agent.
 
     Args:
-        external_id: The external ID provided by the client. Must be unique for the resource type.
-        name: The name of the agent, for use in user interfaces.
-        description: The human readable description of the agent. Always present in API responses.
-        instructions: Instructions for the agent. Always present in API responses.
-        model: Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
-        labels: Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
-        tools: List of tools for the agent.
-        created_time: The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
-        last_updated_time: The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
-        owner_id: The ID of the user who owns the agent.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        name (str): The name of the agent, for use in user interfaces.
+        created_time (int): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        last_updated_time (int): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        description (str | None): The human readable description of the agent. Always present in API responses.
+        instructions (str | None): Instructions for the agent. Always present in API responses.
+        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
+        labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
+        tools (AgentToolList | Sequence[AgentTool] | None): List of tools for the agent.
+        owner_id (str | None): The ID of the user who owns the agent.
     """
 
     def __init__(
         self,
         external_id: str,
         name: str,
-        description: str | None,
-        instructions: str | None,
-        model: str | None,
-        labels: list[str] | None,
-        tools: Sequence[AgentTool] | None,
         created_time: int,
         last_updated_time: int,
-        owner_id: str | None,
+        description: str | None = None,
+        instructions: str | None = None,
+        model: str | None = None,
+        labels: list[str] | None = None,
+        tools: AgentToolList | Sequence[AgentTool] | None = None,
+        owner_id: str | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -150,7 +156,9 @@ class Agent(AgentCore):
             model=model,
             labels=labels,
         )
-        self.tools = AgentToolList(tools if tools is not None else [])
+        self.tools = (
+            tools if isinstance(tools, AgentToolList) else (AgentToolList(tools) if tools is not None else None)
+        )
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.owner_id = owner_id

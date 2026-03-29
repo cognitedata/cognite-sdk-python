@@ -168,7 +168,7 @@ class FunctionsAPI(APIClient):
         skip_folder_validation: bool = False,
         data_set_id: int | None = None,
     ) -> Function:
-        """`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
+        """`When creating a function, <https://api-docs.cognite.com/20230101/tag/Functions/operation/postFunctions>`_
         the source code can be specified in one of three ways:
 
         - Via the `folder` argument, which is the path to the folder where the source code is located. `function_path` must point to a python file in the folder within which a function named `handle` must be defined.
@@ -185,24 +185,25 @@ class FunctionsAPI(APIClient):
         For help with troubleshooting, please see `this page. <https://docs.cognite.com/cdf/functions/known_issues/>`_
 
         Args:
-            name: The name of the function or a FunctionWrite object. If a FunctionWrite object is passed, all other arguments are ignored.
-            folder: Path to the folder where the function source code is located.
-            file_id: File ID of the code uploaded to the Files API.
-            function_path: Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
-            function_handle: Reference to a function object, which must be named `handle`.
-            external_id: External id of the function.
-            description: Description of the function.
-            owner: Owner of this function. Typically used to know who created it.
-            secrets: Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
-            env_vars: Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
-            cpu: Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            memory: Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            runtime: The function runtime. Valid values are ["py310", "py311", "py312", `None`], and `None` translates to the API default which will change over time. The runtime "py312" resolves to the latest version of the Python 3.12 series.
-            metadata: Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
-            index_url: Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-            extra_index_urls: Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-            skip_folder_validation: When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
-            data_set_id: Data set to upload the function code to. Note: Does not affect the function itself.
+            name (str | FunctionWrite): The name of the function or a FunctionWrite object. If a FunctionWrite
+                object is passed, all other arguments are ignored.
+            folder (str | None): Path to the folder where the function source code is located.
+            file_id (int | None): File ID of the code uploaded to the Files API.
+            function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
+            function_handle (FunctionHandle | None): Reference to a function object, which must be named `handle`.
+            external_id (str | None): External id of the function.
+            description (str | None): Description of the function.
+            owner (str | None): Owner of this function. Typically used to know who created it.
+            secrets (dict[str, str] | None): Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
+            env_vars (dict[str, str] | None): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
+            cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            runtime (RunTime | None): The function runtime. Valid values are ["py310", "py311", "py312", `None`], and `None` translates to the API default which will change over time. The runtime "py312" resolves to the latest version of the Python 3.12 series.
+            metadata (dict[str, str] | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
+            index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            skip_folder_validation (bool): When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
+            data_set_id (int | None): Data set to upload the function code to. Note: Does not affect the function itself.
 
         Returns:
             The created function.
@@ -215,14 +216,14 @@ class FunctionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> function = client.functions.create(
-                ...     name="myfunction",
-                ...     folder="path/to/code",
-                ...     function_path="path/to/function.py")
+                ...     name="myfunction", folder="path/to/code", function_path="path/to/function.py"
+                ... )
 
             Create function with file_id from already uploaded source code:
 
                 >>> function = client.functions.create(
-                ...     name="myfunction", file_id=123, function_path="path/to/function.py")
+                ...     name="myfunction", file_id=123, function_path="path/to/function.py"
+                ... )
 
             Create function with predefined function object named `handle`:
 
@@ -274,7 +275,7 @@ class FunctionsAPI(APIClient):
             json={"items": [function_input.dump(camel_case=True)]},
             semaphore=self._get_semaphore("write"),
         )
-        return Function._load(res.json()["items"][0])
+        return Function._load(res.json()["items"][0]).set_client_ref(self._cognite_client)
 
     async def _create_function_obj(
         self,
@@ -341,7 +342,7 @@ class FunctionsAPI(APIClient):
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
     ) -> None:
-        """`Delete one or more functions. <https://developer.cognite.com/api#tag/Functions/operation/deleteFunctions>`_
+        """`Delete one or more functions. <https://api-docs.cognite.com/20230101/tag/Functions/operation/deleteFunctions>`_
 
         Args:
             id: Id or list of ids.
@@ -372,7 +373,7 @@ class FunctionsAPI(APIClient):
         metadata: dict[str, str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionList:
-        """`List all functions. <https://developer.cognite.com/api#tag/Functions/operation/listFunctions>`_
+        """`List all functions. <https://api-docs.cognite.com/20230101/tag/Functions/operation/listFunctions>`_
 
         Args:
             name: The name of the function.
@@ -418,10 +419,10 @@ class FunctionsAPI(APIClient):
             semaphore=self._get_semaphore("read"),
         )
 
-        return FunctionList._load(res.json()["items"])
+        return FunctionList._load(res.json()["items"])._maybe_set_client_ref(self._cognite_client)
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
-        """`Retrieve a single function by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
+        """`Retrieve a single function by id. <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_
 
         Args:
             id: ID
@@ -452,7 +453,7 @@ class FunctionsAPI(APIClient):
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> FunctionList:
-        """`Retrieve multiple functions by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
+        """`Retrieve multiple functions by id. <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_
 
         Args:
             ids: IDs
@@ -492,7 +493,7 @@ class FunctionsAPI(APIClient):
         wait: bool = True,
         nonce: str | None = None,
     ) -> FunctionCall:
-        """`Call a function by its ID or external ID. <https://developer.cognite.com/api#tag/Function-calls/operation/postFunctionsCall>`_.
+        """`Call a function by its ID or external ID. <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/postFunctionsCall>`_.
 
         Args:
             id: ID
@@ -536,7 +537,7 @@ class FunctionsAPI(APIClient):
         return function_call
 
     async def limits(self) -> FunctionsLimits:
-        """`Get service limits. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_.
+        """`Get service limits. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_.
 
         Returns:
             A function limits object.
@@ -645,7 +646,7 @@ class FunctionsAPI(APIClient):
             )
 
     async def activate(self) -> FunctionsStatus:
-        """`Activate functions for the Project. <https://developer.cognite.com/api#tag/Functions/operation/postFunctionsStatus>`_.
+        """`Activate functions for the Project. <https://api-docs.cognite.com/20230101/tag/Functions/operation/postFunctionsStatus>`_.
 
         Note:
             May take some time to take effect (hours).
@@ -666,7 +667,7 @@ class FunctionsAPI(APIClient):
         return FunctionsStatus.load(res.json())
 
     async def status(self) -> FunctionsStatus:
-        """`Functions activation status for the Project. <https://developer.cognite.com/api#tag/Functions/operation/getFunctionsStatus>`_.
+        """`Functions activation status for the Project. <https://api-docs.cognite.com/20230101/tag/Functions/operation/getFunctionsStatus>`_.
 
         Returns:
             A function activation status.

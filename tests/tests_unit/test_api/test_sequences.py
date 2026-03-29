@@ -365,20 +365,7 @@ class TestSequences:
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any]) -> None:
-        res = cognite_client.sequences.update(
-            Sequence(
-                id=1,
-                created_time=123,
-                last_updated_time=123,
-                name=None,
-                description=None,
-                asset_id=None,
-                external_id=None,
-                metadata=None,
-                columns=[],
-                data_set_id=None,
-            )
-        )
+        res = cognite_client.sequences.update(Sequence(id=1, created_time=123, last_updated_time=123, columns=[]))
         assert isinstance(res, Sequence)
         assert mock_seq_response["items"][0] == res.dump(camel_case=True)
 

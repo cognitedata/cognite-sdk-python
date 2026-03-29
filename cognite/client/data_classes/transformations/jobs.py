@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from typing_extensions import Self
 
@@ -61,42 +61,45 @@ class TransformationJob(CogniteResourceWithClientRef):
     """The transformation job resource allows following the status of execution of a transformation run.
 
     Args:
-        id: A server-generated ID for the object.
-        status: Status of the job.
-        transformation_id: Server-generated ID of the transformation.
-        transformation_external_id: external ID of the transformation.
-        source_project: Name of the CDF project the data will be read from.
-        destination_project: Name of the CDF project the data will be written to.
-        destination: No description.
-        conflict_mode: What to do in case of id collisions: either "abort", "upsert", "update" or "delete".
-        query: Query of the transformation that is being executed.
-        error: Error message from the server.
-        ignore_null_fields: Indicates how null values are handled on updates: ignore or set null.
-        created_time: Time when the job was created.
-        started_time: Time when the job started running.
-        finished_time: Time when the job finished running.
-        last_seen_time: Time of the last status update from the job.
+        id (int): A server-generated ID for the object.
+        uuid (str): A server-generated UUID for the object.
+        status (TransformationJobStatus): Status of the job.
+        transformation_id (int): Server-generated ID of the transformation.
+        transformation_external_id (str): external ID of the transformation.
+        source_project (str): Name of the CDF project the data will be read from.
+        destination_project (str): Name of the CDF project the data will be written to.
+        destination (TransformationDestination): No description.
+        conflict_mode (Literal['abort', 'delete', 'update', 'upsert']): What to do in case of id collisions: either "abort", "upsert", "update" or "delete".
+        query (str): Query of the transformation that is being executed.
+        ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
+        created_time (int): Time when the job was created.
+        error (str | None): Error message from the server.
+        started_time (int | None): Time when the job started running.
+        finished_time (int | None): Time when the job finished running.
+        last_seen_time (int | None): Time of the last status update from the job.
     """
 
     def __init__(
         self,
         id: int,
+        uuid: str,
         status: TransformationJobStatus,
         transformation_id: int,
         transformation_external_id: str,
         source_project: str,
         destination_project: str,
         destination: TransformationDestination,
-        conflict_mode: str,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"],
         query: str,
-        error: str | None,
         ignore_null_fields: bool,
-        created_time: int | None,
-        started_time: int | None,
-        finished_time: int | None,
-        last_seen_time: int | None,
+        created_time: int,
+        error: str | None = None,
+        started_time: int | None = None,
+        finished_time: int | None = None,
+        last_seen_time: int | None = None,
     ) -> None:
         self.id = id
+        self.uuid = uuid
         self.status = status
         self.transformation_id = transformation_id
         self.transformation_external_id = transformation_external_id
@@ -169,8 +172,8 @@ class TransformationJob(CogniteResourceWithClientRef):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>>
-                >>> job1 = client.transformations.run(id = 1, wait = False)
-                >>> job2 = client.transformations.run(id = 2, wait = False)
+                >>> job1 = client.transformations.run(id=1, wait=False)
+                >>> job2 = client.transformations.run(id=2, wait=False)
                 >>> job1.wait()
                 >>> job2.wait()
                 >>> if TransformationJobStatus.FAILED not in [job1.status, job2.status]:
@@ -179,15 +182,15 @@ class TransformationJob(CogniteResourceWithClientRef):
             Wait on transformation for 5 minutes and do something if still running:
 
                 >>>
-                >>> job = client.transformations.run(id = 1, wait = False)
-                >>> job.wait(timeout = 5.0*60)
+                >>> job = client.transformations.run(id=1, wait=False)
+                >>> job.wait(timeout=5.0 * 60)
                 >>> match job.status:
                 >>>     case TransformationJobStatus.FAILED:
-                >>>         # do something if job failed
+                >>> # do something if job failed
                 >>>     case TransformationJobStatus.COMPLETED:
-                >>>         # do something if job completed successfully
+                >>> # do something if job completed successfully
                 >>>     case _:
-                >>>         # do something if job is still running
+                >>> # do something if job is still running
         """
         await self.update_async()
         if timeout is None:
@@ -223,6 +226,7 @@ class TransformationJob(CogniteResourceWithClientRef):
             destination = TransformationDestination(type=resource["destination"])
         return cls(
             id=resource["id"],
+            uuid=resource["uuid"],
             status=TransformationJobStatus(resource["status"]),
             transformation_id=resource["transformationId"],
             transformation_external_id=resource["transformationExternalId"],
@@ -233,7 +237,7 @@ class TransformationJob(CogniteResourceWithClientRef):
             query=resource["query"],
             error=resource.get("error"),
             ignore_null_fields=resource["ignoreNullFields"],
-            created_time=resource.get("createdTime"),
+            created_time=resource["createdTime"],
             started_time=resource.get("startedTime"),
             finished_time=resource.get("finishedTime"),
             last_seen_time=resource.get("lastSeenTime"),

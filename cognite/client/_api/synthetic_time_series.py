@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, Union, cast, overload
 from zoneinfo import ZoneInfo
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite
+from cognite.client.data_classes import SyntheticDatapoints, SyntheticDatapointsList, TimeSeries, TimeSeriesWrite
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
@@ -68,7 +68,7 @@ class SyntheticDatapointsAPI(APIClient):
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         timezone: str | datetime.timezone | ZoneInfo | None = None,
-    ) -> DatapointsList: ...
+    ) -> SyntheticDatapointsList: ...
 
     @overload
     async def query(
@@ -83,7 +83,7 @@ class SyntheticDatapointsAPI(APIClient):
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         timezone: str | datetime.timezone | ZoneInfo | None = None,
-    ) -> Datapoints: ...
+    ) -> SyntheticDatapoints: ...
 
     async def query(
         self,
@@ -97,8 +97,8 @@ class SyntheticDatapointsAPI(APIClient):
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         timezone: str | datetime.timezone | ZoneInfo | None = None,
-    ) -> Datapoints | DatapointsList:
-        """`Calculate the result of a function on time series. <https://developer.cognite.com/api#tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
+    ) -> SyntheticDatapoints | SyntheticDatapointsList:
+        """`Calculate the result of a function on time series. <https://api-docs.cognite.com/20230101/tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
         Info:
             You can read the guide to synthetic time series in our `documentation <https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries>`_.
@@ -116,7 +116,7 @@ class SyntheticDatapointsAPI(APIClient):
             timezone: The timezone to use when aggregating datapoints. For aggregates of granularity 'hour' and longer, which time zone should we align to. Align to the start of the hour, start of the day or start of the month. For time zones of type Region/Location, the aggregate duration can vary, typically due to daylight saving time. For time zones of type UTC+/-HH:MM, use increments of 15 minutes. Default: "UTC" (None)
 
         Returns:
-            A DatapointsList object containing the calculated data.
+            SyntheticDatapoints | SyntheticDatapointsList: A SyntheticDatapointsList object containing the calculated data.
 
         Examples:
 
@@ -133,9 +133,8 @@ class SyntheticDatapointsAPI(APIClient):
                 ...     + ts{space:'my-space',externalId:'my-ts-xid'}
                 ... '''
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions=expression,
-                ...     start="2w-ago",
-                ...     end="now")
+                ...     expressions=expression, start="2w-ago", end="now"
+                ... )
 
             You can also specify variables for an easier query syntax:
 
@@ -147,14 +146,15 @@ class SyntheticDatapointsAPI(APIClient):
                 ...     "C": NodeId("my-space", "my-ts-xid"),
                 ... }
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions="A+B+C", start="2w-ago", end="2w-ahead", variables=variables)
+                ...     expressions="A+B+C", start="2w-ago", end="2w-ahead", variables=variables
+                ... )
 
             Use sympy to build complex expressions:
 
                 >>> from sympy import symbols, cos, sin
                 >>> x, y = symbols("x y")
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     [sin(x), y*cos(x)],
+                ...     [sin(x), y * cos(x)],
                 ...     start="2w-ago",
                 ...     end="now",
                 ...     variables={x: "foo", y: "bar"},
@@ -184,31 +184,29 @@ class SyntheticDatapointsAPI(APIClient):
 
         datapoints_summary = await execute_async_tasks(tasks)
         datapoints_summary.raise_compound_exception_if_failed_tasks()
-        return DatapointsList(datapoints_summary.results) if not single_expr else datapoints_summary.results[0]
+        return SyntheticDatapointsList(datapoints_summary.results) if not single_expr else datapoints_summary.results[0]
 
-    async def _fetch_datapoints(self, query: dict[str, Any], limit: int, short_expression: str) -> Datapoints:
-        datapoints = None
+    async def _fetch_datapoints(self, query: dict[str, Any], limit: int, short_expression: str) -> SyntheticDatapoints:
+        dps = None
         semaphore = self._get_semaphore("read")
         while True:
             query["limit"] = min(limit, self._DPS_LIMIT_SYNTH)
             resp = await self._post(
                 url_path=self._RESOURCE_PATH + "/query", json={"items": [query]}, semaphore=semaphore
             )
-            data = resp.json()["items"][0]
-            new_dps = Datapoints._load_from_synthetic(data)
-            if datapoints is None:
-                # NOTE / TODO: We misuse the 'external_id' field for the entire 'expression string':
-                new_dps.external_id = short_expression
-                datapoints = new_dps
+            data = resp.json()["items"][0] | {"expression": short_expression, "timezone": query.get("timeZone")}
+            new_dps = SyntheticDatapoints._load(data)
+            if dps is None:
+                dps = new_dps
             else:
-                datapoints.timestamp.extend(new_dps.timestamp)
-                datapoints.value.extend(new_dps.value)  # type: ignore[union-attr, arg-type]
-                datapoints.error.extend(new_dps.error)  # type: ignore[union-attr, arg-type]
+                dps.timestamp.extend(new_dps.timestamp)
+                dps.value.extend(new_dps.value)
+                dps.error.extend(new_dps.error)
             limit -= (n_fetched := len(data["datapoints"]))
             if n_fetched < self._DPS_LIMIT_SYNTH or limit <= 0:
                 break
             query["start"] = data["datapoints"][-1]["timestamp"] + 1
-        return datapoints
+        return dps
 
     def _build_expression(
         self,
@@ -253,7 +251,8 @@ class SyntheticDatapointsAPI(APIClient):
         for k, v in variables.items():
             if isinstance(v, TimeSeries | TimeSeriesWrite):
                 try:
-                    v = Identifier.load(external_id=v.external_id, instance_id=v.instance_id).as_primitive()
+                    instance_id = getattr(v, "instance_id", None)
+                    v = Identifier.load(external_id=v.external_id, instance_id=instance_id).as_primitive()
                 except ValueError:
                     # ^error message wrongly says id is accepted, which it is not
                     raise ValueError(

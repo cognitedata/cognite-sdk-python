@@ -9,6 +9,7 @@ from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import AggregateResultItem, Label, LabelFilter, TimestampRange
+from cognite.client.data_classes._base import UnknownCogniteResource
 from cognite.client.data_classes.assets import Asset, AssetFilter, AssetList, AssetUpdate, AssetWrite
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import convert_all_keys_to_snake_case
@@ -65,11 +66,12 @@ def mock_assets_response(
 def mock_get_subtree_base(
     httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[HTTPXMock]:
+    required = {"rootId": 2, "createdTime": 123, "lastUpdatedTime": 123, "name": "foo"}
     httpx_mock.add_response(
         method="POST",
         url=get_url(async_client.assets) + "/assets/byids",
         status_code=200,
-        json={"items": [{"id": 1, "createdTime": 123, "lastUpdatedTime": 123}]},
+        json={"items": [{"id": 1, **required}]},
         is_optional=True,
     )
     httpx_mock.add_response(
@@ -78,9 +80,9 @@ def mock_get_subtree_base(
         status_code=200,
         json={
             "items": [
-                {"id": 2, "parentId": 1, "createdTime": 123, "lastUpdatedTime": 123},
-                {"id": 3, "parentId": 1, "createdTime": 123, "lastUpdatedTime": 123},
-                {"id": 4, "parentId": 1, "createdTime": 123, "lastUpdatedTime": 123},
+                {"id": 2, "parentId": 1, **required},
+                {"id": 3, "parentId": 1, **required},
+                {"id": 4, "parentId": 1, **required},
             ]
         },
         is_optional=True,
@@ -91,8 +93,8 @@ def mock_get_subtree_base(
         status_code=200,
         json={
             "items": [
-                {"id": 5, "parentId": 2, "createdTime": 123, "lastUpdatedTime": 123},
-                {"id": 6, "parentId": 2, "createdTime": 123, "lastUpdatedTime": 123},
+                {"id": 5, "parentId": 2, **required},
+                {"id": 6, "parentId": 2, **required},
             ]
         },
         is_optional=True,
@@ -103,8 +105,8 @@ def mock_get_subtree_base(
         status_code=200,
         json={
             "items": [
-                {"id": 7, "parentId": 3, "createdTime": 123, "lastUpdatedTime": 123},
-                {"id": 8, "parentId": 3, "createdTime": 123, "lastUpdatedTime": 123},
+                {"id": 7, "parentId": 3, **required},
+                {"id": 8, "parentId": 3, **required},
             ]
         },
         is_optional=True,
@@ -115,8 +117,8 @@ def mock_get_subtree_base(
         status_code=200,
         json={
             "items": [
-                {"id": 9, "parentId": 4, "createdTime": 123, "lastUpdatedTime": 123},
-                {"id": 10, "parentId": 4, "createdTime": 123, "lastUpdatedTime": 123},
+                {"id": 9, "parentId": 4, **required},
+                {"id": 10, "parentId": 4, **required},
             ]
         },
         is_optional=True,
@@ -376,6 +378,18 @@ class TestAssets:
             "limit": 25,
         } == jsgz_load(mock_assets_response.get_requests()[0].content)
 
+    def test_create_with_invalid_geoLocation(self, cognite_client: CogniteClient) -> None:
+        invalid_geo_location = {"foo": "bar"}
+        asset = Asset(
+            id=1,
+            created_time=0,
+            last_updated_time=0,
+            root_id=1,
+            name="bla",
+            geo_location=invalid_geo_location,  # type: ignore[arg-type]
+        )
+        assert isinstance(asset.geo_location, UnknownCogniteResource)
+
     @pytest.mark.parametrize("filter_field", ["parent_ids", "parentIds"])
     def test_search_dict_filter(
         self,
@@ -488,7 +502,7 @@ class TestPandasIntegration:
             method="POST",
             url=get_url(async_client.assets) + "/assets/byids",
             status_code=200,
-            json={"items": [{"id": 1, "createdTime": 0, "lastUpdatedTime": 0}]},
+            json={"items": [{"id": 1, "createdTime": 0, "lastUpdatedTime": 0, "rootId": 1, "name": "test"}]},
         )
         df = cognite_client.assets.retrieve_subtree(id=1).to_pandas()
         cognite_client.assets.retrieve(id=df.at[0, "id"])

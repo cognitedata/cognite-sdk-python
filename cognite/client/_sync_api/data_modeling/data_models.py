@@ -1,6 +1,6 @@
 """
 ===============================================================================
-52353e1e28eda5b7a29b93e791af60fa
+059bf0313b1b78487b9d7972593f9de2
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -104,7 +104,7 @@ class SyncDataModelsAPI(SyncAPIClient):
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: bool = False
     ) -> DataModelList[ViewId] | DataModelList[View]:
         """
-        `Retrieve data_model(s) by id(s). <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_
+        `Retrieve data_model(s) by id(s). <https://api-docs.cognite.com/20230101/tag/Data-models/operation/byExternalIdsDataModels>`_
 
         Args:
             ids: Data Model identifier(s).
@@ -128,7 +128,7 @@ class SyncDataModelsAPI(SyncAPIClient):
 
     def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
         """
-        `Delete one or more data model <https://developer.cognite.com/api#tag/Data-models/operation/deleteDataModels>`_
+        `Delete one or more data model <https://api-docs.cognite.com/20230101/tag/Data-models/operation/deleteDataModels>`_
 
         Args:
             ids: Data Model identifier(s).
@@ -174,7 +174,7 @@ class SyncDataModelsAPI(SyncAPIClient):
         include_global: bool = False,
     ) -> DataModelList[View] | DataModelList[ViewId]:
         """
-        `List data models <https://developer.cognite.com/api#tag/Data-models/operation/listDataModels>`_
+        `List data models <https://api-docs.cognite.com/20230101/tag/Data-models/operation/listDataModels>`_
 
         Args:
             inline_views: Whether to expand the referenced views inline in the returned result.
@@ -203,7 +203,7 @@ class SyncDataModelsAPI(SyncAPIClient):
             Iterate over chunks of data model to reduce memory load:
 
                 >>> for data_model_list in client.data_modeling.data_models(chunk_size=10):
-                ...     data_model_list # do something with the data model
+                ...     data_model_list  # do something with the data model
         """
         return run_sync(
             self.__async_client.data_modeling.data_models.list(  # type: ignore [call-overload]
@@ -223,7 +223,7 @@ class SyncDataModelsAPI(SyncAPIClient):
 
     def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
         """
-        `Create or update one or more data model. <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_
+        `Create or update one or more data model. <https://api-docs.cognite.com/20230101/tag/Data-models/operation/createDataModels>`_
 
         Args:
             data_model: Data model(s) to create or update (upsert).
@@ -240,8 +240,19 @@ class SyncDataModelsAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> data_models = [
-                ...     DataModelApply(space="mySpace",external_id="myDataModel",version="v1",views=[ViewId("mySpace","myView","v1")]),
-                ...     DataModelApply(space="mySpace",external_id="myOtherDataModel",version="v1",views=[ViewId("mySpace","myView","v1")])]
+                ...     DataModelApply(
+                ...         space="mySpace",
+                ...         external_id="myDataModel",
+                ...         version="v1",
+                ...         views=[ViewId("mySpace", "myView", "v1")],
+                ...     ),
+                ...     DataModelApply(
+                ...         space="mySpace",
+                ...         external_id="myOtherDataModel",
+                ...         version="v1",
+                ...         views=[ViewId("mySpace", "myView", "v1")],
+                ...     ),
+                ... ]
                 >>> res = client.data_modeling.data_models.apply(data_models)
         """
         return run_sync(self.__async_client.data_modeling.data_models.apply(data_model=data_model))

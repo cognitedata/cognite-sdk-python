@@ -81,7 +81,7 @@ class TransformationSchedulesAPI(APIClient):
         | Sequence[TransformationSchedule]
         | Sequence[TransformationScheduleWrite],
     ) -> TransformationSchedule | TransformationScheduleList:
-        """`Schedule the specified transformation with the specified configuration(s). <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/createTransformationSchedules>`_
+        """`Schedule the specified transformation with the specified configuration(s). <https://api-docs.cognite.com/20230101/tag/Transformation-Schedules/operation/createTransformationSchedules>`_
 
         Args:
             schedule: Configuration or list of configurations of the schedules to create.
@@ -110,7 +110,7 @@ class TransformationSchedulesAPI(APIClient):
         )
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> TransformationSchedule | None:
-        """`Retrieve a single transformation schedule by the id or external id of its transformation. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
+        """`Retrieve a single transformation schedule by the id or external id of its transformation. <https://api-docs.cognite.com/20230101/tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
 
         Args:
             id: transformation ID
@@ -143,7 +143,7 @@ class TransformationSchedulesAPI(APIClient):
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TransformationScheduleList:
-        """`Retrieve multiple transformation schedules by the ids or external ids of the corresponding transformations. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
+        """`Retrieve multiple transformation schedules by the ids or external ids of the corresponding transformations. <https://api-docs.cognite.com/20230101/tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
 
         Args:
             ids: transformation IDs
@@ -177,7 +177,7 @@ class TransformationSchedulesAPI(APIClient):
     async def list(
         self, include_public: bool = True, limit: int | None = DEFAULT_LIMIT_READ
     ) -> TransformationScheduleList:
-        """`List all transformation schedules. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedules>`_
+        """`List all transformation schedules. <https://api-docs.cognite.com/20230101/tag/Transformation-Schedules/operation/getTransformationSchedules>`_
 
         Args:
             include_public: Whether public transformations should be included in the results. (default true).
@@ -211,7 +211,7 @@ class TransformationSchedulesAPI(APIClient):
         external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Unschedule one or more transformations <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/deleteTransformationSchedules>`_
+        """`Unschedule one or more transformations <https://api-docs.cognite.com/20230101/tag/Transformation-Schedules/operation/deleteTransformationSchedules>`_
 
         Args:
             id: Id or list of ids
@@ -225,7 +225,7 @@ class TransformationSchedulesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.transformations.schedules.delete(id=[1,2,3], external_id="3")
+                >>> client.transformations.schedules.delete(id=[1, 2, 3], external_id="3")
         """
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
@@ -255,7 +255,7 @@ class TransformationSchedulesAPI(APIClient):
         | Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TransformationSchedule | TransformationScheduleList:
-        """`Update one or more transformation schedules <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/updateTransformationSchedules>`_
+        """`Update one or more transformation schedules <https://api-docs.cognite.com/20230101/tag/Transformation-Schedules/operation/updateTransformationSchedules>`_
 
         Args:
             item: Transformation schedule(s) to update
@@ -278,7 +278,9 @@ class TransformationSchedulesAPI(APIClient):
             Perform a partial update on a transformation schedule, updating the interval and unpausing it:
 
                 >>> from cognite.client.data_classes import TransformationScheduleUpdate
-                >>> my_update = TransformationScheduleUpdate(id=1).interval.set("0 * * * *").is_paused.set(False)
+                >>> my_update = (
+                ...     TransformationScheduleUpdate(id=1).interval.set("0 * * * *").is_paused.set(False)
+                ... )
                 >>> res = client.transformations.schedules.update(my_update)
         """
         return await self._update_multiple(

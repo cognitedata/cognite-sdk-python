@@ -90,38 +90,68 @@ See the :doc:`quickstart` for configuration examples.
 
 Contents
 ^^^^^^^^
+
+Getting Started
+"""""""""""""""
 .. toctree::
+   :maxdepth: 2
+
    quickstart
    settings
    credential_providers
    cognite_client
    extensions_and_optional_dependencies
    identity_and_access_management
+
+Core Resources
+""""""""""""""
+.. toctree::
+   :maxdepth: 1
+
    data_modeling
    agents
    ai
-   limits
    assets
    events
+   documents
    files
    time_series
    sequences
-   geospatial
    3d
+
+Data Processing
+"""""""""""""""
+.. toctree::
+   :maxdepth: 1
+
    contextualization
-   documents
    data_ingestion
+   transformations
+   functions
+   data_workflows
+
+Specialized Features
+""""""""""""""""""""
+.. toctree::
+   :maxdepth: 1
+
+   simulators
+   geospatial
+   unit_catalog
    hosted_extractors
    postgres_gateway
    data_organization
-   transformations
-   functions
-   simulators
-   data_workflows
-   unit_catalog
+   limits
+
+Reference
+"""""""""
+.. toctree::
+   :maxdepth: 1
+
    filters
-   base_data_classes
+   deprecated
    exceptions
-   utils
    testing
+   utils
+   base_data_classes
    appendix

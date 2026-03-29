@@ -1955,7 +1955,7 @@ async def test_worker_in_backoff_loop_gets_new_token(httpx_mock: HTTPXMock) -> N
         method="POST",
         url=url,
         status_code=200,
-        json={"items": [{"id": 123, "createdTime": 123, "lastUpdatedTime": 123}]},
+        json={"items": [{"id": 123, "createdTime": 123, "lastUpdatedTime": 123, "rootId": 123, "name": "x"}]},
     )
 
     call_count = 0

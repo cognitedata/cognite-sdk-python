@@ -199,12 +199,9 @@ def convert_dps_to_dataframe(
     include_granularity_name: bool,
     include_status: bool,
     include_unit: bool,
-    include_errors: bool = False,  # old leftover misuse of Datapoints class :(
 ) -> pd.DataFrame:
     pd = local_import("pandas")
-    columns = _extract_column_info_from_dps_for_dataframe(
-        dps, include_status=include_status, include_errors=include_errors
-    )
+    columns = _extract_column_info_from_dps_for_dataframe(dps, include_status=include_status)
     df = pd.DataFrame(
         # We initially use integer indexing to allow duplicate column names:
         {i: col.as_array() for i, col in enumerate(columns)},
@@ -216,7 +213,6 @@ def convert_dps_to_dataframe(
         include_aggregate=include_aggregate_name,
         include_granularity=include_granularity_name,
         include_unit=include_unit,
-        include_errors=include_errors,
     )
     return df
 
@@ -239,18 +235,14 @@ class _DpsColumnInfo:
     granularity: str | None = None
     unit_xid: str | None = None
     status_info: Literal["code", "symbol"] | None = None
-    synth_query_info: str | None = None
 
-    def as_multi_index_tuple(
-        self, include_aggregate: bool, include_granularity: bool, include_unit: bool, include_errors: bool
-    ) -> tuple:
+    def as_multi_index_tuple(self, include_aggregate: bool, include_granularity: bool, include_unit: bool) -> tuple:
         return (
             self.column_id,
             self.status_info,  # since these split to separate cols, they are already filtered out if not wanted
             self.aggregate if include_aggregate else None,
             self.granularity if include_granularity else None,
             self.unit_xid if include_unit else None,
-            self.synth_query_info if include_errors else None,
         )
 
     def as_array(self) -> NumpyObjArray | NumpyFloat64Array | NumpyInt64Array | NumpyUInt32Array:
@@ -304,7 +296,6 @@ def _extract_raw_column_info(
     identifier: NodeId | str | int,
     is_array: bool,
     include_status: bool,
-    include_errors: bool,
 ) -> list[_DpsColumnInfo]:
     assert dps.value is not None
     columns = [
@@ -322,28 +313,6 @@ def _extract_raw_column_info(
         if dps.status_symbol is not None:
             columns.append(_DpsColumnInfo(identifier, data=dps.status_symbol, is_array=is_array, status_info="symbol"))
 
-    if include_errors:
-        columns = _handle_synthetic_dps_with_errors(identifier, dps, columns)  # type: ignore [arg-type]
-    return columns
-
-
-def _handle_synthetic_dps_with_errors(
-    identifier: str, dps: Datapoints, columns: list[_DpsColumnInfo]
-) -> list[_DpsColumnInfo]:
-    # EVERYTHING about this is ugly and hacky, but adding a separate SyntheticDatapoints class is such a waste of time
-    # that we let it slide (literally zero usage of synthetic datapoints API from the SDK - which is understandable):
-    import numpy as np
-
-    from cognite.client.data_classes import Datapoints
-
-    assert isinstance(dps, Datapoints)  # only Datapoints has error field
-    if dps.error is None:
-        raise ValueError("Unable to 'include_errors', only available for data from synthetic datapoint queries")
-
-    errors = np.array([dp or "" for dp in dps.error], dtype=np.object_)
-    columns.append(_DpsColumnInfo(identifier, data=errors, is_array=True, synth_query_info="errors"))
-    # Override the synth. query results with info about what it is:
-    object.__setattr__(columns[0], "synth_query_info", "results")
     return columns
 
 
@@ -367,14 +336,14 @@ def _extract_aggregate_column_info_from_dps(
 
 
 def _extract_column_info_from_dps_for_dataframe(
-    dps: Datapoints | DatapointsArray, include_status: bool, include_errors: bool = False
+    dps: Datapoints | DatapointsArray, include_status: bool
 ) -> list[_DpsColumnInfo]:
     from cognite.client.data_classes import DatapointsArray
 
     identifier = _resolve_ts_identifier_as_df_column_name(dps)
     is_array = isinstance(dps, DatapointsArray)
     if dps.value is not None:
-        return _extract_raw_column_info(dps, identifier, is_array, include_status, include_errors)
+        return _extract_raw_column_info(dps, identifier, is_array, include_status)
     return _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
 
 
@@ -383,7 +352,6 @@ def _create_multi_index_from_columns(
     include_aggregate: bool,
     include_granularity: bool,
     include_unit: bool,
-    include_errors: bool = False,
 ) -> pd.MultiIndex:
     import pandas as pd
 
@@ -393,11 +361,10 @@ def _create_multi_index_from_columns(
                 include_aggregate=include_aggregate,
                 include_granularity=include_granularity,
                 include_unit=include_unit,
-                include_errors=include_errors,
             )
             for col in columns
         ],
-        columns=["identifier", "status", "aggregate", "granularity", "unit", "synthetic query"],
+        columns=["identifier", "status", "aggregate", "granularity", "unit"],
     )
     # Key operation is to drop all-nan columns, which in the multi-index translates to dropping
     # the corresponding levels:

@@ -66,10 +66,13 @@ VALID_METHODS = {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
 
 def resolve_url(api_client: BasicAsyncAPIClient, method: str, url_path: str) -> tuple[bool, str]:
-    if not url_path.startswith("/"):
-        raise ValueError("URL path must start with '/'")
+    if url_path.startswith(("http://", "https://")):
+        full_url = url_path
+    elif url_path.startswith("/"):
+        full_url = api_client._base_url_with_base_path + url_path
+    else:
+        raise ValueError("URL path must start with '/' or be a full URL starting with 'http(s)://'")
 
-    full_url = api_client._base_url_with_base_path + url_path
     is_retryable = validate_url_and_return_retryability(method, full_url)
     return is_retryable, full_url
 

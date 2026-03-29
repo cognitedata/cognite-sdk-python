@@ -215,7 +215,7 @@ class ConcurrencySettings:
     The total concurrency budget, i.e. the maximum number of concurrent requests in flight,
     is the sum of all categories (e.g. general) and operation types (e.g. read or write).
 
-    See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
+    See: https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings
 
     Note:
         The settings apply on a per-project level, thus if you have multiple clients
@@ -257,7 +257,7 @@ class ConcurrencySettings:
             raise RuntimeError(
                 f"Cannot modify '{api_name}.{name}' after concurrency settings have been used to create semaphores. "
                 "Concurrency settings must be configured before sending any API requests. "
-                "See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings"
+                "See: https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings"
             )
 
     def _freeze(self) -> None:
@@ -626,7 +626,7 @@ async def execute_async_tasks_with_fail_fast(tasks: list[AsyncSDKTask]) -> Tasks
         return_when=asyncio.FIRST_EXCEPTION,
     )
     if all(task.exception() is None for task in done):
-        return TasksSummary([task.result() for task in done], successful_tasks=tasks)
+        return TasksSummary([task.result() for task in tasks], successful_tasks=tasks)
 
     # Something failed, and because of fail-fast, we (attempt to) cancel all pending tasks:
     if pending:  # while we are waiting on 3.11 and asyncio.TaskGroup...

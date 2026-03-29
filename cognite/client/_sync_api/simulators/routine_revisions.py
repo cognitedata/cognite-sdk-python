@@ -1,6 +1,6 @@
 """
 ===============================================================================
-59e08b3e8ed6c3221b448ba843da4197
+a4f7d5db770f623f0487f34ba9a253b4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -131,7 +131,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         self, *, ids: int | Sequence[int] | None = None, external_ids: str | SequenceNotStr[str] | None = None
     ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionList | None:
         """
-        `Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
+        `Retrieve simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
 
         Retrieve simulator routine revisions by ID or External Id.
 
@@ -296,7 +296,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         sort: PropertySort | None = None,
     ) -> SimulatorRoutineRevisionList:
         """
-        `Filter simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
+        `Filter simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
 
         Retrieves a list of simulator routine revisions that match the given criteria.
 
@@ -327,13 +327,11 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
                 ...     routine_external_ids=["routine_1"],
                 ...     all_versions=True,
                 ...     sort=PropertySort(order="asc", property="createdTime"),
-                ...     include_all_fields=True
+                ...     include_all_fields=True,
                 ... )
 
             List simulator routine revisions by kind:
-                >>> res = client.simulators.routines.revisions.list(
-                ...     kind="long"
-                ... )
+                >>> res = client.simulators.routines.revisions.list(kind="long")
         """
         return run_sync(
             self.__async_client.simulators.routines.revisions.list(

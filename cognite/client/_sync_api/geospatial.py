@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ddd906b7c138e3c75c04f8648c4438c8
+d1c6c58669aed07e457031a53ba3a9f5
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -55,7 +55,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> FeatureType | FeatureTypeList:
         """
         `Creates feature types`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/createFeatureTypes>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createFeatureTypes>
 
         Args:
             feature_type: feature type definition or list of feature type definitions to create.
@@ -86,7 +86,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     def delete_feature_types(self, external_id: str | SequenceNotStr[str], recursive: bool = False) -> None:
         """
         `Delete one or more feature type`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/GeospatialDeleteFeatureTypes>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/GeospatialDeleteFeatureTypes>
 
         Args:
             external_id: External ID or list of external ids
@@ -108,7 +108,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     def list_feature_types(self) -> FeatureTypeList:
         """
         `List feature types`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/listFeatureTypes>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listFeatureTypes>
 
         Returns:
             List of feature types
@@ -121,7 +121,7 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> for feature_type in client.geospatial.list_feature_types():
-                ...     feature_type # do something with the feature type definition
+                ...     feature_type  # do something with the feature type definition
         """
         return run_sync(self.__async_client.geospatial.list_feature_types())
 
@@ -134,7 +134,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     def retrieve_feature_types(self, external_id: str | list[str]) -> FeatureType | FeatureTypeList:
         """
         `Retrieve feature types`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/getFeatureTypesByIds>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getFeatureTypesByIds>
 
         Args:
             external_id: External ID
@@ -156,7 +156,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     def patch_feature_types(self, patch: FeatureTypePatch | Sequence[FeatureTypePatch]) -> FeatureTypeList:
         """
         `Patch feature types`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatureTypes>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/updateFeatureTypes>
 
         Args:
             patch: the patch to apply
@@ -173,26 +173,29 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.geospatial.patch_feature_types(
-                ...    patch=FeatureTypePatch(
-                ...       external_id="wells",
-                ...       property_patches=Patches(add={"altitude": {"type": "DOUBLE"}}),
-                ...       search_spec_patches=Patches(
-                ...         add={
-                ...           "altitude_idx": {"properties": ["altitude"]},
-                ...           "composite_idx": {"properties": ["location", "altitude"]}
-                ...         }
-                ...       )
-                ...    )
+                ...     patch=FeatureTypePatch(
+                ...         external_id="wells",
+                ...         property_patches=Patches(add={"altitude": {"type": "DOUBLE"}}),
+                ...         search_spec_patches=Patches(
+                ...             add={
+                ...                 "altitude_idx": {"properties": ["altitude"]},
+                ...                 "composite_idx": {"properties": ["location", "altitude"]},
+                ...             }
+                ...         ),
+                ...     )
                 ... )
 
             Add an additional index to an existing property
 
                 >>> from cognite.client.data_classes.geospatial import Patches
                 >>> res = client.geospatial.patch_feature_types(
-                ...    patch=FeatureTypePatch(
+                ...     patch=FeatureTypePatch(
                 ...         external_id="wells",
-                ...         search_spec_patches=Patches(add={"location_idx": {"properties": ["location"]}})
-                ... ))
+                ...         search_spec_patches=Patches(
+                ...             add={"location_idx": {"properties": ["location"]}}
+                ...         ),
+                ...     )
+                ... )
         """
         return run_sync(self.__async_client.geospatial.patch_feature_types(patch=patch))
 
@@ -223,7 +226,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> Feature | FeatureList:
         """
         `Creates features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/createFeatures>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createFeatures>
 
         Args:
             feature_type_external_id: Feature type definition for the features to create.
@@ -247,18 +250,16 @@ class SyncGeospatialAPI(SyncAPIClient):
                 ...         external_id="my_feature_type",
                 ...         properties={
                 ...             "location": {"type": "POINT", "srid": 4326},
-                ...             "temperature": {"type": "DOUBLE"}
-                ...         }
+                ...             "temperature": {"type": "DOUBLE"},
+                ...         },
                 ...     )
                 ... ]
                 >>> res = client.geospatial.create_feature_types(feature_types)
                 >>> res = client.geospatial.create_features(
                 ...     feature_type_external_id="my_feature_type",
                 ...     feature=FeatureWrite(
-                ...         external_id="my_feature",
-                ...         location={"wkt": "POINT(1 1)"},
-                ...         temperature=12.4
-                ...     )
+                ...         external_id="my_feature", location={"wkt": "POINT(1 1)"}, temperature=12.4
+                ...     ),
                 ... )
         """
         return run_sync(
@@ -275,7 +276,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> None:
         """
         `Delete one or more feature`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/deleteFeatures>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteFeatures>
 
         Args:
             feature_type_external_id: No description.
@@ -289,8 +290,7 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.geospatial.delete_features(
-                ...     feature_type_external_id="my_feature_type",
-                ...     external_id=my_feature
+                ...     feature_type_external_id="my_feature_type", external_id=my_feature
                 ... )
         """
         return run_sync(
@@ -314,7 +314,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> FeatureList | Feature:
         """
         `Retrieve features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/getFeaturesByIds>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getFeaturesByIds>
 
         Args:
             feature_type_external_id: No description.
@@ -332,8 +332,7 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.geospatial.retrieve_features(
-                ...     feature_type_external_id="my_feature_type",
-                ...     external_id="my_feature"
+                ...     feature_type_external_id="my_feature_type", external_id="my_feature"
                 ... )
         """
         return run_sync(
@@ -369,7 +368,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> Feature | FeatureList:
         """
         `Update features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatures>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/updateFeatures>
 
         Args:
             feature_type_external_id: No description.
@@ -389,11 +388,11 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_feature = client.geospatial.create_features(
                 ...     feature_type_external_id="my_feature_type",
-                ...     feature=Feature(external_id="my_feature", temperature=12.4)
+                ...     feature=Feature(external_id="my_feature", temperature=12.4),
                 ... )
                 >>> my_updated_feature = client.geospatial.update_features(
                 ...     feature_type_external_id="my_feature_type",
-                ...     feature=Feature(external_id="my_feature", temperature=6.237)
+                ...     feature=Feature(external_id="my_feature", temperature=6.237),
                 ... )
         """
         return run_sync(
@@ -415,7 +414,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> FeatureList:
         """
         `List features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/listFeatures>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listFeatures>
 
         This method allows to filter all features.
 
@@ -442,14 +441,12 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> my_feature = client.geospatial.create_features(
                 ...     feature_type_external_id=my_feature_type,
                 ...     feature=Feature(
-                ...         external_id="my_feature",
-                ...         temperature=12.4,
-                ...         location={"wkt": "POINT(0 1)"}
-                ...     )
+                ...         external_id="my_feature", temperature=12.4, location={"wkt": "POINT(0 1)"}
+                ...     ),
                 ... )
                 >>> res = client.geospatial.list_features(
                 ...     feature_type_external_id="my_feature_type",
-                ...     filter={"range": {"property": "temperature", "gt": 12.0}}
+                ...     filter={"range": {"property": "temperature", "gt": 12.0}},
                 ... )
                 >>> for f in res:
                 ...     # do something with the features
@@ -459,17 +456,19 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> res = client.geospatial.list_features(
                 ...     feature_type_external_id=my_feature_type,
                 ...     filter={},
-                ...     properties={"temperature": {}, "pressure": {}}
+                ...     properties={"temperature": {}, "pressure": {}},
                 ... )
 
             Search for features with spatial filters:
 
                 >>> res = client.geospatial.list_features(
                 ...     feature_type_external_id=my_feature_type,
-                ...     filter={"stWithin": {
-                ...         "property": "location",
-                ...         "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"}
-                ...     }}
+                ...     filter={
+                ...         "stWithin": {
+                ...             "property": "location",
+                ...             "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"},
+                ...         }
+                ...     },
                 ... )
         """
         return run_sync(
@@ -494,7 +493,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> FeatureList:
         """
         `Search for features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeatures>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/searchFeatures>
 
         This method allows to order the result by one or more of the properties of the feature type.
         However, the number of items returned is limited to 1000 and there is no support for cursors yet.
@@ -525,14 +524,12 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> my_feature = client.geospatial.create_features(
                 ...     feature_type_external_id=my_feature_type,
                 ...     feature=Feature(
-                ...         external_id="my_feature",
-                ...         temperature=12.4,
-                ...         location={"wkt": "POINT(0 1)"}
-                ...     )
+                ...         external_id="my_feature", temperature=12.4, location={"wkt": "POINT(0 1)"}
+                ...     ),
                 ... )
                 >>> res = client.geospatial.search_features(
                 ...     feature_type_external_id="my_feature_type",
-                ...     filter={"range": {"property": "temperature", "gt": 12.0}}
+                ...     filter={"range": {"property": "temperature", "gt": 12.0}},
                 ... )
                 >>> for f in res:
                 ...     # do something with the features
@@ -542,7 +539,7 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> res = client.geospatial.search_features(
                 ...     feature_type_external_id=my_feature_type,
                 ...     filter={},
-                ...     properties={"temperature": {}, "pressure": {}}
+                ...     properties={"temperature": {}, "pressure": {}},
                 ... )
 
             Search for features and do CRS conversion on an output property:
@@ -550,7 +547,7 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> res = client.geospatial.search_features(
                 ...     feature_type_external_id=my_feature_type,
                 ...     filter={},
-                ...     properties={"location": {"srid": 3995}}
+                ...     properties={"location": {"srid": 3995}},
                 ... )
 
             Search for features and order results:
@@ -558,43 +555,51 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> res = client.geospatial.search_features(
                 ...     feature_type_external_id=my_feature_type,
                 ...     filter={},
-                ...     order_by=[
-                ...         OrderSpec("temperature", "ASC"),
-                ...         OrderSpec("pressure", "DESC")]
+                ...     order_by=[OrderSpec("temperature", "ASC"), OrderSpec("pressure", "DESC")],
                 ... )
 
             Search for features with spatial filters:
 
                 >>> res = client.geospatial.search_features(
                 ...     feature_type_external_id=my_feature_type,
-                ...     filter={"stWithin": {
-                ...         "property": "location",
-                ...         "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"}
-                ...     }}
+                ...     filter={
+                ...         "stWithin": {
+                ...             "property": "location",
+                ...             "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"},
+                ...         }
+                ...     },
                 ... )
 
             Combining multiple filters:
 
                 >>> res = client.geospatial.search_features(
                 ...     feature_type_external_id=my_feature_type,
-                ...     filter={"and": [
-                ...         {"range": {"property": "temperature", "gt": 12.0}},
-                ...         {"stWithin": {
-                ...             "property": "location",
-                ...             "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"}
-                ...         }}
-                ...     ]}
+                ...     filter={
+                ...         "and": [
+                ...             {"range": {"property": "temperature", "gt": 12.0}},
+                ...             {
+                ...                 "stWithin": {
+                ...                     "property": "location",
+                ...                     "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"},
+                ...                 }
+                ...             },
+                ...         ]
+                ...     },
                 ... )
 
                 >>> res = client.geospatial.search_features(
                 ...     feature_type_external_id=my_feature_type,
-                ...     filter={"or": [
-                ...         {"range": {"property": "temperature", "gt": 12.0}},
-                ...         {"stWithin": {
-                ...             "property": "location",
-                ...             "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"}
-                ...         }}
-                ...     ]}
+                ...     filter={
+                ...         "or": [
+                ...             {"range": {"property": "temperature", "gt": 12.0}},
+                ...             {
+                ...                 "stWithin": {
+                ...                     "property": "location",
+                ...                     "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"},
+                ...                 }
+                ...             },
+                ...         ]
+                ...     },
                 ... )
         """
         return run_sync(
@@ -619,7 +624,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> Iterator[Feature]:
         """
         `Stream features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeaturesStreaming>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/searchFeaturesStreaming>
 
         This method allows to return any number of items until the underlying
         api calls times out. The order of the result items is not deterministic.
@@ -644,11 +649,11 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_feature = client.geospatial.create_features(
                 ...     feature_type_external_id="my_feature_type",
-                ...     feature=Feature(external_id="my_feature", temperature=12.4)
+                ...     feature=Feature(external_id="my_feature", temperature=12.4),
                 ... )
                 >>> features = client.geospatial.stream_features(
                 ...     feature_type_external_id="my_feature_type",
-                ...     filter={"range": {"property": "temperature", "gt": 12.0}}
+                ...     filter={"range": {"property": "temperature", "gt": 12.0}},
                 ... )
                 >>> for f in features:
                 ...     # do something with the features
@@ -658,7 +663,7 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> features = client.geospatial.stream_features(
                 ...     feature_type_external_id="my_feature_type",
                 ...     filter={},
-                ...     properties={"temperature": {}, "pressure": {}}
+                ...     properties={"temperature": {}, "pressure": {}},
                 ... )
                 >>> for f in features:
                 ...     # do something with the features
@@ -683,7 +688,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> FeatureAggregateList:
         """
         `Aggregate filtered features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/aggregateFeatures>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/aggregateFeatures>
 
         Args:
             feature_type_external_id: the feature type to filter features from
@@ -704,16 +709,17 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_feature = client.geospatial.create_features(
                 ...     feature_type_external_id="my_feature_type",
-                ...     feature=Feature(external_id="my_feature", temperature=12.4)
+                ...     feature=Feature(external_id="my_feature", temperature=12.4),
                 ... )
                 >>> res = client.geospatial.aggregate_features(
                 ...     feature_type_external_id="my_feature_type",
                 ...     filter={"range": {"property": "temperature", "gt": 12.0}},
                 ...     group_by=["category"],
                 ...     order_by=[OrderSpec("category", "ASC")],
-                ...     output={"min_temperature": {"min": {"property": "temperature"}},
-                ...         "max_volume": {"max": {"property": "volume"}}
-                ...     }
+                ...     output={
+                ...         "min_temperature": {"min": {"property": "temperature"}},
+                ...         "max_volume": {"max": {"property": "volume"}},
+                ...     },
                 ... )
                 >>> for a in res:
                 ...     # loop over aggregates in different groups
@@ -731,7 +737,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     def get_coordinate_reference_systems(self, srids: int | Sequence[int]) -> CoordinateReferenceSystemList:
         """
         `Get Coordinate Reference Systems`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/getCoordinateReferenceSystem>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getCoordinateReferenceSystem>
 
         Args:
             srids: SRID or list of SRIDs
@@ -753,7 +759,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     def list_coordinate_reference_systems(self, only_custom: bool = False) -> CoordinateReferenceSystemList:
         """
         `List Coordinate Reference Systems`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/listGeospatialCoordinateReferenceSystems>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listGeospatialCoordinateReferenceSystems>
 
         Args:
             only_custom: list only custom CRSs or not
@@ -781,7 +787,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> CoordinateReferenceSystemList:
         """
         `Create Coordinate Reference System`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/createGeospatialCoordinateReferenceSystems>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createGeospatialCoordinateReferenceSystems>
 
         Args:
             crs: a CoordinateReferenceSystem or a list of CoordinateReferenceSystem
@@ -798,37 +804,37 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> custom_crs = CoordinateReferenceSystemWrite(
-                ...     srid = 121111,
+                ...     srid=121111,
                 ...     wkt=(
-                ...          'PROJCS["NTF (Paris) / Lambert zone II",'
-                ...          ' GEOGCS["NTF (Paris)",'
-                ...          '  DATUM["Nouvelle_Triangulation_Francaise_Paris",'
-                ...          '   SPHEROID["Clarke 1880 (IGN)",6378249.2,293.4660212936265,'
-                ...          '    AUTHORITY["EPSG","7011"]],'
-                ...          '   TOWGS84[-168,-60,320,0,0,0,0],'
-                ...          '   AUTHORITY["EPSG","6807"]],'
-                ...          '  PRIMEM["Paris",2.33722917,'
-                ...          '   AUTHORITY["EPSG","8903"]],'
-                ...          '  UNIT["grad",0.01570796326794897,'
-                ...          '   AUTHORITY["EPSG","9105"]], '
-                ...          '  AUTHORITY["EPSG","4807"]],'
-                ...          ' PROJECTION["Lambert_Conformal_Conic_1SP"],'
-                ...          ' PARAMETER["latitude_of_origin",52],'
-                ...          ' PARAMETER["central_meridian",0],'
-                ...          ' PARAMETER["scale_factor",0.99987742],'
-                ...          ' PARAMETER["false_easting",600000],'
-                ...          ' PARAMETER["false_northing",2200000],'
-                ...          ' UNIT["metre",1,'
-                ...          '  AUTHORITY["EPSG","9001"]],'
-                ...          ' AXIS["X",EAST],'
-                ...          ' AXIS["Y",NORTH],'
-                ...          ' AUTHORITY["EPSG","27572"]]'
+                ...         'PROJCS["NTF (Paris) / Lambert zone II",'
+                ...         ' GEOGCS["NTF (Paris)",'
+                ...         '  DATUM["Nouvelle_Triangulation_Francaise_Paris",'
+                ...         '   SPHEROID["Clarke 1880 (IGN)",6378249.2,293.4660212936265,'
+                ...         '    AUTHORITY["EPSG","7011"]],'
+                ...         "   TOWGS84[-168,-60,320,0,0,0,0],"
+                ...         '   AUTHORITY["EPSG","6807"]],'
+                ...         '  PRIMEM["Paris",2.33722917,'
+                ...         '   AUTHORITY["EPSG","8903"]],'
+                ...         '  UNIT["grad",0.01570796326794897,'
+                ...         '   AUTHORITY["EPSG","9105"]], '
+                ...         '  AUTHORITY["EPSG","4807"]],'
+                ...         ' PROJECTION["Lambert_Conformal_Conic_1SP"],'
+                ...         ' PARAMETER["latitude_of_origin",52],'
+                ...         ' PARAMETER["central_meridian",0],'
+                ...         ' PARAMETER["scale_factor",0.99987742],'
+                ...         ' PARAMETER["false_easting",600000],'
+                ...         ' PARAMETER["false_northing",2200000],'
+                ...         ' UNIT["metre",1,'
+                ...         '  AUTHORITY["EPSG","9001"]],'
+                ...         ' AXIS["X",EAST],'
+                ...         ' AXIS["Y",NORTH],'
+                ...         ' AUTHORITY["EPSG","27572"]]'
                 ...     ),
                 ...     proj_string=(
-                ...          '+proj=lcc +lat_1=46.8 +lat_0=46.8 +lon_0=0 +k_0=0.99987742 '
-                ...          '+x_0=600000 +y_0=2200000 +a=6378249.2 +b=6356515 '
-                ...          '+towgs84=-168,-60,320,0,0,0,0 +pm=paris +units=m +no_defs'
-                ...     )
+                ...         "+proj=lcc +lat_1=46.8 +lat_0=46.8 +lon_0=0 +k_0=0.99987742 "
+                ...         "+x_0=600000 +y_0=2200000 +a=6378249.2 +b=6356515 "
+                ...         "+towgs84=-168,-60,320,0,0,0,0 +pm=paris +units=m +no_defs"
+                ...     ),
                 ... )
                 >>> crs = client.geospatial.create_coordinate_reference_systems(custom_crs)
         """
@@ -837,7 +843,7 @@ class SyncGeospatialAPI(SyncAPIClient):
     def delete_coordinate_reference_systems(self, srids: int | Sequence[int]) -> None:
         """
         `Delete Coordinate Reference System`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/deleteGeospatialCoordinateReferenceSystems>
+        <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteGeospatialCoordinateReferenceSystems>
 
         Args:
             srids: SRID or list of SRIDs
@@ -866,7 +872,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         raster_scale_y: float | None = None,
     ) -> RasterMetadata:
         """
-        `Put raster <https://developer.cognite.com/api#tag/Geospatial/operation/putRaster>`
+        `Put raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/putRaster>`
 
         Args:
             feature_type_external_id: No description.
@@ -892,8 +898,14 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> feature_type = ...
                 >>> feature = ...
                 >>> raster_property_name = ...
-                >>> metadata = client.geospatial.put_raster(feature_type.external_id, feature.external_id,
-                ...         raster_property_name, "XYZ", 3857, file)
+                >>> metadata = client.geospatial.put_raster(
+                ...     feature_type.external_id,
+                ...     feature.external_id,
+                ...     raster_property_name,
+                ...     "XYZ",
+                ...     3857,
+                ...     file,
+                ... )
         """
         return run_sync(
             self.__async_client.geospatial.put_raster(
@@ -911,7 +923,7 @@ class SyncGeospatialAPI(SyncAPIClient):
 
     def delete_raster(self, feature_type_external_id: str, feature_external_id: str, raster_property_name: str) -> None:
         """
-        `Delete raster <https://developer.cognite.com/api#tag/Geospatial/operation/deleteRaster>`
+        `Delete raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteRaster>`
 
         Args:
             feature_type_external_id: No description.
@@ -928,7 +940,9 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> feature_type = ...
                 >>> feature = ...
                 >>> raster_property_name = ...
-                >>> client.geospatial.delete_raster(feature_type.external_id, feature.external_id, raster_property_name)
+                >>> client.geospatial.delete_raster(
+                ...     feature_type.external_id, feature.external_id, raster_property_name
+                ... )
         """
         return run_sync(
             self.__async_client.geospatial.delete_raster(
@@ -951,7 +965,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         allow_crs_transformation: bool = False,
     ) -> bytes:
         """
-        `Get raster <https://developer.cognite.com/api#tag/Geospatial/operation/getRaster>`
+        `Get raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getRaster>`
 
         Args:
             feature_type_external_id: Feature type definition for the features to create.
@@ -977,8 +991,13 @@ class SyncGeospatialAPI(SyncAPIClient):
                 >>> feature_type = ...
                 >>> feature = ...
                 >>> raster_property_name = ...
-                >>> raster_data = client.geospatial.get_raster(feature_type.external_id, feature.external_id,
-                ...    raster_property_name, "XYZ", {"SIGNIFICANT_DIGITS": "4"})
+                >>> raster_data = client.geospatial.get_raster(
+                ...     feature_type.external_id,
+                ...     feature.external_id,
+                ...     raster_property_name,
+                ...     "XYZ",
+                ...     {"SIGNIFICANT_DIGITS": "4"},
+                ... )
         """
         return run_sync(
             self.__async_client.geospatial.get_raster(
@@ -996,7 +1015,7 @@ class SyncGeospatialAPI(SyncAPIClient):
 
     def compute(self, output: dict[str, GeospatialComputeFunction]) -> GeospatialComputedResponse:
         """
-        `Compute <https://developer.cognite.com/api#tag/Geospatial/operation/compute>`
+        `Compute <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/compute>`
 
         Args:
             output: No description.
@@ -1009,10 +1028,18 @@ class SyncGeospatialAPI(SyncAPIClient):
             Compute the transformation of an ewkt geometry from one SRID to another:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.geospatial import GeospatialGeometryTransformComputeFunction, GeospatialGeometryValueComputeFunction
+                >>> from cognite.client.data_classes.geospatial import (
+                ...     GeospatialGeometryTransformComputeFunction,
+                ...     GeospatialGeometryValueComputeFunction,
+                ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> compute_function = GeospatialGeometryTransformComputeFunction(GeospatialGeometryValueComputeFunction("SRID=4326;POLYGON((0 0,10 0,10 10,0 10,0 0))"), srid=23031)
-                >>> compute_result = client.geospatial.compute(output = {"output": compute_function})
+                >>> compute_function = GeospatialGeometryTransformComputeFunction(
+                ...     GeospatialGeometryValueComputeFunction(
+                ...         "SRID=4326;POLYGON((0 0,10 0,10 10,0 10,0 0))"
+                ...     ),
+                ...     srid=23031,
+                ... )
+                >>> compute_result = client.geospatial.compute(output={"output": compute_function})
         """
         return run_sync(self.__async_client.geospatial.compute(output=output))

@@ -105,8 +105,8 @@ class NodeOrEdgeData(CogniteResource):
     """This represents the data values of a node or edge.
 
     Args:
-        source: The container or view the node or edge property is in
-        properties: The properties of the node or edge.
+        source (ContainerId | ViewId): The container or view the node or edge property is in
+        properties (Mapping[str, PropertyValueWrite]): The properties of the node or edge.
     """
 
     source: ContainerId | ViewId
@@ -249,6 +249,8 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         if data is None:
             return None
         return cls.load(data)
+
+    load_if = _load_if  # Properties does not have a private load method, so these are the same
 
     def dump(self) -> dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]]:
         props: dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]] = defaultdict(dict)
@@ -1355,8 +1357,8 @@ class InstancesResult(Generic[T_Node, T_Edge]):
     """This represents the read result of an instance query
 
     Args:
-        nodes: A list of nodes.
-        edges: A list of edges.
+        nodes (NodeList[T_Node]): A list of nodes.
+        edges (EdgeList[T_Edge]): A list of edges.
 
     """
 

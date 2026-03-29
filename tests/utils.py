@@ -14,7 +14,7 @@ import string
 import typing
 from collections.abc import Mapping
 from contextlib import contextmanager
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import UnionType
 from typing import Any, Literal, TypeVar, get_args, get_origin, get_type_hints
@@ -416,10 +416,13 @@ class FakeCogniteResourceGenerator:
             keyword_arguments.pop("is_null", None)
         elif resource_cls is Transformation:
             # schedule and jobs must match external id and id
-            keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
-            keyword_arguments["schedule"].id = keyword_arguments["id"]
-            keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
-            keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
+            if "schedule" in keyword_arguments:
+                keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
+                keyword_arguments["schedule"].id = keyword_arguments["id"]
+            if "running_job" in keyword_arguments:
+                keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
+            if "last_finished_job" in keyword_arguments:
+                keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
         elif resource_cls is TransformationScheduleWrite:
             # TransformationScheduleWrite requires either id or external_id
             keyword_arguments.pop("id", None)
@@ -442,6 +445,10 @@ class FakeCogniteResourceGenerator:
             keyword_arguments = {"items": [{"start": 1, "count": 1}]}
         elif resource_cls is timezone:
             positional_arguments.append(timedelta(hours=self._random.randint(-3, 3)))
+        elif resource_cls is datetime:
+            random_timestamp = self._random.randint(0, 1924905599)  # [1970, 2030]
+            positional_arguments = list(datetime.fromtimestamp(random_timestamp).timetuple()[:6])
+            keyword_arguments["tzinfo"] = timezone.utc
         elif resource_cls is RestConfig and isinstance(keyword_arguments.get("incremental_load"), NextUrlLoad):
             # RestConfig requires incremental_load to not be a NextUrlLoad object
             keyword_arguments["incremental_load"] = BodyLoad(

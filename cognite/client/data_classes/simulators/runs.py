@@ -251,7 +251,7 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
         )
 
     async def get_logs_async(self) -> SimulatorLog | None:
-        """`Retrieve logs for this simulation run. <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
+        """`Retrieve logs for this simulation run. <https://api-docs.cognite.com/20230101/tag/Simulator-Logs/operation/retrieve_simulator_logs>`_
 
         Returns:
             Log for the simulation run.
@@ -263,7 +263,7 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
         return run_sync(self.get_logs_async())
 
     async def get_data_async(self) -> SimulationRunDataItem | None:
-        """`Retrieve data associated with this simulation run. <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
+        """`Retrieve data associated with this simulation run. <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
 
         Returns:
             Data for the simulation run.

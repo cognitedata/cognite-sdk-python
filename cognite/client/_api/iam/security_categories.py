@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import overload
+from typing import Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -13,25 +13,34 @@ from cognite.client.utils._identifier import IdentifierSequence
 class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
 
-    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SecurityCategoryList:
-        """`List security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/getSecurityCategories>`_
+    async def list(
+        self, limit: int | None = DEFAULT_LIMIT_READ, sort: Literal["ASC", "DESC"] = "ASC"
+    ) -> SecurityCategoryList:
+        """`List security categories. <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:
-            limit: Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            sort (Literal['ASC', 'DESC']): Sort order of the security categories. Defaults to "ASC".
 
         Returns:
             List of security categories
 
         Example:
 
-            List security categories::
+            List security categories:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.security_categories.list()
         """
-        return await self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
+        return await self._list(
+            list_cls=SecurityCategoryList,
+            resource_cls=SecurityCategory,
+            method="GET",
+            limit=limit,
+            other_params={"sort": sort.upper()},
+        )
 
     @overload
     async def create(self, security_category: SecurityCategory | SecurityCategoryWrite) -> SecurityCategory: ...
@@ -48,7 +57,7 @@ class SecurityCategoriesAPI(APIClient):
         | Sequence[SecurityCategory]
         | Sequence[SecurityCategoryWrite],
     ) -> SecurityCategory | SecurityCategoryList:
-        """`Create one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/createSecurityCategories>`_
+        """`Create one or more security categories. <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/createSecurityCategories>`_
 
         Args:
             security_category: Security category or list of categories to create.
@@ -75,7 +84,7 @@ class SecurityCategoriesAPI(APIClient):
         )
 
     async def delete(self, id: int | Sequence[int]) -> None:
-        """`Delete one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/deleteSecurityCategories>`_
+        """`Delete one or more security categories. <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/deleteSecurityCategories>`_
 
         Args:
             id: ID or list of IDs of security categories to delete.

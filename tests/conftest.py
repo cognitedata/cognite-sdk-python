@@ -60,6 +60,14 @@ def os_and_py_version() -> str:
     return f"{platform.system()}-{platform.python_version()}"
 
 
+@pytest.fixture(scope="session")
+def sdk_version() -> tuple[str, str, str]:
+    # Nice to use to create resources that is unique per e.g. major version of the SDK
+    from cognite.client import __version__
+
+    return tuple(__version__.split(".", 2))  # type: ignore [return-value]
+
+
 def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--test-deps-only-core", action="store_true", default=False, help="Test only core deps are installed"

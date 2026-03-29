@@ -36,11 +36,15 @@ from cognite.client.data_classes.data_modeling import (
     EdgeListWithCursor,
     NodeListWithCursor,
 )
-from cognite.client.data_classes.datapoints import DatapointsArray
+from cognite.client.data_classes.datapoints import DatapointsArray, SyntheticDatapoints
+from cognite.client.data_classes.datapoints_subscriptions import SubscriptionDatapoints
 from cognite.client.data_classes.events import EventList
+from cognite.client.data_classes.files import FileMetadata, FileMetadataList
 from cognite.client.data_classes.functions import FunctionSchedule
 from cognite.client.data_classes.hosted_extractors import Destination, DestinationList, Source, SourceList
 from cognite.client.data_classes.postgres_gateway import TableList, User, UserCreated, UserCreatedList, UserList
+from cognite.client.data_classes.sequences import SequenceUpdate
+from cognite.client.data_classes.time_series import TimeSeries, TimeSeriesList
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json_extended as _json
@@ -170,7 +174,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource)
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SyntheticDatapoints, SubscriptionDatapoints})
         ],
     )
     def test_json_serialize(
@@ -190,7 +194,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource)
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
         ],
     )
     def test_dump_load_only_required(
@@ -224,10 +228,16 @@ class TestCogniteResource:
             seed=69_1337, async_client=cognite_async_mock_client_placeholder
         )
         instance = instance_generator.create_instance(cognite_writable_cls)
-        if type(instance) is FunctionSchedule:
+        if cognite_writable_cls is FunctionSchedule:
             # FunctionSchedule.as_write has to make a call to functions.schedules.get_input_data...
             # (`data` only exist on the FunctionScheduleWrite)
             cognite_async_mock_client_placeholder.functions.schedules.get_input_data = AsyncMock(return_value=None)  # type: ignore[method-assign]
+
+        elif isinstance(instance, (FileMetadata, TimeSeries)):
+            # Files and time series with instance ID can not be created through "old APIs". Doing as_write with
+            # instance_id set raises an error, so we clear it here:
+            instance.instance_id = None
+            assert instance.external_id is not None
 
         write_format = instance.as_write()
         assert isinstance(write_format, CogniteResource)
@@ -257,13 +267,21 @@ class TestCogniteResource:
     ) -> None:
         resource_cls = writable_list_cls._RESOURCE
         instance_generator = FakeCogniteResourceGenerator(seed=52, async_client=cognite_async_mock_client_placeholder)
-        resource = instance_generator.create_instance(resource_cls)
-        if type(resource) is FunctionSchedule:
+        # TODO(doctrino): Why not have gen. create the list directly?
+        resource_list = writable_list_cls([instance_generator.create_instance(resource_cls)])
+
+        if resource_cls is FunctionSchedule:
             # FunctionSchedulesList.as_write() calls FunctionSchedule.as_write() on each item,
             # which makes an async call to functions.schedules.get_input_data
             # (because `data` only exists on FunctionScheduleWrite, not FunctionSchedule)
             cognite_async_mock_client_placeholder.functions.schedules.get_input_data = AsyncMock(return_value=None)  # type: ignore[method-assign]
-        resource_list = writable_list_cls([resource])
+
+        elif writable_list_cls in (FileMetadataList, TimeSeriesList):
+            # Files and time series with instance ID can not be created through "old APIs". Doing as_write with
+            # instance_id set raises an error, so we clear it here:
+            for item in resource_list:
+                item.instance_id = None
+                assert item.external_id is not None
 
         write_format = resource_list.as_write()
         assert isinstance(write_format, CogniteResourceList)
@@ -273,7 +291,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource)
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
         ],
     )
     def test_load_has_no_side_effects(
@@ -303,7 +321,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource)
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
         ],
     )
     def test_handle_unknown_arguments_when_loading(
@@ -346,7 +364,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource)
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
         ],
     )
     def test_yaml_serialize(
@@ -692,9 +710,19 @@ class TestCogniteResourceList:
                     "A test asset",
                     123,
                     [{"external_id": "ROTATING_EQUIPMENT"}],
+                    2,
                 ]
             },
-            index=["id", "external_id", "name", "parent_external_id", "description", "data_set_id", "labels"],
+            index=[
+                "id",
+                "external_id",
+                "name",
+                "parent_external_id",
+                "description",
+                "data_set_id",
+                "labels",
+                "root_id",
+            ],
         )
         pd.testing.assert_frame_equal(result_df, expected_df)
 
@@ -806,16 +834,20 @@ class TestCogniteUpdate:
     def test_correct_implementation_get_update_properties(self, cognite_update_subclass: type[CogniteUpdate]) -> None:
         expected = sorted(
             key
-            for key in cognite_update_subclass.__dict__
-            if not key.startswith("_") and key not in {"columns", "dump"}
+            for key, value in cognite_update_subclass.__dict__.items()
+            if not key.startswith("_") and isinstance(value, property)
         )
         if not expected:
             # Check parent class if there are no attributes in the subclass
             expected = sorted(
                 key
-                for key in cognite_update_subclass.__bases__[0].__dict__
-                if not key.startswith("_") and key != "dump"
+                for key, value in cognite_update_subclass.__bases__[0].__dict__.items()
+                if not key.startswith("_") and isinstance(value, property)
             )
+        # Exceptions from the rule:
+        if cognite_update_subclass is SequenceUpdate:
+            expected.remove("columns")
+
         actual = sorted(prop.name for prop in cognite_update_subclass._get_update_properties())
         assert expected == actual
 

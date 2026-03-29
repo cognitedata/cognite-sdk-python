@@ -18,7 +18,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.time_series import TimeSeriesProperty
 from cognite.client.utils._text import random_string
-from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
+from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, datetime_to_ms
 from tests.utils import get_or_raise
 
 
@@ -301,7 +301,10 @@ class TestTimeSeriesAPI:
             assert retrieved is not None
             assert retrieved.instance_id == my_ts.as_id()
 
-            update_writable = retrieved.as_write()
+            with pytest.raises(ValueError, match=r"cannot be created via the Time Series API"):
+                retrieved.as_write()
+
+            update_writable = retrieved
             update_writable.metadata = {"c": "d"}
             update_writable.external_id = external_id
             update_writable.data_set_id = ts_test_dataset.id
@@ -337,17 +340,17 @@ class TestTimeSeriesHelperMethods:
     def test_get_latest(self, test_ts_numeric: TimeSeries, test_ts_string: TimeSeries) -> None:
         res1 = get_or_raise(test_ts_numeric.latest())
         res2 = get_or_raise(test_ts_string.latest())
-        assert res1.timestamp == 946166400000
+        assert datetime_to_ms(get_or_raise(res1.timestamp)) == 946166400000
         assert res1.value == 946166400003.0
-        assert res2.timestamp == 946166400000
+        assert datetime_to_ms(get_or_raise(res2.timestamp)) == 946166400000
         assert res2.value == "946166400073"  # this value should probably be more string-like ;P
 
     def test_get_latest_before(self, test_ts_numeric: TimeSeries, test_ts_string: TimeSeries) -> None:
         res1 = get_or_raise(test_ts_numeric.latest(before=0))
         res2 = get_or_raise(test_ts_string.latest(before=0))
-        assert res1.timestamp == -345600000
+        assert datetime_to_ms(get_or_raise(res1.timestamp)) == -345600000
         assert res1.value == -345599997.0
-        assert res2.timestamp == -345600000
+        assert datetime_to_ms(get_or_raise(res2.timestamp)) == -345600000
         assert res2.value == "-345599927"
 
     @pytest.mark.parametrize(

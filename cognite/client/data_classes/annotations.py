@@ -143,8 +143,6 @@ class Annotation(AnnotationCore):
 
     def as_write(self) -> AnnotationWrite:
         """Returns this Annotation in its write version."""
-        if self.annotated_resource_id is None:
-            raise ValueError("Annotated resource ID is required for the write version of an annotation.")
         return AnnotationWrite(
             annotation_type=cast(AnnotationType, self.annotation_type),
             data=self.data,

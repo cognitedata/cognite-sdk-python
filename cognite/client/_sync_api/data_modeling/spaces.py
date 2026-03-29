@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a8571b42863ad0dfe06d8f428ff5b844
+e7bcba053c734addd5c227721c494fbb
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -58,7 +58,7 @@ class SyncSpacesAPI(SyncAPIClient):
 
     def retrieve(self, spaces: str | SequenceNotStr[str]) -> Space | SpaceList | None:
         """
-        `Retrieve one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/bySpaceIdsSpaces>`_
+        `Retrieve one or more spaces. <https://api-docs.cognite.com/20230101/tag/Spaces/operation/bySpaceIdsSpaces>`_
 
         Args:
             spaces: Space ID
@@ -71,17 +71,19 @@ class SyncSpacesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.data_modeling.spaces.retrieve(spaces='mySpace')
+                >>> res = client.data_modeling.spaces.retrieve(spaces="mySpace")
 
             Get multiple spaces by id:
 
-                >>> res = client.data_modeling.spaces.retrieve(spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
+                >>> res = client.data_modeling.spaces.retrieve(
+                ...     spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"]
+                ... )
         """
         return run_sync(self.__async_client.data_modeling.spaces.retrieve(spaces=spaces))
 
     def delete(self, spaces: str | SequenceNotStr[str]) -> list[str]:
         """
-        `Delete one or more spaces <https://developer.cognite.com/api#tag/Spaces/operation/deleteSpacesV3>`_
+        `Delete one or more spaces <https://api-docs.cognite.com/20230101/tag/Spaces/operation/deleteSpacesV3>`_
 
         Args:
             spaces: ID or ID list ids of spaces.
@@ -100,7 +102,7 @@ class SyncSpacesAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ, include_global: bool = False) -> SpaceList:
         """
-        `List spaces <https://developer.cognite.com/api#tag/Spaces/operation/listSpacesV3>`_
+        `List spaces <https://api-docs.cognite.com/20230101/tag/Spaces/operation/listSpacesV3>`_
 
         Args:
             limit: Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
@@ -126,7 +128,7 @@ class SyncSpacesAPI(SyncAPIClient):
             Iterate over chunks of spaces to reduce memory load:
 
                 >>> for space_list in client.data_modeling.spaces(chunk_size=2500):
-                ...     space_list # do something with the spaces
+                ...     space_list  # do something with the spaces
         """
         return run_sync(self.__async_client.data_modeling.spaces.list(limit=limit, include_global=include_global))
 
@@ -138,7 +140,7 @@ class SyncSpacesAPI(SyncAPIClient):
 
     def apply(self, spaces: SpaceApply | Sequence[SpaceApply]) -> Space | SpaceList:
         """
-        `Create or patch one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/ApplySpaces>`_
+        `Create or patch one or more spaces. <https://api-docs.cognite.com/20230101/tag/Spaces/operation/ApplySpaces>`_
 
         Args:
             spaces: Space or spaces of spacesda to create or update.
@@ -154,8 +156,12 @@ class SyncSpacesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.data_modeling import SpaceApply
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> spaces = [SpaceApply(space="mySpace", description="My first space", name="My Space"),
-                ... SpaceApply(space="myOtherSpace", description="My second space", name="My Other Space")]
+                >>> spaces = [
+                ...     SpaceApply(space="mySpace", description="My first space", name="My Space"),
+                ...     SpaceApply(
+                ...         space="myOtherSpace", description="My second space", name="My Other Space"
+                ...     ),
+                ... ]
                 >>> res = client.data_modeling.spaces.apply(spaces)
         """
         return run_sync(self.__async_client.data_modeling.spaces.apply(spaces=spaces))

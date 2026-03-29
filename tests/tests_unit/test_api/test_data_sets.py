@@ -111,16 +111,7 @@ class TestDataset:
         self, cognite_client: CogniteClient, mock_ds_response: HTTPXMock, example_data_set: dict[str, Any]
     ) -> None:
         res = cognite_client.data_sets.update(
-            DataSet(
-                id=1,
-                created_time=123,
-                last_updated_time=123,
-                name=None,
-                write_protected=False,
-                external_id=None,
-                description=None,
-                metadata=None,
-            )
+            DataSet(id=1, created_time=123, last_updated_time=123, write_protected=False)
         )
         assert isinstance(res, DataSet)
         assert example_data_set == res.dump(camel_case=True)

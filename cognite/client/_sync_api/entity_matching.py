@@ -1,6 +1,6 @@
 """
 ===============================================================================
-3f883e3cf967206d715bdaef521dbb22
+2d6e1ebcc76109dbd96fd3269d590f67
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -33,7 +33,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> EntityMatchingModel | None:
         """
-        `Retrieve model  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_
+        `Retrieve model  <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingRetrieve>`_
 
         Args:
             id: id of the model to retrieve.
@@ -54,7 +54,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         self, ids: Sequence[int] | None = None, external_ids: SequenceNotStr[str] | None = None
     ) -> EntityMatchingModelList:
         """
-        `Retrieve models  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_
+        `Retrieve models  <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingRetrieve>`_
 
         Args:
             ids: ids of the model to retrieve.
@@ -67,7 +67,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
             >>> # async_client = AsyncCogniteClient()  # another option
-            >>> retrieved_models = client.entity_matching.retrieve_multiple([1,2,3])
+            >>> retrieved_models = client.entity_matching.retrieve_multiple([1, 2, 3])
         """
         return run_sync(self.__async_client.entity_matching.retrieve_multiple(ids=ids, external_ids=external_ids))
 
@@ -79,7 +79,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> EntityMatchingModelList | EntityMatchingModel:
         """
-        `Update model  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingUpdate>`_
+        `Update model  <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingUpdate>`_
 
         Args:
             item: Model(s) to update
@@ -107,7 +107,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> EntityMatchingModelList:
         """
-        `List models  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingModels>`_
+        `List models  <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingModels>`_
 
         Args:
             name: Optional user-defined name of model.
@@ -150,7 +150,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
         """
-        `Delete models  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingDelete>`_
+        `Delete models  <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingDelete>`_
 
         https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingDelete
 
@@ -204,14 +204,16 @@ class SyncEntityMatchingAPI(SyncAPIClient):
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
             >>> # async_client = AsyncCogniteClient()  # another option
-            >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
-            >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
+            >>> sources = [
+            ...     {"id": 101, "name": "ChildAsset1", "description": "Child of ParentAsset1"}
+            ... ]
+            >>> targets = [{"id": 1, "name": "ParentAsset1", "description": "Parent to ChildAsset1"}]
             >>> true_matches = [(1, 101)]
             >>> model = client.entity_matching.fit(
             ...     sources=sources,
             ...     targets=targets,
             ...     true_matches=true_matches,
-            ...     description="AssetMatchingJob1"
+            ...     description="AssetMatchingJob1",
             ... )
         """
         return run_sync(
@@ -239,7 +241,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         external_id: str | None = None,
     ) -> EntityMatchingPredictionResult:
         """
-        `Predict entity matching.  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingPredict>`_
+        `Predict entity matching.  <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingPredict>`_
 
         Warning:
             Blocks and waits for the model to be ready if it has been recently created.
@@ -263,15 +265,11 @@ class SyncEntityMatchingAPI(SyncAPIClient):
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
             >>> # async_client = AsyncCogniteClient()  # another option
-            >>> sources = {'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}
-            >>> targets = {'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}
+            >>> sources = {"id": 101, "name": "ChildAsset1", "description": "Child of ParentAsset1"}
+            >>> targets = {"id": 1, "name": "ParentAsset1", "description": "Parent to ChildAsset1"}
             >>> true_matches = [(1, 101)]
             >>> model = client.entity_matching.predict(
-            ...     sources = sources,
-            ...     targets = targets,
-            ...     num_matches = 1,
-            ...     score_threshold = 0.6,
-            ...     id=1
+            ...     sources=sources, targets=targets, num_matches=1, score_threshold=0.6, id=1
             ... )
         """
         return run_sync(
@@ -292,7 +290,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         external_id: str | None = None,
     ) -> EntityMatchingModel:
         """
-        `Re-fits an entity matching model, using the combination of the old and new true matches.  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingReFit>`_
+        `Re-fits an entity matching model, using the combination of the old and new true matches.  <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingReFit>`_
 
         Note:
             All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
@@ -309,8 +307,10 @@ class SyncEntityMatchingAPI(SyncAPIClient):
             >>> from cognite.client import CogniteClient, AsyncCogniteClient
             >>> client = CogniteClient()
             >>> # async_client = AsyncCogniteClient()  # another option
-            >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
-            >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
+            >>> sources = [
+            ...     {"id": 101, "name": "ChildAsset1", "description": "Child of ParentAsset1"}
+            ... ]
+            >>> targets = [{"id": 1, "name": "ParentAsset1", "description": "Parent to ChildAsset1"}]
             >>> true_matches = [(1, 101)]
             >>> model = client.entity_matching.refit(true_matches=true_matches, id=1)
         """

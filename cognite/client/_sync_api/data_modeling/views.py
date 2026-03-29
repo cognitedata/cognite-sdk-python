@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ccc30965f9b4fb2373f005996eb78293
+3b362be0b839452958bd6fa808ea60ae
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -92,7 +92,7 @@ class SyncViewsAPI(SyncAPIClient):
         all_versions: bool = True,
     ) -> ViewList:
         """
-        `Retrieve a single view by id. <https://developer.cognite.com/api#tag/Views/operation/byExternalIdsViews>`_
+        `Retrieve a single view by id. <https://api-docs.cognite.com/20230101/tag/Views/operation/byExternalIdsViews>`_
 
         Args:
             ids: The view identifier(s). This can be given as a tuple of strings or a ViewId object. For example, ("my_space", "my_view"), ("my_space", "my_view", "my_version"), or ViewId("my_space", "my_view", "my_version"). Note that version is optional, if not provided, all versions will be returned.
@@ -107,7 +107,7 @@ class SyncViewsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
+                >>> res = client.data_modeling.views.retrieve(("mySpace", "myView", "v1"))
         """
         return run_sync(
             self.__async_client.data_modeling.views.retrieve(
@@ -117,7 +117,7 @@ class SyncViewsAPI(SyncAPIClient):
 
     def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
         """
-        `Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_
+        `Delete one or more views <https://api-docs.cognite.com/20230101/tag/Views/operation/deleteViews>`_
 
         Args:
             ids: View identifier(s)
@@ -130,7 +130,7 @@ class SyncViewsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.data_modeling.views.delete(('mySpace', 'myView', 'v1'))
+                >>> client.data_modeling.views.delete(("mySpace", "myView", "v1"))
         """
         return run_sync(self.__async_client.data_modeling.views.delete(ids=ids))
 
@@ -143,7 +143,7 @@ class SyncViewsAPI(SyncAPIClient):
         include_global: bool = False,
     ) -> ViewList:
         """
-        `List views <https://developer.cognite.com/api#tag/Views/operation/listViews>`_
+        `List views <https://api-docs.cognite.com/20230101/tag/Views/operation/listViews>`_
 
         Args:
             limit: Maximum number of views to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
@@ -172,7 +172,7 @@ class SyncViewsAPI(SyncAPIClient):
             Iterate over chunks of views to reduce memory load:
 
                 >>> for view_list in client.data_modeling.views(chunk_size=10):
-                ...     view_list # do something with the views
+                ...     view_list  # do something with the views
         """
         return run_sync(
             self.__async_client.data_modeling.views.list(
@@ -192,7 +192,7 @@ class SyncViewsAPI(SyncAPIClient):
 
     def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
         """
-        `Create or update (upsert) one or more views. <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_
+        `Create or update (upsert) one or more views. <https://api-docs.cognite.com/20230101/tag/Views/operation/ApplyViews>`_
 
         Args:
             view: View(s) to create or update.
@@ -205,7 +205,11 @@ class SyncViewsAPI(SyncAPIClient):
             Create new views:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import ViewApply, MappedPropertyApply, ContainerId
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     ViewApply,
+                ...     MappedPropertyApply,
+                ...     ContainerId,
+                ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> views = [
@@ -218,8 +222,8 @@ class SyncViewsAPI(SyncAPIClient):
                 ...                 container=ContainerId("mySpace", "myContainer"),
                 ...                 container_property_identifier="someProperty",
                 ...             ),
-                ...         }
-                ...    )
+                ...         },
+                ...     )
                 ... ]
                 >>> res = client.data_modeling.views.apply(views)
 
@@ -232,9 +236,11 @@ class SyncViewsAPI(SyncAPIClient):
                 ...     MappedPropertyApply,
                 ...     MultiEdgeConnectionApply,
                 ...     ViewApply,
-                ...     ViewId
+                ...     ViewId,
                 ... )
-                >>> work_order_for_asset = DirectRelationReference(space="mySpace", external_id="work_order_for_asset")
+                >>> work_order_for_asset = DirectRelationReference(
+                ...     space="mySpace", external_id="work_order_for_asset"
+                ... )
                 >>> work_order_view = ViewApply(
                 ...     space="mySpace",
                 ...     external_id="WorkOrder",
@@ -251,7 +257,7 @@ class SyncViewsAPI(SyncAPIClient):
                 ...             source=ViewId("mySpace", "Asset", "v1"),
                 ...             name="asset",
                 ...         ),
-                ...     }
+                ...     },
                 ... )
                 >>> asset_view = ViewApply(
                 ...     space="mySpace",
@@ -270,7 +276,7 @@ class SyncViewsAPI(SyncAPIClient):
                 ...             source=ViewId("mySpace", "WorkOrder", "v1"),
                 ...             name="work_orders",
                 ...         ),
-                ...     }
+                ...     },
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
         """

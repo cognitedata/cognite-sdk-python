@@ -1,6 +1,6 @@
 """
 ===============================================================================
-2da2c3b09d7047644784b2bbe2cf2f04
+3fb2bb1e260073e2d54317794dab4d4d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -143,7 +143,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         sort: SimulationRunsSort | None = None,
     ) -> SimulationRunList:
         """
-        `Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
+        `Filter simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
 
         Retrieves a list of simulation runs that match the given criteria.
 
@@ -177,8 +177,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
             Filter runs by status and simulator external ids:
                 >>> res = client.simulators.runs.list(
-                ...     simulator_external_ids=["PROSPER", "DWSIM"],
-                ...     status="success"
+                ...     simulator_external_ids=["PROSPER", "DWSIM"], status="success"
                 ... )
 
             Filter runs by time ranges:
@@ -213,7 +212,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
     def retrieve(self, ids: int | Sequence[int]) -> SimulationRun | SimulationRunList | None:
         """
-        `Retrieve simulation runs by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_by_id_simulators_runs_byids_post>`_
+        `Retrieve simulation runs by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/retrieve_simulation_run_by_id>`_
 
         Args:
             ids: The ID(s) of the simulation run(s) to retrieve.
@@ -238,7 +237,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
     def create(self, items: SimulationRunWrite | Sequence[SimulationRunWrite]) -> SimulationRun | SimulationRunList:
         """
-        `Create simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
+        `Create simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
 
         Args:
             items: The simulation run(s) to execute.
@@ -265,7 +264,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
     def list_run_data(self, run_id: int) -> SimulationRunDataList:
         """
-        `Get simulation run data <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
+        `Get simulation run data <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
 
         Retrieve data associated with a simulation run by ID.
 

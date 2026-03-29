@@ -109,7 +109,7 @@ class DataModelsAPI(APIClient):
     async def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: bool = False
     ) -> DataModelList[ViewId] | DataModelList[View]:
-        """`Retrieve data_model(s) by id(s). <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_
+        """`Retrieve data_model(s) by id(s). <https://api-docs.cognite.com/20230101/tag/Data-models/operation/byExternalIdsDataModels>`_
 
         Args:
             ids: Data Model identifier(s).
@@ -135,7 +135,7 @@ class DataModelsAPI(APIClient):
         )
 
     async def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
-        """`Delete one or more data model <https://developer.cognite.com/api#tag/Data-models/operation/deleteDataModels>`_
+        """`Delete one or more data model <https://api-docs.cognite.com/20230101/tag/Data-models/operation/deleteDataModels>`_
 
         Args:
             ids: Data Model identifier(s).
@@ -189,7 +189,7 @@ class DataModelsAPI(APIClient):
         all_versions: bool = False,
         include_global: bool = False,
     ) -> DataModelList[View] | DataModelList[ViewId]:
-        """`List data models <https://developer.cognite.com/api#tag/Data-models/operation/listDataModels>`_
+        """`List data models <https://api-docs.cognite.com/20230101/tag/Data-models/operation/listDataModels>`_
 
         Args:
             inline_views: Whether to expand the referenced views inline in the returned result.
@@ -218,7 +218,7 @@ class DataModelsAPI(APIClient):
             Iterate over chunks of data model to reduce memory load:
 
                 >>> for data_model_list in client.data_modeling.data_models(chunk_size=10):
-                ...     data_model_list # do something with the data model
+                ...     data_model_list  # do something with the data model
         """
         filter = DataModelFilter(space, inline_views, all_versions, include_global)
 
@@ -238,7 +238,7 @@ class DataModelsAPI(APIClient):
     async def apply(self, data_model: DataModelApply) -> DataModel: ...
 
     async def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
-        """`Create or update one or more data model. <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_
+        """`Create or update one or more data model. <https://api-docs.cognite.com/20230101/tag/Data-models/operation/createDataModels>`_
 
         Args:
             data_model: Data model(s) to create or update (upsert).
@@ -255,8 +255,19 @@ class DataModelsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> data_models = [
-                ...     DataModelApply(space="mySpace",external_id="myDataModel",version="v1",views=[ViewId("mySpace","myView","v1")]),
-                ...     DataModelApply(space="mySpace",external_id="myOtherDataModel",version="v1",views=[ViewId("mySpace","myView","v1")])]
+                ...     DataModelApply(
+                ...         space="mySpace",
+                ...         external_id="myDataModel",
+                ...         version="v1",
+                ...         views=[ViewId("mySpace", "myView", "v1")],
+                ...     ),
+                ...     DataModelApply(
+                ...         space="mySpace",
+                ...         external_id="myOtherDataModel",
+                ...         version="v1",
+                ...         views=[ViewId("mySpace", "myView", "v1")],
+                ...     ),
+                ... ]
                 >>> res = client.data_modeling.data_models.apply(data_models)
         """
         return await self._create_multiple(

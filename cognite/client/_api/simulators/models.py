@@ -41,7 +41,7 @@ class SimulatorModelsAPI(APIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         sort: PropertySort | None = None,
     ) -> SimulatorModelList:
-        """`Filter simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
+        """`Filter simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
 
         Retrieves a list of simulator models that match the given criteria.
 
@@ -68,10 +68,7 @@ class SimulatorModelsAPI(APIClient):
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> res = client.simulators.models.list(
                 ...     simulator_external_ids=["simulator_external_id"],
-                ...     sort=PropertySort(
-                ...         property="createdTime",
-                ...         order="asc"
-                ...     )
+                ...     sort=PropertySort(property="createdTime", order="asc"),
                 ... )
 
         """
@@ -104,7 +101,7 @@ class SimulatorModelsAPI(APIClient):
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
     ) -> SimulatorModel | SimulatorModelList | None:
-        """`Retrieve simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_simulators_models_byids_post>`_
+        """`Retrieve simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/retrieve_simulator_model_simulators_models_byids_post>`_
 
         Retrieve one or more simulator models by ID(s) or external ID(s).
 
@@ -126,7 +123,7 @@ class SimulatorModelsAPI(APIClient):
                 >>> res = client.simulators.models.retrieve(external_ids="model_external_id")
 
             Get multiple simulator models by ids:
-                >>> res = client.simulators.models.retrieve(ids=[1,2])
+                >>> res = client.simulators.models.retrieve(ids=[1, 2])
 
             Get multiple simulator models by external ids:
                 >>> res = client.simulators.models.retrieve(
@@ -200,7 +197,7 @@ class SimulatorModelsAPI(APIClient):
     async def create(
         self, items: SimulatorModelWrite | Sequence[SimulatorModelWrite]
     ) -> SimulatorModel | SimulatorModelList:
-        """`Create simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
+        """`Create simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
 
         Args:
             items: The model(s) to create.
@@ -216,13 +213,19 @@ class SimulatorModelsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> models = [
                 ...     SimulatorModelWrite(
-                ...         name="model1", simulator_external_id="sim1", type="SteadyState",
-                ...         data_set_id=1, external_id="model_external_id"
+                ...         name="model1",
+                ...         simulator_external_id="sim1",
+                ...         type="SteadyState",
+                ...         data_set_id=1,
+                ...         external_id="model_external_id",
                 ...     ),
                 ...     SimulatorModelWrite(
-                ...         name="model2", simulator_external_id="sim2", type="SteadyState",
-                ...         data_set_id=2, external_id="model_external_id2"
-                ...     )
+                ...         name="model2",
+                ...         simulator_external_id="sim2",
+                ...         type="SteadyState",
+                ...         data_set_id=2,
+                ...         external_id="model_external_id2",
+                ...     ),
                 ... ]
                 >>> res = client.simulators.models.create(models)
         """
@@ -241,7 +244,7 @@ class SimulatorModelsAPI(APIClient):
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
     ) -> None:
-        """`Delete simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/delete_simulator_model_simulators_models_delete_post>`_
+        """`Delete simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/delete_simulator_model_simulators_models_delete_post>`_
 
         Args:
             ids: id (or sequence of ids) for the model(s) to delete.
@@ -252,7 +255,7 @@ class SimulatorModelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.simulators.models.delete(ids=[1,2,3], external_ids="model_external_id")
+                >>> client.simulators.models.delete(ids=[1, 2, 3], external_ids="model_external_id")
         """
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
@@ -279,7 +282,7 @@ class SimulatorModelsAPI(APIClient):
         | SimulatorModelUpdate
         | Sequence[SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate],
     ) -> SimulatorModel | SimulatorModelList:
-        """`Update simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/update_simulator_model_simulators_models_update_post>`_
+        """`Update simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/update_simulator_model_simulators_models_update_post>`_
 
         Args:
             items: The model to update.

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c8c735fa45de9c52b66ec5a35b2d5d16
+4a0a07131386c8ecbd12af4fe10decdf
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -25,7 +25,7 @@ class SyncGroupsAPI(SyncAPIClient):
 
     def list(self, all: bool = False) -> GroupList:
         """
-        `List groups. <https://developer.cognite.com/api#tag/Groups/operation/getGroups>`_
+        `List groups. <https://api-docs.cognite.com/20230101/tag/Groups/operation/getGroups>`_
 
         Args:
             all: Whether to get all groups, only available with the groups:list acl.
@@ -56,7 +56,7 @@ class SyncGroupsAPI(SyncAPIClient):
 
     def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
         """
-        `Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
+        `Create one or more groups. <https://api-docs.cognite.com/20230101/tag/Groups/operation/createGroups>`_
 
         Args:
             group: Group or list of groups to create.
@@ -74,7 +74,8 @@ class SyncGroupsAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_capabilities = [
                 ...     AssetsAcl([AssetsAcl.Action.Read], AssetsAcl.Scope.All()),
-                ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456]))]
+                ...     EventsAcl([EventsAcl.Action.Write], EventsAcl.Scope.DataSet([123, 456])),
+                ... ]
                 >>> my_group = GroupWrite(name="My Group", capabilities=my_capabilities)
                 >>> res = client.iam.groups.create(my_group)
 
@@ -85,7 +86,8 @@ class SyncGroupsAPI(SyncAPIClient):
                 >>> grp = GroupWrite(
                 ...     name="Externally managed group",
                 ...     capabilities=my_capabilities,
-                ...     source_id="b7c9a5a4...")
+                ...     source_id="b7c9a5a4...",
+                ... )
                 >>> res = client.iam.groups.create(grp)
 
             Create a group whose members are managed internally by Cognite. This group may grant access through
@@ -102,7 +104,8 @@ class SyncGroupsAPI(SyncAPIClient):
                 >>> user_list_group = GroupWrite(
                 ...     name="Specfic users only",
                 ...     capabilities=my_capabilities,
-                ...     members=["XRsSD1k3mTIKG", "M0SxY6bM9Jl"])
+                ...     members=["XRsSD1k3mTIKG", "M0SxY6bM9Jl"],
+                ... )
                 >>> res = client.iam.groups.create([user_list_group, all_group])
 
             Capabilities are often defined in configuration files, like YAML or JSON. You may convert capabilities
@@ -111,8 +114,8 @@ class SyncGroupsAPI(SyncAPIClient):
 
                 >>> from cognite.client.data_classes.capabilities import Capability
                 >>> unparsed_capabilities = [
-                ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
-                ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
+                ...     {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+                ...     {"eventsAcl": {"actions": ["WRITE"], "scope": {"datasetScope": {"ids": [123]}}}},
                 ... ]
                 >>> acls = [Capability.load(cap) for cap in unparsed_capabilities]
                 >>> group = GroupWrite(name="Another group", capabilities=acls)
@@ -121,7 +124,7 @@ class SyncGroupsAPI(SyncAPIClient):
 
     def delete(self, id: int | Sequence[int]) -> None:
         """
-        `Delete one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_
+        `Delete one or more groups. <https://api-docs.cognite.com/20230101/tag/Groups/operation/deleteGroups>`_
 
         Args:
             id: ID or list of IDs of groups to delete.

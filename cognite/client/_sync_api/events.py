@@ -1,6 +1,6 @@
 """
 ===============================================================================
-77d3ee5e2efc989a1d91bebec687e704
+edbf16b9fd90eaf16868adde518851eb
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -165,7 +165,7 @@ class SyncEventsAPI(SyncAPIClient):
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
         """
-        `Retrieve a single event by id. <https://developer.cognite.com/api#tag/Events/operation/getEventByInternalId>`_
+        `Retrieve a single event by id. <https://api-docs.cognite.com/20230101/tag/Events/operation/getEventByInternalId>`_
 
         Args:
             id: ID
@@ -196,7 +196,7 @@ class SyncEventsAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> EventList:
         """
-        `Retrieve multiple events by id. <https://developer.cognite.com/api#tag/Events/operation/byIdsEvents>`_
+        `Retrieve multiple events by id. <https://api-docs.cognite.com/20230101/tag/Events/operation/byIdsEvents>`_
 
         Args:
             ids: IDs
@@ -233,7 +233,7 @@ class SyncEventsAPI(SyncAPIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """
-        `Get unique properties with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        `Get unique properties with counts for events. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
 
         Args:
             filter: The filter to narrow down the events to count requiring exact match.
@@ -261,8 +261,12 @@ class SyncEventsAPI(SyncAPIClient):
             >>> from cognite.client.data_classes.events import EventProperty
             >>> from cognite.client.utils import timestamp_to_ms
             >>> from datetime import datetime
-            >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = client.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020)
+            >>> is_after_2020 = filters.Range(
+            ...     EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+            ... )
+            >>> result = client.events.aggregate_unique_values(
+            ...     EventProperty.type, advanced_filter=is_after_2020
+            ... )
             >>> print(result.unique)
 
         Get the unique types of events after 2020-01-01 in your CDF project, but exclude all types that start with
@@ -272,8 +276,12 @@ class SyncEventsAPI(SyncAPIClient):
             >>> from cognite.client.data_classes import aggregations
             >>> agg = aggregations
             >>> not_planned = agg.Not(agg.Prefix("planned"))
-            >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = client.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020, aggregate_filter=not_planned)
+            >>> is_after_2020 = filters.Range(
+            ...     EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+            ... )
+            >>> result = client.events.aggregate_unique_values(
+            ...     EventProperty.type, advanced_filter=is_after_2020, aggregate_filter=not_planned
+            ... )
             >>> print(result.unique)
         """
         return run_sync(
@@ -289,7 +297,7 @@ class SyncEventsAPI(SyncAPIClient):
         filter: EventFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Count of event matching the specified filters. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        `Count of event matching the specified filters. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
 
         Args:
             property: If specified, Get an approximate number of Events with a specific property (property is not null) and matching the filters.
@@ -329,7 +337,7 @@ class SyncEventsAPI(SyncAPIClient):
         filter: EventFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Find approximate property count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        `Find approximate property count for events. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
 
         Args:
             property: The property to count the cardinality of.
@@ -354,7 +362,9 @@ class SyncEventsAPI(SyncAPIClient):
             >>> from cognite.client.data_classes import filters
             >>> from cognite.client.data_classes.events import EventProperty
             >>> is_asset = filters.ContainsAny(EventProperty.asset_ids, 123)
-            >>> plain_text_author_count = client.events.aggregate_cardinality_values(EventProperty.type, advanced_filter=is_asset)
+            >>> plain_text_author_count = client.events.aggregate_cardinality_values(
+            ...     EventProperty.type, advanced_filter=is_asset
+            ... )
         """
         return run_sync(
             self.__async_client.events.aggregate_cardinality_values(
@@ -370,7 +380,7 @@ class SyncEventsAPI(SyncAPIClient):
         filter: EventFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Find approximate paths count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        `Find approximate paths count for events. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
 
         Args:
             path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -404,7 +414,7 @@ class SyncEventsAPI(SyncAPIClient):
         filter: EventFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """
-        `Get unique paths with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        `Get unique paths with counts for events. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
 
         Args:
             path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -440,7 +450,7 @@ class SyncEventsAPI(SyncAPIClient):
 
     def create(self, event: Event | EventWrite | Sequence[Event] | Sequence[EventWrite]) -> Event | EventList:
         """
-        `Create one or more events. <https://developer.cognite.com/api#tag/Events/operation/createEvents>`_
+        `Create one or more events. <https://api-docs.cognite.com/20230101/tag/Events/operation/createEvents>`_
 
         Args:
             event: Event or list of events to create.
@@ -468,7 +478,7 @@ class SyncEventsAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> None:
         """
-        `Delete one or more events <https://developer.cognite.com/api#tag/Events/operation/deleteEvents>`_
+        `Delete one or more events <https://api-docs.cognite.com/20230101/tag/Events/operation/deleteEvents>`_
 
         Args:
             id: Id or list of ids
@@ -482,7 +492,7 @@ class SyncEventsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.events.delete(id=[1,2,3], external_id="3")
+                >>> client.events.delete(id=[1, 2, 3], external_id="3")
         """
         return run_sync(
             self.__async_client.events.delete(id=id, external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)
@@ -508,7 +518,7 @@ class SyncEventsAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Event | EventList:
         """
-        `Update one or more events <https://developer.cognite.com/api#tag/Events/operation/updateEvents>`_
+        `Update one or more events <https://api-docs.cognite.com/20230101/tag/Events/operation/updateEvents>`_
 
         Args:
             item: Event(s) to update
@@ -531,7 +541,11 @@ class SyncEventsAPI(SyncAPIClient):
             Perform a partial update on a event, updating the description and adding a new field to metadata:
 
                 >>> from cognite.client.data_classes import EventUpdate
-                >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> my_update = (
+                ...     EventUpdate(id=1)
+                ...     .description.set("New description")
+                ...     .metadata.add({"key": "value"})
+                ... )
                 >>> res = client.events.update(my_update)
         """
         return run_sync(self.__async_client.events.update(item=item, mode=mode))
@@ -543,7 +557,7 @@ class SyncEventsAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> EventList:
         """
-        `Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_
+        `Search for events <https://api-docs.cognite.com/20230101/tag/Events/operation/searchEvents>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -627,7 +641,7 @@ class SyncEventsAPI(SyncAPIClient):
         advanced_filter: Filter | dict[str, Any] | None = None,
     ) -> EventList:
         """
-        `List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
+        `List events <https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents>`_
 
         Args:
             start_time: Range between two timestamps.
@@ -678,7 +692,7 @@ class SyncEventsAPI(SyncAPIClient):
             Iterate over chunks of events to reduce memory load:
 
                 >>> for event_list in client.events(chunk_size=2500):
-                ...     event_list # do something with the events
+                ...     event_list  # do something with the events
 
             Using advanced filter, find all events that have a metadata key 'timezone' starting with 'Europe',
             and sort by external id ascending:
@@ -697,17 +711,19 @@ class SyncEventsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
                 >>> in_timezone = filters.Prefix(EventProperty.metadata_key("timezone"), "Europe")
                 >>> res = client.events.list(
-                ...     advanced_filter=in_timezone,
-                ...     sort=(SortableEventProperty.external_id, "asc"))
+                ...     advanced_filter=in_timezone, sort=(SortableEventProperty.external_id, "asc")
+                ... )
 
             Combine filter and advanced filter:
 
                 >>> from cognite.client.data_classes import filters
                 >>> not_instrument_lvl5 = filters.And(
-                ...    filters.ContainsAny("labels", ["Level5"]),
-                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
+                ...     filters.ContainsAny("labels", ["Level5"]),
+                ...     filters.Not(filters.ContainsAny("labels", ["Instrument"])),
                 ... )
-                >>> res = client.events.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+                >>> res = client.events.list(
+                ...     asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5
+                ... )
         """
         return run_sync(
             self.__async_client.events.list(

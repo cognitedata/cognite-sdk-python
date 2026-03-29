@@ -87,7 +87,7 @@ class DocumentsAPI(APIClient):
             yield item
 
     async def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
-        """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Count of documents matching the specified filters and search. <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
             query: The free text search query, for details see the documentation referenced above.
@@ -118,7 +118,7 @@ class DocumentsAPI(APIClient):
                 >>> client.documents.aggregate_count(
                 ...     filter=filters.InAssetSubtree(
                 ...         property=DocumentProperty.asset_external_ids,
-                ...         values=['Plant_1', 'Plant_2'],
+                ...         values=["Plant_1", "Plant_2"],
                 ...     )
                 ... )
         """
@@ -134,7 +134,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Find approximate property count for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Find approximate property count for documents. <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
             property: The property to count the cardinality of.
@@ -160,7 +160,9 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
-                >>> plain_text_author_count = client.documents.aggregate_cardinality_values(DocumentProperty.author, filter=is_plain_text)
+                >>> plain_text_author_count = client.documents.aggregate_cardinality_values(
+                ...     DocumentProperty.author, filter=is_plain_text
+                ... )
 
             Count the number of types of documents in your CDF project but exclude documents that start with "text":
 
@@ -168,7 +170,9 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import aggregations
                 >>> agg = aggregations
                 >>> is_not_text = agg.Not(agg.Prefix("text"))
-                >>> type_count_excluded_text = client.documents.aggregate_cardinality_values(DocumentProperty.type, aggregate_filter=is_not_text)
+                >>> type_count_excluded_text = client.documents.aggregate_cardinality_values(
+                ...     DocumentProperty.type, aggregate_filter=is_not_text
+                ... )
         """
         self._validate_filter(filter)
 
@@ -187,7 +191,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Find approximate paths count for documents.  <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Find approximate paths count for documents.  <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
             path: The scope in every document to aggregate properties. The only value allowed now is ["sourceFile", "metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -225,7 +229,7 @@ class DocumentsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> UniqueResultList:
-        """`Get unique properties with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Get unique properties with counts for documents. <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
             property: The property to group by.
@@ -253,7 +257,9 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> is_abc = filters.Prefix(DocumentProperty.external_id, "abc")
-                >>> result = client.documents.aggregate_unique_values(DocumentProperty.language, filter=is_abc)
+                >>> result = client.documents.aggregate_unique_values(
+                ...     DocumentProperty.language, filter=is_abc
+                ... )
                 >>> unique_languages = result.unique
 
             Get the unique mime types with count of documents, but exclude mime types that start with text:
@@ -262,7 +268,9 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import aggregations
                 >>> agg = aggregations
                 >>> is_not_text = agg.Not(agg.Prefix("text"))
-                >>> result = client.documents.aggregate_unique_values(DocumentProperty.mime_type, aggregate_filter=is_not_text)
+                >>> result = client.documents.aggregate_unique_values(
+                ...     DocumentProperty.mime_type, aggregate_filter=is_not_text
+                ... )
                 >>> unique_mime_types = result.unique
         """
         self._validate_filter(filter)
@@ -283,7 +291,7 @@ class DocumentsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> UniqueResultList:
-        """`Get unique paths with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Get unique paths with counts for documents. <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
             path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -324,7 +332,7 @@ class DocumentsAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> bytes:
-        """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
+        """`Retrieve document content <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsContentPost>`_
 
         Returns extracted textual information for the given document.
 
@@ -376,7 +384,7 @@ class DocumentsAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> None:
-        """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
+        """`Retrieve document content into buffer <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsContentPost>`_
 
         Returns extracted textual information for the given document.
 
@@ -450,7 +458,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentList | DocumentHighlightList:
-        """`Search documents <https://developer.cognite.com/api#tag/Documents/operation/documentsSearch>`_
+        """`Search documents <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsSearch>`_
 
         This endpoint lets you search for documents by using advanced filters and free text queries.
         Free text queries are matched against the documents' filenames and contents. For more information, see
@@ -486,11 +494,15 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> from cognite.client.utils import timestamp_to_ms
                 >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
-                >>> last_week = filters.Range(DocumentProperty.created_time,
-                ...     gt=timestamp_to_ms(datetime.now() - timedelta(days=7)))
-                >>> documents = client.documents.search('"CPLEX Error 1217: No Solution exists."',
+                >>> last_week = filters.Range(
+                ...     DocumentProperty.created_time,
+                ...     gt=timestamp_to_ms(datetime.now() - timedelta(days=7)),
+                ... )
+                >>> documents = client.documents.search(
+                ...     '"CPLEX Error 1217: No Solution exists."',
                 ...     highlight=True,
-                ...     filter=filters.And(is_plain_text, last_week))
+                ...     filter=filters.And(is_plain_text, last_week),
+                ... )
         """
         self._validate_filter(filter)
         body: dict[str, str | int | bool | dict | list] = {"search": {"query": query}}
@@ -519,7 +531,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> DocumentList:
-        """`List documents <https://developer.cognite.com/api#tag/Documents/operation/documentsList>`_
+        """`List documents <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsList>`_
 
         You can use filters to narrow down the list. Unlike the search method, list does not restrict the number
         of documents to return, meaning that setting the limit to -1 will return all the documents in your

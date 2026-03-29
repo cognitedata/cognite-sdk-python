@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c971288b7ad55e15a90c90580f3a572f
+bbf19ca65eaac5dabe7ab700b5da116c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -56,7 +56,7 @@ class Sync3DModelsAPI(SyncAPIClient):
 
     def retrieve(self, id: int) -> ThreeDModel | None:
         """
-        `Retrieve a 3d model by id <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModel>`_
+        `Retrieve a 3d model by id <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/get3DModel>`_
 
         Args:
             id: Get the model with this id.
@@ -77,7 +77,7 @@ class Sync3DModelsAPI(SyncAPIClient):
 
     def list(self, published: bool | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> ThreeDModelList:
         """
-        `List 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModels>`_
+        `List 3d models. <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/get3DModels>`_
 
         Args:
             published: Filter based on whether or not the model has published revisions.
@@ -103,7 +103,7 @@ class Sync3DModelsAPI(SyncAPIClient):
             Iterate over chunks of 3d models to reduce memory load:
 
                 >>> for model in client.three_d.models(chunk_size=50):
-                ...     model # do something with the 3d model
+                ...     model  # do something with the 3d model
         """
         return run_sync(self.__async_client.three_d.models.list(published=published, limit=limit))
 
@@ -127,7 +127,7 @@ class Sync3DModelsAPI(SyncAPIClient):
         metadata: dict[str, str] | None = None,
     ) -> ThreeDModel | ThreeDModelList:
         """
-        `Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
+        `Create new 3d models. <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/create3DModels>`_
 
         Args:
             name: The name of the 3d model(s) or 3D model object to create. If a 3D model object is provided, the other arguments are ignored.
@@ -144,7 +144,9 @@ class Sync3DModelsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
+                >>> res = client.three_d.models.create(
+                ...     name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"}
+                ... )
 
             Create multiple new 3D Models:
 
@@ -152,8 +154,14 @@ class Sync3DModelsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import ThreeDModelWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> my_model = ThreeDModelWrite(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
-                >>> my_other_model = ThreeDModelWrite(name="My Other Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
+                >>> my_model = ThreeDModelWrite(
+                ...     name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"}
+                ... )
+                >>> my_other_model = ThreeDModelWrite(
+                ...     name="My Other Model",
+                ...     data_set_id=1,
+                ...     metadata={"key1": "value1", "key2": "value2"},
+                ... )
                 >>> res = client.three_d.models.create([my_model, my_other_model])
         """
         return run_sync(
@@ -180,7 +188,7 @@ class Sync3DModelsAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModel | ThreeDModelList:
         """
-        `Update 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_
+        `Update 3d models. <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/update3DModels>`_
 
         Args:
             item: ThreeDModel(s) to update
@@ -210,7 +218,7 @@ class Sync3DModelsAPI(SyncAPIClient):
 
     def delete(self, id: int | Sequence[int]) -> None:
         """
-        `Delete 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/delete3DModels>`_
+        `Delete 3d models. <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/delete3DModels>`_
 
         Args:
             id: ID or list of IDs to delete.

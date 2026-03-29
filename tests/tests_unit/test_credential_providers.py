@@ -423,7 +423,7 @@ class TestOauthClientCredentials:
         }
     )
 
-    @patch("cognite.client.credentials.OAuth2Client")
+    @patch("authlib.integrations.httpx_client.OAuth2Client")
     @pytest.mark.parametrize("expires_in", (1000, "1001"))  # some IDPs return as string
     def test_access_token_generated(self, mock_oauth_client: MagicMock, expires_in: int | str) -> None:
         mock_oauth_client().fetch_token.return_value = {"access_token": "azure_token", "expires_in": expires_in}
@@ -431,7 +431,7 @@ class TestOauthClientCredentials:
         creds._refresh_access_token()
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
-    @patch("cognite.client.credentials.OAuth2Client")
+    @patch("authlib.integrations.httpx_client.OAuth2Client")
     def test_access_token_not_generated_due_to_error(self, mock_oauth_client: MagicMock) -> None:
         mock_oauth_client().fetch_token.side_effect = OAuthError("very_invalid", "Invalid client_id parameter value.")
         with pytest.raises(
@@ -441,7 +441,7 @@ class TestOauthClientCredentials:
             creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
             creds._refresh_access_token()
 
-    @patch("cognite.client.credentials.OAuth2Client")
+    @patch("authlib.integrations.httpx_client.OAuth2Client")
     def test_access_token_expired(self, mock_oauth_client: MagicMock) -> None:
         mock_oauth_client().fetch_token.side_effect = [
             {"access_token": "azure_token_expired", "expires_in": -1000},

@@ -70,10 +70,10 @@ class DataSet(DataSetCore):
         created_time: int,
         last_updated_time: int,
         write_protected: bool,
-        external_id: str | None,
-        name: str | None,
-        description: str | None,
-        metadata: dict[str, str] | None,
+        external_id: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        metadata: dict[str, str] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,

@@ -73,9 +73,7 @@ def parse_str_timezone_offset(tz: str) -> timezone:
     return cast(timezone, datetime.strptime(tz, "%z").tzinfo)
 
 
-def parse_str_timezone(tz: str | ZoneInfo | timezone) -> timezone | ZoneInfo:
-    if isinstance(tz, (ZoneInfo, timezone)):
-        return tz
+def parse_str_timezone(tz: str) -> timezone | ZoneInfo:
     try:
         return ZoneInfo(tz)
     except ZoneInfoNotFoundError:
@@ -245,8 +243,8 @@ def timestamp_to_ms(timestamp: int | float | str | datetime) -> int:
             >>> from datetime import datetime
             >>> timestamp_to_ms(datetime(2021, 1, 7, 12, 0, 0))
             >>> timestamp_to_ms("now")
-            >>> timestamp_to_ms("2w-ago") # 2 weeks ago
-            >>> timestamp_to_ms("3d-ahead") # 3 days ahead from now
+            >>> timestamp_to_ms("2w-ago")  # 2 weeks ago
+            >>> timestamp_to_ms("3d-ahead")  # 3 days ahead from now
     """
     if isinstance(timestamp, numbers.Number):  # float, int, int64 etc
         ms = int(timestamp)  # type: ignore[arg-type]
@@ -271,6 +269,7 @@ TIME_ATTRIBUTES = {
     "deleted_time",
     "end_time",
     "expiration_time",
+    "last_called",
     "last_failure",
     "last_indexed_time",
     "last_seen",

@@ -138,8 +138,8 @@ class InstanceSpaces(WriteableCogniteResource):
     """Configuration for instance spaces in knowledge graph queries.
 
     Args:
-        type: The type of instance spaces.
-        spaces: The spaces of the instance spaces.
+        type (Literal['manual', 'all']): The type of instance spaces.
+        spaces (Sequence[str] | None): The spaces of the instance spaces.
     """
 
     type: Literal["manual", "all"]
@@ -161,9 +161,9 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     """Configuration for knowledge graph query agent tools.
 
     Args:
-        data_models: The data models and views to query.
-        instance_spaces: The instance spaces to query.
-        version: The version of the query generation strategy to use. A higher number does not necessarily mean a better query. Supported values are "v1" and "v2".
+        data_models (Sequence[DataModelInfo]): The data models and views to query.
+        instance_spaces (InstanceSpaces | None): The instance spaces to query.
+        version (Literal['v1', 'v2'] | str | None): The version of the query generation strategy to use. A higher number does not necessarily mean a better query. Supported values are "v1" and "v2".
     """
 
     data_models: Sequence[DataModelInfo]
@@ -426,10 +426,10 @@ class UnknownAgentToolUpsert(AgentToolUpsert):
     """Upsert version of unknown agent tool.
 
     Args:
-        name: The name of the agent tool. Used by the agent to decide when to use this tool.
-        type: The type of the agent tool.
-        description: The description of the agent tool. Used by the agent to decide when to use this tool.
-        configuration: The configuration of the agent tool.
+        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
+        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        type (str): The type of the agent tool.
+        configuration (dict[str, Any] | None): The configuration of the agent tool.
     """
 
     type: str

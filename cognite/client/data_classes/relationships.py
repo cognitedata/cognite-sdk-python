@@ -103,20 +103,20 @@ class Relationship(RelationshipCore):
     This is the read version of the relationship class, it is used when retrieving from CDF.
 
     Args:
-        external_id: External id of the relationship, must be unique within the project.
-        created_time: Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
-        last_updated_time: Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
-        source_external_id: External id of the CDF resource that constitutes the relationship source.
-        source_type: The CDF resource type of the relationship source. Must be one of the specified values.
-        source: The full resource referenced by the source_external_id and source_type fields.
-        target_external_id: External id of the CDF resource that constitutes the relationship target.
-        target_type: The CDF resource type of the relationship target. Must be one of the specified values.
-        target: The full resource referenced by the target_external_id and target_type fields.
-        start_time: Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
-        end_time: Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
-        confidence: Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
-        data_set_id: The id of the dataset this relationship belongs to.
-        labels: A list of the labels associated with this resource item.
+        external_id (str): External id of the relationship, must be unique within the project.
+        created_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
+        last_updated_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
+        source_external_id (str): External id of the CDF resource that constitutes the relationship source.
+        source_type (str): The CDF resource type of the relationship source. Must be one of the specified values.
+        target_external_id (str): External id of the CDF resource that constitutes the relationship target.
+        target_type (str): The CDF resource type of the relationship target. Must be one of the specified values.
+        source (Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None): The full resource referenced by the source_external_id and source_type fields.
+        target (Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None): The full resource referenced by the target_external_id and target_type fields.
+        start_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
+        end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
+        confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
+        data_set_id (int | None): The id of the dataset this relationship belongs to.
+        labels (SequenceNotStr[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
     """
 
     def __init__(
@@ -126,15 +126,15 @@ class Relationship(RelationshipCore):
         last_updated_time: int,
         source_external_id: str,
         source_type: str,
-        source: Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None,
         target_external_id: str,
         target_type: str,
-        target: Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None,
-        start_time: int | None,
-        end_time: int | None,
-        confidence: float | None,
-        data_set_id: int | None,
-        labels: SequenceNotStr[Label | str | LabelDefinition | dict] | None,
+        source: Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None = None,
+        target: Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        confidence: float | None = None,
+        data_set_id: int | None = None,
+        labels: SequenceNotStr[Label | str | LabelDefinition | dict] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -155,8 +155,6 @@ class Relationship(RelationshipCore):
 
     def as_write(self) -> RelationshipWrite:
         """Returns this Relationship in its write version."""
-        if self.external_id is None:
-            raise ValueError("External ID is required for the write version of a relationship.")
         source_external_id, source_type = self._get_external_id_and_type(
             self.source_external_id, self.source_type, self.source
         )

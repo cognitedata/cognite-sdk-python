@@ -1,6 +1,6 @@
 """
 ===============================================================================
-27d84df9580f0ca1a1b5c692145898db
+62111ab91d0c470f704e057cf41bbee2
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -170,7 +170,7 @@ class SyncAssetsAPI(SyncAPIClient):
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Asset | None:
         """
-        `Retrieve a single asset by id. <https://developer.cognite.com/api#tag/Assets/operation/getAsset>`_
+        `Retrieve a single asset by id. <https://api-docs.cognite.com/20230101/tag/Assets/operation/getAsset>`_
 
         Args:
             id: ID
@@ -201,7 +201,7 @@ class SyncAssetsAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> AssetList:
         """
-        `Retrieve multiple assets by id. <https://developer.cognite.com/api#tag/Assets/operation/byIdsAssets>`_
+        `Retrieve multiple assets by id. <https://api-docs.cognite.com/20230101/tag/Assets/operation/byIdsAssets>`_
 
         Args:
             ids: IDs
@@ -222,7 +222,9 @@ class SyncAssetsAPI(SyncAPIClient):
 
             Get assets by external id:
 
-                >>> res = client.assets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
+                >>> res = client.assets.retrieve_multiple(
+                ...     external_ids=["abc", "def"], ignore_unknown_ids=True
+                ... )
         """
         return run_sync(
             self.__async_client.assets.retrieve_multiple(
@@ -237,7 +239,7 @@ class SyncAssetsAPI(SyncAPIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Count of assets matching the specified filters. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        `Count of assets matching the specified filters. <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_
 
         Args:
             property: If specified, get an approximate number of asset with a specific property (property is not null) and matching the filters.
@@ -277,7 +279,7 @@ class SyncAssetsAPI(SyncAPIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Find approximate property count for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        `Find approximate property count for assets. <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_
 
         Args:
             property: The property to count the cardinality of.
@@ -303,8 +305,8 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.assets import AssetProperty
                 >>> is_critical = Search(AssetProperty.description, "critical")
                 >>> critical_assets = client.assets.aggregate_cardinality_values(
-                ...     AssetProperty.metadata_key("timezone"),
-                ...     advanced_filter=is_critical)
+                ...     AssetProperty.metadata_key("timezone"), advanced_filter=is_critical
+                ... )
         """
         return run_sync(
             self.__async_client.assets.aggregate_cardinality_values(
@@ -320,7 +322,7 @@ class SyncAssetsAPI(SyncAPIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Find approximate paths count for assets.  <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        `Find approximate paths count for assets.  <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_
 
         Args:
             path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -354,7 +356,7 @@ class SyncAssetsAPI(SyncAPIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """
-        `Get unique properties with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        `Get unique properties with counts for assets. <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_
 
         Note:
             In the case of text fields, the values are aggregated in a case-insensitive manner.
@@ -376,7 +378,9 @@ class SyncAssetsAPI(SyncAPIClient):
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> client = CogniteClient()
             >>> # async_client = AsyncCogniteClient()  # another option
-            >>> result = client.assets.aggregate_unique_values(AssetProperty.metadata_key("timezone"))
+            >>> result = client.assets.aggregate_unique_values(
+            ...     AssetProperty.metadata_key("timezone")
+            ... )
             >>> print(result.unique)
 
         Get the different labels with count used for assets created after 2020-01-01 in your CDF project:
@@ -385,8 +389,12 @@ class SyncAssetsAPI(SyncAPIClient):
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> from cognite.client.utils import timestamp_to_ms
             >>> from datetime import datetime
-            >>> created_after_2020 = filters.Range(AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = client.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020)
+            >>> created_after_2020 = filters.Range(
+            ...     AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+            ... )
+            >>> result = client.assets.aggregate_unique_values(
+            ...     AssetProperty.labels, advanced_filter=created_after_2020
+            ... )
             >>> print(result.unique)
 
         Get the different labels with count for assets updated after 2020-01-01 in your CDF project, but exclude all labels that
@@ -396,8 +404,14 @@ class SyncAssetsAPI(SyncAPIClient):
             >>> from cognite.client.data_classes import aggregations
             >>> from cognite.client.data_classes import filters
             >>> not_test = aggregations.Not(aggregations.Prefix("test"))
-            >>> created_after_2020 = filters.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = client.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
+            >>> created_after_2020 = filters.Range(
+            ...     AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+            ... )
+            >>> result = client.assets.aggregate_unique_values(
+            ...     AssetProperty.labels,
+            ...     advanced_filter=created_after_2020,
+            ...     aggregate_filter=not_test,
+            ... )
             >>> print(result.unique)
         """
         return run_sync(
@@ -414,7 +428,7 @@ class SyncAssetsAPI(SyncAPIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """
-        `Get unique paths with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        `Get unique paths with counts for assets. <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_
 
         Note:
             In the case of text fields, the values are aggregated in a case-insensitive manner.
@@ -452,7 +466,7 @@ class SyncAssetsAPI(SyncAPIClient):
 
     def create(self, asset: Asset | AssetWrite | Sequence[Asset] | Sequence[AssetWrite]) -> Asset | AssetList:
         """
-        `Create one or more assets. <https://developer.cognite.com/api#tag/Assets/operation/createAssets>`_
+        `Create one or more assets. <https://api-docs.cognite.com/20230101/tag/Assets/operation/createAssets>`_
 
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
         When specifying parent-child relation between assets using `parentExternalId` the link will be resvoled into an internal ID and stored as `parentId`.
@@ -546,7 +560,8 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> assets = [
                 ...     AssetWrite(external_id="root", name="root"),
                 ...     AssetWrite(external_id="child1", parent_external_id="root", name="child1"),
-                ...     AssetWrite(external_id="child2", parent_external_id="root", name="child2")]
+                ...     AssetWrite(external_id="child2", parent_external_id="root", name="child2"),
+                ... ]
                 >>> res = client.assets.create_hierarchy(assets)
 
             Create an asset hierarchy, but run update for existing assets:
@@ -619,7 +634,7 @@ class SyncAssetsAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> None:
         """
-        `Delete one or more assets <https://developer.cognite.com/api#tag/Assets/operation/deleteAssets>`_
+        `Delete one or more assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/deleteAssets>`_
 
         Args:
             id: Id or list of ids
@@ -634,7 +649,7 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.assets.delete(id=[1,2,3], external_id="3")
+                >>> client.assets.delete(id=[1, 2, 3], external_id="3")
         """
         return run_sync(
             self.__async_client.assets.delete(
@@ -662,7 +677,7 @@ class SyncAssetsAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Asset | AssetList:
         """
-        `Update one or more assets <https://developer.cognite.com/api#tag/Assets/operation/updateAssets>`_
+        `Update one or more assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/updateAssets>`_
         Labels can be added, removed or replaced (set). Note that set operation deletes all the existing labels and adds the new specified labels.
 
         Args:
@@ -678,7 +693,11 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import AssetUpdate
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> my_update = (
+                ...     AssetUpdate(id=1)
+                ...     .description.set("New description")
+                ...     .metadata.add({"key": "value"})
+                ... )
                 >>> res1 = client.assets.update(my_update)
                 >>> # Remove an already set field like so
                 >>> another_update = AssetUpdate(id=1).description.set(None)
@@ -747,7 +766,9 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> existing_asset = client.assets.retrieve(id=1)
                 >>> existing_asset.description = "New description"
-                >>> new_asset = AssetWrite(external_id="new_asset", name="my asset", description="New asset")
+                >>> new_asset = AssetWrite(
+                ...     external_id="new_asset", name="my asset", description="New asset"
+                ... )
                 >>> res = client.assets.upsert([existing_asset, new_asset], mode="replace")
         """
         return run_sync(self.__async_client.assets.upsert(item=item, mode=mode))
@@ -761,7 +782,7 @@ class SyncAssetsAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """
-        `Search for assets <https://developer.cognite.com/api#tag/Assets/operation/searchAssets>`_
+        `Search for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/searchAssets>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -793,12 +814,14 @@ class SyncAssetsAPI(SyncAPIClient):
 
             Search for assets using multiple filters, finding all assets with name similar to `xyz` with parent asset `123` or `456` with source `some source`:
 
-                >>> res = client.assets.search(name="xyz",filter={"parent_ids": [123,456],"source": "some source"})
+                >>> res = client.assets.search(
+                ...     name="xyz", filter={"parent_ids": [123, 456], "source": "some source"}
+                ... )
 
             Search for an asset with an attached label:
 
                 >>> my_label_filter = LabelFilter(contains_all=["PUMP"])
-                >>> res = client.assets.search(name="xyz",filter=AssetFilter(labels=my_label_filter))
+                >>> res = client.assets.search(name="xyz", filter=AssetFilter(labels=my_label_filter))
         """
         return run_sync(
             self.__async_client.assets.search(
@@ -846,7 +869,7 @@ class SyncAssetsAPI(SyncAPIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> AssetList:
         """
-        `List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
+        `List assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/listAssets>`_
 
         Args:
             name: Name of asset. Often referred to as tag.
@@ -896,7 +919,7 @@ class SyncAssetsAPI(SyncAPIClient):
             Iterate over chunks of assets to reduce memory load:
 
                 >>> for asset_list in client.assets(chunk_size=2500):
-                ...     asset_list # do something with the assets
+                ...     asset_list  # do something with the assets
 
             Filter assets based on labels:
 
@@ -921,17 +944,19 @@ class SyncAssetsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
                 >>> in_timezone = filters.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
                 >>> res = client.assets.list(
-                ...     advanced_filter=in_timezone,
-                ...     sort=(SortableAssetProperty.external_id, "asc"))
+                ...     advanced_filter=in_timezone, sort=(SortableAssetProperty.external_id, "asc")
+                ... )
 
             Combine filter and advanced filter:
 
                 >>> from cognite.client.data_classes import filters
                 >>> not_instrument_lvl5 = filters.And(
-                ...    filters.ContainsAny("labels", ["Level5"]),
-                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
+                ...     filters.ContainsAny("labels", ["Level5"]),
+                ...     filters.Not(filters.ContainsAny("labels", ["Instrument"])),
                 ... )
-                >>> res = client.assets.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+                >>> res = client.assets.list(
+                ...     asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5
+                ... )
         """
         return run_sync(
             self.__async_client.assets.list(

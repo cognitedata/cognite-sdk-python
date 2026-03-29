@@ -92,7 +92,7 @@ class WorkflowVersionAPI(APIClient):
     async def upsert(
         self, version: WorkflowVersionUpsert | Sequence[WorkflowVersionUpsert], mode: Literal["replace"] = "replace"
     ) -> WorkflowVersion | WorkflowVersionList:
-        """`Create one or more workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
+        """`Create one or more workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflows/operation/CreateOrUpdateWorkflowVersion>`_
 
         Note this is an upsert endpoint, so workflow versions that already exist will be updated, and new ones will be created.
 
@@ -109,8 +109,10 @@ class WorkflowVersionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import (
-                ...     WorkflowVersionUpsert, WorkflowDefinitionUpsert,
-                ...     WorkflowTask, FunctionTaskParameters,
+                ...     WorkflowVersionUpsert,
+                ...     WorkflowDefinitionUpsert,
+                ...     WorkflowTask,
+                ...     FunctionTaskParameters,
                 ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
@@ -122,12 +124,12 @@ class WorkflowVersionAPI(APIClient):
                 ...     ),
                 ... )
                 >>> new_version = WorkflowVersionUpsert(
-                ...    workflow_external_id="my_workflow",
-                ...    version="1",
-                ...    workflow_definition=WorkflowDefinitionUpsert(
-                ...        tasks=[function_task],
-                ...        description="This workflow has one step",
-                ...    ),
+                ...     workflow_external_id="my_workflow",
+                ...     version="1",
+                ...     workflow_definition=WorkflowDefinitionUpsert(
+                ...         tasks=[function_task],
+                ...         description="This workflow has one step",
+                ...     ),
                 ... )
                 >>> res = client.workflows.versions.upsert(new_version)
         """
@@ -168,7 +170,9 @@ class WorkflowVersionAPI(APIClient):
             Delete workflow version "1" of workflow "my workflow" and workflow version "2" of workflow "my workflow 2" using the WorkflowVersionId class:
 
                 >>> from cognite.client.data_classes import WorkflowVersionId
-                >>> client.workflows.versions.delete([WorkflowVersionId("my workflow", "1"), WorkflowVersionId("my workflow 2", "2")])
+                >>> client.workflows.versions.delete(
+                ...     [WorkflowVersionId("my workflow", "1"), WorkflowVersionId("my workflow 2", "2")]
+                ... )
 
         """
         identifiers = WorkflowIds.load(workflow_version_id).dump(camel_case=True)
@@ -282,12 +286,12 @@ class WorkflowVersionAPI(APIClient):
 
                 >>> from cognite.client.data_classes import WorkflowVersionId
                 >>> res = client.workflows.versions.list(
-                ...     [WorkflowVersionId("my_workflow"), WorkflowVersionId("my_workflow_2")])
+                ...     [WorkflowVersionId("my_workflow"), WorkflowVersionId("my_workflow_2")]
+                ... )
 
             Get all workflow versions for workflows 'my_workflow' version '1' and 'my_workflow_2' version '2' using tuples:
 
-                >>> res = client.workflows.versions.list(
-                ...     [("my_workflow", "1"), ("my_workflow_2", "2")])
+                >>> res = client.workflows.versions.list([("my_workflow", "1"), ("my_workflow_2", "2")])
 
         """
         return await self._list(

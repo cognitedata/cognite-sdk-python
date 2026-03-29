@@ -35,6 +35,8 @@ from cognite.client.data_classes import (
     DatapointsArrayList,
     DatapointsList,
     DatapointsQuery,
+    LatestDatapoint,
+    LatestDatapointList,
     LatestDatapointQuery,
     StatusCode,
     TimeSeries,
@@ -1326,7 +1328,7 @@ class TestRetrieveRawDatapointsAPI:
         res = retrieve_method(external_id=ts.external_id, end=3, **kwargs)
 
         if isinstance(res, pd.DataFrame):
-            res = DatapointsArray(value=res.values.ravel())
+            res = DatapointsArray(id=0, is_string=False, is_step=False, type="numeric", value=res.values.ravel())
 
         assert math.isclose(res.value[0], -40)
         assert math.isclose(res.value[1], 32)
@@ -2101,7 +2103,7 @@ class TestRetrieveAggregateDatapointsAPI:
         for retrieve_method in all_retrieve_endpoints:
             res = retrieve_method(external_id=ts.external_id, aggregates="max", granularity="1h", end=3, **kwargs)
             if isinstance(res, pd.DataFrame):
-                res = DatapointsArray(max=res.values.ravel())
+                res = DatapointsArray(id=0, is_string=False, is_step=False, type="numeric", max=res.values.ravel())
             assert math.isclose(res.max[0], 212)
 
     def test_status_codes_affect_aggregate_calculations(
@@ -2537,8 +2539,9 @@ class TestRetrieveLatestDatapointsAPI:
     def test_retrieve_latest(self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList) -> None:
         ids = [all_test_time_series[0].id, all_test_time_series[1].id]
         res = cognite_client.time_series.data.retrieve_latest(id=ids)
-        for dps in res:
-            assert 1 == len(dps)
+        for dp in res:
+            assert dp  # __bool__ is implemented to check if it has a datapoint
+            assert dp.has_datapoint
 
     def test_retrieve_latest_two_unknown(
         self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList
@@ -2546,8 +2549,9 @@ class TestRetrieveLatestDatapointsAPI:
         ids = [all_test_time_series[0].id, all_test_time_series[1].id, 42, 1337]
         res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
         assert 2 == len(res)
-        for dps in res:
-            assert 1 == len(dps)
+        for dp in res:
+            assert dp
+            assert dp.has_datapoint
 
     @pytest.mark.usefixtures("post_spy")
     def test_retrieve_latest_many(
@@ -2559,17 +2563,16 @@ class TestRetrieveLatestDatapointsAPI:
         monkeypatch.setattr(async_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 10)
         res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
 
-        assert {dps.id for dps in res}.issubset(set(ids))
+        assert {dp.id for dp in res}.issubset(set(ids))
         assert 2 == async_client.time_series.data._post.call_count  # type: ignore[attr-defined]
-        for dps in res:
-            assert len(dps) <= 1  # could be empty
+        assert len(res) == len(ids)
 
     def test_retrieve_latest_before(self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList) -> None:
         ts = all_test_time_series[0]
         res = cognite_client.time_series.data.retrieve_latest(id=ts.id, before="1h-ago")
         assert res
-        assert 1 == len(res)
-        assert res[0].timestamp < timestamp_to_ms("1h-ago")
+        assert res.timestamp is not None
+        assert res.timestamp < ms_to_datetime(timestamp_to_ms("1h-ago"))
 
     def test_retrieve_latest_in_target_unit(
         self,
@@ -2582,14 +2585,14 @@ class TestRetrieveLatestDatapointsAPI:
             external_id=cast(str, ts.external_id), before="now", target_unit="temperature:deg_f"
         )
         assert res
-        assert res.value and math.isclose(res.value[0], 212)  # type: ignore[arg-type]
+        assert res.value is not None and math.isclose(res.value, 212)  # type: ignore[arg-type]
         assert res.unit_external_id == "temperature:deg_f"
 
         res = cognite_client.time_series.data.retrieve_latest(
             external_id=cast(str, ts.external_id), before="now", target_unit_system="Imperial"
         )
         assert res
-        assert res.value and math.isclose(res.value[0], 212)  # type: ignore[arg-type]
+        assert res.value is not None and math.isclose(res.value, 212)  # type: ignore[arg-type]
         assert res.unit_external_id == "temperature:deg_f"
 
     def test_retrieve_latest_query_in_target_unit(
@@ -2603,14 +2606,14 @@ class TestRetrieveLatestDatapointsAPI:
             external_id=LatestDatapointQuery(external_id=ts.external_id, before="now", target_unit="temperature:deg_f")
         )
         assert res
-        assert res.value and math.isclose(res.value[0], 212)  # type: ignore[arg-type]
+        assert res.value is not None and math.isclose(res.value, 212)  # type: ignore[arg-type]
         assert res.unit_external_id == "temperature:deg_f"
 
         res = cognite_client.time_series.data.retrieve_latest(
             external_id=LatestDatapointQuery(external_id=ts.external_id, before="now", target_unit_system="Imperial")
         )
         assert res
-        assert res.value and math.isclose(res.value[0], 212)  # type: ignore[arg-type]
+        assert res.value is not None and math.isclose(res.value, 212)  # type: ignore[arg-type]
         assert res.unit_external_id == "temperature:deg_f"
 
     def test_error_when_both_target_unit_and_system_in_latest(
@@ -2650,17 +2653,17 @@ class TestRetrieveLatestDatapointsAPI:
             # Package inside list with other "primitive" identifiers:
             ldq = [identifier, ldq, ldq]
         if attr == "id":
-            res: DatapointsList | Datapoints | None = cognite_client.time_series.data.retrieve_latest(id=ldq)  # type: ignore[arg-type]
+            res: LatestDatapointList | LatestDatapoint | None = cognite_client.time_series.data.retrieve_latest(id=ldq)  # type: ignore[arg-type]
         elif attr == "external_id":
             res = cognite_client.time_series.data.retrieve_latest(external_id=ldq)  # type: ignore[arg-type]
         else:
             raise ValueError(f"Unknown attr {attr}")
         if multiple:
-            assert isinstance(res, DatapointsList)
+            assert isinstance(res, LatestDatapointList)
             assert len(cast(Sized, ldq)) == len(res)
         else:
-            assert isinstance(res, Datapoints)
-            assert 1 == len(res)
+            assert isinstance(res, LatestDatapoint)
+            assert res.has_datapoint
 
     @pytest.mark.usefixtures("post_spy")
     @pytest.mark.parametrize("test_is_string", (True, False))
@@ -2730,13 +2733,13 @@ class TestRetrieveLatestDatapointsAPI:
         assert m1.is_string is test_is_string
         assert b1.is_string is test_is_string
 
-        assert m1.timestamp == [1698537600000]
-        assert m1.status_code == [0]  # This is empty in the JSON response
-        assert m1.status_symbol == ["Good"]  # This is empty in the JSON response
+        assert m1.timestamp == ms_to_datetime(1698537600000)
+        assert m1.status_code == 0  # This is empty in the JSON response
+        assert m1.status_symbol == "Good"  # This is empty in the JSON response
 
-        assert b1.timestamp == [1698537600000]
-        assert b1.status_code == [2154168320]
-        assert b1.status_symbol == ["BadDuplicateReferenceNotAllowed"]
+        assert b1.timestamp == ms_to_datetime(1698537600000)
+        assert b1.status_code == 2154168320
+        assert b1.status_symbol == "BadDuplicateReferenceNotAllowed"
 
     @pytest.mark.parametrize("test_is_string", (True, False))
     def test_effect_of_uncertain_and_bad_settings_using_same_before_setting(
@@ -2763,18 +2766,18 @@ class TestRetrieveLatestDatapointsAPI:
             treat_uncertain_as_bad=True,
             before=ts_to_ms("2023-08-05 12:00:00"),
         )
-        assert m1.timestamp == [1691020800000]  # 2023-08-03
-        assert m2.timestamp == [1691107200000]  # 2023-08-04 newer because uncertain is treated as good
-        assert m3.timestamp == [1691193600000]  # 2023-08-05 even newer because bad is not ignored
-        assert b3.timestamp == [1691193600000]
+        assert m1.timestamp == ms_to_datetime(1691020800000)  # 2023-08-03
+        assert m2.timestamp == ms_to_datetime(1691107200000)  # 2023-08-04 newer because uncertain is treated as good
+        assert m3.timestamp == ms_to_datetime(1691193600000)  # 2023-08-05 even newer because bad is not ignored
+        assert b3.timestamp == ms_to_datetime(1691193600000)
         assert not b1.timestamp and not b1.value
         assert not b2.timestamp and not b2.value
 
         if not test_is_string:
-            assert m1.value and math.isclose(m1.value[0], -443.7838445173604)  # type:ignore[arg-type]
-            assert m2.value and math.isclose(m2.value[0], 792804.310084)  # type:ignore[arg-type]
-            assert m3.value and math.isclose(m3.value[0], 1e100)  # type:ignore[arg-type]
-            assert b3.value and math.isclose(b3.value[0], -1e100)  # type:ignore[arg-type]
+            assert m1.value is not None and math.isclose(m1.value, -443.7838445173604)  # type: ignore[arg-type]
+            assert m2.value is not None and math.isclose(m2.value, 792804.310084)  # type: ignore[arg-type]
+            assert m3.value is not None and math.isclose(m3.value, 1e100)  # type: ignore[arg-type]
+            assert b3.value is not None and math.isclose(b3.value, -1e100)  # type: ignore[arg-type]
 
     @pytest.mark.parametrize("test_is_string", (True, False))
     def test_json_float_translation(
@@ -2790,21 +2793,21 @@ class TestRetrieveLatestDatapointsAPI:
             id=[LatestDatapointQuery(id=bad_ts.id, before=ts + 1) for ts in exp_timestamps],
             ignore_bad_datapoints=False,
         )
-        for dps, exp_ts in zip(dps_lst, exp_timestamps):
-            assert dps.timestamp == [exp_ts]
+        for dp, exp_ts in zip(dps_lst, exp_timestamps):
+            assert dp.timestamp == ms_to_datetime(exp_ts)
 
-        assert dps_lst[3].value and dps_lst[3].value[0] is None
+        assert dps_lst[3].value is None  # Missing value (bad status)
         if test_is_string:
-            for i, dps in enumerate(dps_lst):
+            for i, dp in enumerate(dps_lst):
                 if i == 3:
                     continue  # None aka missing, checked above
-                assert isinstance(dps.value[0], str)
+                assert isinstance(dp.value, str)
         else:
-            assert dps_lst[0].value and math.isclose(dps_lst[0].value[0], 2.71)
-            assert dps_lst[2].value and math.isclose(dps_lst[2].value[0], -5e-324)
-            assert dps_lst[4].value and math.isnan(dps_lst[4].value[0])
-            assert dps_lst[1].value and dps_lst[1].value[0] == -math.inf
-            assert dps_lst[5].value and dps_lst[5].value[0] == math.inf
+            assert dps_lst[0].value is not None and math.isclose(dps_lst[0].value, 2.71)  # type: ignore[arg-type]
+            assert dps_lst[2].value is not None and math.isclose(dps_lst[2].value, -5e-324)  # type: ignore[arg-type]
+            assert dps_lst[4].value is not None and math.isnan(dps_lst[4].value)  # type: ignore[arg-type]
+            assert dps_lst[1].value is not None and dps_lst[1].value == -math.inf
+            assert dps_lst[5].value is not None and dps_lst[5].value == math.inf
 
     def test_instance_id_usage(
         self, cognite_client: CogniteClient, instance_ts_id: NodeId, instance_ts_latest: NodeId
@@ -2812,23 +2815,24 @@ class TestRetrieveLatestDatapointsAPI:
         single: NodeId | LatestDatapointQuery = random.choice(
             [instance_ts_latest, LatestDatapointQuery(instance_id=instance_ts_latest)]
         )  # type: ignore[assignment]
-        dps1 = cognite_client.time_series.data.retrieve_latest(instance_id=single)
-        assert type(dps1) is Datapoints
+        dp1 = cognite_client.time_series.data.retrieve_latest(instance_id=single)
+        assert type(dp1) is LatestDatapoint
 
         dps_lst = cognite_client.time_series.data.retrieve_latest(instance_id=[instance_ts_id, single])
-        assert type(dps_lst) is DatapointsList
+        assert type(dps_lst) is LatestDatapointList
         assert len(dps_lst) == 2
 
-        dps2, dps3 = dps_lst
-        for dps in (dps1, dps_lst[-1]):  # 'instance_ts_id' may not have any last dp
-            assert dps.instance_id == instance_ts_latest
-            dp = dps[0]
+        dp2, dp3 = dps_lst
+        for dp in (dp1, dps_lst[-1]):  # 'instance_ts_id' may not have any last dp
+            assert dp.instance_id == instance_ts_latest
+            assert dp.timestamp is not None
             now = datetime.now(timezone.utc)
-            ts = ms_to_datetime(dp.timestamp)
-            assert now - timedelta(minutes=2) < ts < now
+            assert now - timedelta(minutes=2) < dp.timestamp < now
 
             assert isinstance(dp.value, float)
-            assert int(dp.timestamp / 1000) == int(dp.value)
+            int_ts_seconds = int(dp.timestamp.timestamp())
+            assert dp.timestamp.tzinfo == timezone.utc
+            assert int_ts_seconds == int(dp.value)
 
     def test_instance_id_and_missing(self, cognite_client: CogniteClient, instance_ts_id: NodeId) -> None:
         # Before 7.73.4 (and after support for instance_id was added ofc), when a not-found time series was requested
@@ -2840,7 +2844,7 @@ class TestRetrieveLatestDatapointsAPI:
         # This could also happen - but on a separate codeline - when the missing was not an instance_id, as we loaded the
         # dict in before a comparison of the identifiers:
         res = cognite_client.time_series.data.retrieve_latest(id=1, instance_id=instance_ts_id, ignore_unknown_ids=True)  # type: ignore
-        assert isinstance(res, DatapointsList)
+        assert isinstance(res, LatestDatapointList)
         assert len(res) == 1
         assert res[0].instance_id == instance_ts_id
 

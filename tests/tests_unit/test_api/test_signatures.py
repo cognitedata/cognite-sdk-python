@@ -142,7 +142,6 @@ class TestFileMetadataUploadSignatures:
         del upload_from_memory_parameters["name"]
         del upload_from_memory_parameters["security_categories"]
         file_metadata_parameters = dict(inspect.signature(FileMetadataWrite.__init__).parameters)
-        del file_metadata_parameters["instance_id"]
         del file_metadata_parameters["name"]
         del file_metadata_parameters["security_categories"]
 

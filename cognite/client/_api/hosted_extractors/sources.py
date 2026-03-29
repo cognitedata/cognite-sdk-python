@@ -70,7 +70,7 @@ class SourcesAPI(APIClient):
     async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Source | SourceList:
-        """`Retrieve one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/retrieve_sources>`_
+        """`Retrieve one or more sources. <https://api-docs.cognite.com/20230101/tag/Sources/operation/retrieve_sources>`_
 
         Args:
             external_ids: The external ID provided by the client. Must be unique for the resource type.
@@ -84,11 +84,13 @@ class SourcesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.hosted_extractors.sources.retrieve('myMQTTSource')
+                >>> res = client.hosted_extractors.sources.retrieve("myMQTTSource")
 
             Get multiple sources by id:
 
-                >>> res = client.hosted_extractors.sources.retrieve(["myMQTTSource", "MyEventHubSource"], ignore_unknown_ids=True)
+                >>> res = client.hosted_extractors.sources.retrieve(
+                ...     ["myMQTTSource", "MyEventHubSource"], ignore_unknown_ids=True
+                ... )
 
         """
         self._warning.warn()
@@ -103,7 +105,7 @@ class SourcesAPI(APIClient):
     async def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
-        """`Delete one or more sources  <https://developer.cognite.com/api#tag/Sources/operation/delete_sources>`_
+        """`Delete one or more sources  <https://api-docs.cognite.com/20230101/tag/Sources/operation/delete_sources>`_
 
         Args:
             external_ids: The external ID provided by the client. Must be unique for the resource type.
@@ -139,7 +141,7 @@ class SourcesAPI(APIClient):
     async def create(self, items: Sequence[SourceWrite]) -> SourceList: ...
 
     async def create(self, items: SourceWrite | Sequence[SourceWrite]) -> Source | SourceList:
-        """`Create one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/create_sources>`_
+        """`Create one or more sources. <https://api-docs.cognite.com/20230101/tag/Sources/operation/create_sources>`_
 
         Args:
             items: Source(s) to create.
@@ -155,7 +157,9 @@ class SourcesAPI(APIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> source = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
+                >>> source = EventHubSourceWrite(
+                ...     "my_event_hub", "http://myeventhub.com", "My EventHub", "my_key", "my_value"
+                ... )
                 >>> res = client.hosted_extractors.sources.create(source)
         """
         self._warning.warn()
@@ -186,7 +190,7 @@ class SourcesAPI(APIClient):
         items: SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Source | SourceList:
-        """`Update one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/update_sources>`_
+        """`Update one or more sources. <https://api-docs.cognite.com/20230101/tag/Sources/operation/update_sources>`_
 
         Args:
             items: Source(s) to update.
@@ -203,7 +207,9 @@ class SourcesAPI(APIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceUpdate
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> source = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
+                >>> source = EventHubSourceUpdate("my_event_hub").event_hub_name.set(
+                ...     "My Updated EventHub"
+                ... )
                 >>> res = client.hosted_extractors.sources.update(source)
         """
         self._warning.warn()
@@ -233,7 +239,7 @@ class SourcesAPI(APIClient):
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> SourceList:
-        """`List sources <https://developer.cognite.com/api#tag/Sources/operation/list_sources>`_
+        """`List sources <https://api-docs.cognite.com/20230101/tag/Sources/operation/list_sources>`_
 
         Args:
             limit: Maximum number of sources to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -258,7 +264,7 @@ class SourcesAPI(APIClient):
             Iterate over chunks of sources to reduce memory load:
 
                 >>> for source_list in client.hosted_extractors.sources(chunk_size=25):
-                ...     source_list # do something with the sources
+                ...     source_list  # do something with the sources
         """
         self._warning.warn()
         return await self._list(

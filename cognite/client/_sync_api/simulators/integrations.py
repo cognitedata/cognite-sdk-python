@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ef827367aadc9cbf18d34667c0e76b53
+cc66cced91c72607a9a48412b697fc97
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -79,7 +79,7 @@ class SyncSimulatorIntegrationsAPI(SyncAPIClient):
         active: bool | None = None,
     ) -> SimulatorIntegrationList:
         """
-        `Filter simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/filter_simulator_integrations_simulators_integrations_list_post>`_
+        `Filter simulator integrations <https://api-docs.cognite.com/20230101/tag/Simulator-Integrations/operation/filter_simulator_integrations_simulators_integrations_list_post>`_
 
         Retrieves a list of simulator integrations that match the given criteria.
 
@@ -118,7 +118,7 @@ class SyncSimulatorIntegrationsAPI(SyncAPIClient):
         self, ids: int | Sequence[int] | None = None, external_ids: str | SequenceNotStr[str] | None = None
     ) -> None:
         """
-        `Delete simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
+        `Delete simulator integrations <https://api-docs.cognite.com/20230101/tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
 
         Args:
             ids: Id(s) of simulator integrations to delete
@@ -129,6 +129,6 @@ class SyncSimulatorIntegrationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.simulators.integrations.delete(ids=[1,2,3], external_ids="foo")
+                >>> client.simulators.integrations.delete(ids=[1, 2, 3], external_ids="foo")
         """
         return run_sync(self.__async_client.simulators.integrations.delete(ids=ids, external_ids=external_ids))

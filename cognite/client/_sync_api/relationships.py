@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d65ed29d7fa57070fe41d79eac5099c7
+d31286ebf278cd9c14c11d678adddd33
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -169,7 +169,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
         self, external_ids: SequenceNotStr[str], fetch_resources: bool = False, ignore_unknown_ids: bool = False
     ) -> RelationshipList:
         """
-        `Retrieve multiple relationships by external id.  <https://developer.cognite.com/api#tag/Relationships/operation/byidsRelationships>`_
+        `Retrieve multiple relationships by external id.  <https://api-docs.cognite.com/20230101/tag/Relationships/operation/byidsRelationships>`_
 
         Args:
             external_ids: External IDs
@@ -214,7 +214,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
         fetch_resources: bool = False,
     ) -> RelationshipList:
         """
-        `Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://developer.cognite.com/api#tag/Relationships/operation/listRelationships>`_
+        `Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://api-docs.cognite.com/20230101/tag/Relationships/operation/listRelationships>`_
 
         Args:
             source_external_ids: Include relationships that have any of these values in their source External Id field
@@ -282,7 +282,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
         self, relationship: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]
     ) -> Relationship | RelationshipList:
         """
-        `Create one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/createRelationships>`_
+        `Create one or more relationships. <https://api-docs.cognite.com/20230101/tag/Relationships/operation/createRelationships>`_
 
         Args:
             relationship: Relationship or list of relationships to create.
@@ -309,7 +309,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 ...     target_external_id="target_ext_id",
                 ...     target_type="event",
                 ...     confidence=0.1,
-                ...     data_set_id=1234
+                ...     data_set_id=1234,
                 ... )
                 >>> flowrel2 = RelationshipWrite(
                 ...     external_id="flow_2",
@@ -318,9 +318,9 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 ...     target_external_id="target_ext_id",
                 ...     target_type="event",
                 ...     confidence=0.1,
-                ...     data_set_id=1234
+                ...     data_set_id=1234,
                 ... )
-                >>> res = client.relationships.create([flowrel1,flowrel2])
+                >>> res = client.relationships.create([flowrel1, flowrel2])
         """
         return run_sync(self.__async_client.relationships.create(relationship=relationship))
 
@@ -339,7 +339,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Relationship | RelationshipList:
         """
-        `Update one or more relationships <https://developer.cognite.com/api#tag/Relationships/operation/updateRelationships>`_
+        `Update one or more relationships <https://api-docs.cognite.com/20230101/tag/Relationships/operation/updateRelationships>`_
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
@@ -362,7 +362,11 @@ class SyncRelationshipsAPI(SyncAPIClient):
             Perform a partial update on a relationship, setting a source_external_id and a confidence:
 
                 >>> from cognite.client.data_classes import RelationshipUpdate
-                >>> my_update = RelationshipUpdate(external_id="flow_1").source_external_id.set("alternate_source").confidence.set(0.97)
+                >>> my_update = (
+                ...     RelationshipUpdate(external_id="flow_1")
+                ...     .source_external_id.set("alternate_source")
+                ...     .confidence.set(0.97)
+                ... )
                 >>> res1 = client.relationships.update(my_update)
                 >>> # Remove an already set optional field like so
                 >>> another_update = RelationshipUpdate(external_id="flow_1").confidence.set(None)
@@ -426,15 +430,17 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 ...     source_external_id="new_source",
                 ...     source_type="asset",
                 ...     target_external_id="new_target",
-                ...     target_type="event"
+                ...     target_type="event",
                 ... )
-                >>> res = client.relationships.upsert([existing_relationship, new_relationship], mode="replace")
+                >>> res = client.relationships.upsert(
+                ...     [existing_relationship, new_relationship], mode="replace"
+                ... )
         """
         return run_sync(self.__async_client.relationships.upsert(item=item, mode=mode))
 
     def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """
-        `Delete one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/deleteRelationships>`_
+        `Delete one or more relationships. <https://api-docs.cognite.com/20230101/tag/Relationships/operation/deleteRelationships>`_
 
         Args:
             external_id: External ID or list of external ids
@@ -446,7 +452,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.relationships.delete(external_id=["a","b"])
+                >>> client.relationships.delete(external_id=["a", "b"])
         """
         return run_sync(
             self.__async_client.relationships.delete(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)

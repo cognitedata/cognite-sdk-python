@@ -45,7 +45,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
     ) -> SimulatorModelRevisionList:
-        """`Filter simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
+        """`Filter simulator model revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
 
         Retrieves a list of simulator model revisions that match the given criteria.
 
@@ -76,7 +76,7 @@ class SimulatorModelRevisionsAPI(APIClient):
                 ...     created_time=TimestampRange(min=0, max=1000000),
                 ...     last_updated_time=TimestampRange(min=0, max=1000000),
                 ...     sort=PropertySort(order="asc", property="createdTime"),
-                ...     limit=10
+                ...     limit=10,
                 ... )
         """
         model_revisions_filter = SimulatorModelRevisionsFilter(
@@ -113,7 +113,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
     ) -> SimulatorModelRevision | SimulatorModelRevisionList | None:
-        """`Retrieve simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
+        """`Retrieve simulator model revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
 
         Retrieve one or more simulator model revisions by ID(s) or external ID(s).
 
@@ -137,7 +137,7 @@ class SimulatorModelRevisionsAPI(APIClient):
                 ... )
 
             Get multiple simulator model revisions by ids:
-                >>> res = client.simulators.models.revisions.retrieve(ids=[1,2])
+                >>> res = client.simulators.models.revisions.retrieve(ids=[1, 2])
 
             Get multiple simulator model revisions by external ids:
                 >>> res = client.simulators.models.revisions.retrieve(
@@ -239,7 +239,11 @@ class SimulatorModelRevisionsAPI(APIClient):
         Examples:
             Create new simulator model revisions:
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionWrite, SimulatorModelDependencyFileId, SimulatorModelRevisionDependency
+                >>> from cognite.client.data_classes.simulators import (
+                ...     SimulatorModelRevisionWrite,
+                ...     SimulatorModelDependencyFileId,
+                ...     SimulatorModelRevisionDependency,
+                ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> revisions = [
@@ -252,7 +256,7 @@ class SimulatorModelRevisionsAPI(APIClient):
                 ...         external_id="revision2",
                 ...         file_id=2,
                 ...         model_external_id="a_2",
-                ...         external_dependencies = [
+                ...         external_dependencies=[
                 ...             SimulatorModelRevisionDependency(
                 ...                 file=SimulatorModelDependencyFileId(id=123),
                 ...                 arguments={
@@ -260,7 +264,7 @@ class SimulatorModelRevisionsAPI(APIClient):
                 ...                     "fieldB": "value2",
                 ...                 },
                 ...             )
-                ...         ]
+                ...         ],
                 ...     ),
                 ... ]
                 >>> res = client.simulators.models.revisions.create(revisions)

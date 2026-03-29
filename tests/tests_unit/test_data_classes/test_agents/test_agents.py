@@ -149,7 +149,7 @@ class TestAgent:
         assert agent.description is None
         assert agent.instructions is None
         assert agent.model is None
-        assert agent.tools == []
+        assert agent.tools is None
 
         dumped = agent.dump(camel_case=True)
         assert agent_minimal_dump == dumped
@@ -171,7 +171,7 @@ class TestAgent:
     def test_tools_handling(self) -> None:
         # Test with no tools
         agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent")
-        assert agent.tools == []
+        assert agent.tools is None
 
         # Test with an empty list of tools
         agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent", tools=[])
@@ -191,17 +191,6 @@ class TestAgent:
 
         # Test with empty list of tools
         agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent", tools=[])
-        assert agent.tools == []
-
-    def test_agent_with_empty_tools_list(self) -> None:
-        """Test agent creation with empty tools list."""
-        agent = DefaultResourceGenerator.agent(external_id="test", name="test", tools=[])
-        assert agent.tools == []
-        assert not agent.tools  # Should be falsy
-
-    def test_agent_with_none_tools(self) -> None:
-        """Test agent creation with None tools."""
-        agent = DefaultResourceGenerator.agent(external_id="test", name="test", tools=None)
         assert agent.tools == []
 
     def test_post_init_tools_validation(self) -> None:

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-4dcb782b79fca8ab86d57e9d1e5180b9
+ef3951b05d4235a59e1c676636514dfa
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -27,7 +27,7 @@ class SyncVisionAPI(SyncAPIClient):
         parameters: FeatureParameters | None = None,
     ) -> VisionExtractJob:
         """
-        `Start an asynchronous job to extract features from image files. <https://developer.cognite.com/api#tag/Vision/operation/postVisionExtract>`_
+        `Start an asynchronous job to extract features from image files. <https://api-docs.cognite.com/20230101/tag/Vision/operation/postVisionExtract>`_
 
         Args:
             features: The feature(s) to extract from the provided image files.
@@ -44,7 +44,9 @@ class SyncVisionAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.contextualization import VisionFeature
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> extract_job = client.vision.extract(features=VisionFeature.ASSET_TAG_DETECTION, file_ids=[1])
+                >>> extract_job = client.vision.extract(
+                ...     features=VisionFeature.ASSET_TAG_DETECTION, file_ids=[1]
+                ... )
                 >>> extract_job.wait_for_completion()
                 >>> for item in extract_job.items:
                 ...     predictions = item.predictions
@@ -60,7 +62,7 @@ class SyncVisionAPI(SyncAPIClient):
 
     def get_extract_job(self, job_id: int) -> VisionExtractJob:
         """
-        `Retrieve an existing extract job by ID. <https://developer.cognite.com/api#tag/Vision/operation/getVisionExtract>`_
+        `Retrieve an existing extract job by ID. <https://api-docs.cognite.com/20230101/tag/Vision/operation/getVisionExtract>`_
 
         Args:
             job_id: ID of an existing feature extraction job.

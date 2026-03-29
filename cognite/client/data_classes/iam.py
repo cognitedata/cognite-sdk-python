@@ -119,26 +119,26 @@ class Group(GroupCore):
     Groups can either be managed through the external identity provider for the project or managed by CDF.
 
     Args:
-        id: No description.
-        name: Name of the group.
-        source_id: ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
-        capabilities: List of capabilities (acls) this group should grant its users.
-        attributes: Attributes of the group, this scopes down access based on the attributes specified.
-        is_deleted: No description.
-        deleted_time: No description.
-        metadata: Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
-        members: Specifies which users are members of the group. Can not be used together with 'source_id'.
+        id (int): No description.
+        name (str): Name of the group.
+        is_deleted (bool): No description.
+        source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
+        capabilities (list[Capability] | Capability | None): List of capabilities (acls) this group should grant its users.
+        attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
+        deleted_time (int | None): No description.
+        metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
+        members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
 
     def __init__(
         self,
         id: int,
         name: str,
-        source_id: str | None,
-        capabilities: list[Capability] | Capability | None,
-        attributes: GroupAttributes | None,
-        is_deleted: bool | None,
-        deleted_time: int | None,
+        is_deleted: bool,
+        source_id: str | None = None,
+        capabilities: list[Capability] | Capability | None = None,
+        attributes: GroupAttributes | None = None,
+        deleted_time: int | None = None,
         metadata: dict[str, str] | None = None,
         members: Literal["allUserAccounts"] | list[str] | None = None,
     ) -> None:
@@ -186,7 +186,7 @@ class Group(GroupCore):
             source_id=resource.get("sourceId"),
             attributes=GroupAttributes._load_if(resource.get("attributes")),
             capabilities=[Capability.load(c, allow_unknown) for c in resource.get("capabilities", [])] or None,
-            is_deleted=resource.get("isDeleted"),
+            is_deleted=resource["isDeleted"],
             deleted_time=resource.get("deletedTime"),
             metadata=resource.get("metadata"),
             members=resource.get("members"),
@@ -297,10 +297,10 @@ class SecurityCategoryCore(WriteableCogniteResource["SecurityCategoryWrite"], AB
     """No description.
 
     Args:
-        name: Name of the security category
+        name (str): Name of the security category
     """
 
-    def __init__(self, name: str | None = None) -> None:
+    def __init__(self, name: str) -> None:
         self.name = name
 
 
@@ -309,22 +309,20 @@ class SecurityCategory(SecurityCategoryCore):
     This is the read version of a security category, which is used when retrieving security categories.
 
     Args:
-        id: Id of the security category
-        name: Name of the security category
+        id (int): Id of the security category
+        name (str): Name of the security category
     """
 
-    def __init__(self, id: int, name: str | None) -> None:
+    def __init__(self, id: int, name: str) -> None:
         super().__init__(name=name)
         self.id = id
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(id=resource["id"], name=resource.get("name"))
+        return cls(id=resource["id"], name=resource["name"])
 
     def as_write(self) -> SecurityCategoryWrite:
         """Returns a write version of this security category."""
-        if self.name is None:
-            raise ValueError("SecurityCategory must have an id to be used as write")
         return SecurityCategoryWrite(name=self.name)
 
 
@@ -500,7 +498,7 @@ class Session(CogniteResource):
         status: SessionStatus,
         creation_time: int,
         expiration_time: int,
-        client_id: str | None,
+        client_id: str | None = None,
     ) -> None:
         self.id = id
         self.type = type

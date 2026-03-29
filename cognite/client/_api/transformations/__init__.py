@@ -45,7 +45,7 @@ class TransformationsAPI(APIClient):
         name_regex: str | None = None,
         query_regex: str | None = None,
         destination_type: str | None = None,
-        conflict_mode: str | None = None,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"] | None = None,
         cdf_project_name: str | None = None,
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
@@ -64,7 +64,7 @@ class TransformationsAPI(APIClient):
         name_regex: str | None = None,
         query_regex: str | None = None,
         destination_type: str | None = None,
-        conflict_mode: str | None = None,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"] | None = None,
         cdf_project_name: str | None = None,
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
@@ -82,7 +82,7 @@ class TransformationsAPI(APIClient):
         name_regex: str | None = None,
         query_regex: str | None = None,
         destination_type: str | None = None,
-        conflict_mode: str | None = None,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"] | None = None,
         cdf_project_name: str | None = None,
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
@@ -95,20 +95,20 @@ class TransformationsAPI(APIClient):
         """Iterate over transformations
 
         Args:
-            chunk_size: Number of transformations to return in each chunk. Defaults to yielding one transformation a time.
-            include_public: Whether public transformations should be included in the results. (default true).
-            name_regex: Regex expression to match the transformation name
-            query_regex: Regex expression to match the transformation query
-            destination_type: Transformation destination resource name to filter by.
-            conflict_mode: Filters by a selected transformation action type: abort/create, upsert, update, delete
-            cdf_project_name: Project name to filter by configured source and destination project
-            has_blocked_error: Whether only the blocked transformations should be included in the results.
-            created_time: Range between two timestamps
-            last_updated_time: Range between two timestamps
-            data_set_ids: Return only transformations in the specified data sets with these id(s).
-            data_set_external_ids: Return only transformations in the specified data sets with these external id(s).
-            tags: Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
-            limit: Limits the number of results to be returned. Defaults to yielding all transformations.
+            chunk_size (int | None): Number of transformations to return in each chunk. Defaults to yielding one transformation a time.
+            include_public (bool): Whether public transformations should be included in the results. (default true).
+            name_regex (str | None): Regex expression to match the transformation name
+            query_regex (str | None): Regex expression to match the transformation query
+            destination_type (str | None): Transformation destination resource name to filter by.
+            conflict_mode (Literal['abort', 'delete', 'update', 'upsert'] | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
+            cdf_project_name (str | None): Project name to filter by configured source and destination project
+            has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
+            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            data_set_ids (int | list[int] | None): Return only transformations in the specified data sets with these id(s).
+            data_set_external_ids (str | list[str] | None): Return only transformations in the specified data sets with these external id(s).
+            tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+            limit (int | None): Limits the number of results to be returned. Defaults to yielding all transformations.
 
         Yields:
             Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
@@ -152,7 +152,7 @@ class TransformationsAPI(APIClient):
         self,
         transformation: Transformation | TransformationWrite | Sequence[Transformation] | Sequence[TransformationWrite],
     ) -> Transformation | TransformationList:
-        """`Create one or more transformations. <https://developer.cognite.com/api#tag/Transformations/operation/createTransformations>`_
+        """`Create one or more transformations. <https://api-docs.cognite.com/20230101/tag/Transformations/operation/createTransformations>`_
 
         Args:
             transformation: Transformation or list of transformations to create.
@@ -165,8 +165,15 @@ class TransformationsAPI(APIClient):
             Create new transformations:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import TransformationWrite, TransformationDestination
-                >>> from cognite.client.data_classes.transformations.common import ViewInfo, EdgeType, DataModelInfo
+                >>> from cognite.client.data_classes import (
+                ...     TransformationWrite,
+                ...     TransformationDestination,
+                ... )
+                >>> from cognite.client.data_classes.transformations.common import (
+                ...     ViewInfo,
+                ...     EdgeType,
+                ...     DataModelInfo,
+                ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> transformations = [
@@ -254,7 +261,7 @@ class TransformationsAPI(APIClient):
         external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more transformations. <https://developer.cognite.com/api#tag/Transformations/operation/deleteTransformations>`_
+        """`Delete one or more transformations. <https://api-docs.cognite.com/20230101/tag/Transformations/operation/deleteTransformations>`_
 
         Args:
             id: Id or list of ids.
@@ -282,7 +289,7 @@ class TransformationsAPI(APIClient):
         name_regex: str | None = None,
         query_regex: str | None = None,
         destination_type: str | None = None,
-        conflict_mode: str | None = None,
+        conflict_mode: Literal["abort", "delete", "update", "upsert"] | None = None,
         cdf_project_name: str | None = None,
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
@@ -292,22 +299,22 @@ class TransformationsAPI(APIClient):
         tags: TagsFilter | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TransformationList:
-        """`List all transformations. <https://developer.cognite.com/api#tag/Transformations/operation/filterTransformations>`_
+        """`List all transformations. <https://api-docs.cognite.com/20230101/tag/Transformations/operation/filterTransformations>`_
 
         Args:
-            include_public: Whether public transformations should be included in the results. (default true).
-            name_regex: Regex expression to match the transformation name
-            query_regex: Regex expression to match the transformation query
-            destination_type: Transformation destination resource name to filter by.
-            conflict_mode: Filters by a selected transformation action type: abort/create, upsert, update, delete
-            cdf_project_name: Project name to filter by configured source and destination project
-            has_blocked_error: Whether only the blocked transformations should be included in the results.
-            created_time: Range between two timestamps
-            last_updated_time: Range between two timestamps
-            data_set_ids: Return only transformations in the specified data sets with these id(s).
-            data_set_external_ids: Return only transformations in the specified data sets with these external id(s).
-            tags: Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
-            limit: Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            include_public (bool): Whether public transformations should be included in the results. (default true).
+            name_regex (str | None): Regex expression to match the transformation name
+            query_regex (str | None): Regex expression to match the transformation query
+            destination_type (str | None): Transformation destination resource name to filter by.
+            conflict_mode (Literal['abort', 'delete', 'update', 'upsert'] | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
+            cdf_project_name (str | None): Project name to filter by configured source and destination project
+            has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
+            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            data_set_ids (int | list[int] | None): Return only transformations in the specified data sets with these id(s).
+            data_set_external_ids (str | list[str] | None): Return only transformations in the specified data sets with these external id(s).
+            tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+            limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
         Returns:
             List of transformations
@@ -347,7 +354,7 @@ class TransformationsAPI(APIClient):
         )
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Transformation | None:
-        """`Retrieve a single transformation by id. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_
+        """`Retrieve a single transformation by id. <https://api-docs.cognite.com/20230101/tag/Transformations/operation/getTransformationsByIds>`_
 
         Args:
             id: ID
@@ -382,7 +389,7 @@ class TransformationsAPI(APIClient):
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TransformationList:
-        """`Retrieve multiple transformations. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_
+        """`Retrieve multiple transformations. <https://api-docs.cognite.com/20230101/tag/Transformations/operation/getTransformationsByIds>`_
 
         Args:
             ids: List of ids to retrieve.
@@ -399,7 +406,9 @@ class TransformationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.transformations.retrieve_multiple(ids=[1,2,3], external_ids=['transform-1','transform-2'])
+                >>> res = client.transformations.retrieve_multiple(
+                ...     ids=[1, 2, 3], external_ids=["transform-1", "transform-2"]
+                ... )
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return await self._retrieve_multiple(
@@ -431,7 +440,7 @@ class TransformationsAPI(APIClient):
         | Sequence[Transformation | TransformationWrite | TransformationUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Transformation | TransformationList:
-        """`Update one or more transformations <https://developer.cognite.com/api#tag/Transformations/operation/updateTransformations>`_
+        """`Update one or more transformations <https://api-docs.cognite.com/20230101/tag/Transformations/operation/updateTransformations>`_
 
         Args:
             item: Transformation(s) to update
@@ -454,7 +463,11 @@ class TransformationsAPI(APIClient):
             Perform a partial update on a transformation, updating the query and making it private:
 
                 >>> from cognite.client.data_classes import TransformationUpdate
-                >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
+                >>> my_update = (
+                ...     TransformationUpdate(id=1)
+                ...     .query.set("SELECT * FROM _cdf.assets")
+                ...     .is_public.set(False)
+                ... )
                 >>> res = client.transformations.update(my_update)
 
             Update the session used for reading (source) and writing (destination) when authenticating for all
@@ -466,7 +479,7 @@ class TransformationsAPI(APIClient):
                 >>> new_nonce = NonceCredentials(
                 ...     session_id=new_session.id,
                 ...     nonce=new_session.nonce,
-                ...     cdf_project_name=client.config.project
+                ...     cdf_project_name=client.config.project,
                 ... )
                 >>> for tr in to_update:
                 ...     tr.source_nonce = new_nonce
@@ -513,7 +526,7 @@ class TransformationsAPI(APIClient):
         wait: bool = True,
         timeout: float | None = None,
     ) -> TransformationJob:
-        """`Run a transformation. <https://developer.cognite.com/api#tag/Transformations/operation/runTransformation>`_
+        """`Run a transformation. <https://api-docs.cognite.com/20230101/tag/Transformations/operation/runTransformation>`_
 
         Args:
             transformation_id: Transformation internal id
@@ -551,7 +564,7 @@ class TransformationsAPI(APIClient):
         return job
 
     async def cancel(self, transformation_id: int | None = None, transformation_external_id: str | None = None) -> None:
-        """`Cancel a running transformation. <https://developer.cognite.com/api#tag/Transformations/operation/postApiV1ProjectsProjectTransformationsCancel>`_
+        """`Cancel a running transformation. <https://api-docs.cognite.com/20230101/tag/Transformations/operation/postApiV1ProjectsProjectTransformationsCancel>`_
 
         Args:
             transformation_id: Transformation internal id
@@ -583,7 +596,7 @@ class TransformationsAPI(APIClient):
         infer_schema_limit: int | None = 10_000,
         timeout: int | None = 240,
     ) -> TransformationPreviewResult:
-        """`Preview the result of a query. <https://developer.cognite.com/api#tag/Query/operation/runPreview>`_
+        """`Preview the result of a query. <https://api-docs.cognite.com/20230101/tag/Query/operation/runPreview>`_
 
         Args:
             query: SQL query to run for preview.
@@ -614,12 +627,16 @@ class TransformationsAPI(APIClient):
             a query that converts one source row to one result row, you may need to increase the `source_limit`.
             For example, given that you have a query that reads from a raw table with 10,903 rows
 
-                >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None)
+                >>> result = client.transformations.preview(
+                ...     query="select * from my_raw_db.my_raw_table", limit=None
+                ... )
                 >>> print(result.results)  # 100
 
             To get all rows, you also need to set the `source_limit` to None:
 
-                >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None, source_limit=None)
+                >>> result = client.transformations.preview(
+                ...     query="select * from my_raw_db.my_raw_table", limit=None, source_limit=None
+                ... )
                 >>> print(result.results)  # 10903
 
         """

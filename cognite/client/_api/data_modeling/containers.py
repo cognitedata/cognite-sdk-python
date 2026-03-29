@@ -101,7 +101,7 @@ class ContainersAPI(APIClient):
     async def retrieve(
         self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]
     ) -> Container | ContainerList | None:
-        """`Retrieve one or more container by id(s). <https://developer.cognite.com/api#tag/Containers/operation/byExternalIdsContainers>`_
+        """`Retrieve one or more container by id(s). <https://api-docs.cognite.com/20230101/tag/Containers/operation/byExternalIdsContainers>`_
 
         Args:
             ids: Identifier for container(s).
@@ -114,13 +114,14 @@ class ContainersAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.data_modeling.containers.retrieve(('mySpace', 'myContainer'))
+                >>> res = client.data_modeling.containers.retrieve(("mySpace", "myContainer"))
 
             Fetch using the ContainerId:
 
                 >>> from cognite.client.data_classes.data_modeling import ContainerId
                 >>> res = client.data_modeling.containers.retrieve(
-                ...     ContainerId(space='mySpace', external_id='myContainer'))
+                ...     ContainerId(space="mySpace", external_id="myContainer")
+                ... )
         """
         identifier = _load_identifier(ids, "container")
         return await self._retrieve_multiple(
@@ -131,7 +132,7 @@ class ContainersAPI(APIClient):
         )
 
     async def delete(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
-        """`Delete one or more containers <https://developer.cognite.com/api#tag/Containers/operation/deleteContainers>`_
+        """`Delete one or more containers <https://api-docs.cognite.com/20230101/tag/Containers/operation/deleteContainers>`_
 
         Args:
             ids: The container identifier(s).
@@ -158,7 +159,7 @@ class ContainersAPI(APIClient):
         return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
     async def delete_constraints(self, ids: Sequence[ConstraintIdentifier]) -> list[ConstraintIdentifier]:
-        """`Delete one or more constraints <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerConstraints>`_
+        """`Delete one or more constraints <https://api-docs.cognite.com/20230101/tag/Containers/operation/deleteContainerConstraints>`_
 
         Args:
             ids: The constraint identifier(s).
@@ -178,7 +179,7 @@ class ContainersAPI(APIClient):
         return await self._delete_constraints_or_indexes(ids, "constraints")
 
     async def delete_indexes(self, ids: Sequence[IndexIdentifier]) -> list[IndexIdentifier]:
-        """`Delete one or more indexes <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerIndexes>`_
+        """`Delete one or more indexes <https://api-docs.cognite.com/20230101/tag/Containers/operation/deleteContainerIndexes>`_
 
         Args:
             ids: The index identifier(s).
@@ -226,7 +227,7 @@ class ContainersAPI(APIClient):
         limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         include_global: bool = False,
     ) -> ContainerList:
-        """`List containers <https://developer.cognite.com/api#tag/Containers/operation/listContainers>`_
+        """`List containers <https://api-docs.cognite.com/20230101/tag/Containers/operation/listContainers>`_
 
         Args:
             space: The space to query
@@ -253,7 +254,7 @@ class ContainersAPI(APIClient):
             Iterate over chunks of containers to reduce memory load:
 
                 >>> for container_list in client.data_modeling.containers(chunk_size=10):
-                ...     container_list # do something with the containers
+                ...     container_list  # do something with the containers
         """
         flt = _ContainerFilter(space, include_global)
         return await self._list(
@@ -272,7 +273,7 @@ class ContainersAPI(APIClient):
     async def apply(self, container: ContainerApply) -> Container: ...
 
     async def apply(self, container: ContainerApply | Sequence[ContainerApply]) -> Container | ContainerList:
-        """`Add or update (upsert) containers. <https://developer.cognite.com/api#tag/Containers/operation/ApplyContainers>`_
+        """`Add or update (upsert) containers. <https://api-docs.cognite.com/20230101/tag/Containers/operation/ApplyContainers>`_
 
         Args:
             container: Container(s) to create or update.
@@ -286,20 +287,26 @@ class ContainersAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import (
-                ...     ContainerApply, ContainerPropertyApply, Text, Float64)
+                ...     ContainerApply,
+                ...     ContainerPropertyApply,
+                ...     Text,
+                ...     Float64,
+                ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> container = ContainerApply(
-                ...     space="mySpace",
-                ...     external_id="myContainer",
-                ...     properties={
-                ...         "name": ContainerPropertyApply(type=Text, name="name"),
-                ...         "numbers": ContainerPropertyApply(
-                ...             type=Float64(is_list=True, max_list_size=200),
-                ...             description="very important numbers",
-                ...         ),
-                ...     },
-                ... ),
+                >>> container = (
+                ...     ContainerApply(
+                ...         space="mySpace",
+                ...         external_id="myContainer",
+                ...         properties={
+                ...             "name": ContainerPropertyApply(type=Text, name="name"),
+                ...             "numbers": ContainerPropertyApply(
+                ...                 type=Float64(is_list=True, max_list_size=200),
+                ...                 description="very important numbers",
+                ...             ),
+                ...         },
+                ...     ),
+                ... )
                 >>> res = client.data_modeling.containers.apply(container)
 
             Create new container with unit-aware properties:
@@ -315,11 +322,8 @@ class ContainersAPI(APIClient):
                 ...             description="Maximum Pump Pressure",
                 ...             name="maxPressure",
                 ...             type=Float64(
-                ...                 unit=UnitReference(
-                ...                     external_id="pressure:bar",
-                ...                     source_unit="BAR"
-                ...                 )
-                ...             )
+                ...                 unit=UnitReference(external_id="pressure:bar", source_unit="BAR")
+                ...             ),
                 ...         ),
                 ...         "rotationConfigurations": ContainerPropertyApply(
                 ...             nullable=True,
@@ -327,12 +331,10 @@ class ContainersAPI(APIClient):
                 ...             name="rotationConfigurations",
                 ...             type=Float64(
                 ...                 is_list=True,
-                ...                 unit=UnitReference(
-                ...                     external_id="angular_velocity:rev-per-min"
-                ...                 )
-                ...             )
-                ...         )
-                ...     }
+                ...                 unit=UnitReference(external_id="angular_velocity:rev-per-min"),
+                ...             ),
+                ...         ),
+                ...     },
                 ... )
                 >>> res = client.data_modeling.containers.apply(container)
 
@@ -341,10 +343,25 @@ class ContainersAPI(APIClient):
             ``nullable``, ``auto_increment``, ``default_value`` and ``immutable`` that may be specified,
             depending on the choice of property type (e.g. ``auto_increment`` only works with integer types).
 
-                >>> from cognite.client.data_classes.data_modeling.data_types import UnitReference, EnumValue
                 >>> from cognite.client.data_classes.data_modeling.data_types import (
-                ...     Boolean, Date, DirectRelation, Enum, FileReference, Float32, Float64,
-                ...     Int32, Int64, Json, SequenceReference, Text, TimeSeriesReference, Timestamp
+                ...     UnitReference,
+                ...     EnumValue,
+                ... )
+                >>> from cognite.client.data_classes.data_modeling.data_types import (
+                ...     Boolean,
+                ...     Date,
+                ...     DirectRelation,
+                ...     Enum,
+                ...     FileReference,
+                ...     Float32,
+                ...     Float64,
+                ...     Int32,
+                ...     Int64,
+                ...     Json,
+                ...     SequenceReference,
+                ...     Text,
+                ...     TimeSeriesReference,
+                ...     Timestamp,
                 ... )
                 >>> container_properties = {
                 ...     "prop01": ContainerPropertyApply(Boolean),
@@ -361,8 +378,13 @@ class ContainersAPI(APIClient):
                 ...     "prop10": ContainerPropertyApply(DirectRelation(is_list=True)),
                 ...     # Note: Enum also support `unknown_value`: The value to use when the enum value is unknown.
                 ...     "prop11": ContainerPropertyApply(
-                ...         Enum({"Closed": EnumValue("Valve is closed"),
-                ...               "Opened": EnumValue("Valve is opened")})),
+                ...         Enum(
+                ...             {
+                ...                 "Closed": EnumValue("Valve is closed"),
+                ...                 "Opened": EnumValue("Valve is opened"),
+                ...             }
+                ...         )
+                ...     ),
                 ...     # Note: Floats support unit references, e.g. `unit=UnitReference("pressure:bar")`:
                 ...     "prop12": ContainerPropertyApply(Float32),
                 ...     "prop13": ContainerPropertyApply(Float32(is_list=True)),

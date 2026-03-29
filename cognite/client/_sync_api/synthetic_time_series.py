@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d5dfa84b4d5e61943efef506246e1da8
+33d39ce5b3cd74e806a3d511931e65f1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite
+from cognite.client.data_classes import SyntheticDatapoints, SyntheticDatapointsList, TimeSeries, TimeSeriesWrite
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -42,7 +42,7 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         timezone: str | datetime.timezone | ZoneInfo | None = None,
-    ) -> DatapointsList: ...
+    ) -> SyntheticDatapointsList: ...
 
     @overload
     def query(
@@ -57,7 +57,7 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         timezone: str | datetime.timezone | ZoneInfo | None = None,
-    ) -> Datapoints: ...
+    ) -> SyntheticDatapoints: ...
 
     def query(
         self,
@@ -71,9 +71,9 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         timezone: str | datetime.timezone | ZoneInfo | None = None,
-    ) -> Datapoints | DatapointsList:
+    ) -> SyntheticDatapoints | SyntheticDatapointsList:
         """
-        `Calculate the result of a function on time series. <https://developer.cognite.com/api#tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
+        `Calculate the result of a function on time series. <https://api-docs.cognite.com/20230101/tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
         Info:
             You can read the guide to synthetic time series in our `documentation <https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries>`_.
@@ -91,7 +91,7 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
             timezone: The timezone to use when aggregating datapoints. For aggregates of granularity 'hour' and longer, which time zone should we align to. Align to the start of the hour, start of the day or start of the month. For time zones of type Region/Location, the aggregate duration can vary, typically due to daylight saving time. For time zones of type UTC+/-HH:MM, use increments of 15 minutes. Default: "UTC" (None)
 
         Returns:
-            A DatapointsList object containing the calculated data.
+            SyntheticDatapoints | SyntheticDatapointsList: A SyntheticDatapointsList object containing the calculated data.
 
         Examples:
 
@@ -108,9 +108,8 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
                 ...     + ts{space:'my-space',externalId:'my-ts-xid'}
                 ... '''
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions=expression,
-                ...     start="2w-ago",
-                ...     end="now")
+                ...     expressions=expression, start="2w-ago", end="now"
+                ... )
 
             You can also specify variables for an easier query syntax:
 
@@ -122,14 +121,15 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
                 ...     "C": NodeId("my-space", "my-ts-xid"),
                 ... }
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions="A+B+C", start="2w-ago", end="2w-ahead", variables=variables)
+                ...     expressions="A+B+C", start="2w-ago", end="2w-ahead", variables=variables
+                ... )
 
             Use sympy to build complex expressions:
 
                 >>> from sympy import symbols, cos, sin
                 >>> x, y = symbols("x y")
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     [sin(x), y*cos(x)],
+                ...     [sin(x), y * cos(x)],
                 ...     start="2w-ago",
                 ...     end="now",
                 ...     variables={x: "foo", y: "bar"},

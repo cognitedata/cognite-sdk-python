@@ -106,7 +106,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = True,
     ) -> ViewList:
-        """`Retrieve a single view by id. <https://developer.cognite.com/api#tag/Views/operation/byExternalIdsViews>`_
+        """`Retrieve a single view by id. <https://api-docs.cognite.com/20230101/tag/Views/operation/byExternalIdsViews>`_
 
         Args:
             ids: The view identifier(s). This can be given as a tuple of strings or a ViewId object. For example, ("my_space", "my_view"), ("my_space", "my_view", "my_version"), or ViewId("my_space", "my_view", "my_version"). Note that version is optional, if not provided, all versions will be returned.
@@ -121,7 +121,7 @@ class ViewsAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
+                >>> res = client.data_modeling.views.retrieve(("mySpace", "myView", "v1"))
 
         """
         identifier = _load_identifier(ids, "view")
@@ -138,7 +138,7 @@ class ViewsAPI(APIClient):
             return self._get_latest_views(views)
 
     async def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
-        """`Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_
+        """`Delete one or more views <https://api-docs.cognite.com/20230101/tag/Views/operation/deleteViews>`_
 
         Args:
             ids: View identifier(s)
@@ -151,7 +151,7 @@ class ViewsAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.data_modeling.views.delete(('mySpace', 'myView', 'v1'))
+                >>> client.data_modeling.views.delete(("mySpace", "myView", "v1"))
         """
         deleted_views = cast(
             list,
@@ -172,7 +172,7 @@ class ViewsAPI(APIClient):
         all_versions: bool = False,
         include_global: bool = False,
     ) -> ViewList:
-        """`List views <https://developer.cognite.com/api#tag/Views/operation/listViews>`_
+        """`List views <https://api-docs.cognite.com/20230101/tag/Views/operation/listViews>`_
 
         Args:
             limit: Maximum number of views to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
@@ -201,7 +201,7 @@ class ViewsAPI(APIClient):
             Iterate over chunks of views to reduce memory load:
 
                 >>> for view_list in client.data_modeling.views(chunk_size=10):
-                ...     view_list # do something with the views
+                ...     view_list  # do something with the views
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
 
@@ -221,7 +221,7 @@ class ViewsAPI(APIClient):
     async def apply(self, view: ViewApply) -> View: ...
 
     async def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
-        """`Create or update (upsert) one or more views. <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_
+        """`Create or update (upsert) one or more views. <https://api-docs.cognite.com/20230101/tag/Views/operation/ApplyViews>`_
 
         Args:
             view: View(s) to create or update.
@@ -234,7 +234,11 @@ class ViewsAPI(APIClient):
             Create new views:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import ViewApply, MappedPropertyApply, ContainerId
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     ViewApply,
+                ...     MappedPropertyApply,
+                ...     ContainerId,
+                ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> views = [
@@ -247,8 +251,8 @@ class ViewsAPI(APIClient):
                 ...                 container=ContainerId("mySpace", "myContainer"),
                 ...                 container_property_identifier="someProperty",
                 ...             ),
-                ...         }
-                ...    )
+                ...         },
+                ...     )
                 ... ]
                 >>> res = client.data_modeling.views.apply(views)
 
@@ -261,9 +265,11 @@ class ViewsAPI(APIClient):
                 ...     MappedPropertyApply,
                 ...     MultiEdgeConnectionApply,
                 ...     ViewApply,
-                ...     ViewId
+                ...     ViewId,
                 ... )
-                >>> work_order_for_asset = DirectRelationReference(space="mySpace", external_id="work_order_for_asset")
+                >>> work_order_for_asset = DirectRelationReference(
+                ...     space="mySpace", external_id="work_order_for_asset"
+                ... )
                 >>> work_order_view = ViewApply(
                 ...     space="mySpace",
                 ...     external_id="WorkOrder",
@@ -280,7 +286,7 @@ class ViewsAPI(APIClient):
                 ...             source=ViewId("mySpace", "Asset", "v1"),
                 ...             name="asset",
                 ...         ),
-                ...     }
+                ...     },
                 ... )
                 >>> asset_view = ViewApply(
                 ...     space="mySpace",
@@ -299,7 +305,7 @@ class ViewsAPI(APIClient):
                 ...             source=ViewId("mySpace", "WorkOrder", "v1"),
                 ...             name="work_orders",
                 ...         ),
-                ...     }
+                ...     },
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
         """

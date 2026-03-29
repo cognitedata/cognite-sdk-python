@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import typing
-import warnings
 from abc import ABC
 from collections.abc import Iterator
 from enum import auto
@@ -45,20 +44,20 @@ class SequenceColumnCore(WriteableCogniteResource["SequenceColumnWrite"], ABC):
     """This represents a column in a sequence.
 
     Args:
-        external_id: The external ID provided by the client. Must be unique for the resource type.
-        name: Name of the column
-        description: Description of the column
-        value_type: The type of the column. It can be String, Double or Long.
-        metadata: Custom, application-specific metadata. String key -> String value. The maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        name (str | None): Name of the column
+        description (str | None): Description of the column
+        metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. The maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        value_type (ValueType): The type of the column. It can be STRING, DOUBLE or LONG.
     """
 
     def __init__(
         self,
-        external_id: str | None = None,
-        name: str | None = None,
-        description: str | None = None,
+        external_id: str,
+        name: str | None,
+        description: str | None,
+        metadata: dict[str, Any] | None,
         value_type: ValueType = "DOUBLE",
-        metadata: dict[str, Any] | None = None,
     ) -> None:
         self.external_id = external_id
         self.name = name
@@ -71,24 +70,24 @@ class SequenceColumn(SequenceColumnCore):
     """This represents a column in a sequence. It is used for reading only.
 
     Args:
-        external_id: The external ID provided by the client. Must be unique for the resource type.
-        created_time: Time when this column was created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time: The last time this column was updated in CDF, in milliseconds since Jan 1, 1970.
-        name: Name of the column
-        description: Description of the column
-        value_type: The type of the column. It can be String, Double or Long.
-        metadata: Custom, application-specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        value_type (ValueType): The type of the column. It can be STRING, DOUBLE or LONG.
+        created_time (int | None): Time when this column was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int | None): The last time this column was updated in CDF, in milliseconds since Jan 1, 1970.
+        name (str | None): Name of the column
+        description (str | None): Description of the column
+        metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
     """
 
     def __init__(
         self,
         external_id: str,
-        created_time: int | None,
-        last_updated_time: int | None,
-        name: str | None,
-        description: str | None,
         value_type: ValueType,
-        metadata: dict[str, Any] | None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -101,7 +100,7 @@ class SequenceColumn(SequenceColumnCore):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
             created_time=resource.get("createdTime"),
@@ -114,9 +113,6 @@ class SequenceColumn(SequenceColumnCore):
 
     def as_write(self) -> SequenceColumnWrite:
         """Returns a writeable version of this column."""
-        if self.external_id is None:
-            raise ValueError("External ID must be set for the write version of the column")
-
         return SequenceColumnWrite(
             external_id=self.external_id,
             name=self.name,
@@ -130,11 +126,11 @@ class SequenceColumnWrite(SequenceColumnCore):
     """This represents a column in a sequence. This is used for writing only.
 
     Args:
-        external_id: The external ID provided by the client. Must be unique for the resource type.
-        name: Name of the column
-        description: Description of the column
-        value_type: The type of the column. It can be String, Double or Long.
-        metadata: Custom, application-specific metadata. String key -> String value. The maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        name (str | None): Name of the column
+        description (str | None): Description of the column
+        value_type (ValueType): The type of the column. It can be STRING, DOUBLE or LONG.
+        metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. The maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
     """
 
     def __init__(
@@ -203,16 +199,16 @@ class Sequence(WriteableCogniteResourceWithClientRef["SequenceWrite"]):
     This is the read version of the class, it is used for retrieving data from the CDF.
 
     Args:
-        id: Unique cognite-provided identifier for the sequence
-        created_time: Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time: The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
-        name: Name of the sequence
-        description: Description of the sequence
-        asset_id: Optional asset this sequence is associated with
-        external_id: The external ID provided by the client. Must be unique for the resource type.
-        metadata: Custom, application-specific metadata. String key -> String value. The maximum length of the key is 32 bytes, the value 512 bytes, with up to 16 key-value pairs.
-        columns: List of column definitions
-        data_set_id: Data set that this sequence belongs to
+        id (int): Unique cognite-provided identifier for the sequence
+        created_time (int): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
+        columns (typing.Sequence[SequenceColumn] | SequenceColumnList): List of column definitions
+        name (str | None): Name of the sequence
+        description (str | None): Description of the sequence
+        asset_id (int | None): Optional asset this sequence is associated with
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. The maximum length of the key is 32 bytes, the value 512 bytes, with up to 16 key-value pairs.
+        data_set_id (int | None): Data set that this sequence belongs to
     """
 
     def __init__(
@@ -220,13 +216,13 @@ class Sequence(WriteableCogniteResourceWithClientRef["SequenceWrite"]):
         id: int,
         created_time: int,
         last_updated_time: int,
-        name: str | None,
-        description: str | None,
-        asset_id: int | None,
-        external_id: str | None,
-        metadata: dict[str, Any] | None,
-        columns: typing.Sequence[SequenceColumn],
-        data_set_id: int | None,
+        columns: typing.Sequence[SequenceColumn] | SequenceColumnList,
+        name: str | None = None,
+        description: str | None = None,
+        asset_id: int | None = None,
+        external_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        data_set_id: int | None = None,
     ) -> None:
         self.name = name
         self.description = description
@@ -239,23 +235,17 @@ class Sequence(WriteableCogniteResourceWithClientRef["SequenceWrite"]):
         self.last_updated_time = last_updated_time
 
         self.columns: SequenceColumnList
-        if columns is None:
-            self.columns = SequenceColumnList([])
-        elif isinstance(columns, SequenceColumnList):
+        if isinstance(columns, SequenceColumnList):
             self.columns = columns
         elif isinstance(columns, typing.Sequence) and all(isinstance(col, SequenceColumn) for col in columns):
             self.columns = SequenceColumnList(columns)
-        elif isinstance(columns, list):
-            warnings.warn(
-                "Columns is no longer a dict, you should first load the list of dictionaries using SequenceColumnList.load([{...}, {...}])",
-                DeprecationWarning,
-            )
-            self.columns = SequenceColumnList._load(columns)
         else:
-            raise ValueError(f"columns must be a sequence of SequenceColumn objects not {type(columns)}")
+            raise ValueError(
+                f"columns must be a SequenceColumnList or a sequence of SequenceColumn objects not {type(columns)}"
+            )
 
     @classmethod
-    def _load(cls, resource: dict) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -338,18 +328,18 @@ class SequenceWrite(WriteableCogniteResource["SequenceWrite"]):
     This is the write version of the class, it is used for inserting data into the CDF.
 
     Args:
-        columns: List of column definitions
-        name: Name of the sequence
-        description: Description of the sequence
-        asset_id: Optional asset this sequence is associated with
-        external_id: The external ID provided by the client. Must be unique for the resource type.
-        metadata: Custom, application-specific metadata. String key -> String value. Th maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        data_set_id: Data set that this sequence belongs to
+        columns (SequenceColumnWriteList | typing.Sequence[SequenceColumnWrite]): List of column definitions
+        name (str | None): Name of the sequence
+        description (str | None): Description of the sequence
+        asset_id (int | None): Optional asset this sequence is associated with
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. Th maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        data_set_id (int | None): Data set that this sequence belongs to
     """
 
     def __init__(
         self,
-        columns: typing.Sequence[SequenceColumnWrite],
+        columns: SequenceColumnWriteList | typing.Sequence[SequenceColumnWrite],
         name: str | None = None,
         description: str | None = None,
         asset_id: int | None = None,
@@ -368,7 +358,9 @@ class SequenceWrite(WriteableCogniteResource["SequenceWrite"]):
         elif isinstance(columns, typing.Sequence) and all(isinstance(col, SequenceColumnWrite) for col in columns):
             self.columns = SequenceColumnWriteList(columns)
         else:
-            raise ValueError(f"columns must be a sequence of SequenceColumnWrite objects not {type(columns)}")
+            raise ValueError(
+                f"columns must be a SequenceColumnWriteList or a sequence of SequenceColumnWrite objects not {type(columns)}"
+            )
 
     @classmethod
     def _load(cls, resource: dict) -> Self:

@@ -66,7 +66,9 @@ class WorkflowUpsert(WorkflowCore):
                             If a dataSetId is provided, any operations on this workflow, or its versions, executions,
                             and triggers will require appropriate access to the data set. More information on data sets
                             and their configuration can be found here: https://docs.cognite.com/cdf/data_governance/concepts/datasets/
-        max_concurrent_executions: Maximum concurrent executions for this workflow. Defaults to None, which means the workflow will use the project limit.
+        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to the
+                            project limit if not specified or explicitly set to None. Values exceeding the project limit
+                            are dynamically capped at runtime.
     """
 
     @classmethod
@@ -88,12 +90,14 @@ class Workflow(WorkflowCore):
     This class represents a workflow. This is the read version, used when reading or listing workflows.
 
     Args:
-        external_id: The external ID provided by the client. Must be unique for the resource type.
-        created_time: The time when the workflow was created. Unix timestamp in milliseconds.
-        last_updated_time: The time when the workflow was last updated. Unix timestamp in milliseconds.
-        description: Description of the workflow. Defaults to None.
-        data_set_id: The id of the data set this workflow belongs to.
-        max_concurrent_executions: Maximum concurrent executions for this workflow. Defaults to None, which means the workflow will use the project limit.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        created_time (int): The time when the workflow was created. Unix timestamp in milliseconds.
+        last_updated_time (int): The time when the workflow was last updated. Unix timestamp in milliseconds.
+        description (str | None): Description of the workflow. Defaults to None.
+        data_set_id (int | None): The id of the data set this workflow belongs to.
+        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to the
+                            project limit if not specified or explicitly set to None. Values exceeding the project limit
+                            are dynamically capped at runtime.
     """
 
     def __init__(
@@ -201,7 +205,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         For example, if you have a workflow containing two tasks, and the external_id of the first task is `task1` then,
         you can specify the data for the second task as follows:
 
-            >>> from cognite.client.data_classes  import WorkflowTask, FunctionTaskParameters
+            >>> from cognite.client.data_classes import WorkflowTask, FunctionTaskParameters
             >>> task = WorkflowTask(
             ...     external_id="task2",
             ...     parameters=FunctionTaskParameters(
@@ -209,7 +213,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             ...         data={
             ...             "workflow_data": "${workflow.input}",
             ...             "task1_input": "${task1.input}",
-            ...             "task1_output": "${task1.output}"
+            ...             "task1_output": "${task1.output}",
             ...         },
             ...     ),
             ... )
@@ -1261,8 +1265,8 @@ class WorkflowVersionId:
     This class represents a Workflow Version Identifier.
 
     Args:
-        workflow_external_id: The external ID of the workflow.
-        version: The version of the workflow. Defaults to None.
+        workflow_external_id (str): The external ID of the workflow.
+        version (str | None): The version of the workflow. Defaults to None.
     """
 
     workflow_external_id: str
@@ -1558,15 +1562,15 @@ class WorkflowTrigger(WorkflowTriggerCore):
     This class represents a workflow trigger.
 
     Args:
-        external_id: The external ID provided by the client. Must be unique for the resource type.
-        trigger_rule: The trigger rule of the workflow version trigger.
-        workflow_external_id: The external ID of the workflow.
-        workflow_version: The version of the workflow.
-        is_paused: Whether the trigger is paused.
-        input: The input data passed to the workflow when an execution is started.
-        metadata: Application specific metadata.
-        created_time: The time when the workflow version trigger was created. Unix timestamp in milliseconds.
-        last_updated_time: The time when the workflow version trigger was last updated. Unix timestamp in milliseconds.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
+        workflow_external_id (str): The external ID of the workflow.
+        workflow_version (str): The version of the workflow.
+        is_paused (bool): Whether the trigger is paused.
+        created_time (int): The time when the workflow version trigger was created. Unix timestamp in milliseconds.
+        last_updated_time (int): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds.
+        input (dict | None): The input data passed to the workflow when an execution is started.
+        metadata (dict | None): Application specific metadata.
     """
 
     def __init__(
@@ -1576,10 +1580,10 @@ class WorkflowTrigger(WorkflowTriggerCore):
         workflow_external_id: str,
         workflow_version: str,
         is_paused: bool,
-        input: dict | None,
-        metadata: dict | None,
         created_time: int,
         last_updated_time: int,
+        input: dict | None = None,
+        metadata: dict | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -1599,16 +1603,14 @@ class WorkflowTrigger(WorkflowTriggerCore):
             "trigger_rule": self.trigger_rule.dump(camel_case=camel_case),
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
+            "created_time": self.created_time,
+            "last_updated_time": self.last_updated_time,
+            "is_paused": self.is_paused,
         }
         if self.input:
             item["input"] = self.input
         if self.metadata:
             item["metadata"] = self.metadata
-        if self.created_time:
-            item["created_time"] = self.created_time
-        if self.last_updated_time:
-            item["last_updated_time"] = self.last_updated_time
-        item["is_paused"] = self.is_paused
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item
@@ -1669,8 +1671,8 @@ class WorkflowTriggerRun(CogniteResource):
         workflow_external_id: str,
         workflow_version: str,
         status: Literal["success", "failed"],
-        workflow_execution_id: str | None,
-        reason_for_failure: str | None,
+        workflow_execution_id: str | None = None,
+        reason_for_failure: str | None = None,
     ) -> None:
         self.external_id = external_id
         self.fire_time = fire_time

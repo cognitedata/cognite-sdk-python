@@ -360,7 +360,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> EdgeList[T_Edge] | T_Edge | Edge | None:
-        """`Retrieve one or more edges by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+        """`Retrieve one or more edges by id(s). <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
 
         Note:
             This method should be used for retrieving edges with a custom edge class. You can use it
@@ -384,32 +384,45 @@ class InstancesAPI(APIClient):
             We strongly suggest you use snake_cased attribute names, as is done here:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import EdgeId, TypedEdge, PropertyOptions, DirectRelationReference, ViewId
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     EdgeId,
+                ...     TypedEdge,
+                ...     PropertyOptions,
+                ...     DirectRelationReference,
+                ...     ViewId,
+                ... )
                 >>> class Flow(TypedEdge):
-                ...    flow_rate = PropertyOptions(identifier="flowRate")
+                ...     flow_rate = PropertyOptions(identifier="flowRate")
                 ...
-                ...    def __init__(
-                ...        self,
-                ...        space: str,
-                ...        external_id: str,
-                ...        version: int,
-                ...        type: DirectRelationReference,
-                ...        last_updated_time: int,
-                ...        created_time: int,
-                ...        flow_rate: float,
-                ...        start_node: DirectRelationReference,
-                ...        end_node: DirectRelationReference,
-                ...        deleted_time: int | None = None,
-                ...    ) -> None:
-                ...        super().__init__(
-                ...            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time
-                ...        )
-                ...        self.flow_rate = flow_rate
+                ...     def __init__(
+                ...         self,
+                ...         space: str,
+                ...         external_id: str,
+                ...         version: int,
+                ...         type: DirectRelationReference,
+                ...         last_updated_time: int,
+                ...         created_time: int,
+                ...         flow_rate: float,
+                ...         start_node: DirectRelationReference,
+                ...         end_node: DirectRelationReference,
+                ...         deleted_time: int | None = None,
+                ...     ) -> None:
+                ...         super().__init__(
+                ...             space,
+                ...             external_id,
+                ...             version,
+                ...             type,
+                ...             last_updated_time,
+                ...             created_time,
+                ...             start_node,
+                ...             end_node,
+                ...             deleted_time,
+                ...         )
+                ...         self.flow_rate = flow_rate
                 ...
-                ...    @classmethod
-                ...    def get_source(cls) -> ViewId:
-                ...        return ViewId("sp_model_space", "flow", "1")
-                ...
+                ...     @classmethod
+                ...     def get_source(cls) -> ViewId:
+                ...         return ViewId("sp_model_space", "flow", "1")
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.instances.retrieve_edges(
@@ -465,7 +478,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> NodeList[T_Node] | T_Node | Node | None:
-        """`Retrieve one or more nodes by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+        """`Retrieve one or more nodes by id(s). <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
 
         Note:
             This method should be used for retrieving nodes with a custom node class. You can use it
@@ -488,38 +501,43 @@ class InstancesAPI(APIClient):
             We strongly suggest you use snake_cased attribute names, as is done here:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import NodeId, TypedNode, PropertyOptions, DirectRelationReference, ViewId
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     NodeId,
+                ...     TypedNode,
+                ...     PropertyOptions,
+                ...     DirectRelationReference,
+                ...     ViewId,
+                ... )
                 >>> class Person(TypedNode):
-                ...    birth_year = PropertyOptions(identifier="birthYear")
+                ...     birth_year = PropertyOptions(identifier="birthYear")
                 ...
-                ...    def __init__(
-                ...        self,
-                ...        space: str,
-                ...        external_id: str,
-                ...        version: int,
-                ...        last_updated_time: int,
-                ...        created_time: int,
-                ...        name: str,
-                ...        birth_year: int | None = None,
-                ...        type: DirectRelationReference | None = None,
-                ...        deleted_time: int | None = None,
-                ...    ):
-                ...        super().__init__(
-                ...            space=space,
-                ...            external_id=external_id,
-                ...            version=version,
-                ...            last_updated_time=last_updated_time,
-                ...            created_time=created_time,
-                ...            type=type,
-                ...            deleted_time=deleted_time
-                ...        )
-                ...        self.name = name
-                ...        self.birth_year = birth_year
+                ...     def __init__(
+                ...         self,
+                ...         space: str,
+                ...         external_id: str,
+                ...         version: int,
+                ...         last_updated_time: int,
+                ...         created_time: int,
+                ...         name: str,
+                ...         birth_year: int | None = None,
+                ...         type: DirectRelationReference | None = None,
+                ...         deleted_time: int | None = None,
+                ...     ):
+                ...         super().__init__(
+                ...             space=space,
+                ...             external_id=external_id,
+                ...             version=version,
+                ...             last_updated_time=last_updated_time,
+                ...             created_time=created_time,
+                ...             type=type,
+                ...             deleted_time=deleted_time,
+                ...         )
+                ...         self.name = name
+                ...         self.birth_year = birth_year
                 ...
-                ...    @classmethod
-                ...    def get_source(cls) -> ViewId:
-                ...        return ViewId("myModelSpace", "Person", "1")
-                ...
+                ...     @classmethod
+                ...     def get_source(cls) -> ViewId:
+                ...         return ViewId("myModelSpace", "Person", "1")
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.instances.retrieve_nodes(
@@ -541,7 +559,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> InstancesResult[Node, Edge]:
-        """`Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+        """`Retrieve one or more instance by id(s). <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
 
         Args:
             nodes: Node ids
@@ -562,7 +580,8 @@ class InstancesAPI(APIClient):
                 >>> res = client.data_modeling.instances.retrieve(
                 ...     nodes=("mySpace", "myNodeExternalId"),
                 ...     edges=("mySpace", "myEdgeExternalId"),
-                ...     sources=("mySpace", "myViewExternalId", "myViewVersion"))
+                ...     sources=("mySpace", "myViewExternalId", "myViewVersion"),
+                ... )
 
             Retrieve nodes an edges using the built in data class
 
@@ -570,7 +589,8 @@ class InstancesAPI(APIClient):
                 >>> res = client.data_modeling.instances.retrieve(
                 ...     NodeId("mySpace", "myNode"),
                 ...     EdgeId("mySpace", "myEdge"),
-                ...     ViewId("mySpace", "myViewExternalId", "myViewVersion"))
+                ...     ViewId("mySpace", "myViewExternalId", "myViewVersion"),
+                ... )
 
             Retrieve nodes an edges using the the view object as source
 
@@ -578,7 +598,8 @@ class InstancesAPI(APIClient):
                 >>> res = client.data_modeling.instances.retrieve(
                 ...     NodeId("mySpace", "myNode"),
                 ...     EdgeId("mySpace", "myEdge"),
-                ...     sources=("myspace", "myView"))
+                ...     sources=("myspace", "myView"),
+                ... )
         """
         return await self._retrieve_typed(
             nodes=nodes, edges=edges, sources=sources, include_typing=include_typing, node_cls=Node, edge_cls=Edge
@@ -689,7 +710,7 @@ class InstancesAPI(APIClient):
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
     ) -> InstancesDeleteResult:
-        """`Delete one or more instances <https://developer.cognite.com/api#tag/Instances/operation/deleteBulk>`_
+        """`Delete one or more instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/deleteBulk>`_
 
         Args:
             nodes: Node ids
@@ -710,13 +731,17 @@ class InstancesAPI(APIClient):
             Delete nodes and edges using the built in data class
 
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
-                >>> client.data_modeling.instances.delete(NodeId('mySpace', 'myNode'), EdgeId('mySpace', 'myEdge'))
+                >>> client.data_modeling.instances.delete(
+                ...     NodeId("mySpace", "myNode"), EdgeId("mySpace", "myEdge")
+                ... )
 
             Delete all nodes from a NodeList
 
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
-                >>> my_view = client.data_modeling.views.retrieve(('mySpace', 'myView'))
-                >>> my_nodes = client.data_modeling.instances.list(instance_type='node', sources=my_view, limit=None)
+                >>> my_view = client.data_modeling.views.retrieve(("mySpace", "myView"))
+                >>> my_nodes = client.data_modeling.instances.list(
+                ...     instance_type="node", sources=my_view, limit=None
+                ... )
                 >>> client.data_modeling.instances.delete(nodes=my_nodes.as_ids())
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
@@ -832,7 +857,11 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.query import (
-                ...     QuerySync, QueryResult, NodeResultSetExpressionSync, SelectSync, SourceSelector
+                ...     QuerySync,
+                ...     QueryResult,
+                ...     NodeResultSetExpressionSync,
+                ...     SelectSync,
+                ...     SourceSelector,
                 ... )
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes.filters import Equals
@@ -845,7 +874,7 @@ class InstancesAPI(APIClient):
                 >>> filter = Equals(view_id.as_property_ref("myAsset"), "Il-Tempo-Gigante")
                 >>> query = QuerySync(
                 ...     with_={"work_orders": NodeResultSetExpressionSync(filter=filter)},
-                ...     select={"work_orders": SelectSync([SourceSelector(view_id, ["*"])])}
+                ...     select={"work_orders": SelectSync([SourceSelector(view_id, ["*"])])},
                 ... )
                 >>> subscription_context = client.data_modeling.instances.subscribe(
                 ...     query, callback=just_print_the_result
@@ -952,7 +981,7 @@ class InstancesAPI(APIClient):
         skip_on_version_conflict: bool = False,
         replace: bool = False,
     ) -> InstancesApplyResult:
-        """`Add or update (upsert) instances. <https://developer.cognite.com/api#tag/Instances/operation/applyNodeAndEdges>`_
+        """`Add or update (upsert) instances. <https://api-docs.cognite.com/20230101/tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
             nodes: Nodes to apply
@@ -971,7 +1000,11 @@ class InstancesAPI(APIClient):
             Create new node without data:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     EdgeApply,
+                ...     NodeOrEdgeData,
+                ...     NodeApply,
+                ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> node = NodeApply("mySpace", "myNodeId")
@@ -979,7 +1012,13 @@ class InstancesAPI(APIClient):
 
             Create two nodes with data with a one-to-many edge
 
-                >>> from cognite.client.data_classes.data_modeling import ContainerId, EdgeApply, NodeOrEdgeData, NodeApply, ViewId
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     ContainerId,
+                ...     EdgeApply,
+                ...     NodeOrEdgeData,
+                ...     NodeApply,
+                ...     ViewId,
+                ... )
                 >>> work_order = NodeApply(
                 ...     space="industrial",
                 ...     external_id="work_order:123",
@@ -987,9 +1026,9 @@ class InstancesAPI(APIClient):
                 ...         # Insert data through a view
                 ...         NodeOrEdgeData(
                 ...             ViewId("mySpace", "WorkOrderView", "v1"),
-                ...             {"title": "Repair pump", "createdYear": 2023}
+                ...             {"title": "Repair pump", "createdYear": 2023},
                 ...         )
-                ...     ]
+                ...     ],
                 ... )
                 >>> pump = NodeApply(
                 ...     space="industrial",
@@ -998,9 +1037,9 @@ class InstancesAPI(APIClient):
                 ...         # Insert data directly to the container
                 ...         NodeOrEdgeData(
                 ...             ContainerId("mySpace", "PumpContainer"),
-                ...             {"name": "Pump 456", "location": "Subsea"}
+                ...             {"name": "Pump 456", "location": "Subsea"},
                 ...         )
-                ...     ]
+                ...     ],
                 ... )
                 ... # This is one-to-many edge, in this case from a work order to a pump
                 >>> work_order_to_pump = EdgeApply(
@@ -1025,7 +1064,7 @@ class InstancesAPI(APIClient):
                 >>> res = client.data_modeling.instances.apply(
                 ...     edges=work_order_to_pump,
                 ...     auto_create_start_nodes=True,
-                ...     auto_create_end_nodes=True
+                ...     auto_create_end_nodes=True,
                 ... )
 
             Using helper function to create valid graphql timestamp for a datetime object:
@@ -1033,7 +1072,9 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.utils import datetime_to_ms_iso_timestamp
                 >>> from datetime import datetime, timezone
                 >>> my_date = datetime(2020, 3, 14, 15, 9, 26, 535000, tzinfo=timezone.utc)
-                >>> data_model_timestamp = datetime_to_ms_iso_timestamp(my_date)  # "2020-03-14T15:09:26.535+00:00"
+                >>> data_model_timestamp = datetime_to_ms_iso_timestamp(
+                ...     my_date
+                ... )  # "2020-03-14T15:09:26.535+00:00"
 
             Create a typed node apply. Any property that you want to look up by a different attribute name, e.g. you want
             `my_node.birth_year` to return the data for property `birthYear`, must use the PropertyOptions as shown below.
@@ -1047,9 +1088,9 @@ class InstancesAPI(APIClient):
                 ...         super().__init__(space, external_id, type=("sp_model_space", "Person"))
                 ...         self.name = name
                 ...         self.birth_year = birth_year
+                ...
                 ...     def get_source(self):
                 ...         return ViewId("sp_model_space", "Person", "v1")
-                ...
                 >>> person = PersonApply("sp_date_space", "my_person", "John Doe", 1980)
                 >>> res = client.data_modeling.instances.apply(nodes=person)
         """
@@ -1189,10 +1230,7 @@ class InstancesAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> view = ViewId("assetSpace", "EquipmentView", "v1")
                 >>> res = client.data_modeling.instances.search(
-                ...     view,
-                ...     query="centrifugal pump",
-                ...     properties=["description"],
-                ...     operator="AND"
+                ...     view, query="centrifugal pump", properties=["description"], operator="AND"
                 ... )
 
             Search for 'pump', 'valve' or 'compressor', but filter on those installed after 2015:
@@ -1208,7 +1246,7 @@ class InstancesAPI(APIClient):
                 ...     query="pump valve compressor",
                 ...     properties=["name", "description"],
                 ...     filter=installed_after_2015,
-                ...     operator="OR"
+                ...     operator="OR",
                 ... )
         """
         self._validate_filter(filter)
@@ -1351,7 +1389,9 @@ class InstancesAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> avg_run_time = Average("runTimeMinutes")
                 >>> view_id = ViewId("mySpace", "PumpView", "v1")
-                >>> res = client.data_modeling.instances.aggregate(view_id, avg_run_time, group_by="releaseYear")
+                >>> res = client.data_modeling.instances.aggregate(
+                ...     view_id, avg_run_time, group_by="releaseYear"
+                ... )
 
         """
         if instance_type not in ("node", "edge"):
@@ -1520,7 +1560,13 @@ class InstancesAPI(APIClient):
             Find work orders created before 2023 sorted by title:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
+                >>> from cognite.client.data_classes.data_modeling.query import (
+                ...     Query,
+                ...     Select,
+                ...     NodeResultSetExpression,
+                ...     EdgeResultSetExpression,
+                ...     SourceSelector,
+                ... )
                 >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> client = CogniteClient()
@@ -1528,14 +1574,24 @@ class InstancesAPI(APIClient):
                 >>> work_order_id = ViewId("mySpace", "WorkOrderView", "v1")
                 >>> pump_id = ViewId("mySpace", "PumpView", "v1")
                 >>> query = Query(
-                ...     with_ = {
-                ...         "work_orders": NodeResultSetExpression(filter=Range(work_order_id.as_property_ref("createdYear"), lt=2023)),
-                ...         "work_orders_to_pumps": EdgeResultSetExpression(from_="work_orders", filter=Equals(["edge", "type"], {"space": work_order_id.space, "externalId": "WorkOrder.asset"})),
+                ...     with_={
+                ...         "work_orders": NodeResultSetExpression(
+                ...             filter=Range(work_order_id.as_property_ref("createdYear"), lt=2023)
+                ...         ),
+                ...         "work_orders_to_pumps": EdgeResultSetExpression(
+                ...             from_="work_orders",
+                ...             filter=Equals(
+                ...                 ["edge", "type"],
+                ...                 {"space": work_order_id.space, "externalId": "WorkOrder.asset"},
+                ...             ),
+                ...         ),
                 ...         "pumps": NodeResultSetExpression(from_="work_orders_to_pumps"),
                 ...     },
-                ...     select = {
+                ...     select={
                 ...         "pumps": Select(
-                ...             [SourceSelector(pump_id, ["name"])], sort=[InstanceSort(pump_id.as_property_ref("name"))]),
+                ...             [SourceSelector(pump_id, ["name"])],
+                ...             sort=[InstanceSort(pump_id.as_property_ref("name"))],
+                ...         ),
                 ...     },
                 ... )
                 >>> res = client.data_modeling.instances.query(query)
@@ -1544,7 +1600,10 @@ class InstancesAPI(APIClient):
             a UnitReference or a UnitSystemReference. Note that in order for a property to be converted, they
             need to have a unit defined in the underlying container.
 
-                >>> from cognite.client.data_classes.data_modeling.data_types import UnitReference, UnitSystemReference
+                >>> from cognite.client.data_classes.data_modeling.data_types import (
+                ...     UnitReference,
+                ...     UnitSystemReference,
+                ... )
                 >>> selected_source = SourceSelector(
                 ...     source=ViewId("my-space", "my-xid", "v1"),
                 ...     properties=["f32_prop1", "f32_prop2", "f64_prop1", "f64_prop2"],
@@ -1595,7 +1654,13 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.instances import InstanceSort
-                >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
+                >>> from cognite.client.data_classes.data_modeling.query import (
+                ...     Query,
+                ...     Select,
+                ...     NodeResultSetExpression,
+                ...     EdgeResultSetExpression,
+                ...     SourceSelector,
+                ... )
                 >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> client = CogniteClient()
@@ -1603,14 +1668,24 @@ class InstancesAPI(APIClient):
                 >>> work_order_id = ViewId("mySpace", "WorkOrderView", "v1")
                 >>> pump_id = ViewId("mySpace", "PumpView", "v1")
                 >>> query = Query(
-                ...     with_ = {
-                ...         "work_orders": NodeResultSetExpression(filter=Range(work_order_id.as_property_ref("createdYear"), lt=2023)),
-                ...         "work_orders_to_pumps": EdgeResultSetExpression(from_="work_orders", filter=Equals(["edge", "type"], {"space": work_order_id.space, "externalId": "WorkOrder.asset"})),
+                ...     with_={
+                ...         "work_orders": NodeResultSetExpression(
+                ...             filter=Range(work_order_id.as_property_ref("createdYear"), lt=2023)
+                ...         ),
+                ...         "work_orders_to_pumps": EdgeResultSetExpression(
+                ...             from_="work_orders",
+                ...             filter=Equals(
+                ...                 ["edge", "type"],
+                ...                 {"space": work_order_id.space, "externalId": "WorkOrder.asset"},
+                ...             ),
+                ...         ),
                 ...         "pumps": NodeResultSetExpression(from_="work_orders_to_pumps"),
                 ...     },
-                ...     select = {
+                ...     select={
                 ...         "pumps": Select(
-                ...             [SourceSelector(pump_id, ["name"])], sort=[InstanceSort(pump_id.as_property_ref("name"))]),
+                ...             [SourceSelector(pump_id, ["name"])],
+                ...             sort=[InstanceSort(pump_id.as_property_ref("name"))],
+                ...         ),
                 ...     },
                 ... )
                 >>> res = client.data_modeling.instances.sync(query)
@@ -1726,7 +1801,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         debug: DebugParameters | None = None,
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
-        """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
+        """`List instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/advancedListInstance>`_
 
         Args:
             instance_type: Whether to query for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
@@ -1758,9 +1833,10 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client.data_classes.data_modeling import InstanceSort
                 >>> property_sort = InstanceSort(
-                ...     property=('space', 'view_xid/view_version', 'some_property'),
+                ...     property=("space", "view_xid/view_version", "some_property"),
                 ...     direction="descending",
-                ...     nulls_first=True)
+                ...     nulls_first=True,
+                ... )
                 >>> instance_list = client.data_modeling.instances.list(sort=property_sort)
 
             Iterate over instances (nodes by default), one-by-one:
@@ -1773,7 +1849,7 @@ class InstancesAPI(APIClient):
             Iterate over chunks of instances to reduce memory load:
 
                 >>> for instance_list in client.data_modeling.instances(chunk_size=100):
-                ...     instance_list # do something with the instances
+                ...     instance_list  # do something with the instances
 
             List instances with a view as source:
 
@@ -1799,9 +1875,7 @@ class InstancesAPI(APIClient):
                 ...     include_translated_query=True,  # Include the internal representation of the query.
                 ...     profile=True,
                 ... )
-                >>> res = client.data_modeling.instances.list(
-                ...     debug=debug_params, sources=my_view
-                ... )
+                >>> res = client.data_modeling.instances.list(debug=debug_params, sources=my_view)
                 >>> print(res.debug)
         """
         self._validate_filter(filter)

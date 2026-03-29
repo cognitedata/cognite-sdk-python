@@ -27,49 +27,43 @@ Changes are grouped as follows:
 - The generic `aggregate` method on the Data Sets API and Files API has been replaced with `aggregate_count`.
 - The aggregation data class `CountAggregate` has been removed. Methods now return the count (`int`) directly.
 - The generic `filter` method on classic CDF APIs has been removed (Assets, Events, Sequences and Time Series). Use the normal `list` method instead and pass filters as `advanved_filters=...` instead.
-- Datapoints API method `retrieve_dataframe_in_tz` has been removed. Use `retrieve`, `retrieve_arrays` or `retrieve_dataframe` and specify `timezone` instead.
-- System-managed, read-only properties for `CogniteFile` in `../cdm/v1.py`, `is_uploaded` and `uploaded_time`, have been removed from the `CogniteFileApply` class.
 - The method `trigger` on the Workflow Executions API has been removed. Use `run` instead.
 - The method `create` on the Workflow Triggers API has been removed. Use `upsert` instead.
 - The method `get_triggers` on the Workflow Triggers API has been removed. Use `list` instead.
 - The method `get_trigger_run_history` on the Workflow Triggers API has been removed. Use `list_runs` instead.
 - Data class `WorkflowTriggerCreate` has been removed. Use `WorkflowTriggerUpsert`.
-- Data class `DataPointSubscriptionCreate` has been removed. Use `DataPointSubscriptionWrite`.
 - The method `as_primitive` method on the identifier data class `WorkflowVersionId` has been removed. Use `as_tuple` instead.
 - The methods `insert`, `retrieve`, `retrieve_last_row` and `retrieve_dataframe` on the Sequence Data API no longer support the parameter `column_external_ids`. Use `columns` instead.
 - The `__iter__` method has been removed from all APIs. Use `__call__` instead: `for ts in client.time_series()`. This makes it seamless to pass one or more parameters.
-- All references to `legacy_name` on time series data classes and API have been removed.
 - The helper methods on `client.iam`, `compare_capabilities` and `verify_capabilities` no longer support the `ignore_allscope_meaning` parameter.
-- The method `load_yaml` on the data class `Query` has been removed. Use `load` instead.
 - The Templates API has been completely removed from the SDK (the API service has already been shut off)
 - The separate beta `CogniteClient` has been removed. Note: APIs currently in alpha/beta are (already) implemented directly on the main client and throw warnings on use.
 
+#### Data Modeling
+- System-managed, read-only properties for `CogniteFile` in `../cdm/v1.py`, `is_uploaded` and `uploaded_time`, have been removed from the `CogniteFileApply` class.
+- The write class for classic time series, `TimeSeriesWrite` no longer has the field `instance_id`. All time
+  series with instance ID must be created through the Data Modeling API, so this was confusing.
+- The write class for classic file, `FileMetadataWrite` no longer has the field `instance_id`. All
+  files with instance ID must be created through the Data Modeling API, so this was confusing.
+- The method `load_yaml` on the data class `Query` has been removed. Use `load` instead.
+
+#### Time Series / Datapoints
+- Datapoints API method `retrieve_dataframe_in_tz` has been removed. Use `retrieve`, `retrieve_arrays` or `retrieve_dataframe` and specify `timezone` instead.
+- All references to `legacy_name` on time series data classes and API have been removed.
+- Data class `DataPointSubscriptionCreate` has been removed. Use `DataPointSubscriptionWrite`.
+
 ### Changed
-- The default value for the `operator` parameter in the `InstancesAPI.search` method has been changed to `AND` (which previously defaulted to 'OR' behavior). This change provides more precise search results by default, requiring all search terms to be present. If you need the previous behavior of matching any search term, explicitly pass `operator='OR'`.
 - Attributes on all "read" data classes now have the correct type (typically no longer `Optional[...]`), meaning type inference will be correct. If you try to instantiate these classes directly (*you shouldn't* - use the write versions instead!), you will see that all required parameters in the API response will also be required on the object. **What is a read class?** Any data class returned by the SDK from a call to the API to fetch a resource of some kind.
 - All (HTTP) responses from the SDK (returned by e.g. `client.post` or `client.get`) are now of type `CogniteHTTPResponse` (from `cognite.client.response`) instead of the specific type from the underlying http library to support future http-client changes.
-- All typed instance apply classes, e.g. `CogniteAssetApply` from `cognite.client.data_classes.data_modeling.cdm.v1` (or `extractor_extensions.v1`) now work with patch updates (using `replace=False`). Previously, all unset fields would be dumped as `None` and thus cleared/nulled in the backend database. Now, any unset fields are not dumped and will not clear an existing value (unless used with `replace=True`).
-- When using the Datapoints API to ingest datapoints through `insert_dataframe`, the parameters `external_id_headers` and `instance_id_headers` have been removed. The new logic infers the kind of identifier from the type of the column: an integer is an ID, a string is an external ID and a NodeId (or 2-tuple of space and ext.id) is an instance ID. This also means you can pass more than one type of time series identifier in the same pandas DataFrame.
-- Datapoints API method `retrieve_dataframe` and all `to_pandas` methods on datapoints-container-like objects now accept a new parameter: `include_unit` (`bool`). Time series using physical units via `unit_external_id`, will end up as part of the pandas DataFrame columns (like aggregate info).
-- The `.columns` of the returned pandas DataFrame from both Datapoints API method `retrieve_dataframe` and all `to_pandas` methods on datapoints-container-like objects are now pandas `MultiIndex`, where each level corresponds to the: time series identifiers (always present), then the possible aggregate-, granularity-, status code- and unit information. Any level with no information is automatically dropped. This solves several practical problems in the past when the identifiers were always cast to string before e.g. `|interpolation` was appended directly to it. This worked ok until `NodeId` appeared. Now, the identifiers are never cast. If you have a `node_id`, you can extract the time series directly from the dataframe: `df[node_id]`. If you fetch several aggregates, you can select one just as easily: `df[node_id, "average"]`.
-- When using the Datapoints API to request datapoints, passing dictionaries with individual settings is no longer supported. Pass raw identifiers (`str`, `int`, `NodeId`) or `DatapointsQuery`.
-- When using the Datapoints API to ingest datapoints, empty containers no longer raise `ValueError`, but short-circuit.
-- Passing `column_names` to the Datapoints API method `retrieve_dataframe` or to `to_pandas` on any datapoints-container-like instance is no longer supported. The resolving is now dynamic with the precedence order: instance ID, then external ID and lastly (internal) ID.
-- For users of the Data Modeling API method `sync`, the data classes have been split from those used in `query`. They can be recognized by simply appending `Sync` to the end, e.g. `Query` and `QuerySync`. Previously, these were used for both, but as these API endpoints continue to evolve, it makes sense to fine-tune the data classes to each - starting now. Examples: `QuerySync`, `SelectSync`, `NodeResultSetExpressionSync` and `EdgeResultSetExpressionSync`.
-- When using `to_pandas` on a list of Data Modeling instances, the properties will be expanded by default (to separate columns). To get the old behaviour, pass `expand_properties=False`.
-- When using `to_pandas` on a list of Data Modeling instances, parameters `expand_metadata` and `metadata_prefix` are no longer silently ignored and will raise as unrecognized.
-- When using `get` on a list of Data Modeling instances, the parameter `id` has been removed. Use `instance_id` (or `external_id` when there is no ambiguity on space).
 - Parameter `partitions` has been removed from all `__call__` methods except for the Raw Rows API (which has special handling for it). It was previosuly being ignored with the added side effect of ignoring `chunk_size` stemming from a very early API design oversight.
 - The method `retrieve` on the Workflow Versions API no longer accepts `workflow_external_id` and `version` as separate arguments. Pass a single or a sequence of `WorkflowVersionId` (tuples also accepted).
 - When loading a `ViewProperty` or `ViewPropertyApply`, the resource dictionary must contain the `"connectionType"` key or an error is raised.
 - The specific exceptions `CogniteDuplicatedError` and `CogniteNotFoundError` should now always be used when appropriate (previously certain API endpoints always used `CogniteAPIError`)
 - `ModelFailedException` has changed name to `CogniteModelFailedError`.
 - For `class Transformation`, which used to have an async `run` method, this is now named `run_async` to unify the overall interface. The same applies to the `cancel` and `jobs` methods for the same class, and `update` and `wait` on `TransformationJob`.
-- Iterating through a `DatapointsArray` is no longer supported. Access the numpy arrays directly and use vectorised operations instead.
-- Extending a `Datapoints` instance is no longer supported.
 - **ClientConfig**:
   - `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`.
-    See the `Settings documentation <https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings>`_ for details.
+    See the [Settings documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings) for details.
   - `timeout`: default has been increased from 30 sec to 60 sec
 - **global_config**:
   - New setting `follow_redirects` that controls whether or not to follow redirects. Defaults to `False`.
@@ -79,6 +73,43 @@ Changes are grouped as follows:
   - `proxies` have been replaced by `proxy` and follow httpx directly. See: [Proxies - HTTPX](https://www.python-httpx.org/advanced/proxies/)
   - `max_retry_backoff`: default has been increased from 30 sec to 60 sec
   - `max_connection_pool_size`: default has been reduced from 50 to 20
+
+#### Data Modeling
+- The default value for the `operator` parameter in the `InstancesAPI.search` method has been changed to `AND` (which previously defaulted to 'OR' behavior). This change provides more precise search results by default, requiring all search terms to be present. If you need the previous behavior of matching any search term, explicitly pass `operator='OR'`.
+- All typed instance apply classes, e.g. `CogniteAssetApply` from `cognite.client.data_classes.data_modeling.cdm.v1` (or `extractor_extensions.v1`) now work with patch updates (using `replace=False`). Previously, all unset fields would be dumped as `None` and thus cleared/nulled in the backend database. Now, any unset fields are not dumped and will not clear an existing value (unless used with `replace=True`).
+- For users of the Data Modeling API method `sync`, the data classes have been split from those used in `query`. They can be recognized by simply appending `Sync` to the end, e.g. `Query` and `QuerySync`. Previously, these were used for both, but as these API endpoints continue to evolve, it makes sense to fine-tune the data classes to each - starting now. Examples: `QuerySync`, `SelectSync`, `NodeResultSetExpressionSync` and `EdgeResultSetExpressionSync`.
+- When using `to_pandas` on a list of Data Modeling instances, the properties will be expanded by default (to separate columns). To get the old behaviour, pass `expand_properties=False`.
+- When using `to_pandas` on a list of Data Modeling instances, parameters `expand_metadata` and `metadata_prefix` are no longer silently ignored and will raise as unrecognized.
+- When using `get` on a list of Data Modeling instances, the parameter `id` has been removed. Use `instance_id` (or `external_id` when there is no ambiguity on space).
+
+#### Time Series / Datapoints
+- When using the Datapoints API to ingest datapoints through `insert_dataframe`, the parameters `external_id_headers` and `instance_id_headers` have been removed. The new logic infers the kind of identifier from the type of the column: an integer is an ID, a string is an external ID and a NodeId (or 2-tuple of space and ext.id) is an instance ID. This also means you can pass more than one type of time series identifier in the same pandas DataFrame.
+- Datapoints API method `retrieve_dataframe` and all `to_pandas` methods on datapoints-container-like objects now accept a new parameter: `include_unit` (`bool`). Time series using physical units via `unit_external_id`, will end up as part of the pandas DataFrame columns (like aggregate info).
+- The `.columns` of the returned pandas DataFrame from both Datapoints API method `retrieve_dataframe` and all `to_pandas` methods on datapoints-container-like objects are now pandas `MultiIndex`, where each level corresponds to the: time series identifiers (always present), then the possible aggregate-, granularity-, status code- and unit information. Any level with no information is automatically dropped. This solves several practical problems in the past when the identifiers were always cast to string before e.g. `|interpolation` was appended directly to it. This worked ok until `NodeId` appeared. Now, the identifiers are never cast. If you have a `node_id`, you can extract the time series directly from the dataframe: `df[node_id]`. If you fetch several aggregates, you can select one just as easily: `df[node_id, "average"]`.
+- When using the Datapoints API to request datapoints, passing dictionaries with individual settings is no longer supported. Pass raw identifiers (`str`, `int`, `NodeId`) or `DatapointsQuery`.
+- When using the Datapoints API to ingest datapoints, empty containers no longer raise `ValueError`, but short-circuit.
+- Passing `column_names` to the Datapoints API method `retrieve_dataframe` or to `to_pandas` on any datapoints-container-like instance is no longer supported. The resolving is now dynamic with the precedence order: instance ID, then external ID and lastly (internal) ID.
+- The `Datapoints` class was previously (mis)used for several different API endpoints with different response structures. Dedicated classes have been introduced:
+  - **retrieve_latest**: Now returns `LatestDatapoint` or `LatestDatapointList` instead of `Datapoints` or `DatapointsList`. `LatestDatapoint` has scalar values: `timestamp` is `datetime` (not `list[int]`), `value` is `float | str` (not a list). Use `has_datapoint` property to check if a datapoint was returned (or just `if dp: ...`).
+    ```python
+    # Before (v7)
+    if dps := client.time_series.data.retrieve_latest(id=123):
+        ts = dps[0].timestamp  # int (ms)
+        val = dps[0].value
+
+    # After (v8)
+    if dp := client.time_series.data.retrieve_latest(id=123):
+        ts = dp.timestamp  # datetime (UTC)
+        val = dp.value
+    ```
+  - **TimeSeries.latest()**: Now returns `LatestDatapoint` instead of `Datapoint | None`.
+  - **Synthetic datapoints queries**: Now return `SyntheticDatapoints` or `SyntheticDatapointsList` instead of `Datapoints` or `DatapointsList`. The `error` field only exists on `SyntheticDatapoints` (where it belongs). Use `to_pandas(include_errors=True)` on `SyntheticDatapoints` to include the error column.
+  - **Datapoint subscriptions**: `DatapointsUpdate.upserts` is now `SubscriptionDatapoints` instead of `Datapoints`.
+- `Datapoints` class no longer has the `error` attribute (moved to `SyntheticDatapoints`).
+- `Datapoints` and `DatapointsArray` now require `id` and `is_step`, `is_string` and `type`.
+- Removed `include_errors` parameter from `Datapoints.to_pandas()`. This parameter only applies to `SyntheticDatapoints.to_pandas()`.
+- Iterating through a `DatapointsArray` is no longer supported. Access the numpy arrays directly and use vectorised operations instead.
+- Extending a `Datapoints` instance is no longer supported.
 
 ### Deprecated
 - Accessing the Sequence Data API through the Sequence API should use `.data` instead of `.rows`. This may raise in a future version.

@@ -55,7 +55,7 @@ class ThreeDModelsAPI(APIClient):
             yield item
 
     async def retrieve(self, id: int) -> ThreeDModel | None:
-        """`Retrieve a 3d model by id <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModel>`_
+        """`Retrieve a 3d model by id <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/get3DModel>`_
 
         Args:
             id: Get the model with this id.
@@ -75,7 +75,7 @@ class ThreeDModelsAPI(APIClient):
         return await self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
 
     async def list(self, published: bool | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> ThreeDModelList:
-        """`List 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModels>`_
+        """`List 3d models. <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/get3DModels>`_
 
         Args:
             published: Filter based on whether or not the model has published revisions.
@@ -101,7 +101,7 @@ class ThreeDModelsAPI(APIClient):
             Iterate over chunks of 3d models to reduce memory load:
 
                 >>> for model in client.three_d.models(chunk_size=50):
-                ...     model # do something with the 3d model
+                ...     model  # do something with the 3d model
         """
         return await self._list(
             list_cls=ThreeDModelList,
@@ -133,7 +133,7 @@ class ThreeDModelsAPI(APIClient):
         data_set_id: int | None = None,
         metadata: dict[str, str] | None = None,
     ) -> ThreeDModel | ThreeDModelList:
-        """`Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
+        """`Create new 3d models. <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/create3DModels>`_
 
         Args:
             name: The name of the 3d model(s) or 3D model object to create. If a 3D model object is provided, the other arguments are ignored.
@@ -150,7 +150,9 @@ class ThreeDModelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
+                >>> res = client.three_d.models.create(
+                ...     name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"}
+                ... )
 
             Create multiple new 3D Models:
 
@@ -158,8 +160,14 @@ class ThreeDModelsAPI(APIClient):
                 >>> from cognite.client.data_classes import ThreeDModelWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> my_model = ThreeDModelWrite(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
-                >>> my_other_model = ThreeDModelWrite(name="My Other Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
+                >>> my_model = ThreeDModelWrite(
+                ...     name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"}
+                ... )
+                >>> my_other_model = ThreeDModelWrite(
+                ...     name="My Other Model",
+                ...     data_set_id=1,
+                ...     metadata={"key1": "value1", "key2": "value2"},
+                ... )
                 >>> res = client.three_d.models.create([my_model, my_other_model])
 
         """
@@ -191,7 +199,7 @@ class ThreeDModelsAPI(APIClient):
         item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModel | ThreeDModelList:
-        """`Update 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_
+        """`Update 3d models. <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/update3DModels>`_
 
         Args:
             item: ThreeDModel(s) to update
@@ -229,7 +237,7 @@ class ThreeDModelsAPI(APIClient):
         )
 
     async def delete(self, id: int | Sequence[int]) -> None:
-        """`Delete 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/delete3DModels>`_
+        """`Delete 3d models. <https://api-docs.cognite.com/20230101/tag/3D-Models/operation/delete3DModels>`_
 
         Args:
             id: ID or list of IDs to delete.

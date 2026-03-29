@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - 'pysdk-release-v8'
+
+permissions:
+  contents: read
+
+jobs:
+  test_full_build_and_release:
+    runs-on: ubuntu-latest
+    environment: CD
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+
+      - uses: ./.github/actions/setup
+
+      - name: Ensure version is a v8-release
+        run: |
+          VERSION=$(poetry version --short)
+          echo "Detected version: $VERSION"
+          if [[ "$VERSION" =~ ^8\.[0-9]+\.[0-9]+$ ]]; then
+            echo "✅ Version format is valid for a v8-release."
+          else
+            echo "❌ Error: Version '$VERSION' is not a valid v8-release (must be 8.x.y format)."
+            exit 1
+          fi
+
+      - name: Build package
+        run: poetry build
+
+      - name: Release to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload --skip-existing --disable-progress-bar --verbose dist/*

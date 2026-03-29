@@ -7,7 +7,8 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Asset, Datapoint
+from cognite.client.data_classes import Asset
+from cognite.client.data_classes.datapoints import LatestDatapoint
 from tests.utils import get_or_raise, get_url
 
 if TYPE_CHECKING:
@@ -48,34 +49,15 @@ def mock_ts_by_ids_response(
 def mock_asset_by_ids_response(
     httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[HTTPXMock]:
-    res = {"items": [{"id": 1, "externalId": "1", "name": "assetname", "createdTime": 0, "lastUpdatedTime": 0}]}
+    res = {
+        "items": [
+            {"id": 1, "externalId": "1", "name": "assetname", "rootId": 1, "createdTime": 0, "lastUpdatedTime": 0}
+        ]
+    }
     httpx_mock.add_response(
         method="POST", url=get_url(async_client.time_series) + "/assets/byids", status_code=200, json=res
     )
     yield httpx_mock
-
-
-@pytest.fixture
-def mock_count_dps_in_ts(
-    mock_ts_by_ids_response: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
-) -> Iterator[HTTPXMock]:
-    mock_ts_by_ids_response.add_response(
-        method="POST",
-        url=get_url(async_client.time_series) + "/timeseries/data/list",
-        status_code=200,
-        json={
-            "items": [
-                {
-                    "id": 1,
-                    "externalId": "1",
-                    "isString": False,
-                    "isStep": False,
-                    "datapoints": [{"timestamp": 1, "count": 10}, {"timestamp": 2, "count": 5}],
-                }
-            ]
-        },
-    )
-    yield mock_ts_by_ids_response
 
 
 @pytest.fixture
@@ -93,6 +75,7 @@ def mock_get_latest_dp_in_ts(
                     "externalId": "1",
                     "isString": False,
                     "isStep": False,
+                    "type": "numeric",
                     "datapoints": [{"timestamp": 1, "value": 10}],
                 }
             ]
@@ -131,8 +114,8 @@ class TestTimeSeries:
 
     def test_get_latest(self, cognite_client: CogniteClient, mock_get_latest_dp_in_ts: HTTPXMock) -> None:
         res = get_or_raise(cognite_client.time_series.retrieve(id=1)).latest()
-        assert isinstance(res, Datapoint)
-        assert Datapoint(timestamp=1, value=10) == res
+        assert isinstance(res, LatestDatapoint)
+        assert 10 == res.value
 
     async def test_asset(
         self, cognite_client: CogniteClient, mock_ts_by_ids_response: HTTPXMock, mock_asset_by_ids_response: HTTPXMock

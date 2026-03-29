@@ -1,6 +1,6 @@
 """
 ===============================================================================
-92fe9d80e648744edfc9807377889346
+d1feeb34081c9b8719db7769e1dc00a7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -56,7 +56,7 @@ class SyncRawTablesAPI(SyncAPIClient):
 
     def create(self, db_name: str, name: str | list[str]) -> raw.Table | raw.TableList:
         """
-        `Create one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/createTables>`_
+        `Create one or more tables. <https://api-docs.cognite.com/20230101/tag/Raw/operation/createTables>`_
 
         Args:
             db_name: Database to create the tables in.
@@ -78,7 +78,7 @@ class SyncRawTablesAPI(SyncAPIClient):
 
     def delete(self, db_name: str, name: str | SequenceNotStr[str]) -> None:
         """
-        `Delete one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/deleteTables>`_
+        `Delete one or more tables. <https://api-docs.cognite.com/20230101/tag/Raw/operation/deleteTables>`_
 
         Args:
             db_name: Database to delete tables from.
@@ -97,7 +97,7 @@ class SyncRawTablesAPI(SyncAPIClient):
 
     def list(self, db_name: str, limit: int | None = DEFAULT_LIMIT_READ) -> raw.TableList:
         """
-        `List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_
+        `List tables <https://api-docs.cognite.com/20230101/tag/Raw/operation/getTables>`_
 
         Args:
             db_name: The database to list tables from.
@@ -123,6 +123,6 @@ class SyncRawTablesAPI(SyncAPIClient):
             Iterate over chunks of tables to reduce memory load:
 
                 >>> for table_list in client.raw.tables(db_name="db1", chunk_size=25):
-                ...     table_list # do something with the tables
+                ...     table_list  # do something with the tables
         """
         return run_sync(self.__async_client.raw.tables.list(db_name=db_name, limit=limit))

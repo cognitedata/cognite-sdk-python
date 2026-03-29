@@ -42,7 +42,7 @@ class SequencesDataAPI(APIClient):
         id: int | None = None,
         external_id: str | None = None,
     ) -> None:
-        """`Insert rows into a sequence <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
+        """`Insert rows into a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_
 
         Args:
             rows:  The rows you wish to insert. Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
@@ -61,27 +61,32 @@ class SequencesDataAPI(APIClient):
                 ...     SequenceWrite(
                 ...         columns=[
                 ...             SequenceColumnWrite(value_type="STRING", external_id="col_a"),
-                ...             SequenceColumnWrite(value_type="DOUBLE", external_id ="col_b")
+                ...             SequenceColumnWrite(value_type="DOUBLE", external_id="col_b"),
                 ...         ],
                 ...     )
                 ... )
-                >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
-                >>> client.sequences.data.insert(columns=["col_a","col_b"], rows=data, id=1)
+                >>> data = [(1, ["pi", 3.14]), (2, ["e", 2.72])]
+                >>> client.sequences.data.insert(columns=["col_a", "col_b"], rows=data, id=1)
 
             They can also be provided as a list of API-style objects with a rowNumber and values field:
 
-                >>> data = [{"rowNumber": 123, "values": ['str',3]}, {"rowNumber": 456, "values": ["bar",42]} ]
-                >>> client.sequences.data.insert(data, id=1, columns=["col_a","col_b"]) # implicit columns are retrieved from metadata
+                >>> data = [
+                ...     {"rowNumber": 123, "values": ["str", 3]},
+                ...     {"rowNumber": 456, "values": ["bar", 42]},
+                ... ]
+                >>> client.sequences.data.insert(
+                ...     data, id=1, columns=["col_a", "col_b"]
+                ... )  # implicit columns are retrieved from metadata
 
             Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row:
 
-                >>> data = {123 : ['str',3], 456 : ['bar',42] }
-                >>> client.sequences.data.insert(columns=['stringColumn','intColumn'], rows=data, id=1)
+                >>> data = {123: ["str", 3], 456: ["bar", 42]}
+                >>> client.sequences.data.insert(columns=["stringColumn", "intColumn"], rows=data, id=1)
 
             Finally, they can be a SequenceData object retrieved from another request. In this case columns from this object are used as well.
 
-                >>> data = client.sequences.data.retrieve(id=2,start=0,end=10)
-                >>> client.sequences.data.insert(rows=data, id=1,columns=None)
+                >>> data = client.sequences.data.retrieve(id=2, start=0, end=10)
+                >>> client.sequences.data.insert(rows=data, id=1, columns=None)
         """
         match rows:
             case SequenceRows():
@@ -121,7 +126,7 @@ class SequencesDataAPI(APIClient):
     async def insert_dataframe(
         self, dataframe: pd.DataFrame, id: int | None = None, external_id: str | None = None, dropna: bool = True
     ) -> None:
-        """`Insert a Pandas dataframe. <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
+        """`Insert a Pandas dataframe. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_
 
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
         The sequence and columns must already exist.
@@ -139,7 +144,7 @@ class SequencesDataAPI(APIClient):
                 >>> import pandas as pd
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> df = pd.DataFrame({'col_a': [1, 2, 3], 'col_b': [4, 5, 6]}, index=[1, 2, 3])
+                >>> df = pd.DataFrame({"col_a": [1, 2, 3], "col_b": [4, 5, 6]}, index=[1, 2, 3])
                 >>> client.sequences.data.insert_dataframe(df, id=123)
         """
         if dropna:
@@ -154,7 +159,7 @@ class SequencesDataAPI(APIClient):
         await self._post(url_path=self._RESOURCE_PATH, json={"items": [task]}, semaphore=self._get_semaphore("write"))
 
     async def delete(self, rows: typing.Sequence[int], id: int | None = None, external_id: str | None = None) -> None:
-        """`Delete rows from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_
+        """`Delete rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_
 
         Args:
             rows: List of row numbers.
@@ -168,7 +173,7 @@ class SequencesDataAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.sequences.data.delete(id=1, rows=[1,2,42])
+                >>> client.sequences.data.delete(id=1, rows=[1, 2, 42])
         """
         post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj["rows"] = rows
@@ -182,7 +187,7 @@ class SequencesDataAPI(APIClient):
     async def delete_range(
         self, start: int, end: int | None, id: int | None = None, external_id: str | None = None
     ) -> None:
-        """`Delete a range of rows from a sequence. Note this operation is potentially slow, as retrieves each row before deleting. <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_
+        """`Delete a range of rows from a sequence. Note this operation is potentially slow, as retrieves each row before deleting. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_
 
         Args:
             start: Row number to start from (inclusive).
@@ -283,7 +288,7 @@ class SequencesDataAPI(APIClient):
         columns: SequenceNotStr[str] | None = None,
         limit: int | None = None,
     ) -> SequenceRows | SequenceRowsList:
-        """`Retrieve data from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
+        """`Retrieve data from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_
 
         Args:
             external_id: The external id of the sequence to retrieve from.
@@ -302,10 +307,14 @@ class SequencesDataAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.data.retrieve(id=1)
-                >>> tuples = [(r,v) for r,v in res.items()] # You can use this iterator in for loops and list comprehensions,
-                >>> single_value = res[23] # ... get the values at a single row number,
-                >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
-                >>> df = res.to_pandas() # ... or convert the result to a dataframe
+                >>> tuples = [
+                ...     (r, v) for r, v in res.items()
+                ... ]  # You can use this iterator in for loops and list comprehensions,
+                >>> single_value = res[23]  # ... get the values at a single row number,
+                >>> col = res.get_column(
+                ...     external_id="columnExtId"
+                ... )  # ... get the array of values for a specific column,
+                >>> df = res.to_pandas()  # ... or convert the result to a dataframe
         """
         ident_sequence = IdentifierSequence.load(id, external_id)
 
@@ -324,7 +333,7 @@ class SequencesDataAPI(APIClient):
         tasks = [AsyncSDKTask(_fetch_sequence, id_) for id_ in ident_sequence.as_dicts()]
         tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_list_element_unwrap_fn=lambda task: ident_sequence.extract_identifiers(task[0])
+            task_list_element_unwrap_fn=ident_sequence.extract_identifiers
         )
         results = tasks_summary.joined_results()
         if ident_sequence.is_singleton():
@@ -339,7 +348,7 @@ class SequencesDataAPI(APIClient):
         columns: SequenceNotStr[str] | None = None,
         before: int | None = None,
     ) -> SequenceRows:
-        """`Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://developer.cognite.com/api#tag/Sequences/operation/getLatestSequenceRow>`_
+        """`Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getLatestSequenceRow>`_
 
         Args:
             id: Id or list of ids.
@@ -377,7 +386,7 @@ class SequencesDataAPI(APIClient):
         id: int | None = None,
         limit: int | None = None,
     ) -> pd.DataFrame:
-        """`Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
+        """`Retrieve data from a sequence as a pandas dataframe <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_
 
         Args:
             start: (inclusive) row number to start from.

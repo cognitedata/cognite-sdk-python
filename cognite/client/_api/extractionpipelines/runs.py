@@ -34,7 +34,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         created_time: dict[str, Any] | TimestampRange | str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ExtractionPipelineRunList:
-        """`List runs for an extraction pipeline with given external_id <https://developer.cognite.com/api#tag/Extraction-Pipelines-Runs/operation/filterRuns>`_
+        """`List runs for an extraction pipeline with given external_id <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines-Runs/operation/filterRuns>`_
 
         Args:
             external_id: Extraction pipeline external Id.
@@ -62,12 +62,16 @@ class ExtractionPipelineRunsAPI(APIClient):
 
             Filter extraction pipeline runs on a given status:
 
-                >>> runs_list = client.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], limit=5)
+                >>> runs_list = client.extraction_pipelines.runs.list(
+                ...     external_id="test ext id", statuses=["seen"], limit=5
+                ... )
 
             Get all failed pipeline runs in the last 24 hours for pipeline 'extId':
 
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
-                >>> res = client.extraction_pipelines.runs.list(external_id="extId", statuses="failure", created_time="24h-ago")
+                >>> res = client.extraction_pipelines.runs.list(
+                ...     external_id="extId", statuses="failure", created_time="24h-ago"
+                ... )
         """
         if isinstance(created_time, str):
             created_time = TimestampRange(min=timestamp_to_ms(created_time))
@@ -110,7 +114,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         | Sequence[ExtractionPipelineRun]
         | Sequence[ExtractionPipelineRunWrite],
     ) -> ExtractionPipelineRun | ExtractionPipelineRunList:
-        """`Create one or more extraction pipeline runs. <https://developer.cognite.com/api#tag/Extraction-Pipelines-Runs/operation/createRuns>`_
+        """`Create one or more extraction pipeline runs. <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines-Runs/operation/createRuns>`_
 
         You can create an arbitrary number of extraction pipeline runs, and the SDK will split the request into multiple requests.
 
@@ -128,7 +132,8 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> from cognite.client.data_classes import ExtractionPipelineRunWrite
                 >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.runs.create(
-                ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId"))
+                ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId")
+                ... )
         """
         assert_type(run, "run", [ExtractionPipelineRunCore, Sequence])
         return await self._create_multiple(
