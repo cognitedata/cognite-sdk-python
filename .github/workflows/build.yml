@@ -35,6 +35,8 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - uses: ./.github/actions/setup
+        with:
+          extras: "-E all"
       - name: Build docs
         run: cd docs && make html SPHINXOPTS="-W --keep-going"
 
