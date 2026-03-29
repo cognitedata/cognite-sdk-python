@@ -11,6 +11,7 @@ from cognite.client.data_classes.simulators.models import (
 from cognite.client.data_classes.simulators.routine_revisions import (
     SimulationValueUnitInput,
     SimulatorRoutineConfiguration,
+    SimulatorRoutineInput,
     SimulatorRoutineInputConstant,
     SimulatorRoutineInputTimeseries,
     SimulatorRoutineOutput,
@@ -489,3 +490,24 @@ class TestSimulationRunWrite:
             SimulationRunWrite(
                 routine_revision_external_id="routine_revision_external_id_1",
             )
+
+
+class TestSimulatorRoutineInput:
+    def test_load_zero_value(self) -> None:
+        routine_input = SimulatorRoutineInput._load(
+            {"name": "input", "referenceId": "input", "value": 0, "valueType": "DOUBLE"}
+        )
+        assert isinstance(routine_input, SimulatorRoutineInputConstant)
+        assert routine_input.value == 0
+
+    def test_load_empty_string_source_external_id(self) -> None:
+        routine_input = SimulatorRoutineInput._load({"name": "input", "referenceId": "input", "sourceExternalId": ""})
+        assert isinstance(routine_input, SimulatorRoutineInputTimeseries)
+        assert routine_input.source_external_id == ""
+
+    def test_load_both_value_and_time_series(self) -> None:
+        with pytest.raises(
+            ValueError,
+            match="Invalid routine input, cannot contain both 'value' and 'sourceExternalId'",
+        ):
+            SimulatorRoutineInput._load({"name": "input", "referenceId": "input", "sourceExternalId": "", "value": 0})
