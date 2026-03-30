@@ -501,7 +501,7 @@ class TestCogniteResourceList:
         expected_df = pd.DataFrame(
             {
                 "varA": [1, 2],
-                "lastUpdatedTime": [pd.Timestamp(60, unit="ms"), pd.NaT],
+                "lastUpdatedTime": pd.array([pd.Timestamp(60, unit="ms"), pd.NaT], dtype="datetime64[ms]"),
                 "varB": [None, 3],
             },
         )

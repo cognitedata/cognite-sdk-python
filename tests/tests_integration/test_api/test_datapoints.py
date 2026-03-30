@@ -1577,24 +1577,28 @@ class TestRetrieveRawDatapointsAPI:
     def test_timezone_raw_query_dst_transitions(
         self, all_retrieve_endpoints: list[Callable], dps_queries_dst_transitions: list[DatapointsQuery]
     ) -> None:
-        expected_index = pd.to_datetime(
-            [
-                # to summer
-                "1991-03-31 00:20:05.911+01:00",
-                "1991-03-31 00:39:49.780+01:00",
-                "1991-03-31 03:21:08.144+02:00",
-                "1991-03-31 03:28:06.963+02:00",
-                "1991-03-31 03:28:51.903+02:00",
-                # to winter
-                "1991-09-29 01:02:37.949+02:00",
-                "1991-09-29 02:09:29.699+02:00",
-                "1991-09-29 02:11:39.983+02:00",
-                "1991-09-29 02:10:59.442+01:00",
-                "1991-09-29 02:52:26.212+01:00",
-                "1991-09-29 04:12:02.558+01:00",
-            ],
-            utc=True,  # pandas is not great at parameter names
-        ).tz_convert("Europe/Oslo")
+        expected_index = (
+            pd.to_datetime(
+                [
+                    # to summer
+                    "1991-03-31 00:20:05.911+01:00",
+                    "1991-03-31 00:39:49.780+01:00",
+                    "1991-03-31 03:21:08.144+02:00",
+                    "1991-03-31 03:28:06.963+02:00",
+                    "1991-03-31 03:28:51.903+02:00",
+                    # to winter
+                    "1991-09-29 01:02:37.949+02:00",
+                    "1991-09-29 02:09:29.699+02:00",
+                    "1991-09-29 02:11:39.983+02:00",
+                    "1991-09-29 02:10:59.442+01:00",
+                    "1991-09-29 02:52:26.212+01:00",
+                    "1991-09-29 04:12:02.558+01:00",
+                ],
+                utc=True,  # pandas is not great at parameter names
+            )
+            .tz_convert("Europe/Oslo")
+            .as_unit("ms")
+        )
         expected_to_summer_index = expected_index[:5]
         expected_to_winter_index = expected_index[5:]
         for endpoint, convert in zip(all_retrieve_endpoints, (True, True, False)):
@@ -2201,21 +2205,25 @@ class TestRetrieveAggregateDatapointsAPI:
     ) -> None:
         expected_values1 = [-0.0408386913634, -0.1204416510548, -0.1519269888052, 0.00331827604225]
         expected_values2 = [-0.0503489023269, 0.190474485259, 0.102249925079, -0.1000846729966]
-        expected_index = pd.to_datetime(
-            [
-                # to summer
-                "2023-03-26 00:00:00+01:00",
-                "2023-03-26 01:00:00+01:00",
-                "2023-03-26 03:00:00+02:00",
-                "2023-03-26 04:00:00+02:00",
-                # to winter
-                "2023-10-29 01:00:00+02:00",
-                "2023-10-29 02:00:00+02:00",
-                "2023-10-29 02:00:00+01:00",
-                "2023-10-29 03:00:00+01:00",
-            ],
-            utc=True,  # pandas is still not great at parameter names
-        ).tz_convert("Europe/Oslo")
+        expected_index = (
+            pd.to_datetime(
+                [
+                    # to summer
+                    "2023-03-26 00:00:00+01:00",
+                    "2023-03-26 01:00:00+01:00",
+                    "2023-03-26 03:00:00+02:00",
+                    "2023-03-26 04:00:00+02:00",
+                    # to winter
+                    "2023-10-29 01:00:00+02:00",
+                    "2023-10-29 02:00:00+02:00",
+                    "2023-10-29 02:00:00+01:00",
+                    "2023-10-29 03:00:00+01:00",
+                ],
+                utc=True,  # pandas is still not great at parameter names
+            )
+            .tz_convert("Europe/Oslo")
+            .as_unit("ms")
+        )
         expected_to_summer_index = expected_index[:4]
         expected_to_winter_index = expected_index[4:]
         for endpoint, convert in zip(all_retrieve_endpoints, (True, True, False)):
@@ -2449,7 +2457,8 @@ class TestRetrieveDataFrameAPI:
             assert res_df.isna().sum().sum() == 0
             assert res_df.shape == (exp_len, n_ts)
             assert res_df.dtypes.nunique() == 1
-            assert res_df.dtypes.iloc[0] == exp_dtype
+            dtype = res_df.dtypes.iloc[0]
+            assert dtype == exp_dtype or (exp_dtype is object and pd.api.types.is_string_dtype(dtype))
 
     @pytest.mark.parametrize("uniform, exp_n_ts_delta, exp_n_nans_step_interp", ((True, 1, 1), (False, 2, 0)))
     def test_agg_uniform_true_false(
@@ -2504,8 +2513,8 @@ class TestRetrieveDataFrameAPI:
         )
         # We have duplicates in df.columns, so to test specific columns, we reset first:
         res_df.columns = c1, c2, c3, c4, *cx = range(len(res_df.columns))
-        assert res_df[[c1, c2]].dtypes.unique() == [object]
-        assert res_df[[c3, c4, *cx]].dtypes.unique() == [np.float64]
+        assert all(pd.api.types.is_string_dtype(dt) for dt in res_df[[c1, c2]].dtypes)
+        assert (res_df[[c3, c4, *cx]].dtypes == np.float64).all()
         assert (res_df[[c1, c3, *cx]].count() == [limit] * (len(cx) + 2)).all()
         assert (res_df[[c2, c4]].count() == [limit + 2] * 2).all()
 

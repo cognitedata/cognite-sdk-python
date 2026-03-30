@@ -323,7 +323,7 @@ class TestDatapointSubscriptions:
                 {time_series_external_ids[0]: new_values},
                 index=pd.date_range(start=start, periods=2, freq="1d"),
             )
-            new_timestamps = new_data.index.asi8 // 10**6
+            new_timestamps = new_data.index.as_unit("ms").asi8
             try:
                 cognite_client.time_series.data.insert_dataframe(new_data)
                 batch = next(cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id))
