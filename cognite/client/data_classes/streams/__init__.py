@@ -6,6 +6,8 @@ from cognite.client.data_classes.streams.stream import (
     StreamLimitSettings,
     StreamList,
     StreamSettings,
+    StreamTemplate,
+    StreamTemplateWriteSettings,
     StreamWrite,
 )
 
@@ -17,5 +19,7 @@ __all__ = [
     "StreamLimitSettings",
     "StreamList",
     "StreamSettings",
+    "StreamTemplate",
+    "StreamTemplateWriteSettings",
     "StreamWrite",
 ]

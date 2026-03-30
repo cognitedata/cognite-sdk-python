@@ -214,6 +214,8 @@ from cognite.client.data_classes.streams import (
     StreamLimitSettings,
     StreamList,
     StreamSettings,
+    StreamTemplate,
+    StreamTemplateWriteSettings,
     StreamWrite,
 )
 from cognite.client.data_classes.three_d import (
@@ -504,6 +506,8 @@ __all__ = [
     "StreamLimitSettings",
     "StreamList",
     "StreamSettings",
+    "StreamTemplate",
+    "StreamTemplateWriteSettings",
     "StreamWrite",
     "SubworkflowTaskParameters",
     "SyntheticDatapoints",

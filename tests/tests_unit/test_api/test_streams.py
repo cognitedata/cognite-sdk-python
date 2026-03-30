@@ -6,7 +6,12 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
-from cognite.client.data_classes.streams import StreamList, StreamWrite
+from cognite.client.data_classes.streams import (
+    StreamList,
+    StreamTemplate,
+    StreamTemplateWriteSettings,
+    StreamWrite,
+)
 
 
 @pytest.fixture
@@ -93,15 +98,19 @@ class TestStreamsAPI:
             ]
         }
         httpx_mock.add_response(method="POST", url=re.compile(re.escape(streams_base_url) + r"$"), json=sample)
-        w = StreamWrite("st1", {"template": {"name": "ImmutableTestStream"}})
+        w = StreamWrite(
+            "st1",
+            StreamTemplateWriteSettings(StreamTemplate("ImmutableTestStream")),
+        )
         cognite_client.streams.create([w])
         requests = httpx_mock.get_requests()
         assert len(requests) == 1
         assert requests[0].url.path.endswith("/streams")
 
     def test_create_rejects_multiple_items(self, cognite_client: CogniteClient) -> None:
-        a = StreamWrite("a", {"template": {"name": "ImmutableTestStream"}})
-        b = StreamWrite("b", {"template": {"name": "ImmutableTestStream"}})
+        tpl = StreamTemplateWriteSettings(StreamTemplate("ImmutableTestStream"))
+        a = StreamWrite("a", tpl)
+        b = StreamWrite("b", tpl)
         with pytest.raises(ValueError, match="exactly one"):
             cognite_client.streams.create([a, b])
 

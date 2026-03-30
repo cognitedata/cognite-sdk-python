@@ -154,19 +154,68 @@ class StreamList(CogniteResourceList[Stream], ExternalIDTransformerMixin):
     _RESOURCE = Stream
 
 
+class StreamTemplate(CogniteResource):
+    """Reference to an ILA stream template (``StreamRequestItem.settings.template``)."""
+
+    def __init__(self, name: str, version: str | None = None) -> None:
+        self.name = name
+        self.version = version
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(name=resource["name"], version=resource.get("version"))
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        out: dict[str, Any] = {"name": self.name}
+        if self.version is not None:
+            out["version"] = self.version
+        return convert_all_keys_to_camel_case(out) if camel_case else out
+
+
+class StreamTemplateWriteSettings(CogniteResource):
+    """Write-side settings for creating a stream from a template (``{"template": {...}}``)."""
+
+    def __init__(self, template: StreamTemplate) -> None:
+        self.template = template
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(template=StreamTemplate._load(resource["template"]))
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"template": self.template.dump(camel_case=camel_case)}
+
+
+def _parse_stream_write_settings(raw: dict[str, Any]) -> StreamTemplateWriteSettings | dict[str, Any]:
+    if set(raw.keys()) == {"template"} and isinstance(raw["template"], dict) and "name" in raw["template"]:
+        return StreamTemplateWriteSettings._load(raw)
+    return raw
+
+
 class StreamWrite(CogniteResource):
     """Request item for creating a stream (``StreamRequestItem``)."""
 
-    def __init__(self, external_id: str, settings: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        external_id: str,
+        settings: StreamTemplateWriteSettings | dict[str, Any],
+    ) -> None:
         self.external_id = external_id
         self.settings = settings
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(external_id=resource["externalId"], settings=resource["settings"])
+        return cls(
+            external_id=resource["externalId"],
+            settings=_parse_stream_write_settings(resource["settings"]),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        out = {"external_id": self.external_id, "settings": self.settings}
+        if isinstance(self.settings, CogniteResource):
+            settings_dumped = self.settings.dump(camel_case=camel_case)
+        else:
+            settings_dumped = self.settings
+        out = {"external_id": self.external_id, "settings": settings_dumped}
         return convert_all_keys_to_camel_case(out) if camel_case else out
 
 
