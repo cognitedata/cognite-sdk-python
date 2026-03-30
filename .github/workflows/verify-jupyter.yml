@@ -3,7 +3,7 @@ name: build
 
 on:
   pull_request:
-    branches: [master]
+    branches: [pysdk-release-v7]
 
 jobs:
   build_and_test_jupyter_pyodide:

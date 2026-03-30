@@ -3,7 +3,7 @@ name: release-please
 on:
   push:
     branches:
-      - master
+      - pysdk-release-v7
 
 jobs:
   release:
@@ -12,5 +12,6 @@ jobs:
       - uses: google-github-actions/release-please-action@e4dc86ba9405554aeba3c6bb2d169500e7d3b4ee # v4
         with:
           token: ${{ secrets.RELEASE_PLEASE_GITHUB_TOKEN }}
+          target-branch: pysdk-release-v7
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json

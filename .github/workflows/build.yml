@@ -4,7 +4,7 @@ name: build
 on:
   merge_group:
   pull_request:
-    branches: [master]
+    branches: [pysdk-release-v7]
 
 concurrency:
   group: pr-${{ github.workflow }}-${{ github.head_ref }}
