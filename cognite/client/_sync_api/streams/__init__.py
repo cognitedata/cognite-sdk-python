@@ -1,19 +1,20 @@
 """
 ===============================================================================
-9303ab5e6fadf932b93ee83f4fe9221e
+f03f005a79a9c59186281743220dc02d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
-from collections.abc import MutableSequence, Sequence
-from typing import Any
+from collections.abc import Sequence
+from typing import overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes.streams.stream import Stream, StreamDeleteItem, StreamList, StreamWrite
+from cognite.client.data_classes.streams.stream import Stream, StreamList, StreamWrite
 from cognite.client.utils._async_helpers import run_sync
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class SyncStreamsAPI(SyncAPIClient):
@@ -22,12 +23,21 @@ class SyncStreamsAPI(SyncAPIClient):
     def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
-    def create(self, items: Sequence[StreamWrite | dict[str, Any]]) -> StreamList:
+    @overload
+    def create(self, items: StreamWrite) -> Stream: ...
+
+    @overload
+    def create(self, items: Sequence[StreamWrite]) -> StreamList: ...
+
+    def create(self, items: StreamWrite | Sequence[StreamWrite]) -> Stream | StreamList:
         """
         `Create streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/createStream>`_.
 
-        The API accepts **exactly one** stream per request. Pass a single-element sequence.
-        Stream creation is rate-limited; avoid issuing many create calls in a tight loop.
+        Args:
+            items (StreamWrite | Sequence[StreamWrite]): One or more streams to create.
+
+        Returns:
+            Stream | StreamList: The created stream or streams.
         """
         return run_sync(self.__async_client.streams.create(items=items))
 
@@ -35,8 +45,12 @@ class SyncStreamsAPI(SyncAPIClient):
         """
         `List streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/listStreams>`_ in the project.
 
-        There is no paging limit parameter: the endpoint returns all streams in the project
-        (projects are expected to have few streams).
+        Note:
+            There is no paging limit parameter: the endpoint returns all streams in the project
+            (projects are expected to have few streams).
+
+        Returns:
+            StreamList: The streams in the project.
         """
         return run_sync(self.__async_client.streams.list())
 
@@ -47,7 +61,7 @@ class SyncStreamsAPI(SyncAPIClient):
         Args:
             stream_external_id (str): Stream external id.
             include_statistics (bool | None): When ``True``, the response may include **statistics**. Computing
-                statistics can be expensive; the list endpoint does not offer this flag for that reason.
+                statistics can be expensive.
 
         Returns:
             Stream: The stream metadata (and optionally statistics).
@@ -58,11 +72,14 @@ class SyncStreamsAPI(SyncAPIClient):
             )
         )
 
-    def delete(self, items: MutableSequence[StreamDeleteItem | dict[str, Any]]) -> None:
+    def delete(self, external_id: str | SequenceNotStr[str]) -> None:
         """
-        `Delete streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/deleteStreams>`_ (POST).
+        `Delete streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/deleteStreams>`_.
 
-        The API accepts **exactly one** stream per request. Deletion is soft-delete and retains
+        The API accepts **exactly one** stream per request. Deletion is a soft delete that retains
         capacity for an extended period; prefer deleting only when necessary.
+
+        Args:
+            external_id (str | SequenceNotStr[str]): External ID or list of external IDs.
         """
-        return run_sync(self.__async_client.streams.delete(items=items))
+        return run_sync(self.__async_client.streams.delete(external_id=external_id))

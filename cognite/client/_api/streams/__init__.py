@@ -1,62 +1,64 @@
 from __future__ import annotations
 
-from collections.abc import MutableSequence, Sequence
-from typing import TYPE_CHECKING, Any
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.streams.stream import (
     Stream,
-    StreamDeleteItem,
     StreamList,
     StreamWrite,
 )
+from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._url import interpolate_and_url_encode
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
-def _dump_write_item(obj: StreamWrite | dict[str, Any]) -> dict[str, Any]:
-    if isinstance(obj, dict):
-        return obj
-    return obj.dump()
-
-
-def _dump_delete_item(obj: StreamDeleteItem | dict[str, Any]) -> dict[str, Any]:
-    if isinstance(obj, dict):
-        return obj
-    return obj.dump()
-
-
 class StreamsAPI(APIClient):
-    """ILA Streams API (``/streams``): create, list, retrieve, delete."""
+    """ILA Streams API (``/streams``)."""
 
     _RESOURCE_PATH = "/streams"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self._CREATE_LIMIT = 1
+        self._DELETE_LIMIT = 1
 
-    async def create(self, items: Sequence[StreamWrite | dict[str, Any]]) -> StreamList:
+    @overload
+    async def create(self, items: StreamWrite) -> Stream: ...
+
+    @overload
+    async def create(self, items: Sequence[StreamWrite]) -> StreamList: ...
+
+    async def create(self, items: StreamWrite | Sequence[StreamWrite]) -> Stream | StreamList:
         """`Create streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/createStream>`_.
 
-        The API accepts **exactly one** stream per request. Pass a single-element sequence.
-        Stream creation is rate-limited; avoid issuing many create calls in a tight loop.
+        Args:
+            items (StreamWrite | Sequence[StreamWrite]): One or more streams to create.
+
+        Returns:
+            Stream | StreamList: The created stream or streams.
         """
-        if len(items) != 1:
-            raise ValueError("ILA create stream accepts exactly one item; see API documentation.")
-        res = await self._post(
-            self._RESOURCE_PATH,
-            json={"items": [_dump_write_item(i) for i in items]},
-            semaphore=self._get_semaphore("write"),
+        return await self._create_multiple(
+            list_cls=StreamList,
+            resource_cls=Stream,  # type: ignore[type-var]
+            items=items,  # type: ignore[arg-type]
+            input_resource_cls=StreamWrite,
         )
-        return StreamList._load(res.json()["items"])
 
     async def list(self) -> StreamList:
         """`List streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/listStreams>`_ in the project.
 
-        There is no paging limit parameter: the endpoint returns all streams in the project
-        (projects are expected to have few streams).
+        Note:
+            There is no paging limit parameter: the endpoint returns all streams in the project
+            (projects are expected to have few streams).
+
+        Returns:
+            StreamList: The streams in the project.
         """
         res = await self._get(url_path=self._RESOURCE_PATH, semaphore=self._get_semaphore("read"))
         return StreamList._load(res.json()["items"])
@@ -67,28 +69,28 @@ class StreamsAPI(APIClient):
         Args:
             stream_external_id (str): Stream external id.
             include_statistics (bool | None): When ``True``, the response may include **statistics**. Computing
-                statistics can be expensive; the list endpoint does not offer this flag for that reason.
+                statistics can be expensive.
 
         Returns:
             Stream: The stream metadata (and optionally statistics).
         """
         path = interpolate_and_url_encode(f"{self._RESOURCE_PATH}/{{}}", stream_external_id)
-        params: dict[str, Any] | None = None
+        params: dict[str, bool] | None = None
         if include_statistics is not None:
-            params = {"includeStatistics": "true" if include_statistics else "false"}
+            params = {"includeStatistics": include_statistics}
         res = await self._get(url_path=path, params=params, semaphore=self._get_semaphore("read"))
         return Stream._load(res.json())
 
-    async def delete(self, items: MutableSequence[StreamDeleteItem | dict[str, Any]]) -> None:
-        """`Delete streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/deleteStreams>`_ (POST).
+    async def delete(self, external_id: str | SequenceNotStr[str]) -> None:
+        """`Delete streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/deleteStreams>`_.
 
-        The API accepts **exactly one** stream per request. Deletion is soft-delete and retains
+        The API accepts **exactly one** stream per request. Deletion is a soft delete that retains
         capacity for an extended period; prefer deleting only when necessary.
+
+        Args:
+            external_id (str | SequenceNotStr[str]): External ID or list of external IDs.
         """
-        if len(items) != 1:
-            raise ValueError("ILA delete stream accepts exactly one item; see API documentation.")
-        await self._post(
-            f"{self._RESOURCE_PATH}/delete",
-            json={"items": [_dump_delete_item(i) for i in items]},
-            semaphore=self._get_semaphore("write"),
+        await self._delete_multiple(
+            identifiers=IdentifierSequence.load(external_ids=external_id),
+            wrap_ids=True,
         )

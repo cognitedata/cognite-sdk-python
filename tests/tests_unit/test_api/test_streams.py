@@ -7,11 +7,13 @@ from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.streams import (
+    Stream,
     StreamList,
     StreamTemplate,
     StreamTemplateWriteSettings,
     StreamWrite,
 )
+from tests.utils import jsgz_load
 
 
 @pytest.fixture
@@ -69,12 +71,15 @@ class TestStreamsAPI:
         }
         httpx_mock.add_response(
             method="GET",
-            url=re.compile(re.escape(streams_base_url) + r"/st1\?includeStatistics=true$"),
+            url=re.compile(re.escape(streams_base_url) + r"/st1(?:\?.+)?$"),
             json=sample,
         )
         cognite_client.streams.retrieve("st1", include_statistics=True)
+        requests = httpx_mock.get_requests()
+        assert len(requests) == 1
+        assert requests[0].url.params["includeStatistics"].lower() == "true"
 
-    def test_create_posts_items(
+    def test_create_posts_single_item(
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
@@ -102,20 +107,88 @@ class TestStreamsAPI:
             "st1",
             StreamTemplateWriteSettings(StreamTemplate("ImmutableTestStream")),
         )
-        cognite_client.streams.create([w])
+        out = cognite_client.streams.create(w)
         requests = httpx_mock.get_requests()
+        assert isinstance(out, Stream)
         assert len(requests) == 1
         assert requests[0].url.path.endswith("/streams")
+        assert jsgz_load(requests[0].content) == {
+            "items": [{"externalId": "st1", "settings": {"template": {"name": "ImmutableTestStream"}}}]
+        }
 
-    def test_create_rejects_multiple_items(self, cognite_client: CogniteClient) -> None:
+    def test_create_chunks_multiple_items(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        streams_base_url: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=re.compile(re.escape(streams_base_url) + r"$"),
+            json={
+                "items": [
+                    {
+                        "externalId": "a",
+                        "createdTime": 1,
+                        "createdFromTemplate": "ImmutableTestStream",
+                        "type": "Immutable",
+                        "settings": {
+                            "lifecycle": {"retainedAfterSoftDelete": "P1D"},
+                            "limits": {
+                                "maxRecordsTotal": {"provisioned": 1000.0},
+                                "maxGigaBytesTotal": {"provisioned": 1.0},
+                            },
+                        },
+                    }
+                ]
+            },
+        )
+        httpx_mock.add_response(
+            method="POST",
+            url=re.compile(re.escape(streams_base_url) + r"$"),
+            json={
+                "items": [
+                    {
+                        "externalId": "b",
+                        "createdTime": 2,
+                        "createdFromTemplate": "ImmutableTestStream",
+                        "type": "Immutable",
+                        "settings": {
+                            "lifecycle": {"retainedAfterSoftDelete": "P1D"},
+                            "limits": {
+                                "maxRecordsTotal": {"provisioned": 1000.0},
+                                "maxGigaBytesTotal": {"provisioned": 1.0},
+                            },
+                        },
+                    }
+                ]
+            },
+        )
         tpl = StreamTemplateWriteSettings(StreamTemplate("ImmutableTestStream"))
         a = StreamWrite("a", tpl)
         b = StreamWrite("b", tpl)
-        with pytest.raises(ValueError, match="exactly one"):
-            cognite_client.streams.create([a, b])
+        out = cognite_client.streams.create([a, b])
+        requests = httpx_mock.get_requests()
+        assert isinstance(out, StreamList)
+        assert [stream.external_id for stream in out] == ["a", "b"]
+        assert len(requests) == 2
+        assert [jsgz_load(request.content) for request in requests] == [
+            {"items": [{"externalId": "a", "settings": {"template": {"name": "ImmutableTestStream"}}}]},
+            {"items": [{"externalId": "b", "settings": {"template": {"name": "ImmutableTestStream"}}}]},
+        ]
 
-    def test_delete_rejects_multiple_items(self, cognite_client: CogniteClient) -> None:
-        from cognite.client.data_classes.streams import StreamDeleteItem
-
-        with pytest.raises(ValueError, match="exactly one"):
-            cognite_client.streams.delete([StreamDeleteItem("a"), StreamDeleteItem("b")])
+    def test_delete_chunks_multiple_items(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        streams_base_url: str,
+    ) -> None:
+        httpx_mock.add_response(method="POST", url=re.compile(re.escape(streams_base_url) + r"/delete$"), json={})
+        httpx_mock.add_response(method="POST", url=re.compile(re.escape(streams_base_url) + r"/delete$"), json={})
+        cognite_client.streams.delete(["a", "b"])
+        requests = httpx_mock.get_requests()
+        assert len(requests) == 2
+        assert [jsgz_load(request.content) for request in requests] == [
+            {"items": [{"externalId": "a"}]},
+            {"items": [{"externalId": "b"}]},
+        ]

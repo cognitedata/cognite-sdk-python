@@ -1,6 +1,5 @@
 from cognite.client.data_classes.streams.stream import (
     Stream,
-    StreamDeleteItem,
     StreamLifecycleSettings,
     StreamLimit,
     StreamLimitSettings,
@@ -13,7 +12,6 @@ from cognite.client.data_classes.streams.stream import (
 
 __all__ = [
     "Stream",
-    "StreamDeleteItem",
     "StreamLifecycleSettings",
     "StreamLimit",
     "StreamLimitSettings",

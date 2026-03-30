@@ -8,6 +8,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     ExternalIDTransformerMixin,
+    WriteableCogniteResource,
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
@@ -192,7 +193,7 @@ def _parse_stream_write_settings(raw: dict[str, Any]) -> StreamTemplateWriteSett
     return raw
 
 
-class StreamWrite(CogniteResource):
+class StreamWrite(WriteableCogniteResource["StreamWrite"]):
     """Request item for creating a stream (``StreamRequestItem``)."""
 
     def __init__(
@@ -218,17 +219,5 @@ class StreamWrite(CogniteResource):
         out = {"external_id": self.external_id, "settings": settings_dumped}
         return convert_all_keys_to_camel_case(out) if camel_case else out
 
-
-class StreamDeleteItem(CogniteResource):
-    """Identifier for ``POST /streams/delete``."""
-
-    def __init__(self, external_id: str) -> None:
-        self.external_id = external_id
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(external_id=resource["externalId"])
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        out = {"external_id": self.external_id}
-        return convert_all_keys_to_camel_case(out) if camel_case else out
+    def as_write(self) -> Self:
+        return self

@@ -208,7 +208,6 @@ from cognite.client.data_classes.shared import (
 )
 from cognite.client.data_classes.streams import (
     Stream,
-    StreamDeleteItem,
     StreamLifecycleSettings,
     StreamLimit,
     StreamLimitSettings,
@@ -500,7 +499,6 @@ __all__ = [
     "SourceFile",
     "StatusCode",
     "Stream",
-    "StreamDeleteItem",
     "StreamLifecycleSettings",
     "StreamLimit",
     "StreamLimitSettings",
