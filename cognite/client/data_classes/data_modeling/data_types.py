@@ -48,6 +48,8 @@ class DirectRelationReference:
             return None
         return cls.load(data)
 
+    load_if = _load_if  # DirectRelationReference has no private load method, so these are the same
+
     def as_tuple(self) -> tuple[str, str]:
         return self.space, self.external_id
 
