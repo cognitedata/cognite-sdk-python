@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api.simulators.models_revisions import SimulatorModelRevisionsAPI
@@ -19,13 +19,13 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class SimulatorModelsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/models"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.revisions = SimulatorModelRevisionsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
@@ -35,7 +35,7 @@ class SimulatorModelsAPI(APIClient):
         self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 1
 
-    def list(
+    async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
@@ -55,24 +55,26 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
             List simulator models:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.models.list(limit=10)
+
+            Iterate over simulator models, one-by-one:
+                >>> for model in client.simulators.models():
+                ...     model  # do something with the simulator model
 
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> res = client.simulators.models.list(
                 ...     simulator_external_ids=["simulator_external_id"],
-                ...     sort=PropertySort(
-                ...         property="createdTime",
-                ...         order="asc"
-                ...     )
+                ...     sort=PropertySort(property="createdTime", order="asc"),
                 ... )
 
         """
         model_filter = SimulatorModelsFilter(simulator_external_ids=simulator_external_ids)
         self._warning.warn()
-        return self._list(
+        return await self._list(
             method="POST",
             limit=limit,
             resource_cls=SimulatorModel,
@@ -82,18 +84,18 @@ class SimulatorModelsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, *, ids: int) -> SimulatorModel | None: ...
+    async def retrieve(self, *, ids: int) -> SimulatorModel | None: ...
 
     @overload
-    def retrieve(self, *, external_ids: str) -> SimulatorModel | None: ...
+    async def retrieve(self, *, external_ids: str) -> SimulatorModel | None: ...
 
     @overload
-    def retrieve(self, *, ids: Sequence[int]) -> SimulatorModelList: ...
+    async def retrieve(self, *, ids: Sequence[int]) -> SimulatorModelList: ...
 
     @overload
-    def retrieve(self, *, external_ids: SequenceNotStr[str]) -> SimulatorModelList: ...
+    async def retrieve(self, *, external_ids: SequenceNotStr[str]) -> SimulatorModelList: ...
 
-    def retrieve(
+    async def retrieve(
         self,
         *,
         ids: int | Sequence[int] | None = None,
@@ -112,15 +114,16 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
             Get simulator model by id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.models.retrieve(ids=1)
 
             Get simulator model by external id:
                 >>> res = client.simulators.models.retrieve(external_ids="model_external_id")
 
             Get multiple simulator models by ids:
-                >>> res = client.simulators.models.retrieve(ids=[1,2])
+                >>> res = client.simulators.models.retrieve(ids=[1, 2])
 
             Get multiple simulator models by external ids:
                 >>> res = client.simulators.models.retrieve(
@@ -129,21 +132,11 @@ class SimulatorModelsAPI(APIClient):
         """
         self._warning.warn()
 
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
         )
-
-    def __iter__(self) -> Iterator[SimulatorModel]:
-        """Iterate over simulator models
-
-        Fetches simulator models as they are iterated over, so you keep a limited number of simulator models in memory.
-
-        Returns:
-            Iterator[SimulatorModel]: yields Simulator model one by one.
-        """
-        return self()
 
     @overload
     def __call__(
@@ -152,7 +145,7 @@ class SimulatorModelsAPI(APIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         sort: PropertySort | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorModel]: ...
+    ) -> AsyncIterator[SimulatorModel]: ...
 
     @overload
     def __call__(
@@ -161,15 +154,15 @@ class SimulatorModelsAPI(APIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         sort: PropertySort | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorModelList]: ...
+    ) -> AsyncIterator[SimulatorModelList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         sort: PropertySort | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorModel] | Iterator[SimulatorModelList]:
+    ) -> AsyncIterator[SimulatorModel] | AsyncIterator[SimulatorModelList]:
         """Iterate over simulator simulator models
 
         Fetches simulator models as they are iterated over, so you keep a limited number of simulator models in memory.
@@ -180,11 +173,11 @@ class SimulatorModelsAPI(APIClient):
             sort (PropertySort | None): The criteria to sort by.
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
-        Returns:
-            Iterator[SimulatorModel] | Iterator[SimulatorModelList]: yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
-        """
+        Yields:
+            SimulatorModel | SimulatorModelList: yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
+        """  # noqa: DOC404
         model_filter = SimulatorModelsFilter(simulator_external_ids=simulator_external_ids)
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             method="POST",
@@ -192,15 +185,18 @@ class SimulatorModelsAPI(APIClient):
             sort=[PropertySort.load(sort).dump()] if sort else None,
             chunk_size=chunk_size,
             limit=limit,
-        )
+        ):
+            yield item
 
     @overload
-    def create(self, items: SimulatorModelWrite) -> SimulatorModel: ...
+    async def create(self, items: SimulatorModelWrite) -> SimulatorModel: ...
 
     @overload
-    def create(self, items: Sequence[SimulatorModelWrite]) -> SimulatorModelList: ...
+    async def create(self, items: Sequence[SimulatorModelWrite]) -> SimulatorModelList: ...
 
-    def create(self, items: SimulatorModelWrite | Sequence[SimulatorModelWrite]) -> SimulatorModel | SimulatorModelList:
+    async def create(
+        self, items: SimulatorModelWrite | Sequence[SimulatorModelWrite]
+    ) -> SimulatorModel | SimulatorModelList:
         """`Create simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
 
         Args:
@@ -214,21 +210,28 @@ class SimulatorModelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators import SimulatorModelWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> models = [
                 ...     SimulatorModelWrite(
-                ...         name="model1", simulator_external_id="sim1", type="SteadyState",
-                ...         data_set_id=1, external_id="model_external_id"
+                ...         name="model1",
+                ...         simulator_external_id="sim1",
+                ...         type="SteadyState",
+                ...         data_set_id=1,
+                ...         external_id="model_external_id",
                 ...     ),
                 ...     SimulatorModelWrite(
-                ...         name="model2", simulator_external_id="sim2", type="SteadyState",
-                ...         data_set_id=2, external_id="model_external_id2"
-                ...     )
+                ...         name="model2",
+                ...         simulator_external_id="sim2",
+                ...         type="SteadyState",
+                ...         data_set_id=2,
+                ...         external_id="model_external_id2",
+                ...     ),
                 ... ]
                 >>> res = client.simulators.models.create(models)
         """
         assert_type(items, "simulator_model", [SimulatorModelWrite, Sequence])
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             items=items,
@@ -236,7 +239,7 @@ class SimulatorModelsAPI(APIClient):
             resource_path=self._RESOURCE_PATH,
         )
 
-    def delete(
+    async def delete(
         self,
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
@@ -249,29 +252,30 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
             Delete simulator models by id or external id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
-                >>> client.simulators.models.delete(ids=[1,2,3], external_ids="model_external_id")
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> client.simulators.models.delete(ids=[1, 2, 3], external_ids="model_external_id")
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             wrap_ids=True,
             resource_path=self._RESOURCE_PATH,
         )
 
     @overload
-    def update(
+    async def update(
         self,
         items: Sequence[SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate],
     ) -> SimulatorModelList: ...
 
     @overload
-    def update(
+    async def update(
         self,
         items: SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate,
     ) -> SimulatorModel: ...
 
-    def update(
+    async def update(
         self,
         items: SimulatorModel
         | SimulatorModelWrite
@@ -288,12 +292,13 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
             Update a simulator model that you have fetched. This will perform a full update of the model:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> model = client.simulators.models.retrieve(external_ids="model_external_id")
                 >>> model.name = "new_name"
                 >>> res = client.simulators.models.update(model)
         """
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=SimulatorModelList, resource_cls=SimulatorModel, update_cls=SimulatorModelUpdate, items=items
         )

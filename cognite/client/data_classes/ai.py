@@ -34,7 +34,7 @@ class Summary:
         summary (str): The textual summary of the document
         id (int | None): The id of the document
         external_id (str | None): The external id of the document
-        instance_id (NodeId| None): The instance id of the document
+        instance_id (NodeId | None): The instance id of the document
     """
 
     summary: str
@@ -48,7 +48,7 @@ class Summary:
             summary=data["summary"],
             id=data.get("id"),
             external_id=data.get("externalId"),
-            instance_id=NodeId.load(data["instanceId"]) if "instanceId" in data else None,
+            instance_id=NodeId._load_if(data.get("instanceId")),
         )
 
 
@@ -117,7 +117,7 @@ class AnswerReference:
         return cls(
             file_id=data["fileId"],
             external_id=data.get("externalId"),
-            instance_id=NodeId.load(data["instanceId"]) if "instanceId" in data else None,
+            instance_id=NodeId._load_if(data.get("instanceId")),
             file_name=data["fileName"],
             locations=[AnswerLocation._load(d) for d in data.get("locations", [])],
         )
@@ -136,7 +136,7 @@ class AnswerContent:
 
     Args:
         text (str): The extracted plain text
-        content (list[AnswerReference]): The list of references
+        references (list[AnswerReference]): The list of references.
     """
 
     text: str

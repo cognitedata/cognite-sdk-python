@@ -4,9 +4,8 @@ import re
 from collections import defaultdict
 from doctest import DocTestParser, Example
 
-from cognite.client import ClientConfig
+from cognite.client import ClientConfig, CogniteClient
 from cognite.client._api_client import APIClient
-from cognite.client.beta import CogniteClient
 from cognite.client.credentials import Token
 
 
@@ -19,7 +18,7 @@ def collect_apis(obj, done):
     return apis + sub
 
 
-client = CogniteClient(ClientConfig(project="_", client_name="_", credentials=Token("_")))
+client = CogniteClient(ClientConfig(project="_", client_name="_", cluster="_", credentials=Token("_")))
 parser = DocTestParser()
 
 apis = collect_apis(client, {})
@@ -38,7 +37,7 @@ duplicate_operations = {
 for api_name, api in apis:
     for fun_name, fun in inspect.getmembers(api, predicate=inspect.ismethod):
         docstring = fun.__doc__ or ""
-        match_link_openapi = re.match("`.* <.*?/operation/(.*)>`_", docstring.strip().split("\n")[0])
+        match_link_openapi = re.match(r"`.* <.*?/operation/(.*)>`_", docstring.strip().split("\n")[0])
         if api_name[0] != "_" and fun_name[0] != "_" and match_link_openapi:
             openapi_ident = match_link_openapi[1]
             parsed_lines = parser.parse(fun.__doc__)

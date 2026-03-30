@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import random
 
 import pytest
 
-from cognite.client.data_classes._base import UnknownCogniteObject
+from cognite.client.data_classes._base import UnknownCogniteResource
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
     Enum,
@@ -63,7 +65,7 @@ class TestPropertyType:
         loaded = PropertyType.load(data)
         dumped = loaded.dump(camel_case=True)
 
-        assert not isinstance(loaded, UnknownCogniteObject)
+        assert not isinstance(loaded, UnknownCogniteResource)
         assert data == dumped
 
     def test_load_ignore_unknown_properties(self) -> None:
@@ -75,7 +77,7 @@ class TestPropertyType:
     def test_load_dump_unknown_property(self) -> None:
         data = {"type": "unknowngibberish", "list": True, "unit": {"externalId": "known"}}
         obj = PropertyType.load(data)
-        assert isinstance(obj, UnknownCogniteObject)
+        assert isinstance(obj, UnknownCogniteResource)
         actual = obj.dump(camel_case=True)
         assert data == actual
 

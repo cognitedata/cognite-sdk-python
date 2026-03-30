@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 from pathlib import Path
 
@@ -7,18 +9,18 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
+    CogniteResourceListWithClientRef,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
     InternalIdTransformerMixin,
 )
 from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
 from cognite.client.data_classes.principals import PrincipalList
+from cognite.client.utils._url import NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN
 from tests.utils import all_concrete_subclasses, all_subclasses
 
-ALL_FILEPATHS = Path("cognite/client/").rglob("*.py")
 
-
-def test_assert_no_root_init_file():
+def test_assert_no_root_init_file() -> None:
     # We have an implicit namespace package under the namespace package directory: 'cognite'.
 
     # From: https://packaging.python.org/en/latest/guides/packaging-namespace-packages/#native-namespace-packages
@@ -29,12 +31,12 @@ def test_assert_no_root_init_file():
 
 
 @pytest.mark.parametrize("cls", [CogniteResource, CogniteResourceList])
-def test_ensure_all_to_pandas_methods_use_snake_case(cls):
+def test_ensure_all_to_pandas_methods_use_snake_case(cls: type) -> None:
     err_msg = "Class: '{}' for method to_pandas does not default camel_case parameter to False."
     for sub_cls in all_subclasses(cls):
         if not (cls_method := getattr(sub_cls, "to_pandas", False)):
             continue
-        if param := inspect.signature(cls_method).parameters.get("camel_case"):
+        if param := inspect.signature(cls_method).parameters.get("camel_case"):  # type: ignore[arg-type]
             assert param.default is False, err_msg.format(sub_cls.__name__)
 
 
@@ -44,10 +46,12 @@ def test_ensure_all_to_pandas_methods_use_snake_case(cls):
         list_cls
         # Principal list .as_ids() returns a list of strings and not integers,
         # so we skip the check for it.
-        for list_cls in all_concrete_subclasses(CogniteResourceList, exclude={PrincipalList})
+        for list_cls in all_concrete_subclasses(
+            CogniteResourceList, exclude={PrincipalList, CogniteResourceListWithClientRef}
+        )
     ],
 )
-def test_ensure_identifier_mixins(lst_cls):
+def test_ensure_identifier_mixins(lst_cls: type[CogniteResourceList]) -> None:
     # TODO: Data Modeling uses "as_ids()" even though existing classes use the same for "integer internal ids"
     if "data_modeling" in str(lst_cls):
         return
@@ -75,7 +79,7 @@ def test_ensure_identifier_mixins(lst_cls):
 
 @pytest.fixture(scope="session")
 def apis_matching_non_idempotent_POST_regex() -> set[str]:
-    regex = APIClient._NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN
+    regex = NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN
     return {part.removeprefix("^/").removeprefix("(").split("/")[0] for part in regex.pattern.split("|")}
 
 
@@ -90,15 +94,15 @@ def test_POST_endpoint_idempotency_vs_retries(api: str, apis_matching_non_idempo
     # Answer the following:
     # Is this new API fully idempotent, i.e. can all its POST endpoints be safely retried automatically?
     # if yes  -> add the url base path allow list below.
-    # if no -> look up '_NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN' and add a regex for the relevant url path(s)
+    # if no -> look up 'NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN' and add a regex for the relevant url path(s)
     # ... but always(!): add tests to TestRetryableEndpoints!
     idempotent_api_allow_list = {
         "groups",
+        "limits",
         "models",
         "principals",
         "securitycategories",
         "sessions",  # TODO: Review this with the sessions team
-        "templategroups",  # Won't do: Deprecated API. TODO: remove when we remove the templates API
         "workflows",
         "units",
     }
@@ -109,11 +113,20 @@ def test_POST_endpoint_idempotency_vs_retries(api: str, apis_matching_non_idempo
         pytest.fail(
             f"API '{api}' is treated as a fully idempotent API, but it's not whitelisted as idempotent."
             "If all the POST endpoints of this API are idempotent, you can whitelist it. If not you'll need to match"
-            "the endpoints in _NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN and add tests to TestRetryableEndpoints!"
+            "the endpoints in NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN and add tests to TestRetryableEndpoints!"
         )
     if not treated_as_idempotent and is_whitelisted_as_idempotent:
         pytest.fail(
             f"API '{api}' matches the non-idempotent regex, but it's also whitelisted as idempotent. "
             "You'll need to either remove it from the whitelist or from "
-            "_NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN."
+            "NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN."
         )
+
+
+def test_constants_are_importable() -> None:
+    # Extractor utils using extractor_extensions/v1.py has a legit use case for needing the OMITTED singleton.
+    # Thus this test is here to ensure we don't accidentally move it or break it.
+    # Do not change this test without doing new major version release!!
+    from cognite.client._constants import OMITTED, Omitted
+
+    assert isinstance(OMITTED, Omitted)

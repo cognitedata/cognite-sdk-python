@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import overload
+from typing import Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -13,34 +13,44 @@ from cognite.client.utils._identifier import IdentifierSequence
 class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SecurityCategoryList:
+    async def list(
+        self, limit: int | None = DEFAULT_LIMIT_READ, sort: Literal["ASC", "DESC"] = "ASC"
+    ) -> SecurityCategoryList:
         """`List security categories. <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:
             limit (int | None): Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            sort (Literal['ASC', 'DESC']): Sort order of the security categories. Defaults to "ASC".
 
         Returns:
             SecurityCategoryList: List of security categories
 
         Example:
 
-            List security categories::
+            List security categories:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.security_categories.list()
         """
-        return self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
+        return await self._list(
+            list_cls=SecurityCategoryList,
+            resource_cls=SecurityCategory,
+            method="GET",
+            limit=limit,
+            other_params={"sort": sort.upper()},
+        )
 
     @overload
-    def create(self, security_category: SecurityCategory | SecurityCategoryWrite) -> SecurityCategory: ...
+    async def create(self, security_category: SecurityCategory | SecurityCategoryWrite) -> SecurityCategory: ...
 
     @overload
-    def create(
+    async def create(
         self, security_category: Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]
     ) -> SecurityCategoryList: ...
 
-    def create(
+    async def create(
         self,
         security_category: SecurityCategory
         | SecurityCategoryWrite
@@ -62,17 +72,18 @@ class SecurityCategoriesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SecurityCategoryWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> my_category = SecurityCategoryWrite(name="My Category")
                 >>> res = client.iam.security_categories.create(my_category)
         """
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SecurityCategoryList,
             resource_cls=SecurityCategory,
             items=security_category,
             input_resource_cls=SecurityCategoryWrite,
         )
 
-    def delete(self, id: int | Sequence[int]) -> None:
+    async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more security categories. <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/deleteSecurityCategories>`_
 
         Args:
@@ -82,8 +93,9 @@ class SecurityCategoriesAPI(APIClient):
 
             Delete security category::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.iam.security_categories.delete(1)
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
+        await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)

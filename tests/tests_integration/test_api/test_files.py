@@ -1,5 +1,9 @@
+from __future__ import annotations
+
 import time
 import uuid
+from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 
@@ -16,10 +20,11 @@ from cognite.client.data_classes import (
     Geometry,
     GeometryFilter,
     Label,
-    LabelDefinition,
+    LabelDefinitionWrite,
 )
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFileApply
 from cognite.client.utils._text import random_string
+from tests.utils import get_or_raise
 
 
 def await_file_upload(client: CogniteClient, file_id: int | list[int]) -> None:
@@ -35,13 +40,13 @@ def await_file_upload(client: CogniteClient, file_id: int | list[int]) -> None:
 
 
 @pytest.fixture(scope="class")
-def mock_geo_location():
+def mock_geo_location() -> GeoLocation:
     geometry = Geometry(type="LineString", coordinates=[[30, 10], [10, 30], [40, 40]])
-    yield GeoLocation(type="Feature", geometry=geometry, properties=dict())
+    return GeoLocation(type="Feature", geometry=geometry, properties=dict())
 
 
 @pytest.fixture(scope="class")
-def new_file(cognite_client):
+def new_file(cognite_client: CogniteClient) -> Iterator[FileMetadata]:
     res = cognite_client.files.upload_bytes(content="blabla", name="myspecialfile", directory="/foo/bar/baz")
     await_file_upload(cognite_client, res.id)
     yield res
@@ -50,7 +55,7 @@ def new_file(cognite_client):
 
 
 @pytest.fixture(scope="class")
-def empty_file(cognite_client):
+def empty_file(cognite_client: CogniteClient) -> Iterator[FileMetadata]:
     name = "empty_" + random_string(10)
     res = cognite_client.files.upload_bytes(content=b"", name=name, external_id=name)
     await_file_upload(cognite_client, res.id)
@@ -59,7 +64,7 @@ def empty_file(cognite_client):
 
 
 @pytest.fixture(scope="class")
-def new_file_with_geo_location(mock_geo_location, cognite_client):
+def new_file_with_geo_location(mock_geo_location: GeoLocation, cognite_client: CogniteClient) -> Iterator[FileMetadata]:
     res = cognite_client.files.upload_bytes(content="blabla", name="geo_locationFile", geo_location=mock_geo_location)
     await_file_upload(cognite_client, res.id)
     yield res
@@ -68,9 +73,9 @@ def new_file_with_geo_location(mock_geo_location, cognite_client):
 
 
 @pytest.fixture(scope="class")
-def new_file_with_label(cognite_client):
+def new_file_with_label(cognite_client: CogniteClient) -> Iterator[tuple[FileMetadata, str]]:
     label_external_id = uuid.uuid4().hex[0:20]
-    label = cognite_client.labels.create(LabelDefinition(external_id=label_external_id, name="mandatory"))
+    label = cognite_client.labels.create(LabelDefinitionWrite(external_id=label_external_id, name="mandatory"))
     file = cognite_client.files.upload_bytes(
         content="blabla",
         name="myspecialfile",
@@ -127,7 +132,9 @@ def big_txt(cognite_client: CogniteClient) -> FileMetadata:
 
 
 @pytest.fixture(scope="class")
-def test_files(cognite_client, abc_files: FileMetadataList, big_txt: FileMetadata) -> dict[str, FileMetadata]:
+def test_files(
+    cognite_client: CogniteClient, abc_files: FileMetadataList, big_txt: FileMetadata
+) -> dict[str, FileMetadata]:
     return {f.name: f for f in [*abc_files, big_txt]}
 
 
@@ -135,34 +142,34 @@ A_WHILE_AGO = {"max": int(time.time() - 1800) * 1000}
 
 
 class TestFilesAPI:
-    def test_create(self, cognite_client):
-        file_metadata = FileMetadata(name="mytestfile")
+    def test_create(self, cognite_client: CogniteClient) -> None:
+        file_metadata = FileMetadataWrite(name="mytestfile")
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         assert returned_file_metadata.uploaded is False
         cognite_client.files.delete(id=returned_file_metadata.id)
 
-    def test_create_with_geo_location(self, cognite_client, mock_geo_location):
-        file_metadata = FileMetadata(name="mytestfile", geo_location=mock_geo_location)
+    def test_create_with_geo_location(self, cognite_client: CogniteClient, mock_geo_location: GeoLocation) -> None:
+        file_metadata = FileMetadataWrite(name="mytestfile", geo_location=mock_geo_location)
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         assert returned_file_metadata.uploaded is False
         assert returned_file_metadata.geo_location == mock_geo_location
         cognite_client.files.delete(id=returned_file_metadata.id)
 
     @pytest.mark.usefixtures("big_txt")
-    def test_retrieve(self, cognite_client):
+    def test_retrieve(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.files.list(name="big.txt", limit=1)
         assert res[0] == cognite_client.files.retrieve(res[0].id)
 
-    def test_retrieve_multiple(self, cognite_client):
+    def test_retrieve_multiple(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.files.list(uploaded_time=A_WHILE_AGO, limit=2)
         assert res == cognite_client.files.retrieve_multiple([f.id for f in res])
 
-    def test_retrieve_multiple_ignore_unknown_ids(self, cognite_client):
+    def test_retrieve_multiple_ignore_unknown_ids(self, cognite_client: CogniteClient) -> None:
         assert [] == cognite_client.files.retrieve_multiple(
             external_ids=["this file doesn't exist"], ignore_unknown_ids=True
         )
 
-    def test_retrieve_download_urls(self, cognite_client):
+    def test_retrieve_download_urls(self, cognite_client: CogniteClient) -> None:
         try:
             f1 = cognite_client.files.upload_bytes(b"f1", external_id=random_string(10), name="bla")
             f2 = cognite_client.files.upload_bytes(b"f2", external_id=random_string(10), name="bla")
@@ -170,11 +177,11 @@ class TestFilesAPI:
             download_links = cognite_client.files.retrieve_download_urls(id=f1.id, external_id=f2.external_id)
             assert len(download_links.values()) == 2
             assert download_links[f1.id].startswith("http")
-            assert download_links[f2.external_id].startswith("http")
+            assert download_links[get_or_raise(f2.external_id)].startswith("http")
         finally:
             cognite_client.files.delete(id=[f1.id, f2.id], ignore_unknown_ids=True)
 
-    def test_retrieve_download_urls_with_extended_expiration(self, cognite_client):
+    def test_retrieve_download_urls_with_extended_expiration(self, cognite_client: CogniteClient) -> None:
         try:
             f1 = cognite_client.files.upload_bytes(b"f1", external_id=random_string(10), name="bla")
             f2 = cognite_client.files.upload_bytes(b"f2", external_id=random_string(10), name="bla")
@@ -184,28 +191,34 @@ class TestFilesAPI:
             )
             assert len(download_links.values()) == 2
             assert download_links[f1.id].startswith("http")
-            assert download_links[f2.external_id].startswith("http")
+            assert download_links[get_or_raise(f2.external_id)].startswith("http")
         finally:
             cognite_client.files.delete(id=[f1.id, f2.id], ignore_unknown_ids=True)
 
-    def test_list(self, cognite_client):
+    def test_list(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.files.list(limit=4)
         assert 4 == len(res)
 
-    def test_aggregate(self, cognite_client):
-        res = cognite_client.files.aggregate(filter=FileMetadataFilter(name="big.txt"))
-        assert res[0].count > 0
+    def test_aggregate(self, cognite_client: CogniteClient) -> None:
+        res = cognite_client.files.aggregate_count(filter=FileMetadataFilter(name="big.txt"))
+        assert res > 0
 
-    def test_search(self, cognite_client):
+    def test_search(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.files.search(name="big.txt", filter=FileMetadataFilter(created_time={"min": 0}))
         assert len(res) > 0
 
-    def test_update(self, cognite_client, new_file):
+    def test_update(self, cognite_client: CogniteClient, new_file: FileMetadata) -> None:
         update_file = FileMetadataUpdate(new_file.id).metadata.set({"bla": "bla"})
         res = cognite_client.files.update(update_file)
         assert {"bla": "bla"} == res.metadata
 
-    def test_download_multiple__name_conflict(self, tmp_path, cognite_client, new_file, new_file_with_label):
+    def test_download_multiple__name_conflict(
+        self,
+        tmp_path: Path,
+        cognite_client: CogniteClient,
+        new_file: FileMetadata,
+        new_file_with_label: tuple[FileMetadata, str],
+    ) -> None:
         new_file2 = new_file_with_label[0]
         assert new_file.directory is not None
         assert new_file2.directory is None
@@ -221,9 +234,9 @@ class TestFilesAPI:
         assert len(downloaded) == 1  # On name conflict, only 1 survive
         assert downloaded[0].stem == new_file.name
 
-    def test_update_directory(self, cognite_client, new_file):
+    def test_update_directory(self, cognite_client: CogniteClient, new_file: FileMetadata) -> None:
         dir = "/some/directory"
-        res = cognite_client.files.update(FileMetadata(id=new_file.id, directory=dir))
+        res = cognite_client.files.update(FileMetadataUpdate(id=new_file.id).directory.set(dir))
         assert res.directory == dir
 
     def test_download(self, cognite_client: CogniteClient, test_files: dict[str, FileMetadata]) -> None:
@@ -231,10 +244,10 @@ class TestFilesAPI:
         res = cognite_client.files.download_bytes(id=test_file.id)
         assert b"a" == res
 
-    def test_download_new_file(self, cognite_client, new_file):
+    def test_download_new_file(self, cognite_client: CogniteClient, new_file: FileMetadata) -> None:
         assert b"blabla" == cognite_client.files.download_bytes(id=new_file.id)
 
-    def test_download_empty_file(self, cognite_client, empty_file, tmp_path):
+    def test_download_empty_file(self, cognite_client: CogniteClient, empty_file: FileMetadata, tmp_path: Path) -> None:
         content = cognite_client.files.download_bytes(external_id=empty_file.external_id)
         assert content == b""
         cognite_client.files.download(directory=tmp_path, external_id=empty_file.external_id)
@@ -242,13 +255,18 @@ class TestFilesAPI:
         tmp_file = tmp_path / empty_file.name
         cognite_client.files.download_to_path(path=tmp_file, external_id=empty_file.external_id)
 
-    def test_retrieve_file_with_labels(self, cognite_client, new_file_with_label):
+    def test_retrieve_file_with_labels(
+        self, cognite_client: CogniteClient, new_file_with_label: tuple[FileMetadata, str]
+    ) -> None:
         file, label_external_id = new_file_with_label
         res = cognite_client.files.retrieve(id=file.id)
-        assert len(res.labels) == 1
-        assert res.labels[0].external_id == label_external_id
+        assert res
+        assert len(res.labels or []) == 1
+        assert (res.labels or [])[0].external_id == label_external_id
 
-    def test_filter_file_on_geo_location(self, cognite_client, new_file_with_geo_location):
+    def test_filter_file_on_geo_location(
+        self, cognite_client: CogniteClient, new_file_with_geo_location: FileMetadata
+    ) -> None:
         geometry_filter = GeometryFilter(type="Point", coordinates=[30, 10])
         geo_location_filter = GeoLocationFilter(relation="intersects", shape=geometry_filter)
         await_file_upload(cognite_client, new_file_with_geo_location.id)
@@ -273,13 +291,12 @@ class TestFilesAPI:
         retrieved_content = cognite_client.files.download_bytes(external_id=external_id)
         assert retrieved_content == content.encode("utf-8")
 
-    @pytest.mark.skip("Ticket DOGE-110: This test is flaky and needs to be fixed")
-    def test_upload_multipart(self, cognite_client: CogniteClient) -> None:
+    def test_upload_multipart(self, cognite_client: CogniteClient, os_and_py_version: str) -> None:
         # Min file chunk size is 5MiB
         content_1 = "abcde" * 1_200_000
         content_2 = "fghij"
 
-        external_id = "test_upload_multipart"
+        external_id = f"test_upload_multipart_{os_and_py_version}"
 
         with cognite_client.files.multipart_upload_session(
             name="test_multipart.txt",
@@ -298,13 +315,13 @@ class TestFilesAPI:
 
         cognite_client.files.delete(session.file_metadata.id)
 
-    def test_upload_content_error_modes(self, cognite_client, tmp_path):
+    def test_upload_content_error_modes(self, cognite_client: CogniteClient, tmp_path: Path) -> None:
         with pytest.raises(IsADirectoryError):
-            cognite_client.files.upload_content(str(tmp_path))
+            cognite_client.files.upload_content(tmp_path)
 
         missing_file = tmp_path / "does_not_exist.txt"
         with pytest.raises(FileNotFoundError):
-            cognite_client.files.upload_content(str(missing_file))
+            cognite_client.files.upload_content(missing_file)
 
     def test_create_retrieve_update_delete_with_instance_id(
         self, cognite_client: CogniteClient, instance_id_test_space: str
@@ -329,7 +346,7 @@ class TestFilesAPI:
             await_file_upload(cognite_client, f1.id)
             download_links = cognite_client.files.retrieve_download_urls(instance_id=instance_id)
             assert len(download_links.values()) == 1
-            assert download_links[f1.instance_id].startswith("http")
+            assert download_links[get_or_raise(f1.instance_id)].startswith("http")
 
             content_1 = "abcde" * 1_200_000
             content_2 = "fghij"
@@ -344,7 +361,10 @@ class TestFilesAPI:
             assert retrieved is not None
             assert retrieved.instance_id == instance_id
 
-            update_writable = retrieved.as_write()
+            with pytest.raises(ValueError, match=r"cannot be created via the Files API"):
+                retrieved.as_write()
+
+            update_writable = retrieved
             update_writable.metadata = {"a": "b"}
             update_writable.external_id = exernal_id + "updated"
             updated_writable = cognite_client.files.update(update_writable)
@@ -354,12 +374,12 @@ class TestFilesAPI:
             updated = cognite_client.files.update(FileMetadataUpdate(instance_id=instance_id).metadata.add({"c": "d"}))
             assert updated.metadata == {"a": "b", "c": "d"}
 
-            retrieved = cognite_client.files.retrieve_multiple(instance_ids=[instance_id])
-            assert retrieved.dump() == [updated.dump()]
+            retrieved_list = cognite_client.files.retrieve_multiple(instance_ids=[instance_id])
+            assert retrieved_list.dump() == [updated.dump()]
         finally:
             cognite_client.data_modeling.instances.delete(nodes=instance_id)
 
     def test_create_delete_ignore_unknown_ids(self, cognite_client: CogniteClient) -> None:
-        file_metadata = FileMetadata(name="mytestfile")
+        file_metadata = FileMetadataWrite(name="mytestfile")
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         cognite_client.files.delete(id=[returned_file_metadata.id, 1], ignore_unknown_ids=True)

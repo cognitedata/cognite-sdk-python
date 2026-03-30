@@ -3,21 +3,19 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, TypeVar, cast
+from typing import Any, ClassVar, Literal, Protocol, TypeVar, cast
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteObject
+from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._identifier import (
     DataModelingIdentifier,
     DataModelingIdentifierSequence,
     InstanceId,
+    _resolve_data_modeling_id,
 )
 from cognite.client.utils._text import convert_all_keys_recursive
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 
 @dataclass(frozen=True)
@@ -47,11 +45,18 @@ class DataModelingId(AbstractDataclass):
     def load(cls: type[T_DataModelingId], data: dict | T_DataModelingId | tuple[str, str]) -> T_DataModelingId:
         if isinstance(data, cls):
             return data
-        elif isinstance(data, tuple):
-            return cls(space=data[0], external_id=data[1])
-        elif isinstance(data, dict):
-            return cls(space=data["space"], external_id=data["externalId"])
-        raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
+        space, xid, _ = _resolve_data_modeling_id(data, cls, allow_version=False)
+        return cls(space=space, external_id=xid)
+
+    @classmethod
+    def _load_if(
+        cls: type[T_DataModelingId], data: dict | T_DataModelingId | tuple[str, str] | None
+    ) -> T_DataModelingId | None:
+        if data is None:
+            return None
+        return cls.load(data)
+
+    load_if = _load_if  # DataModelingId has no private load method so these are the same
 
 
 T_DataModelingId = TypeVar("T_DataModelingId", bound=DataModelingId)
@@ -80,11 +85,19 @@ class VersionedDataModelingId(AbstractDataclass):
     ) -> T_Versioned_DataModeling_Id:
         if isinstance(data, cls):
             return data
-        elif isinstance(data, tuple):
-            return cls(space=data[0], external_id=data[1], version=data[2] if len(data) == 3 else None)
-        elif isinstance(data, dict):
-            return cls(space=data["space"], external_id=data["externalId"], version=data.get("version"))
-        raise TypeError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
+        space, xid, version = _resolve_data_modeling_id(data, cls, allow_version=True)
+        return cls(space=space, external_id=xid, version=version)
+
+    @classmethod
+    def _load_if(
+        cls: type[T_Versioned_DataModeling_Id],
+        data: dict | T_Versioned_DataModeling_Id | tuple[str, str] | tuple[str, str, str] | None,
+    ) -> T_Versioned_DataModeling_Id | None:
+        if data is None:
+            return None
+        return cls.load(data)
+
+    load_if = _load_if  # VersionedDataModelingId has no private load method so these are the same
 
 
 T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=VersionedDataModelingId)
@@ -135,12 +148,12 @@ class ViewId(VersionedDataModelingId):
 
 
 @dataclass(frozen=True)
-class PropertyId(CogniteObject):
+class PropertyId(CogniteResource):
     source: ViewId | ContainerId
     property: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             source=cls.__load_view_or_container_id(resource["source"]),
             property=resource["identifier"],

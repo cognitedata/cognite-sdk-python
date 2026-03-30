@@ -23,12 +23,18 @@ import re
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = "7.2"
+needs_sphinx = "8.1"
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.doctest", "sphinx.ext.napoleon", "sphinx.ext.autosectionlabel"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autosectionlabel",
+    "sphinx_copybutton",
+]
 
 autosectionlabel_prefix_document = True
 
@@ -46,7 +52,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "cognite-sdk"
-copyright = "2019, Cognite AS"
+copyright = "2017-%Y, Cognite AS"
 author = "Erlend Vollset"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -106,7 +112,7 @@ html_sidebars = {
 }
 
 html_favicon = "img/cognite_logo_black.png"
-html_logo = "img/cognite_logo_white.png"
+html_logo = "img/cognite_logo_white.svg"
 
 # -- Options for HTMLHelp output ------------------------------------------
 
