@@ -13,6 +13,40 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.93.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.92.0...cognite-sdk-python-v7.93.0) (2026-03-30)
+
+
+### Features
+
+* add client conversion methods (sync &lt;-&gt; async) ([#2520](https://github.com/cognitedata/cognite-sdk-python/issues/2520)) ([3343521](https://github.com/cognitedata/cognite-sdk-python/commit/33435211b26417cd4493e957101f3c7a0c10530c))
+* Add deprecation warning for Vision API ([#2469](https://github.com/cognitedata/cognite-sdk-python/issues/2469)) ([ea1b662](https://github.com/cognitedata/cognite-sdk-python/commit/ea1b662b1d252381dfc99d8737539e9119f91f11))
+* Add public `load_if` method ([#2526](https://github.com/cognitedata/cognite-sdk-python/issues/2526)) ([0b94aeb](https://github.com/cognitedata/cognite-sdk-python/commit/0b94aebc23151dc93668d9249c90cd7ffe1047b0))
+* **Datapoints:** add specialized datapoints classes ([#2508](https://github.com/cognitedata/cognite-sdk-python/issues/2508)) ([cf63e25](https://github.com/cognitedata/cognite-sdk-python/commit/cf63e259a5b3cd54ebd1af97140c2c069834d6b6))
+* **DatapointsAPI:** Add missing 'type' field to Datapoints[Array] data classes ([#2484](https://github.com/cognitedata/cognite-sdk-python/issues/2484)) ([d71698e](https://github.com/cognitedata/cognite-sdk-python/commit/d71698ec2d9f6679aab9c735a73b771edfcad7db))
+* **signals:** Add support for subscribeSignals ACL ([#2500](https://github.com/cognitedata/cognite-sdk-python/issues/2500)) ([3b7d0e8](https://github.com/cognitedata/cognite-sdk-python/commit/3b7d0e84d54811fd82bdc061bd719b788152c0cb))
+
+
+### Bug Fixes
+
+* add last_called to TIME_ATTRIBUTES for datetime rendering ([#2487](https://github.com/cognitedata/cognite-sdk-python/issues/2487)) ([8afd420](https://github.com/cognitedata/cognite-sdk-python/commit/8afd420272a71b14e0f70442fdb18b9addc78e0a))
+* add major version of the sdk to external id to avoid v7-v8 fight ([f95e69a](https://github.com/cognitedata/cognite-sdk-python/commit/f95e69abb7ba7330116b909d0d1f885567243434))
+* avoid flaky workflow execution list test by comparing IDs ([#2488](https://github.com/cognitedata/cognite-sdk-python/issues/2488)) ([8fb5f58](https://github.com/cognitedata/cognite-sdk-python/commit/8fb5f588c99662a734757ef9b8a82fd57c929897))
+* clean up stale workflows in tests using improved logic ([4c46470](https://github.com/cognitedata/cognite-sdk-python/commit/4c464703c9e81e0a67bbb117b187358782b11e0d))
+* handle invalid geo locations better ([#2529](https://github.com/cognitedata/cognite-sdk-python/issues/2529)) ([581086e](https://github.com/cognitedata/cognite-sdk-python/commit/581086ea44d6de6c1aaeef211fdbf70e973f318d))
+* handle invalid geo locations better ([#2540](https://github.com/cognitedata/cognite-sdk-python/issues/2540)) ([ef2ce47](https://github.com/cognitedata/cognite-sdk-python/commit/ef2ce478e6cef2301d7078865176c93ebcf48f03))
+* ordering issue in fast-fail when all tasks succeeds (e.g. retrieve) ([#2522](https://github.com/cognitedata/cognite-sdk-python/issues/2522)) ([c9fd42d](https://github.com/cognitedata/cognite-sdk-python/commit/c9fd42d84e822404281d810cc3b06bafbdd8e534))
+* streamlit running with pyodide ([#2513](https://github.com/cognitedata/cognite-sdk-python/issues/2513)) ([1519c45](https://github.com/cognitedata/cognite-sdk-python/commit/1519c45f3bfce4708d30fb56be442030b8e19b19))
+* task ordering bug in execute_async_tasks_with_fail_fast ([c484cda](https://github.com/cognitedata/cognite-sdk-python/commit/c484cda9a571d325acbebdc0798df80a0e36a50d))
+
+
+### Documentation
+
+* auto-format docstring examples using ruff (DM-3079) ([#2521](https://github.com/cognitedata/cognite-sdk-python/issues/2521)) ([d3a6ab3](https://github.com/cognitedata/cognite-sdk-python/commit/d3a6ab3572e04c5f676a6ac90c4b861648d0a63e))
+* Automatically update copyright years ([#2480](https://github.com/cognitedata/cognite-sdk-python/issues/2480)) ([298ccd6](https://github.com/cognitedata/cognite-sdk-python/commit/298ccd6102370cc704d0a62fe97759a3ddaa75a7))
+* change Cognite logo to svg ([#2544](https://github.com/cognitedata/cognite-sdk-python/issues/2544)) ([0dc0437](https://github.com/cognitedata/cognite-sdk-python/commit/0dc04370c5cdfd462c6dab1dde2de130ad866f63))
+* Fix sqlite syncing example ([#2463](https://github.com/cognitedata/cognite-sdk-python/issues/2463)) ([08da799](https://github.com/cognitedata/cognite-sdk-python/commit/08da7993d39e64be26f79fba41bc3d8b04472680))
+* reorder top-level doc sections, separate DM from legacy (DM-3572) ([#2481](https://github.com/cognitedata/cognite-sdk-python/issues/2481)) ([3db85d7](https://github.com/cognitedata/cognite-sdk-python/commit/3db85d76917137d12fb30bcf99efb16ae2de5575))
+
 ## [7.92.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.91.2...cognite-sdk-python-v7.92.0) (2026-02-18)
 
 
