@@ -387,7 +387,7 @@ class TestFilesAPI:
         assert isinstance(res, FileMetadata)
         assert mock_files_response["items"][0] == res.dump(camel_case=True)
 
-    def test_create_with_invalid_geoLocation(self, cognite_client: CogniteClient) -> None:
+    def test_create_with_invalid_geo_location(self, cognite_client: CogniteClient) -> None:
         invalid_geo_location = {"foo": "bar"}
         file_metadata = FileMetadata(
             id=1,

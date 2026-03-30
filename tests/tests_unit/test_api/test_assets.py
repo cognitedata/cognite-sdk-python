@@ -378,7 +378,7 @@ class TestAssets:
             "limit": 25,
         } == jsgz_load(mock_assets_response.get_requests()[0].content)
 
-    def test_create_with_invalid_geoLocation(self, cognite_client: CogniteClient) -> None:
+    def test_create_with_invalid_geo_location(self, cognite_client: CogniteClient) -> None:
         invalid_geo_location = {"foo": "bar"}
         asset = Asset(
             id=1,
