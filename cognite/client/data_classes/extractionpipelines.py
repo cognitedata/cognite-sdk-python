@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import Any, Literal
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteListUpdate,
-    CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
     CogniteResource,
@@ -22,11 +23,8 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils.useful_types import SequenceNotStr
 
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
-
-class ExtractionPipelineContact(CogniteObject):
+class ExtractionPipelineContact(CogniteResource):
     """A contact for an extraction pipeline
 
     Args:
@@ -48,9 +46,18 @@ class ExtractionPipelineContact(CogniteObject):
         self.role = role
         self.send_notification = send_notification
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            name=resource.get("name"),
+            email=resource.get("email"),
+            role=resource.get("role"),
+            send_notification=resource.get("sendNotification"),
+        )
+
 
 @dataclass
-class ExtractionPipelineNotificationConfiguration(CogniteObject):
+class ExtractionPipelineNotificationConfiguration(CogniteResource):
     """Extraction pipeline notification configuration
 
     Args:
@@ -60,15 +67,21 @@ class ExtractionPipelineNotificationConfiguration(CogniteObject):
 
     allowed_not_seen_range_in_minutes: int | None = None
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            allowed_not_seen_range_in_minutes=resource.get("allowedNotSeenRangeInMinutes"),
+        )
+
 
 class ExtractionPipelineCore(WriteableCogniteResource["ExtractionPipelineWrite"], ABC):
     """An extraction pipeline is a representation of a process writing data to CDF, such as an extractor or an ETL tool.
 
     Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        name (str | None): The name of the extraction pipeline.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        name (str): The name of the extraction pipeline.
         description (str | None): The description of the extraction pipeline.
-        data_set_id (int | None): The id of the dataset this extraction pipeline related with.
+        data_set_id (int): The id of the dataset this extraction pipeline related with.
         raw_tables (list[dict[str, str]] | None): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
         schedule (str | None): One of None/On trigger/Continuous/cron regex.
         contacts (list[ExtractionPipelineContact] | None): list of contacts
@@ -82,18 +95,18 @@ class ExtractionPipelineCore(WriteableCogniteResource["ExtractionPipelineWrite"]
 
     def __init__(
         self,
-        external_id: str | None = None,
-        name: str | None = None,
-        description: str | None = None,
-        data_set_id: int | None = None,
-        raw_tables: list[dict[str, str]] | None = None,
-        schedule: str | None = None,
-        contacts: list[ExtractionPipelineContact] | None = None,
-        metadata: dict[str, str] | None = None,
-        source: str | None = None,
-        documentation: str | None = None,
-        notification_config: ExtractionPipelineNotificationConfiguration | None = None,
-        created_by: str | None = None,
+        external_id: str,
+        name: str,
+        description: str | None,
+        data_set_id: int,
+        raw_tables: list[dict[str, str]] | None,
+        schedule: str | None,
+        contacts: list[ExtractionPipelineContact] | None,
+        metadata: dict[str, str] | None,
+        source: str | None,
+        documentation: str | None,
+        notification_config: ExtractionPipelineNotificationConfiguration | None,
+        created_by: str | None,
     ) -> None:
         self.external_id = external_id
         self.name = name
@@ -119,14 +132,16 @@ class ExtractionPipelineCore(WriteableCogniteResource["ExtractionPipelineWrite"]
 
 class ExtractionPipeline(ExtractionPipelineCore):
     """An extraction pipeline is a representation of a process writing data to CDF, such as an extractor or an ETL tool.
-    This is the reading version of the ExtractionPipeline class, which is used when retrieving extraction pipelines.
+    This is the read version of the ExtractionPipeline class, which is used when retrieving extraction pipelines.
 
     Args:
-        id (int | None): A server-generated ID for the object.
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        name (str | None): The name of the extraction pipeline.
+        id (int): A server-generated ID for the object.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        name (str): The name of the extraction pipeline.
+        data_set_id (int): The id of the dataset this extraction pipeline related with.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         description (str | None): The description of the extraction pipeline.
-        data_set_id (int | None): The id of the dataset this extraction pipeline related with.
         raw_tables (list[dict[str, str]] | None): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
         last_success (int | None): Milliseconds value of last success status.
         last_failure (int | None): Milliseconds value of last failure status.
@@ -138,19 +153,19 @@ class ExtractionPipeline(ExtractionPipelineCore):
         source (str | None): Source text value for extraction pipeline.
         documentation (str | None): Documentation text value for extraction pipeline.
         notification_config (ExtractionPipelineNotificationConfiguration | None): Notification configuration for the extraction pipeline.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_by (str | None): Extraction pipeline creator, usually an email.
-        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        external_id: str | None = None,
-        name: str | None = None,
+        # Note: The API spec lists id as not required.
+        id: int,
+        external_id: str,
+        name: str,
+        data_set_id: int,
+        created_time: int,
+        last_updated_time: int,
         description: str | None = None,
-        data_set_id: int | None = None,
         raw_tables: list[dict[str, str]] | None = None,
         last_success: int | None = None,
         last_failure: int | None = None,
@@ -162,10 +177,7 @@ class ExtractionPipeline(ExtractionPipelineCore):
         source: str | None = None,
         documentation: str | None = None,
         notification_config: ExtractionPipelineNotificationConfiguration | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
         created_by: str | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -181,24 +193,16 @@ class ExtractionPipeline(ExtractionPipelineCore):
             notification_config=notification_config,
             created_by=created_by,
         )
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
+        self.id = id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
         self.last_success = last_success
         self.last_failure = last_failure
         self.last_message = last_message
         self.last_seen = last_seen
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> ExtractionPipelineWrite:
         """Returns this ExtractionPipeline as a ExtractionPipelineWrite"""
-        if self.external_id is None or self.name is None or self.data_set_id is None:
-            raise ValueError("external_id, name and data_set_id are required to create a ExtractionPipeline")
         return ExtractionPipelineWrite(
             external_id=self.external_id,
             name=self.name,
@@ -215,18 +219,32 @@ class ExtractionPipeline(ExtractionPipelineCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipeline:
-        instance = super()._load(resource, cognite_client)
-        if instance.contacts:
-            instance.contacts = [
-                ExtractionPipelineContact._load(contact) if isinstance(contact, dict) else contact
-                for contact in instance.contacts
-            ]
-        if instance.notification_config and isinstance(instance.notification_config, dict):
-            instance.notification_config = ExtractionPipelineNotificationConfiguration._load(
-                instance.notification_config
-            )
-        return instance
+    def _load(cls, resource: dict) -> ExtractionPipeline:
+        if contacts := resource.get("contacts"):
+            contacts = [ExtractionPipelineContact._load(contact) for contact in contacts]
+        return cls(
+            id=resource["id"],
+            external_id=resource["externalId"],
+            name=resource["name"],
+            description=resource.get("description"),
+            data_set_id=resource["dataSetId"],
+            raw_tables=resource.get("rawTables"),
+            last_success=resource.get("lastSuccess"),
+            last_failure=resource.get("lastFailure"),
+            last_message=resource.get("lastMessage"),
+            last_seen=resource.get("lastSeen"),
+            schedule=resource.get("schedule"),
+            contacts=contacts,
+            metadata=resource.get("metadata"),
+            source=resource.get("source"),
+            documentation=resource.get("documentation"),
+            notification_config=ExtractionPipelineNotificationConfiguration._load_if(
+                resource.get("notificationConfig")
+            ),
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            created_by=resource.get("createdBy"),
+        )
 
     def __hash__(self) -> int:
         return hash(self.external_id)
@@ -234,7 +252,7 @@ class ExtractionPipeline(ExtractionPipelineCore):
 
 class ExtractionPipelineWrite(ExtractionPipelineCore):
     """An extraction pipeline is a representation of a process writing data to CDF, such as an extractor or an ETL tool.
-    This is the writing version of the ExtractionPipeline class, which is used when creating extraction pipelines.
+    This is the write version of the ExtractionPipeline class, which is used when creating extraction pipelines.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -282,7 +300,7 @@ class ExtractionPipelineWrite(ExtractionPipelineCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineWrite:
+    def _load(cls, resource: dict) -> ExtractionPipelineWrite:
         return cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -294,9 +312,9 @@ class ExtractionPipelineWrite(ExtractionPipelineCore):
             metadata=resource.get("metadata"),
             source=resource.get("source"),
             documentation=resource.get("documentation"),
-            notification_config=ExtractionPipelineNotificationConfiguration._load(resource["notificationConfig"])
-            if "notificationConfig" in resource
-            else None,
+            notification_config=ExtractionPipelineNotificationConfiguration._load_if(
+                resource.get("notificationConfig")
+            ),
             created_by=resource.get("createdBy"),
         )
 
@@ -408,23 +426,23 @@ class ExtractionPipelineList(
     _RESOURCE = ExtractionPipeline
 
     def as_write(self) -> ExtractionPipelineWriteList:
-        return ExtractionPipelineWriteList([x.as_write() for x in self.data], cognite_client=self._get_cognite_client())
+        return ExtractionPipelineWriteList([x.as_write() for x in self.data])
 
 
 class ExtractionPipelineRunCore(WriteableCogniteResource["ExtractionPipelineRunWrite"], ABC):
     """A representation of an extraction pipeline run.
 
     Args:
-        status (str | None): success/failure/seen.
+        status (Literal['success', 'failure', 'seen']): success/failure/seen.
         message (str | None): Optional status message.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
         self,
-        status: str | None = None,
-        message: str | None = None,
-        created_time: int | None = None,
+        status: Literal["success", "failure", "seen"],
+        message: str | None,
+        created_time: int | None,
     ) -> None:
         self.status = status
         self.message = message
@@ -435,22 +453,20 @@ class ExtractionPipelineRun(ExtractionPipelineRunCore):
     """A representation of an extraction pipeline run.
 
     Args:
+        id (int): A server-generated ID for the object.
+        status (Literal['success', 'failure', 'seen']): success/failure/seen.
         extpipe_external_id (str | None): The external ID of the extraction pipeline.
-        status (str | None): success/failure/seen.
         message (str | None): Optional status message.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient | None): The client to associate with this object.
-        id (int | None): A server-generated ID for the object.
     """
 
     def __init__(
         self,
+        id: int,
+        status: Literal["success", "failure", "seen"],
         extpipe_external_id: str | None = None,
-        status: str | None = None,
         message: str | None = None,
         created_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
-        id: int | None = None,
     ) -> None:
         super().__init__(
             status=status,
@@ -459,29 +475,30 @@ class ExtractionPipelineRun(ExtractionPipelineRunCore):
         )
         self.id = id
         self.extpipe_external_id = extpipe_external_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> ExtractionPipelineRunWrite:
         """Returns this ExtractionPipelineRun as a ExtractionPipelineRunWrite"""
+        # Note: list/filter ext.pipe. runs only return internal ID (of the run, not the ext.pipe.),
+        #       so this 'as_write' method is not really usable...
         if self.extpipe_external_id is None:
-            raise ValueError("extpipe_external_id is required to create a ExtractionPipelineRun")
+            raise ValueError("extpipe_external_id is required to create a ExtractionPipelineRunWrite")
+
         return ExtractionPipelineRunWrite(
             extpipe_external_id=self.extpipe_external_id,
-            status=cast(
-                Literal["success", "failure", "seen"],
-                self.status,
-            ),
+            status=self.status,
             message=self.message,
             created_time=self.created_time,
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineRun:
-        obj = super()._load(resource, cognite_client)
-        # Note: The API ONLY returns IDs, but if they chose to change this, we're ready:
-        if isinstance(resource, dict):
-            obj.extpipe_external_id = resource.get("externalId")
-        return obj
+    def _load(cls, resource: dict) -> ExtractionPipelineRun:
+        return cls(
+            id=resource["id"],
+            extpipe_external_id=resource.get("externalId"),
+            status=resource["status"],
+            message=resource.get("message"),
+            created_time=resource.get("createdTime"),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dct = super().dump(camel_case=camel_case)
@@ -500,7 +517,7 @@ class ExtractionPipelineRun(ExtractionPipelineRunCore):
 
 class ExtractionPipelineRunWrite(ExtractionPipelineRunCore):
     """A representation of an extraction pipeline run.
-    This is the writing version of the ExtractionPipelineRun class, which is used when creating extraction pipeline runs.
+    This is the write version of the ExtractionPipelineRun class, which is used when creating extraction pipeline runs.
 
     Args:
         extpipe_external_id (str): The external ID of the extraction pipeline.
@@ -524,7 +541,7 @@ class ExtractionPipelineRunWrite(ExtractionPipelineRunCore):
         self.extpipe_external_id = extpipe_external_id
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineRunWrite:
+    def _load(cls, resource: dict) -> ExtractionPipelineRunWrite:
         return cls(
             extpipe_external_id=resource["externalId"],
             status=resource["status"],
@@ -561,9 +578,7 @@ class ExtractionPipelineRunList(
     _RESOURCE = ExtractionPipelineRun
 
     def as_write(self) -> ExtractionPipelineRunWriteList:
-        return ExtractionPipelineRunWriteList(
-            [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
-        )
+        return ExtractionPipelineRunWriteList([x.as_write() for x in self.data])
 
 
 class StringFilter(CogniteFilter):
@@ -604,40 +619,46 @@ class ExtractionPipelineConfigRevision(CogniteResource):
     """An extraction pipeline config revision
 
     Args:
-        external_id (str | None): The external ID of the associated extraction pipeline.
-        revision (int | None): The revision number of this config as a positive integer.
+        external_id (str): The external ID of the associated extraction pipeline.
+        revision (int): The revision number of this config as a positive integer.
         description (str | None): Short description of this configuration revision.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
         self,
-        external_id: str | None = None,
-        revision: int | None = None,
-        description: str | None = None,
-        created_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        external_id: str,
+        revision: int,
+        description: str | None,
+        created_time: int,
     ) -> None:
         self.external_id = external_id
         self.revision = revision
         self.description = description
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            revision=resource["revision"],
+            description=resource.get("description"),
+            created_time=resource["createdTime"],
+        )
 
 
 class ExtractionPipelineConfigCore(WriteableCogniteResource["ExtractionPipelineConfigWrite"], ABC):
     """An extraction pipeline config
 
     Args:
-        external_id (str | None): The external ID of the associated extraction pipeline.
+        external_id (str): The external ID of the associated extraction pipeline.
         config (str | None): Contents of this configuration revision.
         description (str | None): Short description of this configuration revision.
     """
 
     def __init__(
         self,
-        external_id: str | None = None,
+        external_id: str,
         config: str | None = None,
         description: str | None = None,
     ) -> None:
@@ -650,22 +671,20 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigCore):
     """An extraction pipeline config
 
     Args:
-        external_id (str | None): The external ID of the associated extraction pipeline.
+        external_id (str): The external ID of the associated extraction pipeline.
+        revision (int): The revision number of this config as a positive integer.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         config (str | None): Contents of this configuration revision.
-        revision (int | None): The revision number of this config as a positive integer.
         description (str | None): Short description of this configuration revision.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        external_id: str | None = None,
+        external_id: str,
+        revision: int,
+        created_time: int,
         config: str | None = None,
-        revision: int | None = None,
         description: str | None = None,
-        created_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -674,12 +693,19 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigCore):
         )
         self.revision = revision
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            config=resource.get("config"),
+            revision=resource["revision"],
+            description=resource.get("description"),
+            created_time=resource["createdTime"],
+        )
 
     def as_write(self) -> ExtractionPipelineConfigWrite:
         """Returns this ExtractionPipelineConfig as a ExtractionPipelineConfigWrite"""
-        if self.external_id is None:
-            raise ValueError("external_id is required to create a ExtractionPipelineConfig")
         return ExtractionPipelineConfigWrite(
             external_id=self.external_id,
             config=self.config,
@@ -705,9 +731,7 @@ class ExtractionPipelineConfigWrite(ExtractionPipelineConfigCore):
         super().__init__(external_id, config, description)
 
     @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
-    ) -> ExtractionPipelineConfigWrite:
+    def _load(cls, resource: dict[str, Any]) -> ExtractionPipelineConfigWrite:
         return cls(
             external_id=resource["externalId"],
             config=resource.get("config"),
@@ -735,6 +759,4 @@ class ExtractionPipelineConfigList(
     _RESOURCE = ExtractionPipelineConfig
 
     def as_write(self) -> ExtractionPipelineConfigWriteList:
-        return ExtractionPipelineConfigWriteList(
-            [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
-        )
+        return ExtractionPipelineConfigWriteList([x.as_write() for x in self.data])

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
-
-from requests import Response
+from typing import TYPE_CHECKING, Any
 
 from cognite.client._api.agents import AgentsAPI
 from cognite.client._api.ai import AIAPI
@@ -21,12 +19,12 @@ from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.hosted_extractors import HostedExtractorsAPI
 from cognite.client._api.iam import IAMAPI
 from cognite.client._api.labels import LabelsAPI
+from cognite.client._api.limits import LimitsAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI
 from cognite.client._api.simulators import SimulatorsAPI
-from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api.transformations import TransformationsAPI
@@ -36,13 +34,18 @@ from cognite.client._api.workflows import WorkflowAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
-from cognite.client.utils._auxiliary import get_current_sdk_version, load_resource_to_dict
+from cognite.client.utils._auxiliary import load_resource_to_dict
+
+if TYPE_CHECKING:
+    from cognite.client._sync_cognite_client import CogniteClient
+    from cognite.client.response import CogniteHTTPResponse
 
 
-class CogniteClient:
-    """Main entrypoint into Cognite Python SDK.
+class AsyncCogniteClient:
+    """Main entrypoint into the Cognite Python SDK.
 
-    All services are made available through this object. See examples below.
+    All Cognite Data Fusion APIs are accessible through this asynchronous client.
+    For the synchronous client, see :class:`~cognite.client._cognite_client.CogniteClient`.
 
     Args:
         config (ClientConfig | None): The configuration for this client.
@@ -53,8 +56,8 @@ class CogniteClient:
     def __init__(self, config: ClientConfig | None = None) -> None:
         if (client_config := config or global_config.default_client_config) is None:
             raise ValueError(
-                "No ClientConfig has been provided, either pass it directly to CogniteClient "
-                "or set global_config.default_client_config."
+                "No ClientConfig has been provided, either pass it directly to the client on "
+                "initialization or set global_config.default_client_config."
             )
         else:
             self._config = client_config
@@ -73,9 +76,9 @@ class CogniteClient:
         self.raw = RawAPI(self._config, self._API_VERSION, self)
         self.three_d = ThreeDAPI(self._config, self._API_VERSION, self)
         self.labels = LabelsAPI(self._config, self._API_VERSION, self)
+        self.limits = LimitsAPI(self._config, self._API_VERSION, self)
         self.relationships = RelationshipsAPI(self._config, self._API_VERSION, self)
         self.entity_matching = EntityMatchingAPI(self._config, self._API_VERSION, self)
-        self.templates = TemplatesAPI(self._config, self._API_VERSION, self)
         self.vision = VisionAPI(self._config, self._API_VERSION, self)
         self.extraction_pipelines = ExtractionPipelinesAPI(self._config, self._API_VERSION, self)
         self.hosted_extractors = HostedExtractorsAPI(self._config, self._API_VERSION, self)
@@ -92,27 +95,54 @@ class CogniteClient:
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 
-    def get(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
-        """Perform a GET request to an arbitrary path in the API."""
-        return self._api_client._get(url, params=params, headers=headers)
+        self.__sync_client: CogniteClient | None = None
 
-    def post(
+    @property
+    def api_client(self) -> APIClient:
+        """Returns the underlying API client used for HTTP requests.
+
+        Returns:
+            APIClient: The API client instance.
+        """
+        return self._api_client
+
+    def get_sync_client(self) -> CogniteClient:
+        """Returns a synchronous CogniteClient with the same configuration.
+
+        Returns:
+            CogniteClient: A sync client with the same configuration.
+        """
+        from cognite.client._sync_cognite_client import CogniteClient
+
+        if self.__sync_client is None:
+            self.__sync_client = CogniteClient(self._config)
+        return self.__sync_client
+
+    async def get(
+        self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
+    ) -> CogniteHTTPResponse:
+        """Perform a GET request to an arbitrary path in the API."""
+        return await self._api_client._get(url, params=params, headers=headers, semaphore=None)
+
+    async def post(
         self,
         url: str,
-        json: dict[str, Any],
+        json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
-    ) -> Response:
+    ) -> CogniteHTTPResponse:
         """Perform a POST request to an arbitrary path in the API."""
-        return self._api_client._post(url, json=json, params=params, headers=headers)
+        return await self._api_client._post(url, json=json, params=params, headers=headers, semaphore=None)
 
-    def put(self, url: str, json: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
+    async def put(
+        self,
+        url: str,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+    ) -> CogniteHTTPResponse:
         """Perform a PUT request to an arbitrary path in the API."""
-        return self._api_client._put(url, json=json, headers=headers)
-
-    def delete(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
-        """Perform a DELETE request to an arbitrary path in the API."""
-        return self._api_client._delete(url, params=params, headers=headers)
+        return await self._api_client._put(url, json=json, params=params, headers=headers, semaphore=None)
 
     @property
     def version(self) -> str:
@@ -121,7 +151,9 @@ class CogniteClient:
         Returns:
             str: The current SDK version
         """
-        return get_current_sdk_version()
+        from cognite.client import __version__
+
+        return __version__
 
     @property
     def config(self) -> ClientConfig:
@@ -139,9 +171,9 @@ class CogniteClient:
         cdf_cluster: str,
         credentials: CredentialProvider,
         client_name: str | None = None,
-    ) -> CogniteClient:
+    ) -> AsyncCogniteClient:
         """
-        Create a CogniteClient with default configuration.
+        Create an AsyncCogniteClient with default configuration.
 
         The default configuration creates the URLs based on the project and cluster:
 
@@ -154,7 +186,7 @@ class CogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            CogniteClient: A CogniteClient instance with default configurations.
+            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
         return cls(ClientConfig.default(project, cdf_cluster, credentials, client_name=client_name))
 
@@ -167,9 +199,9 @@ class CogniteClient:
         client_id: str,
         client_secret: str,
         client_name: str | None = None,
-    ) -> CogniteClient:
+    ) -> AsyncCogniteClient:
         """
-        Create a CogniteClient with default configuration using a client credentials flow.
+        Create an AsyncCogniteClient with default configuration using a client credentials flow.
 
         The default configuration creates the URLs based on the project and cluster:
 
@@ -186,11 +218,9 @@ class CogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            CogniteClient: A CogniteClient instance with default configurations.
+            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
-
-        credentials = OAuthClientCredentials.default_for_azure_ad(tenant_id, client_id, client_secret, cdf_cluster)
-
+        credentials = OAuthClientCredentials.default_for_entra_id(tenant_id, client_id, client_secret, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod
@@ -201,9 +231,9 @@ class CogniteClient:
         tenant_id: str,
         client_id: str,
         client_name: str | None = None,
-    ) -> CogniteClient:
+    ) -> AsyncCogniteClient:
         """
-        Create a CogniteClient with default configuration using the interactive flow.
+        Create an AsyncCogniteClient with default configuration using the interactive flow.
 
         The default configuration creates the URLs based on the tenant_id and cluster:
 
@@ -219,26 +249,26 @@ class CogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            CogniteClient: A CogniteClient instance with default configurations.
+            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
-        credentials = OAuthInteractive.default_for_azure_ad(tenant_id, client_id, cdf_cluster)
+        credentials = OAuthInteractive.default_for_entra_id(tenant_id, client_id, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod
-    def load(cls, config: dict[str, Any] | str) -> CogniteClient:
+    def load(cls, config: dict[str, Any] | str) -> AsyncCogniteClient:
         """Load a cognite client object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the CogniteClient class.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the AsyncCogniteClient class.
 
         Returns:
-            CogniteClient: A cognite client object.
+            AsyncCogniteClient: A cognite client object.
 
         Examples:
 
             Create a cognite client object from a dictionary input:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import AsyncCogniteClient
                 >>> import os
                 >>> config = {
                 ...     "client_name": "abcd",
@@ -253,7 +283,7 @@ class CogniteClient:
                 ...         },
                 ...     },
                 ... }
-                >>> client = CogniteClient.load(config)
+                >>> client = AsyncCogniteClient.load(config)
         """
         loaded = load_resource_to_dict(config)
         return cls(config=ClientConfig.load(loaded))

@@ -1,11 +1,9 @@
-from requests import Response
+from __future__ import annotations
 
-from cognite.client._cognite_client import CogniteClient
+from cognite.client import AsyncCogniteClient
+from cognite.client.response import CogniteHTTPResponse
 
 
-def update_logs(cognite_client: CogniteClient, log_id: int, payload: list[dict]) -> Response:
+async def update_logs(async_client: AsyncCogniteClient, log_id: int, payload: list[dict]) -> CogniteHTTPResponse:
     items = {"items": [{"id": log_id, "update": {"data": {"add": payload}}}]}
-    return cognite_client.simulators._post(
-        "/simulators/logs/update",
-        json=items,
-    )
+    return await async_client.simulators._post("/simulators/logs/update", json=items, semaphore=None)

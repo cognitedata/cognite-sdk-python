@@ -11,7 +11,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import InitVar, asdict, dataclass, field
 from itertools import product
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, NoReturn, cast
+from typing import Any, ClassVar, Literal, NamedTuple, NoReturn, cast
 
 from typing_extensions import Self
 
@@ -23,9 +23,6 @@ from cognite.client.utils._text import (
     to_camel_case,
     to_snake_case,
 )
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +63,9 @@ class Capability(ABC):
             raise ValueError(f"Could not instantiate {acl_name} due to: {err}. " + self.show_example_usage()) from err
 
     def _validate(self) -> None:
-        if (capability_cls := type(self)) is UnknownAcl:
+        if type(self) is UnknownAcl:
             raise ValueError(
-                f"{self.capability_name!r} is not a known ACL. If it should be, "  # type: ignore [attr-defined]
+                f"{self.capability_name!r} is not a known ACL. If it should be, "
                 "please create an issue on: https://github.com/cognitedata/cognite-sdk-python"
             )
         acl = (capability_cls := type(self)).__name__
@@ -298,7 +295,7 @@ class ProjectCapability(CogniteResource):
         Projects = ProjectsScope
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Self:
+    def _load(cls, resource: dict, allow_unknown: bool = False) -> Self:
         (keys := set(resource)).remove(ProjectScope.name)
         project_scope_dct = {ProjectScope.name: resource[ProjectScope.name]}
         return cls(
@@ -319,17 +316,35 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
     def _load(
         cls,
         resource_list: Iterable[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> Self:
-        return cls(
-            [cls._RESOURCE._load(res, cognite_client, allow_unknown) for res in resource_list],
-            cognite_client=cognite_client,
-        )
+        return cls([cls._RESOURCE._load(res, allow_unknown) for res in resource_list])
+
+    @classmethod
+    def _load_with_project(
+        cls,
+        resource_list: Iterable[dict[str, Any]],
+        project: str,
+        allow_unknown: bool = False,
+    ) -> Self:
+        instance = cls._load(resource_list, allow_unknown)
+        instance.project = project
+        return instance
+
+    @property
+    def project(self) -> str:
+        try:
+            return self._project
+        except AttributeError:
+            raise AttributeError("'project' not set on this ProjectCapabilityList, did you instantiate it yourself?")
+
+    @project.setter
+    def project(self, value: str) -> None:
+        self._project = value
 
     def _infer_project(self, project: str | None = None) -> str:
         if project is None:
-            return self._cognite_client.config.project
+            return self._project
         return project
 
     def as_tuples(self, project: str | None = None) -> set[CapabilityTuple]:
@@ -435,7 +450,7 @@ class DataSetScope(Capability.Scope):
 @dataclass(frozen=True)
 class TableScope(Capability.Scope):
     _scope_name = "tableScope"
-    dbs_to_tables: dict[str, list[str]]
+    dbs_to_tables: dict[str, list[str] | dict[str, list[str]]]
 
     def __post_init__(self) -> None:
         if not self.dbs_to_tables:
@@ -1137,7 +1152,7 @@ class ExperimentsAcl(Capability):
 
 
 @dataclass
-class TemplateGroupsAcl(Capability):
+class TemplateGroupsAcl(LegacyCapability):
     _capability_name = "templateGroupsAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)

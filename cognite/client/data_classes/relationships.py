@@ -7,6 +7,9 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 from typing_extensions import Self
 
+if TYPE_CHECKING:
+    from cognite.client import AsyncCogniteClient
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -27,9 +30,6 @@ from cognite.client.data_classes.sequences import Sequence
 from cognite.client.data_classes.time_series import TimeSeries
 from cognite.client.utils.useful_types import SequenceNotStr
 
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-
 RelationshipType: TypeAlias = Literal["asset", "timeseries", "file", "event", "sequence"]
 
 
@@ -37,11 +37,11 @@ class RelationshipCore(WriteableCogniteResource["RelationshipWrite"], ABC):
     """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
 
     Args:
-        external_id (str | None): External id of the relationship, must be unique within the project.
-        source_external_id (str | None): External id of the CDF resource that constitutes the relationship source.
-        source_type (str | None): The CDF resource type of the relationship source. Must be one of the specified values.
-        target_external_id (str | None): External id of the CDF resource that constitutes the relationship target.
-        target_type (str | None): The CDF resource type of the relationship target. Must be one of the specified values.
+        external_id (str): External id of the relationship, must be unique within the project.
+        source_external_id (str): External id of the CDF resource that constitutes the relationship source.
+        source_type (str): The CDF resource type of the relationship source. Must be one of the specified values.
+        target_external_id (str): External id of the CDF resource that constitutes the relationship target.
+        target_type (str): The CDF resource type of the relationship target. Must be one of the specified values.
         start_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
         end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
         confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
@@ -49,20 +49,26 @@ class RelationshipCore(WriteableCogniteResource["RelationshipWrite"], ABC):
         labels (list[Label] | None): A list of the labels associated with this resource item.
     """
 
-    _RESOURCE_TYPES = frozenset({"asset", "timeseries", "file", "event", "sequence"})
+    _RESOURCE_TYPE_MAP: typing.ClassVar[dict[str, type[Asset | TimeSeries | FileMetadata | Event | Sequence]]] = {
+        "asset": Asset,
+        "timeseries": TimeSeries,
+        "file": FileMetadata,
+        "event": Event,
+        "sequence": Sequence,
+    }
 
     def __init__(
         self,
-        external_id: str | None = None,
-        source_external_id: str | None = None,
-        source_type: str | None = None,
-        target_external_id: str | None = None,
-        target_type: str | None = None,
-        start_time: int | None = None,
-        end_time: int | None = None,
-        confidence: float | None = None,
-        data_set_id: int | None = None,
-        labels: list[Label] | None = None,
+        external_id: str,
+        source_external_id: str,
+        source_type: str,
+        target_external_id: str,
+        target_type: str,
+        start_time: int | None,
+        end_time: int | None,
+        confidence: float | None,
+        data_set_id: int | None,
+        labels: list[Label] | None,
     ) -> None:
         self.external_id = external_id
         self.source_external_id = source_external_id
@@ -88,49 +94,47 @@ class RelationshipCore(WriteableCogniteResource["RelationshipWrite"], ABC):
         return rel
 
     def _validate_resource_type(self, resource_type: str | None) -> None:
-        if resource_type is None or resource_type.lower() not in self._RESOURCE_TYPES:
+        if resource_type is None or resource_type.lower() not in self._RESOURCE_TYPE_MAP:
             raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
 
 class Relationship(RelationshipCore):
     """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
-    This is the reading version of the relationship class, it is used when retrieving from CDF.
+    This is the read version of the relationship class, it is used when retrieving from CDF.
 
     Args:
-        external_id (str | None): External id of the relationship, must be unique within the project.
-        source_external_id (str | None): External id of the CDF resource that constitutes the relationship source.
-        source_type (str | None): The CDF resource type of the relationship source. Must be one of the specified values.
-        source (Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None): The full resource referenced by the source_external_id and source_type fields.
-        target_external_id (str | None): External id of the CDF resource that constitutes the relationship target.
-        target_type (str | None): The CDF resource type of the relationship target. Must be one of the specified values.
-        target (Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None): The full resource referenced by the target_external_id and target_type fields.
+        external_id (str): External id of the relationship, must be unique within the project.
+        created_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
+        last_updated_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
+        source_external_id (str): External id of the CDF resource that constitutes the relationship source.
+        source_type (str): The CDF resource type of the relationship source. Must be one of the specified values.
+        target_external_id (str): External id of the CDF resource that constitutes the relationship target.
+        target_type (str): The CDF resource type of the relationship target. Must be one of the specified values.
+        source (Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None): The full resource referenced by the source_external_id and source_type fields.
+        target (Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None): The full resource referenced by the target_external_id and target_type fields.
         start_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
         end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
         confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
         data_set_id (int | None): The id of the dataset this relationship belongs to.
         labels (SequenceNotStr[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
-        created_time (int | None): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
-        last_updated_time (int | None): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
-        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        external_id: str | None = None,
-        source_external_id: str | None = None,
-        source_type: str | None = None,
-        source: Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None = None,
-        target_external_id: str | None = None,
-        target_type: str | None = None,
-        target: Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None = None,
+        external_id: str,
+        created_time: int,
+        last_updated_time: int,
+        source_external_id: str,
+        source_type: str,
+        target_external_id: str,
+        target_type: str,
+        source: Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None = None,
+        target: Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None = None,
         start_time: int | None = None,
         end_time: int | None = None,
         confidence: float | None = None,
         data_set_id: int | None = None,
         labels: SequenceNotStr[Label | str | LabelDefinition | dict] | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -148,12 +152,9 @@ class Relationship(RelationshipCore):
         self.target = target
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> RelationshipWrite:
-        """Returns this Relationship in its writing version."""
-        if self.external_id is None:
-            raise ValueError("External ID is required for the writing version of a relationship.")
+        """Returns this Relationship in its write version."""
         source_external_id, source_type = self._get_external_id_and_type(
             self.source_external_id, self.source_type, self.source
         )
@@ -188,14 +189,26 @@ class Relationship(RelationshipCore):
         return external_id, cast(RelationshipType, resource_type)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Relationship:
-        instance = super()._load(resource, cognite_client)
-        if instance.source is not None:
-            instance.source = instance._convert_resource(instance.source, instance.source_type, cognite_client)  # type: ignore
-        if instance.target is not None:
-            instance.target = instance._convert_resource(instance.target, instance.target_type, cognite_client)  # type: ignore
-        instance.labels = Label._load_list(instance.labels)
-        return instance
+    def _load(cls, resource: dict) -> Relationship:
+        source = resource.get("source")
+        target = resource.get("target")
+        labels = resource.get("labels")
+        return cls(
+            external_id=resource["externalId"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            source_external_id=resource["sourceExternalId"],
+            source_type=resource["sourceType"],
+            source=cls._convert_resource(source, resource["sourceType"]) if source else None,
+            target_external_id=resource["targetExternalId"],
+            target_type=resource["targetType"],
+            target=cls._convert_resource(target, resource["targetType"]) if target else None,
+            start_time=resource.get("startTime"),
+            end_time=resource.get("endTime"),
+            confidence=resource.get("confidence"),
+            data_set_id=resource.get("dataSetId"),
+            labels=Label._load_list(labels) if labels else None,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = super().dump(camel_case)
@@ -205,27 +218,27 @@ class Relationship(RelationshipCore):
             result["target"] = self.target.dump(camel_case)
         return result
 
-    @staticmethod
+    def _maybe_set_client_ref(self, client: AsyncCogniteClient) -> Self:
+        # We do not use the client ref, but our source and target resources most likely do, so we
+        # propagate the reference to them:
+        if self.source is not None and not isinstance(self.source, dict):
+            self.source._maybe_set_client_ref(client)
+        if self.target is not None and not isinstance(self.target, dict):
+            self.target._maybe_set_client_ref(client)
+        return self
+
+    @classmethod
     def _convert_resource(
-        resource: dict[str, Any], resource_type: str | None, cognite_client: CogniteClient | None = None
+        cls, resource: dict[str, Any], resource_type: str | None
     ) -> dict[str, Any] | TimeSeries | Asset | Sequence | FileMetadata | Event:
-        resource_type = resource_type.lower() if resource_type else resource_type
-        if resource_type == "timeseries":
-            return TimeSeries._load(resource, cognite_client=cognite_client)
-        if resource_type == "asset":
-            return Asset._load(resource, cognite_client=cognite_client)
-        if resource_type == "sequence":
-            return Sequence._load(resource, cognite_client=cognite_client)
-        if resource_type == "file":
-            return FileMetadata._load(resource, cognite_client=cognite_client)
-        if resource_type == "event":
-            return Event._load(resource, cognite_client=cognite_client)
+        if resource_type and (resource_cls := cls._RESOURCE_TYPE_MAP.get(resource_type.lower())):
+            return resource_cls._load(resource)
         return resource
 
 
 class RelationshipWrite(RelationshipCore):
     """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
-    This is the writing version of the relationship class, and is used when creating new relationships.
+    This is the write version of the relationship class, and is used when creating new relationships.
 
     Args:
         external_id (str): External id of the relationship, must be unique within the project.
@@ -267,7 +280,8 @@ class RelationshipWrite(RelationshipCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> RelationshipWrite:
+    def _load(cls, resource: dict) -> RelationshipWrite:
+        labels = resource.get("labels")
         return cls(
             external_id=resource["externalId"],
             source_external_id=resource["sourceExternalId"],
@@ -278,7 +292,7 @@ class RelationshipWrite(RelationshipCore):
             end_time=resource.get("endTime"),
             confidence=resource.get("confidence"),
             data_set_id=resource.get("dataSetId"),
-            labels=(labels := resource.get("labels")) and Label._load_list(labels),
+            labels=Label._load_list(labels) if labels else None,
         )
 
     def as_write(self) -> RelationshipWrite:
@@ -423,5 +437,5 @@ class RelationshipList(WriteableCogniteResourceList[RelationshipWrite, Relations
     _RESOURCE = Relationship
 
     def as_write(self) -> RelationshipWriteList:
-        """Returns this RelationshipList in its writing version."""
-        return RelationshipWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
+        """Returns this RelationshipList in its write version."""
+        return RelationshipWriteList([item.as_write() for item in self.data])

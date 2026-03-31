@@ -14,39 +14,48 @@ import string
 import typing
 from collections.abc import Mapping
 from contextlib import contextmanager
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import UnionType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, get_args, get_origin, get_type_hints
+from typing import Any, Literal, TypeVar, get_args, get_origin, get_type_hints
+from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 import cognite.client.utils._auxiliary
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
+from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes import (
     DataPointSubscriptionWrite,
     EndTimeFilter,
+    Geometry,
     Relationship,
-    SequenceColumn,
-    SequenceColumnList,
-    SequenceData,
-    SequenceRow,
     SequenceRows,
     Transformation,
     filters,
 )
-from cognite.client.data_classes._base import CogniteResourceList, Geometry
+from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import Buckets
 from cognite.client.data_classes.capabilities import Capability, LegacyCapability, UnknownAcl
 from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNode, TypedNodeApply
 from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType
 from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
-from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
-from cognite.client.data_classes.datapoints import (
-    _INT_AGGREGATES,
-    _OBJECT_AGGREGATES,
+from cognite.client.data_classes.data_modeling.query import (
+    NodeResultSetExpression,
+    NodeResultSetExpressionSync,
+    Query,
+    QuerySync,
+    Select,
+    SelectSync,
+)
+from cognite.client.data_classes.datapoint_aggregates import (
     ALL_SORTED_DP_AGGS,
+    INT_AGGREGATES,
+    OBJECT_AGGREGATES,
+    Aggregate,
+)
+from cognite.client.data_classes.datapoints import (
     Datapoints,
     DatapointsArray,
 )
@@ -63,20 +72,31 @@ from cognite.client.data_classes.workflows import (
     WorkflowTaskOutput,
     WorkflowTaskParameters,
 )
-from cognite.client.testing import CogniteClientMock
-from cognite.client.utils import _json
-from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import random_string, to_snake_case
-
-if TYPE_CHECKING:
-    import pandas
-
+from cognite.client.testing import AsyncCogniteClientMock
+from cognite.client.utils import _json_extended as _json
+from cognite.client.utils._concurrency import CRUDConcurrency
+from cognite.client.utils._text import random_string
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 T_Type = TypeVar("T_Type", bound=type)
 
-UNION_TYPES = {typing.Union, UnionType}
+UNION_TYPES = {typing.Union, UnionType}  # TODO: Can we remove UnionType now that 3.8 is dropped?
+
+
+def get_wrapped_async_client(client: CogniteClient) -> AsyncCogniteClient:
+    # We have a ton of tests for the sync client, but after we changed the main SDK client to async
+    # in major version 8, whenever we do some monkeypatching/patch.object with wraps etc. the
+    # sync client no longer has e.g. _post or similar, so we need a simple way to get the async client
+    # used by the sync client and then do (e.g.) patching on that instead.
+    return client._CogniteClient__async_client  # type: ignore[attr-defined]
+
+
+def get_url(api: APIClient, path: str = "") -> str:
+    """Test helper to get the full URL for a given API + path (mostly to improve readability)"""
+    if path:
+        assert path.startswith("/"), "Path must start with /"
+    return api._base_url_with_base_path + path
 
 
 def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Type]:
@@ -93,7 +113,7 @@ def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Typ
     """
     return sorted(
         filter(
-            lambda sub: sub.__module__.startswith("cognite.client"),
+            lambda sub: sub.__module__.startswith("cognite.client"),  # type: ignore[arg-type]
             cognite.client.utils._auxiliary.all_subclasses(base, exclude=exclude),
         ),
         key=str,
@@ -113,15 +133,27 @@ def all_concrete_subclasses(base: T_Type, exclude: set[type] | None = None) -> l
     ]
 
 
-def all_mock_children(mock, parent_name=()):
-    """Returns a dictionary with correct dotted names mapping to mocked classes."""
-    dct = {".".join((*parent_name, k)): v for k, v in mock._mock_children.items()}
-    for name, child in dct.copy().items():
-        dct.update(all_mock_children(child, parent_name=(name,)))
-    return dct
+def all_mock_children(mock_obj: MagicMock, parent_path: str = "") -> dict[str, tuple[type[APIClient], MagicMock]]:
+    """Returns a dictionary with correct dotted names mapping to mocked APIClient classes."""
+    api_mocks = {}
+    for attr in dir(mock_obj):
+        if attr.startswith("_"):
+            continue
+
+        api_mock = getattr(mock_obj, attr)
+        spec_class = getattr(api_mock, "_spec_class", None)
+        current_path = f"{parent_path}.{attr}" if parent_path else attr
+
+        if spec_class is not None and issubclass(spec_class, APIClient | SyncAPIClient):
+            api_mocks[current_path] = (spec_class, api_mock)
+            # Recursively check nested APIs:
+            nested_apis = all_mock_children(api_mock, current_path)
+            api_mocks.update(nested_apis)
+
+    return api_mocks
 
 
-def get_api_class_by_attribute(cls_: object, parent_name=()) -> dict[str, type[APIClient]]:
+def get_api_class_by_attribute(cls_: object, parent_name: tuple[str, ...] = ()) -> dict[str, type[APIClient]]:
     available_apis: dict[str, type[APIClient]] = {}
     for attr, obj in cls_.__dict__.items():
         if attr.startswith("_") or not isinstance(obj, APIClient):
@@ -133,7 +165,7 @@ def get_api_class_by_attribute(cls_: object, parent_name=()) -> dict[str, type[A
 
 
 @contextmanager
-def rng_context(seed: int | str):
+def rng_context(seed: int | float | str) -> typing.Iterator[None]:
     """Temporarily override internal random state for deterministic behaviour without side-effects
 
     Idea stolen from pandas source `class RNGContext`.
@@ -171,18 +203,19 @@ def random_cognite_external_ids(n: int, str_len: int = 50) -> list[str]:
     return [random_string(str_len) for _ in range(n)]
 
 
-def random_granularity(granularities="smhd", lower_lim=1, upper_lim=100000):
+def random_granularity(granularities: str = "smhd", lower_lim: int = 1, upper_lim: int = 100000) -> str:
     gran = random.choice(granularities)
     upper = {"s": 120, "m": 120, "h": 100000, "d": 100000}
     unit = random.choice(range(max(lower_lim, 1), min(upper_lim, upper[gran]) + 1))
     return f"{unit}{gran}"
 
 
-INTEGER_AGGREGATES = set(map(to_snake_case, _INT_AGGREGATES))
-OBJECT_AGGREGATES = set(map(to_snake_case, _OBJECT_AGGREGATES))
-
-
-def random_aggregates(n=None, exclude=None, exclude_integer_aggregates=False, exclude_object_aggregates=False):
+def random_aggregates(
+    n: int | None = None,
+    exclude: set[str] | None = None,
+    exclude_integer_aggregates: bool = False,
+    exclude_object_aggregates: bool = False,
+) -> list[Aggregate]:
     """Return n random aggregates in a list - or random (at least 1) if n is None.
     Accepts a container object of aggregates to `exclude`
     """
@@ -190,14 +223,14 @@ def random_aggregates(n=None, exclude=None, exclude_integer_aggregates=False, ex
     if exclude:
         agg_lst = [a for a in agg_lst if a not in exclude]
     if exclude_integer_aggregates:
-        agg_lst = [a for a in agg_lst if a not in INTEGER_AGGREGATES]
+        agg_lst = [a for a in agg_lst if a not in INT_AGGREGATES]
     if exclude_object_aggregates:
         agg_lst = [a for a in agg_lst if a not in OBJECT_AGGREGATES]
     n = n or random.randint(1, len(agg_lst))
     return random.sample(agg_lst, k=n)
 
 
-def random_gamma_dist_integer(inclusive_max, max_tries=100):
+def random_gamma_dist_integer(inclusive_max: int, max_tries: int = 100) -> int:
     # "Smaller integers are more likely"
     for _ in range(max_tries):
         i = 1 + math.floor(random.gammavariate(1, inclusive_max * 0.3))
@@ -207,15 +240,43 @@ def random_gamma_dist_integer(inclusive_max, max_tries=100):
 
 
 @contextmanager
-def set_max_workers(cognite_client, new):
-    old = cognite_client._config.max_workers
-    cognite_client._config.max_workers = new
-    yield
-    cognite_client._config.max_workers = old
+def override_semaphore(
+    new: int,
+    target: Literal["general", "datapoints", "raw"],
+) -> typing.Iterator[None]:
+    # After v8, the main SDK went async and now we have -several- bounded semaphores instead
+    # of a single max_workers parameter. In order to run tests that require (or test) different levels
+    # of concurrency, we need a way to override these semaphores temporarily.
+    from cognite.client import global_config
+
+    conc_settings = global_config.concurrency_settings
+    assert target != "data_modeling", "TODO if you need it :)"
+    settings: CRUDConcurrency = getattr(conc_settings, target)
+    old_read, old_write, old_delete = settings.read, settings.write, settings.delete
+
+    semaphore_get_fn = settings._semaphore_factory
+    semaphore_get_fn.cache_clear()
+
+    if frozen_status := conc_settings.is_frozen:
+        conc_settings._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
+
+    settings.read, settings.write, settings.delete = new, new, new
+
+    test_operation: Literal["read", "write", "delete"] = random.choice(("read", "write", "delete"))
+    sem = semaphore_get_fn(test_operation, "whatever-project")  # this also freezes the settings again
+    assert new == sem._value == sem._bound_value, f"Semaphore didn't update according to overridden {new=}"  # type: ignore[attr-defined]
+
+    try:
+        yield
+    finally:
+        conc_settings._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
+        settings.read, settings.write, settings.delete = old_read, old_write, old_delete
+        semaphore_get_fn.cache_clear()
+        conc_settings._ConcurrencySettings__frozen = frozen_status  # type: ignore[attr-defined]
 
 
 @contextmanager
-def tmp_set_envvar(envvar: str, value: str):
+def tmp_set_envvar(envvar: str, value: str) -> typing.Iterator[None]:
     old = os.getenv(envvar)
     os.environ[envvar] = value
     yield
@@ -225,99 +286,8 @@ def tmp_set_envvar(envvar: str, value: str):
         os.environ[envvar] = old
 
 
-def jsgz_load(s):
+def jsgz_load(s: Any) -> Any:
     return _json.loads(gzip.decompress(s).decode())
-
-
-@contextmanager
-def set_request_limit(client, limit):
-    limits = [
-        "_CREATE_LIMIT",
-        "_LIST_LIMIT",
-        "_RETRIEVE_LIMIT",
-        "_UPDATE_LIMIT",
-        "_DELETE_LIMIT",
-    ]
-
-    tmp = {lim: 0 for lim in limits}
-    for limit_name in limits:
-        if hasattr(client, limit_name):
-            tmp[limit_name] = getattr(client, limit_name)
-            setattr(client, limit_name, limit)
-    yield
-    for limit_name, limit_val in tmp.items():
-        if hasattr(client, limit_name):
-            setattr(client, limit_name, limit_val)
-
-
-def cdf_aggregate(
-    raw_df: pandas.DataFrame,
-    aggregate: Literal["average", "sum", "count"],
-    granularity: str,
-    is_step: bool | None = False,
-    raw_freq: str | None = None,
-) -> pandas.DataFrame:
-    """Aggregates the dataframe as CDF is doing it on the database layer.
-
-    **Motivation**: This is used in testing to verify that the correct aggregation is done with
-    on the client side when aggregating in given time zone.
-
-    Current assumptions:
-        * No step timeseries
-        * Uniform index.
-        * Known frequency of raw data.
-
-    Args:
-        raw_df (pd.DataFrame): Dataframe with the raw datapoints.
-        aggregate (str): Single aggregate to calculate, supported average, sum.
-        granularity (str): The granularity to aggregates at. e.g. '15s', '2h', '10d'.
-        is_step (bool): Whether to use stepwise or continuous interpolation.
-        raw_freq (str): The frequency of the raw data. If it is not given, it is attempted inferred from raw_df.
-    """
-    if is_step:
-        raise NotImplementedError
-
-    pd = cast(Any, local_import("pandas"))
-    granularity_pd = granularity.replace("m", "T")
-    grouping = raw_df.groupby(pd.Grouper(freq=granularity_pd))
-    if aggregate == "sum":
-        return grouping.sum()
-    elif aggregate == "count":
-        return grouping.count().astype("Int64")
-
-    # The average is calculated by the formula '1/(b-a) int_a^b f(t) dt' where f(t) is the continuous function
-    # This is weighted average of the sampled version of f(t)
-    np = cast(Any, local_import("numpy"))
-
-    def integrate_average(values: pandas.DataFrame) -> pandas.Series:
-        inner = (values.iloc[1:].values + values.iloc[:-1].values) / 2.0
-        res = inner.mean() if inner.shape[0] else np.nan
-        return pd.Series(res, index=values.columns)
-
-    freq = raw_freq or raw_df.index.inferred_freq
-    if freq is None:
-        raise ValueError("Failed to infer frequency raw data.")
-    if not freq[0].isdigit():
-        freq = f"1{freq}"
-
-    # When the frequency of the data is 1 hour and above, the end point is excluded.
-    freq = pd.Timedelta(freq)
-    if freq >= pd.Timedelta("1hour"):
-        return grouping.apply(integrate_average)
-
-    def integrate_average_end_points(values: pandas.Series) -> float:
-        dt = values.index[-1] - values.index[0]
-        scale = np.diff(values.index) / 2.0 / dt
-        return (scale * (values.values[1:] + values.values[:-1])).sum()
-
-    step = pd.Timedelta(granularity_pd) // freq
-
-    return (
-        raw_df.rolling(window=pd.Timedelta(granularity_pd), closed="both")
-        .apply(integrate_average_end_points)
-        .shift(-step)
-        .iloc[::step]
-    )
 
 
 T = TypeVar("T")
@@ -345,20 +315,22 @@ T_Object = TypeVar("T_Object")
 class FakeCogniteResourceGenerator:
     _error_msg: typing.ClassVar[str] = "Please extend this function to support generating fake data for this type"
 
-    def __init__(self, seed: int | None = None, cognite_client: CogniteClientMock | CogniteClient | None = None):
+    def __init__(
+        self, seed: int | None = None, async_client: AsyncCogniteClientMock | AsyncCogniteClient | None = None
+    ):
         self._random = random.Random(seed)
-        self._cognite_client = cognite_client or CogniteClientMock()
+        self._async_client = async_client or AsyncCogniteClientMock()
 
     def create_instance(self, resource_cls: type[T_Object], skip_defaulted_args: bool = False) -> T_Object:
         if abc.ABC in resource_cls.__bases__:
             subclasses = all_concrete_subclasses(resource_cls)
             if len(subclasses) == 0:
                 raise TypeError(f"Cannot create instance of abstract class {resource_cls.__name__}")
-            resource_cls = self._random.choice(subclasses) if subclasses else resource_cls
+            resource_cls = self._random.choice(subclasses)
 
         signature = inspect.signature(resource_cls.__init__)
         try:
-            type_hint_by_name = get_type_hints(resource_cls.__init__, localns=self._type_checking)
+            type_hint_by_name: Mapping[str, Any] = get_type_hints(resource_cls.__init__, localns=self._type_checking)  # type: ignore[arg-type]
         except TypeError:
             # Python 3.10 Type hints cannot be evaluated with get_type_hints,
             # ref https://stackoverflow.com/questions/66006087/how-to-use-typing-get-type-hints-with-pep585-in-python3-8
@@ -397,13 +369,17 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments["time_series_ids"] = ["my_timeseries1", "my_timeseries2"]
             else:
                 keyword_arguments.pop("filter", None)
-        elif issubclass(resource_cls, Query):
-            # The fake generator makes all dicts from 1-3 values, we need to make sure that the query is valid
-            # by making sure that the list of equal length, so we make both to length 1.
-            with_key, with_value = next(iter(keyword_arguments["with_"].items()))
-            select_value = next(iter(keyword_arguments["select"].values()))
-            keyword_arguments["with_"] = {with_key: with_value}
-            keyword_arguments["select"] = {with_key: select_value}
+        elif issubclass(resource_cls, Query) and not issubclass(resource_cls, QuerySync):
+            # Query (and subclasses) needs ResultSetExpression (not Sync), and Select (not SelectSync)
+            # The fake generator picks from all subclasses of the TypeVar bound which includes sync classes
+            key = self._random_string(15)
+            keyword_arguments["with_"] = {key: self.create_instance(NodeResultSetExpression)}
+            keyword_arguments["select"] = {key: self.create_instance(Select)}
+        elif issubclass(resource_cls, QuerySync):
+            # QuerySync (and subclasses) needs ResultSetExpressionSync and SelectSync
+            key = self._random_string(15)
+            keyword_arguments["with_"] = {key: self.create_instance(NodeResultSetExpressionSync)}
+            keyword_arguments["select"] = {key: self.create_instance(SelectSync)}
         elif resource_cls is Relationship and not skip_defaulted_args:
             # Relationship must set the source and target type consistently with the source and target
             keyword_arguments["source_type"] = type(keyword_arguments["source"]).__name__
@@ -435,28 +411,18 @@ class FakeCogniteResourceGenerator:
             keyword_arguments["columns"] = keyword_arguments["columns"][:1]
             for row in keyword_arguments["rows"]:
                 row.values = row.values[:1]
-        elif resource_cls is SequenceData:
-            if skip_defaulted_args:
-                # At least external_id or id must be set
-                keyword_arguments["external_id"] = "my_sequence"
-                keyword_arguments["rows"] = [SequenceRow(row_number=1, values=[1])]
-                keyword_arguments["columns"] = SequenceColumnList([SequenceColumn("my_column")])
-            else:
-                # All row values must match the number of columns
-                keyword_arguments.pop("rows", None)
-                keyword_arguments["columns"] = keyword_arguments["columns"][:1]
-                keyword_arguments["row_numbers"] = keyword_arguments["row_numbers"][:1]
-                keyword_arguments["values"] = keyword_arguments["values"][:1]
-                keyword_arguments["values"][0] = keyword_arguments["values"][0][:1]
         elif resource_cls is EndTimeFilter:
             # EndTimeFilter requires either is null or (max and/or min)
             keyword_arguments.pop("is_null", None)
-        elif resource_cls is Transformation and not skip_defaulted_args:
+        elif resource_cls is Transformation:
             # schedule and jobs must match external id and id
-            keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
-            keyword_arguments["schedule"].id = keyword_arguments["id"]
-            keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
-            keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
+            if "schedule" in keyword_arguments:
+                keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
+                keyword_arguments["schedule"].id = keyword_arguments["id"]
+            if "running_job" in keyword_arguments:
+                keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
+            if "last_finished_job" in keyword_arguments:
+                keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
         elif resource_cls is TransformationScheduleWrite:
             # TransformationScheduleWrite requires either id or external_id
             keyword_arguments.pop("id", None)
@@ -472,10 +438,17 @@ class FakeCogniteResourceGenerator:
         elif resource_cls is NodeResultSetExpression and not skip_defaulted_args:
             # Through has a special format.
             keyword_arguments["through"] = [keyword_arguments["through"][0], "my_view/v1", "a_property"]
+        elif resource_cls is NodeResultSetExpressionSync and not skip_defaulted_args:
+            # Through has a special format.
+            keyword_arguments["through"] = [keyword_arguments["through"][0], "my_view/v1", "a_property"]
         elif resource_cls is Buckets:
             keyword_arguments = {"items": [{"start": 1, "count": 1}]}
         elif resource_cls is timezone:
             positional_arguments.append(timedelta(hours=self._random.randint(-3, 3)))
+        elif resource_cls is datetime:
+            random_timestamp = self._random.randint(0, 1924905599)  # [1970, 2030]
+            positional_arguments = list(datetime.fromtimestamp(random_timestamp).timetuple()[:6])
+            keyword_arguments["tzinfo"] = timezone.utc
         elif resource_cls is RestConfig and isinstance(keyword_arguments.get("incremental_load"), NextUrlLoad):
             # RestConfig requires incremental_load to not be a NextUrlLoad object
             keyword_arguments["incremental_load"] = BodyLoad(
@@ -497,13 +470,18 @@ class FakeCogniteResourceGenerator:
                 # Use revision-based parameters
                 keyword_arguments.pop("routine_external_id", None)
 
-        return resource_cls(*positional_arguments, **keyword_arguments)
+        instance = resource_cls(*positional_arguments, **keyword_arguments)
+
+        # Set client reference on resources that use it:
+        if hasattr(instance, "set_client_ref"):
+            instance.set_client_ref(self._async_client)
+        return instance
 
     def create_value(self, type_: Any, var_name: str | None = None) -> Any:
         import numpy as np
 
         if isinstance(type_, typing.ForwardRef):
-            type_ = type_._evaluate(globals(), self._type_checking())
+            type_ = type_._evaluate(globals(), self._type_checking(), recursive_guard=frozenset())
 
         container_type = get_origin(type_)
         is_container = container_type is not None
@@ -564,7 +542,9 @@ class FakeCogniteResourceGenerator:
         elif type_ is dict:
             return {self._random_string(10): self._random_string(10) for _ in range(self._random.randint(1, 3))}
         elif type_ is CogniteClient:
-            return self._cognite_client
+            raise NotImplementedError("Did you mean to use the AsyncCogniteClient?")
+        elif type_ is AsyncCogniteClient:
+            return self._async_client
         elif type_ is ZoneInfo:
             # Special case for ZoneInfo - provide a default timezone
             return ZoneInfo("UTC")
@@ -578,6 +558,8 @@ class FakeCogniteResourceGenerator:
                 implementations.remove(filters.HasData)
                 implementations.remove(filters.InvalidFilter)
                 implementations.remove(filters.Nested)
+
+                # ...and geo filters:
                 implementations.remove(filters.GeoJSONWithin)
                 implementations.remove(filters.GeoJSONDisjoint)
                 implementations.remove(filters.GeoJSONIntersects)
@@ -587,7 +569,7 @@ class FakeCogniteResourceGenerator:
                     implementations.remove(LegacyCapability)
             if type_ is WorkflowTaskOutput:
                 # For Workflow Output has to match the input type
-                selected = FunctionTaskOutput
+                selected: type = FunctionTaskOutput
             elif type_ is WorkflowTaskParameters:
                 selected = FunctionTaskParameters
             else:
@@ -596,7 +578,12 @@ class FakeCogniteResourceGenerator:
         elif isinstance(type_, enum.EnumMeta):
             return self._random.choice(list(type_))
         elif isinstance(type_, TypeVar):
-            return self.create_value(type_.__bound__)
+            bound = type_.__bound__
+            if isinstance(bound, typing.ForwardRef):
+                # Resolve the ForwardRef using the TypeVar's module namespace
+                module = importlib.import_module(type_.__module__)
+                bound = bound._evaluate(vars(module), self._type_checking(), recursive_guard=frozenset())
+            return self.create_value(bound)
         elif inspect.isclass(type_) and issubclass(type_, CogniteResourceList):
             return type_([self.create_value(type_._RESOURCE) for _ in range(self._random.randint(1, 3))])
         elif inspect.isclass(type_):
@@ -625,12 +612,13 @@ class FakeCogniteResourceGenerator:
         import numpy as np
         import numpy.typing as npt
 
-        from cognite.client import CogniteClient
+        from cognite.client import AsyncCogniteClient, CogniteClient
 
         return {
             "ContainerId": ContainerId,
             "ViewId": ViewId,
             "CogniteClient": CogniteClient,
+            "AsyncCogniteClient": AsyncCogniteClient,
             "NumpyDatetime64NSArray": npt.NDArray[np.datetime64],
             "NumpyUInt32Array": npt.NDArray[np.uint32],
             "NumpyInt64Array": npt.NDArray[np.int64],
@@ -640,7 +628,7 @@ class FakeCogniteResourceGenerator:
 
     @classmethod
     def _get_type_hints_3_10(
-        cls, resource_module_vars: dict[str, Any], signature310: inspect.Signature, local_vars: dict[str, Any]
+        cls, resource_module_vars: dict[str, Any], signature310: inspect.Signature, local_vars: Mapping[str, Any]
     ) -> dict[str, Any]:
         return {
             name: cls._create_type_hint_3_10(parameter.annotation, resource_module_vars, local_vars)
@@ -650,7 +638,7 @@ class FakeCogniteResourceGenerator:
 
     @classmethod
     def _create_type_hint_3_10(
-        cls, annotation: str, resource_module_vars: dict[str, Any], local_vars: dict[str, Any]
+        cls, annotation: str, resource_module_vars: dict[str, Any], local_vars: Mapping[str, Any]
     ) -> Any:
         if annotation.endswith(" | None"):
             annotation = annotation[:-7]
@@ -660,7 +648,7 @@ class FakeCogniteResourceGenerator:
         except TypeError:
             # Python 3.10 Type Hint
             if annotation.startswith("Sequence[") and annotation.endswith("]"):
-                return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]
+                return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]  # type: ignore[misc]
 
 
 def get_or_raise(obj: T | None) -> T:

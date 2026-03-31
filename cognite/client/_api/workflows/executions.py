@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from collections.abc import MutableSequence
 from typing import TYPE_CHECKING, Any
 
@@ -14,19 +13,21 @@ from cognite.client.data_classes.workflows import (
     WorkflowStatus,
 )
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import at_least_one_is_not_none, interpolate_and_url_encode
+from cognite.client.utils._auxiliary import at_least_one_is_not_none
 from cognite.client.utils._session import create_session_and_return_nonce
+from cognite.client.utils._url import interpolate_and_url_encode
 
 if TYPE_CHECKING:
-    from cognite.client._api.workflows.versions import WorkflowVersionIdentifier
+    from cognite.client._api.workflows import WorkflowVersionIdentifier
     from cognite.client.data_classes import ClientCredentials
 
 
 class WorkflowExecutionAPI(APIClient):
     _RESOURCE_PATH = "/workflows/executions"
 
-    def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:
+    async def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:
         """`Retrieve a workflow execution with detailed information. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ExecutionOfSpecificRunOfWorkflow>`_
+
         Args:
             id (str): The server-generated id of the workflow execution.
 
@@ -37,9 +38,12 @@ class WorkflowExecutionAPI(APIClient):
 
             Retrieve workflow execution with id '000560bc-9080-4286-b242-a27bb4819253':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.executions.retrieve_detailed("000560bc-9080-4286-b242-a27bb4819253")
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.workflows.executions.retrieve_detailed(
+                ...     "000560bc-9080-4286-b242-a27bb4819253"
+                ... )
 
             List workflow executions and retrieve detailed information for the first one:
 
@@ -48,34 +52,14 @@ class WorkflowExecutionAPI(APIClient):
 
         """
         try:
-            response = self._get(url_path=f"{self._RESOURCE_PATH}/{id}")
+            response = await self._get(url_path=f"{self._RESOURCE_PATH}/{id}", semaphore=self._get_semaphore("read"))
         except CogniteAPIError as e:
             if e.code == 400:
                 return None
             raise
         return WorkflowExecutionDetailed._load(response.json())
 
-    def trigger(
-        self,
-        workflow_external_id: str,
-        version: str,
-        input: dict | None = None,
-        metadata: dict | None = None,
-        client_credentials: ClientCredentials | None = None,
-    ) -> WorkflowExecution:
-        """Trigger a workflow execution.
-
-        .. admonition:: Deprecation Warning
-
-            This method is deprecated, use '.run' instead. It will be completely removed in the next major version.
-        """
-        warnings.warn(
-            "This methods has been deprecated, use '.run' instead. It will completely removed in the next major release.",
-            UserWarning,
-        )
-        return self.run(workflow_external_id, version, input, metadata, client_credentials)
-
-    def run(
+    async def run(
         self,
         workflow_external_id: str,
         version: str,
@@ -103,7 +87,9 @@ class WorkflowExecutionAPI(APIClient):
                 ...     external_id="my_workflow-task1",
                 ...     parameters=FunctionTaskParameters(
                 ...         external_id="cdf_deployed_function:my_function",
-                ...         data={"workflow_data": "${workflow.input}"}))
+                ...         data={"workflow_data": "${workflow.input}"},
+                ...     ),
+                ... )
 
         Tip:
             You can create a session via the Sessions API, using the client.iam.session.create() method.
@@ -115,8 +101,9 @@ class WorkflowExecutionAPI(APIClient):
 
             Trigger a workflow execution for the workflow "foo", version 1:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.run("foo", "1")
 
             Trigger a workflow execution with input data:
@@ -130,7 +117,7 @@ class WorkflowExecutionAPI(APIClient):
                 >>> credentials = ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"])
                 >>> res = client.workflows.executions.run("foo", "1", client_credentials=credentials)
         """
-        nonce = nonce or create_session_and_return_nonce(
+        nonce = nonce or await create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
         body = {"authentication": {"nonce": nonce}}
@@ -139,13 +126,14 @@ class WorkflowExecutionAPI(APIClient):
         if metadata is not None:
             body["metadata"] = metadata
 
-        response = self._post(
+        response = await self._post(
             url_path=interpolate_and_url_encode("/workflows/{}/versions/{}/run", workflow_external_id, version),
             json=body,
+            semaphore=self._get_semaphore("write"),
         )
         return WorkflowExecution._load(response.json())
 
-    def list(
+    async def list(
         self,
         workflow_version_ids: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None = None,
         created_time_start: int | None = None,
@@ -169,15 +157,15 @@ class WorkflowExecutionAPI(APIClient):
 
             Get all workflow executions for workflows 'my_workflow' version '1':
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.list(("my_workflow", "1"))
 
             Get all workflow executions from the last 24 hours:
 
                 >>> from cognite.client.utils import timestamp_to_ms
-                >>> res = client.workflows.executions.list(
-                ...     created_time_start=timestamp_to_ms("1d-ago"))
+                >>> res = client.workflows.executions.list(created_time_start=timestamp_to_ms("1d-ago"))
 
         """
         # Passing at least one filter criterion is required:
@@ -201,7 +189,7 @@ class WorkflowExecutionAPI(APIClient):
             else:  # Assume it is a stringy type
                 filter_["status"] = [statuses.upper()]
 
-        return self._list(
+        return await self._list(
             method="POST",
             resource_cls=WorkflowExecution,
             list_cls=WorkflowExecutionList,
@@ -209,7 +197,7 @@ class WorkflowExecutionAPI(APIClient):
             limit=limit,
         )
 
-    def cancel(self, id: str, reason: str | None) -> WorkflowExecution:
+    async def cancel(self, id: str, reason: str | None) -> WorkflowExecution:
         """`Cancel a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionCancellation>`_
 
         Note:
@@ -228,18 +216,20 @@ class WorkflowExecutionAPI(APIClient):
 
             Trigger a workflow execution for the workflow "foo", version 1 and cancel it:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.run("foo", "1")
                 >>> client.workflows.executions.cancel(id="foo", reason="test cancellation")
         """
-        response = self._post(
+        response = await self._post(
             url_path=f"{self._RESOURCE_PATH}/{id}/cancel",
             json={"reason": reason} if reason else {},
+            semaphore=self._get_semaphore("delete"),
         )
         return WorkflowExecution._load(response.json())
 
-    def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
+    async def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
         """`Retry a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionRetry>`_
 
         Args:
@@ -252,17 +242,19 @@ class WorkflowExecutionAPI(APIClient):
         Examples:
             Retry a workflow execution that has been cancelled or failed:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.executions.run("foo", "1")
                 >>> client.workflows.executions.cancel(id=res.id, reason="test cancellation")
                 >>> client.workflows.executions.retry(res.id)
         """
-        nonce = create_session_and_return_nonce(
+        nonce = await create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
-        response = self._post(
+        response = await self._post(
             url_path=f"{self._RESOURCE_PATH}/{id}/retry",
             json={"authentication": {"nonce": nonce}},
+            semaphore=self._get_semaphore("write"),
         )
         return WorkflowExecution._load(response.json())

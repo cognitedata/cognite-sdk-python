@@ -1,25 +1,26 @@
 from __future__ import annotations
 
+import asyncio
 import datetime
 import re
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Union, cast
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Literal, Union, cast, overload
+from zoneinfo import ZoneInfo
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite
+from cognite.client.data_classes import SyntheticDatapoints, SyntheticDatapointsList, TimeSeries, TimeSeriesWrite
 from cognite.client.data_classes.data_modeling.ids import NodeId
-from cognite.client.data_classes.time_series import TimeSeriesCore
 from cognite.client.utils._auxiliary import is_unlimited
-from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, InstanceId
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._time import ZoneInfo, convert_timezone_to_str, timestamp_to_ms
+from cognite.client.utils._time import convert_timezone_to_str, timestamp_to_ms
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import sympy
 
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
@@ -43,34 +44,71 @@ def _supported_sympy_functions(operation: type[sympy.Basic]) -> str | None:
 class SyntheticDatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/synthetic"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DPS_LIMIT_SYNTH = 10_000
 
-    def query(
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        return global_config.concurrency_settings.datapoints._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
+
+    @overload
+    async def query(
         self,
-        expressions: str | sympy.Basic | Sequence[str | sympy.Basic],
+        expressions: SequenceNotStr[str] | SequenceNotStr[sympy.Basic],
         start: int | str | datetime.datetime,
         end: int | str | datetime.datetime,
         limit: int | None = None,
-        variables: dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
+        variables: Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         timezone: str | datetime.timezone | ZoneInfo | None = None,
-    ) -> Datapoints | DatapointsList:
+    ) -> SyntheticDatapointsList: ...
+
+    @overload
+    async def query(
+        self,
+        expressions: str | sympy.Basic,
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime,
+        limit: int | None = None,
+        variables: Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
+        aggregate: str | None = None,
+        granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+    ) -> SyntheticDatapoints: ...
+
+    async def query(
+        self,
+        expressions: str | sympy.Basic | Sequence[str] | Sequence[sympy.Basic],
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime,
+        limit: int | None = None,
+        variables: Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
+        aggregate: str | None = None,
+        granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+    ) -> SyntheticDatapoints | SyntheticDatapointsList:
         """`Calculate the result of a function on time series. <https://api-docs.cognite.com/20230101/tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
         Info:
             You can read the guide to synthetic time series in our `documentation <https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries>`_.
 
         Args:
-            expressions (str | sympy.Basic | Sequence[str | sympy.Basic]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
+            expressions (str | sympy.Basic | Sequence[str] | Sequence[sympy.Basic]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
             start (int | str | datetime.datetime): Inclusive start.
             end (int | str | datetime.datetime): Exclusive end.
             limit (int | None): Number of datapoints per expression to retrieve.
-            variables (dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None): An optional map of symbol replacements.
+            variables (Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None): An optional map of symbol replacements.
             aggregate (str | None): use this aggregate when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
             granularity (str | None): use this granularity with the aggregate.
             target_unit (str | None): use this target_unit when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
@@ -80,15 +118,16 @@ class SyntheticDatapointsAPI(APIClient):
                 the aggregate duration can vary, typically due to daylight saving time. For time zones of type UTC+/-HH:MM, use increments of 15 minutes. Default: "UTC" (None)
 
         Returns:
-            Datapoints | DatapointsList: A DatapointsList object containing the calculated data.
+            SyntheticDatapoints | SyntheticDatapointsList: A SyntheticDatapointsList object containing the calculated data.
 
         Examples:
 
             Execute a synthetic time series query with an expression. Here we sum three time series plus a constant. The first is referenced by ID,
             the second by external ID, and the third by instance ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> expression = '''
                 ...     123
                 ...     + ts{id:123}
@@ -96,9 +135,8 @@ class SyntheticDatapointsAPI(APIClient):
                 ...     + ts{space:'my-space',externalId:'my-ts-xid'}
                 ... '''
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions=expression,
-                ...     start="2w-ago",
-                ...     end="now")
+                ...     expressions=expression, start="2w-ago", end="now"
+                ... )
 
             You can also specify variables for an easier query syntax:
 
@@ -110,14 +148,15 @@ class SyntheticDatapointsAPI(APIClient):
                 ...     "C": NodeId("my-space", "my-ts-xid"),
                 ... }
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions="A+B+C", start="2w-ago", end="2w-ahead", variables=variables)
+                ...     expressions="A+B+C", start="2w-ago", end="2w-ahead", variables=variables
+                ... )
 
             Use sympy to build complex expressions:
 
                 >>> from sympy import symbols, cos, sin
                 >>> x, y = symbols("x y")
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     [sin(x), y*cos(x)],
+                ...     [sin(x), y * cos(x)],
                 ...     start="2w-ago",
                 ...     end="now",
                 ...     variables={x: "foo", y: "bar"},
@@ -138,44 +177,43 @@ class SyntheticDatapointsAPI(APIClient):
             expression, short_expression = self._build_expression(
                 user_expr, variables, aggregate, granularity, target_unit, target_unit_system
             )
-            query = {
-                "expression": expression,
-                "start": timestamp_to_ms(start),
-                "end": timestamp_to_ms(end),
-            }
+            query = {"expression": expression, "start": timestamp_to_ms(start), "end": timestamp_to_ms(end)}
             if timezone is not None:
                 if isinstance(timezone, (ZoneInfo, datetime.timezone)):
                     timezone = convert_timezone_to_str(timezone)
                 query["timeZone"] = timezone
+            tasks.append(AsyncSDKTask(self._fetch_datapoints, query, limit, short_expression))
 
-            # NOTE / TODO: We misuse the 'external_id' field for the entire 'expression string':
-            query_datapoints = Datapoints(external_id=short_expression, value=[], error=[])
-            tasks.append((query, query_datapoints, limit))
-
-        datapoints_summary = execute_tasks(self._fetch_datapoints, tasks, max_workers=self._config.max_workers)
+        datapoints_summary = await execute_async_tasks(tasks)
         datapoints_summary.raise_compound_exception_if_failed_tasks()
-        return (
-            DatapointsList(datapoints_summary.results, cognite_client=self._cognite_client)
-            if not single_expr
-            else datapoints_summary.results[0]
-        )
+        return SyntheticDatapointsList(datapoints_summary.results) if not single_expr else datapoints_summary.results[0]
 
-    def _fetch_datapoints(self, query: dict[str, Any], datapoints: Datapoints, limit: int) -> Datapoints:
+    async def _fetch_datapoints(self, query: dict[str, Any], limit: int, short_expression: str) -> SyntheticDatapoints:
+        dps = None
+        semaphore = self._get_semaphore("read")
         while True:
             query["limit"] = min(limit, self._DPS_LIMIT_SYNTH)
-            resp = self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
-            data = resp.json()["items"][0]
-            datapoints._extend(Datapoints._load_from_synthetic(data))
+            resp = await self._post(
+                url_path=self._RESOURCE_PATH + "/query", json={"items": [query]}, semaphore=semaphore
+            )
+            data = resp.json()["items"][0] | {"expression": short_expression, "timezone": query.get("timeZone")}
+            new_dps = SyntheticDatapoints._load(data)
+            if dps is None:
+                dps = new_dps
+            else:
+                dps.timestamp.extend(new_dps.timestamp)
+                dps.value.extend(new_dps.value)
+                dps.error.extend(new_dps.error)
             limit -= (n_fetched := len(data["datapoints"]))
             if n_fetched < self._DPS_LIMIT_SYNTH or limit <= 0:
                 break
             query["start"] = data["datapoints"][-1]["timestamp"] + 1
-        return datapoints
+        return dps
 
     def _build_expression(
         self,
         expression: str | sympy.Basic,
-        variables: dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
+        variables: Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
@@ -213,9 +251,10 @@ class SyntheticDatapointsAPI(APIClient):
 
         to_substitute = {}
         for k, v in variables.items():
-            if isinstance(v, TimeSeriesCore):
+            if isinstance(v, TimeSeries | TimeSeriesWrite):
                 try:
-                    v = Identifier.load(external_id=v.external_id, instance_id=v.instance_id).as_primitive()
+                    instance_id = getattr(v, "instance_id", None)
+                    v = Identifier.load(external_id=v.external_id, instance_id=instance_id).as_primitive()
                 except ValueError:
                     # ^error message wrongly says id is accepted, which it is not
                     raise ValueError(
