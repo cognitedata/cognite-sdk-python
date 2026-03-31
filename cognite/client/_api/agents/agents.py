@@ -344,7 +344,10 @@ class AgentsAPI(APIClient):
 
             Handle tool confirmation for integration tools (Call Function, Run Python code, Call REST API):
 
-                >>> from cognite.client.data_classes.agents import ToolConfirmationCall, ToolConfirmationResult
+                >>> from cognite.client.data_classes.agents import (
+                ...     ToolConfirmationCall,
+                ...     ToolConfirmationResult,
+                ... )
                 >>> response = client.agents.chat(
                 ...     agent_external_id="my_agent",
                 ...     messages=Message("Run the data quality check function"),

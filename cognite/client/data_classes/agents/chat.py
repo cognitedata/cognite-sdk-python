@@ -416,7 +416,7 @@ class ToolConfirmationResult(ActionResult):
 
     Args:
         action_id (str): The ID of the :class:`ToolConfirmationCall` being responded to.
-        status (Literal["ALLOW", "DENY"]): Whether to allow or deny the tool execution.
+        status (Literal['ALLOW', 'DENY']): Whether to allow or deny the tool execution.
     """
 
     _type: ClassVar[str] = "toolConfirmation"
