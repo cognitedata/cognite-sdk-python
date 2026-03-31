@@ -1,6 +1,6 @@
 """
 ===============================================================================
-67747240774889c1eeb68499640679a8
+bfc6535f11bf8b175836aebca409eb8b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -334,17 +334,23 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...     agent_external_id="my_agent",
                 ...     messages=Message("Run the data quality check function"),
                 ... )
-                >>> for action in response.action_calls:
-                ...     if isinstance(action, ToolConfirmationCall):
-                ...         # Inspect the tool call before deciding
-                ...         print(f"Tool: {action.tool_name}, type: {action.tool_type}")
-                ...         print(f"Arguments: {action.tool_arguments}")
+                >>> if response.action_calls:
+                ...     confirmations = []
+                ...     for action in response.action_calls:
+                ...         if isinstance(action, ToolConfirmationCall):
+                ...             # Inspect each tool call before deciding
+                ...             print(f"Tool: {action.tool_name}, type: {action.tool_type}")
+                ...             print(f"Arguments: {action.tool_arguments}")
+                ...             confirmations.append(
+                ...                 ToolConfirmationResult(
+                ...                     action_id=action.action_id,
+                ...                     status="ALLOW",  # or "DENY" to cancel
+                ...                 )
+                ...             )
+                ...     if confirmations:
                 ...         response = client.agents.chat(
                 ...             agent_external_id="my_agent",
-                ...             messages=ToolConfirmationResult(
-                ...                 action_id=action.action_id,
-                ...                 status="ALLOW",  # or "DENY" to cancel
-                ...             ),
+                ...             messages=confirmations,
                 ...             cursor=response.cursor,
                 ...         )
         """
