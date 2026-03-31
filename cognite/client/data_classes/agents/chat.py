@@ -235,11 +235,10 @@ class ClientToolCall(ActionCall):
 class ToolConfirmationCall(ActionCall):
     """A tool confirmation request from the agent.
 
-    Integration tools — Call Function, Run Python code, and Call REST API — require explicit
-    user confirmation before they execute, to prevent unintended or destructive actions.
+    Some tools require explicit user confirmation before execution, to prevent unintended or destructive actions.
+    These tools include Call Function, Run Python code, and Call REST API.
     When an agent wants to run one of these tools, this action is included in the response
-    instead of the final result. Respond with a :class:`ToolConfirmationResult` using
-    ``status="ALLOW"`` to proceed or ``status="DENY"`` to cancel.
+    instead of the final result. Respond with a :class:`ToolConfirmationResult` using ``status="ALLOW"`` to proceed or ``status="DENY"`` to cancel.
 
     Args:
         action_id (str): The unique identifier for this action call.
