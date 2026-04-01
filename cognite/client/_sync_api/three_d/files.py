@@ -1,6 +1,6 @@
 """
 ===============================================================================
-dbe9a104d55695a3db272582d455f669
+eb47aaab2dd7eec948e699491678694d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -23,10 +23,10 @@ class Sync3DFilesAPI(SyncAPIClient):
         `Retrieve the contents of a 3d file by id. <https://api-docs.cognite.com/20230101/tag/3D-Files/operation/get3DFile>`_
 
         Args:
-            id (int): The id of the file to retrieve.
+            id: The id of the file to retrieve.
 
         Returns:
-            bytes: The contents of the file.
+            The contents of the file.
 
         Example:
 

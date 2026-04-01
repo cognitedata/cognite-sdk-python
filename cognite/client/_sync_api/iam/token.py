@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d7f8ea05edb54a84534b0b464e2e5645
+984dd3457723af98e27974707ff19bed
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -26,7 +26,7 @@ class SyncTokenAPI(SyncAPIClient):
         Get details about which projects it belongs to and which capabilities are granted to it.
 
         Returns:
-            TokenInspection: The object with token inspection details.
+            The object with token inspection details.
 
         Example:
 

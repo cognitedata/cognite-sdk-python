@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0eb88d958406c07c70a3a70bb4b168c9
+00a61b3e11bd5a4d605cf56267e18559
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -51,11 +51,11 @@ class SyncSimulatorsAPI(SyncAPIClient):
         Fetches simulators as they are iterated over, so you keep a limited number of simulators in memory.
 
         Args:
-            chunk_size (int | None): Number of simulators to return in each chunk. Defaults to yielding one simulator a time.
-            limit (int | None): Maximum number of simulators to return. Defaults to return all items.
+            chunk_size: Number of simulators to return in each chunk. Defaults to yielding one simulator a time.
+            limit: Maximum number of simulators to return. Defaults to return all items.
 
         Yields:
-            Simulator | SimulatorList: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
+            yields Simulator one by one if chunk is not specified, else SimulatorList objects.
         """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.simulators(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
@@ -64,10 +64,10 @@ class SyncSimulatorsAPI(SyncAPIClient):
         `List all simulators <https://api-docs.cognite.com/20230101/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
         Args:
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
         Returns:
-            SimulatorList: List of simulators
+            List of simulators
 
         Examples:
             List simulators:

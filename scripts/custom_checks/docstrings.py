@@ -286,9 +286,10 @@ class DocstrFormatter:
             or (
                 list(self.actual_annotations.keys()) == list(parsed_annotations.keys())
                 # Do the annotations match?
-                and list(self.actual_annotations.values()) == list(parsed_annotations.values())
+                and not any(list(parsed_annotations.values()))
             )
         )
+
         return return_annot_is_correct and parameters_are_correct
 
     def _create_docstring_param_description(self):
@@ -299,7 +300,7 @@ class DocstrFormatter:
         doc_descr = dict((p.var_name, p.description) for p in self.parameters)
         for var, annot in self.actual_annotations.items():
             description = doc_descr.get(var, "No description.")
-            fixed_lines.append(f"{whitespace}    {var} ({annot}): {description}")
+            fixed_lines.append(f"{whitespace}    {var}: {description}")
         if self.add_space_after_args:
             fixed_lines.append("")
         return fixed_lines
@@ -316,7 +317,7 @@ class DocstrFormatter:
         whitespace = " " * self.indentation
         fixed_lines = [
             f"{whitespace}{self.RETURN_STRING}",
-            f"{whitespace}    {self.actual_return_annotation}: {description}",
+            f"{whitespace}    {description}",
         ]
         if self.add_space_after_returns:
             fixed_lines.append("")
@@ -417,6 +418,8 @@ def format_docstring_class_methods(cls) -> list[str]:
             continue
 
         if not doc_fmt.docstring_is_correct():
+            print(doc_fmt.actual_return_annotation)
+            print(doc_fmt.return_parameter)
             if err_msg := doc_fmt.update_py_file(cls, method_description):
                 failed.append(err_msg)
     return failed

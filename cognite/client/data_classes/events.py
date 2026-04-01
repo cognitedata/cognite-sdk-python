@@ -32,9 +32,9 @@ class EndTimeFilter(CogniteResource):
     """Either range between two timestamps or isNull filter condition.
 
     Args:
-        max (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        min (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        is_null (bool | None): Set to true if you want to search for data with field value not set, false to search for cases where some value is present.
+        max: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        min: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        is_null: Set to true if you want to search for data with field value not set, false to search for cases where some value is present.
     """
 
     def __init__(self, max: int | None = None, min: int | None = None, is_null: bool | None = None) -> None:
@@ -59,19 +59,19 @@ class Event(WriteableCogniteResourceWithClientRef["EventWrite"]):
     This is the read version of the Event class. It is used when retrieving existing events.
 
     Args:
-        id (int): A server-generated ID for the object.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        data_set_id (int | None): The id of the dataset this event belongs to.
-        start_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        end_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        type (str | None): Type of the event, e.g. 'failure'.
-        subtype (str | None): SubType of the event, e.g. 'electrical'.
-        description (str | None): Textual description of the event.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
-        asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
-        source (str | None): The source of this event.
+        id: A server-generated ID for the object.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        data_set_id: The id of the dataset this event belongs to.
+        start_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        end_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        type: Type of the event, e.g. 'failure'.
+        subtype: SubType of the event, e.g. 'electrical'.
+        description: Textual description of the event.
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
+        asset_ids: Asset IDs of equipment that this event relates to.
+        source: The source of this event.
     """
 
     def __init__(
@@ -143,16 +143,16 @@ class EventWrite(WriteableCogniteResource["EventWrite"]):
     This is the write version of the Event class. It is used when creating new events.
 
     Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        data_set_id (int | None): The id of the dataset this event belongs to.
-        start_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        end_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        type (str | None): Type of the event, e.g. 'failure'.
-        subtype (str | None): SubType of the event, e.g. 'electrical'.
-        description (str | None): Textual description of the event.
-        metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
-        asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
-        source (str | None): The source of this event.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        data_set_id: The id of the dataset this event belongs to.
+        start_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        end_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        type: Type of the event, e.g. 'failure'.
+        subtype: SubType of the event, e.g. 'electrical'.
+        description: Textual description of the event.
+        metadata: Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
+        asset_ids: Asset IDs of equipment that this event relates to.
+        source: The source of this event.
     """
 
     def __init__(
@@ -202,20 +202,20 @@ class EventFilter(CogniteFilter):
     """Filter on events filter with exact match
 
     Args:
-        start_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        end_time (dict[str, Any] | EndTimeFilter | None): Either range between two timestamps or isNull filter condition.
-        active_at_time (dict[str, Any] | TimestampRange | None): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
-        asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
-        asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of equipment that this event relates to.
-        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        data_set_ids (Sequence[dict[str, Any]] | None): Only include events that belong to these datasets.
-        source (str | None): The source of this event.
-        type (str | None): Type of the event, e.g 'failure'.
-        subtype (str | None): SubType of the event, e.g 'electrical'.
-        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
+        start_time: Range between two timestamps.
+        end_time: Either range between two timestamps or isNull filter condition.
+        active_at_time: Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
+        metadata: Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
+        asset_ids: Asset IDs of equipment that this event relates to.
+        asset_external_ids: Asset External IDs of equipment that this event relates to.
+        asset_subtree_ids: Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_ids: Only include events that belong to these datasets.
+        source: The source of this event.
+        type: Type of the event, e.g 'failure'.
+        subtype: SubType of the event, e.g 'electrical'.
+        created_time: Range between two timestamps.
+        last_updated_time: Range between two timestamps.
+        external_id_prefix: Filter by this (case-sensitive) prefix for the external ID.
     """
 
     def __init__(
@@ -269,8 +269,8 @@ class EventUpdate(CogniteUpdate):
     """Changes will be applied to event.
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        id: A server-generated ID for the object.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
     """
 
     class _PrimitiveEventUpdate(CognitePrimitiveUpdate):

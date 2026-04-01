@@ -33,6 +33,7 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
+    "sphinx_autodoc_typehints",
     "sphinx_copybutton",
 ]
 
@@ -185,3 +186,7 @@ def analyze_but_skip_overloads(self):
 
 
 ModuleAnalyzer.analyze = analyze_but_skip_overloads
+
+# Options for how to autodoc type hints
+typehints_use_signature = True
+always_use_bars_union = True

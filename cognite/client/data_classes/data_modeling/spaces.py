@@ -19,9 +19,9 @@ class SpaceCore(WritableDataModelingResource["SpaceApply"], ABC):
     """A workspace for data models and instances.
 
     Args:
-        space (str): A unique identifier for the space.
-        description (str | None): Textual description of the space
-        name (str | None): Human readable name for the space.
+        space: A unique identifier for the space.
+        description: Textual description of the space
+        name: Human readable name for the space.
     """
 
     def __init__(self, space: str, description: str | None, name: str | None) -> None:
@@ -37,9 +37,9 @@ class SpaceApply(SpaceCore):
     """A workspace for data models and instances. This is the write version
 
     Args:
-        space (str): A unique identifier for the space.
-        description (str | None): Textual description of the space
-        name (str | None): Human readable name for the space.
+        space: A unique identifier for the space.
+        description: Textual description of the space
+        name: Human readable name for the space.
     """
 
     def __init__(self, space: str, description: str | None = None, name: str | None = None) -> None:
@@ -63,12 +63,12 @@ class Space(SpaceCore):
     """A workspace for data models and instances. This is the read version.
 
     Args:
-        space (str): A unique identifier for the space.
-        is_global (bool): Whether the space is global or not.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        description (str | None): Textual description of the space
-        name (str | None): Human readable name for the space.
+        space: A unique identifier for the space.
+        is_global: Whether the space is global or not.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description: Textual description of the space
+        name: Human readable name for the space.
     """
 
     def __init__(
@@ -115,7 +115,7 @@ class SpaceApplyList(CogniteResourceList[SpaceApply]):
         Converts all the spaces to a space id list.
 
         Returns:
-            list[str]: A list of space ids.
+            A list of space ids.
         """
         return [item.space for item in self]
 
@@ -131,10 +131,10 @@ class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
         """Get a space object from this list by space ID.
 
         Args:
-            space (str): The space identifier to get.
+            space: The space identifier to get.
 
         Returns:
-            Space | None: The requested space if present, else None
+            The requested space if present, else None
         """
         return self._space_to_item.get(space)
 
@@ -151,7 +151,7 @@ class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
         Converts all the spaces to a space id list.
 
         Returns:
-            list[str]: A list of space ids.
+            A list of space ids.
         """
         return [item.space for item in self]
 
@@ -160,7 +160,7 @@ class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
         Converts all the spaces to a space apply list.
 
         Returns:
-            SpaceApplyList: A list of space applies.
+            A list of space applies.
         """
         return SpaceApplyList([item.as_apply() for item in self])
 

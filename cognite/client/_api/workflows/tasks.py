@@ -20,12 +20,12 @@ class WorkflowTaskAPI(APIClient):
         For tasks that has been marked with 'is_async = True', the status must be updated by calling this endpoint with either 'completed', 'failed' or 'failed_with_terminal_error'.
 
         Args:
-            task_id (str): The server-generated id of the task.
-            status (Literal['completed', 'failed', 'failed_with_terminal_error']): The new status of the task. Must be either 'completed', 'failed' or 'failed_with_terminal_error'.
-            output (dict | None): The output of the task. This will be available for tasks that has specified it as an output with the string "${<taskExternalId>.output}"
+            task_id: The server-generated id of the task.
+            status: The new status of the task. Must be either 'completed', 'failed' or 'failed_with_terminal_error'.
+            output: The output of the task. This will be available for tasks that has specified it as an output with the string "${<taskExternalId>.output}"
 
         Returns:
-            WorkflowTaskExecution: The updated task execution.
+            The updated task execution.
 
         Examples:
 

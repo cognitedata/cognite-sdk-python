@@ -11,7 +11,7 @@ class TokenAPI(APIClient):
         Get details about which projects it belongs to and which capabilities are granted to it.
 
         Returns:
-            TokenInspection: The object with token inspection details.
+            The object with token inspection details.
 
         Example:
 

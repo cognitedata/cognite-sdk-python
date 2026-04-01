@@ -14,11 +14,11 @@ class DocumentPreviewAPI(APIClient):
         """`Downloads an image preview for a specific page of the specified document. <https://api-docs.cognite.com/20230101/tag/Document-preview/operation/documentsPreviewImagePage>`_
 
         Args:
-            id (int): The server-generated ID for the document you want to retrieve the preview of.
-            page_number (int): Page number to preview. Starting at 1 for first page.
+            id: The server-generated ID for the document you want to retrieve the preview of.
+            page_number: Page number to preview. Starting at 1 for first page.
 
         Returns:
-            bytes: The png preview of the document.
+            The png preview of the document.
 
         Examples:
 
@@ -50,10 +50,10 @@ class DocumentPreviewAPI(APIClient):
         """`Downloads an image preview for a specific page of the specified document. <https://api-docs.cognite.com/20230101/tag/Document-preview/operation/documentsPreviewImagePage>`_
 
         Args:
-            path (Path | str | IO): The path to save the png preview of the document. If the path is a directory, the file name will be '[id]_page[page_number].png'.
-            id (int): The server-generated ID for the document you want to retrieve the preview of.
-            page_number (int): Page number to preview. Starting at 1 for first page.
-            overwrite (bool): Whether to overwrite existing file at the given path. Defaults to False.
+            path: The path to save the png preview of the document. If the path is a directory, the file name will be '[id]_page[page_number].png'.
+            id: The server-generated ID for the document you want to retrieve the preview of.
+            page_number: Page number to preview. Starting at 1 for first page.
+            overwrite: Whether to overwrite existing file at the given path. Defaults to False.
 
         Examples:
 
@@ -86,10 +86,10 @@ class DocumentPreviewAPI(APIClient):
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
         Args:
-            id (int): The server-generated ID for the document you want to retrieve the preview of.
+            id: The server-generated ID for the document you want to retrieve the preview of.
 
         Returns:
-            bytes: The pdf preview of the document.
+            The pdf preview of the document.
 
         Examples:
 
@@ -113,9 +113,9 @@ class DocumentPreviewAPI(APIClient):
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
         Args:
-            path (Path | str | IO): The path to save the pdf preview of the document. If the path is a directory, the file name will be '[id].pdf'.
-            id (int): The server-generated ID for the document you want to retrieve the preview of.
-            overwrite (bool): Whether to overwrite existing file at the given path. Defaults to False.
+            path: The path to save the pdf preview of the document. If the path is a directory, the file name will be '[id].pdf'.
+            id: The server-generated ID for the document you want to retrieve the preview of.
+            overwrite: Whether to overwrite existing file at the given path. Defaults to False.
 
         Examples:
 
@@ -146,10 +146,10 @@ class DocumentPreviewAPI(APIClient):
         """`Retrieve a Temporary link to download pdf preview <https://api-docs.cognite.com/20230101/tag/Document-preview/operation/documentsPreviewPdfTemporaryLink>`_
 
         Args:
-            id (int): The server-generated ID for the document you want to retrieve the preview of.
+            id: The server-generated ID for the document you want to retrieve the preview of.
 
         Returns:
-            TemporaryLink: A temporary link to download the pdf preview.
+            A temporary link to download the pdf preview.
 
         Examples:
 

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-533d33cb32bbf0b0561e66c3e06c3b63
+d92bbae5b68c207f44491310adb58af6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -36,10 +36,10 @@ class SyncSpaceStatisticsAPI(SyncAPIClient):
         `Retrieve usage data and limits per space <https://api-docs.cognite.com/20230101/tag/Statistics/operation/getSpaceStatisticsByIds>`_
 
         Args:
-            space (str | SequenceNotStr[str]): The space or spaces to retrieve statistics for.
+            space: The space or spaces to retrieve statistics for.
 
         Returns:
-            SpaceStatistics | SpaceStatisticsList | None: The requested statistics and limits for the specified space(s).
+            The requested statistics and limits for the specified space(s).
 
         Examples:
 
@@ -62,7 +62,7 @@ class SyncSpaceStatisticsAPI(SyncAPIClient):
         Returns statistics for data modeling resources grouped by each space in the project.
 
         Returns:
-            SpaceStatisticsList: The requested statistics and limits for all spaces in the project.
+            The requested statistics and limits for all spaces in the project.
 
         Examples:
 

@@ -15,13 +15,13 @@ class UserProfile(CogniteResource):
     for principals based on data from the identity provider configured for the CDF project.
 
     Args:
-        user_identifier (str): Uniquely identifies the principal the profile is associated with. This property is guaranteed to be immutable.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        given_name (str | None): The user's first name.
-        surname (str | None): The user's last name.
-        email (str | None): The user's email address (if any). The email address is is returned directly from the identity provider and not guaranteed to be verified. Note that the email is mutable and can be updated in the identity provider. It should not be used to uniquely identify as a user. Use the user_identifier property instead.
-        display_name (str | None): The display name for the user.
-        job_title (str | None): The user's job title.
+        user_identifier: Uniquely identifies the principal the profile is associated with. This property is guaranteed to be immutable.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        given_name: The user's first name.
+        surname: The user's last name.
+        email: The user's email address (if any). The email address is is returned directly from the identity provider and not guaranteed to be verified. Note that the email is mutable and can be updated in the identity provider. It should not be used to uniquely identify as a user. Use the user_identifier property instead.
+        display_name: The display name for the user.
+        job_title: The user's job title.
     """
 
     def __init__(
@@ -64,9 +64,9 @@ class UserProfileList(CogniteResourceList[UserProfile]):
     def get(self, user_identifier: str) -> UserProfile | None:  # type: ignore [override]
         """Get an item from this list by user_identifier.
         Args:
-            user_identifier (str): The user_identifier of the item to get.
+            user_identifier: The user_identifier of the item to get.
         Returns:
-            UserProfile | None: The requested item or None if not found.
+            The requested item or None if not found.
         """
         return self._user_identifier_to_item.get(user_identifier)
 

@@ -28,11 +28,11 @@ class ConcurrencyConfig(ABC):
     Abstract base class for concurrency settings.
 
     Args:
-        concurrency_settings (ConcurrencySettings): Reference to the parent settings object, used to check if settings are frozen.
-        api_name (str): Which API these settings apply to (e.g. "data_modeling", "datapoints", etc.).
-        read (int): Maximum number of concurrent generic read requests.
-        write (int): Maximum number of concurrent generic write requests.
-        delete (int): Maximum number of concurrent generic delete requests.
+        concurrency_settings: Reference to the parent settings object, used to check if settings are frozen.
+        api_name: Which API these settings apply to (e.g. "data_modeling", "datapoints", etc.).
+        read: Maximum number of concurrent generic read requests.
+        write: Maximum number of concurrent generic write requests.
+        delete: Maximum number of concurrent generic delete requests.
     """
 
     def __init__(
@@ -90,11 +90,11 @@ class CRUDConcurrency(ConcurrencyConfig):
     Basic concurrency settings, only differentiating on CRUD operation types.
 
     Args:
-        concurrency_settings (ConcurrencySettings): Reference to the parent settings object, used to check if settings are frozen.
-        api_name (str): Which API these settings apply to (e.g. "data_modeling", "datapoints", etc.).
-        read (int): Maximum number of concurrent read requests (list, retrieve, search, etc.).
-        write (int): Maximum number of concurrent write requests (create, update, upsert, etc.).
-        delete (int): Maximum number of concurrent delete requests.
+        concurrency_settings: Reference to the parent settings object, used to check if settings are frozen.
+        api_name: Which API these settings apply to (e.g. "data_modeling", "datapoints", etc.).
+        read: Maximum number of concurrent read requests (list, retrieve, search, etc.).
+        write: Maximum number of concurrent write requests (create, update, upsert, etc.).
+        delete: Maximum number of concurrent delete requests.
     """
 
     @cache
@@ -126,14 +126,13 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
     Schema operations involve any call to views, data models and containers.
 
     Args:
-        concurrency_settings (ConcurrencySettings): Reference to the parent settings object, used to check if settings are frozen.
-        read (int): Maximum number of concurrent non-schema read requests. Mostly covers instance operations: query, retrieve, list,
-            sync and inspect, but also graphQL instance queries.
-        write (int): Maximum number of concurrent non-schema write requests, currently only instances -> apply.
-        delete (int): Maximum number of concurrent non-schema delete requests, currently only instances -> delete.
-        search (int): Maximum number of concurrent search and aggregation requests for instances.
-        read_schema (int): Maximum number of concurrent schema read requests (views, data models, containers and spaces), as well as calls to statistics.
-        write_schema (int): Maximum number of concurrent schema write requests (views, data models, containers and spaces).
+        concurrency_settings: Reference to the parent settings object, used to check if settings are frozen.
+        read: Maximum number of concurrent non-schema read requests. Mostly covers instance operations: query, retrieve, list, sync and inspect, but also graphQL instance queries.
+        write: Maximum number of concurrent non-schema write requests, currently only instances -> apply.
+        delete: Maximum number of concurrent non-schema delete requests, currently only instances -> delete.
+        search: Maximum number of concurrent search and aggregation requests for instances.
+        read_schema: Maximum number of concurrent schema read requests (views, data models, containers and spaces), as well as calls to statistics.
+        write_schema: Maximum number of concurrent schema write requests (views, data models, containers and spaces).
     """
 
     def __init__(

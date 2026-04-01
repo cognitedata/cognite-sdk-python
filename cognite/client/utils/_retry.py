@@ -9,9 +9,9 @@ class Backoff(Iterator[float]):
     described in this post: https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
 
     Args:
-        multiplier (float): No description.
-        max_wait (float): No description.
-        base (int): No description."""
+        multiplier: No description.
+        max_wait: No description.
+        base: No description."""
 
     def __init__(self, multiplier: float = 0.5, max_wait: float = 60.0, base: int = 2) -> None:
         self._multiplier = multiplier

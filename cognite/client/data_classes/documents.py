@@ -24,9 +24,9 @@ class DocumentsGeoJsonGeometry(CogniteResource):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
-        type (Literal['Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon', 'GeometryCollection']): The geometry type.
-        coordinates (list | None): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
-        geometries (Collection[Geometry] | None): No description.
+        type: The geometry type.
+        coordinates: An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+        geometries: No description.
 
     Examples:
         Point:
@@ -112,19 +112,19 @@ class SourceFile(CogniteResource):
     The source file that a document is derived from.
 
     Args:
-        name (str): The name of the source file.
-        hash (str | None): The hash of the source file. This is a SHA256 hash of the original file. The hash only covers the file content, and not other CDF metadata.
-        directory (str | None): The directory the file can be found in.
-        source (str | None): The source of the file.
-        mime_type (str | None): The mime type of the file.
-        size (int | None): The size of the file in bytes.
-        asset_ids (list[int] | None): The ids of the assets related to this file.
-        labels (list[Label | str | LabelDefinition] | None): A list of labels associated with this document's source file in CDF.
-        geo_location (DocumentsGeoJsonGeometry | None): The geolocation of the source file.
-        dataset_id (int | None): The id if the dataset this file belongs to, if any.
-        security_categories (list[int] | None): The security category IDs required to access this file.
-        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value.
-        **_ (Any): No description.
+        name: The name of the source file.
+        hash: The hash of the source file. This is a SHA256 hash of the original file. The hash only covers the file content, and not other CDF metadata.
+        directory: The directory the file can be found in.
+        source: The source of the file.
+        mime_type: The mime type of the file.
+        size: The size of the file in bytes.
+        asset_ids: The ids of the assets related to this file.
+        labels: A list of labels associated with this document's source file in CDF.
+        geo_location: The geolocation of the source file.
+        dataset_id: The id if the dataset this file belongs to, if any.
+        security_categories: The security category IDs required to access this file.
+        metadata: Custom, application specific metadata. String key -> String value.
+        **_: No description.
     """
 
     def __init__(
@@ -191,26 +191,26 @@ class Document(CogniteResource):
     A representation of a document in CDF.
 
     Args:
-        id (int): A server-generated ID for the object.
-        created_time (int): The creation time of the document in CDF in milliseconds since Jan 1, 1970.
-        source_file (SourceFile): The source file that this document is derived from.
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        instance_id (InstanceId | None): The instance ID of the node this document is associated with.
-        title (str | None): The title of the document.
-        author (str | None): The author of the document.
-        producer (str | None): The producer of the document. Many document types contain metadata indicating what software or system was used to create the document.
-        modified_time (int | None): The last time the document was modified in CDF in milliseconds since Jan 1, 1970.
-        last_indexed_time (int | None): The last time the document was indexed in the search engine, measured in milliseconds since Jan 1, 1970.
-        mime_type (str | None): The detected mime type of the document.
-        extension (str | None): Extension of the file (always in lowercase)
-        page_count (int | None): The number of pages in the document.
-        type (str | None): The detected type of the document.
-        language (str | None): The detected language of the document.
-        truncated_content (str | None): The truncated content of the document.
-        asset_ids (list[int] | None): The ids of any assets referred to in the document.
-        labels (list[Label | str | LabelDefinition] | None): The labels attached to the document.
-        geo_location (DocumentsGeoJsonGeometry | None): The geolocation of the document.
-        **_ (Any): No description.
+        id: A server-generated ID for the object.
+        created_time: The creation time of the document in CDF in milliseconds since Jan 1, 1970.
+        source_file: The source file that this document is derived from.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        instance_id: The instance ID of the node this document is associated with.
+        title: The title of the document.
+        author: The author of the document.
+        producer: The producer of the document. Many document types contain metadata indicating what software or system was used to create the document.
+        modified_time: The last time the document was modified in CDF in milliseconds since Jan 1, 1970.
+        last_indexed_time: The last time the document was indexed in the search engine, measured in milliseconds since Jan 1, 1970.
+        mime_type: The detected mime type of the document.
+        extension: Extension of the file (always in lowercase)
+        page_count: The number of pages in the document.
+        type: The detected type of the document.
+        language: The detected language of the document.
+        truncated_content: The truncated content of the document.
+        asset_ids: The ids of any assets referred to in the document.
+        labels: The labels attached to the document.
+        geo_location: The geolocation of the document.
+        **_: No description.
     """
 
     def __init__(
@@ -305,8 +305,8 @@ class Highlight(CogniteResource):
     This is used in search results to represent the result.
 
     Args:
-        name (list[str]): Matches in name.
-        content (list[str]): Matches in content.
+        name: Matches in name.
+        content: Matches in content.
     """
 
     name: list[str]
@@ -331,8 +331,8 @@ class DocumentHighlight(CogniteResource):
     This is used in search results to represent the result
 
     Args:
-        highlight (Highlight): The highlight from the document matching search results.
-        document (Document): The document.
+        highlight: The highlight from the document matching search results.
+        document: The document.
     """
 
     highlight: Highlight

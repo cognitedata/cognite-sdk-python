@@ -33,7 +33,7 @@ class StatisticsAPI(APIClient):
         Returns the usage data and limits for a project's data modelling usage, including data model schemas and graph instances
 
         Returns:
-            ProjectStatistics: The requested statistics and limits
+            The requested statistics and limits
 
         Examples:
 

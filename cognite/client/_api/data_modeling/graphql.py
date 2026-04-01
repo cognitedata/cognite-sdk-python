@@ -39,10 +39,10 @@ class DataModelingGraphQLAPI(APIClient):
             This removes all comments from the DML.
 
         Args:
-            id (DataModelIdentifier): The data model to apply DML to.
+            id: The data model to apply DML to.
 
         Returns:
-            str: The new DML
+            The new DML
         """
         graphql_body = """
             query WipeAndRegenerateDml($space: String!, $externalId: String!, $version: String!) {
@@ -82,14 +82,14 @@ class DataModelingGraphQLAPI(APIClient):
         """Apply the DML for a given data model.
 
         Args:
-            id (DataModelIdentifier): The data model to apply DML to.
-            dml (str): The DML to apply.
-            name (str | None): The name of the data model.
-            description (str | None): The description of the data model.
-            previous_version (str | None): The previous version of the data model. Specify to reuse view versions from previous data model version.
+            id: The data model to apply DML to.
+            dml: The DML to apply.
+            name: The name of the data model.
+            description: The description of the data model.
+            previous_version: The previous version of the data model. Specify to reuse view versions from previous data model version.
 
         Returns:
-            DMLApplyResult: The id of the updated data model.
+            The id of the updated data model.
 
         Examples:
 
@@ -163,12 +163,12 @@ class DataModelingGraphQLAPI(APIClient):
         """Execute a GraphQl query against a given data model.
 
         Args:
-            id (DataModelIdentifier): The data model to query.
-            query (str): The query to issue.
-            variables (dict[str, Any] | None): An optional dict of variables to pass to the query.
+            id: The data model to query.
+            query: The query to issue.
+            variables: An optional dict of variables to pass to the query.
 
         Returns:
-            dict[str, Any]: The query result
+            The query result
 
         Examples:
 

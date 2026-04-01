@@ -44,9 +44,9 @@ class DestinationWrite(_DestinationCore):
     This is the write/request format of the destination.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        credentials (SessionWrite): Credentials for authenticating towards CDF using a CDF session.
-        target_data_set_id (int | None): Data set ID the created items are inserted into, if applicable.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        credentials: Credentials for authenticating towards CDF using a CDF session.
+        target_data_set_id: Data set ID the created items are inserted into, if applicable.
 
     """
 
@@ -84,11 +84,11 @@ class Destination(_DestinationCore):
     This is the write/request format of the destination.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        session_id (int | None): ID of the session tied to this destination.
-        target_data_set_id (int | None): Data set ID the created items are inserted into, if applicable.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        session_id: ID of the session tied to this destination.
+        target_data_set_id: Data set ID the created items are inserted into, if applicable.
 
     """
 

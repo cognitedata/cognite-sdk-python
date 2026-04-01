@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e7bcba053c734addd5c227721c494fbb
+da2419a66b498a2b2751fbbfee062762
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -42,11 +42,11 @@ class SyncSpacesAPI(SyncAPIClient):
         Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
 
         Args:
-            chunk_size (int | None): Number of spaces to return in each chunk. Defaults to yielding one space a time.
-            limit (int | None): Maximum number of spaces to return. Defaults to returning all items.
+            chunk_size: Number of spaces to return in each chunk. Defaults to yielding one space a time.
+            limit: Maximum number of spaces to return. Defaults to returning all items.
 
         Yields:
-            Space | SpaceList: yields Space one by one if chunk_size is not specified, else SpaceList objects.
+            yields Space one by one if chunk_size is not specified, else SpaceList objects.
         """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.data_modeling.spaces(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
@@ -61,10 +61,10 @@ class SyncSpacesAPI(SyncAPIClient):
         `Retrieve one or more spaces. <https://api-docs.cognite.com/20230101/tag/Spaces/operation/bySpaceIdsSpaces>`_
 
         Args:
-            spaces (str | SequenceNotStr[str]): Space ID
+            spaces: Space ID
 
         Returns:
-            Space | SpaceList | None: Requested space or None if it does not exist.
+            Requested space or None if it does not exist.
 
         Examples:
 
@@ -86,9 +86,9 @@ class SyncSpacesAPI(SyncAPIClient):
         `Delete one or more spaces <https://api-docs.cognite.com/20230101/tag/Spaces/operation/deleteSpacesV3>`_
 
         Args:
-            spaces (str | SequenceNotStr[str]): ID or ID list ids of spaces.
+            spaces: ID or ID list ids of spaces.
         Returns:
-            list[str]: The space(s) which has been deleted.
+            The space(s) which has been deleted.
         Examples:
 
             Delete spaces by id:
@@ -105,11 +105,11 @@ class SyncSpacesAPI(SyncAPIClient):
         `List spaces <https://api-docs.cognite.com/20230101/tag/Spaces/operation/listSpacesV3>`_
 
         Args:
-            limit (int | None): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
-            include_global (bool): Whether to include global spaces. Defaults to False.
+            limit: Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            include_global: Whether to include global spaces. Defaults to False.
 
         Returns:
-            SpaceList: List of requested spaces
+            List of requested spaces
 
         Examples:
 
@@ -143,10 +143,10 @@ class SyncSpacesAPI(SyncAPIClient):
         `Create or patch one or more spaces. <https://api-docs.cognite.com/20230101/tag/Spaces/operation/ApplySpaces>`_
 
         Args:
-            spaces (SpaceApply | Sequence[SpaceApply]): Space | Sequence[Space]): Space or spaces of spacesda to create or update.
+            spaces: Space or spaces of spacesda to create or update.
 
         Returns:
-            Space | SpaceList: Created space(s)
+            Created space(s)
 
         Examples:
 

@@ -105,8 +105,8 @@ class NodeOrEdgeData(CogniteResource):
     """This represents the data values of a node or edge.
 
     Args:
-        source (ContainerId | ViewId): The container or view the node or edge property is in
-        properties (Mapping[str, PropertyValueWrite]): The properties of the node or edge.
+        source: The container or view the node or edge property is in
+        properties: The properties of the node or edge.
     """
 
     source: ContainerId | ViewId
@@ -147,9 +147,9 @@ class InstanceCore(DataModelingResource, ABC):
     """A node or edge
 
     Args:
-        space (str): The workspace for the instance, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the instance.
-        instance_type (Literal['node', 'edge']): The type of instance.
+        space: The workspace for the instance, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the instance.
+        instance_type: The type of instance.
     """
 
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
@@ -169,11 +169,11 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
     """A node or edge. This is the write version of the instance.
 
     Args:
-        space (str): The workspace for the instance, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the instance.
-        instance_type (Literal['node', 'edge']): The type of instance.
-        existing_version (int | None): Fail the ingestion request if the instance's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the instance (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the instance already exists. If skipOnVersionConflict is set on the ingestion request, then the instance will be skipped instead of failing the ingestion request.
-        sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the instance and/or container the container(s) making up this node.
+        space: The workspace for the instance, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the instance.
+        instance_type: The type of instance.
+        existing_version: Fail the ingestion request if the instance's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the instance (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the instance already exists. If skipOnVersionConflict is set on the ingestion request, then the instance will be skipped instead of failing the ingestion request.
+        sources: List of source properties to write. The properties are from the instance and/or container the container(s) making up this node.
     """
 
     def __init__(
@@ -325,14 +325,14 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
     """A node or edge. This is the read version of the instance.
 
     Args:
-        space (str): The workspace for the instance, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the instance.
-        version (int): Current version of the instance.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        instance_type (Literal['node', 'edge']): The type of instance.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-        properties (Properties | None): Properties of the instance.
+        space: The workspace for the instance, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the instance.
+        version: Current version of the instance.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        instance_type: The type of instance.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        properties: Properties of the instance.
     """
 
     def __init__(
@@ -433,14 +433,14 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
-            camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect properties if expanded.
-            convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
-            expand_properties (bool): Expand the properties into separate rows.
-            remove_property_prefix (bool): Attempt to remove the view ID prefix from row names of expanded properties (in index). Requires data to be from a single view and that all property names do not conflict with base properties (e.g. 'space' or 'type'). In such cases, a warning is issued and the prefix is kept.
+            ignore: List of row keys to skip when converting to a data frame. Is applied before expansions.
+            camel_case: Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect properties if expanded.
+            convert_timestamps: Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
+            expand_properties: Expand the properties into separate rows.
+            remove_property_prefix: Attempt to remove the view ID prefix from row names of expanded properties (in index). Requires data to be from a single view and that all property names do not conflict with base properties (e.g. 'space' or 'type'). In such cases, a warning is issued and the prefix is kept.
 
         Returns:
-            pd.DataFrame: The dataframe.
+            The dataframe.
         """
         df = super().to_pandas(
             expand_metadata=False, ignore=ignore, camel_case=camel_case, convert_timestamps=convert_timestamps
@@ -486,13 +486,13 @@ class InstanceApplyResult(InstanceCore, ABC):
     """A node or edge. This represents the update on the instance.
 
     Args:
-        instance_type (Literal['node', 'edge']): The type of instance.
-        space (str): The workspace for the instance, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the instance.
-        version (int): DMS version of the instance.
-        was_modified (bool): Whether the instance was modified by the ingestion.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        instance_type: The type of instance.
+        space: The workspace for the instance, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the instance.
+        version: DMS version of the instance.
+        was_modified: Whether the instance was modified by the ingestion.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -516,8 +516,8 @@ class InstanceAggregationResult(DataModelingResource):
     """Represents instances aggregation results.
 
     Args:
-        aggregates (list[AggregatedNumberedValue]): List of aggregated values.
-        group (dict[str, str | int | float | bool]): The grouping used for the aggregation.
+        aggregates: List of aggregated values.
+        group: The grouping used for the aggregation.
     """
 
     def __init__(self, aggregates: list[AggregatedNumberedValue], group: dict[str, str | int | float | bool]) -> None:
@@ -530,10 +530,10 @@ class InstanceAggregationResult(DataModelingResource):
         Loads an instance aggregation result from a json string or dictionary.
 
         Args:
-            resource (dict): No description.
+            resource: No description.
 
         Returns:
-            Self: An instance aggregation result.
+            An instance aggregation result.
         """
         return cls(
             aggregates=[AggregatedNumberedValue.load(agg) for agg in resource["aggregates"]],
@@ -545,10 +545,10 @@ class InstanceAggregationResult(DataModelingResource):
         Dumps the aggregation results to a dictionary.
 
         Args:
-            camel_case (bool): Whether to convert the keys to camel case.
+            camel_case: Whether to convert the keys to camel case.
 
         Returns:
-            dict[str, Any]: A dictionary with the instance results.
+            A dictionary with the instance results.
 
         """
         return {
@@ -652,11 +652,11 @@ class NodeApply(InstanceApply["NodeApply"]):
     """A node. This is the write version of the node.
 
     Args:
-        space (str): The workspace for the node, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the node.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the node and/or container the container(s) making up this node.
-        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+        space: The workspace for the node, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the node.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        sources: List of source properties to write. The properties are from the node and/or container the container(s) making up this node.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -698,14 +698,14 @@ class Node(Instance[NodeApply]):
     """A node. This is the read version of the node.
 
     Args:
-        space (str): The workspace for the node, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the node.
-        version (int): Current version of the node.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-        properties (Properties | None): Properties of the node.
-        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+        space: The workspace for the node, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the node.
+        version: Current version of the node.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        properties: Properties of the node.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -733,7 +733,7 @@ class Node(Instance[NodeApply]):
             (CogniteAsset), or ``isUploaded`` (CogniteFile).
 
         Returns:
-            NodeApply: A write node, NodeApply, with all properties (even read-only) copied over.
+            A write node, NodeApply, with all properties (even read-only) copied over.
 
         """
         return NodeApply(
@@ -777,12 +777,12 @@ class NodeApplyResult(InstanceApplyResult):
     """A node. This represents the update on the node.
 
     Args:
-        space (str): The workspace for the node, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the node.
-        version (int): Current version of the node.
-        was_modified (bool): Whether the node was modified by the ingestion.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        space: The workspace for the node, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the node.
+        version: Current version of the node.
+        was_modified: Whether the node was modified by the ingestion.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -817,13 +817,13 @@ class EdgeApply(InstanceApply["EdgeApply"]):
     """An Edge. This is the write version of the edge.
 
     Args:
-        space (str): The workspace for the edge, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the edge.
-        type (DirectRelationReference | tuple[str, str]): The type of edge.
-        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the edge and/or container the container(s) making up this node.
+        space: The workspace for the edge, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the edge.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        sources: List of source properties to write. The properties are from the edge and/or container the container(s) making up this node.
     """
 
     def __init__(
@@ -879,16 +879,16 @@ class Edge(Instance[EdgeApply]):
     """An Edge. This is the read version of the edge.
 
     Args:
-        space (str): The workspace for the edge, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the edge.
-        version (int): Current version of the edge.
-        type (DirectRelationReference | tuple[str, str]): The type of edge.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-        properties (Properties | None): No description.
+        space: The workspace for the edge, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the edge.
+        version: Current version of the edge.
+        type: The type of edge.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        properties: No description.
     """
 
     def __init__(
@@ -919,7 +919,7 @@ class Edge(Instance[EdgeApply]):
             edge will fail on ingestion.
 
         Returns:
-            EdgeApply: A write edge, EdgeApply, with all properties (even read-only) copied over.
+            A write edge, EdgeApply, with all properties (even read-only) copied over.
 
         """
         return EdgeApply(
@@ -971,12 +971,12 @@ class EdgeApplyResult(InstanceApplyResult):
     """An Edge. This represents the update on the edge.
 
     Args:
-        space (str): The workspace for the edge, a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the edge.
-        version (int): Current version of the edge.
-        was_modified (bool): Whether the edge was modified by the ingestion.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        space: The workspace for the edge, a unique identifier for the space.
+        external_id: Combined with the space is the unique identifier of the edge.
+        version: Current version of the edge.
+        was_modified: Whether the edge was modified by the ingestion.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -1015,7 +1015,7 @@ class NodeApplyResultList(CogniteResourceList[NodeApplyResult]):
         Convert the list of nodes to a list of node ids.
 
         Returns:
-            list[NodeId]: A list of node ids.
+            A list of node ids.
         """
         return [result.as_id() for result in self]
 
@@ -1028,7 +1028,7 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
         Convert the list of nodes to a list of node ids.
 
         Returns:
-            list[NodeId]: A list of node ids.
+            A list of node ids.
         """
         return [node.as_id() for node in self]
 
@@ -1067,11 +1067,11 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
         """Get an instance from this list by instance ID.
 
         Args:
-            instance_id (InstanceId | tuple[str, str] | None): The instance ID to get. A tuple on the form (space, external_id) is also accepted.
-            external_id (str | None): The external ID of the instance to return. Will raise ValueError when ambiguous (in presence of multiple spaces).
+            instance_id: The instance ID to get. A tuple on the form (space, external_id) is also accepted.
+            external_id: The external ID of the instance to return. Will raise ValueError when ambiguous (in presence of multiple spaces).
 
         Returns:
-            T_Instance | None: The requested instance if present, else None
+            The requested instance if present, else None
         """
         if not exactly_one_is_not_none(instance_id, external_id):
             raise ValueError(
@@ -1108,13 +1108,13 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
         keys in the metadata that already exist in the DataFrame, then an error will be raised by pandas during joining.
 
         Args:
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`). Does not apply to properties.
-            convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
-            expand_properties (bool): Expand the properties into separate columns.
-            remove_property_prefix (bool): Attempt to remove the view ID prefix from columns names of expanded properties. Requires data to be from a single view and that all property names do not conflict with base properties (e.g. 'space' or 'type'). In such cases, a warning is issued and the prefix is kept.
+            camel_case: Convert column names to camel case (e.g. `externalId` instead of `external_id`). Does not apply to properties.
+            convert_timestamps: Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
+            expand_properties: Expand the properties into separate columns.
+            remove_property_prefix: Attempt to remove the view ID prefix from columns names of expanded properties. Requires data to be from a single view and that all property names do not conflict with base properties (e.g. 'space' or 'type'). In such cases, a warning is issued and the prefix is kept.
 
         Returns:
-            pd.DataFrame: The Cognite resource as a dataframe.
+            The Cognite resource as a dataframe.
         """
         df = super().to_pandas(camel_case=camel_case, expand_metadata=False, convert_timestamps=convert_timestamps)
         if not expand_properties or "properties" not in df.columns:
@@ -1170,7 +1170,7 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
         Convert the list of nodes to a list of node ids.
 
         Returns:
-            list[NodeId]: A list of node ids.
+            A list of node ids.
         """
         return [node.as_id() for node in self]
 
@@ -1233,7 +1233,7 @@ class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
         Convert the list of edges to a list of edge ids.
 
         Returns:
-            list[EdgeId]: A list of edge ids.
+            A list of edge ids.
         """
         return [edge.as_id() for edge in self]
 
@@ -1246,7 +1246,7 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
         Convert the list of edges to a list of edge ids.
 
         Returns:
-            list[EdgeId]: A list of edge ids.
+            A list of edge ids.
         """
         return [edge.as_id() for edge in self]
 
@@ -1272,7 +1272,7 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
         Convert the list of edges to a list of edge ids.
 
         Returns:
-            list[EdgeId]: A list of edge ids.
+            A list of edge ids.
         """
         return [edge.as_id() for edge in self]
 
@@ -1334,8 +1334,8 @@ class InstancesApply:
     This represents the write request of an instance query
 
     Args:
-        nodes (NodeApplyList): A list of nodes.
-        edges (EdgeApplyList): A list of edges.
+        nodes: A list of nodes.
+        edges: A list of edges.
     """
 
     nodes: NodeApplyList
@@ -1357,8 +1357,8 @@ class InstancesResult(Generic[T_Node, T_Edge]):
     """This represents the read result of an instance query
 
     Args:
-        nodes (NodeList[T_Node]): A list of nodes.
-        edges (EdgeList[T_Edge]): A list of edges.
+        nodes: A list of nodes.
+        edges: A list of edges.
 
     """
 
@@ -1371,8 +1371,8 @@ class InstancesApplyResult:
     """This represents the write result of an instance query
 
     Args:
-        nodes (NodeApplyResultList): A list of nodes.
-        edges (EdgeApplyResultList): A list of edges.
+        nodes: A list of nodes.
+        edges: A list of edges.
 
     """
 
@@ -1385,8 +1385,8 @@ class InstancesDeleteResult:
     """This represents the delete result of an instance query
 
     Args:
-        nodes (list[NodeId]): A list of node ids.
-        edges (list[EdgeId]): A list of edge ids.
+        nodes: A list of node ids.
+        edges: A list of edge ids.
 
     """
 
@@ -1560,7 +1560,7 @@ class PropertyOptions:
     compared to the name in the Python class.
 
     Args:
-        identifier (str | None): The name of the property in the Data Model. Defaults to the name of the property in the Python class.
+        identifier: The name of the property in the Data Model. Defaults to the name of the property in the Python class.
     """
 
     def __init__(self, identifier: str | None = None) -> None:

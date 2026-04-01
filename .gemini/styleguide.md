@@ -101,10 +101,10 @@ def render_header(header: str) -> str:
     Renders a (markdown) heading.
 
     Args:
-        header (str): header
+        header: header
 
     Returns:
-        str: The rendered header
+        The rendered header
     """
     return f"{header}\n{'=' * len(header)}\n"
 

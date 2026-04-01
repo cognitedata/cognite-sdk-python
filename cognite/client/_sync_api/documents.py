@@ -1,6 +1,6 @@
 """
 ===============================================================================
-3ec6c9ff3cd20cbefde273d76514a0b0
+75b658b2f1387f5dafd70f1f036d73a4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -70,13 +70,13 @@ class SyncDocumentsAPI(SyncAPIClient):
         Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
 
         Args:
-            chunk_size (int | None): Number of documents to return in each chunk. Defaults to yielding one document at a time.
-            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to return.
-            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal['asc', 'desc']] | None): The property to sort by. The default order is ascending.
-            limit (int | None): Maximum number of documents to return. Default to return all items.
+            chunk_size: Number of documents to return in each chunk. Defaults to yielding one document at a time.
+            filter: The filter to narrow down the documents to return.
+            sort: The property to sort by. The default order is ascending.
+            limit: Maximum number of documents to return. Default to return all items.
 
         Yields:
-            Document | DocumentList: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
+            yields Documents one by one if chunk_size is not specified, else DocumentList objects.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.documents(chunk_size=chunk_size, filter=filter, sort=sort, limit=limit)
@@ -87,11 +87,11 @@ class SyncDocumentsAPI(SyncAPIClient):
         `Count of documents matching the specified filters and search. <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count.
+            query: The free text search query, for details see the documentation referenced above.
+            filter: The filter to narrow down the documents to count.
 
         Returns:
-            int: The number of documents matching the specified filters and search.
+            The number of documents matching the specified filters and search.
 
         Examples:
 
@@ -132,13 +132,13 @@ class SyncDocumentsAPI(SyncAPIClient):
         `Find approximate property count for documents. <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            property (DocumentProperty | SourceFileProperty | list[str] | str): The property to count the cardinality of.
-            query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            property: The property to count the cardinality of.
+            query: The free text search query, for details see the documentation referenced above.
+            filter: The filter to narrow down the documents to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
 
         Returns:
-            int: The number of documents matching the specified filters and search.
+            The number of documents matching the specified filters and search.
 
         Examples:
 
@@ -186,13 +186,13 @@ class SyncDocumentsAPI(SyncAPIClient):
         `Find approximate paths count for documents.  <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            path (SourceFileProperty | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["sourceFile", "metadata"]. It means to aggregate only metadata properties (aka keys).
-            query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
+            path: The scope in every document to aggregate properties. The only value allowed now is ["sourceFile", "metadata"]. It means to aggregate only metadata properties (aka keys).
+            query: The free text search query, for details see the documentation referenced above.
+            filter: The filter to narrow down the documents to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
 
         Returns:
-            int: The number of documents matching the specified filters and search.
+            The number of documents matching the specified filters and search.
 
         Examples:
 
@@ -221,14 +221,14 @@ class SyncDocumentsAPI(SyncAPIClient):
         `Get unique properties with counts for documents. <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            property (DocumentProperty | SourceFileProperty | list[str] | str): The property to group by.
-            query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            limit (int): Maximum number of items. Defaults to 25.
+            property: The property to group by.
+            query: The free text search query, for details see the documentation referenced above.
+            filter: The filter to narrow down the documents to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            limit: Maximum number of items. Defaults to 25.
 
         Returns:
-            UniqueResultList: List of unique values of documents matching the specified filters and search.
+            List of unique values of documents matching the specified filters and search.
 
         Examples:
 
@@ -280,14 +280,14 @@ class SyncDocumentsAPI(SyncAPIClient):
         `Get unique paths with counts for documents. <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
-            query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
-            limit (int): Maximum number of items. Defaults to 25.
+            path: The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
+            query: The free text search query, for details see the documentation referenced above.
+            filter: The filter to narrow down the documents to count cardinality.
+            aggregate_filter: The filter to apply to the resulting buckets.
+            limit: Maximum number of items. Defaults to 25.
 
         Returns:
-            UniqueResultList: List of unique values of documents matching the specified filters and search.
+            List of unique values of documents matching the specified filters and search.
 
         Examples:
 
@@ -319,12 +319,12 @@ class SyncDocumentsAPI(SyncAPIClient):
         you can use this endpoint.
 
         Args:
-            id (int | None): The server-generated ID for the document you want to retrieve the content of.
-            external_id (str | None): External ID of the document.
-            instance_id (NodeId | None): Instance ID of the document.
+            id: The server-generated ID for the document you want to retrieve the content of.
+            external_id: External ID of the document.
+            instance_id: Instance ID of the document.
 
         Returns:
-            bytes: The content of the document.
+            The content of the document.
 
         Examples:
 
@@ -363,10 +363,10 @@ class SyncDocumentsAPI(SyncAPIClient):
         you can use this endpoint.
 
         Args:
-            buffer (BinaryIO): The document content is streamed directly into the buffer. This is useful for retrieving large documents.
-            id (int | None): The server-generated ID for the document you want to retrieve the content of.
-            external_id (str | None): External ID of the document.
-            instance_id (NodeId | None): Instance ID of the document.
+            buffer: The document content is streamed directly into the buffer. This is useful for retrieving large documents.
+            id: The server-generated ID for the document you want to retrieve the content of.
+            external_id: External ID of the document.
+            instance_id: Instance ID of the document.
 
         Examples:
 
@@ -426,14 +426,14 @@ class SyncDocumentsAPI(SyncAPIClient):
         endpoint documentation referenced above.
 
         Args:
-            query (str): The free text search query.
-            highlight (bool): Whether or not matches in search results should be highlighted.
-            filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to search.
-            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal['asc', 'desc']] | None): The property to sort by. The default order is ascending.
-            limit (int): Maximum number of items to return. When using highlights, the maximum value is reduced to 20. Defaults to 25.
+            query: The free text search query.
+            highlight: Whether or not matches in search results should be highlighted.
+            filter: The filter to narrow down the documents to search.
+            sort: The property to sort by. The default order is ascending.
+            limit: Maximum number of items to return. When using highlights, the maximum value is reduced to 20. Defaults to 25.
 
         Returns:
-            DocumentList | DocumentHighlightList: List of search results. If highlight is True, a DocumentHighlightList is returned, otherwise a DocumentList is returned.
+            List of search results. If highlight is True, a DocumentHighlightList is returned, otherwise a DocumentList is returned.
 
         Examples:
 
@@ -485,12 +485,12 @@ class SyncDocumentsAPI(SyncAPIClient):
         project.
 
         Args:
-            filter (Filter | dict[str, Any] | None): Filter | dict[str, Any] | None): The filter to narrow down the documents to return.
-            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal['asc', 'desc']] | None): The property to sort by. The default order is ascending.
-            limit (int | None): Maximum number of documents to return. Defaults to 25. Set to None or -1 to return all documents.
+            filter: The filter to narrow down the documents to return.
+            sort: The property to sort by. The default order is ascending.
+            limit: Maximum number of documents to return. Defaults to 25. Set to None or -1 to return all documents.
 
         Returns:
-            DocumentList: List of documents
+            List of documents
 
         Examples:
 

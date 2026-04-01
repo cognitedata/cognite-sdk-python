@@ -1,6 +1,6 @@
 """
 ===============================================================================
-603a6779be1a738cab2a9b44d73a33c7
+f654f21067441bbf6e0274e33a00a664
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -31,11 +31,11 @@ class SyncSecurityCategoriesAPI(SyncAPIClient):
         `List security categories. <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:
-            limit (int | None): Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            sort (Literal['ASC', 'DESC']): Sort order of the security categories. Defaults to "ASC".
+            limit: Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            sort: Sort order of the security categories. Defaults to "ASC".
 
         Returns:
-            SecurityCategoryList: List of security categories
+            List of security categories
 
         Example:
 
@@ -67,10 +67,10 @@ class SyncSecurityCategoriesAPI(SyncAPIClient):
         `Create one or more security categories. <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/createSecurityCategories>`_
 
         Args:
-            security_category (SecurityCategory | SecurityCategoryWrite | Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]): Security category or list of categories to create.
+            security_category: Security category or list of categories to create.
 
         Returns:
-            SecurityCategory | SecurityCategoryList: The created security category or categories.
+            The created security category or categories.
 
         Example:
 
@@ -90,7 +90,7 @@ class SyncSecurityCategoriesAPI(SyncAPIClient):
         `Delete one or more security categories. <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/deleteSecurityCategories>`_
 
         Args:
-            id (int | Sequence[int]): ID or list of IDs of security categories to delete.
+            id: ID or list of IDs of security categories to delete.
 
         Example:
 

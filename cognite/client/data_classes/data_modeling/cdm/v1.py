@@ -40,28 +40,28 @@ class Cognite360ImageApply(_Cognite360ImageProperties, TypedNodeApply):
     It is used when data is written to CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 360 image.
-        translation_x (float | None | Omitted): The displacement of the object along the X-axis in the 3D coordinate system
-        translation_y (float | None | Omitted): The displacement of the object along the Y-axis in the 3D coordinate system
-        translation_z (float | None | Omitted): The displacement of the object along the Z-axis in the 3D coordinate system
-        euler_rotation_x (float | None | Omitted): The rotation of the object around the X-axis in radians
-        euler_rotation_y (float | None | Omitted): The rotation of the object around the Y-axis in radians
-        euler_rotation_z (float | None | Omitted): The rotation of the object around the Z-axis in radians
-        scale_x (float | None | Omitted): The scaling factor applied to the object along the X-axis
-        scale_y (float | None | Omitted): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None | Omitted): The scaling factor applied to the object along the Z-axis
-        front (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the front projection of the cube map
-        back (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the back projection of the cube map
-        left (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the left projection of the cube map
-        right (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the right projection of the cube map
-        top (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the top projection of the cube map
-        bottom (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the bottom projection of the cube map
-        collection_360 (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to Cognite360ImageCollection
-        station_360 (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to Cognite3DGroup instance that groups different Cognite360Image instances to the same station
-        taken_at (datetime | None | Omitted): The timestamp when the 6 photos were taken
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 360 image.
+        translation_x: The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y: The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z: The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x: The rotation of the object around the X-axis in radians
+        euler_rotation_y: The rotation of the object around the Y-axis in radians
+        euler_rotation_z: The rotation of the object around the Z-axis in radians
+        scale_x: The scaling factor applied to the object along the X-axis
+        scale_y: The scaling factor applied to the object along the Y-axis
+        scale_z: The scaling factor applied to the object along the Z-axis
+        front: Direct relation to a file holding the front projection of the cube map
+        back: Direct relation to a file holding the back projection of the cube map
+        left: Direct relation to a file holding the left projection of the cube map
+        right: Direct relation to a file holding the right projection of the cube map
+        top: Direct relation to a file holding the top projection of the cube map
+        bottom: Direct relation to a file holding the bottom projection of the cube map
+        collection_360: Direct relation to Cognite360ImageCollection
+        station_360: Direct relation to Cognite3DGroup instance that groups different Cognite360Image instances to the same station
+        taken_at: The timestamp when the 6 photos were taken
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -117,31 +117,31 @@ class Cognite360Image(_Cognite360ImageProperties, TypedNode):
     It is used when data is read from CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 360 image.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        translation_x (float | None): The displacement of the object along the X-axis in the 3D coordinate system
-        translation_y (float | None): The displacement of the object along the Y-axis in the 3D coordinate system
-        translation_z (float | None): The displacement of the object along the Z-axis in the 3D coordinate system
-        euler_rotation_x (float | None): The rotation of the object around the X-axis in radians
-        euler_rotation_y (float | None): The rotation of the object around the Y-axis in radians
-        euler_rotation_z (float | None): The rotation of the object around the Z-axis in radians
-        scale_x (float | None): The scaling factor applied to the object along the X-axis
-        scale_y (float | None): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None): The scaling factor applied to the object along the Z-axis
-        front (DirectRelationReference | None): Direct relation to a file holding the front projection of the cube map
-        back (DirectRelationReference | None): Direct relation to a file holding the back projection of the cube map
-        left (DirectRelationReference | None): Direct relation to a file holding the left projection of the cube map
-        right (DirectRelationReference | None): Direct relation to a file holding the right projection of the cube map
-        top (DirectRelationReference | None): Direct relation to a file holding the top projection of the cube map
-        bottom (DirectRelationReference | None): Direct relation to a file holding the bottom projection of the cube map
-        collection_360 (DirectRelationReference | None): Direct relation to Cognite360ImageCollection
-        station_360 (DirectRelationReference | None): Direct relation to Cognite3DGroup instance that groups different Cognite360Image instances to the same station
-        taken_at (datetime | None): The timestamp when the 6 photos were taken
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 360 image.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        translation_x: The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y: The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z: The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x: The rotation of the object around the X-axis in radians
+        euler_rotation_y: The rotation of the object around the Y-axis in radians
+        euler_rotation_z: The rotation of the object around the Z-axis in radians
+        scale_x: The scaling factor applied to the object along the X-axis
+        scale_y: The scaling factor applied to the object along the Y-axis
+        scale_z: The scaling factor applied to the object along the Z-axis
+        front: Direct relation to a file holding the front projection of the cube map
+        back: Direct relation to a file holding the back projection of the cube map
+        left: Direct relation to a file holding the left projection of the cube map
+        right: Direct relation to a file holding the right projection of the cube map
+        top: Direct relation to a file holding the top projection of the cube map
+        bottom: Direct relation to a file holding the bottom projection of the cube map
+        collection_360: Direct relation to Cognite360ImageCollection
+        station_360: Direct relation to Cognite3DGroup instance that groups different Cognite360Image instances to the same station
+        taken_at: The timestamp when the 6 photos were taken
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -237,18 +237,18 @@ class Cognite360ImageCollectionApply(_Cognite360ImageCollectionProperties, Typed
     Represents a logical collection of Cognite360Image instances
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 360 image collection.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None | Omitted): The status field.
-        published (bool | None | Omitted): The published field.
-        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): The revision type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None | Omitted): The model 3d field.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 360 image collection.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        status: The status field.
+        published: The published field.
+        revision_type: The revision type field.
+        model_3d: The model 3d field.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -286,21 +286,21 @@ class Cognite360ImageCollection(_Cognite360ImageCollectionProperties, TypedNode)
     Represents a logical collection of Cognite360Image instances
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 360 image collection.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The status field.
-        published (bool | None): The published field.
-        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | None): The revision type field.
-        model_3d (DirectRelationReference | None): The model 3d field.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 360 image collection.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        status: The status field.
+        published: The published field.
+        revision_type: The revision type field.
+        model_3d: The model 3d field.
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -365,16 +365,16 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply)
     Navigational aid for traversing Cognite360ImageModel instances
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 360 image model.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): CAD, PointCloud or Image360
-        thumbnail (DirectRelationReference | tuple[str, str] | None | Omitted): Thumbnail of the 3D model
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 360 image model.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        model_type: CAD, PointCloud or Image360
+        thumbnail: Thumbnail of the 3D model
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -408,19 +408,19 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
     Navigational aid for traversing Cognite360ImageModel instances
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 360 image model.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
-        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 360 image model.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        model_type: CAD, PointCloud or Image360
+        thumbnail: Thumbnail of the 3D model
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -479,15 +479,15 @@ class Cognite360ImageStationApply(_Cognite360ImageStationProperties, TypedNodeAp
     A way to group images across collections. Used for creating visual scan history
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 360 image station.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        group_type (Literal['Station360'] | None | Omitted): Type of group
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 360 image station.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        group_type: Type of group
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -519,18 +519,18 @@ class Cognite360ImageStation(_Cognite360ImageStationProperties, TypedNode):
     A way to group images across collections. Used for creating visual scan history
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 360 image station.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        group_type (Literal['Station360'] | None): Type of group
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 360 image station.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        group_type: Type of group
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -586,16 +586,16 @@ class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
     Groups revisions of 3D data of various kinds together (CAD, PointCloud, Image360)
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 3D model.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): CAD, PointCloud or Image360
-        thumbnail (DirectRelationReference | tuple[str, str] | None | Omitted): Thumbnail of the 3D model
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 3D model.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        model_type: CAD, PointCloud or Image360
+        thumbnail: Thumbnail of the 3D model
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -629,19 +629,19 @@ class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
     Groups revisions of 3D data of various kinds together (CAD, PointCloud, Image360)
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 3D model.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
-        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 3D model.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        model_type: CAD, PointCloud or Image360
+        thumbnail: Thumbnail of the 3D model
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -705,20 +705,20 @@ class Cognite3DObjectApply(_Cognite3DObjectProperties, TypedNodeApply):
     This is the virtual position representation of an object in the physical world, connecting an asset to one or more 3D resources
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 3D object.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        x_min (float | None | Omitted): Lowest X value in bounding box
-        x_max (float | None | Omitted): Highest X value in bounding box
-        y_min (float | None | Omitted): Lowest Y value in bounding box
-        y_max (float | None | Omitted): Highest Y value in bounding box
-        z_min (float | None | Omitted): Lowest Z value in bounding box
-        z_max (float | None | Omitted): Highest Z value in bounding box
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 3D object.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        x_min: Lowest X value in bounding box
+        x_max: Highest X value in bounding box
+        y_min: Lowest Y value in bounding box
+        y_max: Highest Y value in bounding box
+        z_min: Lowest Z value in bounding box
+        z_max: Highest Z value in bounding box
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -760,23 +760,23 @@ class Cognite3DObject(_Cognite3DObjectProperties, TypedNode):
     This is the virtual position representation of an object in the physical world, connecting an asset to one or more 3D resources
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 3D object.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        x_min (float | None): Lowest X value in bounding box
-        x_max (float | None): Highest X value in bounding box
-        y_min (float | None): Lowest Y value in bounding box
-        y_max (float | None): Highest Y value in bounding box
-        z_min (float | None): Lowest Z value in bounding box
-        z_max (float | None): Highest Z value in bounding box
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 3D object.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        x_min: Lowest X value in bounding box
+        x_max: Highest X value in bounding box
+        y_min: Lowest Y value in bounding box
+        y_max: Highest Y value in bounding box
+        z_min: Lowest Z value in bounding box
+        z_max: Highest Z value in bounding box
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -848,14 +848,14 @@ class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
     Shared revision information for various 3D data types. Normally not used directly, but through CognitePointCloudRevision, Image360Collection or CogniteCADRevision
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 3D revision.
-        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None | Omitted): The status field.
-        published (bool | None | Omitted): The published field.
-        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): The revision type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None | Omitted): The model 3d field.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 3D revision.
+        status: The status field.
+        published: The published field.
+        revision_type: The revision type field.
+        model_3d: The model 3d field.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -885,17 +885,17 @@ class Cognite3DRevision(_Cognite3DRevisionProperties, TypedNode):
     Shared revision information for various 3D data types. Normally not used directly, but through CognitePointCloudRevision, Image360Collection or CogniteCADRevision
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 3D revision.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The status field.
-        published (bool | None): The published field.
-        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | None): The revision type field.
-        model_3d (DirectRelationReference | None): The model 3d field.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 3D revision.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        status: The status field.
+        published: The published field.
+        revision_type: The revision type field.
+        model_3d: The model 3d field.
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -956,19 +956,19 @@ class Cognite3DTransformationNodeApply(_Cognite3DTransformationProperties, Typed
     The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 3D transformation node.
-        translation_x (float | None | Omitted): The displacement of the object along the X-axis in the 3D coordinate system
-        translation_y (float | None | Omitted): The displacement of the object along the Y-axis in the 3D coordinate system
-        translation_z (float | None | Omitted): The displacement of the object along the Z-axis in the 3D coordinate system
-        euler_rotation_x (float | None | Omitted): The rotation of the object around the X-axis in radians
-        euler_rotation_y (float | None | Omitted): The rotation of the object around the Y-axis in radians
-        euler_rotation_z (float | None | Omitted): The rotation of the object around the Z-axis in radians
-        scale_x (float | None | Omitted): The scaling factor applied to the object along the X-axis
-        scale_y (float | None | Omitted): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None | Omitted): The scaling factor applied to the object along the Z-axis
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 3D transformation node.
+        translation_x: The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y: The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z: The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x: The rotation of the object around the X-axis in radians
+        euler_rotation_y: The rotation of the object around the Y-axis in radians
+        euler_rotation_z: The rotation of the object around the Z-axis in radians
+        scale_x: The scaling factor applied to the object along the X-axis
+        scale_y: The scaling factor applied to the object along the Y-axis
+        scale_z: The scaling factor applied to the object along the Z-axis
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1008,22 +1008,22 @@ class Cognite3DTransformationNode(_Cognite3DTransformationProperties, TypedNode)
     The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 3D transformation node.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        translation_x (float | None): The displacement of the object along the X-axis in the 3D coordinate system
-        translation_y (float | None): The displacement of the object along the Y-axis in the 3D coordinate system
-        translation_z (float | None): The displacement of the object along the Z-axis in the 3D coordinate system
-        euler_rotation_x (float | None): The rotation of the object around the X-axis in radians
-        euler_rotation_y (float | None): The rotation of the object around the Y-axis in radians
-        euler_rotation_z (float | None): The rotation of the object around the Z-axis in radians
-        scale_x (float | None): The scaling factor applied to the object along the X-axis
-        scale_y (float | None): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None): The scaling factor applied to the object along the Z-axis
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 3D transformation node.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        translation_x: The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y: The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z: The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x: The rotation of the object around the X-axis in radians
+        euler_rotation_y: The rotation of the object around the Y-axis in radians
+        euler_rotation_z: The rotation of the object around the Z-axis in radians
+        scale_x: The scaling factor applied to the object along the X-axis
+        scale_y: The scaling factor applied to the object along the Y-axis
+        scale_z: The scaling factor applied to the object along the Z-axis
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -1101,28 +1101,28 @@ class CogniteActivityApply(_CogniteActivityProperties, TypedNodeApply):
     Represents activities. Activities typically happen over a period and have a start and end time.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite activity.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        start_time (datetime | None | Omitted): The actual start time of an activity (or similar that extends this)
-        end_time (datetime | None | Omitted): The actual end time of an activity (or similar that extends this)
-        scheduled_start_time (datetime | None | Omitted): The planned start time of an activity (or similar that extends this)
-        scheduled_end_time (datetime | None | Omitted): The planned end time of an activity (or similar that extends this)
-        assets (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of assets the activity is related to.
-        equipment (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of equipment the activity is related to.
-        time_series (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of time series the activity is related to.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite activity.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        start_time: The actual start time of an activity (or similar that extends this)
+        end_time: The actual end time of an activity (or similar that extends this)
+        scheduled_start_time: The planned start time of an activity (or similar that extends this)
+        scheduled_end_time: The planned end time of an activity (or similar that extends this)
+        assets: A list of assets the activity is related to.
+        equipment: A list of equipment the activity is related to.
+        time_series: A list of time series the activity is related to.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1180,31 +1180,31 @@ class CogniteActivity(_CogniteActivityProperties, TypedNode):
     Represents activities. Activities typically happen over a period and have a start and end time.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite activity.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        start_time (datetime | None): The actual start time of an activity (or similar that extends this)
-        end_time (datetime | None): The actual end time of an activity (or similar that extends this)
-        scheduled_start_time (datetime | None): The planned start time of an activity (or similar that extends this)
-        scheduled_end_time (datetime | None): The planned end time of an activity (or similar that extends this)
-        assets (list[DirectRelationReference] | None): A list of assets the activity is related to.
-        equipment (list[DirectRelationReference] | None): A list of equipment the activity is related to.
-        time_series (list[DirectRelationReference] | None): A list of time series the activity is related to.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite activity.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        start_time: The actual start time of an activity (or similar that extends this)
+        end_time: The actual end time of an activity (or similar that extends this)
+        scheduled_start_time: The planned start time of an activity (or similar that extends this)
+        scheduled_end_time: The planned end time of an activity (or similar that extends this)
+        assets: A list of assets the activity is related to.
+        equipment: A list of equipment the activity is related to.
+        time_series: A list of time series the activity is related to.
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -1307,25 +1307,25 @@ class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
     Assets represent systems that support industrial functions or processes. Assets are often called 'functional location'.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite asset.
-        object_3d (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to an Object3D instance representing the 3D resource
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        parent (DirectRelationReference | tuple[str, str] | None | Omitted): The parent of the asset.
-        asset_class (DirectRelationReference | tuple[str, str] | None | Omitted): Specifies the class of the asset. It's a direct relation to CogniteAssetClass.
-        asset_type (DirectRelationReference | tuple[str, str] | None | Omitted): Specifies the type of the asset. It's a direct relation to CogniteAssetType.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite asset.
+        object_3d: Direct relation to an Object3D instance representing the 3D resource
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        parent: The parent of the asset.
+        asset_class: Specifies the class of the asset. It's a direct relation to CogniteAssetClass.
+        asset_type: Specifies the type of the asset. It's a direct relation to CogniteAssetType.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1377,31 +1377,31 @@ class CogniteAsset(_CogniteAssetProperties, TypedNode):
     Assets represent systems that support industrial functions or processes. Assets are often called 'functional location'.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite asset.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        object_3d (DirectRelationReference | None): Direct relation to an Object3D instance representing the 3D resource
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        parent (DirectRelationReference | None): The parent of the asset.
-        root (DirectRelationReference | None): An automatically updated reference to the top-level asset of the hierarchy.
-        path (list[DirectRelationReference] | None): An automatically updated ordered list of this asset's ancestors, starting with the root asset. Enables subtree filtering to find all assets under a parent.
-        path_last_updated_time (datetime | None): The last time the path was updated for this asset.
-        asset_class (DirectRelationReference | None): Specifies the class of the asset. It's a direct relation to CogniteAssetClass.
-        asset_type (DirectRelationReference | None): Specifies the type of the asset. It's a direct relation to CogniteAssetType.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite asset.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        object_3d: Direct relation to an Object3D instance representing the 3D resource
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        parent: The parent of the asset.
+        root: An automatically updated reference to the top-level asset of the hierarchy.
+        path: An automatically updated ordered list of this asset's ancestors, starting with the root asset. Enables subtree filtering to find all assets under a parent.
+        path_last_updated_time: The last time the path was updated for this asset.
+        asset_class: Specifies the class of the asset. It's a direct relation to CogniteAssetClass.
+        asset_type: Specifies the type of the asset. It's a direct relation to CogniteAssetType.
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     path_last_updated_time = PropertyOptions("pathLastUpdatedTime")
@@ -1493,16 +1493,16 @@ class CogniteAssetClassApply(_CogniteAssetClassProperties, TypedNodeApply):
     Represents the class of an asset.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite asset clas.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        code (str | None | Omitted): A unique identifier for the class of asset.
-        standard (str | None | Omitted): A text string to specify which standard the class is from.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite asset clas.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        code: A unique identifier for the class of asset.
+        standard: A text string to specify which standard the class is from.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1536,19 +1536,19 @@ class CogniteAssetClass(_CogniteAssetClassProperties, TypedNode):
     Represents the class of an asset.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite asset clas.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        code (str | None): A unique identifier for the class of asset.
-        standard (str | None): A text string to specify which standard the class is from.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite asset clas.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        code: A unique identifier for the class of asset.
+        standard: A text string to specify which standard the class is from.
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -1607,17 +1607,17 @@ class CogniteAssetTypeApply(_CogniteAssetTypeProperties, TypedNodeApply):
     Represents the type of an asset.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite asset type.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        code (str | None | Omitted): A unique identifier for the type of asset.
-        standard (str | None | Omitted): A text string to specify which standard the type is from.
-        asset_class (DirectRelationReference | tuple[str, str] | None | Omitted): Specifies the class the type belongs to. It's a direct relation to CogniteAssetClass.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite asset type.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        code: A unique identifier for the type of asset.
+        standard: A text string to specify which standard the type is from.
+        asset_class: Specifies the class the type belongs to. It's a direct relation to CogniteAssetClass.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1653,20 +1653,20 @@ class CogniteAssetType(_CogniteAssetTypeProperties, TypedNode):
     Represents the type of an asset.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite asset type.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        code (str | None): A unique identifier for the type of asset.
-        standard (str | None): A text string to specify which standard the type is from.
-        asset_class (DirectRelationReference | None): Specifies the class the type belongs to. It's a direct relation to CogniteAssetClass.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite asset type.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        code: A unique identifier for the type of asset.
+        standard: A text string to specify which standard the type is from.
+        asset_class: Specifies the class the type belongs to. It's a direct relation to CogniteAssetClass.
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -1728,16 +1728,16 @@ class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
     Navigational aid for traversing CogniteCADModel instances
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite cad model.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): CAD, PointCloud or Image360
-        thumbnail (DirectRelationReference | tuple[str, str] | None | Omitted): Thumbnail of the 3D model
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite cad model.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        model_type: CAD, PointCloud or Image360
+        thumbnail: Thumbnail of the 3D model
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1771,19 +1771,19 @@ class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
     Navigational aid for traversing CogniteCADModel instances
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite cad model.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
-        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite cad model.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        model_type: CAD, PointCloud or Image360
+        thumbnail: Thumbnail of the 3D model
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -1846,20 +1846,20 @@ class CogniteCADNodeApply(_CogniteCADNodeProperties, TypedNodeApply):
     Represents nodes from the 3D model that have been contextualized
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite cad node.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        object_3d (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to object3D grouping for this node
-        model_3d (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to Cognite3DModel
-        cad_node_reference (str | None | Omitted): Reference to a node within a CAD model from the 3D API
-        revisions (list[DirectRelationReference | tuple[str, str]] | None | Omitted): List of direct relations to instances of Cognite3DRevision which this CogniteCADNode exists in.
-        tree_indexes (list[int] | None | Omitted): List of tree indexes in the same order as revisions. Used by Reveal and similar applications to map from CogniteCADNode to tree index
-        sub_tree_sizes (list[int] | None | Omitted): List of subtree sizes in the same order as revisions. Used by Reveal and similar applications to know how many nodes exists below this node in the hierarchy
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite cad node.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        object_3d: Direct relation to object3D grouping for this node
+        model_3d: Direct relation to Cognite3DModel
+        cad_node_reference: Reference to a node within a CAD model from the 3D API
+        revisions: List of direct relations to instances of Cognite3DRevision which this CogniteCADNode exists in.
+        tree_indexes: List of tree indexes in the same order as revisions. Used by Reveal and similar applications to map from CogniteCADNode to tree index
+        sub_tree_sizes: List of subtree sizes in the same order as revisions. Used by Reveal and similar applications to know how many nodes exists below this node in the hierarchy
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1901,23 +1901,23 @@ class CogniteCADNode(_CogniteCADNodeProperties, TypedNode):
     Represents nodes from the 3D model that have been contextualized
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite cad node.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        object_3d (DirectRelationReference | None): Direct relation to object3D grouping for this node
-        model_3d (DirectRelationReference | None): Direct relation to Cognite3DModel
-        cad_node_reference (str | None): Reference to a node within a CAD model from the 3D API
-        revisions (list[DirectRelationReference] | None): List of direct relations to instances of Cognite3DRevision which this CogniteCADNode exists in.
-        tree_indexes (list[int] | None): List of tree indexes in the same order as revisions. Used by Reveal and similar applications to map from CogniteCADNode to tree index
-        sub_tree_sizes (list[int] | None): List of subtree sizes in the same order as revisions. Used by Reveal and similar applications to know how many nodes exists below this node in the hierarchy
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite cad node.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        object_3d: Direct relation to object3D grouping for this node
+        model_3d: Direct relation to Cognite3DModel
+        cad_node_reference: Reference to a node within a CAD model from the 3D API
+        revisions: List of direct relations to instances of Cognite3DRevision which this CogniteCADNode exists in.
+        tree_indexes: List of tree indexes in the same order as revisions. Used by Reveal and similar applications to map from CogniteCADNode to tree index
+        sub_tree_sizes: List of subtree sizes in the same order as revisions. Used by Reveal and similar applications to know how many nodes exists below this node in the hierarchy
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -1988,15 +1988,15 @@ class CogniteCADRevisionApply(_CogniteCADRevisionProperties, TypedNodeApply):
     It is used when data is written to CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite cad revision.
-        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None | Omitted): The status field.
-        published (bool | None | Omitted): The published field.
-        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): The revision type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None | Omitted): .
-        revision_id (int | None | Omitted): The 3D API revision identifier for this CAD model
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite cad revision.
+        status: The status field.
+        published: The published field.
+        revision_type: The revision type field.
+        model_3d: .
+        revision_id: The 3D API revision identifier for this CAD model
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2026,18 +2026,18 @@ class CogniteCADRevision(_CogniteCADRevisionProperties, TypedNode):
     It is used when data is read from CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite cad revision.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The status field.
-        published (bool | None): The published field.
-        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | None): The revision type field.
-        model_3d (DirectRelationReference | None): .
-        revision_id (int | None): The 3D API revision identifier for this CAD model
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite cad revision.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        status: The status field.
+        published: The published field.
+        revision_type: The revision type field.
+        model_3d: .
+        revision_id: The 3D API revision identifier for this CAD model
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -2091,16 +2091,16 @@ class CogniteCubeMapApply(_CogniteCubeMapProperties, TypedNodeApply):
     The cube map holds references to 6 images in used to visually represent the surrounding environment
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite cube map.
-        front (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the front projection of the cube map
-        back (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the back projection of the cube map
-        left (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the left projection of the cube map
-        right (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the right projection of the cube map
-        top (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the top projection of the cube map
-        bottom (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the bottom projection of the cube map
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite cube map.
+        front: Direct relation to a file holding the front projection of the cube map
+        back: Direct relation to a file holding the back projection of the cube map
+        left: Direct relation to a file holding the left projection of the cube map
+        right: Direct relation to a file holding the right projection of the cube map
+        top: Direct relation to a file holding the top projection of the cube map
+        bottom: Direct relation to a file holding the bottom projection of the cube map
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2134,19 +2134,19 @@ class CogniteCubeMap(_CogniteCubeMapProperties, TypedNode):
     The cube map holds references to 6 images in used to visually represent the surrounding environment
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite cube map.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        front (DirectRelationReference | None): Direct relation to a file holding the front projection of the cube map
-        back (DirectRelationReference | None): Direct relation to a file holding the back projection of the cube map
-        left (DirectRelationReference | None): Direct relation to a file holding the left projection of the cube map
-        right (DirectRelationReference | None): Direct relation to a file holding the right projection of the cube map
-        top (DirectRelationReference | None): Direct relation to a file holding the top projection of the cube map
-        bottom (DirectRelationReference | None): Direct relation to a file holding the bottom projection of the cube map
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite cube map.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        front: Direct relation to a file holding the front projection of the cube map
+        back: Direct relation to a file holding the back projection of the cube map
+        left: Direct relation to a file holding the left projection of the cube map
+        right: Direct relation to a file holding the right projection of the cube map
+        top: Direct relation to a file holding the top projection of the cube map
+        bottom: Direct relation to a file holding the bottom projection of the cube map
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -2203,14 +2203,14 @@ class CogniteDescribableNodeApply(_CogniteDescribableProperties, TypedNodeApply)
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite describable node.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite describable node.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2240,17 +2240,17 @@ class CogniteDescribableNode(_CogniteDescribableProperties, TypedNode):
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite describable node.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite describable node.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -2310,26 +2310,26 @@ class CogniteEquipmentApply(_CogniteEquipmentProperties, TypedNodeApply):
     Equipment represents physical supplies or devices.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite equipment.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        asset (DirectRelationReference | tuple[str, str] | None | Omitted): The asset the equipment is related to.
-        serial_number (str | None | Omitted): The serial number of the equipment.
-        manufacturer (str | None | Omitted): The manufacturer of the equipment.
-        equipment_type (DirectRelationReference | tuple[str, str] | None | Omitted): Specifies the type of the equipment. It's a direct relation to CogniteEquipmentType.
-        files (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of files the equipment relates to.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite equipment.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        asset: The asset the equipment is related to.
+        serial_number: The serial number of the equipment.
+        manufacturer: The manufacturer of the equipment.
+        equipment_type: Specifies the type of the equipment. It's a direct relation to CogniteEquipmentType.
+        files: A list of files the equipment relates to.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2383,29 +2383,29 @@ class CogniteEquipment(_CogniteEquipmentProperties, TypedNode):
     Equipment represents physical supplies or devices.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite equipment.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        asset (DirectRelationReference | None): The asset the equipment is related to.
-        serial_number (str | None): The serial number of the equipment.
-        manufacturer (str | None): The manufacturer of the equipment.
-        equipment_type (DirectRelationReference | None): Specifies the type of the equipment. It's a direct relation to CogniteEquipmentType.
-        files (list[DirectRelationReference] | None): A list of files the equipment relates to.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite equipment.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        asset: The asset the equipment is related to.
+        serial_number: The serial number of the equipment.
+        manufacturer: The manufacturer of the equipment.
+        equipment_type: Specifies the type of the equipment. It's a direct relation to CogniteEquipmentType.
+        files: A list of files the equipment relates to.
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -2495,18 +2495,18 @@ class CogniteEquipmentTypeApply(_CogniteEquipmentTypeProperties, TypedNodeApply)
     Represents the type of equipment.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite equipment type.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        code (str | None | Omitted): A unique identifier for the type of equipment.
-        equipment_class (str | None | Omitted): Represents the class of equipment.
-        standard (str | None | Omitted): An identifier for the standard this equipment type is sourced from, for example, ISO14224.
-        standard_reference (str | None | Omitted): A reference to the source of the equipment standard.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite equipment type.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        code: A unique identifier for the type of equipment.
+        equipment_class: Represents the class of equipment.
+        standard: An identifier for the standard this equipment type is sourced from, for example, ISO14224.
+        standard_reference: A reference to the source of the equipment standard.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2544,21 +2544,21 @@ class CogniteEquipmentType(_CogniteEquipmentTypeProperties, TypedNode):
     Represents the type of equipment.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite equipment type.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        code (str | None): A unique identifier for the type of equipment.
-        equipment_class (str | None): Represents the class of equipment.
-        standard (str | None): An identifier for the standard this equipment type is sourced from, for example, ISO14224.
-        standard_reference (str | None): A reference to the source of the equipment standard.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite equipment type.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        code: A unique identifier for the type of equipment.
+        equipment_class: Represents the class of equipment.
+        standard: An identifier for the standard this equipment type is sourced from, for example, ISO14224.
+        standard_reference: A reference to the source of the equipment standard.
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -2629,25 +2629,25 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
     Represents files.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite file.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        assets (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of assets this file is related to.
-        mime_type (str | None | Omitted): The MIME type of the file.
-        directory (str | None | Omitted): Contains the path elements from the source (if the source system has a file system hierarchy or similar.)
-        category (DirectRelationReference | tuple[str, str] | None | Omitted): Specifies the detected category the file belongs to. It's a direct relation to an instance of CogniteFileCategory.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite file.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        assets: A list of assets this file is related to.
+        mime_type: The MIME type of the file.
+        directory: Contains the path elements from the source (if the source system has a file system hierarchy or similar.)
+        category: Specifies the detected category the file belongs to. It's a direct relation to an instance of CogniteFileCategory.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2699,30 +2699,30 @@ class CogniteFile(_CogniteFileProperties, TypedNode):
     Represents files.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite file.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        assets (list[DirectRelationReference] | None): A list of assets this file is related to.
-        mime_type (str | None): The MIME type of the file.
-        directory (str | None): Contains the path elements from the source (if the source system has a file system hierarchy or similar.)
-        is_uploaded (bool | None): Specifies if the file content has been uploaded to Cognite Data Fusion or not.
-        uploaded_time (datetime | None): The time the file upload completed.
-        category (DirectRelationReference | None): Specifies the detected category the file belongs to. It's a direct relation to an instance of CogniteFileCategory.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite file.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        assets: A list of assets this file is related to.
+        mime_type: The MIME type of the file.
+        directory: Contains the path elements from the source (if the source system has a file system hierarchy or similar.)
+        is_uploaded: Specifies if the file content has been uploaded to Cognite Data Fusion or not.
+        uploaded_time: The time the file upload completed.
+        category: Specifies the detected category the file belongs to. It's a direct relation to an instance of CogniteFileCategory.
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     is_uploaded = PropertyOptions("isUploaded")
@@ -2815,17 +2815,17 @@ class CogniteFileCategoryApply(_CogniteFileCategoryProperties, TypedNodeApply):
     Represents the categories of files as determined by contextualization or categorization.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite file category.
-        code (str): An identifier for the category, for example, 'AA' for Accounting (from Norsok.)
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        standard (str | None | Omitted): The name of the standard the category originates from, for example, 'Norsok'.
-        standard_reference (str | None | Omitted): A reference to the source of the category standard.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite file category.
+        code: An identifier for the category, for example, 'AA' for Accounting (from Norsok.)
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        standard: The name of the standard the category originates from, for example, 'Norsok'.
+        standard_reference: A reference to the source of the category standard.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2861,20 +2861,20 @@ class CogniteFileCategory(_CogniteFileCategoryProperties, TypedNode):
     Represents the categories of files as determined by contextualization or categorization.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite file category.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        code (str): An identifier for the category, for example, 'AA' for Accounting (from Norsok.)
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        standard (str | None): The name of the standard the category originates from, for example, 'Norsok'.
-        standard_reference (str | None): A reference to the source of the category standard.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite file category.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        code: An identifier for the category, for example, 'AA' for Accounting (from Norsok.)
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        standard: The name of the standard the category originates from, for example, 'Norsok'.
+        standard_reference: A reference to the source of the category standard.
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -2936,16 +2936,16 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeAp
     Navigational aid for traversing CognitePointCloudModel instances
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite point cloud model.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): CAD, PointCloud or Image360
-        thumbnail (DirectRelationReference | tuple[str, str] | None | Omitted): Thumbnail of the 3D model
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite point cloud model.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        model_type: CAD, PointCloud or Image360
+        thumbnail: Thumbnail of the 3D model
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2979,19 +2979,19 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
     Navigational aid for traversing CognitePointCloudModel instances
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite point cloud model.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
-        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite point cloud model.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        model_type: CAD, PointCloud or Image360
+        thumbnail: Thumbnail of the 3D model
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -3052,15 +3052,15 @@ class CognitePointCloudRevisionApply(_CognitePointCloudRevisionProperties, Typed
     Navigational aid for traversing CognitePointCloudRevision instances
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite point cloud revision.
-        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None | Omitted): The status field.
-        published (bool | None | Omitted): The published field.
-        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): The revision type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None | Omitted): .
-        revision_id (int | None | Omitted): The 3D API revision identifier for this PointCloud model
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite point cloud revision.
+        status: The status field.
+        published: The published field.
+        revision_type: The revision type field.
+        model_3d: .
+        revision_id: The 3D API revision identifier for this PointCloud model
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3092,18 +3092,18 @@ class CognitePointCloudRevision(_CognitePointCloudRevisionProperties, TypedNode)
     Navigational aid for traversing CognitePointCloudRevision instances
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite point cloud revision.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The status field.
-        published (bool | None): The published field.
-        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | None): The revision type field.
-        model_3d (DirectRelationReference | None): .
-        revision_id (int | None): The 3D API revision identifier for this PointCloud model
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite point cloud revision.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        status: The status field.
+        published: The published field.
+        revision_type: The revision type field.
+        model_3d: .
+        revision_id: The 3D API revision identifier for this PointCloud model
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -3163,21 +3163,21 @@ class CognitePointCloudVolumeApply(_CognitePointCloudVolumeProperties, TypedNode
     PointCloud volume definition
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite point cloud volume.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        object_3d (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to object3D grouping for this node
-        model_3d (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to Cognite3DModel instance
-        volume_references (list[str] | None | Omitted): Unique volume metric hashes used to access the 3D specialized data storage
-        revisions (list[DirectRelationReference | tuple[str, str]] | None | Omitted): List of direct relations to revision information
-        volume_type (Literal['Box', 'Cylinder'] | None | Omitted): Type of volume (Cylinder or Box)
-        volume (list[float] | None | Omitted): Relevant coordinates for the volume type, 9 floats in total, that defines the volume
-        format_version (str | None | Omitted): Specifies the version the 'volume' field is following. Volume definition is today 9 floats (property volume)
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite point cloud volume.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        object_3d: Direct relation to object3D grouping for this node
+        model_3d: Direct relation to Cognite3DModel instance
+        volume_references: Unique volume metric hashes used to access the 3D specialized data storage
+        revisions: List of direct relations to revision information
+        volume_type: Type of volume (Cylinder or Box)
+        volume: Relevant coordinates for the volume type, 9 floats in total, that defines the volume
+        format_version: Specifies the version the 'volume' field is following. Volume definition is today 9 floats (property volume)
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3221,24 +3221,24 @@ class CognitePointCloudVolume(_CognitePointCloudVolumeProperties, TypedNode):
     PointCloud volume definition
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite point cloud volume.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        object_3d (DirectRelationReference | None): Direct relation to object3D grouping for this node
-        model_3d (DirectRelationReference | None): Direct relation to Cognite3DModel instance
-        volume_references (list[str] | None): Unique volume metric hashes used to access the 3D specialized data storage
-        revisions (list[DirectRelationReference] | None): List of direct relations to revision information
-        volume_type (Literal['Box', 'Cylinder'] | None): Type of volume (Cylinder or Box)
-        volume (list[float] | None): Relevant coordinates for the volume type, 9 floats in total, that defines the volume
-        format_version (str | None): Specifies the version the 'volume' field is following. Volume definition is today 9 floats (property volume)
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite point cloud volume.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        object_3d: Direct relation to object3D grouping for this node
+        model_3d: Direct relation to Cognite3DModel instance
+        volume_references: Unique volume metric hashes used to access the 3D specialized data storage
+        revisions: List of direct relations to revision information
+        volume_type: Type of volume (Cylinder or Box)
+        volume: Relevant coordinates for the volume type, 9 floats in total, that defines the volume
+        format_version: Specifies the version the 'volume' field is following. Volume definition is today 9 floats (property volume)
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -3315,14 +3315,14 @@ class CogniteSchedulableApply(_CogniteSchedulableProperties, TypedNodeApply):
     CogniteSchedulable represents the metadata about when an activity (or similar) starts and ends.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite schedulable.
-        start_time (datetime | None | Omitted): The actual start time of an activity (or similar that extends this)
-        end_time (datetime | None | Omitted): The actual end time of an activity (or similar that extends this)
-        scheduled_start_time (datetime | None | Omitted): The planned start time of an activity (or similar that extends this)
-        scheduled_end_time (datetime | None | Omitted): The planned end time of an activity (or similar that extends this)
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite schedulable.
+        start_time: The actual start time of an activity (or similar that extends this)
+        end_time: The actual end time of an activity (or similar that extends this)
+        scheduled_start_time: The planned start time of an activity (or similar that extends this)
+        scheduled_end_time: The planned end time of an activity (or similar that extends this)
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3352,17 +3352,17 @@ class CogniteSchedulable(_CogniteSchedulableProperties, TypedNode):
     CogniteSchedulable represents the metadata about when an activity (or similar) starts and ends.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite schedulable.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        start_time (datetime | None): The actual start time of an activity (or similar that extends this)
-        end_time (datetime | None): The actual end time of an activity (or similar that extends this)
-        scheduled_start_time (datetime | None): The planned start time of an activity (or similar that extends this)
-        scheduled_end_time (datetime | None): The planned end time of an activity (or similar that extends this)
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite schedulable.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        start_time: The actual start time of an activity (or similar that extends this)
+        end_time: The actual end time of an activity (or similar that extends this)
+        scheduled_start_time: The planned start time of an activity (or similar that extends this)
+        scheduled_end_time: The planned end time of an activity (or similar that extends this)
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -3415,16 +3415,16 @@ class CogniteSourceSystemApply(_CogniteSourceSystemProperties, TypedNodeApply):
     The CogniteSourceSystem core concept is used to standardize the way source system is stored.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite source system.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_system_version (str | None | Omitted): Version identifier for the source system
-        manufacturer (str | None | Omitted): Manufacturer of the source system
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite source system.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_system_version: Version identifier for the source system
+        manufacturer: Manufacturer of the source system
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3458,19 +3458,19 @@ class CogniteSourceSystem(_CogniteSourceSystemProperties, TypedNode):
     The CogniteSourceSystem core concept is used to standardize the way source system is stored.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite source system.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_system_version (str | None): Version identifier for the source system
-        manufacturer (str | None): Manufacturer of the source system
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite source system.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_system_version: Version identifier for the source system
+        manufacturer: Manufacturer of the source system
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -3532,17 +3532,17 @@ class CogniteSourceableNodeApply(_CogniteSourceableProperties, TypedNodeApply):
     It is used when data is written to CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite sourceable node.
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite sourceable node.
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3576,20 +3576,20 @@ class CogniteSourceableNode(_CogniteSourceableProperties, TypedNode):
     It is used when data is read from CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite sourceable node.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite sourceable node.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -3659,27 +3659,27 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, TypedNodeApply):
     Represents a series of data points in time order."
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite time series.
-        is_step (bool): Specifies whether the time series is a step time series or not.
-        time_series_type (Literal['numeric', 'string']): Specifies the data type of the data points.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_unit (str | None | Omitted): The unit specified in the source system.
-        unit (DirectRelationReference | tuple[str, str] | None | Omitted): The unit of the time series.
-        assets (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of assets the time series is related to.
-        equipment (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of equipment the time series is related to.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite time series.
+        is_step: Specifies whether the time series is a step time series or not.
+        time_series_type: Specifies the data type of the data points.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_unit: The unit specified in the source system.
+        unit: The unit of the time series.
+        assets: A list of assets the time series is related to.
+        equipment: A list of equipment the time series is related to.
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3735,30 +3735,30 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, TypedNode):
     Represents a series of data points in time order."
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite time series.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        is_step (bool): Specifies whether the time series is a step time series or not.
-        time_series_type (Literal['numeric', 'string']): Specifies the data type of the data points.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_unit (str | None): The unit specified in the source system.
-        unit (DirectRelationReference | None): The unit of the time series.
-        assets (list[DirectRelationReference] | None): A list of assets the time series is related to.
-        equipment (list[DirectRelationReference] | None): A list of equipment the time series is related to.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite time series.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        is_step: Specifies whether the time series is a step time series or not.
+        time_series_type: Specifies the data type of the data points.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_unit: The unit specified in the source system.
+        unit: The unit of the time series.
+        assets: A list of assets the time series is related to.
+        equipment: A list of equipment the time series is related to.
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -3850,18 +3850,18 @@ class CogniteUnitApply(_CogniteUnitProperties, TypedNodeApply):
     Represents a single unit of measurement
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite unit.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        symbol (str | None | Omitted): The symbol for the unit of measurement
-        quantity (str | None | Omitted): Specifies the physical quantity the unit measures
-        source (str | None | Omitted): Source of the unit definition
-        source_reference (str | None | Omitted): Reference to the source of the unit definition
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite unit.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        symbol: The symbol for the unit of measurement
+        quantity: Specifies the physical quantity the unit measures
+        source: Source of the unit definition
+        source_reference: Reference to the source of the unit definition
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3899,21 +3899,21 @@ class CogniteUnit(_CogniteUnitProperties, TypedNode):
     Represents a single unit of measurement
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite unit.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        symbol (str | None): The symbol for the unit of measurement
-        quantity (str | None): Specifies the physical quantity the unit measures
-        source (str | None): Source of the unit definition
-        source_reference (str | None): Reference to the source of the unit definition
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite unit.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        symbol: The symbol for the unit of measurement
+        quantity: Specifies the physical quantity the unit measures
+        source: Source of the unit definition
+        source_reference: Reference to the source of the unit definition
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -3978,11 +3978,11 @@ class CogniteVisualizableApply(_CogniteVisualizableProperties, TypedNodeApply):
     CogniteVisualizable defines the standard way to reference a related 3D resource
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite visualizable.
-        object_3d (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to an Object3D instance representing the 3D resource
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite visualizable.
+        object_3d: Direct relation to an Object3D instance representing the 3D resource
+        existing_version: Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type: Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -4006,14 +4006,14 @@ class CogniteVisualizable(_CogniteVisualizableProperties, TypedNode):
     CogniteVisualizable defines the standard way to reference a related 3D resource
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite visualizable.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        object_3d (DirectRelationReference | None): Direct relation to an Object3D instance representing the 3D resource
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite visualizable.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        object_3d: Direct relation to an Object3D instance representing the 3D resource
+        type: Direct relation pointing to the type node.
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -4061,27 +4061,27 @@ class Cognite360ImageAnnotationApply(_Cognite360ImageAnnotationProperties, Typed
     It is used when data is written to CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 360 image annotation.
-        type (DirectRelationReference | tuple[str, str]): The type of edge.
-        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        confidence (float | None | Omitted): The confidence that the annotation is a good match
-        status (Literal['Approved', 'Rejected', 'Suggested'] | None | Omitted): The status of the annotation
-        polygon (list[float] | None | Omitted): List of floats representing the polygon. Format depends on formatVersion
-        format_version (str | None | Omitted): Specifies the storage representation for the polygon
-        existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 360 image annotation.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        confidence: The confidence that the annotation is a good match
+        status: The status of the annotation
+        polygon: List of floats representing the polygon. Format depends on formatVersion
+        format_version: Specifies the storage representation for the polygon
+        existing_version: Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
     def __init__(
@@ -4133,30 +4133,30 @@ class Cognite360ImageAnnotation(_Cognite360ImageAnnotationProperties, TypedEdge)
     It is used when data is read from CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 360 image annotation.
-        type (DirectRelationReference): The type of edge.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        confidence (float | None): The confidence that the annotation is a good match
-        status (Literal['Approved', 'Rejected', 'Suggested'] | None): The status of the annotation
-        polygon (list[float] | None): List of floats representing the polygon. Format depends on formatVersion
-        format_version (str | None): Specifies the storage representation for the polygon
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 360 image annotation.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        confidence: The confidence that the annotation is a good match
+        status: The status of the annotation
+        polygon: List of floats representing the polygon. Format depends on formatVersion
+        format_version: Specifies the storage representation for the polygon
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -4240,21 +4240,21 @@ class Cognite3DTransformationEdgeApply(_Cognite3DTransformationProperties, Typed
     The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 3D transformation edge.
-        type (DirectRelationReference | tuple[str, str]): The type of edge.
-        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        translation_x (float | None | Omitted): The displacement of the object along the X-axis in the 3D coordinate system
-        translation_y (float | None | Omitted): The displacement of the object along the Y-axis in the 3D coordinate system
-        translation_z (float | None | Omitted): The displacement of the object along the Z-axis in the 3D coordinate system
-        euler_rotation_x (float | None | Omitted): The rotation of the object around the X-axis in radians
-        euler_rotation_y (float | None | Omitted): The rotation of the object around the Y-axis in radians
-        euler_rotation_z (float | None | Omitted): The rotation of the object around the Z-axis in radians
-        scale_x (float | None | Omitted): The scaling factor applied to the object along the X-axis
-        scale_y (float | None | Omitted): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None | Omitted): The scaling factor applied to the object along the Z-axis
-        existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 3D transformation edge.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        translation_x: The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y: The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z: The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x: The rotation of the object around the X-axis in radians
+        euler_rotation_y: The rotation of the object around the Y-axis in radians
+        euler_rotation_z: The rotation of the object around the Z-axis in radians
+        scale_x: The scaling factor applied to the object along the X-axis
+        scale_y: The scaling factor applied to the object along the Y-axis
+        scale_z: The scaling factor applied to the object along the Z-axis
+        existing_version: Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
     def __init__(
@@ -4296,24 +4296,24 @@ class Cognite3DTransformationEdge(_Cognite3DTransformationProperties, TypedEdge)
     The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite 3D transformation edge.
-        type (DirectRelationReference): The type of edge.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        translation_x (float | None): The displacement of the object along the X-axis in the 3D coordinate system
-        translation_y (float | None): The displacement of the object along the Y-axis in the 3D coordinate system
-        translation_z (float | None): The displacement of the object along the Z-axis in the 3D coordinate system
-        euler_rotation_x (float | None): The rotation of the object around the X-axis in radians
-        euler_rotation_y (float | None): The rotation of the object around the Y-axis in radians
-        euler_rotation_z (float | None): The rotation of the object around the Z-axis in radians
-        scale_x (float | None): The scaling factor applied to the object along the X-axis
-        scale_y (float | None): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None): The scaling factor applied to the object along the Z-axis
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite 3D transformation edge.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        translation_x: The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y: The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z: The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x: The rotation of the object around the X-axis in radians
+        euler_rotation_y: The rotation of the object around the Y-axis in radians
+        euler_rotation_z: The rotation of the object around the Z-axis in radians
+        scale_x: The scaling factor applied to the object along the X-axis
+        scale_y: The scaling factor applied to the object along the Y-axis
+        scale_z: The scaling factor applied to the object along the Z-axis
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -4392,25 +4392,25 @@ class CogniteAnnotationApply(_CogniteAnnotationProperties, TypedEdgeApply):
     Annotation represents contextualization results or links
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite annotation.
-        type (DirectRelationReference | tuple[str, str]): The type of edge.
-        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        confidence (float | None | Omitted): The confidence that the annotation is a good match
-        status (Literal['Approved', 'Rejected', 'Suggested'] | None | Omitted): The status of the annotation
-        existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite annotation.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        confidence: The confidence that the annotation is a good match
+        status: The status of the annotation
+        existing_version: Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
     def __init__(
@@ -4460,28 +4460,28 @@ class CogniteAnnotation(_CogniteAnnotationProperties, TypedEdge):
     Annotation represents contextualization results or links
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite annotation.
-        type (DirectRelationReference): The type of edge.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        confidence (float | None): The confidence that the annotation is a good match
-        status (Literal['Approved', 'Rejected', 'Suggested'] | None): The status of the annotation
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite annotation.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        confidence: The confidence that the annotation is a good match
+        status: The status of the annotation
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -4559,16 +4559,16 @@ class CogniteDescribableEdgeApply(_CogniteDescribableProperties, TypedEdgeApply)
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite describable edge.
-        type (DirectRelationReference | tuple[str, str]): The type of edge.
-        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite describable edge.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        existing_version: Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
     def __init__(
@@ -4600,19 +4600,19 @@ class CogniteDescribableEdge(_CogniteDescribableProperties, TypedEdge):
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite describable edge.
-        type (DirectRelationReference): The type of edge.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite describable edge.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -4688,37 +4688,37 @@ class CogniteDiagramAnnotationApply(_CogniteDiagramAnnotationProperties, TypedEd
     Annotation for diagrams
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite diagram annotation.
-        type (DirectRelationReference | tuple[str, str]): The type of edge.
-        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        confidence (float | None | Omitted): The confidence that the annotation is a good match
-        status (Literal['Approved', 'Rejected', 'Suggested'] | None | Omitted): The status of the annotation
-        start_node_page_number (int | None | Omitted): The number of the page on which this annotation is located in `startNode` File. The first page has number 1
-        end_node_page_number (int | None | Omitted): The number of the page on which this annotation is located in the endNode File if an endNode is present. The first page has number 1
-        start_node_x_min (float | None | Omitted): Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than startNodeXMax
-        start_node_x_max (float | None | Omitted): Value between [0,1]. Maximum abscissa of the bounding box (right edge). Must be strictly more than startNodeXMin
-        start_node_y_min (float | None | Omitted): Value between [0,1]. Minimum ordinate of the bounding box (bottom edge). Must be strictly less than startNodeYMax
-        start_node_y_max (float | None | Omitted): Value between [0,1]. Maximum ordinate of the bounding box (top edge). Must be strictly more than startNodeYMin
-        start_node_text (str | None | Omitted): The text extracted from within the bounding box on the startNode
-        end_node_x_min (float | None | Omitted): Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than endNodeXMax. Only applicable if an endNode is defined
-        end_node_x_max (float | None | Omitted): Value between [0,1]. Maximum abscissa of the bounding box (right edge). Must be strictly more than endNodeXMin. Only applicable if an endNode is defined
-        end_node_y_min (float | None | Omitted): Value between [0,1]. Minimum ordinate of the bounding box (bottom edge). Must be strictly less than endNodeYMax. Only applicable if an endNode is defined
-        end_node_y_max (float | None | Omitted): Value between [0,1]. Maximum ordinate of the bounding box (top edge). Must be strictly more than endNodeYMin. Only applicable if an endNode is defined
-        end_node_text (str | None | Omitted): The text extracted from within the bounding box on the endNode. Only applicable if an endNode is defined
-        existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite diagram annotation.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        confidence: The confidence that the annotation is a good match
+        status: The status of the annotation
+        start_node_page_number: The number of the page on which this annotation is located in `startNode` File. The first page has number 1
+        end_node_page_number: The number of the page on which this annotation is located in the endNode File if an endNode is present. The first page has number 1
+        start_node_x_min: Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than startNodeXMax
+        start_node_x_max: Value between [0,1]. Maximum abscissa of the bounding box (right edge). Must be strictly more than startNodeXMin
+        start_node_y_min: Value between [0,1]. Minimum ordinate of the bounding box (bottom edge). Must be strictly less than startNodeYMax
+        start_node_y_max: Value between [0,1]. Maximum ordinate of the bounding box (top edge). Must be strictly more than startNodeYMin
+        start_node_text: The text extracted from within the bounding box on the startNode
+        end_node_x_min: Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than endNodeXMax. Only applicable if an endNode is defined
+        end_node_x_max: Value between [0,1]. Maximum abscissa of the bounding box (right edge). Must be strictly more than endNodeXMin. Only applicable if an endNode is defined
+        end_node_y_min: Value between [0,1]. Minimum ordinate of the bounding box (bottom edge). Must be strictly less than endNodeYMax. Only applicable if an endNode is defined
+        end_node_y_max: Value between [0,1]. Maximum ordinate of the bounding box (top edge). Must be strictly more than endNodeYMin. Only applicable if an endNode is defined
+        end_node_text: The text extracted from within the bounding box on the endNode. Only applicable if an endNode is defined
+        existing_version: Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
     def __init__(
@@ -4792,40 +4792,40 @@ class CogniteDiagramAnnotation(_CogniteDiagramAnnotationProperties, TypedEdge):
     Annotation for diagrams
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite diagram annotation.
-        type (DirectRelationReference): The type of edge.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        confidence (float | None): The confidence that the annotation is a good match
-        status (Literal['Approved', 'Rejected', 'Suggested'] | None): The status of the annotation
-        start_node_page_number (int | None): The number of the page on which this annotation is located in `startNode` File. The first page has number 1
-        end_node_page_number (int | None): The number of the page on which this annotation is located in the endNode File if an endNode is present. The first page has number 1
-        start_node_x_min (float | None): Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than startNodeXMax
-        start_node_x_max (float | None): Value between [0,1]. Maximum abscissa of the bounding box (right edge). Must be strictly more than startNodeXMin
-        start_node_y_min (float | None): Value between [0,1]. Minimum ordinate of the bounding box (bottom edge). Must be strictly less than startNodeYMax
-        start_node_y_max (float | None): Value between [0,1]. Maximum ordinate of the bounding box (top edge). Must be strictly more than startNodeYMin
-        start_node_text (str | None): The text extracted from within the bounding box on the startNode
-        end_node_x_min (float | None): Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than endNodeXMax. Only applicable if an endNode is defined
-        end_node_x_max (float | None): Value between [0,1]. Maximum abscissa of the bounding box (right edge). Must be strictly more than endNodeXMin. Only applicable if an endNode is defined
-        end_node_y_min (float | None): Value between [0,1]. Minimum ordinate of the bounding box (bottom edge). Must be strictly less than endNodeYMax. Only applicable if an endNode is defined
-        end_node_y_max (float | None): Value between [0,1]. Maximum ordinate of the bounding box (top edge). Must be strictly more than endNodeYMin. Only applicable if an endNode is defined
-        end_node_text (str | None): The text extracted from within the bounding box on the endNode. Only applicable if an endNode is defined
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite diagram annotation.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name: Name of the instance
+        description: Description of the instance
+        tags: Text based labels for generic use, limited to 1000
+        aliases: Alternative names for the node
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        confidence: The confidence that the annotation is a good match
+        status: The status of the annotation
+        start_node_page_number: The number of the page on which this annotation is located in `startNode` File. The first page has number 1
+        end_node_page_number: The number of the page on which this annotation is located in the endNode File if an endNode is present. The first page has number 1
+        start_node_x_min: Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than startNodeXMax
+        start_node_x_max: Value between [0,1]. Maximum abscissa of the bounding box (right edge). Must be strictly more than startNodeXMin
+        start_node_y_min: Value between [0,1]. Minimum ordinate of the bounding box (bottom edge). Must be strictly less than startNodeYMax
+        start_node_y_max: Value between [0,1]. Maximum ordinate of the bounding box (top edge). Must be strictly more than startNodeYMin
+        start_node_text: The text extracted from within the bounding box on the startNode
+        end_node_x_min: Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than endNodeXMax. Only applicable if an endNode is defined
+        end_node_x_max: Value between [0,1]. Maximum abscissa of the bounding box (right edge). Must be strictly more than endNodeXMin. Only applicable if an endNode is defined
+        end_node_y_min: Value between [0,1]. Minimum ordinate of the bounding box (bottom edge). Must be strictly less than endNodeYMax. Only applicable if an endNode is defined
+        end_node_y_max: Value between [0,1]. Maximum ordinate of the bounding box (top edge). Must be strictly more than endNodeYMin. Only applicable if an endNode is defined
+        end_node_text: The text extracted from within the bounding box on the endNode. Only applicable if an endNode is defined
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -4937,19 +4937,19 @@ class CogniteSourceableEdgeApply(_CogniteSourceableProperties, TypedEdgeApply):
     It is used when data is written to CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite sourceable edge.
-        type (DirectRelationReference | tuple[str, str]): The type of edge.
-        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        space: The space where the node is located.
+        external_id: The external id of the Cognite sourceable edge.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        existing_version: Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
     def __init__(
@@ -4985,22 +4985,22 @@ class CogniteSourceableEdge(_CogniteSourceableProperties, TypedEdge):
     It is used when data is read from CDF.
 
     Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite sourceable edge.
-        type (DirectRelationReference): The type of edge.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        space: The space where the node is located.
+        external_id: The external id of the Cognite sourceable edge.
+        type: The type of edge.
+        start_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node: Reference to the direct relation. The reference consists of a space and an external-id.
+        version: DMS version.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        source_id: Identifier from the source system
+        source_context: Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source: Direct relation to a source system
+        source_created_time: When the instance was created in source system (if available)
+        source_updated_time: When the instance was last updated in the source system (if available)
+        source_created_user: User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user: User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        deleted_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(

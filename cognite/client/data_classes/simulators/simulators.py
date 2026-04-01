@@ -24,14 +24,14 @@ class Simulator(CogniteResource):
     This is the read/response format of the simulator.
 
     Args:
-        external_id (str): External id of the simulator
-        id (int): Id of the simulator.
-        name (str): Name of the simulator
-        file_extension_types (Sequence[str]): File extension types supported by the simulator
-        model_types (Sequence[SimulatorModelType] | None): Model types supported by the simulator
-        model_dependencies (Sequence[SimulatorModelDependency] | None): Model dependencies supported by the simulator
-        step_fields (Sequence[SimulatorStep] | None): Step types supported by the simulator when creating routines
-        unit_quantities (Sequence[SimulatorQuantity] | None): Quantities and their units supported by the simulator
+        external_id: External id of the simulator
+        id: Id of the simulator.
+        name: Name of the simulator
+        file_extension_types: File extension types supported by the simulator
+        model_types: Model types supported by the simulator
+        model_dependencies: Model dependencies supported by the simulator
+        step_fields: Step types supported by the simulator when creating routines
+        unit_quantities: Quantities and their units supported by the simulator
 
     """
 
@@ -104,7 +104,7 @@ class Simulator(CogniteResource):
         """Get a list of quantity names available for this simulator.
 
         Returns:
-            list[str]: List of quantity names from the simulator's unit_quantities.
+            List of quantity names from the simulator's unit_quantities.
         """
         if not self.unit_quantities:
             return []
@@ -114,10 +114,10 @@ class Simulator(CogniteResource):
         """Get a list of unit names for a specific quantity.
 
         Args:
-            quantity (str): The name of the quantity to get units for.
+            quantity: The name of the quantity to get units for.
 
         Returns:
-            list[str]: List of unit names for the specified quantity.
+            List of unit names for the specified quantity.
 
         Raises:
             ValueError: If the specified quantity does not exist for this simulator.
@@ -239,9 +239,9 @@ class SimulatorModelDependencyFields(CogniteResource):
     """
     Represents the fields supported by the simulator for external dependencies.
     Args:
-        name (str): The name of the field.
-        label (str): The label of the field.
-        info (str): Additional information about the field.
+        name: The name of the field.
+        label: The label of the field.
+        info: Additional information about the field.
     """
 
     name: str
@@ -262,8 +262,8 @@ class SimulatorModelDependency(CogniteResource):
     """
     Defines the simulator model dependency, specifying the supported fields and file extension types compatible with the simulator.
     Args:
-        file_extension_types (Sequence[str]): A list of file extension types supported by the simulator for external dependencies.
-        fields (Sequence[SimulatorModelDependencyFields]): A list of supported fields.
+        file_extension_types: A list of file extension types supported by the simulator for external dependencies.
+        fields: A list of supported fields.
     """
 
     file_extension_types: Sequence[str]
@@ -341,21 +341,21 @@ class SimulatorIntegration(CogniteResource):
     This is the read/response format of the simulator integration.
 
     Args:
-        id (int): Id of the simulator integration.
-        external_id (str): External id of the simulator integration
-        simulator_external_id (str): External id of the associated simulator
-        heartbeat (int): The interval in seconds between the last heartbeat and the current time
-        data_set_id (int): The id of the dataset associated with the simulator integration
-        connector_version (str): The version of the connector
-        log_id (int): Id of the log associated with this simulator integration.
-        active (bool): Indicates if the simulator integration is active (i.e., a connector is linked to CDF for this integration).
-        created_time (int): The time when this simulator integration resource was created.
-        last_updated_time (int): The last time the simulator integration resource was updated.
-        license_status (str | None): The status of the license
-        simulator_version (str | None): The version of the simulator
-        license_last_checked_time (int | None): The time when the license was last checked
-        connector_status (str | None): The status of the connector
-        connector_status_updated_time (int | None): The time when the connector status was last updated
+        id: Id of the simulator integration.
+        external_id: External id of the simulator integration
+        simulator_external_id: External id of the associated simulator
+        heartbeat: The interval in seconds between the last heartbeat and the current time
+        data_set_id: The id of the dataset associated with the simulator integration
+        connector_version: The version of the connector
+        log_id: Id of the log associated with this simulator integration.
+        active: Indicates if the simulator integration is active (i.e., a connector is linked to CDF for this integration).
+        created_time: The time when this simulator integration resource was created.
+        last_updated_time: The last time the simulator integration resource was updated.
+        license_status: The status of the license
+        simulator_version: The version of the simulator
+        license_last_checked_time: The time when the license was last checked
+        connector_status: The status of the connector
+        connector_status_updated_time: The time when the connector status was last updated
     """
 
     def __init__(

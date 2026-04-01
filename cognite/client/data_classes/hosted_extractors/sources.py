@@ -30,7 +30,7 @@ class SourceWrite(CogniteResource, ABC):
     This is the write/request format of the source resource.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
     """
 
     _type: ClassVar[str]
@@ -70,7 +70,7 @@ class Source(WriteableCogniteResource[T_WriteClass], ABC):
     This is the read/response format of the source resource.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
     """
 
     _type: ClassVar[str]
@@ -138,12 +138,12 @@ class EventHubSourceWrite(SourceWrite):
     This is the write/request format of the source resource.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        host (str): URL of the event hub consumer endpoint.
-        event_hub_name (str): Name of the event hub
-        key_name (str): The name of the Event Hub key to use.
-        key_value (str): Value of the Event Hub key to use for authentication.
-        consumer_group (str | None): The event hub consumer group to use. Microsoft recommends having a distinct consumer group for each application consuming data from event hub. If left out, this uses the default consumer group.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        host: URL of the event hub consumer endpoint.
+        event_hub_name: Name of the event hub
+        key_name: The name of the Event Hub key to use.
+        key_value: Value of the Event Hub key to use for authentication.
+        consumer_group: The event hub consumer group to use. Microsoft recommends having a distinct consumer group for each application consuming data from event hub. If left out, this uses the default consumer group.
     """
 
     _type = "eventhub"
@@ -187,13 +187,13 @@ class EventHubSource(Source):
     This is the read/response format of the source resource.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        host (str): URL of the event hub consumer endpoint.
-        event_hub_name (str): Name of the event hub
-        key_name (str): The name of the Event Hub key to use.
-        created_time (int): No description.
-        last_updated_time (int): No description.
-        consumer_group (str | None): The event hub consumer group to use. Microsoft recommends having a distinct consumer group for each application consuming data from event hub. If left out, this uses the default consumer group.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        host: URL of the event hub consumer endpoint.
+        event_hub_name: Name of the event hub
+        key_name: The name of the Event Hub key to use.
+        created_time: No description.
+        last_updated_time: No description.
+        consumer_group: The event hub consumer group to use. Microsoft recommends having a distinct consumer group for each application consuming data from event hub. If left out, this uses the default consumer group.
     """
 
     _type = "eventhub"
@@ -476,12 +476,12 @@ class KafkaSourceWrite(SourceWrite):
     This is the write/request format of the kafka resource.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        bootstrap_brokers (Sequence[KafkaBroker]): List of redundant kafka brokers to connect to.
-        authentication (AuthenticationWrite | None): Authentication information for the kafka source.
-        use_tls (bool): If true, use TLS when connecting to the broker.
-        ca_certificate (CACertificateWrite | None): Custom certificate authority certificate to let the source use a self signed certificate.
-        auth_certificate (AuthCertificateWrite | None): Authentication certificate (if configured) used to authenticate to source.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        bootstrap_brokers: List of redundant kafka brokers to connect to.
+        authentication: Authentication information for the kafka source.
+        use_tls: If true, use TLS when connecting to the broker.
+        ca_certificate: Custom certificate authority certificate to let the source use a self signed certificate.
+        auth_certificate: Authentication certificate (if configured) used to authenticate to source.
     """
 
     _type = "kafka"
@@ -535,14 +535,14 @@ class KafkaSource(Source):
     This is the read/response format of the kafka resource.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        bootstrap_brokers (Sequence[KafkaBroker]): List of redundant kafka brokers to connect to.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        authentication (Authentication | None): Authentication information for the kafka source.
-        use_tls (bool): If true, use TLS when connecting to the broker.
-        ca_certificate (CACertificate | None): Custom certificate authority certificate to let the source use a self signed certificate.
-        auth_certificate (AuthCertificate | None): Authentication certificate (if configured) used to authenticate to source.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        bootstrap_brokers: List of redundant kafka brokers to connect to.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        authentication: Authentication information for the kafka source.
+        use_tls: If true, use TLS when connecting to the broker.
+        ca_certificate: Custom certificate authority certificate to let the source use a self signed certificate.
+        auth_certificate: Authentication certificate (if configured) used to authenticate to source.
     """
 
     _type = "kafka"
@@ -659,12 +659,12 @@ class RestSourceWrite(SourceWrite):
     This is the write/request format of the rest resource.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        host (str): Host or IP address to connect to.
-        scheme (Literal['http', 'https']): Type of connection to establish.
-        port (int | None): Port on server to connect to. Uses default ports based on the scheme if omitted.
-        ca_certificate (CACertificateWrite | None): Custom certificate authority certificate to let the source use a self signed certificate.
-        authentication (AuthenticationWrite | None): Authentication details for source.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        host: Host or IP address to connect to.
+        scheme: Type of connection to establish.
+        port: Port on server to connect to. Uses default ports based on the scheme if omitted.
+        ca_certificate: Custom certificate authority certificate to let the source use a self signed certificate.
+        authentication: Authentication details for source.
     """
 
     _type = "rest"
@@ -717,14 +717,14 @@ class RestSource(Source):
     This is the read/response format of the rest resource.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        host (str): Host or IP address to connect to.
-        scheme (Literal['http', 'https']): Type of connection to establish.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        port (int | None): Port on server to connect to. Uses default ports based on the scheme if omitted.
-        ca_certificate (CACertificate | None): Custom certificate authority certificate to let the source use a self signed certificate.
-        authentication (Authentication | None): Authentication details for source.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
+        host: Host or IP address to connect to.
+        scheme: Type of connection to establish.
+        created_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time: The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        port: Port on server to connect to. Uses default ports based on the scheme if omitted.
+        ca_certificate: Custom certificate authority certificate to let the source use a self signed certificate.
+        authentication: Authentication details for source.
     """
 
     _type = "rest"

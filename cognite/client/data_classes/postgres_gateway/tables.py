@@ -129,9 +129,9 @@ class RawTableWrite(TableWrite):
     This is the read/response format of the raw table.
 
     Args:
-        tablename (str): Name of the foreign table.
-        options (RawTableOptions): Table options
-        columns (Sequence[Column] | ColumnList): Foreign table columns.
+        tablename: Name of the foreign table.
+        options: Table options
+        columns: Foreign table columns.
 
     """
 
@@ -163,8 +163,8 @@ class ViewTableWrite(TableWrite):
     This is the read/response format of the custom table.
 
     Args:
-        tablename (str): Name of the foreign table.
-        options (ViewId): Table options
+        tablename: Name of the foreign table.
+        options: Table options
     """
 
     _type = "view"
@@ -192,8 +192,8 @@ class Table(_TableCore, ABC):
     This is the read/response format of the custom table.
 
     Args:
-        tablename (str): Name of the foreign table.
-        created_time (int | None): Time when the table was created
+        tablename: Name of the foreign table.
+        created_time: Time when the table was created
 
     """
 
@@ -225,10 +225,10 @@ class RawTable(Table):
     This is the read/response format of the raw table.
 
     Args:
-        tablename (str): Name of the foreign table.
-        options (RawTableOptions): Table options
-        columns (ColumnList): Foreign table columns.
-        created_time (int | None): Time when the table was created.
+        tablename: Name of the foreign table.
+        options: Table options
+        columns: Foreign table columns.
+        created_time: Time when the table was created.
 
     """
 
@@ -270,9 +270,9 @@ class ViewTable(Table):
     This is the read/response format of the custom table.
 
     Args:
-        tablename (str): Name of the foreign table.
-        options (ViewId): Table options
-        created_time (int | None): Time when the table was created.
+        tablename: Name of the foreign table.
+        options: Table options
+        created_time: Time when the table was created.
     """
 
     _type = "view"

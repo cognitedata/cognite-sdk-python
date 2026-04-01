@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ef3951b05d4235a59e1c676636514dfa
+1d299c7aec0d671001b80fef67aa1855
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -30,12 +30,12 @@ class SyncVisionAPI(SyncAPIClient):
         `Start an asynchronous job to extract features from image files. <https://api-docs.cognite.com/20230101/tag/Vision/operation/postVisionExtract>`_
 
         Args:
-            features (VisionFeature | list[VisionFeature]): The feature(s) to extract from the provided image files.
-            file_ids (list[int] | None): IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
-            file_external_ids (list[str] | None): The external file ids of the image files to analyze.
-            parameters (FeatureParameters | None): No description.
+            features: The feature(s) to extract from the provided image files.
+            file_ids: IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
+            file_external_ids: The external file ids of the image files to analyze.
+            parameters: No description.
         Returns:
-            VisionExtractJob: Resulting queued job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
+            Resulting queued job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
 
         Examples:
             Start a job, wait for completion and then get the parsed results:
@@ -65,10 +65,10 @@ class SyncVisionAPI(SyncAPIClient):
         `Retrieve an existing extract job by ID. <https://api-docs.cognite.com/20230101/tag/Vision/operation/getVisionExtract>`_
 
         Args:
-            job_id (int): ID of an existing feature extraction job.
+            job_id: ID of an existing feature extraction job.
 
         Returns:
-            VisionExtractJob: Vision extract job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
+            Vision extract job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
 
         Examples:
             Retrieve a vision extract job by ID:

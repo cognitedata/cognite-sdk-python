@@ -44,10 +44,10 @@ class SpaceStatisticsAPI(APIClient):
         """`Retrieve usage data and limits per space <https://api-docs.cognite.com/20230101/tag/Statistics/operation/getSpaceStatisticsByIds>`_
 
         Args:
-            space (str | SequenceNotStr[str]): The space or spaces to retrieve statistics for.
+            space: The space or spaces to retrieve statistics for.
 
         Returns:
-            SpaceStatistics | SpaceStatisticsList | None: The requested statistics and limits for the specified space(s).
+            The requested statistics and limits for the specified space(s).
 
         Examples:
 
@@ -76,7 +76,7 @@ class SpaceStatisticsAPI(APIClient):
         Returns statistics for data modeling resources grouped by each space in the project.
 
         Returns:
-            SpaceStatisticsList: The requested statistics and limits for all spaces in the project.
+            The requested statistics and limits for all spaces in the project.
 
         Examples:
 

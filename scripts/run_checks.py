@@ -5,7 +5,6 @@ from pathlib import Path
 
 from cognite.client import global_config
 from scripts.custom_checks.docstr_examples import format_docstring_examples
-from scripts.custom_checks.docstrings import format_docstrings
 from scripts.custom_checks.version import pyproj_version_matches
 
 global_config.silence_feature_preview_warnings = True
@@ -14,7 +13,6 @@ global_config.silence_feature_preview_warnings = True
 def run_checks(files: tuple[Path, ...]) -> list[str | None]:
     return [
         pyproj_version_matches(),
-        format_docstrings(files),
         format_docstring_examples(files),
     ]
 

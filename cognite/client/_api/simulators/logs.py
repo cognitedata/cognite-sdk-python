@@ -41,10 +41,10 @@ class SimulatorLogsAPI(APIClient):
         They help users identify issues, diagnose problems, and gain insights into the behavior of the simulator integrations.
 
         Args:
-            ids (int | Sequence[int]): The ids of the simulator log.
+            ids: The ids of the simulator log.
 
         Returns:
-            SimulatorLogList | SimulatorLog | None: Requested simulator log(s)
+            Requested simulator log(s)
 
         Examples:
             Get simulator logs by simulator model id:

@@ -88,10 +88,10 @@ class TransformationSchemaColumn(CogniteResource):
     """Represents a column of the expected sql structure for a destination type.
 
     Args:
-        name (str): Column name
-        sql_type (str): Type of the column in sql format.
-        type (TransformationSchemaType): Type of the column in json format.
-        nullable (bool): Values for the column can be null or not
+        name: Column name
+        sql_type: Type of the column in sql format.
+        type: Type of the column in json format.
+        nullable: Values for the column can be null or not
     """
 
     def __init__(
