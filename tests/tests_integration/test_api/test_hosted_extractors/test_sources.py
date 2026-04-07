@@ -13,13 +13,18 @@ from cognite.client.data_classes.hosted_extractors import (
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
+from tests.tests_integration.test_api.test_hosted_extractors.conftest import (
+    HUB_SOURCE_PREFIX,
+    MQTT_SOURCE_PREFIX,
+    UPDATE_SOURCE_PREFIX,
+)
 from tests.utils import get_or_raise
 
 
 @pytest.fixture(scope="session")
 def one_event_hub_source(cognite_client: CogniteClient, os_and_py_version: str) -> SourceList:
     my_hub = EventHubSourceWrite(
-        external_id=f"myNewHub-{os_and_py_version}",
+        external_id=f"{HUB_SOURCE_PREFIX}{os_and_py_version}",
         host="myHost",
         key_name="myKeyName",
         key_value="myKey",
@@ -34,7 +39,7 @@ def one_event_hub_source(cognite_client: CogniteClient, os_and_py_version: str) 
 class TestSources:
     def test_create_update_retrieve_delete(self, cognite_client: CogniteClient) -> None:
         my_hub = EventHubSourceWrite(
-            external_id=f"myNewHub-{random_string(10)}",
+            external_id=f"{HUB_SOURCE_PREFIX}{random_string(10)}",
             host="myHost",
             key_name="myKeyName",
             key_value="myKey",
@@ -67,7 +72,7 @@ class TestSources:
 
     def test_create_update_replace_retrieve(self, cognite_client: CogniteClient) -> None:
         original = MQTT5SourceWrite(
-            external_id=f"myMqttSource-{random_string(10)}",
+            external_id=f"{MQTT_SOURCE_PREFIX}{random_string(10)}",
             host="mqtt.hsl.fi",
             port=1883,
         )
@@ -97,7 +102,7 @@ class TestSources:
 
     def test_update_using_write_object(self, cognite_client: CogniteClient) -> None:
         my_hub = EventHubSourceWrite(
-            external_id=f"to-update-{random_string(10)}",
+            external_id=f"{UPDATE_SOURCE_PREFIX}{random_string(10)}",
             host="myHost",
             key_name="myKeyName",
             key_value="myKey",
