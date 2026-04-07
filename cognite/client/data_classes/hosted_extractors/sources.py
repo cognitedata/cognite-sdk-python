@@ -41,7 +41,7 @@ class SourceWrite(CogniteResource, ABC):
     @classmethod
     @abstractmethod
     def _load_source(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -81,7 +81,7 @@ class Source(WriteableCogniteResource[T_WriteClass], ABC):
     @classmethod
     @abstractmethod
     def _load_source(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -835,7 +835,7 @@ class AuthenticationWrite(CogniteResource, ABC):
     @classmethod
     @abstractmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -949,7 +949,7 @@ class Authentication(CogniteResource, ABC):
     @classmethod
     @abstractmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:

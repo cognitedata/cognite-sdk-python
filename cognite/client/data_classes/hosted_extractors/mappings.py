@@ -35,7 +35,7 @@ class InputMapping(CogniteResource, ABC):
     @classmethod
     @abstractmethod
     def _load_input(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
