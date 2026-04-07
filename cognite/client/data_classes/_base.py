@@ -11,6 +11,7 @@ from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Generic,
     Literal,
     Protocol,
@@ -39,10 +40,6 @@ if TYPE_CHECKING:
 
     from cognite.client import AsyncCogniteClient
 
-
-# Populated automatically by CogniteResourceList.__init_subclass__ whenever a list class defines _RESOURCE.
-# Used by CogniteResource.to_pandas to delegate to the corresponding list type's to_pandas implementation.
-_RESOURCE_TO_LIST_CLASS: dict[type, type] = {}
 
 
 def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
@@ -82,6 +79,10 @@ class CogniteResource(ABC):
     """The CogniteResource is the main data class in the SDK and is used to add serialization and deserialization, and the to_pandas method,
     which together with _repr_html_ makes it easy to visualize data in a tabular format in e.g. Jupyter notebooks.
     """
+
+    # Set to the corresponding list class after that class is defined (mirrors _RESOURCE on list classes).
+    # None for resource types that have no list class counterpart.
+    _LIST_CLASS: ClassVar[type[CogniteResourceList] | None] = None
 
     def __eq__(self, other: Any) -> bool:
         return type(self) is type(other) and self.dump() == other.dump()
@@ -169,7 +170,10 @@ class CogniteResource(ABC):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        list_cls = _RESOURCE_TO_LIST_CLASS[type(self)]
+        if (list_cls := type(self)._LIST_CLASS) is None:
+            raise NotImplementedError(
+                f"{type(self).__name__} has no list class (_LIST_CLASS is None). Override to_pandas() directly."
+            )
         df = list_cls([self]).to_pandas(
             camel_case=camel_case,
             expand_metadata=expand_metadata,
@@ -242,15 +246,6 @@ class WriteableCogniteResourceWithClientRef(
 
 class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     _RESOURCE: type[T_CogniteResource]
-
-    def __init_subclass__(cls, **kwargs: Any) -> None:
-        # Whenever a new list class is defined with _RESOURCE, register the resource → list mapping so that
-        # CogniteResource.to_pandas can delegate to the list's to_pandas without any per-class boilerplate.
-        # We check cls.__dict__ (not hasattr) to avoid inheriting a parent's _RESOURCE and registering it twice
-        # under the wrong list class.
-        super().__init_subclass__(**kwargs)
-        if "_RESOURCE" in cls.__dict__:
-            _RESOURCE_TO_LIST_CLASS[cls.__dict__["_RESOURCE"]] = cls
 
     def __init__(self, resources: Sequence[T_CogniteResource]) -> None:
         if resources:

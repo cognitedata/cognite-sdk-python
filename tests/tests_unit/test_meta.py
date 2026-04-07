@@ -16,7 +16,6 @@ from cognite.client.data_classes._base import (
     InternalIdTransformerMixin,
     WriteableCogniteResourceList,
     WriteableCogniteResourceListWithClientRef,
-    _RESOURCE_TO_LIST_CLASS,
 )
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.contextualization import DiagramConvertItem, DiagramDetectItem
@@ -27,12 +26,11 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeListWithCursor,
     TypeInformation,
 )
-from cognite.client.data_classes.datapoints import Datapoint
+from cognite.client.data_classes.datapoints import Datapoint, DatapointsArrayList, DatapointsList
 from cognite.client.data_classes.datapoints_subscriptions import SubscriptionDatapoints
 from cognite.client.data_classes.geospatial import FeatureListCore
-from cognite.client.data_classes.raw import RowCore, RowListCore
-from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
 from cognite.client.data_classes.principals import PrincipalList
+from cognite.client.data_classes.raw import RowCore, RowListCore
 from cognite.client.utils._url import NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN
 from tests.utils import all_concrete_subclasses, all_subclasses
 
@@ -169,25 +167,38 @@ def test_all_list_classes_define_resource(list_cls: type, list_classes_without_r
         )
         return
 
-    resource_cls = list_cls._RESOURCE
-    assert resource_cls in _RESOURCE_TO_LIST_CLASS, (
-        f"{list_cls.__name__}._RESOURCE = {resource_cls.__name__} is not registered in _RESOURCE_TO_LIST_CLASS"
-    )
-    assert _RESOURCE_TO_LIST_CLASS[resource_cls] is list_cls, (
+    resource_cls = list_cls.__dict__["_RESOURCE"]
+    if isinstance(resource_cls, tuple):
+        return  # Internal multi-resource list classes (e.g. _NodeOrEdgeApplyResultList) — no _LIST_CLASS needed
+
+    assert resource_cls._LIST_CLASS is list_cls, (
         f"{list_cls.__name__}._RESOURCE = {resource_cls.__name__}, "
-        f"but _RESOURCE_TO_LIST_CLASS[{resource_cls.__name__}] = {_RESOURCE_TO_LIST_CLASS[resource_cls].__name__}"
+        f"but {resource_cls.__name__}._LIST_CLASS = {resource_cls._LIST_CLASS}"
+    )
+
+
+@pytest.mark.parametrize("list_cls", all_subclasses(CogniteResourceList))
+def test_list_class_resource_back_reference(list_cls: type, list_classes_without_resource: set[type]) -> None:
+    if list_cls in list_classes_without_resource or "_RESOURCE" not in list_cls.__dict__:
+        return
+    resource_cls = list_cls.__dict__["_RESOURCE"]
+    if isinstance(resource_cls, tuple):
+        return
+    assert list_cls._RESOURCE._LIST_CLASS is list_cls, (
+        f"{resource_cls.__name__}._LIST_CLASS should be {list_cls.__name__}, "
+        f"got {resource_cls._LIST_CLASS}"
     )
 
 
 def test_standalone_to_pandas_allowlist() -> None:
-    # Resource classes that define their own to_pandas without a registered list class to delegate to.
+    # Resource classes that define their own to_pandas without a list class to delegate to.
     # These are intentional exceptions — domain-specific data shapes where the standard
     # "delegate to list type" pattern doesn't apply. Adding a new class here requires justification.
     expected_standalone = {
         Datapoint,           # Time series datapoint — tabular layout, not a standard resource
         DiagramConvertItem,  # Embedded inside DiagramConvertResults, no standalone list type
         DiagramDetectItem,   # Embedded inside DiagramDetectResults, no standalone list type
-        Instance,            # Abstract base; delegates at runtime via _RESOURCE_TO_LIST_CLASS[type(self)]
+        Instance,            # Abstract base; delegates at runtime via type(self)._LIST_CLASS
         RowCore,             # Raw table row — its to_pandas pivots columns, not a standard layout
         SubscriptionDatapoints,  # Datapoint subscription batch item, no standalone list type
         TypeInformation,     # DM type metadata embedded in query results, not a standard resource
@@ -200,21 +211,13 @@ def test_standalone_to_pandas_allowlist() -> None:
         for cls in aux.all_subclasses(CogniteResource)
         if cls.__module__.startswith("cognite.client")
         and "to_pandas" in cls.__dict__
-        and cls not in _RESOURCE_TO_LIST_CLASS
+        and cls._LIST_CLASS is None
     }
     unexpected = actual_standalone - expected_standalone
     assert not unexpected, (
         f"New resource class(es) with a standalone to_pandas found: "
         f"{sorted(c.__name__ for c in unexpected)}. "
-        f"Either add a list class and register it, or add to the allowlist above with a comment."
-    )
-
-
-@pytest.mark.parametrize("resource_cls,list_cls", list(_RESOURCE_TO_LIST_CLASS.items()))
-def test_registry_entries_are_consistent(resource_cls: type, list_cls: type) -> None:
-    assert list_cls._RESOURCE is resource_cls, (
-        f"_RESOURCE_TO_LIST_CLASS maps {resource_cls.__name__} → {list_cls.__name__}, "
-        f"but {list_cls.__name__}._RESOURCE = {list_cls._RESOURCE}"
+        f"Either add a list class and set _LIST_CLASS, or add to the allowlist above with a comment."
     )
 
 

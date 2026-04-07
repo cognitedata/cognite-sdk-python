@@ -330,6 +330,9 @@ class SimulatorList(CogniteResourceList[Simulator], IdTransformerMixin):
     _RESOURCE = Simulator
 
 
+Simulator._LIST_CLASS = SimulatorList
+
+
 class SimulatorIntegration(CogniteResource):
     """
     The simulator integration resource represents a simulator connector in Cognite Data Fusion (CDF).
@@ -415,3 +418,6 @@ class SimulatorIntegration(CogniteResource):
 
 class SimulatorIntegrationList(CogniteResourceList[SimulatorIntegration], IdTransformerMixin):
     _RESOURCE = SimulatorIntegration
+
+
+SimulatorIntegration._LIST_CLASS = SimulatorIntegrationList

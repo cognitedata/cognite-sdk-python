@@ -201,6 +201,9 @@ class DataModelApplyList(CogniteResourceList[DataModelApply]):
         return [d.as_id() for d in self]
 
 
+DataModelApply._LIST_CLASS = DataModelApplyList
+
+
 class DataModelList(WriteableCogniteResourceList[DataModelApply, DataModel[T_View]]):
     # This should be DataModel[T_View], but generic causes issues with MyPy.
     _RESOURCE = DataModel  # type: ignore[assignment]
@@ -242,6 +245,9 @@ class DataModelList(WriteableCogniteResourceList[DataModelApply, DataModel[T_Vie
 
     def as_write(self) -> DataModelApplyList:
         return self.as_apply()
+
+
+DataModel._LIST_CLASS = DataModelList
 
 
 class DataModelFilter(CogniteFilter):

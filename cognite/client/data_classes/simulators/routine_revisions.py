@@ -669,6 +669,9 @@ class SimulatorRoutineRevisionWriteList(CogniteResourceList[SimulatorRoutineRevi
     _RESOURCE = SimulatorRoutineRevisionWrite
 
 
+SimulatorRoutineRevisionWrite._LIST_CLASS = SimulatorRoutineRevisionWriteList
+
+
 class SimulatorRoutineRevisionList(
     WriteableCogniteResourceList[SimulatorRoutineRevisionWrite, SimulatorRoutineRevision], IdTransformerMixin
 ):
@@ -676,6 +679,9 @@ class SimulatorRoutineRevisionList(
 
     def as_write(self) -> SimulatorRoutineRevisionWriteList:
         return SimulatorRoutineRevisionWriteList([a.as_write() for a in self.data])
+
+
+SimulatorRoutineRevision._LIST_CLASS = SimulatorRoutineRevisionList
 
 
 class SimulatorRoutineStageList(UserList[SimulatorRoutineStage]):
