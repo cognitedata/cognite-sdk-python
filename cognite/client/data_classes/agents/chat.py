@@ -3,23 +3,20 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
-from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_camel_case
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 
 @dataclass
-class MessageContent(CogniteObject, ABC):
+class MessageContent(CogniteResource, ABC):
     """Base class for message content types."""
 
     _type: ClassVar[str]  # To be set by concrete classes
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> MessageContent:
+    def _load(cls, data: dict[str, Any]) -> MessageContent:
         """Dispatch to the correct concrete content class based on `type`."""
         content_type = data.get("type", "")
         content_class = _MESSAGE_CONTENT_CLS_BY_TYPE.get(content_type, UnknownContent)
@@ -27,7 +24,6 @@ class MessageContent(CogniteObject, ABC):
         return content_class._load_content(data)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dump the content to a dictionary."""
         output = super().dump(camel_case=camel_case)
         output["type"] = self._type
         return output
@@ -60,8 +56,8 @@ class UnknownContent(MessageContent):
     """Unknown content type for forward compatibility.
 
     Args:
-        data (dict[str, Any]): The raw content data.
         type (str): The content type.
+        data (dict[str, Any]): The raw content data.
     """
 
     type: str
@@ -87,21 +83,21 @@ _MESSAGE_CONTENT_CLS_BY_TYPE: dict[str, type[MessageContent]] = {
 
 
 @dataclass(frozen=True, slots=True)
-class Action(CogniteObject, ABC):
+class Action(CogniteResource, ABC):
     """Base class for all action types that can be provided to an agent."""
 
     _type: ClassVar[str]
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Action:
+    def _load(cls, data: dict[str, Any]) -> Action:
         """Dispatch to the correct concrete action class based on `type`."""
         action_type = data.get("type", "")
         action_class = _ACTION_CLS_BY_TYPE.get(action_type, UnknownAction)
-        return action_class._load_action(data, cognite_client)
+        return action_class._load_action(data)
 
     @classmethod
     @abstractmethod
-    def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Action:
+    def _load_action(cls, data: dict[str, Any]) -> Action:
         """Create a concrete action instance from raw data."""
         ...
 
@@ -134,7 +130,7 @@ class ClientToolAction(Action):
         }
 
     @classmethod
-    def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolAction:
+    def _load_action(cls, data: dict[str, Any]) -> ClientToolAction:
         client_tool = data[cls._type]
         return cls(
             name=client_tool["name"],
@@ -161,7 +157,7 @@ class UnknownAction(Action):
         return result
 
     @classmethod
-    def _load_action(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownAction:
+    def _load_action(cls, data: dict[str, Any]) -> UnknownAction:
         action_type = data.get("type", "")
         return cls(data=data, type=action_type)
 
@@ -175,22 +171,22 @@ _ACTION_CLS_BY_TYPE: dict[str, type[Action]] = {
 
 
 @dataclass(frozen=True, slots=True)
-class ActionCall(CogniteObject, ABC):
+class ActionCall(CogniteResource, ABC):
     """Base class for action calls requested by the agent."""
 
     _type: ClassVar[str]
     action_id: str
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionCall:
+    def _load(cls, data: dict[str, Any]) -> ActionCall:
         """Dispatch to the correct concrete action call class based on `type`."""
         action_type = data.get("type", "")
         action_class = _ACTION_CALL_CLS_BY_TYPE.get(action_type, UnknownActionCall)
-        return action_class._load_call(data, cognite_client)
+        return action_class._load_call(data)
 
     @classmethod
     @abstractmethod
-    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionCall:
+    def _load_call(cls, data: dict[str, Any]) -> ActionCall:
         """Create a concrete action call instance from raw data."""
         ...
 
@@ -221,7 +217,7 @@ class ClientToolCall(ActionCall):
         }
 
     @classmethod
-    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolCall:
+    def _load_call(cls, data: dict[str, Any]) -> ClientToolCall:
         client_tool = data[cls._type]
         arguments_str = client_tool["arguments"]
         return cls(
@@ -235,13 +231,18 @@ class ClientToolCall(ActionCall):
 class ToolConfirmationCall(ActionCall):
     """A tool confirmation request from the agent.
 
+    Some tools require explicit user confirmation before execution, to prevent unintended or destructive actions.
+    These tools include Call Function, Run Python code, and Call REST API.
+    When an agent wants to run one of these tools, this action is included in the response
+    instead of the final result. Respond with a :class:`ToolConfirmationResult` using ``status="ALLOW"`` to proceed or ``status="DENY"`` to cancel.
+
     Args:
         action_id (str): The unique identifier for this action call.
-        content (MessageContent): The confirmation message content.
+        content (MessageContent): The human-readable confirmation message from the agent.
         tool_name (str): The name of the tool requiring confirmation.
         tool_arguments (dict[str, object]): The arguments for the tool call.
         tool_description (str): Description of what the tool does.
-        tool_type (str): The type of tool (e.g., "runPythonCode", "callRestApi").
+        tool_type (str): The type of tool (e.g., "callFunction", "runPythonCode", "callRestApi").
         details (dict[str, object] | None): Optional additional details about the tool call.
     """
 
@@ -271,7 +272,7 @@ class ToolConfirmationCall(ActionCall):
         return result
 
     @classmethod
-    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ToolConfirmationCall:
+    def _load_call(cls, data: dict[str, Any]) -> ToolConfirmationCall:
         tool_confirmation = data[cls._type]
         content = MessageContent._load(tool_confirmation["content"])
         return cls(
@@ -306,7 +307,7 @@ class UnknownActionCall(ActionCall):
         return result
 
     @classmethod
-    def _load_call(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownActionCall:
+    def _load_call(cls, data: dict[str, Any]) -> UnknownActionCall:
         action_type = data["type"]
         action_id = data["actionId"]
         return cls(action_id=action_id, data=data, type=action_type)
@@ -325,9 +326,8 @@ class Message(CogniteResource):
     """A message to send to an agent.
 
     Args:
-        content (str | MessageContent): The message content. If a string is provided,
-            it will be converted to TextContent.
-        role (Literal["user"]): The role of the message sender. Defaults to "user".
+        content (str | MessageContent): The message content. If a string is provided, it will be converted to TextContent.
+        role (Literal['user']): The role of the message sender. Defaults to "user".
     """
 
     content: MessageContent
@@ -347,7 +347,7 @@ class Message(CogniteResource):
         }
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Message:
+    def _load(cls, data: dict[str, Any]) -> Message:
         content = MessageContent._load(data["content"])
         return cls(content=content, role=data["role"])
 
@@ -359,7 +359,7 @@ class MessageList(CogniteResourceList[Message]):
 
 
 @dataclass(frozen=True, slots=True)
-class ActionResult(CogniteObject, ABC):
+class ActionResult(CogniteResource, ABC):
     """Base class for action execution results."""
 
     _type: ClassVar[str]
@@ -396,9 +396,9 @@ class ClientToolResult(ActionResult):
         }
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolResult:
+    def _load(cls, data: dict[str, Any]) -> ClientToolResult:
         """Load from dumped data. Only used for testing."""
-        content = MessageContent._load(data["content"], cognite_client)
+        content = MessageContent._load(data["content"])
         return cls(
             action_id=data["actionId"],
             content=content,
@@ -408,11 +408,15 @@ class ClientToolResult(ActionResult):
 
 @dataclass(frozen=True, slots=True)
 class ToolConfirmationResult(ActionResult):
-    """Result of a tool confirmation request.
+    """Result of a tool confirmation request, sent back to the agent.
+
+    Use this to respond to a :class:`ToolConfirmationCall` received in the agent response.
+    Pass ``status="ALLOW"`` to let the agent execute the tool, or ``status="DENY"`` to cancel it.
+    Always include the ``cursor`` from the confirmation response when sending this result.
 
     Args:
-        action_id (str): The ID of the action being responded to.
-        status (Literal["ALLOW", "DENY"]): Whether to allow or deny the tool execution.
+        action_id (str): The ID of the :class:`ToolConfirmationCall` being responded to.
+        status (Literal['ALLOW', 'DENY']): Whether to allow or deny the tool execution.
     """
 
     _type: ClassVar[str] = "toolConfirmation"
@@ -427,7 +431,7 @@ class ToolConfirmationResult(ActionResult):
         }
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ToolConfirmationResult:
+    def _load(cls, data: dict[str, Any]) -> ToolConfirmationResult:
         """Load from dumped data. Not used to load from API response."""
         return cls(
             action_id=data.get("actionId", data.get("action_id", "")),
@@ -436,7 +440,7 @@ class ToolConfirmationResult(ActionResult):
 
 
 @dataclass
-class AgentDataItem(CogniteObject):
+class AgentDataItem(CogniteResource):
     """Data item in agent response.
 
     Args:
@@ -454,14 +458,14 @@ class AgentDataItem(CogniteObject):
         return result
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentDataItem:
+    def _load(cls, data: dict[str, Any]) -> AgentDataItem:
         item_type = data["type"]
         item_data = {k: v for k, v in data.items() if k != "type"}
         return cls(type=item_type, data=item_data)
 
 
 @dataclass
-class AgentReasoningItem(CogniteObject):
+class AgentReasoningItem(CogniteResource):
     """Reasoning item in agent response.
 
     Args:
@@ -476,7 +480,7 @@ class AgentReasoningItem(CogniteObject):
         }
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentReasoningItem:
+    def _load(cls, data: dict[str, Any]) -> AgentReasoningItem:
         content = [MessageContent._load(item) for item in data.get("content", [])]
         return cls(content=content)
 
@@ -490,7 +494,7 @@ class AgentMessage(CogniteResource):
         data (list[AgentDataItem] | None): Data items in the response.
         reasoning (list[AgentReasoningItem] | None): Reasoning items in the response.
         actions (list[ActionCall] | None): Action calls requested by the agent.
-        role (Literal["agent"]): The role of the message sender.
+        role (Literal['agent']): The role of the message sender.
     """
 
     content: MessageContent | None = None
@@ -512,16 +516,15 @@ class AgentMessage(CogniteResource):
         return result
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentMessage:
-        content = MessageContent._load(data["content"]) if "content" in data else None
-        data_items = [AgentDataItem._load(item, cognite_client) for item in data.get("data", [])]
-        reasoning_items = [AgentReasoningItem._load(item, cognite_client) for item in data.get("reasoning", [])]
-        action_calls = [ActionCall._load(item, cognite_client) for item in data.get("actions", [])]
+    def _load(cls, data: dict[str, Any]) -> AgentMessage:
+        data_items = [AgentDataItem._load(item) for item in data.get("data", [])]
+        reasoning_items = [AgentReasoningItem._load(item) for item in data.get("reasoning", [])]
+        action_calls = [ActionCall._load(item) for item in data.get("actions", [])]
         return cls(
-            content=content,
-            data=data_items if data_items else None,
-            reasoning=reasoning_items if reasoning_items else None,
-            actions=action_calls if action_calls else None,
+            content=MessageContent._load_if(data.get("content")),
+            data=data_items or None,
+            reasoning=reasoning_items or None,
+            actions=action_calls or None,
             role=data["role"],
         )
 
@@ -582,10 +585,10 @@ class AgentChatResponse(CogniteResource):
         return [call for msgs in self.messages if msgs.actions for call in msgs.actions] or None
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentChatResponse:
+    def _load(cls, data: dict[str, Any]) -> AgentChatResponse:
         response_data = data["response"]
         raw_messages = response_data["messages"]
-        messages = [AgentMessage._load(msg, cognite_client) for msg in raw_messages]
+        messages = [AgentMessage._load(msg) for msg in raw_messages]
         messages_list = AgentMessageList(messages)
 
         instance = cls(

@@ -3,47 +3,53 @@ This file contains integration tests for the logic in the generic API client. Ho
 generic resource, an arbitrary resource is used instead to test the endpoint.
 """
 
+from __future__ import annotations
+
 import random
-from unittest.mock import patch
+from collections.abc import Iterator
+from typing import Any
+from unittest.mock import call, patch
 
 import pytest
 from pytest import MonkeyPatch
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import Asset, AssetWrite, Event, EventFilter, EventList, aggregations, filters
 from cognite.client.data_classes.events import EventProperty, EventWrite
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
+from tests.tests_unit.conftest import DefaultResourceGenerator
+from tests.utils import get_or_raise
 
 
 @pytest.fixture
-def post_spy_event(cognite_client):
-    dps_api = cognite_client.events
-    with patch.object(dps_api, "_post", wraps=dps_api._post):
+def post_spy_event(async_client: AsyncCogniteClient) -> Iterator[None]:
+    with patch.object(async_client.events, "_post", wraps=async_client.events._post):
         yield
 
 
 class TestAPIClientUpsert:
     def test_upsert_2_items_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        new_event = Event(
+        new_event = EventWrite(
             external_id="test_upsert2_one_preexisting:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
-        preexisting = Event(
+        preexisting = EventWrite(
             external_id="test_upsert2_one_preexisting:preexisting" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event.load(preexisting.dump(camel_case=True))
-        preexisting_update.subtype = "mySubType1"
         try:
             created_existing = cognite_client.events.create(preexisting)
             assert created_existing is not None
+
+            preexisting_update = Event.load(created_existing.dump(camel_case=True))
+            preexisting_update.subtype = "mySubType1"
 
             res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
             assert len(res) == 2
@@ -55,7 +61,7 @@ class TestAPIClientUpsert:
             cognite_client.events.delete(external_id=[new_event.external_id, preexisting.external_id])
 
     def test_upsert_with_all_preexisting(self, cognite_client: CogniteClient) -> None:
-        new_event = Event(
+        new_event = EventWrite(
             external_id="test_upsert_all_preexisting:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
@@ -72,26 +78,27 @@ class TestAPIClientUpsert:
             cognite_client.events.delete(external_id=new_event.external_id)
 
     def test_upsert_without_external_id(self, cognite_client: CogniteClient) -> None:
-        new_event = Event(
+        new_event = EventWrite(
             external_id="test_upsert_without_external_id:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
-        existing = Event(
+        existing = EventWrite(
             external_id="test_upsert_without_external_id:existing" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType2",
         )
-        existing_update = Event.load(existing.dump(camel_case=True))
-        existing_update.subtype = "mySubType1"
         try:
-            created = cognite_client.events.create(existing)
+            created_existing = cognite_client.events.create(existing)
+
+            existing_update = Event.load(created_existing.dump(camel_case=True))
+            existing_update.subtype = "mySubType1"
             existing_update.external_id = None
-            existing_update.id = created.id
+            existing_update.id = created_existing.id
 
             res = cognite_client.events.upsert([new_event, existing_update], mode="replace")
             assert len(res) == 2
@@ -102,32 +109,37 @@ class TestAPIClientUpsert:
         finally:
             cognite_client.events.delete(external_id=[new_event.external_id, existing.external_id])
 
+    @pytest.mark.usefixtures("post_spy_event")
     def test_upsert_split_into_multiple_tasks(
-        self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch, post_spy_event
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        monkeypatch: MonkeyPatch,
     ) -> None:
-        new_event = Event(
+        new_event = EventWrite(
             external_id="test_upsert_split_into_multiple_tasks:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
-        preexisting = Event(
+        preexisting = EventWrite(
             external_id="test_upsert_split_into_multiple_tasks:preexisting" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event.load(preexisting.dump(camel_case=True))
-        preexisting_update.subtype = "mySubType1"
         try:
             created_existing = cognite_client.events.create(preexisting)
             assert created_existing is not None
-            monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
+
+            preexisting_update = Event.load(created_existing.dump(camel_case=True))
+            preexisting_update.subtype = "mySubType1"
+            monkeypatch.setattr(async_client.events, "_UPDATE_LIMIT", 1)
 
             res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
-            assert cognite_client.events._post.call_count >= 2
+            assert async_client.events._post.call_count >= 2  # type: ignore[attr-defined]
             assert len(res) == 2
             assert new_event.external_id == res[0].external_id
             assert preexisting.external_id == res[1].external_id
@@ -136,27 +148,29 @@ class TestAPIClientUpsert:
         finally:
             cognite_client.events.delete(external_id=[new_event.external_id, preexisting.external_id])
 
-    def test_upsert_invalid_update(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
-        new_event = Event(
+    def test_upsert_invalid_update(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, monkeypatch: MonkeyPatch
+    ) -> None:
+        new_event = EventWrite(
             external_id="test_upsert_invalid_update:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
-        preexisting = Event(
+        preexisting = EventWrite(
             external_id="test_upsert_invalid_update:preexisting" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event.load(preexisting.dump(camel_case=True))
-        preexisting_update.type = "invalid_length" * 64
         try:
             created = cognite_client.events.create(preexisting)
             assert created
-            monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
+            preexisting_update = Event.load(created.dump(camel_case=True))
+            preexisting_update.type = "invalid_length" * 64
+            monkeypatch.setattr(async_client.events, "_UPDATE_LIMIT", 1)
 
             with pytest.raises(CogniteAPIError) as e:
                 cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
@@ -168,27 +182,30 @@ class TestAPIClientUpsert:
         finally:
             cognite_client.events.delete(external_id=[preexisting.external_id])
 
-    def test_upsert_invalid_create(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
-        new_event = Event(
+    def test_upsert_invalid_create(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, monkeypatch: MonkeyPatch
+    ) -> None:
+        new_event = EventWrite(
             external_id="test_upsert_invalid_create:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="InvalidLength" * 100,
         )
-        preexisting = Event(
+        preexisting = EventWrite(
             external_id="test_upsert_invalid_create:preexisting" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event.load(preexisting.dump(camel_case=True))
-        preexisting_update.type = "mySubType42"
         try:
             created = cognite_client.events.create(preexisting)
             assert created
-            monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
+            preexisting_update = Event.load(created.dump(camel_case=True))
+            preexisting_update.type = "mySubType42"
+
+            monkeypatch.setattr(async_client.events, "_UPDATE_LIMIT", 1)
 
             with pytest.raises(CogniteAPIError) as e:
                 cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
@@ -199,8 +216,8 @@ class TestAPIClientUpsert:
         finally:
             cognite_client.events.delete(external_id=[preexisting.external_id])
 
-    def test_upsert_with_invalid_mode(self, cognite_client: CogniteClient):
-        new_event = Event(
+    def test_upsert_with_invalid_mode(self, cognite_client: CogniteClient) -> None:
+        new_event = EventWrite(
             external_id="test_upsert_with_invalid_mode:new",
             type="test__py__sdk",
             start_time=0,
@@ -209,14 +226,14 @@ class TestAPIClientUpsert:
         )
         try:
             with pytest.raises(ValueError) as e:
-                cognite_client.events.upsert(new_event, mode="invalid_mode")
+                cognite_client.events.upsert(new_event, mode="invalid_mode")  # type: ignore[call-overload]
 
             assert "invalid_mode" in e.value.args[0]
         finally:  # Just in case the event gets created
             cognite_client.events.delete(external_id=new_event.external_id, ignore_unknown_ids=True)
 
-    def test_upsert_with_invalid_internal_id(self, cognite_client: CogniteClient):
-        new_event = Event(
+    def test_upsert_with_invalid_internal_id(self, cognite_client: CogniteClient) -> None:
+        new_event = DefaultResourceGenerator.event(
             id=666,
             type="test__py__sdk",
             start_time=0,
@@ -231,15 +248,15 @@ class TestAPIClientUpsert:
         finally:  # Just in case the event gets created
             cognite_client.events.delete(id=new_event.id, ignore_unknown_ids=True)
 
-    def test_upsert_with_patch_option(self, cognite_client: CogniteClient):
-        existing_event = Event(
+    def test_upsert_with_patch_option(self, cognite_client: CogniteClient) -> None:
+        existing_event = EventWrite(
             external_id="test_upsert_with_patch_option:existing" + random_string(5),
             type="mypType1",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
-        updated_event = Event(
+        updated_event = EventWrite(
             external_id=existing_event.external_id,
             subtype="mySubType2",
         )
@@ -271,45 +288,43 @@ class TestAPIClientUpsert:
 @pytest.fixture(scope="session")
 def event_list(cognite_client: CogniteClient) -> EventList:
     prefix = "events:_advanced_aggregate:"
-    events = EventList(
-        [
-            Event(
-                external_id=f"{prefix}1",
-                type="type1",
-                subtype="subtype1",
-                start_time=0,
-                source="source1",
-                metadata={
-                    "timezone": "Europe/Oslo",
-                    "shop:dynamic": "ignore",
-                    "shop:static": "file",
-                },
-            ),
-            Event(
-                external_id=f"{prefix}2",
-                type="type1",
-                subtype="subtype2",
-                start_time=100,
-                source="source1",
-                metadata={"timezone": "Europe/Oslo", "shop:dynamic": "rerun", "shop:static": "config"},
-            ),
-            Event(
-                external_id=f"{prefix}3",
-                type="type2",
-                subtype="subtype1",
-                start_time=200,
-                end_time=500,
-                source="source2",
-                metadata={
-                    "timezone": "America/New_York",
-                    "shop:dynamic": "taxing",
-                    "shop:static": "config",
-                },
-            ),
-        ]
-    )
+    events = [
+        EventWrite(
+            external_id=f"{prefix}1",
+            type="type1",
+            subtype="subtype1",
+            start_time=0,
+            source="source1",
+            metadata={
+                "timezone": "Europe/Oslo",
+                "shop:dynamic": "ignore",
+                "shop:static": "file",
+            },
+        ),
+        EventWrite(
+            external_id=f"{prefix}2",
+            type="type1",
+            subtype="subtype2",
+            start_time=100,
+            source="source1",
+            metadata={"timezone": "Europe/Oslo", "shop:dynamic": "rerun", "shop:static": "config"},
+        ),
+        EventWrite(
+            external_id=f"{prefix}3",
+            type="type2",
+            subtype="subtype1",
+            start_time=200,
+            end_time=500,
+            source="source2",
+            metadata={
+                "timezone": "America/New_York",
+                "shop:dynamic": "taxing",
+                "shop:static": "config",
+            },
+        ),
+    ]
     retrieved_events = cognite_client.events.retrieve_multiple(
-        external_ids=events.as_external_ids(), ignore_unknown_ids=True
+        external_ids=[ev.external_id for ev in events], ignore_unknown_ids=True
     )
     if len(retrieved_events) == len(events):
         return retrieved_events
@@ -317,7 +332,7 @@ def event_list(cognite_client: CogniteClient) -> EventList:
 
 
 class TestAPIClientAdvancedAggregate:
-    def test_aggregate_property_with_all_filters(self, cognite_client: CogniteClient, event_list: EventList):
+    def test_aggregate_property_with_all_filters(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         filter_ = EventFilter(external_id_prefix="_advanced_aggregate:")
         advanced_filter = filters.Not(filters.Equals(EventProperty.source, "source2"))
         agg_filter = aggregations.Prefix("subtype1")
@@ -328,12 +343,12 @@ class TestAPIClientAdvancedAggregate:
         assert count == sum(
             1
             for event in event_list
-            if event.subtype.startswith("type1")
-            and event.external_id.startswith("_advanced_aggregate:") == "subtype1"
+            if get_or_raise(event.subtype).startswith("type1")
+            and get_or_raise(event.external_id).startswith("_advanced_aggregate:") == "subtype1"
             and event.source != "source2"
         )
 
-    def test_aggregate_path_with_all_filters(self, cognite_client: CogniteClient, event_list: EventList):
+    def test_aggregate_path_with_all_filters(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         filter_ = EventFilter(external_id_prefix="_advanced_aggregate:")
         advanced_filter = filters.Not(filters.Equals(EventProperty.type, "type1"))
         agg_filter = aggregations.Prefix("shop")
@@ -344,8 +359,9 @@ class TestAPIClientAdvancedAggregate:
         assert count == sum(
             1
             for event in event_list
-            if event.external_id.startswith("_advanced_aggregate:") == "subtype1" and event.type != "type1"
-            for key in event.metadata
+            if get_or_raise(event.external_id).startswith("_advanced_aggregate:") == "subtype1"
+            and event.type != "type1"
+            for key in get_or_raise(event.metadata)
             if key.startswith("shop")
         )
 
@@ -357,24 +373,37 @@ class TestAPIClientRetrieveMultiple:
         assert len(res) == 0
 
     def test_retrieve_multiple__ordering_matches_input(
-        self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, monkeypatch: MonkeyPatch
     ) -> None:
         # Between SDK version 7.0.0 and 7.33.1, ordering of results was broken when >> 1k elements
         # was requested (meaning multiple requests were used):
+        # This bug came back in version 8.0.0, and was fixed in 8.0.3.
+        total_events = 3000  # Warning: Do not lower this number!! Too valuable test!!
         random_prefix = random_string(10)
-        num_items = 2000
+        ext_ids = [f"{random_prefix}:{i}" for i in range(total_events)]
+        to_create = [EventWrite(external_id=eid) for eid in ext_ids]
+
+        # Some setup to ensure we use concurrency - because without it, the bug may not manifest:
+        monkeypatch.setattr(async_client.events, "_RETRIEVE_LIMIT", 334)  # Force several requests
+        orig_get_sem = async_client.events._get_semaphore
+        sem_returns: list = []
+
+        def _capture_get_sem_call(*a: Any, **kw: Any) -> Any:
+            sem_returns.append(res := orig_get_sem(*a, **kw))
+            return res
+
         try:
-            cognite_client.events.create([EventWrite(external_id=f"{random_prefix}:{i}") for i in range(num_items)])
-            event_ids = cognite_client.events.list(
-                limit=num_items, sort="createdTime:asc", external_id_prefix=random_prefix
-            ).as_ids()
-            random.shuffle(event_ids)
-            # monkeypatch.setattr(cognite_client.events, "_RETRIEVE_LIMIT", 80)
-            res = cognite_client.events.retrieve_multiple(ids=event_ids)
-            assert res.as_ids() == event_ids
+            cognite_client.events.create(to_create)
+            random.shuffle(ext_ids)
+            with patch.object(async_client.events, "_get_semaphore", side_effect=_capture_get_sem_call) as get_sem_spy:
+                res = cognite_client.events.retrieve_multiple(external_ids=ext_ids)
+
+            assert get_sem_spy.call_args_list == [call("read")]
+            assert sem_returns[0] is async_client.events._get_semaphore("read")
+            assert sem_returns[0]._value >= 3, "Expected to use at least 3 concurrent requests to trigger the bug."
+            assert ext_ids == res.as_external_ids()
         finally:
-            event_ids = cognite_client.events.list(limit=num_items, external_id_prefix=random_prefix).as_ids()
-            cognite_client.events.delete(id=event_ids, ignore_unknown_ids=True)
+            cognite_client.events.delete(external_id=ext_ids, ignore_unknown_ids=True)
 
 
 class TestAPIClientDelete:
@@ -384,7 +413,7 @@ class TestAPIClientDelete:
 
 
 @pytest.fixture()
-def new_asset(cognite_client: CogniteClient) -> Asset:
+def new_asset(cognite_client: CogniteClient) -> Iterator[Asset]:
     new_asset = AssetWrite(
         external_id=f"test_api_client:new_asset:fixture_{random_string(5)}",
         name="test_asset",

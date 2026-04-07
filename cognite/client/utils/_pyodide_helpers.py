@@ -2,56 +2,69 @@ from __future__ import annotations
 
 import logging
 import os
-import warnings
-from collections.abc import Callable, MutableMapping
-from typing import TYPE_CHECKING, Any
 
 import cognite.client as cc  # Do not import individual entities
-from cognite.client._http_client import _RetryTracker
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider
 
-if TYPE_CHECKING:
-    from requests import Session
-
-    from cognite.client._http_client import HTTPClient, HTTPClientConfig
-
-
 logger = logging.getLogger(__name__)
+
+_TASK_REF_TZDATA: object = None  # We need a global ref
+
+
+def _apply_legacy_pyodide_httpx_patch() -> None:
+    try:
+        import pyodide_httpx  # type: ignore [import-not-found]
+    except ImportError:
+        logger.warning(
+            "The 'pyodide-httpx' package is required for this Pyodide version (<0.29) but was not found. "
+            "HTTP requests may fail."
+        )
+        return
+
+    pyodide_httpx.patch_httpx()
+
+    # Replace CORS-choker 'user-agent' with friendly 'x-user-agent':
+    def get_x_user_agent_header() -> dict[str, str]:
+        from cognite.client._basic_api_client import get_user_agent
+
+        return {"x-user-agent": get_user_agent()}
+
+    cc._basic_api_client.get_user_agent_header = get_x_user_agent_header
+
+    # You would think that was enough, but no, httpx is very helpful and sets 'user-agent' if we
+    # "forgot about it": https://github.com/encode/httpx/discussions/1566#discussioncomment-594451
+    from cognite.client._http_client import get_global_async_httpx_client
+
+    httpx_client = get_global_async_httpx_client()
+    del httpx_client.headers["user-agent"]
 
 
 def patch_sdk_for_pyodide() -> None:
-    # -------------------
     # Patch Pyodide related issues
-    # - Patch 'requests' as it does not work in pyodide (socket not implemented):
-    from pyodide_http import patch_all
+    # -----------------
+    try:
+        import pyodide  # type: ignore [import-not-found]
 
-    patch_all()
+        # Parse version (e.g., '0.26.2' -> (0, 26)) to conditionally apply the patch
+        version_parts = tuple(map(int, pyodide.__version__.split(".")[:2]))
+        if version_parts < (0, 29):
+            _apply_legacy_pyodide_httpx_patch()
+    except Exception as e:
+        logger.debug(f"Failed to check Pyodide version or apply legacy patch: {e}")
 
     # -----------------
     # Patch Cognite SDK
     # - For good measure ;)
     global_config.disable_pypi_version_check = True
 
-    # - Disable gzip, not supported:
+    # - Disable gzip. Although supported in pyodide, setting header 'content-encoding = gzip'
+    #   currently gets blocked by the browser policy. If we return 'content-encoding' as part
+    #   of 'access-control-allow-headers' from the pre-flight OPTIONS request, this prob goes away:
     global_config.disable_gzip = True
-
-    # - Use another HTTP adapter:
-    cc._http_client.HTTPClient._old__init__ = cc._http_client.HTTPClient.__init__  # type: ignore [attr-defined]
-    cc._http_client.HTTPClient.__init__ = http_client__init__  # type: ignore [method-assign]
 
     # - Inject these magic classes into the correct modules so that the user may import them normally:
     cc.config.FusionNotebookConfig = FusionNotebookConfig  # type: ignore [attr-defined]
-
-    # - Set all usage of thread pool executors to use dummy/serial-implementations:
-    cc.utils._concurrency.ConcurrencySettings.executor_type = "mainthread"
-
-    # - Auto-ignore protobuf warning for the user (as they can't fix this):
-    warnings.filterwarnings(
-        action="ignore",
-        category=UserWarning,
-        message="Your installation of 'protobuf' is missing compiled C binaries",
-    )
 
     # - If we are running inside of a JupyterLite Notebook spawned from Cognite Data Fusion, we set
     #   the default config to FusionNotebookConfig(). This allows the user to:
@@ -65,29 +78,18 @@ def patch_sdk_for_pyodide() -> None:
     #   internally for e.g. datapoints and workflows.
     #   Note: This convenience will only work in chromium-based browsers (as of Sept 2025)
     try:
-        import micropip  # type: ignore [import-not-found]
-        from pyodide.ffi import run_sync  # type: ignore [import-not-found]
+        import asyncio
 
-        run_sync(micropip.install("tzdata"))
+        import micropip  # type: ignore [import-not-found]
+
+        global _TASK_REF_TZDATA  # keep the gc at bay
+        _TASK_REF_TZDATA = asyncio.ensure_future(micropip.install("tzdata"))
+
     except Exception:
         logger.debug(
             "Could not load 'tzdata' package automatically in pyodide. You may need to do this manually:"
             "import micropip; await micropip.install('tzdata')"
         )
-
-
-def http_client__init__(
-    self: HTTPClient,
-    config: HTTPClientConfig,
-    session: Session,
-    refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
-    retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
-) -> None:
-    import pyodide_http
-
-    self._old__init__(config, session, refresh_auth_header, retry_tracker_factory)  # type: ignore [attr-defined]
-    self.session.mount("https://", pyodide_http._requests.PyodideHTTPAdapter())
-    self.session.mount("http://", pyodide_http._requests.PyodideHTTPAdapter())
 
 
 class EnvVarToken(CredentialProvider):
@@ -130,5 +132,4 @@ class FusionNotebookConfig(ClientConfig):
             project=os.environ["COGNITE_PROJECT"],
             credentials=EnvVarToken(),  # Magic!
             base_url=os.environ["COGNITE_BASE_URL"],
-            max_workers=1,
         )

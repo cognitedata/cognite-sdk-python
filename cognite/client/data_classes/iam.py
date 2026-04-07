@@ -3,15 +3,13 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CogniteResource,
     CogniteResourceList,
-    CogniteResponse,
     IdTransformerMixin,
     InternalIdTransformerMixin,
     NameTransformerMixin,
@@ -24,20 +22,23 @@ from cognite.client.utils._importing import local_import
 if TYPE_CHECKING:
     import pandas as pd
 
-    from cognite.client import CogniteClient
 
 ALL_USER_ACCOUNTS = "allUserAccounts"
 
 
 @dataclass
-class GroupAttributesToken(CogniteObject):
+class GroupAttributesToken(CogniteResource):
     """List of applications (represented by their application ID) this group is valid for"""
 
     app_ids: list[str] = field(default_factory=list)
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(app_ids=resource.get("appIds", []))
+
 
 @dataclass
-class GroupAttributes(CogniteObject):
+class GroupAttributes(CogniteResource):
     """Attributes derived from access token"""
 
     token: GroupAttributesToken | None = None
@@ -53,11 +54,8 @@ class GroupAttributes(CogniteObject):
         return dumped
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        token: GroupAttributesToken | None = None
-        if "token" in resource:
-            token = GroupAttributesToken._load(resource["token"], cognite_client=cognite_client)
-        instance = cls(token=token)
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        instance = cls(token=GroupAttributesToken._load_if(resource.get("token")))
         existing = {"token"}
         instance._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
         return instance
@@ -69,7 +67,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
     Args:
         name (str): Name of the group.
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
+        capabilities (list[Capability] | Capability | None): List of capabilities (acls) this group should grant its users.
         attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
         metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
@@ -78,32 +76,28 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
     def __init__(
         self,
         name: str,
-        source_id: str | None = None,
-        capabilities: list[Capability] | None = None,
-        attributes: GroupAttributes | None = None,
-        metadata: dict[str, str] | None = None,
-        members: Literal["allUserAccounts"] | list[str] | None = None,
+        source_id: str | None,
+        capabilities: list[Capability] | Capability | None,
+        attributes: GroupAttributes | None,
+        metadata: dict[str, str] | None,
+        members: Literal["allUserAccounts"] | list[str] | None,
     ) -> None:
         self.name = name
         self.source_id = source_id
-        self.capabilities = capabilities
-        if isinstance(self.capabilities, Capability):
-            self.capabilities = [capabilities]
+        self.capabilities = [capabilities] if isinstance(capabilities, Capability) else capabilities
         self.attributes = attributes
         self.metadata = metadata
         self.members = members
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Self:
+    def _load(cls, resource: dict, allow_unknown: bool = False) -> Self:
         return cls(
             name=resource["name"],
             source_id=resource.get("sourceId"),
             capabilities=[Capability.load(c, allow_unknown=allow_unknown) for c in resource.get("capabilities", [])]
             or None,
             attributes=(
-                GroupAttributes._load(resource["attributes"], cognite_client=cognite_client)
-                if isinstance(resource.get("attributes"), dict)
-                else None
+                GroupAttributes._load(resource["attributes"]) if isinstance(resource.get("attributes"), dict) else None
             ),
             metadata=resource.get("metadata"),
             members=resource.get("members"),
@@ -125,30 +119,28 @@ class Group(GroupCore):
     Groups can either be managed through the external identity provider for the project or managed by CDF.
 
     Args:
+        id (int): No description.
         name (str): Name of the group.
+        is_deleted (bool): No description.
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
+        capabilities (list[Capability] | Capability | None): List of capabilities (acls) this group should grant its users.
         attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
-        id (int | None): No description.
-        is_deleted (bool | None): No description.
         deleted_time (int | None): No description.
         metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
-        cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
+        id: int,
         name: str,
+        is_deleted: bool,
         source_id: str | None = None,
-        capabilities: list[Capability] | None = None,
+        capabilities: list[Capability] | Capability | None = None,
         attributes: GroupAttributes | None = None,
-        id: int | None = None,
-        is_deleted: bool | None = None,
         deleted_time: int | None = None,
         metadata: dict[str, str] | None = None,
         members: Literal["allUserAccounts"] | list[str] | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -158,17 +150,12 @@ class Group(GroupCore):
             metadata=metadata,
             members=members,
         )
-        # id is required when using the class to read, but doesn't make sense passing in when
-        # creating a new object. So in order to make the typing correct here
-        # (i.e. int and not Optional[int]), we force the type to be int rather than Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
+        self.id = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> GroupWrite:
-        """Returns a writing version of this group."""
+        """Returns a write version of this group."""
         return GroupWrite(
             name=self.name,
             source_id=self.source_id,
@@ -192,22 +179,17 @@ class Group(GroupCore):
         return self.members is not None
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Group:
+    def _load(cls, resource: dict, allow_unknown: bool = False) -> Group:
         return cls(
+            id=resource["id"],
             name=resource["name"],
             source_id=resource.get("sourceId"),
-            attributes=(
-                GroupAttributes._load(resource["attributes"], cognite_client=cognite_client)
-                if isinstance(resource.get("attributes"), dict)
-                else None
-            ),
+            attributes=GroupAttributes._load_if(resource.get("attributes")),
             capabilities=[Capability.load(c, allow_unknown) for c in resource.get("capabilities", [])] or None,
-            id=resource.get("id"),
-            is_deleted=resource.get("isDeleted"),
+            is_deleted=resource["isDeleted"],
             deleted_time=resource.get("deletedTime"),
             metadata=resource.get("metadata"),
             members=resource.get("members"),
-            cognite_client=cognite_client,
         )
 
     def to_pandas(
@@ -273,13 +255,9 @@ class GroupWriteList(CogniteResourceList[GroupWrite], NameTransformerMixin):
     def _load(
         cls,
         resource_list: Iterable[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> Self:
-        return cls(
-            [cls._RESOURCE._load(res, cognite_client, allow_unknown) for res in resource_list],
-            cognite_client=cognite_client,
-        )
+        return cls([cls._RESOURCE._load(res, allow_unknown) for res in resource_list])
 
 
 class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformerMixin, InternalIdTransformerMixin):
@@ -289,17 +267,13 @@ class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformer
     def _load(
         cls,
         resource_list: Iterable[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> Self:
-        return cls(
-            [cls._RESOURCE._load(res, cognite_client, allow_unknown) for res in resource_list],
-            cognite_client=cognite_client,
-        )
+        return cls([cls._RESOURCE._load(res, allow_unknown) for res in resource_list])
 
     def as_write(self) -> GroupWriteList:
-        """Returns a writing version of this group list."""
-        return GroupWriteList([s.as_write() for s in self], cognite_client=self._get_cognite_client())
+        """Returns a write version of this group list."""
+        return GroupWriteList([s.as_write() for s in self])
 
     def to_pandas(
         self,
@@ -323,40 +297,38 @@ class SecurityCategoryCore(WriteableCogniteResource["SecurityCategoryWrite"], AB
     """No description.
 
     Args:
-        name (str | None): Name of the security category
+        name (str): Name of the security category
     """
 
-    def __init__(self, name: str | None = None) -> None:
+    def __init__(self, name: str) -> None:
         self.name = name
 
 
 class SecurityCategory(SecurityCategoryCore):
     """Security categories can be used to restrict access to a resource.
-    This is the reading version of a security category, which is used when retrieving security categories.
+    This is the read version of a security category, which is used when retrieving security categories.
 
     Args:
-        name (str | None): Name of the security category
-        id (int | None): Id of the security category
-        cognite_client (CogniteClient | None): The client to associate with this object.
+        id (int): Id of the security category
+        name (str): Name of the security category
     """
 
-    def __init__(
-        self, name: str | None = None, id: int | None = None, cognite_client: CogniteClient | None = None
-    ) -> None:
+    def __init__(self, id: int, name: str) -> None:
         super().__init__(name=name)
         self.id = id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(id=resource["id"], name=resource["name"])
 
     def as_write(self) -> SecurityCategoryWrite:
-        """Returns a writing version of this security category."""
-        if self.name is None:
-            raise ValueError("SecurityCategory must have an id to be used as write")
+        """Returns a write version of this security category."""
         return SecurityCategoryWrite(name=self.name)
 
 
 class SecurityCategoryWrite(SecurityCategoryCore):
     """Security categories can be used to restrict access to a resource.
-    This is the writing version of a security category, which is used when creating security categories.
+    This is the write version of a security category, which is used when creating security categories.
 
 
     Args:
@@ -367,7 +339,7 @@ class SecurityCategoryWrite(SecurityCategoryCore):
         super().__init__(name=name)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(name=resource["name"])
 
     def as_write(self) -> SecurityCategoryWrite:
@@ -387,11 +359,11 @@ class SecurityCategoryList(
     _RESOURCE = SecurityCategory
 
     def as_write(self) -> SecurityCategoryWriteList:
-        """Returns a writing version of this security category list."""
-        return SecurityCategoryWriteList([s.as_write() for s in self], cognite_client=self._get_cognite_client())
+        """Returns a write version of this security category list."""
+        return SecurityCategoryWriteList([s.as_write() for s in self])
 
 
-class ProjectSpec(CogniteResponse):
+class ProjectSpec(CogniteResource):
     """A CDF project spec
 
     Args:
@@ -408,7 +380,7 @@ class ProjectSpec(CogniteResponse):
         return self.url_name
 
     @classmethod
-    def load(cls, api_response: dict[str, Any]) -> ProjectSpec:
+    def _load(cls, api_response: dict[str, Any]) -> ProjectSpec:
         return cls(url_name=api_response["projectUrlName"], groups=api_response["groups"])
 
     def dump(self, camel_case: bool = True) -> dict[str, str | list[int]]:
@@ -418,7 +390,7 @@ class ProjectSpec(CogniteResponse):
         }
 
 
-class TokenInspection(CogniteResponse):
+class TokenInspection(CogniteResource):
     """Current login status
 
     Args:
@@ -433,16 +405,30 @@ class TokenInspection(CogniteResponse):
         self.capabilities = capabilities
 
     @classmethod
-    def load(
+    def _load(
         cls,
         api_response: dict[str, Any],
-        cognite_client: CogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> TokenInspection:
         return cls(
             subject=api_response["subject"],
             projects=[ProjectSpec.load(p) for p in api_response["projects"]],
-            capabilities=ProjectCapabilityList._load(api_response["capabilities"], cognite_client, allow_unknown),
+            capabilities=ProjectCapabilityList._load(api_response["capabilities"], allow_unknown),
+        )
+
+    @classmethod
+    def _load_with_project(
+        cls,
+        api_response: dict[str, Any],
+        project: str,
+        allow_unknown: bool = False,
+    ) -> TokenInspection:
+        return cls(
+            subject=api_response["subject"],
+            projects=[ProjectSpec.load(p) for p in api_response["projects"]],
+            capabilities=ProjectCapabilityList._load_with_project(
+                api_response["capabilities"], project=project, allow_unknown=allow_unknown
+            ),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -457,7 +443,7 @@ SessionStatus: TypeAlias = Literal["READY", "ACTIVE", "CANCELLED", "EXPIRED", "R
 SessionType: TypeAlias = Literal["CLIENT_CREDENTIALS", "TOKEN_EXCHANGE", "ONESHOT_TOKEN_EXCHANGE"]
 
 
-class CreatedSession(CogniteResponse):
+class CreatedSession(CogniteResource):
     """Session creation related information
 
     Args:
@@ -483,7 +469,7 @@ class CreatedSession(CogniteResponse):
         self.client_id = client_id
 
     @classmethod
-    def load(cls, response: dict[str, Any]) -> CreatedSession:
+    def _load(cls, response: dict[str, Any]) -> CreatedSession:
         return cls(
             id=response["id"],
             status=response["status"],
@@ -497,24 +483,22 @@ class Session(CogniteResource):
     """Session status
 
     Args:
-        id (int | None): ID of the session.
-        type (SessionType | None): Credentials kind used to create the session.
-        status (SessionStatus | None): Current status of the session.
-        creation_time (int | None): Session creation time, in milliseconds since 1970
-        expiration_time (int | None): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
+        id (int): ID of the session.
+        type (SessionType): Credentials kind used to create the session.
+        status (SessionStatus): Current status of the session.
+        creation_time (int): Session creation time, in milliseconds since 1970
+        expiration_time (int): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
         client_id (str | None): Client ID in identity provider. Returned only if the session was created using client credentials
-        cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        type: SessionType | None = None,
-        status: SessionStatus | None = None,
-        creation_time: int | None = None,
-        expiration_time: int | None = None,
+        id: int,
+        type: SessionType,
+        status: SessionStatus,
+        creation_time: int,
+        expiration_time: int,
         client_id: str | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
         self.type = type
@@ -522,6 +506,17 @@ class Session(CogniteResource):
         self.creation_time = creation_time
         self.expiration_time = expiration_time
         self.client_id = client_id
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            id=resource["id"],
+            type=resource["type"],
+            status=resource["status"],
+            creation_time=resource["creationTime"],
+            expiration_time=resource["expirationTime"],
+            client_id=resource.get("clientId"),
+        )
 
 
 class SessionList(CogniteResourceList[Session], IdTransformerMixin):
@@ -540,12 +535,6 @@ class ClientCredentials(CogniteResource):
         self.client_id = client_id
         self.client_secret = client_secret
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "clientId" if camel_case else "client_id": self.client_id,
-            "clientSecret" if camel_case else "client_secret": self.client_secret,
-        }
-
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ClientCredentials:
+    def _load(cls, resource: dict) -> ClientCredentials:
         return cls(client_id=resource["clientId"], client_secret=resource["clientSecret"])

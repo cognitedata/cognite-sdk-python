@@ -5,7 +5,6 @@ from collections import UserList
 from collections.abc import Collection, Iterator, MutableSequence, Sequence
 from dataclasses import dataclass, field
 from typing import (
-    TYPE_CHECKING,
     Any,
     ClassVar,
     SupportsIndex,
@@ -16,42 +15,21 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self
-
-from cognite.client.data_classes._base import CogniteObject, CogniteResourceList, UnknownCogniteObject
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, UnknownCogniteResource
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._text import convert_all_keys_recursive
 
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-
-
-class CountAggregate(CogniteObject):
-    """
-    [DEPRECATED] This represents the result of a count aggregation.
-
-    Args:
-        count (int): The number of items matching the aggregation.
-    """
-
-    def __init__(self, count: int) -> None:
-        self.count = count
-
-    @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> CountAggregate:
-        return cls(count=resource["count"])
-
 
 @dataclass
-class Aggregation(CogniteObject, ABC):
+class Aggregation(CogniteResource, ABC):
     _aggregation_name: ClassVar[str]
 
     property: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Aggregation:
+    def _load(cls, resource: dict[str, Any]) -> Aggregation:
         if "avg" in resource:
-            return Avg(property=resource["avg"]["property"])
+            return Average(property=resource["avg"]["property"])
         elif "count" in resource:
             return Count(property=resource["count"]["property"])
         elif "max" in resource:
@@ -62,7 +40,7 @@ class Aggregation(CogniteObject, ABC):
             return Sum(property=resource["sum"]["property"])
         elif "histogram" in resource:
             return Histogram(property=resource["histogram"]["property"], interval=resource["histogram"]["interval"])
-        return cast(Aggregation, UnknownCogniteObject(resource))
+        return cast(Aggregation, UnknownCogniteResource(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = {self._aggregation_name: {"property": self.property}}
@@ -77,8 +55,11 @@ class MetricAggregation(Aggregation, ABC): ...
 
 @final
 @dataclass
-class Avg(MetricAggregation):
+class Average(MetricAggregation):
     _aggregation_name = "avg"
+
+
+Avg = Average  # Backwards-compatible alias
 
 
 @final
@@ -119,34 +100,35 @@ class Histogram(Aggregation):
 
 
 @dataclass
-class AggregatedValue(CogniteObject, ABC):
+class AggregatedValue(CogniteResource, ABC):
     _aggregate: ClassVar[str] = field(init=False)
-
     property: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if "aggregate" not in resource:
+    def _load(cls, resource: dict[str, Any]) -> AggregatedValue:
+        aggregate = resource.get("aggregate")
+        if not aggregate:
             raise ValueError("Missing aggregate, this is required")
-        aggregate = resource["aggregate"]
 
-        if aggregate == "avg":
-            deserialized: Any = AvgValue(property=resource["property"], value=resource.get("value"))
-        elif aggregate == "count":
-            deserialized = CountValue(property=resource["property"], value=resource.get("value"))
-        elif aggregate == "max":
-            deserialized = MaxValue(property=resource["property"], value=resource.get("value"))
-        elif aggregate == "min":
-            deserialized = MinValue(property=resource["property"], value=resource.get("value"))
-        elif aggregate == "sum":
-            deserialized = SumValue(property=resource["property"], value=resource.get("value"))
-        elif aggregate == "histogram":
-            deserialized = HistogramValue(
-                property=resource["property"], interval=resource["interval"], buckets=resource["buckets"]
-            )
-        else:
-            deserialized = UnknownCogniteObject(resource)
-        return cast(Self, deserialized)
+        match aggregate:
+            case "avg":
+                return AverageValue(resource["property"], resource.get("value"))
+            case "count":
+                return CountValue(resource["property"], resource.get("value"))
+            case "max":
+                return MaxValue(resource["property"], resource.get("value"))
+            case "min":
+                return MinValue(resource["property"], resource.get("value"))
+            case "sum":
+                return SumValue(resource["property"], resource.get("value"))
+            case "histogram":
+                return HistogramValue(
+                    property=resource["property"],
+                    interval=resource["interval"],
+                    buckets=resource["buckets"],
+                )
+            case _:
+                return cast(AggregatedValue, UnknownCogniteResource(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"aggregate": self._aggregate, "property": self.property}
@@ -167,8 +149,11 @@ class AggregatedNumberedValue(AggregatedValue, ABC):
 
 @final
 @dataclass
-class AvgValue(AggregatedNumberedValue):
+class AverageValue(AggregatedNumberedValue):
     _aggregate: ClassVar[str] = "avg"
+
+
+AvgValue = AverageValue  # Backwards-compatible alias
 
 
 @final
@@ -375,7 +360,7 @@ class Range(AggregationFilter):
 
 
 @dataclass
-class UniqueResult(CogniteObject):
+class UniqueResult(CogniteResource):
     count: int
     values: list[str | int | float | Label]
 
@@ -384,11 +369,8 @@ class UniqueResult(CogniteObject):
         return self.values[0]
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> UniqueResult:
-        return cls(
-            count=resource["count"],
-            values=resource["values"],
-        )
+    def _load(cls, resource: dict) -> UniqueResult:
+        return cls(count=resource["count"], values=resource["values"])
 
 
 T_UniqueResult = TypeVar("T_UniqueResult", bound="UniqueResult")

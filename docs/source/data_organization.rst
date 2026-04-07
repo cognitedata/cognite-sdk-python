@@ -54,7 +54,7 @@ List data sets
 
 Aggregate data sets
 ^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_sets.DataSetsAPI.aggregate
+.. automethod:: cognite.client._api.data_sets.DataSetsAPI.aggregate_count
 
 Create data sets
 ^^^^^^^^^^^^^^^^

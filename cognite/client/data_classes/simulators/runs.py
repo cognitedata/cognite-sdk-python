@@ -1,43 +1,42 @@
 from __future__ import annotations
 
+import asyncio
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
+    WriteableCogniteResourceWithClientRef,
 )
 from cognite.client.data_classes.simulators.logs import SimulatorLog
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._retry import Backoff
-from cognite.client.utils._text import to_snake_case
+from cognite.client.utils._text import copy_doc_from_async, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
 
-    from cognite.client import CogniteClient
 
 _WARNING = FeaturePreviewWarning(api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators")
 
 
 @dataclass
-class SimulationValueUnitName(CogniteObject):
+class SimulationValueUnitName(CogniteResource):
     name: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            name=resource.get("name"),
-        )
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(name=resource.get("name"))
 
     def __post_init__(self) -> None:
         _WARNING.warn()
@@ -48,28 +47,25 @@ class SimulationValueUnit(SimulationValueUnitName):
     external_id: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            external_id=resource.get("externalId"),
-            name=resource.get("name"),
-        )
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(external_id=resource.get("externalId"), name=resource.get("name"))
 
     def __post_init__(self) -> None:
         _WARNING.warn()
 
 
 @dataclass
-class SimulationInputOverride(CogniteObject):
+class SimulationInputOverride(CogniteResource):
     reference_id: str
     value: str | int | float | list[str] | list[int] | list[float]
     unit: SimulationValueUnitName | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
-            unit=(SimulationValueUnitName._load(resource["unit"], cognite_client) if resource.get("unit") else None),
+            unit=SimulationValueUnitName._load_if(resource.get("unit")),
         )
 
     def __post_init__(self) -> None:
@@ -83,23 +79,7 @@ class SimulationInputOverride(CogniteObject):
         return output
 
 
-class SimulationRunCore(WriteableCogniteResource["SimulationRunWrite"]):
-    def __init__(
-        self,
-        run_type: str | None,
-        routine_external_id: str | None,
-        run_time: int | None = None,
-        routine_revision_external_id: str | None = None,
-        model_revision_external_id: str | None = None,
-    ) -> None:
-        self.run_type = run_type
-        self.run_time = run_time
-        self.routine_external_id = routine_external_id
-        self.routine_revision_external_id = routine_revision_external_id
-        self.model_revision_external_id = model_revision_external_id
-
-
-class SimulationRunWrite(SimulationRunCore):
+class SimulationRunWrite(WriteableCogniteResource["SimulationRunWrite"]):
     """
     Request to run a simulator routine asynchronously.
 
@@ -147,30 +127,27 @@ class SimulationRunWrite(SimulationRunCore):
             )
             raise param_error
 
-        super().__init__(
-            routine_external_id=routine_external_id,
-            routine_revision_external_id=routine_revision_external_id,
-            model_revision_external_id=model_revision_external_id,
-            run_type=run_type,
-            run_time=run_time,
-        )
+        self.routine_external_id = routine_external_id
+        self.routine_revision_external_id = routine_revision_external_id
+        self.model_revision_external_id = model_revision_external_id
+        self.run_type = run_type
+        self.run_time = run_time
         self.queue = queue
         self.log_severity = log_severity
         self.inputs = inputs
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRunWrite:
+    def _load(cls, resource: dict[str, Any]) -> SimulationRunWrite:
         inputs = resource.get("inputs")
         routine_revision_external_id = resource.get("routineRevisionExternalId")
         model_revision_external_id = resource.get("modelRevisionExternalId")
         routine_external_id = resource.get("routineExternalId")
-
         return cls(
             run_type=resource.get("runType"),
             run_time=resource.get("runTime"),
             queue=resource.get("queue"),
             log_severity=resource.get("logSeverity"),
-            inputs=([SimulationInputOverride._load(_input) for _input in inputs] if inputs else None),
+            inputs=[SimulationInputOverride._load(_input) for _input in inputs] if inputs else None,
             routine_external_id=routine_external_id,
             routine_revision_external_id=routine_revision_external_id,
             model_revision_external_id=model_revision_external_id,
@@ -196,7 +173,7 @@ class SimulationRunWrite(SimulationRunCore):
         return self
 
 
-class SimulationRun(SimulationRunCore):
+class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"]):
     """
     Every time a simulation routine executes, a simulation run object is created.
 
@@ -228,7 +205,6 @@ class SimulationRun(SimulationRunCore):
         status_message (str | None): The status message of the simulation run
         simulation_time (int | None): Simulation time in milliseconds. Timestamp when the input data was sampled. Used for indexing input and output time series.
         run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
-        cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
 
     """
 
@@ -251,13 +227,10 @@ class SimulationRun(SimulationRunCore):
         status_message: str | None = None,
         simulation_time: int | None = None,
         run_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
-        super().__init__(
-            run_type=run_type,
-            routine_external_id=routine_external_id,
-            run_time=run_time,
-        )
+        self.run_type = run_type
+        self.routine_external_id = routine_external_id
+        self.run_time = run_time
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -272,7 +245,6 @@ class SimulationRun(SimulationRunCore):
         self.data_set_id = data_set_id
         self.user_id = user_id
         self.log_id = log_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> SimulationRunWrite:
         return SimulationRunWrite(
@@ -281,30 +253,36 @@ class SimulationRun(SimulationRunCore):
             run_time=self.run_time,
         )
 
-    def get_logs(self) -> SimulatorLog | None:
+    async def get_logs_async(self) -> SimulatorLog | None:
         """`Retrieve logs for this simulation run. <https://api-docs.cognite.com/20230101/tag/Simulator-Logs/operation/retrieve_simulator_logs>`_
 
         Returns:
             SimulatorLog | None: Log for the simulation run.
         """
-        return self._cognite_client.simulators.logs.retrieve(ids=self.log_id)
+        return await self._cognite_client.simulators.logs.retrieve(ids=self.log_id)
 
-    def get_data(self) -> SimulationRunDataItem | None:
-        """`Retrieve data associated with this simulation run. <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/retrieve_simulation_run_data>`_
+    @copy_doc_from_async(get_logs_async)
+    def get_logs(self) -> SimulatorLog | None:
+        return run_sync(self.get_logs_async())
+
+    async def get_data_async(self) -> SimulationRunDataItem | None:
+        """`Retrieve data associated with this simulation run. <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
 
         Returns:
             SimulationRunDataItem | None: Data for the simulation run.
         """
-        data = self._cognite_client.simulators.runs.list_run_data(run_id=self.id)
+        data = await self._cognite_client.simulators.runs.list_run_data(run_id=self.id)
         if data:
             return data[0]
-
         return None
 
-    def update(self) -> None:
+    @copy_doc_from_async(get_data_async)
+    def get_data(self) -> SimulationRunDataItem | None:
+        return run_sync(self.get_data_async())
+
+    async def update_async(self) -> None:
         """Update the simulation run object to the latest state. Useful if the run was created with wait=False."""
-        # same logic as Cognite Functions
-        latest = self._cognite_client.simulators.runs.retrieve(ids=self.id)
+        latest = await self._cognite_client.simulators.runs.retrieve(ids=self.id)
         if latest is None:
             raise RuntimeError("Unable to update the simulation run object (it was not found)")
         else:
@@ -313,7 +291,11 @@ class SimulationRun(SimulationRunCore):
             self.simulation_time = latest.simulation_time
             self.last_updated_time = latest.last_updated_time
 
-    def wait(self, timeout: float = 60) -> None:
+    @copy_doc_from_async(update_async)
+    def update(self) -> None:
+        return run_sync(self.update_async())
+
+    async def wait_async(self, timeout: float = 60) -> None:
         """Waits for simulation status to become either success or failure.
         This is generally not needed to call directly, as client.simulators.routines.run(...) will wait for the simulation to finish by default.
 
@@ -325,14 +307,18 @@ class SimulationRun(SimulationRunCore):
         poll_backoff = Backoff(max_wait=30, base=10)
 
         while time.time() < end_time:
-            self.update()
+            await self.update_async()
             if self.status in ["success", "failure"]:
                 return
             sleep_time = min(next(poll_backoff) + 1, end_time - time.time())
-            time.sleep(sleep_time)
+            await asyncio.sleep(sleep_time)
+
+    @copy_doc_from_async(wait_async)
+    def wait(self, timeout: float = 60) -> None:
+        return run_sync(self.wait_async(timeout=timeout))
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRun:
+    def _load(cls, resource: dict[str, Any]) -> SimulationRun:
         return cls(
             id=resource["id"],
             created_time=resource["createdTime"],
@@ -351,11 +337,10 @@ class SimulationRun(SimulationRunCore):
             status_message=resource.get("statusMessage"),
             run_time=resource.get("runTime"),
             simulation_time=resource.get("simulationTime"),
-            cognite_client=cognite_client,
         )
 
 
-class SimulationValueBase(CogniteObject):
+class SimulationValueBase(CogniteResource):
     """
     Base class for simulation values. This class is used to define the value and its type.
     The value can be a string, double, array of strings or array of doubles.
@@ -378,12 +363,12 @@ class SimulationValueBase(CogniteObject):
         self.timeseries_external_id = timeseries_external_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
             value_type=resource["valueType"],
-            unit=SimulationValueUnitName._load(resource["unit"], cognite_client) if resource.get("unit") else None,
+            unit=SimulationValueUnitName._load_if(resource.get("unit")),
             simulator_object_reference=resource.get("simulatorObjectReference"),
             timeseries_external_id=resource.get("timeseriesExternalId"),
         )
@@ -426,12 +411,12 @@ class SimulationInput(SimulationValueBase):
         self.overridden = overridden
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
             value_type=resource["valueType"],
-            unit=SimulationValueUnitName._load(resource["unit"], cognite_client) if resource.get("unit") else None,
+            unit=SimulationValueUnitName._load_if(resource.get("unit")),
             simulator_object_reference=resource.get("simulatorObjectReference"),
             timeseries_external_id=resource.get("timeseriesExternalId"),
             overridden=resource.get("overridden"),
@@ -472,7 +457,7 @@ class SimulationRunDataItem(CogniteResource):
         self.outputs = outputs
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         inputs = [SimulationInput._load(input_) for input_ in resource["inputs"]]
         outputs = [SimulationOutput._load(output_) for output_ in resource["outputs"]]
         return cls(
@@ -546,4 +531,4 @@ class SimulationRunList(WriteableCogniteResourceList[SimulationRunWrite, Simulat
     _RESOURCE = SimulationRun
 
     def as_write(self) -> SimulationRunWriteList:
-        return SimulationRunWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
+        return SimulationRunWriteList([a.as_write() for a in self.data])
