@@ -97,13 +97,6 @@ class Filter(ABC):
         )
         return True
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Filter):
-            return NotImplemented
-        return type(self) is type(other) and self.dump() == other.dump()
-
-    __hash__ = object.__hash__
-
     def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
         """
         Dump the filter to a dictionary.
