@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from cognite.client.data_classes.filters import And, Filter, In, Or
+from cognite.client.data_classes.filters import And, Equals, Filter, In, Or
 from tests.utils import FakeCogniteResourceGenerator
 
 
@@ -52,3 +52,15 @@ def test_filters_warn_in_boolean_contexts() -> None:
 )
 def test_filter_property_case_conversion(user_filter: Filter, expected: dict) -> None:
     assert user_filter.dump(camel_case_property=True) == expected
+
+
+def test_filter_is_hashable_and_uses_identity() -> None:
+    # Bug in 8.0.0 to 8.0.5: __eq__ was added to Filter thus implicitly setting __hash__ = None,
+    # making filters unhashable.
+    flt = Equals(property=["node", "type"], value="pump")
+    hash(flt)  # must not raise
+
+    # Hashing is identity-based: two filters with equal content hash differently.
+    flt2 = Equals(property=["node", "type"], value="pump")
+    assert hash(flt) != hash(flt2)
+    assert flt != flt2

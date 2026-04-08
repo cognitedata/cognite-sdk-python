@@ -142,6 +142,30 @@ class TestResultSetExpressions:
         assert loaded.dump(camel_case=True) == raw_data
 
 
+class TestResultSetExpressionsSync:
+    def test_dump_load_equals(self) -> None:
+        expr = q.NodeResultSetExpressionSync(
+            filter=f.Equals(property=["node", "externalId"], value="my-node"),
+            limit=10,
+            from_="bla",
+        )
+        assert expr == q.ResultSetExpressionSync.load(expr.dump(camel_case=True))
+
+    def test_load(self) -> None:
+        raw = {
+            "nodes": {
+                "filter": {"equals": {"property": ["edge", "type"], "value": {"space": "sp", "externalId": "tp"}}},
+                "chainTo": "destination",
+                "direction": "outwards",
+                "skipAlreadyDeleted": True,
+            }
+        }
+        loaded = q.NodeResultSetExpressionSync(
+            filter=f.Equals(property=["edge", "type"], value={"space": "sp", "externalId": "tp"})
+        )
+        assert q.ResultSetExpressionSync.load(raw) == loaded
+
+
 def select_load_and_dump_equals_data() -> Iterator[ParameterSet]:
     raw: dict[str, Any] = {}
     loaded = q.Select()
