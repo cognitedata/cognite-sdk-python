@@ -12,6 +12,7 @@ from httpx import Request, Response
 from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
+from cognite.client._constants import MIN_MULTIPART_SIZE
 from cognite.client.data_classes import GeoLocation, GeoLocationFilter, Geometry, GeometryFilter, TimestampRange
 from cognite.client.data_classes._base import UnknownCogniteResource
 from cognite.client.data_classes.data_modeling.ids import NodeId
@@ -94,6 +95,33 @@ def example_file(mock_geo_location: GeoLocation) -> dict[str, Any]:
 
 @pytest.fixture
 def mock_file_upload_response(
+    httpx_mock: HTTPXMock, example_file: dict[str, Any], async_client: AsyncCogniteClient
+) -> Any:
+    multipart_response = {
+        **example_file,
+        "uploadUrls": ["https://upload.here/part0"],
+        "uploadId": "test-upload-id",
+    }
+    httpx_mock.add_response(
+        method="POST",
+        url=re.compile(re.escape(get_url(async_client.files) + "/files/initmultipartupload") + r"\?.*"),
+        status_code=200,
+        json=multipart_response,
+        is_reusable=True,
+    )
+    httpx_mock.add_response(method="PUT", url="https://upload.here/part0", status_code=200, is_reusable=True)
+    httpx_mock.add_response(
+        method="POST",
+        url=get_url(async_client.files) + "/files/completemultipartupload",
+        status_code=200,
+        json={},
+        is_reusable=True,
+    )
+    yield example_file
+
+
+@pytest.fixture
+def mock_upload_bytes_response(
     httpx_mock: HTTPXMock, example_file: dict[str, Any], async_client: AsyncCogniteClient
 ) -> Any:
     httpx_mock.add_response(
@@ -630,9 +658,15 @@ class TestFilesAPI:
         res = cognite_client.files.upload(Path(path), name="bla", directory=directory)
         del mock_file_upload_response["uploadUrl"]
         assert FileMetadata.load(mock_file_upload_response) == res
-        assert "https://upload.here" == str(httpx_mock.get_requests()[1].url)
-        assert {"name": "bla", "directory": directory} == jsgz_load(httpx_mock.get_requests()[0].content)
-        assert f"content1{os.linesep}".encode() == httpx_mock.get_requests()[1].content
+        requests = httpx_mock.get_requests()
+        # Request 0: POST /files/initmultipartupload
+        assert "/files/initmultipartupload" in str(requests[0].url)
+        assert {"name": "bla", "directory": directory} == jsgz_load(requests[0].content)
+        # Request 1: PUT part0
+        assert "https://upload.here/part0" == str(requests[1].url)
+        assert f"content1{os.linesep}".encode() == requests[1].content
+        # Request 2: POST /files/completemultipartupload
+        assert "/files/completemultipartupload" in str(requests[2].url)
 
     def test_upload_with_external_id(
         self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any]
@@ -653,9 +687,8 @@ class TestFilesAPI:
         directory = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         path = os.path.join(directory, "file_for_test_upload_1.txt")
         cognite_client.files.upload(Path(path), directory=directory)
-        assert {"name": "file_for_test_upload_1.txt", "directory": directory} == jsgz_load(
-            httpx_mock.get_requests()[0].content
-        )
+        init_request = next(r for r in httpx_mock.get_requests() if "/initmultipartupload" in str(r.url))
+        assert {"name": "file_for_test_upload_1.txt", "directory": directory} == jsgz_load(init_request.content)
 
     def test_upload_set_directory(
         self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
@@ -664,9 +697,8 @@ class TestFilesAPI:
         directory = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         path = os.path.join(directory, "file_for_test_upload_1.txt")
         cognite_client.files.upload(Path(path), directory=set_dir)
-        assert {"name": "file_for_test_upload_1.txt", "directory": set_dir} == jsgz_load(
-            httpx_mock.get_requests()[0].content
-        )
+        init_request = next(r for r in httpx_mock.get_requests() if "/initmultipartupload" in str(r.url))
+        assert {"name": "file_for_test_upload_1.txt", "directory": set_dir} == jsgz_load(init_request.content)
 
     def test_upload_from_directory(
         self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
@@ -680,22 +712,24 @@ class TestFilesAPI:
             )
             == res
         )
-        assert 4 == len(httpx_mock.get_requests())
-        count = 0
-        for request in httpx_mock.get_requests():
-            if not (payload_compressed := request.content).startswith(b"content"):
-                payload = jsgz_load(payload_compressed)
-                count += 1
-                assert [1, 2] == payload["assetIds"]
-                assert payload["name"] in ["file_for_test_upload_1.txt", "file_for_test_upload_2.txt"]
-        assert count == 2
+        # 2 files * 3 requests (init + put + complete) = 6
+        assert 6 == len(httpx_mock.get_requests())
+        init_requests = [r for r in httpx_mock.get_requests() if "/initmultipartupload" in str(r.url)]
+        assert len(init_requests) == 2
+        for request in init_requests:
+            payload = jsgz_load(request.content)
+            assert [1, 2] == payload["assetIds"]
+            assert payload["name"] in ["file_for_test_upload_1.txt", "file_for_test_upload_2.txt"]
 
     def test_upload_from_directory_fails(
         self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
     ) -> None:
         for _ in range(2):
             httpx_mock.add_response(
-                method="POST", url=get_url(async_client.files) + "/files?overwrite=false", status_code=400, json={}
+                method="POST",
+                url=re.compile(re.escape(get_url(async_client.files) + "/files/initmultipartupload") + r"\?.*"),
+                status_code=400,
+                json={},
             )
 
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
@@ -706,52 +740,66 @@ class TestFilesAPI:
         assert "file_for_test_upload_2.txt" in e.value.failed
 
     def test_upload_from_directory_recursively(
-        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, example_file: dict[str, Any]
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        example_file: dict[str, Any],
+        async_client: AsyncCogniteClient,
     ) -> None:
+        multipart_response = {
+            **example_file,
+            "uploadUrls": ["https://upload.here/part0"],
+            "uploadId": "test-upload-id",
+        }
         httpx_mock.add_response(
             method="POST",
-            url=re.compile(r".*/files\?overwrite=false"),
+            url=re.compile(re.escape(get_url(async_client.files) + "/files/initmultipartupload") + r"\?.*"),
             status_code=200,
-            json=example_file,
+            json=multipart_response,
             is_reusable=True,
         )
         httpx_mock.add_response(
             method="PUT",
-            url="https://upload.here",
+            url="https://upload.here/part0",
             status_code=200,
-            content=b"content",
+            is_reusable=True,
+        )
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.files) + "/files/completemultipartupload",
+            status_code=200,
+            json={},
             is_reusable=True,
         )
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         res = cognite_client.files.upload(path=Path(path), recursive=True, asset_ids=[1, 2])
         del example_file["uploadUrl"]
         assert FileMetadataList([FileMetadata.load(example_file) for _ in range(3)]) == res
-        assert 6 == len(httpx_mock.get_requests())
-        count = 0
-        for request in httpx_mock.get_requests():
-            if not (payload_compressed := request.content).startswith(b"content"):
-                payload = jsgz_load(payload_compressed)
-                count += 1
-                assert payload["name"] in [
-                    "file_for_test_upload_1.txt",
-                    "file_for_test_upload_2.txt",
-                    "file_for_test_upload_3.txt",
-                ]
-                assert [1, 2] == payload["assetIds"]
-        assert count == 3
+        # 3 files * 3 requests (init + put + complete) = 9
+        assert 9 == len(httpx_mock.get_requests())
+        init_requests = [r for r in httpx_mock.get_requests() if "/initmultipartupload" in str(r.url)]
+        assert len(init_requests) == 3
+        for request in init_requests:
+            payload = jsgz_load(request.content)
+            assert payload["name"] in [
+                "file_for_test_upload_1.txt",
+                "file_for_test_upload_2.txt",
+                "file_for_test_upload_3.txt",
+            ]
+            assert [1, 2] == payload["assetIds"]
 
     def test_upload_from_memory(
-        self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_upload_bytes_response: dict[str, Any], httpx_mock: HTTPXMock
     ) -> None:
         res = cognite_client.files.upload_bytes(content=b"content", name="bla")
-        del mock_file_upload_response["uploadUrl"]
-        assert FileMetadata.load(mock_file_upload_response) == res
+        del mock_upload_bytes_response["uploadUrl"]
+        assert FileMetadata.load(mock_upload_bytes_response) == res
         assert "https://upload.here" == httpx_mock.get_requests()[1].url
         assert {"name": "bla"} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert b"content" == httpx_mock.get_requests()[1].content
 
     def test_upload_with_netloc(
-        self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_upload_bytes_response: dict[str, Any], httpx_mock: HTTPXMock
     ) -> None:
         """When uploading a file, the upload URL should be used as-is if it contains a netloc."""
         cognite_client.files.upload_bytes(content=b"content", name="bla")
@@ -768,13 +816,13 @@ class TestFilesAPI:
         assert httpx_mock.get_requests()[1].url == "https://api.cognitedata.com/upload/here/to/some/path"
 
     def test_upload_using_file_handle(
-        self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_upload_bytes_response: dict[str, Any], httpx_mock: HTTPXMock
     ) -> None:
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
         with open(path, "rb") as fh:
             res = cognite_client.files.upload_bytes(fh, name="bla")
-        del mock_file_upload_response["uploadUrl"]
-        assert FileMetadata.load(mock_file_upload_response) == res
+        del mock_upload_bytes_response["uploadUrl"]
+        assert FileMetadata.load(mock_upload_bytes_response) == res
         assert "https://upload.here" == httpx_mock.get_requests()[1].url
         assert {"name": "bla"} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert f"content1{os.linesep}".encode() == httpx_mock.get_requests()[1].content
@@ -782,6 +830,30 @@ class TestFilesAPI:
     def test_upload_path_does_not_exist(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(FileNotFoundError):
             cognite_client.files.upload(path=Path("/no/such/path"))
+
+    @pytest.mark.parametrize(
+        "file_size, expected_parts",
+        [
+            (0, 1),
+            (1000, 1),
+            (5 * 1024 * 1024 - 1, 1),  # 5 MiB - 1 byte
+            (5 * 1024 * 1024, 1),  # 5 MiB
+            (5 * 1024 * 1024 + 1, 1),  # 5 MiB + 1 byte
+            (10 * 1024 * 1024, 1),  # 10 MiB
+            (100 * 1024 * 1024, 2),  # 100 MiB
+            (1 * 1024 * 1024 * 1024, 21),  # 1 GiB
+            (10 * 1024 * 1024 * 1024, 205),  # 10 GiB
+            (100 * 1024 * 1024 * 1024, 250),  # 100 GiB
+            (200 * 1024 * 1024 * 1024, 250),  # 200 GiB
+            (250 * 4000 * 1024 * 1024, 250),  # 1 000 000 MiB - max total size for multipart upload
+        ],
+    )
+    def test_calculate_part_size_and_count(
+        self, async_client: AsyncCogniteClient, file_size: int, expected_parts: int
+    ) -> None:
+        part_size, num_parts = async_client.files.calculate_part_size_and_count(file_size)
+        assert part_size >= MIN_MULTIPART_SIZE, f"{file_size=}: part_size {part_size} < 5 MiB"
+        assert num_parts == expected_parts, f"{file_size=}: expected {expected_parts} parts but got {num_parts}"
 
     def test_download(self, cognite_client: CogniteClient, mock_file_download_response: HTTPXMock) -> None:
         with TemporaryDirectory() as tmpdir:  # TODO: Use tmp_path?
