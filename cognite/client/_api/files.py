@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import copy
+import math
 import warnings
 from collections import defaultdict
 from collections.abc import AsyncIterator, Sequence
@@ -9,7 +11,13 @@ from typing import Any, BinaryIO, Literal, overload
 from urllib.parse import urlparse
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._constants import (
+    DEFAULT_LIMIT_READ,
+    DEFAULT_MULTIPART_SIZE,
+    MAX_MULTIPART_PARTS,
+    MAX_MULTIPART_SIZE,
+    MIN_MULTIPART_SIZE,
+)
 from cognite.client.data_classes import (
     FileMetadata,
     FileMetadataFilter,
@@ -484,7 +492,7 @@ class FilesAPI(APIClient):
         recursive: bool = False,
         overwrite: bool = False,
     ) -> FileMetadata | FileMetadataList:
-        """`Upload a file <https://api-docs.cognite.com/20230101/tag/Files/operation/initFileUpload>`_
+        """`Upload a file or directory`_
 
         Args:
             path (Path | str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
@@ -588,8 +596,55 @@ class FilesAPI(APIClient):
     async def _upload_file_from_path(
         self, file_metadata: FileMetadataWrite, path: Path, overwrite: bool
     ) -> FileMetadata:
+        file_size = path.stat().st_size
+        part_size, num_parts = self.calculate_part_size_and_count(file_size)
+
+        session = await self.multipart_upload_session(
+            parts=num_parts,
+            overwrite=overwrite,
+            **file_metadata.dump(camel_case=False),
+        )
+
+        async with session:
+            await asyncio.gather(
+                *(self._upload_file_part(session, path, part_no, part_size, file_size) for part_no in range(num_parts))
+            )
+
+        return session.file_metadata
+
+    def calculate_part_size_and_count(self, file_size: int) -> tuple[int, int]:
+        """Calculate part size and count for a multipart upload, for a given file size.
+
+        See <https://api-docs.cognite.com/20230101/tag/Files/operation/initMultiPartUpload>
+        for more details on multipart upload and the constraints on part size and count.
+
+        Args:
+            file_size (int): The total file size in bytes.
+
+        Returns:
+            tuple[int, int]: A tuple of (part_size, num_parts).
+        """
+        if file_size < MIN_MULTIPART_SIZE:
+            return MIN_MULTIPART_SIZE, 1
+        uncapped_part_size = max(DEFAULT_MULTIPART_SIZE, math.ceil(file_size / MAX_MULTIPART_PARTS))
+        part_size = min(uncapped_part_size, MAX_MULTIPART_SIZE)
+        num_parts = math.ceil(file_size / part_size)
+        return part_size, num_parts
+
+    async def _upload_file_part(
+        self,
+        session: FileMultipartUploadSession,
+        path: Path,
+        part_no: int,
+        part_size: int,
+        file_size: int,
+    ) -> None:
+        offset = part_no * part_size
+        read_size = min(part_size, file_size - offset)
         with path.open("rb") as fh:
-            return await self.upload_bytes(fh, overwrite=overwrite, **file_metadata.dump(camel_case=False))
+            fh.seek(offset)
+            content = fh.read(read_size)
+        await session.upload_part_async(part_no, content)
 
     async def upload_content_bytes(
         self,

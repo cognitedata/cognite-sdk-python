@@ -1,6 +1,6 @@
 """
 ===============================================================================
-03cd8a67df9d7f34c3d962122233d689
+184223d2581d9080416c8abd8a67e832
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,7 +12,9 @@ from pathlib import Path
 from typing import Any, BinaryIO, Literal, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._constants import (
+    DEFAULT_LIMIT_READ,
+)
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes import (
     FileMetadata,
@@ -456,7 +458,7 @@ class SyncFilesAPI(SyncAPIClient):
         overwrite: bool = False,
     ) -> FileMetadata | FileMetadataList:
         """
-        `Upload a file <https://api-docs.cognite.com/20230101/tag/Files/operation/initFileUpload>`_
+        `Upload a file or directory`_
 
         Args:
             path (Path | str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
