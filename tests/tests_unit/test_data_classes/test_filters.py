@@ -54,13 +54,13 @@ def test_filter_property_case_conversion(user_filter: Filter, expected: dict) ->
     assert user_filter.dump(camel_case_property=True) == expected
 
 
-def test_filter_is_hashable() -> None:
-    # Bug in 8.0.0 to 8.0.5: adding __eq__ to Filter implicitly set __hash__ = None, making filters
-    # unhashable and unusable as dict keys or set members.
+def test_filter_is_hashable_and_uses_identity() -> None:
+    # Bug in 8.0.0 to 8.0.5: __eq__ was added to Filter thus implicitly setting __hash__ = None,
+    # making filters unhashable.
     flt = Equals(property=["node", "type"], value="pump")
-    assert hash(flt) == hash(flt)
+    hash(flt)  # must not raise
 
-    # Two filters that are equal by content must NOT hash equal (identity-based hash).
+    # Hashing is identity-based: two filters with equal content hash differently.
     flt2 = Equals(property=["node", "type"], value="pump")
-    assert flt == flt2
     assert hash(flt) != hash(flt2)
+    assert flt != flt2
