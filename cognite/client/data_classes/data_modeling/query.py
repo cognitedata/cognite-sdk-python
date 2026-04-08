@@ -286,8 +286,13 @@ class NodeOrEdgeResultSetExpression(ResultSetExpression, ABC):
     direction: Literal["outwards", "inwards"] = "outwards"
     chain_to: Literal["destination", "source"] = "destination"
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, NodeOrEdgeResultSetExpression):
+            return NotImplemented
+        return type(self) is type(other) and self.dump() == other.dump()
 
-@dataclass
+
+@dataclass(eq=False)  # Prevents @dataclass from generating its own __eq__, so the parent's is used
 class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
     """Describes how to query for nodes in the data model.
 
@@ -355,7 +360,7 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
         return output
 
 
-@dataclass
+@dataclass(eq=False)  # Prevents @dataclass from generating its own __eq__, so the parent's is used
 class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
     """Describes how to query for edges in the data model.
 
