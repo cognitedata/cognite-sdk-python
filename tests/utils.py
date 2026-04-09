@@ -254,8 +254,7 @@ def override_semaphore(
     settings: CRUDConcurrency = getattr(conc_settings, target)
     old_read, old_write, old_delete = settings.read, settings.write, settings.delete
 
-    semaphore_get_fn = settings._semaphore_factory
-    semaphore_get_fn.cache_clear()
+    settings._semaphore_cache.clear()
 
     if frozen_status := conc_settings.is_frozen:
         conc_settings._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
@@ -263,7 +262,7 @@ def override_semaphore(
     settings.read, settings.write, settings.delete = new, new, new
 
     test_operation: Literal["read", "write", "delete"] = random.choice(("read", "write", "delete"))
-    sem = semaphore_get_fn(test_operation, "whatever-project")  # this also freezes the settings again
+    sem = settings._semaphore_factory(test_operation, "whatever-project")  # this also freezes the settings again
     assert new == sem._value == sem._bound_value, f"Semaphore didn't update according to overridden {new=}"  # type: ignore[attr-defined]
 
     try:
@@ -271,7 +270,7 @@ def override_semaphore(
     finally:
         conc_settings._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
         settings.read, settings.write, settings.delete = old_read, old_write, old_delete
-        semaphore_get_fn.cache_clear()
+        settings._semaphore_cache.clear()
         conc_settings._ConcurrencySettings__frozen = frozen_status  # type: ignore[attr-defined]
 
 

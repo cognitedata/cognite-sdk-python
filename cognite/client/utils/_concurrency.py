@@ -7,7 +7,6 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Callable, Coroutine
-from functools import cache
 from typing import (
     Any,
     Literal,
@@ -50,6 +49,7 @@ class ConcurrencyConfig(ABC):
         self._read = read
         self._write = write
         self._delete = delete
+        self._semaphore_cache: dict[tuple[str, str, asyncio.AbstractEventLoop], asyncio.BoundedSemaphore] = {}
 
     @property
     def read(self) -> int:
@@ -79,7 +79,7 @@ class ConcurrencyConfig(ABC):
         self._delete = value
 
     @abstractmethod
-    def _semaphore_factory(self, operation: str, project: str) -> asyncio.BoundedSemaphore: ...
+    def _semaphore_factory(self, operation: Any, project: str) -> asyncio.BoundedSemaphore: ...
 
     @abstractmethod
     def __repr__(self) -> str: ...
@@ -97,24 +97,30 @@ class CRUDConcurrency(ConcurrencyConfig):
         delete (int): Maximum number of concurrent delete requests.
     """
 
-    @cache
     def _semaphore_factory(
         self, operation: Literal["read", "write", "delete"], project: str
     ) -> asyncio.BoundedSemaphore:
-        # We include 'project' in the cache, since concurrency limits should apply per-project
+        # We include 'project' in the cache key, since concurrency limits should apply per-project.
+        # We include the event loop because semaphores are bound to the loop they're first used on,
+        # so the sync client (background loop) and async client (e.g. Jupyter's loop) need separate instances.
+        key = (operation, project, asyncio.get_event_loop())
+        if key in self._semaphore_cache:
+            return self._semaphore_cache[key]
         from cognite.client import global_config
 
         global_config.concurrency_settings._freeze()  # Disallow any further changes
 
         match operation:
             case "read":
-                return asyncio.BoundedSemaphore(self.read)
+                sem = asyncio.BoundedSemaphore(self.read)
             case "write":
-                return asyncio.BoundedSemaphore(self.write)
+                sem = asyncio.BoundedSemaphore(self.write)
             case "delete":
-                return asyncio.BoundedSemaphore(self.delete)
+                sem = asyncio.BoundedSemaphore(self.delete)
             case _:
                 assert_never(operation)
+        self._semaphore_cache[key] = sem
+        return sem
 
     def __repr__(self) -> str:
         return f"Concurrency[{self.api_name}](read={self._read}, write={self._write}, delete={self._delete})"
@@ -178,29 +184,32 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         self._check_frozen("write_schema")
         self._write_schema = value
 
-    @cache
     def _semaphore_factory(
         self, operation: Literal["read", "write", "delete", "search", "read_schema", "write_schema"], project: str
     ) -> asyncio.BoundedSemaphore:
-        # We include 'project' in the cache, since concurrency limits should apply per-project
+        key = (operation, project, asyncio.get_event_loop())
+        if key in self._semaphore_cache:
+            return self._semaphore_cache[key]
         from cognite.client import global_config
 
         global_config.concurrency_settings._freeze()  # Disallow any further changes
         match operation:
             case "read":
-                return asyncio.BoundedSemaphore(self.read)
+                sem = asyncio.BoundedSemaphore(self.read)
             case "write":
-                return asyncio.BoundedSemaphore(self.write)
+                sem = asyncio.BoundedSemaphore(self.write)
             case "delete":
-                return asyncio.BoundedSemaphore(self.delete)
+                sem = asyncio.BoundedSemaphore(self.delete)
             case "search":
-                return asyncio.BoundedSemaphore(self.search)
+                sem = asyncio.BoundedSemaphore(self.search)
             case "read_schema":
-                return asyncio.BoundedSemaphore(self.read_schema)
+                sem = asyncio.BoundedSemaphore(self.read_schema)
             case "write_schema":
-                return asyncio.BoundedSemaphore(self.write_schema)
+                sem = asyncio.BoundedSemaphore(self.write_schema)
             case _:
                 assert_never(operation)
+        self._semaphore_cache[key] = sem
+        return sem
 
     def __repr__(self) -> str:
         return (
