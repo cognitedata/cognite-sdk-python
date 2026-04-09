@@ -40,8 +40,19 @@ class NoCookiesPlease(CookieJar):
         pass
 
 
-@functools.cache
+# One httpx.AsyncClient per event loop to avoid sharing connections (and their
+# loop-bound asyncio primitives) across different loops. This matters when a sync
+# CogniteClient (background loop) and an AsyncCogniteClient (e.g. Jupyter's loop)
+# coexist in the same process:
+_global_async_httpx_clients: dict[asyncio.AbstractEventLoop, httpx.AsyncClient] = {}
+
+
 def get_global_async_httpx_client() -> httpx.AsyncClient:
+    loop = asyncio.get_event_loop()
+    try:
+        return _global_async_httpx_clients[loop]
+    except KeyError:
+        pass
     async_transport = httpx.AsyncHTTPTransport(
         proxy=global_config.proxy,
         retries=0,  # 'retries': The maximum number of retries when trying to establish a connection.
@@ -59,7 +70,7 @@ def get_global_async_httpx_client() -> httpx.AsyncClient:
             keepalive_expiry=5,  # copy httpx default
         ),
     )
-    return httpx.AsyncClient(
+    client = _global_async_httpx_clients[loop] = httpx.AsyncClient(
         transport=async_transport,
         follow_redirects=global_config.follow_redirects,
         cookies=NoCookiesPlease(),
@@ -67,6 +78,7 @@ def get_global_async_httpx_client() -> httpx.AsyncClient:
         proxy=global_config.proxy,
         verify=not global_config.disable_ssl,
     )
+    return client
 
 
 class AsyncHTTPClientWithRetryConfig:
@@ -196,7 +208,11 @@ class AsyncHTTPClientWithRetry:
     ) -> None:
         self.config = config
         self.refresh_auth_header = refresh_auth_header
-        self.httpx_async_client = httpx_async_client or get_global_async_httpx_client()
+        self._httpx_async_client = httpx_async_client
+
+    @property
+    def httpx_async_client(self) -> httpx.AsyncClient:
+        return self._httpx_async_client or get_global_async_httpx_client()
 
     async def request(
         self,
