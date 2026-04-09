@@ -1,6 +1,6 @@
 """
 ===============================================================================
-79aaab7ac35c746786d31b7b7fcbc43c
+7f8fbb89585e5600a0adc8cbcdab740b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -37,7 +37,7 @@ class SyncUnitAPI(SyncAPIClient):
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Unit | UnitList | None:
         """
-        `Retrieve one or more unit <https://api-docs.cognite.com/20230101/tag/Units/operation/byIdsUnits>`_
+        `Retrieve one or more unit <https://api-docs.cognite.com/20230101/tag/Units/operation/byIdsUnits>`_.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external IDs
@@ -92,7 +92,9 @@ class SyncUnitAPI(SyncAPIClient):
         return_closest_matches: bool = False,
     ) -> Unit | UnitList:
         """
-        Look up a unit by alias, optionally for a given quantity. Aliases and quantities are case-sensitive.
+        Look up a unit by alias, optionally for a given quantity.
+
+        Aliases and quantities are case-sensitive.
 
         Note:
             When just ``alias`` is given (i.e. ``quantity`` is not specified), some aliases are ambiguous as they are used
@@ -140,7 +142,7 @@ class SyncUnitAPI(SyncAPIClient):
 
     def list(self) -> UnitList:
         """
-        `List all supported units <https://api-docs.cognite.com/20230101/tag/Units/operation/listUnits>`_
+        `List all supported units <https://api-docs.cognite.com/20230101/tag/Units/operation/listUnits>`_.
 
         Returns:
             UnitList: List of units

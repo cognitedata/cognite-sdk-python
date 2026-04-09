@@ -30,7 +30,7 @@ class SessionsAPI(APIClient):
         client_credentials: ClientCredentials | None = None,
         session_type: SessionType | Literal["DEFAULT"] = "DEFAULT",
     ) -> CreatedSession:
-        """`Create a session. <https://api-docs.cognite.com/20230101/tag/Sessions/operation/createSessions>`_
+        """`Create a session <https://api-docs.cognite.com/20230101/tag/Sessions/operation/createSessions>`_.
 
         Args:
             client_credentials (ClientCredentials | None): The client credentials to create the session. This is required
@@ -83,7 +83,9 @@ class SessionsAPI(APIClient):
     async def revoke(self, id: Sequence[int]) -> SessionList: ...
 
     async def revoke(self, id: int | Sequence[int]) -> Session | SessionList:
-        """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://api-docs.cognite.com/20230101/tag/Sessions/operation/revokeSessions>`_
+        """`Revoke access to a session <https://api-docs.cognite.com/20230101/tag/Sessions/operation/revokeSessions>`_.
+
+        Revocation of a session may in some cases take up to 1 hour to take effect.
 
         Args:
             id (int | Sequence[int]): Id or list of session ids
@@ -114,7 +116,7 @@ class SessionsAPI(APIClient):
     async def retrieve(self, id: Sequence[int]) -> SessionList: ...
 
     async def retrieve(self, id: int | Sequence[int]) -> Session | SessionList:
-        """`Retrieves sessions with given IDs. <https://api-docs.cognite.com/20230101/tag/Sessions/operation/getSessionsByIds>`_
+        """`Retrieves sessions with given IDs <https://api-docs.cognite.com/20230101/tag/Sessions/operation/getSessionsByIds>`_.
 
         The request will fail if any of the IDs does not belong to an existing session.
 
@@ -133,7 +135,7 @@ class SessionsAPI(APIClient):
         )
 
     async def list(self, status: SessionStatus | None = None, limit: int = DEFAULT_LIMIT_READ) -> SessionList:
-        """`List all sessions in the current project. <https://api-docs.cognite.com/20230101/tag/Sessions/operation/listSessions>`_
+        """`List all sessions in the current project <https://api-docs.cognite.com/20230101/tag/Sessions/operation/listSessions>`_.
 
         Args:
             status (SessionStatus | None): If given, only sessions with the given status are returned.

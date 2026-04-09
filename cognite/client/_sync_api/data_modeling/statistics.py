@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c321b1967b69a3a77cfa4c3979d4220d
+fdf9f229e8aa4dc4ef40a6ddbb86fdce
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -28,7 +28,7 @@ class SyncStatisticsAPI(SyncAPIClient):
 
     def project(self) -> ProjectStatistics:
         """
-        `Retrieve project-wide usage data and limits <https://api-docs.cognite.com/20230101/tag/Statistics/operation/getStatistics>`_
+        `Retrieve project-wide usage data and limits <https://api-docs.cognite.com/20230101/tag/Statistics/operation/getStatistics>`_.
 
         Returns the usage data and limits for a project's data modelling usage, including data model schemas and graph instances
 

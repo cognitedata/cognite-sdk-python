@@ -26,7 +26,7 @@ class LimitsAPI(APIClient):
         )
 
     async def retrieve(self, id: str) -> Limit | None:
-        """`Retrieve a limit value by its id. <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/fetchLimitById/>`_
+        """`Retrieve a limit value by its id <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/fetchLimitById/>`_.
 
         Retrieves a limit value by its `limitId`.
 
@@ -59,7 +59,7 @@ class LimitsAPI(APIClient):
         )
 
     async def list(self, filter: Prefix | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> LimitList:
-        """`List all limit values <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/listLimits/>`_
+        """`List all limit values <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/listLimits/>`_.
 
         Retrieves all limit values for a specific project. Optionally filter by limit ID prefix using a `Prefix` filter.
 

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-91d19c1cf73511fffb16ad63b08c027d
+6f405a44b9af327b96291aa79765b1f2
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -84,7 +84,7 @@ class SyncDiagramsAPI(SyncAPIClient):
         multiple_jobs: bool = False,
     ) -> DiagramDetectResults | tuple[DetectJobBundle, list[dict[str, Any]]]:
         """
-        `Detect annotations in engineering diagrams <https://api-docs.cognite.com/20230101/tag/Engineering-diagrams/operation/diagramDetect>`_
+        `Detect annotations in engineering diagrams <https://api-docs.cognite.com/20230101/tag/Engineering-diagrams/operation/diagramDetect>`_.
 
         Note:
             All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
