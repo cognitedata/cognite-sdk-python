@@ -260,10 +260,7 @@ def override_semaphore(
         conc_settings._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
 
     settings.read, settings.write, settings.delete = new, new, new
-
-    test_operation: Literal["read", "write", "delete"] = random.choice(("read", "write", "delete"))
-    sem = settings._semaphore_factory(test_operation, "whatever-project")  # this also freezes the settings again
-    assert new == sem._value == sem._bound_value, f"Semaphore didn't update according to overridden {new=}"  # type: ignore[attr-defined]
+    assert new == settings.read == settings.write == settings.delete
 
     try:
         yield

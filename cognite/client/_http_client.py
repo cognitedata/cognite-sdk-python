@@ -47,23 +47,8 @@ class NoCookiesPlease(CookieJar):
 _global_async_httpx_clients: dict[asyncio.AbstractEventLoop, httpx.AsyncClient] = {}
 
 
-def _get_current_event_loop() -> asyncio.AbstractEventLoop:
-    """Get the current event loop, preferring the running loop if available."""
-    try:
-        return asyncio.get_running_loop()
-    except RuntimeError:
-        pass
-    try:
-        return asyncio.get_event_loop()
-    except RuntimeError:
-        # Python 3.10+: no current event loop in this thread
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        return loop
-
-
 def get_global_async_httpx_client() -> httpx.AsyncClient:
-    loop = _get_current_event_loop()
+    loop = asyncio.get_running_loop()
     try:
         return _global_async_httpx_clients[loop]
     except KeyError:

@@ -103,7 +103,7 @@ class CRUDConcurrency(ConcurrencyConfig):
         # We include 'project' in the cache key, since concurrency limits should apply per-project.
         # We include the event loop because semaphores are bound to the loop they're first used on,
         # so the sync client (background loop) and async client (e.g. Jupyter's loop) need separate instances.
-        key = (operation, project, asyncio.get_event_loop())
+        key = (operation, project, asyncio.get_running_loop())
         if key in self._semaphore_cache:
             return self._semaphore_cache[key]
         from cognite.client import global_config
@@ -187,7 +187,7 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
     def _semaphore_factory(
         self, operation: Literal["read", "write", "delete", "search", "read_schema", "write_schema"], project: str
     ) -> asyncio.BoundedSemaphore:
-        key = (operation, project, asyncio.get_event_loop())
+        key = (operation, project, asyncio.get_running_loop())
         if key in self._semaphore_cache:
             return self._semaphore_cache[key]
         from cognite.client import global_config

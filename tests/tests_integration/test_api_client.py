@@ -399,7 +399,6 @@ class TestAPIClientRetrieveMultiple:
                 res = cognite_client.events.retrieve_multiple(external_ids=ext_ids)
 
             assert get_sem_spy.call_args_list == [call("read")]
-            assert sem_returns[0] is async_client.events._get_semaphore("read")
             assert sem_returns[0]._value >= 3, "Expected to use at least 3 concurrent requests to trigger the bug."
             assert ext_ids == res.as_external_ids()
         finally:
