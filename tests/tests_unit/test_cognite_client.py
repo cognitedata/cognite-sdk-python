@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import importlib
 import logging
+import os
 import ssl
 from typing import Any
 
@@ -158,3 +160,11 @@ class TestCogniteClient:
 
         assert isinstance(sync_client, CogniteClient)
         assert sync_client.config is async_client.config
+
+    def test_client_has_accessors(self) -> None:
+        os.environ["BUILD_COGNITE_SDK_DOCS"] = "true"
+        from cognite.client import _cognite_client
+
+        importlib.reload(_cognite_client)
+        client_class = _cognite_client.AsyncCogniteClient
+        assert hasattr(client_class, "time_series")
