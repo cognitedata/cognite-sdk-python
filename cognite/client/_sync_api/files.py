@@ -1,6 +1,6 @@
 """
 ===============================================================================
-03cd8a67df9d7f34c3d962122233d689
+9775a0ca6d02913bc835831ac35662df
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -206,7 +206,7 @@ class SyncFilesAPI(SyncAPIClient):
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> FileMetadata | None:
         """
-        `Retrieve a single file metadata by id. <https://api-docs.cognite.com/20230101/tag/Files/operation/getFileByInternalId>`_
+        `Retrieve a single file metadata by id <https://api-docs.cognite.com/20230101/tag/Files/operation/getFileByInternalId>`_.
 
         Args:
             id (int | None): ID
@@ -239,7 +239,7 @@ class SyncFilesAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
         """
-        `Retrieve multiple file metadatas by id. <https://api-docs.cognite.com/20230101/tag/Files/operation/byIdsFiles>`_
+        `Retrieve multiple file metadatas by id <https://api-docs.cognite.com/20230101/tag/Files/operation/byIdsFiles>`_.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -271,7 +271,7 @@ class SyncFilesAPI(SyncAPIClient):
 
     def aggregate_count(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> int:
         """
-        `Aggregate files <https://api-docs.cognite.com/20230101/tag/Files/operation/aggregateFiles>`_
+        `Aggregate files <https://api-docs.cognite.com/20230101/tag/Files/operation/aggregateFiles>`_.
 
         Args:
             filter (FileMetadataFilter | dict[str, Any] | None): Filter on file metadata filter with exact match
@@ -297,7 +297,7 @@ class SyncFilesAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> None:
         """
-        `Delete files <https://api-docs.cognite.com/20230101/tag/Files/operation/deleteFiles>`_
+        `Delete files <https://api-docs.cognite.com/20230101/tag/Files/operation/deleteFiles>`_.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -340,7 +340,8 @@ class SyncFilesAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> FileMetadata | FileMetadataList:
         """
-        `Update files <https://api-docs.cognite.com/20230101/tag/Files/operation/updateFiles>`_
+        `Update files <https://api-docs.cognite.com/20230101/tag/Files/operation/updateFiles>`_.
+
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
@@ -390,7 +391,8 @@ class SyncFilesAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> FileMetadataList:
         """
-        `Search for files. <https://api-docs.cognite.com/20230101/tag/Files/operation/searchFiles>`_
+        `Search for files <https://api-docs.cognite.com/20230101/tag/Files/operation/searchFiles>`_.
+
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -423,7 +425,7 @@ class SyncFilesAPI(SyncAPIClient):
         self, path: Path | str, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> FileMetadata:
         """
-        `Upload a file content <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_
+        `Upload a file content <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_.
 
         Args:
             path (Path | str): Path to the file you wish to upload.
@@ -456,7 +458,7 @@ class SyncFilesAPI(SyncAPIClient):
         overwrite: bool = False,
     ) -> FileMetadata | FileMetadataList:
         """
-        `Upload a file <https://api-docs.cognite.com/20230101/tag/Files/operation/initFileUpload>`_
+        `Upload a file <https://api-docs.cognite.com/20230101/tag/Files/operation/initFileUpload>`_.
 
         Args:
             path (Path | str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
@@ -671,7 +673,9 @@ class SyncFilesAPI(SyncAPIClient):
         overwrite: bool = False,
     ) -> FileMultipartUploadSession:
         """
-        Begin uploading a file in multiple parts. This allows uploading files larger than 5GiB.
+        Begin uploading a file in multiple parts.
+
+        This allows uploading files larger than 5GiB.
         Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
         must be greater than 5MiB.
 
@@ -737,7 +741,9 @@ class SyncFilesAPI(SyncAPIClient):
         self, parts: int, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> FileMultipartUploadSession:
         """
-        Begin uploading a file in multiple parts whose metadata is already created in CDF. This allows uploading files larger than 5GiB.
+        Begin uploading a file in multiple parts whose metadata is already created in CDF.
+
+        This allows uploading files larger than 5GiB.
         Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
         must be greater than 5MiB.
 
@@ -783,7 +789,7 @@ class SyncFilesAPI(SyncAPIClient):
         extended_expiration: bool = False,
     ) -> dict[int | str | NodeId, str]:
         """
-        Get download links by id or external id
+        Get download links by id or external id.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
@@ -810,7 +816,7 @@ class SyncFilesAPI(SyncAPIClient):
         resolve_duplicate_file_names: bool = False,
     ) -> None:
         """
-        `Download files by id or external id. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
+        `Download files by id or external id <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_.
 
         This method will stream all files to disk, never keeping more than 2MB in memory per worker.
         The files will be stored in the provided directory using the file name retrieved from the file metadata in CDF.
@@ -937,7 +943,7 @@ class SyncFilesAPI(SyncAPIClient):
         partitions: int | None = None,
     ) -> FileMetadataList:
         """
-        `List files <https://api-docs.cognite.com/20230101/tag/Files/operation/advancedListFiles>`_
+        `List files <https://api-docs.cognite.com/20230101/tag/Files/operation/advancedListFiles>`_.
 
         Args:
             name (str | None): Name of the file.

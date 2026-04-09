@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a137ea2563d43bc87d9193fab4a98294
+93056e9e9785e9889b8eb51e42855834
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -55,7 +55,7 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> ExtractionPipeline | None:
         """
-        `Retrieve a single extraction pipeline by id. <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines/operation/showExtPipe>`_
+        `Retrieve a single extraction pipeline by id <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines/operation/showExtPipe>`_.
 
         Args:
             id (int | None): ID
@@ -86,7 +86,7 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> ExtractionPipelineList:
         """
-        `Retrieve multiple extraction pipelines by ids and external ids. <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines/operation/byidsExtPipes>`_
+        `Retrieve multiple extraction pipelines by ids and external ids <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines/operation/byidsExtPipes>`_.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -119,7 +119,7 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> ExtractionPipelineList:
         """
-        `List extraction pipelines <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines/operation/listExtPipes>`_
+        `List extraction pipelines <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines/operation/listExtPipes>`_.
 
         Args:
             limit (int | None): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -154,7 +154,7 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
         | Sequence[ExtractionPipelineWrite],
     ) -> ExtractionPipeline | ExtractionPipelineList:
         """
-        `Create one or more extraction pipelines. <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines/operation/createExtPipes>`_
+        `Create one or more extraction pipelines <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines/operation/createExtPipes>`_.
 
         You can create an arbitrary number of extraction pipelines, and the SDK will split the request into multiple requests if necessary.
 
@@ -181,7 +181,7 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
         self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
         """
-        `Delete one or more extraction pipelines <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines/operation/deleteExtPipes>`_
+        `Delete one or more extraction pipelines <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines/operation/deleteExtPipes>`_.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -217,7 +217,7 @@ class SyncExtractionPipelinesAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ExtractionPipeline | ExtractionPipelineList:
         """
-        `Update one or more extraction pipelines <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines/operation/updateExtPipes>`_
+        `Update one or more extraction pipelines <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines/operation/updateExtPipes>`_.
 
         Args:
             item (ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate | Sequence[ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate]): Extraction pipeline(s) to update

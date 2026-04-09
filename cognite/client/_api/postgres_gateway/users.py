@@ -67,7 +67,7 @@ class UsersAPI(APIClient):
     async def create(self, user: Sequence[UserWrite]) -> UserCreatedList: ...
 
     async def create(self, user: UserWrite | Sequence[UserWrite]) -> UserCreated | UserCreatedList:
-        """`Create Users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/create_users>`_
+        """`Create Users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/create_users>`_.
 
         Create postgres users.
 
@@ -112,7 +112,7 @@ class UsersAPI(APIClient):
     async def update(self, items: Sequence[UserUpdate | UserWrite]) -> UserList: ...
 
     async def update(self, items: UserUpdate | UserWrite | Sequence[UserUpdate | UserWrite]) -> User | UserList:
-        """`Update users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/update_users>`_
+        """`Update users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/update_users>`_.
 
         Update postgres users
 
@@ -153,7 +153,7 @@ class UsersAPI(APIClient):
         )
 
     async def delete(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
-        """`Delete postgres user(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/delete_users>`_
+        """`Delete postgres user(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/delete_users>`_.
 
         Delete postgres users
 
@@ -189,7 +189,7 @@ class UsersAPI(APIClient):
     async def retrieve(self, username: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UserList: ...
 
     async def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> User | UserList:
-        """`Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retreive_users>`_
+        """`Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retreive_users>`_.
 
         Retrieve a list of postgres users by their usernames, optionally ignoring unknown usernames
 
@@ -218,7 +218,7 @@ class UsersAPI(APIClient):
         )
 
     async def list(self, limit: int = DEFAULT_LIMIT_READ) -> UserList:
-        """`Fetch scoped users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/filter_users>`_
+        """`Fetch scoped users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/filter_users>`_.
 
         List all users in a given project.
 

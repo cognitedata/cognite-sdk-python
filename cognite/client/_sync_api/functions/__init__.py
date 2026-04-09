@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e7f4764857e771bb7ae576073fda06ad
+c04afee0988746b61eb7511ab204e37e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -242,7 +242,7 @@ class SyncFunctionsAPI(SyncAPIClient):
         self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
         """
-        `Delete one or more functions. <https://api-docs.cognite.com/20230101/tag/Functions/operation/deleteFunctions>`_
+        `Delete one or more functions <https://api-docs.cognite.com/20230101/tag/Functions/operation/deleteFunctions>`_.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
@@ -271,7 +271,7 @@ class SyncFunctionsAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionList:
         """
-        `List all functions. <https://api-docs.cognite.com/20230101/tag/Functions/operation/listFunctions>`_
+        `List all functions <https://api-docs.cognite.com/20230101/tag/Functions/operation/listFunctions>`_.
 
         Args:
             name (str | None): The name of the function.
@@ -310,7 +310,7 @@ class SyncFunctionsAPI(SyncAPIClient):
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
         """
-        `Retrieve a single function by id. <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_
+        `Retrieve a single function by id <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_.
 
         Args:
             id (int | None): ID
@@ -341,7 +341,7 @@ class SyncFunctionsAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> FunctionList:
         """
-        `Retrieve multiple functions by id. <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_
+        `Retrieve multiple functions by id <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -379,7 +379,7 @@ class SyncFunctionsAPI(SyncAPIClient):
         nonce: str | None = None,
     ) -> FunctionCall:
         """
-        `Call a function by its ID or external ID. <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/postFunctionsCall>`_.
+        `Call a function by its ID or external ID <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/postFunctionsCall>`_.
 
         Args:
             id (int | None): ID
@@ -414,7 +414,7 @@ class SyncFunctionsAPI(SyncAPIClient):
 
     def limits(self) -> FunctionsLimits:
         """
-        `Get service limits. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_.
+        `Get service limits <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_.
 
         Returns:
             FunctionsLimits: A function limits object.
@@ -432,7 +432,7 @@ class SyncFunctionsAPI(SyncAPIClient):
 
     def activate(self) -> FunctionsStatus:
         """
-        `Activate functions for the Project. <https://api-docs.cognite.com/20230101/tag/Functions/operation/postFunctionsStatus>`_.
+        `Activate functions for the Project <https://api-docs.cognite.com/20230101/tag/Functions/operation/postFunctionsStatus>`_.
 
         Note:
             May take some time to take effect (hours).
@@ -453,7 +453,7 @@ class SyncFunctionsAPI(SyncAPIClient):
 
     def status(self) -> FunctionsStatus:
         """
-        `Functions activation status for the Project. <https://api-docs.cognite.com/20230101/tag/Functions/operation/getFunctionsStatus>`_.
+        `Functions activation status for the Project <https://api-docs.cognite.com/20230101/tag/Functions/operation/getFunctionsStatus>`_.
 
         Returns:
             FunctionsStatus: A function activation status.

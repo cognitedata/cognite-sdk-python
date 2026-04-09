@@ -1,14 +1,13 @@
 Deprecated
 ==========
 
+.. currentmodule:: cognite.client
+
 Vision
 ------
-Start vision extract job
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.vision.VisionAPI.extract
-   :noindex:
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Retrieve vision extract job
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.vision.VisionAPI.get_extract_job
-   :noindex:
+   AsyncCogniteClient.vision

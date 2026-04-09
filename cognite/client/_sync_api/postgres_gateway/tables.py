@@ -1,6 +1,6 @@
 """
 ===============================================================================
-7126db36cdba09e20f2eb5a35e329670
+76644d0a1e130c795027e8e205f1d20f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -56,7 +56,7 @@ class SyncTablesAPI(SyncAPIClient):
 
     def create(self, username: str, items: pg.TableWrite | Sequence[pg.TableWrite]) -> pg.Table | pg.TableList:
         """
-        `Create tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/create_tables>`_
+        `Create tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/create_tables>`_.
 
         Args:
             username (str): The name of the username (a.k.a. database) to be managed from the API
@@ -97,7 +97,7 @@ class SyncTablesAPI(SyncAPIClient):
         self, username: str, tablename: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> pg.Table | pg.TableList | None:
         """
-        `Retrieve a list of tables by their tables names <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/retrieve_tables>`_
+        `Retrieve a list of tables by their tables names <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/retrieve_tables>`_.
 
         Retrieve a list of Postgres tables for a user by their table names, optionally ignoring unknown table names
 
@@ -134,7 +134,7 @@ class SyncTablesAPI(SyncAPIClient):
 
     def delete(self, username: str, tablename: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """
-        `Delete postgres table(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/delete_tables>`_
+        `Delete postgres table(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/delete_tables>`_.
 
         Args:
             username (str): The name of the username (a.k.a. database) to be managed from the API
@@ -163,7 +163,7 @@ class SyncTablesAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> pg.TableList:
         """
-        `List postgres tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/list_tables>`_
+        `List postgres tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/list_tables>`_.
 
         List all tables in a given project.
 

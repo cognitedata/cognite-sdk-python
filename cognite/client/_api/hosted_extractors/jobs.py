@@ -77,7 +77,7 @@ class JobsAPI(APIClient):
     async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Job | None | JobList:
-        """`Retrieve one or more jobs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/retrieve_jobs>`_
+        """`Retrieve one or more jobs <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/retrieve_jobs>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the job type.
@@ -114,7 +114,7 @@ class JobsAPI(APIClient):
         external_ids: str | SequenceNotStr[str],
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more jobs <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/delete_jobs>`_
+        """`Delete one or more jobs <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/delete_jobs>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -148,7 +148,7 @@ class JobsAPI(APIClient):
     async def create(self, items: Sequence[JobWrite]) -> JobList: ...
 
     async def create(self, items: JobWrite | Sequence[JobWrite]) -> Job | JobList:
-        """`Create one or more jobs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/create_jobs>`_
+        """`Create one or more jobs <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/create_jobs>`_.
 
         Args:
             items (JobWrite | Sequence[JobWrite]): Job(s) to create.
@@ -197,7 +197,7 @@ class JobsAPI(APIClient):
         items: JobWrite | JobUpdate | Sequence[JobWrite | JobUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Job | JobList:
-        """`Update one or more jobs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/update_jobs>`_
+        """`Update one or more jobs <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/update_jobs>`_.
 
         Args:
             items (JobWrite | JobUpdate | Sequence[JobWrite | JobUpdate]): Job(s) to update.
@@ -231,7 +231,7 @@ class JobsAPI(APIClient):
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> JobList:
-        """`List jobs <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/list_jobs>`_
+        """`List jobs <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/list_jobs>`_.
 
         Args:
             limit (int | None): Maximum number of jobs to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -274,7 +274,7 @@ class JobsAPI(APIClient):
         destination: str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> JobLogsList:
-        """`List job logs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/get_job_logs>`_
+        """`List job logs <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/get_job_logs>`_.
 
         Args:
             job (str | None): Require returned logs to belong to the job given by this external ID.
@@ -320,7 +320,7 @@ class JobsAPI(APIClient):
         destination: str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> JobMetricsList:
-        """`List job metrics. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/get_job_metrics>`_
+        """`List job metrics <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/get_job_metrics>`_.
 
         Args:
             job (str | None): Require returned metrics to belong to the job given by this external ID.

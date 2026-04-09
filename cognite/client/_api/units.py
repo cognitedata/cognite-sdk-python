@@ -51,7 +51,7 @@ class UnitAPI(APIClient):
     async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Unit | UnitList | None:
-        """`Retrieve one or more unit <https://api-docs.cognite.com/20230101/tag/Units/operation/byIdsUnits>`_
+        """`Retrieve one or more unit <https://api-docs.cognite.com/20230101/tag/Units/operation/byIdsUnits>`_.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external IDs
@@ -110,7 +110,9 @@ class UnitAPI(APIClient):
         return_ambiguous: bool = False,
         return_closest_matches: bool = False,
     ) -> Unit | UnitList:
-        """Look up a unit by alias, optionally for a given quantity. Aliases and quantities are case-sensitive.
+        """Look up a unit by alias, optionally for a given quantity.
+
+        Aliases and quantities are case-sensitive.
 
         Note:
             When just ``alias`` is given (i.e. ``quantity`` is not specified), some aliases are ambiguous as they are used
@@ -202,7 +204,7 @@ class UnitAPI(APIClient):
             raise ValueError(err_msg) from None
 
     async def list(self) -> UnitList:
-        """`List all supported units <https://api-docs.cognite.com/20230101/tag/Units/operation/listUnits>`_
+        """`List all supported units <https://api-docs.cognite.com/20230101/tag/Units/operation/listUnits>`_.
 
         Returns:
             UnitList: List of units
