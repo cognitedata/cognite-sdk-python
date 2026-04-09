@@ -309,7 +309,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
                 ignore_bad_datapoints=ignore_bad_datapoints,
                 treat_uncertain_as_bad=treat_uncertain_as_bad,
             )
-        )  # type: ignore [misc]
+        )
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatapointSubscriptionList:
         """
