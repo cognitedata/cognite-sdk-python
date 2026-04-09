@@ -47,7 +47,7 @@ class GlobalConfig:
             translates to 65536 (64KiB chunks).
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
-        event_loop (asyncio.AbstractEventLoop | None): Override the default event loop used by the SDK.
+        event_loop (asyncio.AbstractEventLoop | None): DEPRECATED: No longer in use. Will be removed in the next major version.
     """
 
     def __new__(cls) -> GlobalConfig:
@@ -77,7 +77,7 @@ class GlobalConfig:
         self.file_download_chunk_size: int | None = None
         self.file_upload_chunk_size: int | None = None
         self.silence_feature_preview_warnings: bool = False
-        self.event_loop: asyncio.AbstractEventLoop | None = None
+        self._event_loop: asyncio.AbstractEventLoop | None = None
 
     @property
     def max_workers(self) -> int:
@@ -93,6 +93,21 @@ class GlobalConfig:
             stacklevel=2,
         )
         self._max_workers = value
+
+    @property
+    def event_loop(self) -> asyncio.AbstractEventLoop | None:
+        return self._event_loop
+
+    @event_loop.setter
+    def event_loop(self, value: asyncio.AbstractEventLoop | None) -> None:
+        if value is not None:
+            warnings.warn(
+                "'event_loop' is no longer in use in the SDK and will be removed in the next major version. "
+                "The SDK now manages its own background event loop automatically.",
+                FutureWarning,
+                stacklevel=2,
+            )
+        self._event_loop = value
 
     @property  # We do not want users to instantiate their own ConcurrencySettings
     def concurrency_settings(self) -> ConcurrencySettings:
