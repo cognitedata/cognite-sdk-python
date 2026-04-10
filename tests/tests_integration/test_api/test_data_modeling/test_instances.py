@@ -1439,7 +1439,7 @@ class TestInstancesAPI:
         # Verify that debug info, which is returned at the root level of the response, is properly handled.
         # We also test with and without 'include_typing' which is returned the same way.
         debug_params = DebugParameters(
-            emit_results=False, profile=False, include_translated_query=True, include_plan=True
+            emit_results=False, profile=False, include_translated_query=True, include_plan=True, include_llm_prompt=True
         )
         # Sorting by this should return SortNotBackedByIndexNotice:
         bad_sort = InstanceSort(CogniteAsset.get_source().as_property_ref("sourceCreatedTime"))
@@ -1483,6 +1483,7 @@ class TestInstancesAPI:
             assert isinstance(res.debug.notices, DebugNoticeList)
             assert len(res.debug.notices) == 1
             assert isinstance(res.debug.notices[0], SortNotBackedByIndexNotice)
+            assert isinstance(res.debug.llm_prompt, str)
 
             if include_typing:
                 assert res.typing is not None
@@ -1490,7 +1491,7 @@ class TestInstancesAPI:
     @pytest.mark.usefixtures("cognite_asset_nodes")
     def test_instance_query_and_sync_debug_info(self, cognite_client: CogniteClient) -> None:
         debug_params = DebugParameters(
-            emit_results=False, profile=False, include_translated_query=True, include_plan=True
+            emit_results=False, profile=False, include_translated_query=True, include_plan=True, include_llm_prompt=True
         )
         rse_with_sort = NodeResultSetExpression(
             sort=[InstanceSort(CogniteAsset.get_source().as_property_ref("sourceCreatedTime"))],
@@ -1510,6 +1511,7 @@ class TestInstancesAPI:
             assert isinstance(res.debug.translated_query, TranslatedQuery)
             assert isinstance(res.debug.plan, ExecutionPlan)
             assert isinstance(res.debug.notices, DebugNoticeList)
+            assert isinstance(res.debug.llm_prompt, str)
             if res is res_query:  # Sort not allowed for /sync
                 assert len(res.debug.notices) == 1
                 # Since we specify both emit_results and timeout, we should get...:
