@@ -624,6 +624,10 @@ class FilesAPI(APIClient):
         Returns:
             tuple[int, int]: A tuple of (part_size, num_parts).
         """
+        if file_size > MAX_MULTIPART_PARTS * MAX_MULTIPART_SIZE:
+            raise ValueError(
+                f"File size {file_size} exceeds the maximum supported size of {MAX_MULTIPART_PARTS * MAX_MULTIPART_SIZE} bytes for multipart upload."
+            )
         if file_size < MIN_MULTIPART_SIZE:
             return MIN_MULTIPART_SIZE, 1
         uncapped_part_size = max(DEFAULT_MULTIPART_SIZE, math.ceil(file_size / MAX_MULTIPART_PARTS))
