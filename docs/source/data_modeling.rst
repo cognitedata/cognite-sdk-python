@@ -1,5 +1,23 @@
 Data Modeling
 =============
+.. note::
+    The data modeling section of the SDK provides low level access to the data modeling API. Most users should use
+    the higher level libraries described in the sections below.
+
+Consuming data models
+---------------------
+If you are consuming data from data models, it is recommended to use `Cognite Pygen <https://cognite-pygen.readthedocs-hosted.com/en/latest/>`_
+unless you need the full flexibility of the SDK. `pygen` provides a high-level, user-friendly interface for working
+with data models, and it handles many of the complexities of the underlying API for you.
+The same applies if you need to write or update instances in a data model in a dynamic way that cannot be handled by
+:ref:`transformations`.
+
+Building data models
+--------------------
+If you are building data models, it is recommended to use `Cognite Toolkit <https://docs.cognite.com/cdf/deploy/cdf_toolkit/>`_
+to design and maintain your data models. `Cognite Toolkit` provides a high-level interface for defining and managing
+data models, and it includes features such as versioning, testing, and deployment tools that can help you build robust
+and maintainable data models.
 
 Data Models
 ------------
