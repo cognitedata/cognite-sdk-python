@@ -1,6 +1,6 @@
 """
 ===============================================================================
-08e10d518c6df13cc1340f1d4afb72c8
+eaf67bcf675abbeb0949346ea1ef5d1f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -1147,9 +1147,9 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> debug_params = DebugParameters(
                 ...     emit_results=False,
                 ...     include_plan=True,  # Include the postgres execution plan
-                ...     include_translated_query=True,  # Include the internal representation of the query.
-                ...     include_llm_prompt=True,  # Include a prompt to ask an LLM to help debug the results.
-                ...     profile=True,
+                ...     include_translated_query=True,  # Include the internal representation of the query
+                ...     include_llm_prompt=True,  # Include a prompt to ask an LLM to help debug the results
+                ...     profile=True,  # Most thorough level of query analysis. Requires emit_results=False
                 ... )
                 >>> res = client.data_modeling.instances.query(query, debug=debug_params)
                 >>> print(res.debug)
@@ -1225,9 +1225,9 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> debug_params = DebugParameters(
                 ...     emit_results=False,
                 ...     include_plan=True,  # Include the postgres execution plan
-                ...     include_translated_query=True,  # Include the internal representation of the query.
-                ...     include_llm_prompt=True,  # Include a prompt to ask an LLM to help debug the results.
-                ...     profile=True,
+                ...     include_translated_query=True,  # Include the internal representation of the query
+                ...     include_llm_prompt=True,  # Include a prompt to ask an LLM to help debug the results
+                ...     profile=True,  # Most thorough level of query analysis. Requires emit_results=False
                 ... )
                 >>> res = client.data_modeling.instances.sync(query, debug=debug_params)
                 >>> print(res.debug)
@@ -1369,9 +1369,9 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> debug_params = DebugParameters(
                 ...     emit_results=False,
                 ...     include_plan=True,  # Include the postgres execution plan
-                ...     include_translated_query=True,  # Include the internal representation of the query.
-                ...     include_llm_prompt=True,  # Include a prompt to ask an LLM to help debug the results.
-                ...     profile=True,
+                ...     include_translated_query=True,  # Include the internal representation of the query
+                ...     include_llm_prompt=True,  # Include a prompt to ask an LLM to help debug the results
+                ...     profile=True,  # Most thorough level of query analysis. Requires emit_results=False
                 ... )
                 >>> res = client.data_modeling.instances.list(debug=debug_params, sources=my_view)
                 >>> print(res.debug)
