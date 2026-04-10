@@ -36,7 +36,7 @@ from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
 from cognite.client.utils._auxiliary import append_url_path, find_duplicates, unpack_items
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
-from cognite.client.utils._uploading import prepare_content_for_upload
+from cognite.client.utils._uploading import AsyncFileChunker, prepare_content_for_upload
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -606,9 +606,17 @@ class FilesAPI(APIClient):
         )
 
         async with session:
-            await asyncio.gather(
-                *(self._upload_file_part(session, path, part_no, part_size, file_size) for part_no in range(num_parts))
-            )
+            # Use a fresh semaphore (not the shared write semaphore, which _upload_multipart_part
+            # also acquires) to avoid deadlock while still honouring the write concurrency setting.
+            from cognite.client import global_config
+
+            part_semaphore = asyncio.Semaphore(global_config.concurrency_settings.general.write)
+
+            async def upload_part(part_no: int) -> None:
+                async with part_semaphore:
+                    await self._upload_file_part(session, path, part_no, part_size, file_size)
+
+            await asyncio.gather(*(upload_part(i) for i in range(num_parts)))
 
         return session.file_metadata
 
@@ -646,9 +654,7 @@ class FilesAPI(APIClient):
         offset = part_no * part_size
         read_size = min(part_size, file_size - offset)
         with path.open("rb") as fh:
-            fh.seek(offset)
-            content = fh.read(read_size)
-        await session.upload_part_async(part_no, content)
+            await session.upload_part_async(part_no, AsyncFileChunker(fh, offset=offset, size=read_size))  # type: ignore[arg-type]
 
     async def upload_content_bytes(
         self,
