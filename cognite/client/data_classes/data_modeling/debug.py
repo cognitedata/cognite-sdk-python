@@ -25,11 +25,13 @@ class DebugInfo(CogniteResource):
             cursoring, to help identify areas for improvement.
         translated_query (TranslatedQuery | None): The internal representation of the query.
         plan (ExecutionPlan | None): The execution plan for the query.
+        llm_prompt (str | None): A prompt that can be used to ask a large language model (LLM) to help debug the query results.
     """
 
     notices: DebugNoticeList | None = None
     translated_query: TranslatedQuery | None = None
     plan: ExecutionPlan | None = None
+    llm_prompt: str | None = None
 
     @classmethod
     def _load(cls, data: dict[str, Any]) -> DebugInfo:
@@ -37,6 +39,7 @@ class DebugInfo(CogniteResource):
             notices=DebugNoticeList._load_if(data.get("notices")),
             translated_query=TranslatedQuery._load_if(data.get("translatedQuery")),
             plan=ExecutionPlan._load_if(data.get("plan")),
+            llm_prompt=data.get("llmPrompt"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -48,6 +51,8 @@ class DebugInfo(CogniteResource):
             obj[key] = self.translated_query.dump(camel_case=camel_case)
         if self.plan is not None:
             obj["plan"] = self.plan.dump(camel_case=camel_case)
+        if self.llm_prompt is not None:
+            obj["llmPrompt" if camel_case else "llm_prompt"] = self.llm_prompt
         return obj
 
 
@@ -113,6 +118,7 @@ class DebugParameters:
         timeout (int | None): Query timeout in milliseconds. Can be used to override the default timeout when analysing queries. Requires emit_results=False.
         include_translated_query (bool): Include the internal representation of the query.
         include_plan (bool): Include the execution plan for the query.
+        include_llm_prompt (bool): Include a prompt that can be used to ask a large language model (LLM) to help debug the query results.
         profile (bool): Most thorough level of query analysis. Requires emit_results=False.
     """
 
@@ -120,6 +126,7 @@ class DebugParameters:
     timeout: int | None = None
     include_translated_query: bool = False
     include_plan: bool = False
+    include_llm_prompt: bool = False
     profile: bool = False
 
     @property
@@ -139,6 +146,9 @@ class DebugParameters:
         if self.include_plan:
             key = "includePlan" if camel_case else "include_plan"
             res[key] = self.include_plan
+        if self.include_llm_prompt:
+            key = "includeLlmPrompt" if camel_case else "include_llm_prompt"
+            res[key] = self.include_llm_prompt
         return res
 
 

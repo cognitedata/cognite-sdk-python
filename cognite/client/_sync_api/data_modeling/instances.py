@@ -1,6 +1,6 @@
 """
 ===============================================================================
-77ddb197a6a73314c704dafacbe56215
+08e10d518c6df13cc1340f1d4afb72c8
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -1148,6 +1148,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 ...     emit_results=False,
                 ...     include_plan=True,  # Include the postgres execution plan
                 ...     include_translated_query=True,  # Include the internal representation of the query.
+                ...     include_llm_prompt=True,  # Include a prompt to ask an LLM to help debug the results.
                 ...     profile=True,
                 ... )
                 >>> res = client.data_modeling.instances.query(query, debug=debug_params)
@@ -1225,6 +1226,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 ...     emit_results=False,
                 ...     include_plan=True,  # Include the postgres execution plan
                 ...     include_translated_query=True,  # Include the internal representation of the query.
+                ...     include_llm_prompt=True,  # Include a prompt to ask an LLM to help debug the results.
                 ...     profile=True,
                 ... )
                 >>> res = client.data_modeling.instances.sync(query, debug=debug_params)
@@ -1368,6 +1370,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 ...     emit_results=False,
                 ...     include_plan=True,  # Include the postgres execution plan
                 ...     include_translated_query=True,  # Include the internal representation of the query.
+                ...     include_llm_prompt=True,  # Include a prompt to ask an LLM to help debug the results.
                 ...     profile=True,
                 ... )
                 >>> res = client.data_modeling.instances.list(debug=debug_params, sources=my_view)
