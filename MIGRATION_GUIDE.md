@@ -63,13 +63,12 @@ Changes are grouped as follows:
 - For `class Transformation`, which used to have an async `run` method, this is now named `run_async` to unify the overall interface. The same applies to the `cancel` and `jobs` methods for the same class, and `update` and `wait` on `TransformationJob`.
 - **ClientConfig**:
   - `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`.
-    See the [Settings documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings) for details.
+    See the [Settings documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings) for details.
   - `timeout`: default has been increased from 30 sec to 60 sec
 - **global_config**:
   - New setting `follow_redirects` that controls whether or not to follow redirects. Defaults to `False`.
   - New setting `file_download_chunk_size` that allows you to override the chunk size for streaming file downloads. Defaults to `None` (auto).
   - New setting `file_upload_chunk_size` that allows you to override the chunk size for streaming file uploads.
-  - New setting `event_loop`, allowing you to override the default event loop used by the SDK
   - `proxies` have been replaced by `proxy` and follow httpx directly. See: [Proxies - HTTPX](https://www.python-httpx.org/advanced/proxies/)
   - `max_retry_backoff`: default has been increased from 30 sec to 60 sec
   - `max_connection_pool_size`: default has been reduced from 50 to 20
