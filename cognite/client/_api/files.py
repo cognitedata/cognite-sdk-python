@@ -655,7 +655,7 @@ class FilesAPI(APIClient):
         offset = part_no * part_size
         read_size = min(part_size, file_size - offset)
         with path.open("rb") as fh:
-            await session.upload_part_async(part_no, AsyncFileChunker(fh, offset=offset, size=read_size))  # type: ignore[arg-type]
+            await session.upload_part_async(part_no, AsyncFileChunker(fh, offset=offset, size=read_size))
 
     async def upload_content_bytes(
         self,
@@ -1000,7 +1000,9 @@ class FilesAPI(APIClient):
             FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
         )
 
-    async def _upload_multipart_part(self, upload_url: str, content: str | bytes | BinaryIO) -> None:
+    async def _upload_multipart_part(
+        self, upload_url: str, content: str | bytes | BinaryIO | AsyncIterator[bytes]
+    ) -> None:
         """Upload part of a file to an upload URL returned from `multipart_upload_session`.
 
         Note:
@@ -1008,7 +1010,7 @@ class FilesAPI(APIClient):
 
         Args:
             upload_url (str): URL to upload file chunk to.
-            content (str | bytes | BinaryIO): The content to upload.
+            content (str | bytes | BinaryIO | AsyncIterator[bytes]): The content to upload.
         """
         headers = {"accept": "*/*"}
         file_size, file_content = prepare_content_for_upload(content)
