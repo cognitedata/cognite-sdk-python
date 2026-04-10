@@ -1,6 +1,6 @@
 """
 ===============================================================================
-184223d2581d9080416c8abd8a67e832
+96e7345c5278671c718694a0e3c24d25
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -458,7 +458,7 @@ class SyncFilesAPI(SyncAPIClient):
         overwrite: bool = False,
     ) -> FileMetadata | FileMetadataList:
         """
-        `Upload a file or directory`_
+        Upload a file or directory
 
         Args:
             path (Path | str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.

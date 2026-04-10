@@ -492,7 +492,7 @@ class FilesAPI(APIClient):
         recursive: bool = False,
         overwrite: bool = False,
     ) -> FileMetadata | FileMetadataList:
-        """`Upload a file or directory`_
+        """Upload a file or directory
 
         Args:
             path (Path | str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
