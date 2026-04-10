@@ -517,9 +517,9 @@ _T = TypeVar("_T")
 
 
 class EventLoopThreadExecutor(threading.Thread):
-    def __init__(self, loop: asyncio.AbstractEventLoop | None = None, daemon: bool = True) -> None:
+    def __init__(self, daemon: bool = True) -> None:
         super().__init__(name=type(self).__name__, daemon=daemon)
-        self._event_loop = loop or asyncio.new_event_loop()
+        self._event_loop = asyncio.new_event_loop()
 
     def run(self) -> None:
         asyncio.set_event_loop(self._event_loop)
@@ -565,13 +565,11 @@ def _get_event_loop_executor() -> EventLoopThreadExecutor:
         return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
     except NameError:
         # First time we need to initialize:
-        from cognite.client import global_config
-
         ex_cls = EventLoopThreadExecutor
         if _RUNNING_IN_BROWSER:
             ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
 
-        executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls(global_config.event_loop)
+        executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls()
         executor.start()
         return executor
 
