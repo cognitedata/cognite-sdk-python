@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, NoReturn
@@ -96,7 +96,7 @@ def example_file(mock_geo_location: GeoLocation) -> dict[str, Any]:
 @pytest.fixture
 def mock_file_upload_response(
     httpx_mock: HTTPXMock, example_file: dict[str, Any], async_client: AsyncCogniteClient
-) -> Any:
+) -> Iterator[dict[str, Any]]:
     multipart_response = {
         **example_file,
         "uploadUrls": ["https://upload.here/part0"],
@@ -123,7 +123,7 @@ def mock_file_upload_response(
 @pytest.fixture
 def mock_upload_bytes_response(
     httpx_mock: HTTPXMock, example_file: dict[str, Any], async_client: AsyncCogniteClient
-) -> Any:
+) -> Iterator[dict[str, Any]]:
     httpx_mock.add_response(
         method="POST",
         url=get_url(async_client.files) + "/files?overwrite=false",
@@ -140,7 +140,7 @@ def mock_file_upload_response_without_netloc_in_upload_url(
     httpx_mock: HTTPXMock,
     mock_geo_location: GeoLocation,
     async_client: AsyncCogniteClient,
-) -> Any:
+) -> Iterator[dict[str, Any]]:
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -172,7 +172,7 @@ def mock_file_create_response(
     cognite_client: CogniteClient,
     mock_geo_location: GeoLocation,
     async_client: AsyncCogniteClient,
-) -> Any:
+) -> Iterator[dict[str, Any]]:
     response_body = {
         "externalId": "string",
         "name": "string",
