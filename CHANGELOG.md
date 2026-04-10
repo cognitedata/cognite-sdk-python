@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.0.7](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.0.6...cognite-sdk-python-v8.0.7) (2026-04-10)
+
+
+### Bug Fixes
+
+* runtime issue in notebooks when using python 3.14 (DM-3678) ([#2560](https://github.com/cognitedata/cognite-sdk-python/issues/2560)) ([5573478](https://github.com/cognitedata/cognite-sdk-python/commit/55734782f18348a2e8e1fcd9a16366d105ac7fba))
+
 ## [8.0.6] - 2026-04-08
 ### Fixed
 - Filters are hashable again (regression introduced in 8.0.0). Be aware that they compare and hash based on identity (as before).
