@@ -21,7 +21,7 @@ def prepare_content_for_upload(
             content = content.encode("utf-8")
             file_size = len(content)
         case AsyncIterable():
-            file_size = None
+            file_size = getattr(content, "size", None)
         case StringIO():
             raise TypeError("File uploads using 'io.StringIO' is not supported, please use 'io.BytesIO' instead.")
         case TextIOBase():
@@ -49,20 +49,23 @@ class AsyncFileChunker(AsyncIterator[bytes]):
 
     Args:
         file_handle (BinaryIO): An open file handle.
+        offset (int): Byte offset to seek to before reading. Defaults to 0 (beginning of file).
+        size (int | None): Maximum number of bytes to yield in total. If None, reads until EOF.
     """
 
     CHUNK_SIZE = 64 * 1024  # 64 KiB chunks by default, copying httpx default
 
-    def __init__(self, file_handle: BinaryIO) -> None:
+    def __init__(self, file_handle: BinaryIO, *, offset: int = 0, size: int | None = None) -> None:
         from cognite.client import global_config
 
         self._file_handle = file_handle
         self._chunk_size = global_config.file_upload_chunk_size or self.CHUNK_SIZE
+        self._remaining = size
+        self.size = size  # exposed so prepare_content_for_upload can set Content-Length
 
-        # Read from beginning of file if possible:
         if hasattr(self._file_handle, "seek"):
             try:
-                self._file_handle.seek(0)
+                self._file_handle.seek(offset)
             except UnsupportedOperation:
                 pass
 
@@ -70,7 +73,12 @@ class AsyncFileChunker(AsyncIterator[bytes]):
         return self
 
     async def __anext__(self) -> bytes:
-        if chunk := self._file_handle.read(self._chunk_size):
+        to_read = self._chunk_size if self._remaining is None else min(self._chunk_size, self._remaining)
+        if to_read == 0:
+            raise StopAsyncIteration
+        if chunk := self._file_handle.read(to_read):
+            if self._remaining is not None:
+                self._remaining -= len(chunk)
             return chunk
         raise StopAsyncIteration
 
