@@ -466,12 +466,30 @@ class FilesAPI(APIClient):
             FileMetadata: No description.
         """
         path = Path(path)
-        if path.is_file():
-            with path.open("rb") as fh:
-                return await self.upload_content_bytes(fh, external_id=external_id, instance_id=instance_id)
-        elif path.is_dir():
+        if path.is_dir():
             raise IsADirectoryError(path)
-        raise FileNotFoundError(path)
+        if not path.is_file():
+            raise FileNotFoundError(path)
+
+        from cognite.client import global_config
+
+        upload_semaphore = asyncio.Semaphore(global_config.concurrency_settings.general.write)
+
+        file_size = path.stat().st_size
+        part_size, num_parts = self.calculate_part_size_and_count(file_size)
+        session = await self.multipart_upload_content_session(
+            parts=num_parts, external_id=external_id, instance_id=instance_id
+        )
+
+        async with session:
+
+            async def upload_part(part_no: int) -> None:
+                async with upload_semaphore:
+                    await self._upload_file_part(session, path, part_no, part_size, file_size)
+
+            await asyncio.gather(*(upload_part(i) for i in range(num_parts)))
+
+        return session.file_metadata
 
     async def upload(
         self,
@@ -602,7 +620,6 @@ class FilesAPI(APIClient):
     ) -> FileMetadata:
         file_size = path.stat().st_size
         part_size, num_parts = self.calculate_part_size_and_count(file_size)
-
         session = await self.multipart_upload_session(
             parts=num_parts,
             overwrite=overwrite,
@@ -610,9 +627,7 @@ class FilesAPI(APIClient):
         )
 
         async with session:
-            # Use a semaphore separate from the shared write semaphore (which _upload_multipart_part
-            # also acquires) to avoid deadlock while still honouring the write concurrency setting.
-            # For directory uploads, the semaphore is shared across all files to cap total concurrency.
+
             async def upload_part(part_no: int) -> None:
                 async with upload_semaphore:
                     await self._upload_file_part(session, path, part_no, part_size, file_size)
