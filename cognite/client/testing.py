@@ -429,6 +429,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         dm_views = create_autospec(SyncViewsAPI, instance=True, spec_set=True)
         dm_instances = create_autospec(SyncInstancesAPI, instance=True, spec_set=True)
         dm_graphql = create_autospec(SyncDataModelingGraphQLAPI, instance=True, spec_set=True)
+        dm_streams = create_autospec(SyncStreamsAPI, instance=True, spec_set=True)
         self.data_modeling = create_autospec(
             SyncDataModelingAPI,
             instance=True,
@@ -439,6 +440,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             instances=dm_instances,
             graphql=dm_graphql,
             statistics=dm_statistics,
+            streams=dm_streams,
         )
         flip_spec_set_on(self.data_modeling, dm_statistics)
 
@@ -513,8 +515,6 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             logs=sim_logs,
         )
         flip_spec_set_on(self.simulators, sim_models)
-
-        self.streams = create_autospec(SyncStreamsAPI, instance=True, spec_set=True)
 
         sequences_data = create_autospec(SyncSequencesDataAPI, instance=True, spec_set=True)
         self.sequences = create_autospec(SyncSequencesAPI, instance=True, data=sequences_data)
