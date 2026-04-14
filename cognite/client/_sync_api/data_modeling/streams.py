@@ -1,6 +1,6 @@
 """
 ===============================================================================
-27bf6ff05fd0b885157b9ac4fd6e0434
+08522cd2e3d995076b7bf12a6390e97e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -79,8 +79,8 @@ class SyncStreamsAPI(SyncAPIClient):
         """
         `Delete streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/deleteStreams>`_.
 
-        The API accepts **exactly one** stream per request. Deletion is a soft delete that retains
-        capacity for an extended period; prefer deleting only when necessary.
+        Deletion is a soft delete that retains capacity for an extended period; prefer deleting only
+        when necessary.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external IDs.

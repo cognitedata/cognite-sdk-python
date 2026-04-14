@@ -29,6 +29,7 @@ class DataModelingAPI(APIClient):
         self.graphql = DataModelingGraphQLAPI(config, api_version, cognite_client)
         self.statistics = StatisticsAPI(config, api_version, cognite_client)
         self.streams = StreamsAPI(config, api_version, cognite_client)
+
     def _get_semaphore(
         self, operation: Literal["read", "write", "delete", "search", "read_schema", "write_schema"]
     ) -> asyncio.BoundedSemaphore:

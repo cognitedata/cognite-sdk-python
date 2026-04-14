@@ -112,7 +112,7 @@ class StreamSettings(CogniteResource):
 
 
 class Stream(CogniteResource):
-    """A stream (ILA ``StreamResponseItem``)."""
+    """A stream (``StreamResponseItem``)."""
 
     def __init__(
         self,
@@ -156,7 +156,7 @@ class StreamList(CogniteResourceList[Stream], ExternalIDTransformerMixin):
 
 
 class StreamTemplate(CogniteResource):
-    """Reference to an ILA stream template (``StreamRequestItem.settings.template``)."""
+    """Reference to an stream template (``StreamRequestItem.settings.template``)."""
 
     def __init__(self, name: str, version: str | None = None) -> None:
         self.name = name

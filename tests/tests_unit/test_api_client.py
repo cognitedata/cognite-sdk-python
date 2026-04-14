@@ -1834,7 +1834,7 @@ class TestRetryableEndpoints:
                 ("GET", "https://api.cognitedata.com/api/v1/projects/bla/limits/values", True),
                 ("GET", "https://api.cognitedata.com/api/v1/projects/bla/limits/values/streams.streams", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/limits/values/list", True),
-                # ILA streams (CRUD only; record POSTs added with StreamsRecordsAPI)
+                # Streams API
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/delete", False),
             ]

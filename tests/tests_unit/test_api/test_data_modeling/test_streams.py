@@ -46,7 +46,7 @@ class TestStreamsAPI:
             ]
         }
         httpx_mock.add_response(method="GET", url=re.compile(re.escape(streams_base_url) + r"$"), json=sample)
-        out = cognite_client.streams.list()
+        out = cognite_client.data_modeling.streams.list()
         assert isinstance(out, StreamList)
         assert out[0].external_id == "st1"
 
@@ -107,7 +107,7 @@ class TestStreamsAPI:
             "st1",
             StreamTemplateWriteSettings(StreamTemplate("ImmutableTestStream")),
         )
-        out = cognite_client.streams.create(w)
+        out = cognite_client.data_modeling.streams.create(w)
         requests = httpx_mock.get_requests()
         assert isinstance(out, Stream)
         assert len(requests) == 1
@@ -167,7 +167,7 @@ class TestStreamsAPI:
         tpl = StreamTemplateWriteSettings(StreamTemplate("ImmutableTestStream"))
         a = StreamWrite("a", tpl)
         b = StreamWrite("b", tpl)
-        out = cognite_client.streams.create([a, b])
+        out = cognite_client.data_modeling.streams.create([a, b])
         requests = httpx_mock.get_requests()
         assert isinstance(out, StreamList)
         assert [stream.external_id for stream in out] == ["a", "b"]

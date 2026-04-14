@@ -5,6 +5,8 @@ from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock, create_autospec, patch
 
+from cognite.client._sync_api.streams import SyncStreamsAPI
+
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api.agents import AgentsAPI
 from cognite.client._api.ai import AIAPI
@@ -20,6 +22,7 @@ from cognite.client._api.data_modeling.instances import InstancesAPI
 from cognite.client._api.data_modeling.space_statistics import SpaceStatisticsAPI
 from cognite.client._api.data_modeling.spaces import SpacesAPI
 from cognite.client._api.data_modeling.statistics import StatisticsAPI
+from cognite.client._api.data_modeling.streams import StreamsAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
@@ -68,7 +71,6 @@ from cognite.client._api.simulators.models_revisions import SimulatorModelRevisi
 from cognite.client._api.simulators.routine_revisions import SimulatorRoutineRevisionsAPI
 from cognite.client._api.simulators.routines import SimulatorRoutinesAPI
 from cognite.client._api.simulators.runs import SimulatorRunsAPI
-from cognite.client._api.data_modeling.streams import StreamsAPI
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.three_d.asset_mapping import ThreeDAssetMappingAPI
@@ -152,7 +154,6 @@ from cognite.client._sync_api.simulators.models_revisions import SyncSimulatorMo
 from cognite.client._sync_api.simulators.routine_revisions import SyncSimulatorRoutineRevisionsAPI
 from cognite.client._sync_api.simulators.routines import SyncSimulatorRoutinesAPI
 from cognite.client._sync_api.simulators.runs import SyncSimulatorRunsAPI
-from cognite.client._sync_api.streams import SyncStreamsAPI
 from cognite.client._sync_api.synthetic_time_series import SyncSyntheticDatapointsAPI
 from cognite.client._sync_api.three_d import Sync3DAPI
 from cognite.client._sync_api.three_d.asset_mapping import Sync3DAssetMappingAPI

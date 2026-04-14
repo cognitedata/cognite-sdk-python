@@ -19,14 +19,12 @@ if TYPE_CHECKING:
 
 
 class StreamsAPI(APIClient):
-    """ILA Streams API (``/streams``)."""
+    """Streams API (``/streams``)."""
 
     _RESOURCE_PATH = "/streams"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._CREATE_LIMIT = 1
-        self._DELETE_LIMIT = 1
 
     @overload
     async def create(self, items: StreamWrite) -> Stream: ...
@@ -44,9 +42,9 @@ class StreamsAPI(APIClient):
             Stream | StreamList: The created stream or streams.
         """
         return await self._create_multiple(
+            items=items,
             list_cls=StreamList,
-            resource_cls=Stream,  # type: ignore[type-var]
-            items=items,  # type: ignore[arg-type]
+            resource_cls=Stream,
             input_resource_cls=StreamWrite,
         )
 
@@ -84,8 +82,8 @@ class StreamsAPI(APIClient):
     async def delete(self, external_id: str | SequenceNotStr[str]) -> None:
         """`Delete streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/deleteStreams>`_.
 
-        The API accepts **exactly one** stream per request. Deletion is a soft delete that retains
-        capacity for an extended period; prefer deleting only when necessary.
+        Deletion is a soft delete that retains capacity for an extended period; prefer deleting only
+        when necessary.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external IDs.
