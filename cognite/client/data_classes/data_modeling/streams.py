@@ -111,7 +111,7 @@ class StreamSettings(CogniteResource):
         }
 
 
-class Stream(CogniteResource):
+class Stream(WriteableCogniteResource["StreamWrite"]):
     """A stream (``StreamResponseItem``)."""
 
     def __init__(
@@ -147,6 +147,13 @@ class Stream(CogniteResource):
             "settings": self.settings.dump(camel_case=camel_case),
         }
         return convert_all_keys_to_camel_case(out) if camel_case else out
+
+    def as_write(self) -> StreamWrite:
+        """Returns a write version."""
+        return StreamWrite(
+            external_id=self.external_id,
+            settings=StreamTemplateWriteSettings(template=StreamTemplate(name=self.created_from_template)),
+        )
 
 
 class StreamList(CogniteResourceList[Stream], ExternalIDTransformerMixin):
@@ -219,5 +226,5 @@ class StreamWrite(WriteableCogniteResource["StreamWrite"]):
         out = {"external_id": self.external_id, "settings": settings_dumped}
         return convert_all_keys_to_camel_case(out) if camel_case else out
 
-    def as_write(self) -> Self:
+    def as_write(self) -> StreamWrite:
         return self
