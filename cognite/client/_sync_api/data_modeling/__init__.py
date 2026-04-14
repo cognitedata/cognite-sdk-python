@@ -1,26 +1,35 @@
 """
 ===============================================================================
-c76b2b9351d2a5eee6a710fa9893bfa4
+220482a0261c745cb1c470fff723b515
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import asyncio
+from collections.abc import Coroutine, Iterator
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._api_client import APIClient
 from cognite.client._sync_api.data_modeling.containers import SyncContainersAPI
 from cognite.client._sync_api.data_modeling.data_models import SyncDataModelsAPI
 from cognite.client._sync_api.data_modeling.graphql import SyncDataModelingGraphQLAPI
 from cognite.client._sync_api.data_modeling.instances import SyncInstancesAPI
 from cognite.client._sync_api.data_modeling.spaces import SyncSpacesAPI
 from cognite.client._sync_api.data_modeling.statistics import SyncStatisticsAPI
+from cognite.client._sync_api.data_modeling.streams import SyncStreamsAPI
 from cognite.client._sync_api.data_modeling.views import SyncViewsAPI
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.utils._async_helpers import SyncIterator, run_sync
+from cognite.client.utils._concurrency import _get_event_loop_executor
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from cognite.client import AsyncCogniteClient
+from cognite.client.config import ClientConfig
 
 
 class SyncDataModelingAPI(SyncAPIClient):
@@ -35,3 +44,4 @@ class SyncDataModelingAPI(SyncAPIClient):
         self.instances = SyncInstancesAPI(async_client)
         self.graphql = SyncDataModelingGraphQLAPI(async_client)
         self.statistics = SyncStatisticsAPI(async_client)
+        self.streams = SyncStreamsAPI(async_client)
