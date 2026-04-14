@@ -5,8 +5,6 @@ from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock, create_autospec, patch
 
-from cognite.client._sync_api.streams import SyncStreamsAPI
-
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api.agents import AgentsAPI
 from cognite.client._api.ai import AIAPI
@@ -106,6 +104,7 @@ from cognite.client._sync_api.data_modeling.instances import SyncInstancesAPI
 from cognite.client._sync_api.data_modeling.space_statistics import SyncSpaceStatisticsAPI
 from cognite.client._sync_api.data_modeling.spaces import SyncSpacesAPI
 from cognite.client._sync_api.data_modeling.statistics import SyncStatisticsAPI
+from cognite.client._sync_api.data_modeling.streams import SyncStreamsAPI
 from cognite.client._sync_api.data_modeling.views import SyncViewsAPI
 from cognite.client._sync_api.data_sets import SyncDataSetsAPI
 from cognite.client._sync_api.datapoints import SyncDatapointsAPI
