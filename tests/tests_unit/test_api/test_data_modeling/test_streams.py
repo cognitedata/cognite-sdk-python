@@ -74,7 +74,7 @@ class TestStreamsAPI:
             url=re.compile(re.escape(streams_base_url) + r"/st1(?:\?.+)?$"),
             json=sample,
         )
-        cognite_client.streams.retrieve("st1", include_statistics=True)
+        cognite_client.data_modeling.streams.retrieve("st1", include_statistics=True)
         requests = httpx_mock.get_requests()
         assert len(requests) == 1
         assert requests[0].url.params["includeStatistics"].lower() == "true"
