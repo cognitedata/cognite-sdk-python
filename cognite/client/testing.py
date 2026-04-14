@@ -313,8 +313,6 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         )
         flip_spec_set_on(self.simulators, sim_models, sim_routines)
 
-        self.streams = create_autospec(StreamsAPI, instance=True, spec_set=True)
-
         sequences_data = create_autospec(SequencesDataAPI, instance=True, spec_set=True)
         self.sequences = create_autospec(SequencesAPI, instance=True, data=sequences_data)
         flip_spec_set_on(self.sequences)
