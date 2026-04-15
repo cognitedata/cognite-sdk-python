@@ -20,8 +20,10 @@ def prepare_content_for_upload(
         case str():
             content = content.encode("utf-8")
             file_size = len(content)
+        case AsyncFileChunker():
+            file_size = content.size
         case AsyncIterable():
-            file_size = getattr(content, "size", None)
+            file_size = None
         case StringIO():
             raise TypeError("File uploads using 'io.StringIO' is not supported, please use 'io.BytesIO' instead.")
         case TextIOBase():
