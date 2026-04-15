@@ -13,10 +13,10 @@ from urllib.parse import urlparse
 from cognite.client._api_client import APIClient
 from cognite.client._constants import (
     DEFAULT_LIMIT_READ,
-    DEFAULT_MULTIPART_SIZE,
-    MAX_MULTIPART_PARTS,
-    MAX_MULTIPART_SIZE,
-    MIN_MULTIPART_SIZE,
+    FILE_DEFAULT_MULTIPART_SIZE,
+    FILE_MAX_MULTIPART_COUNT,
+    FILE_MAX_MULTIPART_SIZE,
+    FILE_MIN_MULTIPART_SIZE,
 )
 from cognite.client.config import global_config
 from cognite.client.data_classes import (
@@ -658,14 +658,14 @@ class FilesAPI(APIClient):
         Returns:
             tuple[int, int]: A tuple of (part_size, num_parts).
         """
-        if file_size > MAX_MULTIPART_PARTS * MAX_MULTIPART_SIZE:
+        if file_size > FILE_MAX_MULTIPART_COUNT * FILE_MAX_MULTIPART_SIZE:
             raise ValueError(
-                f"File size {file_size} exceeds the maximum supported size of {MAX_MULTIPART_PARTS * MAX_MULTIPART_SIZE} bytes for multipart upload."
+                f"File size {file_size} exceeds the maximum supported size of {FILE_MAX_MULTIPART_COUNT * FILE_MAX_MULTIPART_SIZE} bytes for multipart upload."
             )
-        if file_size < MIN_MULTIPART_SIZE:
-            return MIN_MULTIPART_SIZE, 1
-        uncapped_part_size = max(DEFAULT_MULTIPART_SIZE, math.ceil(file_size / MAX_MULTIPART_PARTS))
-        part_size = min(uncapped_part_size, MAX_MULTIPART_SIZE)
+        if file_size < FILE_MIN_MULTIPART_SIZE:
+            return FILE_MIN_MULTIPART_SIZE, 1
+        uncapped_part_size = max(FILE_DEFAULT_MULTIPART_SIZE, math.ceil(file_size / FILE_MAX_MULTIPART_COUNT))
+        part_size = min(uncapped_part_size, FILE_MAX_MULTIPART_SIZE)
         num_parts = math.ceil(file_size / part_size)
         return part_size, num_parts
 
