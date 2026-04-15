@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import re
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, NoReturn
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import Request, Response
@@ -13,6 +15,7 @@ from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client._constants import MAX_MULTIPART_PARTS, MAX_MULTIPART_SIZE, MIN_MULTIPART_SIZE
+from cognite.client.config import global_config
 from cognite.client.data_classes import GeoLocation, GeoLocationFilter, Geometry, GeometryFilter, TimestampRange
 from cognite.client.data_classes._base import UnknownCogniteResource
 from cognite.client.data_classes.data_modeling.ids import NodeId
@@ -1100,6 +1103,86 @@ class TestFilesAPI:
         too_large = MAX_MULTIPART_PARTS * MAX_MULTIPART_SIZE + 1
         with pytest.raises(ValueError, match="exceeds the maximum supported size"):
             async_client.files.calculate_part_size_and_count(too_large)
+
+    def _measure_peak_concurrent_upload_parts(
+        self,
+        async_client: AsyncCogniteClient,
+        upload_fn: Callable[[], Any],
+        session_method: str,
+        num_parts: int,
+    ) -> int:
+        """Run upload_fn with _upload_file_part mocked and return the peak number of concurrent calls."""
+        active = 0
+        peak = 0
+
+        async def fake_upload_file_part(*args: Any, **kwargs: Any) -> None:
+            nonlocal active, peak
+            active += 1
+            peak = max(peak, active)
+            await asyncio.sleep(0)  # yield so the event loop can start other parts
+            active -= 1
+
+        mock_session = AsyncMock()
+        mock_session.file_metadata = FileMetadata(
+            id=1, name="test.bin", uploaded=True, created_time=0, last_updated_time=0
+        )
+
+        with (
+            patch.object(async_client.files, "_upload_file_part", side_effect=fake_upload_file_part),
+            patch.object(async_client.files, "calculate_part_size_and_count", return_value=(1, num_parts)),
+            patch.object(async_client.files, session_method, new=AsyncMock(return_value=mock_session)),
+        ):
+            upload_fn()
+
+        return peak
+
+    def test_upload_content_semaphore_limits_concurrent_parts(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        tmp_path: Path,
+    ) -> None:
+        """Peak concurrent _upload_file_part calls must not exceed the semaphore capacity."""
+        concurrency_limit = global_config.concurrency_settings.general.write
+        test_file = tmp_path / "test.bin"
+        test_file.write_bytes(b"x")
+
+        peak = self._measure_peak_concurrent_upload_parts(
+            async_client,
+            lambda: cognite_client.files.upload_content(test_file, external_id="test"),
+            "multipart_upload_content_session",
+            num_parts=concurrency_limit + 2,
+        )
+
+        assert peak == concurrency_limit
+
+    @pytest.mark.parametrize(
+        "files_to_create",
+        [["test.bin"], ["file_0.bin", "file_1.bin"]],
+        ids=["single_file", "directory"],
+    )
+    def test_upload_semaphore_limits_concurrent_parts(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        tmp_path: Path,
+        files_to_create: list[str],
+    ) -> None:
+        """Peak concurrent _upload_file_part calls must not exceed the semaphore capacity.
+        For a directory upload the semaphore is shared across all files."""
+        concurrency_limit = global_config.concurrency_settings.general.write
+        for filename in files_to_create:
+            (tmp_path / filename).write_bytes(b"x")
+        path = tmp_path / files_to_create[0] if len(files_to_create) == 1 else tmp_path
+
+        peak = self._measure_peak_concurrent_upload_parts(
+            async_client,
+            lambda: cognite_client.files.upload(path, external_id="test" if path.is_file() else None),
+            "multipart_upload_session",
+            num_parts=concurrency_limit + 2,
+        )
+
+        assert peak == concurrency_limit
 
 
 @pytest.fixture
