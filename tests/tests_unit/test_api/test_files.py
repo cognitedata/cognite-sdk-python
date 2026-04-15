@@ -14,7 +14,7 @@ from httpx import Request, Response
 from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
-from cognite.client._constants import MAX_MULTIPART_PARTS, MAX_MULTIPART_SIZE, MIN_MULTIPART_SIZE
+from cognite.client._constants import FILE_MAX_MULTIPART_COUNT, FILE_MAX_MULTIPART_SIZE, FILE_MIN_MULTIPART_SIZE
 from cognite.client.config import global_config
 from cognite.client.data_classes import GeoLocation, GeoLocationFilter, Geometry, GeometryFilter, TimestampRange
 from cognite.client.data_classes._base import UnknownCogniteResource
@@ -855,7 +855,7 @@ class TestFilesAPI:
         self, async_client: AsyncCogniteClient, file_size: int, expected_parts: int
     ) -> None:
         part_size, num_parts = async_client.files.calculate_part_size_and_count(file_size)
-        assert part_size >= MIN_MULTIPART_SIZE, f"{file_size=}: part_size {part_size} < 5 MiB"
+        assert part_size >= FILE_MIN_MULTIPART_SIZE, f"{file_size=}: part_size {part_size} < 5 MiB"
         assert num_parts == expected_parts, f"{file_size=}: expected {expected_parts} parts but got {num_parts}"
 
     def test_download(self, cognite_client: CogniteClient, mock_file_download_response: HTTPXMock) -> None:
@@ -1100,7 +1100,7 @@ class TestFilesAPI:
         assert e.value.x_request_id == api_error.x_request_id
 
     def test_upload_file_exceeds_maximum_size(self, async_client: AsyncCogniteClient) -> None:
-        too_large = MAX_MULTIPART_PARTS * MAX_MULTIPART_SIZE + 1
+        too_large = FILE_MAX_MULTIPART_COUNT * FILE_MAX_MULTIPART_SIZE + 1
         with pytest.raises(ValueError, match="exceeds the maximum supported size"):
             async_client.files.calculate_part_size_and_count(too_large)
 
