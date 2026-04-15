@@ -518,7 +518,8 @@ class FilesAPI(APIClient):
 
         Creates files in files API with metadata and uploads file content.
 
-        If path is a directory, this method will upload all files in that directory. Use `recursive=True` for subdirectories as well.
+        Note:
+            If path is a directory, this method will upload all files in that directory. Use `recursive=True` for subdirectories as well.
 
         Supports upload of large files (>5 GB), using multipart upload.
 

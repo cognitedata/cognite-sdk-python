@@ -1,6 +1,6 @@
 """
 ===============================================================================
-3928a342d39f85065eee2f7793d466bd
+331653b94381661815c7079ac6ed24b3
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -467,7 +467,8 @@ class SyncFilesAPI(SyncAPIClient):
 
         Creates files in files API with metadata and uploads file content.
 
-        If path is a directory, this method will upload all files in that directory. Use `recursive=True` for subdirectories as well.
+        Note:
+            If path is a directory, this method will upload all files in that directory. Use `recursive=True` for subdirectories as well.
 
         Supports upload of large files (>5 GB), using multipart upload.
 
