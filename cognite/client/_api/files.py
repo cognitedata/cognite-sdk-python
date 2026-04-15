@@ -18,6 +18,7 @@ from cognite.client._constants import (
     MAX_MULTIPART_SIZE,
     MIN_MULTIPART_SIZE,
 )
+from cognite.client.config import global_config
 from cognite.client.data_classes import (
     FileMetadata,
     FileMetadataFilter,
@@ -476,8 +477,6 @@ class FilesAPI(APIClient):
         if not path.is_file():
             raise FileNotFoundError(path)
 
-        from cognite.client import global_config
-
         upload_semaphore = asyncio.Semaphore(global_config.concurrency_settings.general.write)
 
         file_size = path.stat().st_size
@@ -601,7 +600,6 @@ class FilesAPI(APIClient):
             source_modified_time=source_modified_time,
             security_categories=security_categories,
         )
-        from cognite.client import global_config
 
         upload_semaphore = asyncio.Semaphore(global_config.concurrency_settings.general.write)
         path = Path(path)
