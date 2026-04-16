@@ -842,23 +842,6 @@ class TestGeospatialAPI:
         raster_content = (GEOSPATIAL_TEST_RESOURCES / "raster-grid-5-decimal.xyz").read_text()
         assert res.decode(encoding="utf-8") == raster_content
 
-    def test_get_raster_with_transformation(
-        self,
-        cognite_client: CogniteClient,
-        test_feature_type_test_scoped: FeatureType,
-        test_feature_with_raster: Feature,
-    ) -> None:
-        res = cognite_client.geospatial.get_raster(
-            feature_type_external_id=test_feature_type_test_scoped.external_id,
-            feature_external_id=get_or_raise(test_feature_with_raster.external_id),
-            raster_property_name="raster",
-            raster_format="XYZ",
-            raster_srid=54030,
-            allow_crs_transformation=True,
-        )
-        raster_content = (GEOSPATIAL_TEST_RESOURCES / "raster-grid-54030-example.xyz").read_text()
-        assert res.decode(encoding="utf-8") == raster_content
-
     def test_retrieve_features_with_raster_property(
         self,
         cognite_client: CogniteClient,

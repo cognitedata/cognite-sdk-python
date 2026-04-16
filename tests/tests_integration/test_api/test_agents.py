@@ -29,7 +29,20 @@ def permanent_agent(cognite_client: CogniteClient) -> Agent:
         name="Permanent Agent",
         description="This agent is used for permanent testing purposes.",
         instructions="Instructions for the permanent agent.",
-        model="azure/gpt-4o",
+        # NOTE: This model will eventually be retired and need updating again. To list native models
+        # sorted by retirement date (pick one near the top), use the (alpha) services availability endpoint:
+        #   res = client.get(
+        #       f"/api/v1/projects/{client.config.project}/ai/services/availability",
+        #       headers={"cdf-version": "20230101-alpha"},
+        #   ).json()
+        #   sorted(
+        #       [model for model in res["languageModels"] if model["native"]],
+        #       key=lambda model: model["earliestRetirementDate"],
+        #       reverse=True,
+        #   )
+        # Or pick one manually from:
+        # https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_language_models
+        model="gcp/claude-4.5-haiku",  # Note: Should be a fast and cheap like haiku or flash
         tools=[
             QueryKnowledgeGraphAgentToolUpsert(
                 name="find_assets",
@@ -50,8 +63,7 @@ def permanent_agent(cognite_client: CogniteClient) -> Agent:
         ],
     )
     existing = cognite_client.agents.retrieve(external_ids=agent.external_id, ignore_unknown_ids=True)
-    if existing:
-        # If the agent already exists, return it without creating a new one
+    if existing and existing.model == agent.model:
         return existing
     return cognite_client.agents.upsert(agent)
 
@@ -71,7 +83,7 @@ class TestAgentsAPI:
             external_id=f"test_minimal_agent_{random_string(10)}",
             name="Minimal Test Agent",
             description="A minimal test agent without tools.",
-            model="azure/gpt-4o",
+            model="gcp/claude-4.5-haiku",
             instructions="This is a test agent for integration testing.",
             tools=[
                 QueryKnowledgeGraphAgentToolUpsert(

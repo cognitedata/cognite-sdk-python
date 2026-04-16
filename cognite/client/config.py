@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import getpass
 import pprint
 import re
@@ -37,7 +36,7 @@ class GlobalConfig:
         max_workers (int): DEPRECATED: Use 'concurrency_settings' instead. Maximum number of concurrent API calls. Defaults to 5.
         concurrency_settings (ConcurrencySettings): Settings controlling the maximum number of concurrent API requests
             for different API categories (general, raw, data_modeling etc.). These settings are frozen after the
-            first API request is made. See https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings
+            first API request is made. See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
         follow_redirects (bool): Whether or not to follow redirects. Defaults to False.
         file_download_chunk_size (int | None): Specify the file chunk size for streaming file downloads. When not specified
             (default is None), the actual chunk size is determined by the underlying transport, which in turn is based on the
@@ -47,7 +46,6 @@ class GlobalConfig:
             translates to 65536 (64KiB chunks).
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
-        event_loop (asyncio.AbstractEventLoop | None): Override the default event loop used by the SDK.
     """
 
     def __new__(cls) -> GlobalConfig:
@@ -77,7 +75,6 @@ class GlobalConfig:
         self.file_download_chunk_size: int | None = None
         self.file_upload_chunk_size: int | None = None
         self.silence_feature_preview_warnings: bool = False
-        self.event_loop: asyncio.AbstractEventLoop | None = None
 
     @property
     def max_workers(self) -> int:
@@ -88,7 +85,7 @@ class GlobalConfig:
         warnings.warn(
             "'max_workers' is no longer in use in the SDK as of v8, and will be removed in the next major version. "
             "Use 'global_config.concurrency_settings' instead for fine-grained control. For more info: "
-            "https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings",
+            "https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings",
             FutureWarning,
             stacklevel=2,
         )

@@ -13,6 +13,142 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.0.7](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.0.6...cognite-sdk-python-v8.0.7) (2026-04-10)
+
+
+### Bug Fixes
+
+* runtime issue in notebooks when using python 3.14 (DM-3678) ([#2560](https://github.com/cognitedata/cognite-sdk-python/issues/2560)) ([5573478](https://github.com/cognitedata/cognite-sdk-python/commit/55734782f18348a2e8e1fcd9a16366d105ac7fba))
+
+## [8.0.6] - 2026-04-08
+### Fixed
+- Filters are hashable again (regression introduced in 8.0.0). Be aware that they compare and hash based on identity (as before).
+
+## [8.0.5] - 2026-03-30
+### Fixed
+- Handle invalid geo locations better on Assets and Files.
+
+## [8.0.4] - 2026-03-29
+### Added
+- Public `load_if` method on data classes to conditionally load data from dictionaries.
+- Improved `load` methods for `DataModelingId`, `VersionedDataModelingId` and `InstanceId`.
+
+## [8.0.3] - 2026-03-28
+### Added
+- Client conversion methods to switch between sync and async clients: `AsyncCogniteClient.as_sync()` and `CogniteClient.as_async()`.
+
+### Fixed
+- Task ordering bug in `execute_async_tasks_with_fail_fast` when all tasks succeed (e.g., retrieve).
+
+## [8.0.2] - 2026-03-27
+### Fixed
+- Compatibility with older Pyodide versions through targeted patching.
+
+## [8.0.1] - 2026-03-26
+### Fixed
+- Issue when using Streamlit (running with Pyodide).
+
+## [8.0.0] - 2026-03-25
+### Dependency
+- **httpx**: The SDK now uses `httpx` instead of `requests` for HTTP operations. This is a new required dependency that enables the new async interface.
+
+### Added
+- **Async Support**: The SDK now provides full async support. The main client is now `AsyncCogniteClient`, but the synchronous `CogniteClient` is still available for backward compatibility. An important implementation detail is that it just wraps `AsyncCogniteClient`.
+- All helper/utility methods on data classes now have an async variant. A few examples: Class `Asset` has `children` and now also `children_async`, `subtree` and `subtree_async`, class `Function` now has `call` and `call_async`, class `TimeSeries` now has `latest` and `latest_async` etc.
+- Instantiating a client has gotten a tiny bit simpler, by allowing either `cluster` or `base_url` to be passed. When passing cluster, it is expected to be on the form 'https://{cluster}.cognitedata.com'
+- The context manager `FileMultipartUploadSession`, returned by a call to one of the Files API methods `multipart_upload_content` or `multipart_upload_content_session`, now also supports async; you can enter with `async with`, and upload parts using `await upload_part_async`.
+- The SDK now ships with a new mock for the async client, namely `AsyncCogniteClientMock`. Both it and the previous `CogniteClientMock` are greatly improved and provide better type safety, checking of call signatures and spec_set=True is now enforced for all APIs (even the mocked client itself), through the use of `create_autospec` and bottom-up construction of nested APIs.
+- With the move to an async client, concurrency now works in Pyodide e.g. Jupyter-Lite in the browser. This also means that user interfaces like Streamlit won't freeze while resources from CDF are being fetched!
+- File upload speeds are now significantly faster on Windows after `requests` is gone!
+- Datapoints API method `retrieve_dataframe` and all `to_pandas` methods on datapoints-container-like objects now accept a new parameter: `include_unit` (`bool`). Time series using physical units via `unit_external_id`, will end up as part of the pandas DataFrame columns (like aggregate info).
+
+### Removed
+- The generic `aggregate` method on classic CDF APIs has been removed (Assets, Events, Sequences and Time Series). Use one of the more specific `aggregate_count`, `aggregate_unique_values`, `aggregate_cardinality_values`, `aggregate_cardinality_properties`, or `aggregate_unique_properties` instead.
+- The generic `aggregate` method on the Data Sets API and Files API has been replaced with `aggregate_count`.
+- The aggregation data class `CountAggregate` has been removed. Methods now return the count (`int`) directly.
+- The generic `filter` method on classic CDF APIs has been removed (Assets, Events, Sequences and Time Series). Use the normal `list` method instead and pass filters as `advanced_filters=...` instead.
+- The method `trigger` on the Workflow Executions API has been removed. Use `run` instead.
+- The method `create` on the Workflow Triggers API has been removed. Use `upsert` instead.
+- The method `get_triggers` on the Workflow Triggers API has been removed. Use `list` instead.
+- The method `get_trigger_run_history` on the Workflow Triggers API has been removed. Use `list_runs` instead.
+- Data class `WorkflowTriggerCreate` has been removed. Use `WorkflowTriggerUpsert`.
+- The method `as_primitive` method on the identifier data class `WorkflowVersionId` has been removed. Use `as_tuple` instead.
+- The methods `insert`, `retrieve`, `retrieve_last_row` and `retrieve_dataframe` on the Sequence Data API no longer support the parameter `column_external_ids`. Use `columns` instead.
+- The `__iter__` method has been removed from all APIs. Use `__call__` instead: `for ts in client.time_series()`. This makes it seamless to pass one or more parameters.
+- The helper methods on `client.iam`, `compare_capabilities` and `verify_capabilities` no longer support the `ignore_allscope_meaning` parameter.
+- The Templates API has been completely removed from the SDK (the API service has already been shut off).
+- The separate beta `CogniteClient` has been removed. Note: APIs currently in alpha/beta are (already) implemented directly on the main client and throw warnings on use.
+- **Data Modeling**: System-managed, read-only properties for `CogniteFile` in `../cdm/v1.py`, `is_uploaded` and `uploaded_time`, have been removed from the `CogniteFileApply` class.
+- **Data Modeling**: The write class for classic time series, `TimeSeriesWrite` no longer has the field `instance_id`. All time series with instance ID must be created through the Data Modeling API, so this was confusing.
+- **Data Modeling**: The write class for classic file, `FileMetadataWrite` no longer has the field `instance_id`. All files with instance ID must be created through the Data Modeling API, so this was confusing.
+- **Data Modeling**: The method `load_yaml` on the data class `Query` has been removed. Use `load` instead.
+- **Datapoints**: Datapoints API method `retrieve_dataframe_in_tz` has been removed. Use `retrieve`, `retrieve_arrays` or `retrieve_dataframe` and specify `timezone` instead.
+- **Datapoints**: All references to `legacy_name` on time series data classes and API have been removed.
+- **Datapoints**: Data class `DataPointSubscriptionCreate` has been removed. Use `DataPointSubscriptionWrite`.
+- **Datapoints**: The `error` attribute has been removed from the `Datapoints` class (moved to `SyntheticDatapoints`).
+- **Datapoints**: Removed `include_errors` parameter from `Datapoints.to_pandas()`. This parameter only applies to `SyntheticDatapoints.to_pandas()`.
+- **Datapoints**: Iterating through a `DatapointsArray` is no longer supported. Access the numpy arrays directly and use vectorised operations instead.
+- **Datapoints**: Extending a `Datapoints` instance is no longer supported.
+- **Datapoints**: Passing `column_names` to the Datapoints API method `retrieve_dataframe` or to `to_pandas` on any datapoints-container-like instance is no longer supported. The resolving is now dynamic with the precedence order: instance ID, then external ID and lastly (internal) ID.
+- **Datapoints**: When using the Datapoints API to request datapoints, passing dictionaries with individual settings is no longer supported. Pass raw identifiers (`str`, `int`, `NodeId`) or `DatapointsQuery`.
+
+### Changed
+- Attributes on all "read" data classes now have the correct type (typically no longer `Optional[...]`), meaning type inference will be correct. If you try to instantiate these classes directly (*you shouldn't* - use the write versions instead!), you will see that all required parameters in the API response will also be required on the object.
+- All (HTTP) responses from the SDK (returned by e.g. `client.post` or `client.get`) are now of type `CogniteHTTPResponse` (from `cognite.client.response`) instead of the specific type from the underlying http library to support future http-client changes.
+- Parameter `partitions` has been removed from all `__call__` methods except for the Raw Rows API (which has special handling for it). It was previously being ignored with the added side effect of ignoring `chunk_size` stemming from a very early API design oversight.
+- The method `retrieve` on the Workflow Versions API no longer accepts `workflow_external_id` and `version` as separate arguments. Pass a single or a sequence of `WorkflowVersionId` (tuples also accepted).
+- When loading a `ViewProperty` or `ViewPropertyApply`, the resource dictionary must contain the `"connectionType"` key or an error is raised.
+- The specific exceptions `CogniteDuplicatedError` and `CogniteNotFoundError` should now always be used when appropriate (previously certain API endpoints always used `CogniteAPIError`).
+- `ModelFailedException` has changed name to `CogniteModelFailedError`.
+- For `class Transformation`, which used to have an async `run` method, this is now named `run_async` to unify the overall interface. The same applies to the `cancel` and `jobs` methods for the same class, and `update` and `wait` on `TransformationJob`.
+- **ClientConfig**: `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`. See the [Settings documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings) for details.
+- **ClientConfig**: `timeout` default has been increased from 30 sec to 60 sec.
+- **global_config**: New setting `follow_redirects` that controls whether or not to follow redirects. Defaults to `False`.
+- **global_config**: New setting `file_download_chunk_size` that allows you to override the chunk size for streaming file downloads. Defaults to `None` (auto).
+- **global_config**: New setting `file_upload_chunk_size` that allows you to override the chunk size for streaming file uploads.
+- **global_config**: `proxies` have been replaced by `proxy` and follow httpx directly. See: [Proxies - HTTPX](https://www.python-httpx.org/advanced/proxies/)
+- **global_config**: `max_retry_backoff` default has been increased from 30 sec to 60 sec.
+- **global_config**: `max_connection_pool_size` default has been reduced from 50 to 20.
+- **Data Modeling**: The default value for the `operator` parameter in the `InstancesAPI.search` method has been changed to `AND` (which previously defaulted to 'OR' behavior). This change provides more precise search results by default, requiring all search terms to be present. If you need the previous behavior of matching any search term, explicitly pass `operator='OR'`.
+- **Data Modeling**: All typed instance apply classes, e.g. `CogniteAssetApply` from `cognite.client.data_classes.data_modeling.cdm.v1` (or `extractor_extensions.v1`) now work with patch updates (using `replace=False`). Previously, all unset fields would be dumped as `None` and thus cleared/nulled in the backend database. Now, any unset fields are not dumped and will not clear an existing value (unless used with `replace=True`).
+- **Data Modeling**: For users of the Data Modeling API method `sync`, the data classes have been split from those used in `query`. They can be recognized by simply appending `Sync` to the end, e.g. `Query` and `QuerySync`. Examples: `QuerySync`, `SelectSync`, `NodeResultSetExpressionSync` and `EdgeResultSetExpressionSync`.
+- **Data Modeling**: When using `to_pandas` on a list of Data Modeling instances, the properties will be expanded by default (to separate columns). To get the old behaviour, pass `expand_properties=False`.
+- **Data Modeling**: When using `to_pandas` on a list of Data Modeling instances, parameters `expand_metadata` and `metadata_prefix` are no longer silently ignored and will raise as unrecognized.
+- **Data Modeling**: When using `get` on a list of Data Modeling instances, the parameter `id` has been removed. Use `instance_id` (or `external_id` when there is no ambiguity on space).
+- **Datapoints**: When using the Datapoints API to ingest datapoints through `insert_dataframe`, the parameters `external_id_headers` and `instance_id_headers` have been removed. The new logic infers the kind of identifier from the type of the column: an integer is an ID, a string is an external ID and a NodeId (or 2-tuple of space and ext.id) is an instance ID.
+- **Datapoints**: The `.columns` of the returned pandas DataFrame from both Datapoints API method `retrieve_dataframe` and all `to_pandas` methods on datapoints-container-like objects are now pandas `MultiIndex`, where each level corresponds to the: time series identifiers (always present), then the possible aggregate-, granularity-, status code- and unit information. Any level with no information is automatically dropped.
+- **Datapoints**: When using the Datapoints API to ingest datapoints, empty containers no longer raise `ValueError`, but short-circuit.
+- **Datapoints**: The `Datapoints` class was previously (mis)used for several different API endpoints with different response structures. Dedicated classes have been introduced:
+  - **retrieve_latest**: Now returns `LatestDatapoint` or `LatestDatapointList` instead of `Datapoints` or `DatapointsList`. `LatestDatapoint` has scalar values: `timestamp` is `datetime` (not `list[int]`), `value` is `float | str` (not a list). Use `has_datapoint` property to check if a datapoint was returned (or just `if dp: ...`).
+  - **TimeSeries.latest()**: Now returns `LatestDatapoint` instead of `Datapoint | None`.
+  - **Synthetic datapoints queries**: Now return `SyntheticDatapoints` or `SyntheticDatapointsList` instead of `Datapoints` or `DatapointsList`. The `error` field only exists on `SyntheticDatapoints` (where it belongs). Use `to_pandas(include_errors=True)` on `SyntheticDatapoints` to include the error column.
+  - **Datapoint subscriptions**: `DatapointsUpdate.upserts` is now `SubscriptionDatapoints` instead of `Datapoints`.
+- **Datapoints**: `Datapoints` and `DatapointsArray` now require `id` and `is_step`, `is_string` and `type`.
+
+### Deprecated
+- Accessing the Sequence Data API through the Sequence API should use `.data` instead of `.rows`. This may raise in a future version.
+
+### Features
+
+* Add deprecation warning for Vision API ([#2469](https://github.com/cognitedata/cognite-sdk-python/issues/2469)) ([ea1b662](https://github.com/cognitedata/cognite-sdk-python/commit/ea1b662b1d252381dfc99d8737539e9119f91f11))
+* **signals:** Add support for subscribeSignals ACL ([#2500](https://github.com/cognitedata/cognite-sdk-python/issues/2500)) ([3b7d0e8](https://github.com/cognitedata/cognite-sdk-python/commit/3b7d0e84d514811fd82bdc061bd719b788152c0cb))
+
+
+### Bug Fixes
+
+* add last_called to TIME_ATTRIBUTES for datetime rendering ([#2487](https://github.com/cognitedata/cognite-sdk-python/issues/2487)) ([8afd420](https://github.com/cognitedata/cognite-sdk-python/commit/8afd420272a71b14e0f70442fdb18b9addc78e0a))
+* avoid flaky workflow execution list test by comparing IDs ([#2488](https://github.com/cognitedata/cognite-sdk-python/issues/2488)) ([8fb5f58](https://github.com/cognitedata/cognite-sdk-python/commit/8fb5f588c99662a734757ef9b8a82fd57c929897))
+* handle invalid geo locations better ([#2529](https://github.com/cognitedata/cognite-sdk-python/issues/2529)) ([581086e](https://github.com/cognitedata/cognite-sdk-python/commit/581086ea44d6de6c1aaeef211fdbf70e973f318d))
+
+
+
+### Documentation
+
+* add tool confirmation flow example to agents chat() ([#2543](https://github.com/cognitedata/cognite-sdk-python/issues/2543)) ([b76c56b](https://github.com/cognitedata/cognite-sdk-python/commit/b76c56b62bfa34e3c49a35cfa0f07d0b8a6cf24c))
+* Fix sqlite syncing example ([#2463](https://github.com/cognitedata/cognite-sdk-python/issues/2463)) ([08da799](https://github.com/cognitedata/cognite-sdk-python/commit/08da7993d39e64be26f79fba41bc3d8b04472680))
+* reorder top-level doc sections, separate DM from legacy (DM-3572) ([#2481](https://github.com/cognitedata/cognite-sdk-python/issues/2481)) ([3db85d7](https://github.com/cognitedata/cognite-sdk-python/commit/3db85d76917137d12fb30bcf99efb16ae2de5575))
+
+
 ## [7.92.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.91.2...cognite-sdk-python-v7.92.0) (2026-02-18)
 
 
@@ -180,9 +316,6 @@ As of 2025-08-29, changes are grouped as follows
 ## [7.83.0] - 2025-08-28
 ### Added
 - Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.
-
-## [Unreleased]
-### Added
 - [alpha] Support for `created_time` and `simulation_time` filters in `client.simulators.runs.list()` to filter simulation runs by timestamp ranges.
 - Added `get_quantities()` and `get_units()` methods to the `Simulator` class for easier access to simulator unit quantities and their units.
 

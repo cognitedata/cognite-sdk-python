@@ -7,7 +7,6 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Callable, Coroutine
-from functools import cache
 from typing import (
     Any,
     Literal,
@@ -19,7 +18,7 @@ from typing import (
 from typing_extensions import assert_never
 
 from cognite.client._constants import _RUNNING_IN_BROWSER
-from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteImportError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import no_op
 
 
@@ -50,6 +49,7 @@ class ConcurrencyConfig(ABC):
         self._read = read
         self._write = write
         self._delete = delete
+        self._semaphore_cache: dict[tuple[str, str, asyncio.AbstractEventLoop], asyncio.BoundedSemaphore] = {}
 
     @property
     def read(self) -> int:
@@ -79,7 +79,7 @@ class ConcurrencyConfig(ABC):
         self._delete = value
 
     @abstractmethod
-    def _semaphore_factory(self, operation: str, project: str) -> asyncio.BoundedSemaphore: ...
+    def _semaphore_factory(self, operation: Any, project: str) -> asyncio.BoundedSemaphore: ...
 
     @abstractmethod
     def __repr__(self) -> str: ...
@@ -97,24 +97,30 @@ class CRUDConcurrency(ConcurrencyConfig):
         delete (int): Maximum number of concurrent delete requests.
     """
 
-    @cache
     def _semaphore_factory(
         self, operation: Literal["read", "write", "delete"], project: str
     ) -> asyncio.BoundedSemaphore:
-        # We include 'project' in the cache, since concurrency limits should apply per-project
+        # We include 'project' in the cache key, since concurrency limits should apply per-project.
+        # We include the event loop because semaphores are bound to the loop they're first used on,
+        # so the sync client (background loop) and async client (e.g. Jupyter's loop) need separate instances.
+        key = (operation, project, asyncio.get_running_loop())
+        if key in self._semaphore_cache:
+            return self._semaphore_cache[key]
         from cognite.client import global_config
 
         global_config.concurrency_settings._freeze()  # Disallow any further changes
 
         match operation:
             case "read":
-                return asyncio.BoundedSemaphore(self.read)
+                sem = asyncio.BoundedSemaphore(self.read)
             case "write":
-                return asyncio.BoundedSemaphore(self.write)
+                sem = asyncio.BoundedSemaphore(self.write)
             case "delete":
-                return asyncio.BoundedSemaphore(self.delete)
+                sem = asyncio.BoundedSemaphore(self.delete)
             case _:
                 assert_never(operation)
+        self._semaphore_cache[key] = sem
+        return sem
 
     def __repr__(self) -> str:
         return f"Concurrency[{self.api_name}](read={self._read}, write={self._write}, delete={self._delete})"
@@ -178,29 +184,32 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         self._check_frozen("write_schema")
         self._write_schema = value
 
-    @cache
     def _semaphore_factory(
         self, operation: Literal["read", "write", "delete", "search", "read_schema", "write_schema"], project: str
     ) -> asyncio.BoundedSemaphore:
-        # We include 'project' in the cache, since concurrency limits should apply per-project
+        key = (operation, project, asyncio.get_running_loop())
+        if key in self._semaphore_cache:
+            return self._semaphore_cache[key]
         from cognite.client import global_config
 
         global_config.concurrency_settings._freeze()  # Disallow any further changes
         match operation:
             case "read":
-                return asyncio.BoundedSemaphore(self.read)
+                sem = asyncio.BoundedSemaphore(self.read)
             case "write":
-                return asyncio.BoundedSemaphore(self.write)
+                sem = asyncio.BoundedSemaphore(self.write)
             case "delete":
-                return asyncio.BoundedSemaphore(self.delete)
+                sem = asyncio.BoundedSemaphore(self.delete)
             case "search":
-                return asyncio.BoundedSemaphore(self.search)
+                sem = asyncio.BoundedSemaphore(self.search)
             case "read_schema":
-                return asyncio.BoundedSemaphore(self.read_schema)
+                sem = asyncio.BoundedSemaphore(self.read_schema)
             case "write_schema":
-                return asyncio.BoundedSemaphore(self.write_schema)
+                sem = asyncio.BoundedSemaphore(self.write_schema)
             case _:
                 assert_never(operation)
+        self._semaphore_cache[key] = sem
+        return sem
 
     def __repr__(self) -> str:
         return (
@@ -216,7 +225,7 @@ class ConcurrencySettings:
     The total concurrency budget, i.e. the maximum number of concurrent requests in flight,
     is the sum of all categories (e.g. general) and operation types (e.g. read or write).
 
-    See: https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings
+    See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
 
     Note:
         The settings apply on a per-project level, thus if you have multiple clients
@@ -258,7 +267,7 @@ class ConcurrencySettings:
             raise RuntimeError(
                 f"Cannot modify '{api_name}.{name}' after concurrency settings have been used to create semaphores. "
                 "Concurrency settings must be configured before sending any API requests. "
-                "See: https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings"
+                "See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings"
             )
 
     def _freeze(self) -> None:
@@ -508,73 +517,20 @@ _T = TypeVar("_T")
 
 
 class EventLoopThreadExecutor(threading.Thread):
-    def __init__(self, loop: asyncio.AbstractEventLoop | None = None, daemon: bool = True) -> None:
+    def __init__(self, daemon: bool = True) -> None:
         super().__init__(name=type(self).__name__, daemon=daemon)
-        self._inside_jupyter = self._detect_jupyter()
-        self._event_loop = self._patch_loop_for_jupyter(loop) or asyncio.new_event_loop()
-
-    @staticmethod
-    def _detect_jupyter() -> bool:
-        try:
-            from IPython import get_ipython  # type: ignore [attr-defined]
-
-            return "IPKernelApp" in get_ipython().config
-        except Exception:
-            return False
-
-    def _patch_loop_for_jupyter(self, loop: asyncio.AbstractEventLoop | None) -> asyncio.AbstractEventLoop | None:
-        """
-        From the 'nest_asyncio' package: By design asyncio does not allow its event loop to be nested. This presents a
-        practical problem: When in an environment where the event loop is already running it's impossible to run
-        tasks and wait for the result.
-        """
-        if not self._inside_jupyter:
-            return loop
-
-        if loop is None:
-            try:
-                import nest_asyncio  # type: ignore [import-not-found]
-            except ImportError:
-                raise CogniteImportError(
-                    module="nest_asyncio",
-                    message="Inside Jupyter notebooks, the 'nest_asyncio' package is required if you want to use the "
-                    '"non-async" CogniteClient. This is because Jupyter already runs an event loop that we need '
-                    "to patch (`pip install nest_asyncio`). Alternatively, you can use the AsyncCogniteClient "
-                    "which does not require any extra packages, but requires the use of 'await', e.g.: "
-                    "`dps = await async_client.time_series.data.retrieve(...)`",
-                ) from None
-            try:
-                # Jupyter: reuse the already running loop but patch it:
-                loop = asyncio.get_running_loop()
-                nest_asyncio.apply(loop)
-                return loop
-            except RuntimeError:
-                return None  # this would be very unexpected
-        else:
-            warnings.warn(
-                RuntimeWarning(
-                    "Overriding the event loop is not recommended inside Jupyter notebooks "
-                    "since Jupyter already runs an event loop. Proceeding with the provided loop anyway, "
-                    "beware of potential issues."
-                )
-            )
-            return loop
+        self._event_loop = asyncio.new_event_loop()
 
     def run(self) -> None:
-        if not self._inside_jupyter:
-            asyncio.set_event_loop(self._event_loop)
-            self._event_loop.run_forever()
+        asyncio.set_event_loop(self._event_loop)
+        self._event_loop.run_forever()
 
     def stop(self) -> None:
-        if not self._inside_jupyter:
-            self._event_loop.call_soon_threadsafe(self._event_loop.stop)
-            self.join()
+        self._event_loop.call_soon_threadsafe(self._event_loop.stop)
+        self.join()
 
-    def run_coro(self, coro: Coroutine[_T, Any, _T], timeout: float | None = None) -> _T:
-        if self._inside_jupyter:
-            return asyncio.get_event_loop().run_until_complete(coro)
-        else:
-            return asyncio.run_coroutine_threadsafe(coro, self._event_loop).result(timeout)
+    def run_coro(self, coro: Coroutine[Any, Any, _T], timeout: float | None = None) -> _T:
+        return asyncio.run_coroutine_threadsafe(coro, self._event_loop).result(timeout)
 
 
 class _PyodideEventLoopExecutor:
@@ -609,13 +565,11 @@ def _get_event_loop_executor() -> EventLoopThreadExecutor:
         return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
     except NameError:
         # First time we need to initialize:
-        from cognite.client import global_config
-
         ex_cls = EventLoopThreadExecutor
         if _RUNNING_IN_BROWSER:
             ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
 
-        executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls(global_config.event_loop)
+        executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls()
         executor.start()
         return executor
 
