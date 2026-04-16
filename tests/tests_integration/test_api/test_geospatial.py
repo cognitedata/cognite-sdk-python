@@ -6,6 +6,7 @@ import re
 import time
 import uuid
 from collections.abc import Callable, Iterator
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -61,7 +62,10 @@ def allow_crs_transformation(request: FixtureRequest) -> Iterator[bool]:
     yield request.param
 
 
-pytestmark = pytest.mark.skip(reason="Geospatial service is unavailable")
+pytestmark = pytest.mark.skipif(
+    date.today() < date(2026, 4, 30),
+    reason="Geospatial service is unavailable",
+)
 
 
 @pytest.fixture(scope="session", autouse=True)
