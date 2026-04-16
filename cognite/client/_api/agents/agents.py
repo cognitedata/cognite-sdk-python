@@ -79,7 +79,7 @@ class AgentsAPI(APIClient):
                 ... )
                 >>> client.agents.upsert(agents=[agent])
 
-            Create an agent with the query tool (Preview):
+            Create an agent with the query tool:
 
                 >>> from cognite.client.data_classes.agents import (
                 ...     AgentUpsert,
