@@ -79,6 +79,37 @@ class AgentsAPI(APIClient):
                 ... )
                 >>> client.agents.upsert(agents=[agent])
 
+            Create an agent with the query tool (Preview):
+
+                >>> from cognite.client.data_classes.agents import (
+                ...     AgentUpsert,
+                ...     QueryAgentToolUpsert,
+                ...     QueryAgentToolConfiguration,
+                ...     DataModelInfo,
+                ...     InstanceSpaces,
+                ... )
+                >>> query_tool = QueryAgentToolUpsert(
+                ...     name="explore data",
+                ...     description="Run flexible queries against your data model",
+                ...     configuration=QueryAgentToolConfiguration(
+                ...         data_models=[
+                ...             DataModelInfo(
+                ...                 space="cdf_idm",
+                ...                 external_id="CogniteProcessIndustries",
+                ...                 version="v1",
+                ...             )
+                ...         ],
+                ...         instance_spaces=InstanceSpaces(type="all"),
+                ...     ),
+                ... )
+                >>> agent = AgentUpsert(
+                ...     external_id="my_agent",
+                ...     name="My Agent",
+                ...     labels=["published"],
+                ...     tools=[query_tool],
+                ... )
+                >>> client.agents.upsert(agents=[agent])
+
             Create an agent with multiple different tools:
 
                 >>> from cognite.client.data_classes.agents import (

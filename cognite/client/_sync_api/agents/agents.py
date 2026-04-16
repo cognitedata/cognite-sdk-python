@@ -1,6 +1,6 @@
 """
 ===============================================================================
-063c42ab744021733ccbdc455b150b2c
+d88277929dfc151715f521eb7176622b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -74,6 +74,37 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...     name="My Agent",
                 ...     labels=["published"],
                 ...     tools=[find_assets_tool],
+                ... )
+                >>> client.agents.upsert(agents=[agent])
+
+            Create an agent with the query tool (Preview):
+
+                >>> from cognite.client.data_classes.agents import (
+                ...     AgentUpsert,
+                ...     QueryAgentToolUpsert,
+                ...     QueryAgentToolConfiguration,
+                ...     DataModelInfo,
+                ...     InstanceSpaces,
+                ... )
+                >>> query_tool = QueryAgentToolUpsert(
+                ...     name="explore data",
+                ...     description="Run flexible queries against your data model",
+                ...     configuration=QueryAgentToolConfiguration(
+                ...         data_models=[
+                ...             DataModelInfo(
+                ...                 space="cdf_idm",
+                ...                 external_id="CogniteProcessIndustries",
+                ...                 version="v1",
+                ...             )
+                ...         ],
+                ...         instance_spaces=InstanceSpaces(type="all"),
+                ...     ),
+                ... )
+                >>> agent = AgentUpsert(
+                ...     external_id="my_agent",
+                ...     name="My Agent",
+                ...     labels=["published"],
+                ...     tools=[query_tool],
                 ... )
                 >>> client.agents.upsert(agents=[agent])
 
