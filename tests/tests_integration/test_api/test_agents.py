@@ -118,6 +118,8 @@ class TestAgentsAPI:
         created_agent: Agent | None = None
         try:
             created_agent = cognite_client.agents.upsert(agent)
+            # Let the server pick runtime_version (default = latest) so this
+            # test doesn't need bumping every time a new version ships.
             agent.runtime_version = created_agent.runtime_version
             assert created_agent.as_write() == agent
 
