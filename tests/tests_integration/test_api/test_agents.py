@@ -81,7 +81,6 @@ class TestAgentsAPI:
             external_id=f"test_minimal_agent_{random_string(10)}",
             name="Minimal Test Agent",
             description="A minimal test agent without tools.",
-            model="gcp/claude-4.5-haiku",
             instructions="This is a test agent for integration testing.",
             tools=[
                 QueryKnowledgeGraphAgentToolUpsert(
@@ -118,8 +117,9 @@ class TestAgentsAPI:
         created_agent: Agent | None = None
         try:
             created_agent = cognite_client.agents.upsert(agent)
-            # Let the server pick runtime_version (default = latest) so this
-            # test doesn't need bumping every time a new version ships.
+            # Let the server pick model and runtime_version (both default to the
+            # latest) so this test doesn't need bumping on retirements/releases.
+            agent.model = created_agent.model
             agent.runtime_version = created_agent.runtime_version
             assert created_agent.as_write() == agent
 
