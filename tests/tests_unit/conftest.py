@@ -302,12 +302,12 @@ class DefaultResourceGenerator:
         description: str | None = None,
         instructions: str | None = None,
         model: str | None = None,
-        runtime_version: str = "1.1.1",
+        runtime_version: str | None = None,
         labels: list[str] | None = None,
         tools: Sequence[AgentTool] | None = None,
         created_time: int = 123,
         last_updated_time: int = 123,
-        owner_id: str = "test_owner",
+        owner_id: str | None = None,
     ) -> Agent:
         return Agent(
             external_id=external_id,

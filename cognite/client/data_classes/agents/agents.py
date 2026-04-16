@@ -133,13 +133,13 @@ class Agent(AgentCore):
         name (str): The name of the agent, for use in user interfaces.
         created_time (int): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         last_updated_time (int): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
-        runtime_version (str): The runtime version of the agent. Defines the complete execution environment including system prompt, available tools, and core features. Always present in API responses (server defaults to the latest version if not provided on upsert). See https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_runtime_versions for available versions.
-        owner_id (str): The ID of the user who owns the agent. Always present in API responses.
         description (str | None): The human readable description of the agent. Always present in API responses.
         instructions (str | None): Instructions for the agent. Always present in API responses.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
+        runtime_version (str | None): The runtime version of the agent. Defines the complete execution environment including system prompt, available tools, and core features. Always present in API responses (server defaults to the latest version if not provided on upsert). See https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_runtime_versions for available versions.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
         tools (AgentToolList | Sequence[AgentTool] | None): List of tools for the agent.
+        owner_id (str | None): The ID of the user who owns the agent. Always present in API responses.
     """
 
     def __init__(
@@ -148,13 +148,13 @@ class Agent(AgentCore):
         name: str,
         created_time: int,
         last_updated_time: int,
-        runtime_version: str,
-        owner_id: str,
         description: str | None = None,
         instructions: str | None = None,
         model: str | None = None,
+        runtime_version: str | None = None,
         labels: list[str] | None = None,
         tools: AgentToolList | Sequence[AgentTool] | None = None,
+        owner_id: str | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
