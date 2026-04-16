@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d88277929dfc151715f521eb7176622b
+990185c07f95962938122269ec34ae29
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -77,7 +77,7 @@ class SyncAgentsAPI(SyncAPIClient):
                 ... )
                 >>> client.agents.upsert(agents=[agent])
 
-            Create an agent with the query tool (Preview):
+            Create an agent with the query tool:
 
                 >>> from cognite.client.data_classes.agents import (
                 ...     AgentUpsert,
