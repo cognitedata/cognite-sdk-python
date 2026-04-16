@@ -62,6 +62,7 @@ def agent_minimal_dump() -> dict[str, Any]:
         "runtimeVersion": "1.1.1",
         "createdTime": 667008000000,
         "lastUpdatedTime": 667008000001,
+        "ownerId": "owner_minimal",
         "tools": [],
     }
 
@@ -158,6 +159,14 @@ class TestAgent:
         dumped = agent.dump(camel_case=True)
         assert agent_minimal_dump == dumped
 
+    @pytest.mark.parametrize("missing_field", ["runtimeVersion", "ownerId"])
+    def test_load_raises_on_missing_required_field(
+        self, agent_minimal_dump: dict[str, Any], missing_field: str
+    ) -> None:
+        del agent_minimal_dump[missing_field]
+        with pytest.raises(KeyError, match=missing_field):
+            Agent._load(agent_minimal_dump)
+
     def test_load_dump_maintain_unknown_properties(self) -> None:
         """Test that unknown properties are maintained in the dump."""
         agent_data = {
@@ -167,6 +176,7 @@ class TestAgent:
             "unknownProperty": "unknown_value",
             "createdTime": 123,
             "lastUpdatedTime": 123,
+            "ownerId": "owner_unknown",
             "tools": [],
         }
         dumped = Agent._load(agent_data).dump(camel_case=True)

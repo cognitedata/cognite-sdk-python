@@ -210,7 +210,7 @@ class Agent(AgentCore):
             tools=[AgentTool._load(item) for item in tools_data] if tools_data else None,
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
-            owner_id=resource.get("ownerId"),
+            owner_id=resource["ownerId"],
         )
         existing = set(instance.dump(camel_case=True).keys())
         instance._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
