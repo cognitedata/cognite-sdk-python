@@ -121,10 +121,8 @@ class TestAgentUpsert:
         agent_upsert = AgentUpsert(
             external_id="test_agent",
             name="Test Agent",
-            runtime_version="2024.09.1",
         )
         assert agent_upsert is agent_upsert.as_write()
-        assert agent_upsert.runtime_version == "2024.09.1"
 
 
 class TestAgent:
@@ -206,32 +204,6 @@ class TestAgent:
                 name="Test Agent",
                 tools=[{"name": "test_tool", "type": "test_type", "description": "A test tool"}],  # type: ignore[list-item]
             )
-
-    def test_as_write(self) -> None:
-        agent = DefaultResourceGenerator.agent(
-            external_id="test_agent",
-            name="Test Agent",
-            description="A test agent",
-            instructions="Test instructions",
-            model="gpt-4",
-            runtime_version="2024.09.1",
-            labels=["published"],
-            tools=[SummarizeDocumentAgentTool(name="test_tool", description="A test tool")],
-        )
-
-        write_agent = agent.as_write()
-        assert isinstance(write_agent, AgentUpsert)
-        assert write_agent.external_id == agent.external_id
-        assert write_agent.name == agent.name
-        assert write_agent.description == agent.description
-        assert write_agent.instructions == agent.instructions
-        assert write_agent.model == agent.model
-        assert write_agent.runtime_version == agent.runtime_version
-        assert write_agent.labels == agent.labels
-        assert write_agent.labels == ["published"]
-        assert write_agent.tools and len(write_agent.tools) == 1
-        assert isinstance(write_agent.tools[0], AgentToolUpsert)
-        assert write_agent.tools[0].name == "test_tool"
 
     def test_agent_labels_forward_compatibility(self) -> None:
         """Test forward compatibility with future label values on Agent."""

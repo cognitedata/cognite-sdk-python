@@ -94,7 +94,6 @@ class TestAgentsAPI:
         retrieved_agent = cognite_client.agents.retrieve("agent_1")
         assert isinstance(retrieved_agent, Agent)
         assert retrieved_agent.external_id == "agent_1"
-        assert retrieved_agent.runtime_version == "2024.09.1"
 
     @pytest.mark.usefixtures("mock_agent_retrieve_response")
     def test_retrieve_multiple(self, cognite_client: CogniteClient) -> None:
@@ -102,7 +101,6 @@ class TestAgentsAPI:
         assert isinstance(retrieved_agents, AgentList)
         assert len(retrieved_agents) == 1
         assert retrieved_agents[0].external_id == "agent_1"
-        assert retrieved_agents[0].runtime_version == "2024.09.1"
 
     @pytest.mark.usefixtures("mock_agent_list_response")
     def test_list(self, cognite_client: CogniteClient) -> None:
@@ -110,7 +108,6 @@ class TestAgentsAPI:
         assert isinstance(agent_list, AgentList)
         assert len(agent_list) == 1
         assert agent_list[0].external_id == "agent_1"
-        assert agent_list[0].runtime_version == "2024.09.1"
 
     def test_delete(
         self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, mock_agent_delete_response: HTTPXMock
@@ -141,7 +138,6 @@ class TestAgentsAPI:
         created_agent = cognite_client.agents.upsert(agent_write)
         assert isinstance(created_agent, Agent)
         assert created_agent.external_id == "agent_1"
-        assert created_agent.runtime_version == "2024.09.1"
         url = str(mock_agent_upsert_response.get_requests()[-1].url)
         assert url.endswith(async_client.agents._RESOURCE_PATH)
 
@@ -238,13 +234,11 @@ class TestAgentsAPI:
             external_id="agent_1",
             name="Agent 1",
             labels=["published"],
-            runtime_version="2024.09.1",
         )
         created_agent = cognite_client.agents.upsert(agent_write)
         assert isinstance(created_agent, Agent)
         assert created_agent.external_id == "agent_1"
         assert created_agent.labels == ["published"]
-        assert created_agent.runtime_version == "2024.09.1"
 
     def test_retrieve_agent_with_labels(
         self, cognite_client: CogniteClient, mock_agent_retrieve_response: MagicMock
@@ -253,4 +247,3 @@ class TestAgentsAPI:
         assert isinstance(retrieved_agent, Agent)
         assert retrieved_agent.external_id == "agent_1"
         assert retrieved_agent.labels == ["published"]
-        assert retrieved_agent.runtime_version == "2024.09.1"
