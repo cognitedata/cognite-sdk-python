@@ -208,8 +208,9 @@ class QueryAgentToolConfiguration(WriteableCogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> QueryAgentToolConfiguration:
-        dm_config = resource.get("dataModels", {})
-        data_models = [DataModelInfo._load(dm) for dm in dm_config.get("dataModels", [])]
+        # API always returns dataModels, but guard against null defensively:
+        dm_config = resource.get("dataModels") or {}
+        data_models = [DataModelInfo._load(dm) for dm in (dm_config.get("dataModels") or [])]
         return cls(
             data_models=data_models,
             instance_spaces=InstanceSpaces._load_if(resource.get("instanceSpaces")),
