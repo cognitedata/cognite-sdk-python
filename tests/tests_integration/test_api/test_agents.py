@@ -63,6 +63,8 @@ class TestAgentsAPI:
         assert len(agent_list) > 0
         agent_external_ids = {a.external_id for a in agent_list}
         assert permanent_agent.external_id in agent_external_ids
+        listed_agent = next(agent for agent in agent_list if agent.external_id == permanent_agent.external_id)
+        assert listed_agent.as_write().runtime_version == listed_agent.runtime_version
 
     def test_create_retrieve_update_delete_agent(self, cognite_client: CogniteClient) -> None:
         agent = AgentUpsert(
@@ -106,15 +108,20 @@ class TestAgentsAPI:
         created_agent: Agent | None = None
         try:
             created_agent = cognite_client.agents.upsert(agent)
-            assert created_agent.as_write() == agent
+            expected_write = AgentUpsert._load(agent.dump())
+            expected_write.runtime_version = created_agent.runtime_version
+            assert created_agent.as_write() == expected_write
+            assert created_agent.as_write().runtime_version == created_agent.runtime_version
 
             retrieved_agent = cognite_client.agents.retrieve(external_ids=created_agent.external_id)
             assert retrieved_agent is not None
+            assert retrieved_agent.runtime_version == created_agent.runtime_version
 
             update = AgentUpsert._load(agent.dump())
             update.description = "Updated description"
             updated_agent = cognite_client.agents.upsert(update)
             assert updated_agent.description == "Updated description"
+            assert updated_agent.runtime_version == retrieved_agent.runtime_version
 
             cognite_client.agents.delete(external_ids=created_agent.external_id)
 

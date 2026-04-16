@@ -22,6 +22,7 @@ def agent_upsert_dump() -> dict[str, Any]:
         "description": "A test agent",
         "instructions": "Test instructions",
         "model": "gpt-4",
+        "runtimeVersion": "2024.09.1",
         "tools": [
             {  # Valid queryKnowledgeGraph tool
                 "name": "test_tool",
@@ -72,6 +73,7 @@ class TestAgentUpsert:
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
+        assert agent.runtime_version == "2024.09.1"
         assert agent.tools
         assert len(agent.tools) == 1
         assert isinstance(agent.tools[0], AgentToolUpsert)
@@ -119,8 +121,10 @@ class TestAgentUpsert:
         agent_upsert = AgentUpsert(
             external_id="test_agent",
             name="Test Agent",
+            runtime_version="2024.09.1",
         )
         assert agent_upsert is agent_upsert.as_write()
+        assert agent_upsert.runtime_version == "2024.09.1"
 
 
 class TestAgent:
@@ -131,6 +135,7 @@ class TestAgent:
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
+        assert agent.runtime_version == "2024.09.1"
         assert agent.tools
         assert len(agent.tools) == 1
         assert isinstance(agent.tools[0], AgentTool)
@@ -209,6 +214,7 @@ class TestAgent:
             description="A test agent",
             instructions="Test instructions",
             model="gpt-4",
+            runtime_version="2024.09.1",
             labels=["published"],
             tools=[SummarizeDocumentAgentTool(name="test_tool", description="A test tool")],
         )
@@ -220,6 +226,7 @@ class TestAgent:
         assert write_agent.description == agent.description
         assert write_agent.instructions == agent.instructions
         assert write_agent.model == agent.model
+        assert write_agent.runtime_version == agent.runtime_version
         assert write_agent.labels == agent.labels
         assert write_agent.labels == ["published"]
         assert write_agent.tools and len(write_agent.tools) == 1
