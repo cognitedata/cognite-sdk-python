@@ -59,6 +59,7 @@ def agent_minimal_dump() -> dict[str, Any]:
     return {
         "externalId": "test_agent",
         "name": "Test Agent",
+        "runtimeVersion": "1.1.1",
         "createdTime": 667008000000,
         "lastUpdatedTime": 667008000001,
         "tools": [],
@@ -162,6 +163,7 @@ class TestAgent:
         agent_data = {
             "externalId": "test_agent",
             "name": "Test Agent",
+            "runtimeVersion": "1.1.1",
             "unknownProperty": "unknown_value",
             "createdTime": 123,
             "lastUpdatedTime": 123,
