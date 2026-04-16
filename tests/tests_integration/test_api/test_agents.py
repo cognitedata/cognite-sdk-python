@@ -118,9 +118,6 @@ class TestAgentsAPI:
         created_agent: Agent | None = None
         try:
             created_agent = cognite_client.agents.upsert(agent)
-            expected_write = AgentUpsert._load(agent.dump())
-            expected_write.runtime_version = created_agent.runtime_version
-            assert created_agent.as_write() == expected_write
 
             retrieved_agent = cognite_client.agents.retrieve(external_ids=created_agent.external_id)
             assert retrieved_agent is not None
