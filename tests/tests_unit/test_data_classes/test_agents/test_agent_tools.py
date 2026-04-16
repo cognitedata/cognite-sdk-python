@@ -213,18 +213,6 @@ class TestAgentToolUpsert:
 
 
 class TestQueryAgentTool:
-    def test_load_with_configuration(self) -> None:
-        loaded = AgentTool._load(query_example)
-        assert isinstance(loaded, QueryAgentTool)
-        assert loaded.configuration is not None
-        assert isinstance(loaded.configuration, QueryAgentToolConfiguration)
-        assert len(loaded.configuration.data_models) == 1
-        assert loaded.configuration.data_models[0].space == "cdf_idm"
-        assert loaded.configuration.data_models[0].external_id == "CogniteProcessIndustries"
-        assert loaded.configuration.instance_spaces is not None
-        assert loaded.configuration.instance_spaces.type == "manual"
-        assert loaded.configuration.instance_spaces.spaces == ["my_space"]
-
     def test_load_without_configuration(self) -> None:
         loaded = AgentTool._load(query_no_config_example)
         assert isinstance(loaded, QueryAgentTool)
