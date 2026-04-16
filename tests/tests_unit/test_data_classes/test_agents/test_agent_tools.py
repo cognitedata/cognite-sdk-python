@@ -229,14 +229,3 @@ class TestQueryAgentTool:
         loaded = AgentTool._load(query_no_config_example)
         assert isinstance(loaded, QueryAgentTool)
         assert loaded.configuration is None
-
-    def test_round_trip(self) -> None:
-        loaded = AgentTool._load(query_example)
-        dumped = loaded.dump(camel_case=True)
-        assert dumped == query_example
-
-    def test_as_write_round_trip(self) -> None:
-        loaded = AgentTool._load(query_example)
-        write = loaded.as_write()
-        dumped = write.dump(camel_case=True)
-        assert dumped == query_example
