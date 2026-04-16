@@ -61,12 +61,12 @@ def allow_crs_transformation(request: FixtureRequest) -> Iterator[bool]:
     yield request.param
 
 
+pytestmark = pytest.mark.skip(reason="Geospatial service is unavailable")
+
+
 @pytest.fixture(scope="session", autouse=True)
 def cleanup_old_feature_types(cognite_client: CogniteClient) -> None:
-    try:
-        res = cognite_client.geospatial.list_feature_types()
-    except CogniteAPIError:
-        pytest.skip("Geospatial service is unavailable")
+    res = cognite_client.geospatial.list_feature_types()
     old_feature_types = [ft.external_id for ft in res if ((time.time() * 1000 - ft.created_time) / 1000 / 60 / 60) > 1]
     for i in range(0, len(old_feature_types), 10):
         try:
