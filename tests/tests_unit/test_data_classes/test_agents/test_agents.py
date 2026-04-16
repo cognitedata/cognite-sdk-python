@@ -22,7 +22,7 @@ def agent_upsert_dump() -> dict[str, Any]:
         "description": "A test agent",
         "instructions": "Test instructions",
         "model": "gpt-4",
-        "runtimeVersion": "2024.09.1",
+        "runtimeVersion": "1.1.1",
         "tools": [
             {  # Valid queryKnowledgeGraph tool
                 "name": "test_tool",
@@ -73,7 +73,7 @@ class TestAgentUpsert:
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
-        assert agent.runtime_version == "2024.09.1"
+        assert agent.runtime_version == "1.1.1"
         assert agent.tools
         assert len(agent.tools) == 1
         assert isinstance(agent.tools[0], AgentToolUpsert)
@@ -133,7 +133,7 @@ class TestAgent:
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
-        assert agent.runtime_version == "2024.09.1"
+        assert agent.runtime_version == "1.1.1"
         assert agent.tools
         assert len(agent.tools) == 1
         assert isinstance(agent.tools[0], AgentTool)

@@ -28,7 +28,7 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
         description (str | None): The description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
-        runtime_version (str | None): Version of the runtime environment used by the agent.
+        runtime_version (str | None): The runtime version of the agent. Defines the complete execution environment including system prompt, available tools, and core features. Defaults to the latest version if not set. See https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_runtime_versions for available versions.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
     """
 
@@ -52,7 +52,7 @@ class AgentUpsert(AgentCore):
         description (str | None): The human readable description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
-        runtime_version (str | None): Version of the runtime environment used by the agent.
+        runtime_version (str | None): The runtime version of the agent. Defines the complete execution environment including system prompt, available tools, and core features. Defaults to the latest version if not set. See https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_runtime_versions for available versions.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
         tools (AgentToolUpsertList | Sequence[AgentToolUpsert] | None): List of tools for the agent.
 
@@ -136,7 +136,7 @@ class Agent(AgentCore):
         description (str | None): The human readable description of the agent. Always present in API responses.
         instructions (str | None): Instructions for the agent. Always present in API responses.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
-        runtime_version (str | None): Version of the runtime environment used by the agent.
+        runtime_version (str | None): The runtime version of the agent. Defines the complete execution environment including system prompt, available tools, and core features. Defaults to the latest version if not set. See https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_runtime_versions for available versions.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
         tools (AgentToolList | Sequence[AgentTool] | None): List of tools for the agent.
         owner_id (str | None): The ID of the user who owns the agent.

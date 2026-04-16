@@ -27,7 +27,7 @@ def agent_response_body() -> dict:
                 "description": "Description 1",
                 "instructions": "Instructions 1",
                 "model": "vendor/model_1",
-                "runtimeVersion": "2024.09.1",
+                "runtimeVersion": "1.1.1",
                 "labels": ["published"],
                 "tools": [
                     {
@@ -150,7 +150,7 @@ class TestAgentsAPI:
             description="Description 1",
             instructions="Instructions 1",
             model="vendor/model_1",
-            runtime_version="2024.09.1",
+            runtime_version="1.1.1",
             tools=[
                 QueryKnowledgeGraphAgentToolUpsert(
                     name="tool_1",
@@ -170,9 +170,9 @@ class TestAgentsAPI:
         created_agent = cognite_client.agents.upsert(agent_write)
         assert isinstance(created_agent, Agent)
         assert created_agent.external_id == "agent_1"
-        assert created_agent.runtime_version == "2024.09.1"
+        assert created_agent.runtime_version == "1.1.1"
         request_body = jsgz_load(mock_agent_upsert_response.get_requests()[-1].content)
-        assert request_body["items"][0]["runtimeVersion"] == "2024.09.1"
+        assert request_body["items"][0]["runtimeVersion"] == "1.1.1"
         url = str(mock_agent_upsert_response.get_requests()[-1].url)
         assert url.endswith(async_client.agents._RESOURCE_PATH)
 
