@@ -205,7 +205,7 @@ class Agent(AgentCore):
             description=resource.get("description"),
             instructions=resource.get("instructions"),
             model=resource.get("model"),
-            runtime_version=resource.get("runtimeVersion"),
+            runtime_version=resource["runtimeVersion"],
             labels=resource.get("labels"),
             tools=[AgentTool._load(item) for item in tools_data] if tools_data else None,
             created_time=resource["createdTime"],
