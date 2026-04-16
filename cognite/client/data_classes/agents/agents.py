@@ -170,7 +170,10 @@ class Agent(AgentCore):
         )
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.owner_id = owner_id
+        # New required API fields - force correct type annotations.
+        # TODO: In the next major version we can make these properties required.
+        self.runtime_version: str = runtime_version  # type: ignore[assignment]
+        self.owner_id: str = owner_id  # type: ignore[assignment]
         # This stores any unknown properties that are not part of the defined fields.
         # This is useful while the API is evolving and new fields are added.
         self._unknown_properties: dict[str, object] = {}
