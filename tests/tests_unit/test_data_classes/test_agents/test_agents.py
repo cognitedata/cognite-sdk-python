@@ -22,6 +22,7 @@ def agent_upsert_dump() -> dict[str, Any]:
         "description": "A test agent",
         "instructions": "Test instructions",
         "model": "gpt-4",
+        "runtimeVersion": "1.1.1",
         "tools": [
             {  # Valid queryKnowledgeGraph tool
                 "name": "test_tool",
@@ -58,8 +59,10 @@ def agent_minimal_dump() -> dict[str, Any]:
     return {
         "externalId": "test_agent",
         "name": "Test Agent",
+        "runtimeVersion": "1.1.1",
         "createdTime": 667008000000,
         "lastUpdatedTime": 667008000001,
+        "ownerId": "owner_minimal",
         "tools": [],
     }
 
@@ -72,6 +75,7 @@ class TestAgentUpsert:
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
+        assert agent.runtime_version == "1.1.1"
         assert agent.tools
         assert len(agent.tools) == 1
         assert isinstance(agent.tools[0], AgentToolUpsert)
@@ -131,6 +135,7 @@ class TestAgent:
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
+        assert agent.runtime_version == "1.1.1"
         assert agent.tools
         assert len(agent.tools) == 1
         assert isinstance(agent.tools[0], AgentTool)
@@ -159,9 +164,11 @@ class TestAgent:
         agent_data = {
             "externalId": "test_agent",
             "name": "Test Agent",
+            "runtimeVersion": "1.1.1",
             "unknownProperty": "unknown_value",
             "createdTime": 123,
             "lastUpdatedTime": 123,
+            "ownerId": "owner_unknown",
             "tools": [],
         }
         dumped = Agent._load(agent_data).dump(camel_case=True)
@@ -201,30 +208,6 @@ class TestAgent:
                 name="Test Agent",
                 tools=[{"name": "test_tool", "type": "test_type", "description": "A test tool"}],  # type: ignore[list-item]
             )
-
-    def test_as_write(self) -> None:
-        agent = DefaultResourceGenerator.agent(
-            external_id="test_agent",
-            name="Test Agent",
-            description="A test agent",
-            instructions="Test instructions",
-            model="gpt-4",
-            labels=["published"],
-            tools=[SummarizeDocumentAgentTool(name="test_tool", description="A test tool")],
-        )
-
-        write_agent = agent.as_write()
-        assert isinstance(write_agent, AgentUpsert)
-        assert write_agent.external_id == agent.external_id
-        assert write_agent.name == agent.name
-        assert write_agent.description == agent.description
-        assert write_agent.instructions == agent.instructions
-        assert write_agent.model == agent.model
-        assert write_agent.labels == agent.labels
-        assert write_agent.labels == ["published"]
-        assert write_agent.tools and len(write_agent.tools) == 1
-        assert isinstance(write_agent.tools[0], AgentToolUpsert)
-        assert write_agent.tools[0].name == "test_tool"
 
     def test_agent_labels_forward_compatibility(self) -> None:
         """Test forward compatibility with future label values on Agent."""

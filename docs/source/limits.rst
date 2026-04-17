@@ -1,14 +1,15 @@
 Limits
 ======
+.. currentmodule:: cognite.client
+
 Limits API
 ----------
-Retrieve a limit value by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.limits.LimitsAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List limit values
-^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.limits.LimitsAPI.list
+   AsyncCogniteClient.limits
 
 Limits Data Classes
 ^^^^^^^^^^^^^^^^^^^

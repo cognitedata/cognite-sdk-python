@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f4e1098248aa0435df188100512548d0
+23944ad7adfdf1d58a1d60fe0088d4fb
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -136,7 +136,7 @@ class SyncRawRowsAPI(SyncAPIClient):
         ensure_parent: bool = False,
     ) -> None:
         """
-        `Insert one or more rows into a table. <https://api-docs.cognite.com/20230101/tag/Raw/operation/postRows>`_
+        `Insert one or more rows into a table <https://api-docs.cognite.com/20230101/tag/Raw/operation/postRows>`_.
 
         Args:
             db_name (str): Name of the database.
@@ -176,7 +176,7 @@ class SyncRawRowsAPI(SyncAPIClient):
         self, db_name: str, table_name: str, dataframe: pd.DataFrame, ensure_parent: bool = False, dropna: bool = True
     ) -> None:
         """
-        `Insert pandas dataframe into a table <https://api-docs.cognite.com/20230101/tag/Raw/operation/postRows>`_
+        `Insert pandas dataframe into a table <https://api-docs.cognite.com/20230101/tag/Raw/operation/postRows>`_.
 
         Uses index for row keys.
 
@@ -209,7 +209,7 @@ class SyncRawRowsAPI(SyncAPIClient):
 
     def delete(self, db_name: str, table_name: str, key: str | SequenceNotStr[str]) -> None:
         """
-        `Delete rows from a table. <https://api-docs.cognite.com/20230101/tag/Raw/operation/deleteRows>`_
+        `Delete rows from a table <https://api-docs.cognite.com/20230101/tag/Raw/operation/deleteRows>`_.
 
         Args:
             db_name (str): Name of the database.
@@ -230,7 +230,7 @@ class SyncRawRowsAPI(SyncAPIClient):
 
     def retrieve(self, db_name: str, table_name: str, key: str) -> Row | None:
         """
-        `Retrieve a single row by key. <https://api-docs.cognite.com/20230101/tag/Raw/operation/getRow>`_
+        `Retrieve a single row by key <https://api-docs.cognite.com/20230101/tag/Raw/operation/getRow>`_.
 
         Args:
             db_name (str): Name of the database.
@@ -269,7 +269,7 @@ class SyncRawRowsAPI(SyncAPIClient):
         infer_dtypes: bool = True,
     ) -> pd.DataFrame:
         """
-        `Retrieve rows in a table as a pandas dataframe. <https://api-docs.cognite.com/20230101/tag/Raw/operation/getRows>`_
+        `Retrieve rows in a table as a pandas dataframe <https://api-docs.cognite.com/20230101/tag/Raw/operation/getRows>`_.
 
         Rowkeys are used as the index.
 
@@ -324,7 +324,7 @@ class SyncRawRowsAPI(SyncAPIClient):
         partitions: int | None = None,
     ) -> RowList:
         """
-        `List rows in a table. <https://api-docs.cognite.com/20230101/tag/Raw/operation/getRows>`_
+        `List rows in a table <https://api-docs.cognite.com/20230101/tag/Raw/operation/getRows>`_.
 
         Args:
             db_name (str): Name of the database.

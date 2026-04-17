@@ -1,6 +1,6 @@
 """
 ===============================================================================
-5b44b9267cff1314fd65f0fb32ed0170
+f5edbbb225707bdc150a94fc1aa31095
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -36,7 +36,7 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
         self, workflow_trigger: WorkflowTriggerUpsert, client_credentials: ClientCredentials | dict | None = None
     ) -> WorkflowTrigger:
         """
-        `Create or update a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_
+        `Create or update a trigger for a workflow <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_.
 
         Args:
             workflow_trigger (WorkflowTriggerUpsert): The workflow trigger specification.
@@ -114,7 +114,7 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
 
     def delete(self, external_id: str | SequenceNotStr[str]) -> None:
         """
-        `Delete one or more triggers for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
+        `Delete one or more triggers for a workflow <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_.
 
         Args:
             external_id (str | SequenceNotStr[str]): The external id(s) of the trigger(s) to delete.
@@ -136,7 +136,7 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
         """
-        `List the workflow triggers. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/FetchAllTriggers>`_
+        `List the workflow triggers <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/FetchAllTriggers>`_.
 
         Args:
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -157,7 +157,7 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
 
     def list_runs(self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerRunList:
         """
-        `List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggerHistory>`_
+        `List the history of runs for a trigger <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggerHistory>`_.
 
         Args:
             external_id (str): The external id of the trigger to list runs for.
@@ -179,7 +179,7 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
 
     def pause(self, external_id: str) -> None:
         """
-        `Pause a workflow trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/pauseTrigger>`_
+        `Pause a workflow trigger <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/pauseTrigger>`_.
 
         When a trigger is paused, it will not trigger new workflow executions.
         This operation is idempotent - pausing an already paused trigger has no effect.
@@ -200,7 +200,7 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
 
     def resume(self, external_id: str) -> None:
         """
-        `Resume a paused workflow trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/resumeTrigger>`_
+        `Resume a paused workflow trigger <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/resumeTrigger>`_.
 
         When a trigger is resumed, it will start triggering workflow executions again according to its trigger rule.
         This operation is idempotent - resuming an already active trigger has no effect.

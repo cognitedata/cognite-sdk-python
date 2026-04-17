@@ -1,46 +1,26 @@
 Contextualization
 =================
+.. currentmodule:: cognite.client
 
 Entity Matching
 ---------------
 These APIs will return as soon as possible, deferring a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
 
-Fit Entity Matching Model
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.fit
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Re-fit Entity Matching Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.refit
-
-Retrieve Entity Matching Models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.retrieve
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.retrieve_multiple
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.list
-
-Delete Entity Matching Models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.delete
-
-Update Entity Matching Models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.update
-
-Predict Using an Entity Matching Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.predict
+   AsyncCogniteClient.entity_matching
 
 Engineering Diagrams
 --------------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Detect entities in Engineering Diagrams
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.diagrams.DiagramsAPI.detect
-
-Convert to an interactive SVG where the provided annotations are highlighted
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.diagrams.DiagramsAPI.convert
+   AsyncCogniteClient.diagrams
 
 
 Vision (deprecated)
@@ -101,15 +81,12 @@ Tweaking the parameters of a feature extractor:
         # parameters = {"textDetectionParameters": {"threshold": 0.9}}
     )
 
-Extract
-^^^^^^^
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-.. automethod:: cognite.client._api.vision.VisionAPI.extract
-
-Get vision extract job
-^^^^^^^^^^^^^^^^^^^^^^
-
-.. automethod:: cognite.client._api.vision.VisionAPI.get_extract_job
+   AsyncCogniteClient.vision
 
 
 Contextualization Data Classes

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ac85717720c349aa2b707d51176c31a7
+5df166262e8c65029e1adcb884de5ec9
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -38,7 +38,7 @@ class Sync3DAssetMappingAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ThreeDAssetMappingList:
         """
-        `List 3D node asset mappings. <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/get3DMappings>`_
+        `List 3D node asset mappings <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/get3DMappings>`_.
 
         Args:
             model_id (int): Id of the model.
@@ -102,7 +102,7 @@ class Sync3DAssetMappingAPI(SyncAPIClient):
         | Sequence[ThreeDAssetMappingWrite],
     ) -> ThreeDAssetMapping | ThreeDAssetMappingList:
         """
-        `Create 3d node asset mappings. <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/create3DMappings>`_
+        `Create 3d node asset mappings <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/create3DMappings>`_.
 
         Args:
             model_id (int): Id of the model.
@@ -135,7 +135,7 @@ class Sync3DAssetMappingAPI(SyncAPIClient):
         self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | Sequence[ThreeDAssetMapping]
     ) -> None:
         """
-        `Delete 3d node asset mappings. <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/delete3DMappings>`_
+        `Delete 3d node asset mappings <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/delete3DMappings>`_.
 
         Args:
             model_id (int): Id of the model.

@@ -17,7 +17,13 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import inspect
+import os
 import re
+import sys
+
+from cognite.client._cognite_client import _make_accessors_for_building_docs
+from docs.source.headings import headings
 
 # -- General configuration ------------------------------------------------
 
@@ -28,12 +34,17 @@ needs_sphinx = "8.1"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+sys.path.append(os.path.abspath("./_ext"))
+
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.doctest",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
+    "sphinx.ext.autosummary",
     "sphinx_copybutton",
+    "sphinx_autosummary_accessors",
+    "autosummary",
 ]
 
 autosectionlabel_prefix_document = True
@@ -42,7 +53,7 @@ copybutton_prompt_text = r"^>>> |^\.\.\. "
 copybutton_prompt_is_regexp = True
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = []
+templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -78,6 +89,15 @@ language = "en"
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = []
+
+# These rst files are only meant as intermediate files for autosummary, and should not be included in the toctree or generated as HTML files
+lines = inspect.getsource(_make_accessors_for_building_docs)
+for line in lines.split():
+    if line.startswith("AsyncCogniteClient."):
+        exclude_patterns.append(f"generated/cognite.client.{line}.rst")
+
+# Apply custom page titles for API methods documentation
+autosummary_context = {"headings": headings}
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"

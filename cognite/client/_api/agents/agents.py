@@ -37,7 +37,7 @@ class AgentsAPI(APIClient):
     async def upsert(self, agents: Sequence[AgentUpsert]) -> AgentList: ...
 
     async def upsert(self, agents: AgentUpsert | Sequence[AgentUpsert]) -> Agent | AgentList:
-        """`Create or update (upsert) one or more agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/main_ai_agents_post/>`_
+        """`Create or update (upsert) one or more agents <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/main_ai_agents_post/>`_.
 
         Args:
             agents (AgentUpsert | Sequence[AgentUpsert]): Agent or list of agents to create or update.
@@ -180,7 +180,7 @@ class AgentsAPI(APIClient):
     async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Agent | AgentList | None:
-        """`Retrieve one or more agents by external ID. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/get_agents_by_ids_ai_agents_byids_post/>`_
+        """`Retrieve one or more agents by external ID <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/get_agents_by_ids_ai_agents_byids_post/>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external id of the agent(s) to retrieve.
@@ -212,7 +212,7 @@ class AgentsAPI(APIClient):
         )
 
     async def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
-        """`Delete one or more agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_delete_ai_agents_delete_post/>`_
+        """`Delete one or more agents <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_delete_ai_agents_delete_post/>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): External ID of the agent or a list of external ids.
@@ -236,7 +236,7 @@ class AgentsAPI(APIClient):
         )
 
     async def list(self) -> AgentList:  # The API does not yet support limit or pagination
-        """`List agents. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_list_ai_agents_get/>`_
+        """`List agents <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_list_ai_agents_get/>`_.
 
         Returns:
             AgentList: The list of agents.
@@ -262,7 +262,7 @@ class AgentsAPI(APIClient):
         cursor: str | None = None,
         actions: Sequence[Action] | None = None,
     ) -> AgentChatResponse:
-        """`Chat with an agent. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_session_ai_agents_chat_post/>`_
+        """`Chat with an agent <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_session_ai_agents_chat_post/>`_.
 
         Given a user query, the Atlas AI agent responds by reasoning and using the tools associated with it.
         Users can ensure conversation continuity by including the cursor from the previous response in subsequent requests.
