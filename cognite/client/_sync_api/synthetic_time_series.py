@@ -1,6 +1,6 @@
 """
 ===============================================================================
-33d39ce5b3cd74e806a3d511931e65f1
+ea1d043bdb3a6528c72c4c5769df9fe7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -73,7 +73,7 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
         timezone: str | datetime.timezone | ZoneInfo | None = None,
     ) -> SyntheticDatapoints | SyntheticDatapointsList:
         """
-        `Calculate the result of a function on time series. <https://api-docs.cognite.com/20230101/tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
+        `Calculate the result of a function on time series <https://api-docs.cognite.com/20230101/tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_.
 
         Info:
             You can read the guide to synthetic time series in our `documentation <https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries>`_.

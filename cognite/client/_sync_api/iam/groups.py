@@ -1,6 +1,6 @@
 """
 ===============================================================================
-4a0a07131386c8ecbd12af4fe10decdf
+586373043d2d2ff985980c01554ca7f1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -25,7 +25,7 @@ class SyncGroupsAPI(SyncAPIClient):
 
     def list(self, all: bool = False) -> GroupList:
         """
-        `List groups. <https://api-docs.cognite.com/20230101/tag/Groups/operation/getGroups>`_
+        `List groups <https://api-docs.cognite.com/20230101/tag/Groups/operation/getGroups>`_.
 
         Args:
             all (bool): Whether to get all groups, only available with the groups:list acl.
@@ -56,7 +56,7 @@ class SyncGroupsAPI(SyncAPIClient):
 
     def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
         """
-        `Create one or more groups. <https://api-docs.cognite.com/20230101/tag/Groups/operation/createGroups>`_
+        `Create one or more groups <https://api-docs.cognite.com/20230101/tag/Groups/operation/createGroups>`_.
 
         Args:
             group (Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]): Group or list of groups to create.
@@ -124,7 +124,7 @@ class SyncGroupsAPI(SyncAPIClient):
 
     def delete(self, id: int | Sequence[int]) -> None:
         """
-        `Delete one or more groups. <https://api-docs.cognite.com/20230101/tag/Groups/operation/deleteGroups>`_
+        `Delete one or more groups <https://api-docs.cognite.com/20230101/tag/Groups/operation/deleteGroups>`_.
 
         Args:
             id (int | Sequence[int]): ID or list of IDs of groups to delete.

@@ -92,7 +92,7 @@ class WorkflowVersionAPI(APIClient):
     async def upsert(
         self, version: WorkflowVersionUpsert | Sequence[WorkflowVersionUpsert], mode: Literal["replace"] = "replace"
     ) -> WorkflowVersion | WorkflowVersionList:
-        """`Create one or more workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflows/operation/CreateOrUpdateWorkflowVersion>`_
+        """`Create one or more workflow version(s) <https://api-docs.cognite.com/20230101/tag/Workflows/operation/CreateOrUpdateWorkflowVersion>`_.
 
         Note this is an upsert endpoint, so workflow versions that already exist will be updated, and new ones will be created.
 
@@ -152,7 +152,7 @@ class WorkflowVersionAPI(APIClient):
         | MutableSequence[tuple[str, str]],
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete a workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/DeleteSpecificVersionsOfWorkflow>`_
+        """`Delete a workflow version(s) <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/DeleteSpecificVersionsOfWorkflow>`_.
 
         Args:
             workflow_version_id (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionId] | MutableSequence[tuple[str, str]]): Workflow version id or list of workflow version ids to delete.
@@ -196,7 +196,7 @@ class WorkflowVersionAPI(APIClient):
         *,
         ignore_unknown_ids: bool = False,
     ) -> WorkflowVersion | WorkflowVersionList | None:
-        """`Retrieve a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/GetSpecificVersion>`_
+        """`Retrieve a workflow version <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/GetSpecificVersion>`_.
 
         Args:
             workflow_external_id (WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds): External id of the workflow.
@@ -264,7 +264,7 @@ class WorkflowVersionAPI(APIClient):
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> WorkflowVersionList:
-        """`List workflow versions in the project <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/ListWorkflowVersions>`_
+        """`List workflow versions in the project <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/ListWorkflowVersions>`_.
 
         Args:
             workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.

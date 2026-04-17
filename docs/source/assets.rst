@@ -1,64 +1,13 @@
 Assets (legacy)
 ===============
-Retrieve an asset by id
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.retrieve
+.. currentmodule:: cognite.client
 
-Retrieve multiple assets by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.retrieve_multiple
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Retrieve an asset subtree
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.retrieve_subtree
-
-List assets
-^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.list
-
-Aggregate Asset Count
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_count
-
-Aggregate Asset Value Cardinality
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_cardinality_values
-
-Aggregate Asset Property Cardinality
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_cardinality_properties
-
-Aggregate Asset Unique Values
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_unique_values
-
-Aggregate Asset Unique Properties
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_unique_properties
-
-Search for assets
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.search
-
-Create assets
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.create
-
-Create asset hierarchy
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.create_hierarchy
-
-Delete assets
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.delete
-
-Update assets
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.update
-
-Upsert assets
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.upsert
+   AsyncCogniteClient.assets
 
 Asset Data classes
 ^^^^^^^^^^^^^^^^^^

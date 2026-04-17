@@ -342,7 +342,7 @@ class FunctionsAPI(APIClient):
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
     ) -> None:
-        """`Delete one or more functions. <https://api-docs.cognite.com/20230101/tag/Functions/operation/deleteFunctions>`_
+        """`Delete one or more functions <https://api-docs.cognite.com/20230101/tag/Functions/operation/deleteFunctions>`_.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
@@ -373,7 +373,7 @@ class FunctionsAPI(APIClient):
         metadata: dict[str, str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionList:
-        """`List all functions. <https://api-docs.cognite.com/20230101/tag/Functions/operation/listFunctions>`_
+        """`List all functions <https://api-docs.cognite.com/20230101/tag/Functions/operation/listFunctions>`_.
 
         Args:
             name (str | None): The name of the function.
@@ -422,7 +422,7 @@ class FunctionsAPI(APIClient):
         return FunctionList._load(res.json()["items"])._maybe_set_client_ref(self._cognite_client)
 
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
-        """`Retrieve a single function by id. <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_
+        """`Retrieve a single function by id <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_.
 
         Args:
             id (int | None): ID
@@ -453,7 +453,7 @@ class FunctionsAPI(APIClient):
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> FunctionList:
-        """`Retrieve multiple functions by id. <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_
+        """`Retrieve multiple functions by id <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -493,7 +493,7 @@ class FunctionsAPI(APIClient):
         wait: bool = True,
         nonce: str | None = None,
     ) -> FunctionCall:
-        """`Call a function by its ID or external ID. <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/postFunctionsCall>`_.
+        """`Call a function by its ID or external ID <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/postFunctionsCall>`_.
 
         Args:
             id (int | None): ID
@@ -537,7 +537,7 @@ class FunctionsAPI(APIClient):
         return function_call
 
     async def limits(self) -> FunctionsLimits:
-        """`Get service limits. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_.
+        """`Get service limits <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_.
 
         Returns:
             FunctionsLimits: A function limits object.
@@ -646,7 +646,7 @@ class FunctionsAPI(APIClient):
             )
 
     async def activate(self) -> FunctionsStatus:
-        """`Activate functions for the Project. <https://api-docs.cognite.com/20230101/tag/Functions/operation/postFunctionsStatus>`_.
+        """`Activate functions for the Project <https://api-docs.cognite.com/20230101/tag/Functions/operation/postFunctionsStatus>`_.
 
         Note:
             May take some time to take effect (hours).
@@ -667,7 +667,7 @@ class FunctionsAPI(APIClient):
         return FunctionsStatus.load(res.json())
 
     async def status(self) -> FunctionsStatus:
-        """`Functions activation status for the Project. <https://api-docs.cognite.com/20230101/tag/Functions/operation/getFunctionsStatus>`_.
+        """`Functions activation status for the Project <https://api-docs.cognite.com/20230101/tag/Functions/operation/getFunctionsStatus>`_.
 
         Returns:
             FunctionsStatus: A function activation status.

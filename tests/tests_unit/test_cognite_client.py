@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import logging
+import os
 import ssl
+import subprocess
+import sys
 from typing import Any
 
 import pytest
@@ -158,3 +161,24 @@ class TestCogniteClient:
 
         assert isinstance(sync_client, CogniteClient)
         assert sync_client.config is async_client.config
+
+    def test_docs_build_adds_nested_accessors(self) -> None:
+        """When BUILD_COGNITE_SDK_DOCS=true, _cognite_client attaches nested API classes
+        onto AsyncCogniteClient as class attributes so Sphinx can discover and document
+        them. We run the assertion in a subprocess so the import-time side effects don't
+        pollute sys.modules for the rest of the test suite (which would break pickling
+        of AsyncCogniteClient instances via class-identity mismatch).
+        """
+        code = (
+            "from cognite.client import _cognite_client\n"
+            "c = _cognite_client.AsyncCogniteClient\n"
+            "assert c.time_series.data.synthetic is not None\n"
+            "assert c.data_modeling.statistics.spaces is not None\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            env={**os.environ, "BUILD_COGNITE_SDK_DOCS": "true"},
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, result.stderr

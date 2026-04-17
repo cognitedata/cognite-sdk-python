@@ -1,6 +1,6 @@
 """
 ===============================================================================
-7284c8ddb0de35ee8b871e9aae3bb31e
+d8f52d5fa4e5f94c791a0e3d33ff2173
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -60,7 +60,7 @@ class SyncMappingsAPI(SyncAPIClient):
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Mapping | MappingList:
         """
-        `Retrieve one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/retrieve_mappings>`_
+        `Retrieve one or more mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/retrieve_mappings>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -93,7 +93,7 @@ class SyncMappingsAPI(SyncAPIClient):
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
         """
-        `Delete one or more mappings  <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/delete_mappings>`_
+        `Delete one or more mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/delete_mappings>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -123,7 +123,7 @@ class SyncMappingsAPI(SyncAPIClient):
 
     def create(self, items: MappingWrite | Sequence[MappingWrite]) -> Mapping | MappingList:
         """
-        `Create one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/create_mappings>`_
+        `Create one or more mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/create_mappings>`_.
 
         Args:
             items (MappingWrite | Sequence[MappingWrite]): Mapping(s) to create.
@@ -159,7 +159,7 @@ class SyncMappingsAPI(SyncAPIClient):
         self, items: MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]
     ) -> Mapping | MappingList:
         """
-        `Update one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/update_mappings>`_
+        `Update one or more mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/update_mappings>`_.
 
         Args:
             items (MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]): Mapping(s) to update.
@@ -182,7 +182,7 @@ class SyncMappingsAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> MappingList:
         """
-        `List mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/list_mappings>`_
+        `List mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/list_mappings>`_.
 
         Args:
             limit (int | None): Maximum number of mappings to return. Defaults to 25. Set to -1, float("inf") or None to return all items.

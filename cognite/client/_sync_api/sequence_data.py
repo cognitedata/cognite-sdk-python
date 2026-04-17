@@ -1,6 +1,6 @@
 """
 ===============================================================================
-24d6447eb14621ef444322baea614541
+27610a606ea85c11b51eeb8555d47324
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -37,7 +37,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
         external_id: str | None = None,
     ) -> None:
         """
-        `Insert rows into a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_
+        `Insert rows into a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_.
 
         Args:
             rows (SequenceRows | dict[int, typing.Sequence[int | float | str]] | typing.Sequence[tuple[int, typing.Sequence[int | float | str]]] | typing.Sequence[dict[str, Any]]):  The rows you wish to insert. Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
@@ -91,7 +91,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
         self, dataframe: pd.DataFrame, id: int | None = None, external_id: str | None = None, dropna: bool = True
     ) -> None:
         """
-        `Insert a Pandas dataframe. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_
+        `Insert a Pandas dataframe <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_.
 
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
         The sequence and columns must already exist.
@@ -120,7 +120,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
 
     def delete(self, rows: typing.Sequence[int], id: int | None = None, external_id: str | None = None) -> None:
         """
-        `Delete rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_
+        `Delete rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_.
 
         Args:
             rows (typing.Sequence[int]): List of row numbers.
@@ -140,7 +140,9 @@ class SyncSequencesDataAPI(SyncAPIClient):
 
     def delete_range(self, start: int, end: int | None, id: int | None = None, external_id: str | None = None) -> None:
         """
-        `Delete a range of rows from a sequence. Note this operation is potentially slow, as retrieves each row before deleting. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_
+        `Delete a range of rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_.
+
+        Note this operation is potentially slow, as retrieves each row before deleting.
 
         Args:
             start (int): Row number to start from (inclusive).
@@ -237,7 +239,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
         limit: int | None = None,
     ) -> SequenceRows | SequenceRowsList:
         """
-        `Retrieve data from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_
+        `Retrieve data from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_.
 
         Args:
             external_id (str | SequenceNotStr[str] | None): The external id of the sequence to retrieve from.
@@ -279,7 +281,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
         before: int | None = None,
     ) -> SequenceRows:
         """
-        `Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getLatestSequenceRow>`_
+        `Retrieves the last row (i.e the row with the highest row number) in a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getLatestSequenceRow>`_.
 
         Args:
             id (int | None): Id or list of ids.
@@ -316,7 +318,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
         limit: int | None = None,
     ) -> pd.DataFrame:
         """
-        `Retrieve data from a sequence as a pandas dataframe <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_
+        `Retrieve data from a sequence as a pandas dataframe <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_.
 
         Args:
             start (int): (inclusive) row number to start from.
