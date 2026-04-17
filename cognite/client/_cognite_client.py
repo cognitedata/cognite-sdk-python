@@ -1,5 +1,3 @@
-# mypy: disable-error-code="attr-defined"
-
 from __future__ import annotations
 
 import os
@@ -43,9 +41,8 @@ if TYPE_CHECKING:
     from cognite.client._sync_cognite_client import CogniteClient
     from cognite.client.response import CogniteHTTPResponse
 
-_build_docs = os.getenv("BUILD_COGNITE_SDK_DOCS")
 
-if _build_docs:
+if _should_build_docs := os.getenv("BUILD_COGNITE_SDK_DOCS") == "true":
     from cognite.client._api.ai.tools import AIToolsAPI
     from cognite.client._api.ai.tools.documents import AIDocumentsAPI
     from cognite.client._api.data_modeling.containers import ContainersAPI
@@ -58,43 +55,54 @@ if _build_docs:
     from cognite.client._api.data_modeling.views import ViewsAPI
     from cognite.client._api.datapoints import DatapointsAPI
     from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
-    from cognite.client._api.documents import DocumentPreviewAPI
-    from cognite.client._api.extractionpipelines import (
+    from cognite.client._api.documents import DocumentPreviewAPI  # type: ignore[attr-defined]
+    from cognite.client._api.extractionpipelines import (  # type: ignore[attr-defined]
         ExtractionPipelineConfigsAPI,
         ExtractionPipelineRunsAPI,
     )
-    from cognite.client._api.functions import FunctionCallsAPI, FunctionSchedulesAPI
-    from cognite.client._api.hosted_extractors import DestinationsAPI, JobsAPI, MappingsAPI, SourcesAPI
-    from cognite.client._api.iam import GroupsAPI, PrincipalsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
+    from cognite.client._api.functions import FunctionCallsAPI, FunctionSchedulesAPI  # type: ignore[attr-defined]
+    from cognite.client._api.hosted_extractors import (  # type: ignore[attr-defined]
+        DestinationsAPI,
+        JobsAPI,
+        MappingsAPI,
+        SourcesAPI,
+    )
+    from cognite.client._api.iam import (  # type: ignore[attr-defined]
+        GroupsAPI,
+        PrincipalsAPI,
+        SecurityCategoriesAPI,
+        SessionsAPI,
+        TokenAPI,
+    )
     from cognite.client._api.postgres_gateway.tables import TablesAPI
     from cognite.client._api.postgres_gateway.users import UsersAPI
-    from cognite.client._api.raw import RawDatabasesAPI, RawRowsAPI, RawTablesAPI
-    from cognite.client._api.sequences import SequencesDataAPI
-    from cognite.client._api.simulators import (
+    from cognite.client._api.raw import RawDatabasesAPI, RawRowsAPI, RawTablesAPI  # type: ignore[attr-defined]
+    from cognite.client._api.sequences import SequencesDataAPI  # type: ignore[attr-defined]
+    from cognite.client._api.simulators import (  # type: ignore[attr-defined]
         SimulatorIntegrationsAPI,
         SimulatorLogsAPI,
         SimulatorModelsAPI,
         SimulatorRoutinesAPI,
         SimulatorRunsAPI,
     )
-    from cognite.client._api.simulators.models import SimulatorModelRevisionsAPI
-    from cognite.client._api.simulators.routines import SimulatorRoutineRevisionsAPI
+    from cognite.client._api.simulators.models import SimulatorModelRevisionsAPI  # type: ignore[attr-defined]
+    from cognite.client._api.simulators.routines import SimulatorRoutineRevisionsAPI  # type: ignore[attr-defined]
     from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
-    from cognite.client._api.three_d import (
+    from cognite.client._api.three_d import (  # type: ignore[attr-defined]
         ThreeDAssetMappingAPI,
         ThreeDFilesAPI,
         ThreeDModelsAPI,
         ThreeDRevisionsAPI,
     )
-    from cognite.client._api.transformations import (
+    from cognite.client._api.transformations import (  # type: ignore[attr-defined]
         TransformationJobsAPI,
         TransformationNotificationsAPI,
         TransformationSchedulesAPI,
         TransformationSchemaAPI,
     )
-    from cognite.client._api.units import UnitSystemAPI
+    from cognite.client._api.units import UnitSystemAPI  # type: ignore[attr-defined]
     from cognite.client._api.user_profiles import UserProfilesAPI
-    from cognite.client._api.workflows import (
+    from cognite.client._api.workflows import (  # type: ignore[attr-defined]
         WorkflowExecutionAPI,
         WorkflowTaskAPI,
         WorkflowTriggerAPI,
@@ -436,5 +444,5 @@ def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.simulators.logs = SimulatorLogsAPI  # type: ignore
 
 
-if _build_docs:
+if _should_build_docs:
     _make_accessors_for_building_docs()
