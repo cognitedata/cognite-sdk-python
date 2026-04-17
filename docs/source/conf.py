@@ -23,6 +23,7 @@ import re
 import sys
 
 from cognite.client._cognite_client import _make_accessors_for_building_docs
+from docs.source.headings import headings
 
 # -- General configuration ------------------------------------------------
 
@@ -94,6 +95,9 @@ lines = inspect.getsource(_make_accessors_for_building_docs)
 for line in lines.split():
     if line.startswith("AsyncCogniteClient."):
         exclude_patterns.append(f"generated/cognite.client.{line}.rst")
+
+# Apply custom page titles for API methods documentation
+autosummary_context = {"headings": headings}
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"

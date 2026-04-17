@@ -1,4 +1,8 @@
-{{ objname.split('.')[1:] | join('.') | escape | underline }}
+{% if objname in headings %}
+{{headings[objname] | escape | underline }}
+{% else %}
+{{ objname.split('.')[-1].replace('_', ' ').title() | escape | underline }}
+{% endif %}
 
 .. currentmodule:: {{ module }}
 
