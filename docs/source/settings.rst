@@ -168,6 +168,23 @@ Alternatively, you can toggle debug logging on or off dynamically by setting the
 
 Note: Large outgoing or incoming payloads will be truncated to 1000 characters in the logs to avoid overwhelming the log output.
 
+Custom event loop (e.g. uvloop)
+-------------------------------
+The SDK automatically creates and manages a background ``asyncio`` event loop for the synchronous ``CogniteClient``.
+By default this uses Python's built-in ``asyncio`` event loop, but you can substitute any compatible implementation
+(such as `uvloop <https://github.com/MagicStack/uvloop>`_) by installing a custom loop *policy* before the first API
+call is made. The background loop is created via ``asyncio.new_event_loop()``, which respects the active policy.
+
+.. code:: python
+
+    import uvloop
+
+    uvloop.install()  # equivalent to asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
+    from cognite.client import CogniteClient
+
+    client = CogniteClient(...)  # background loop will now be a uvloop
+
 HTTP Request logging
 --------------------
 Internally this library uses the ``httpx`` library to perform network calls to the Cognite API service endpoints. For authentication and

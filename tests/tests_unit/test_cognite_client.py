@@ -112,7 +112,7 @@ class TestCogniteClient:
         await async_client.iam.token.inspect()
         assert httpx_mock.get_requests()[0].headers["cdf-version"] == async_client.config.api_subversion
 
-    def test_verify_ssl_enabled_by_default(self, async_client: AsyncCogniteClient) -> None:
+    async def test_verify_ssl_enabled_by_default(self, async_client: AsyncCogniteClient) -> None:
         httpx_client = get_global_async_httpx_client()
         assert ssl.CERT_REQUIRED is httpx_client._transport._pool._ssl_context.verify_mode  # type: ignore[attr-defined]
 

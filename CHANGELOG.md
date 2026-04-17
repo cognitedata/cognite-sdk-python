@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.0.7](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.0.6...cognite-sdk-python-v8.0.7) (2026-04-10)
+
+
+### Bug Fixes
+
+* runtime issue in notebooks when using python 3.14 (DM-3678) ([#2560](https://github.com/cognitedata/cognite-sdk-python/issues/2560)) ([5573478](https://github.com/cognitedata/cognite-sdk-python/commit/55734782f18348a2e8e1fcd9a16366d105ac7fba))
+
 ## [8.0.6] - 2026-04-08
 ### Fixed
 - Filters are hashable again (regression introduced in 8.0.0). Be aware that they compare and hash based on identity (as before).
@@ -99,7 +106,6 @@ As of 2025-08-29, changes are grouped as follows
 - **global_config**: New setting `follow_redirects` that controls whether or not to follow redirects. Defaults to `False`.
 - **global_config**: New setting `file_download_chunk_size` that allows you to override the chunk size for streaming file downloads. Defaults to `None` (auto).
 - **global_config**: New setting `file_upload_chunk_size` that allows you to override the chunk size for streaming file uploads.
-- **global_config**: New setting `event_loop`, allowing you to override the default event loop used by the SDK.
 - **global_config**: `proxies` have been replaced by `proxy` and follow httpx directly. See: [Proxies - HTTPX](https://www.python-httpx.org/advanced/proxies/)
 - **global_config**: `max_retry_backoff` default has been increased from 30 sec to 60 sec.
 - **global_config**: `max_connection_pool_size` default has been reduced from 50 to 20.
