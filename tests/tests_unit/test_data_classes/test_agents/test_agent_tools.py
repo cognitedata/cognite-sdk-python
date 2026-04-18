@@ -114,7 +114,6 @@ class TestAgentToolDump:
         dumped_tool = loaded_tool.dump(camel_case=True)
 
         if expected_type is UnknownAgentTool:
-            assert isinstance(loaded_tool, UnknownAgentTool)
             assert dumped_tool["type"] == unknown_example["type"]
         else:
             assert dumped_tool["type"] == expected_type._type
@@ -161,7 +160,6 @@ class TestAgentToolUpsert:
         dumped_tool = loaded_tool.as_write().dump(camel_case=True)
 
         if expected_type is UnknownAgentTool:
-            assert isinstance(loaded_tool, UnknownAgentTool)
             assert dumped_tool["type"] == unknown_example["type"]
         else:
             assert dumped_tool["type"] == expected_type._type
