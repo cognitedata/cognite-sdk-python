@@ -11,6 +11,8 @@ from cognite.client.data_classes.agents import (
     AskDocumentAgentToolUpsert,
     DataModelInfo,
     Message,
+    QueryAgentToolConfiguration,
+    QueryAgentToolUpsert,
     QueryKnowledgeGraphAgentToolConfiguration,
     QueryKnowledgeGraphAgentToolUpsert,
     QueryTimeSeriesDatapointsAgentToolUpsert,
@@ -59,7 +61,21 @@ def permanent_agent(cognite_client: CogniteClient) -> Agent:
                     instance_spaces=None,
                     version="v2",
                 ),
-            )
+            ),
+            QueryAgentToolUpsert(
+                name="query_data",
+                description="Use this tool to run flexible queries against the data model",
+                configuration=QueryAgentToolConfiguration(
+                    data_models=[
+                        DataModelInfo(
+                            space="cdf_cdm",
+                            external_id="CogniteCore",
+                            version="v1",
+                            view_external_ids=["CogniteAsset"],
+                        )
+                    ],
+                ),
+            ),
         ],
     )
     existing = cognite_client.agents.retrieve(external_ids=agent.external_id, ignore_unknown_ids=True)
