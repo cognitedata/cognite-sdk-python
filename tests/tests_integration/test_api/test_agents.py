@@ -45,6 +45,10 @@ def permanent_agent(cognite_client: CogniteClient) -> Agent:
         # Or pick one manually from:
         # https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_language_models
         model="gcp/claude-4.5-haiku",  # Note: Should be a fast and cheap like haiku or flash
+        # TODO: runtime 1.2.1 is not GA yet; expected to ship in 2-4 weeks. Until then this
+        # fixture will fail to upsert. Leave pinned so the test starts exercising the new
+        # runtime the moment it's available.
+        runtime_version="1.2.1",
         tools=[
             QueryKnowledgeGraphAgentToolUpsert(
                 name="find_assets",
@@ -78,9 +82,6 @@ def permanent_agent(cognite_client: CogniteClient) -> Agent:
             ),
         ],
     )
-    existing = cognite_client.agents.retrieve(external_ids=agent.external_id, ignore_unknown_ids=True)
-    if existing and existing.model == agent.model:
-        return existing
     return cognite_client.agents.upsert(agent)
 
 
