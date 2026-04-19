@@ -41,7 +41,7 @@ python = "^3.10"
 
 httpx = "^0"
 msal = "^1.31"
-authlib = "^1"
+authlib = ">=1,<1.7"  # 1.7 adds joserfc transitive dep requiring cryptography>=45, breaks pyodide 0.26 (stlite)
 protobuf = ">=4"
 packaging = ">=20"
 pip = ">=20.0.0"  # make optional once poetry doesn't auto-remove it on "simple install"
