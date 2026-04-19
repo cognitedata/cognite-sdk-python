@@ -51,5 +51,9 @@ server.listen(PORT, () => {
   test_cognite_sdk().then((result) => {
     console.log("Response from Python =", result);
     server.close();
+  }).catch((err) => {
+    console.error("Pyodide test failed:", err && err.stack ? err.stack : err);
+    server.close();
+    process.exit(1);
   });
 });
