@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
@@ -34,12 +35,17 @@ class TestSingleTSQueryValidator:
         ):
             _FullDatapointsQuery(id=ids, external_id=xids, instance_id=inst_id).parse_into_queries()
 
+    @dataclass
+    class Foo:
+        id: int | None = None
+        external_id: str | None = None
+
     @pytest.mark.parametrize(
         "ids, xids, exp_attr_to_fail",
         (
-            ({123}, None, "id"),
-            (None, {"foo"}, "external_id"),
-            ({123}, {"foo"}, "id"),
+            (Foo(id=123), None, "id"),
+            (None, Foo(external_id="foo"), "external_id"),
+            (Foo(id=123), Foo(external_id="foo"), "id"),
         ),
     )
     def test_wrong_identifier_type_raises(
@@ -49,25 +55,6 @@ class TestSingleTSQueryValidator:
 
         with pytest.raises(TypeError, match=re.escape(err_msg)):
             _FullDatapointsQuery(id=ids, external_id=xids).parse_into_queries()
-
-    @pytest.mark.parametrize(
-        "ids, xids, iids, exp_attr_to_fail, exp_wrong_type",
-        (
-            ({"id": 123}, None, None, "id", "int"),
-            (None, {"external_id": "foo"}, None, "external_id", "str"),
-            (None, None, {"instance_id": "bar"}, "instance_id", "NodeId"),
-        ),
-    )
-    def test_passing_dict_for_identifier_raises(
-        self, ids: dict | None, xids: dict | None, iids: dict | None, exp_attr_to_fail: str, exp_wrong_type: str
-    ) -> None:
-        err_msg = (
-            f"Got unsupported type <class 'dict'>, as, or part of argument `{exp_attr_to_fail}`. Expected one "
-            f"of {exp_wrong_type}, DatapointsQuery, or a (mixed) list of these"
-        )
-
-        with pytest.raises(TypeError, match=re.escape(err_msg)):
-            _FullDatapointsQuery(id=ids, external_id=xids, instance_id=iids).parse_into_queries()  # type: ignore[arg-type]
 
     @pytest.mark.parametrize("limit, exp_limit", [(0, 0), (1, 1), (-1, None), (math.inf, None), (None, None)])
     def test_valid_limits(self, limit: int | None, exp_limit: int | None, query_validator: _DpsQueryValidator) -> None:

@@ -4,7 +4,7 @@ import math
 import operator as op
 import warnings
 from collections import defaultdict
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
@@ -31,7 +31,6 @@ from cognite.client.data_classes.datapoints import (
     MinDatapoint,
     MinDatapointWithStatus,
 )
-from cognite.client.utils.useful_types import SequenceNotStr
 
 if NUMPY_IS_AVAILABLE:
     import numpy as np
@@ -50,9 +49,9 @@ DatapointRaw = NumericDatapoint | StringDatapoint
 DatapointsRaw = NumericDatapoints | StringDatapoints
 
 RawDatapointValue = float | str
-DatapointsId = int | DatapointsQuery | Sequence[int | DatapointsQuery]
-DatapointsExternalId = str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]
-DatapointsInstanceId = NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]
+DatapointsId = int | DatapointsQuery | Iterable[int | DatapointsQuery]
+DatapointsExternalId = str | DatapointsQuery | Iterable[str | DatapointsQuery]
+DatapointsInstanceId = NodeId | DatapointsQuery | Iterable[NodeId | DatapointsQuery]
 
 
 class DpsUnpackFns:
