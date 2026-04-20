@@ -25,6 +25,8 @@ class StreamsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self._CREATE_LIMIT = 1
+        self._DELETE_LIMIT = 1
 
     @overload
     async def create(self, items: StreamWrite) -> Stream: ...
