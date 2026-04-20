@@ -70,23 +70,22 @@ class TestAgentToolLoad:
         assert loaded_tool.name == tool_data["name"]
         assert loaded_tool.description == tool_data["description"]
 
-        if isinstance(loaded_tool, UnknownAgentTool):
+        if expected_type is UnknownAgentTool:
+            assert isinstance(loaded_tool, UnknownAgentTool)
             assert loaded_tool.type == tool_data["type"]
         else:
             assert loaded_tool._type == expected_type._type
 
-        # Handle configuration comparison based on tool type
         if "configuration" in tool_data:
-            if isinstance(loaded_tool, QueryKnowledgeGraphAgentTool):
-                # For QueryKnowledgeGraph, we expect a structured configuration object
+            if expected_type is QueryKnowledgeGraphAgentTool:
+                assert isinstance(loaded_tool, QueryKnowledgeGraphAgentTool)
                 assert isinstance(loaded_tool.configuration, QueryKnowledgeGraphAgentToolConfiguration)
-                # Compare by serializing the structured object back to dict
                 assert loaded_tool.configuration.dump(camel_case=True) == tool_data["configuration"]
-            elif isinstance(loaded_tool, UnknownAgentTool):
-                # For other tools (like UnknownAgentTool), configuration should be a dict
+            elif expected_type is UnknownAgentTool:
+                assert isinstance(loaded_tool, UnknownAgentTool)
                 assert loaded_tool.configuration == tool_data["configuration"]
             else:
-                raise TypeError(f"Unhandled tool type in test case: {type(loaded_tool)}")
+                raise TypeError(f"Unhandled tool type in test case: {expected_type}")
 
     def test_unknown_agent_tool_preserves_custom_type(self) -> None:
         """Test that UnknownAgentTool preserves the original type string."""
@@ -111,9 +110,10 @@ class TestAgentToolDump:
     def test_agent_tool_dump_returns_correct_type(self, tool_data: dict, expected_type: type[AgentTool]) -> None:
         """Test that AgentTool.dump() returns the correct type."""
         loaded_tool = AgentTool._load(tool_data)
+        assert isinstance(loaded_tool, expected_type)
         dumped_tool = loaded_tool.dump(camel_case=True)
 
-        if isinstance(loaded_tool, UnknownAgentTool):
+        if expected_type is UnknownAgentTool:
             assert dumped_tool["type"] == unknown_example["type"]
         else:
             assert dumped_tool["type"] == expected_type._type
@@ -156,9 +156,10 @@ class TestAgentToolUpsert:
     def test_agent_tool_upsert_returns_correct_type(self, tool_data: dict, expected_type: type[AgentTool]) -> None:
         """Test that AgentToolUpsert.dump() returns the correct type."""
         loaded_tool = AgentTool._load(tool_data)
+        assert isinstance(loaded_tool, expected_type)
         dumped_tool = loaded_tool.as_write().dump(camel_case=True)
 
-        if isinstance(loaded_tool, UnknownAgentTool):
+        if expected_type is UnknownAgentTool:
             assert dumped_tool["type"] == unknown_example["type"]
         else:
             assert dumped_tool["type"] == expected_type._type

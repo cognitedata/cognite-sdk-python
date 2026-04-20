@@ -26,7 +26,7 @@ class WorkflowExecutionAPI(APIClient):
     _RESOURCE_PATH = "/workflows/executions"
 
     async def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:
-        """`Retrieve a workflow execution with detailed information. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ExecutionOfSpecificRunOfWorkflow>`_
+        """`Retrieve a workflow execution with detailed information <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ExecutionOfSpecificRunOfWorkflow>`_.
 
         Args:
             id (str): The server-generated id of the workflow execution.
@@ -68,7 +68,7 @@ class WorkflowExecutionAPI(APIClient):
         client_credentials: ClientCredentials | None = None,
         nonce: str | None = None,
     ) -> WorkflowExecution:
-        """`Run a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
+        """`Run a workflow execution <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_.
 
         Args:
             workflow_external_id (str): External id of the workflow.
@@ -141,7 +141,7 @@ class WorkflowExecutionAPI(APIClient):
         statuses: WorkflowStatus | MutableSequence[WorkflowStatus] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> WorkflowExecutionList:
-        """`List workflow executions in the project. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ListWorkflowExecutions>`_
+        """`List workflow executions in the project <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ListWorkflowExecutions>`_.
 
         Args:
             workflow_version_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
@@ -198,7 +198,7 @@ class WorkflowExecutionAPI(APIClient):
         )
 
     async def cancel(self, id: str, reason: str | None) -> WorkflowExecution:
-        """`Cancel a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionCancellation>`_
+        """`Cancel a workflow execution <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionCancellation>`_.
 
         Note:
             Cancelling a workflow will immediately cancel the `in_progress` tasks, but not their spawned work in
@@ -230,7 +230,7 @@ class WorkflowExecutionAPI(APIClient):
         return WorkflowExecution._load(response.json())
 
     async def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
-        """`Retry a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionRetry>`_
+        """`Retry a workflow execution <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionRetry>`_.
 
         Args:
             id (str): The server-generated id of the workflow execution.

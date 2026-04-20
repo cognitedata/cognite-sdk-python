@@ -1,120 +1,79 @@
 Simulators
 ==========
 
+.. currentmodule:: cognite.client
+
 SimulatorsAPI
 -------------
-List simulators
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.SimulatorsAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   AsyncCogniteClient.simulators
 
 Simulator Integrations
 -----------------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List simulator integrations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.integrations.SimulatorIntegrationsAPI.list
-
-Delete simulator integrations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.integrations.SimulatorIntegrationsAPI.delete
+   AsyncCogniteClient.simulators.integrations
 
 Simulator Models
 ----------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List simulator models
-^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.models.SimulatorModelsAPI.list
-
-Retrieve simulator models
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.models.SimulatorModelsAPI.retrieve
-
-Create simulator models
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.models.SimulatorModelsAPI.create
-
-Update simulator models
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.models.SimulatorModelsAPI.update
-
-Delete simulator models
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.models.SimulatorModelsAPI.delete
+   AsyncCogniteClient.simulators.models
 
 Simulator Model Revisions
 --------------------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List simulator model revisions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.models_revisions.SimulatorModelRevisionsAPI.list
-
-Retrieve simulator model revisions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.models_revisions.SimulatorModelRevisionsAPI.retrieve
-
-Create simulator model revisions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.models_revisions.SimulatorModelRevisionsAPI.create
+   AsyncCogniteClient.simulators.models.revisions
 
 Simulator Routines
 ------------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List simulator routines
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.routines.SimulatorRoutinesAPI.list
-
-Create simulator routines
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.routines.SimulatorRoutinesAPI.create
-
-Delete simulator routines
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.routines.SimulatorRoutinesAPI.delete
-
-Run simulator routines
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.routines.SimulatorRoutinesAPI.run
+   AsyncCogniteClient.simulators.routines
 
 Simulator Routine Revisions
 ----------------------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List simulator routine revisions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.routine_revisions.SimulatorRoutineRevisionsAPI.list
-
-Retrieve simulator routine revisions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.routine_revisions.SimulatorRoutineRevisionsAPI.retrieve
-
-Create simulator routine revisions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.routine_revisions.SimulatorRoutineRevisionsAPI.create
+   AsyncCogniteClient.simulators.routines.revisions
 
 Simulation Runs
 ---------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List simulation runs
-^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.runs.SimulatorRunsAPI.list
-
-Retrieve simulation runs
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.runs.SimulatorRunsAPI.retrieve
-
-Create simulation runs
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.runs.SimulatorRunsAPI.create
-
-List simulation run data
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.runs.SimulatorRunsAPI.list_run_data
+   AsyncCogniteClient.simulators.runs
 
 Simulator Logs
 --------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Retrieve simulator logs
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.simulators.logs.SimulatorLogsAPI.retrieve
+   AsyncCogniteClient.simulators.logs
 
 Data classes
 ------------

@@ -983,7 +983,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
     ) -> Datapoints | DatapointsList | None:
-        """`Retrieve datapoints for one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+        """`Retrieve datapoints for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_.
 
         **Performance guide**:
             In order to retrieve millions of datapoints as efficiently as possible, here are a few guidelines:
@@ -1358,7 +1358,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
     ) -> DatapointsArray | DatapointsArrayList | None:
-        """`Retrieve datapoints for one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+        """`Retrieve datapoints for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_.
 
         Note:
             This method requires ``numpy`` to be installed.
@@ -1825,7 +1825,7 @@ class DatapointsAPI(APIClient):
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
     ) -> LatestDatapoint | LatestDatapointList | None:
-        """`Get the latest datapoint for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getLatest>`_
+        """`Get the latest datapoint for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getLatest>`_.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
         `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes/>`_
@@ -1950,7 +1950,7 @@ class DatapointsAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> None:
-        """Insert datapoints into a time series
+        """Insert datapoints into a time series.
 
         Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
         are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
@@ -2043,7 +2043,7 @@ class DatapointsAPI(APIClient):
     async def insert_multiple(
         self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray | NodeId]]
     ) -> None:
-        """`Insert datapoints into multiple time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
+        """`Insert datapoints into multiple time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_.
 
         Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
         are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
@@ -2180,7 +2180,7 @@ class DatapointsAPI(APIClient):
         await self._delete_datapoints_ranges([delete_dps_object])
 
     async def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
-        """`Delete a range of datapoints from multiple time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/deleteDatapoints>`_
+        """`Delete a range of datapoints from multiple time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/deleteDatapoints>`_.
 
         Args:
             ranges (list[dict[str, Any]]): The list of datapoint ids along with time range to delete. See examples below.

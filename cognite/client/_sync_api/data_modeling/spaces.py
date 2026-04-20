@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e7bcba053c734addd5c227721c494fbb
+999009f73cff69a3b217af0109ee31e6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -58,7 +58,7 @@ class SyncSpacesAPI(SyncAPIClient):
 
     def retrieve(self, spaces: str | SequenceNotStr[str]) -> Space | SpaceList | None:
         """
-        `Retrieve one or more spaces. <https://api-docs.cognite.com/20230101/tag/Spaces/operation/bySpaceIdsSpaces>`_
+        `Retrieve one or more spaces <https://api-docs.cognite.com/20230101/tag/Spaces/operation/bySpaceIdsSpaces>`_.
 
         Args:
             spaces (str | SequenceNotStr[str]): Space ID
@@ -83,7 +83,7 @@ class SyncSpacesAPI(SyncAPIClient):
 
     def delete(self, spaces: str | SequenceNotStr[str]) -> list[str]:
         """
-        `Delete one or more spaces <https://api-docs.cognite.com/20230101/tag/Spaces/operation/deleteSpacesV3>`_
+        `Delete one or more spaces <https://api-docs.cognite.com/20230101/tag/Spaces/operation/deleteSpacesV3>`_.
 
         Args:
             spaces (str | SequenceNotStr[str]): ID or ID list ids of spaces.
@@ -102,7 +102,7 @@ class SyncSpacesAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ, include_global: bool = False) -> SpaceList:
         """
-        `List spaces <https://api-docs.cognite.com/20230101/tag/Spaces/operation/listSpacesV3>`_
+        `List spaces <https://api-docs.cognite.com/20230101/tag/Spaces/operation/listSpacesV3>`_.
 
         Args:
             limit (int | None): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
@@ -140,7 +140,7 @@ class SyncSpacesAPI(SyncAPIClient):
 
     def apply(self, spaces: SpaceApply | Sequence[SpaceApply]) -> Space | SpaceList:
         """
-        `Create or patch one or more spaces. <https://api-docs.cognite.com/20230101/tag/Spaces/operation/ApplySpaces>`_
+        `Create or patch one or more spaces <https://api-docs.cognite.com/20230101/tag/Spaces/operation/ApplySpaces>`_.
 
         Args:
             spaces (SpaceApply | Sequence[SpaceApply]): Space | Sequence[Space]): Space or spaces of spacesda to create or update.

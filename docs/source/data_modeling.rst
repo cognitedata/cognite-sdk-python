@@ -1,23 +1,16 @@
 Data Modeling
 =============
 
+.. currentmodule:: cognite.client
+
 Data Models
 ------------
-Retrieve data models by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List data models
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.list
-
-Apply data models
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.apply
-
-Delete data models
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.delete
+   AsyncCogniteClient.data_modeling.data_models
 
 Data model data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -25,23 +18,16 @@ Data model data classes
     :members:
     :show-inheritance:
 
+.. currentmodule:: cognite.client
+
 Spaces
 ------
-Retrieve a space by id
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List spaces
-^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.list
-
-Apply spaces
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.apply
-
-Delete spaces
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.delete
+   AsyncCogniteClient.data_modeling.spaces
 
 Data classes
 ^^^^^^^^^^^^
@@ -49,23 +35,16 @@ Data classes
     :members:
     :show-inheritance:
 
+.. currentmodule:: cognite.client
+
 Views
 ------------
-Retrieve views by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List views
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.list
-
-Apply view
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.apply
-
-Delete views
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.delete
+   AsyncCogniteClient.data_modeling.views
 
 View data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -73,31 +52,16 @@ View data classes
     :members:
     :show-inheritance:
 
+.. currentmodule:: cognite.client
+
 Containers
 ------------
-Retrieve containers by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List containers
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.list
-
-Apply containers
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.apply
-
-Delete containers
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.delete
-
-Delete constraints
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.delete_constraints
-
-Delete indexes
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.delete_indexes
+   AsyncCogniteClient.data_modeling.containers
 
 Containers data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -105,53 +69,21 @@ Containers data classes
     :members:
     :show-inheritance:
 
+.. currentmodule:: cognite.client
+
 Instances
 ------------
-Retrieve instances by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Retrieve Nodes by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.retrieve_nodes
-
-Retrieve Edges by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.retrieve_edges
-
-List instances
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.list
-
-Apply instances
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.apply
-
-Search instances
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.search
-
-Aggregate instances
-^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.aggregate
-
-Query instances
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.query
-
-Inspect instances
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.inspect
-
-Sync instances
-^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.sync
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.subscribe
+   AsyncCogniteClient.data_modeling.instances
 
 .. _dm_instances_subscribe_example:
 
 Example: Syncing instances to a local SQLite database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following example demonstrates how to use the `subscribe` method to create a live, local replica
 of instances from a specific space in a SQLite database.
@@ -316,10 +248,6 @@ of instances from a specific space in a SQLite database.
             pass
 
 
-Delete instances
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.delete
-
 Instances core data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.data_modeling.instances
@@ -338,20 +266,17 @@ Data Modeling ID data classes
     :members:
     :show-inheritance:
 
+.. currentmodule:: cognite.client
+
 Statistics
 ------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Project
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.statistics.StatisticsAPI.project
-
-Retrieve space statistics
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.statistics.SpaceStatisticsAPI.retrieve
-
-List space statistics
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.statistics.SpaceStatisticsAPI.list
+   AsyncCogniteClient.data_modeling.statistics
+   AsyncCogniteClient.data_modeling.statistics.spaces
 
 Data modeling statistics data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -359,15 +284,16 @@ Data modeling statistics data classes
     :members:
     :show-inheritance:
 
+.. currentmodule:: cognite.client
+
 GraphQL
 -------
-Apply DML
-^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.graphql.DataModelingGraphQLAPI.apply_dml
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Execute GraphQl query
-^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.graphql.DataModelingGraphQLAPI.query
+   AsyncCogniteClient.data_modeling.graphql
 
 Core Data Model
 ---------------

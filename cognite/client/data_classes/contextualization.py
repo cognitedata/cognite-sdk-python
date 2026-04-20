@@ -367,8 +367,8 @@ class EntityMatchingModelUpdate(CogniteUpdate):
     """Changes applied to entity matching model
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        id: A server-generated ID for the object.
+        external_id: The external ID provided by the client. Must be unique for the resource type.
     """
 
     class _PrimitiveUpdate(CognitePrimitiveUpdate):
@@ -1234,7 +1234,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
         See https://docs.cognite.com/api/v1/#operation/annotationsSuggest
 
         Args:
-            creating_user (str): (str, optional): A username, or email, or name.
+            creating_user (str): A username, or email, or name.
             creating_app (str | None): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-python'.
             creating_app_version (str | None): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string. Defaults to client version.
         Returns:

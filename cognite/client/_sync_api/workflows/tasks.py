@@ -1,6 +1,6 @@
 """
 ===============================================================================
-2fcd5b66981917f57fcec085afc04f32
+052b6426a0253c32ea6c5a820e0e2d0c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -28,7 +28,7 @@ class SyncWorkflowTaskAPI(SyncAPIClient):
         output: dict | None = None,
     ) -> WorkflowTaskExecution:
         """
-        `Update status of async task. <https://api-docs.cognite.com/20230101/tag/Tasks/operation/UpdateTaskStatus>`_
+        `Update status of async task <https://api-docs.cognite.com/20230101/tag/Tasks/operation/UpdateTaskStatus>`_.
 
         For tasks that has been marked with 'is_async = True', the status must be updated by calling this endpoint with either 'completed', 'failed' or 'failed_with_terminal_error'.
 
