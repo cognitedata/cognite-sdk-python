@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.streams.stream_record import (
+from cognite.client.data_classes.data_modeling.streams import (
     RecordsAggregateResponse,
     RecordsDeleteResponse,
     RecordsFilterResponse,

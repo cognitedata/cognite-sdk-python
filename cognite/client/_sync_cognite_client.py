@@ -33,7 +33,6 @@ from cognite.client._sync_api.raw import SyncRawAPI
 from cognite.client._sync_api.relationships import SyncRelationshipsAPI
 from cognite.client._sync_api.sequences import SyncSequencesAPI
 from cognite.client._sync_api.simulators import SyncSimulatorsAPI
-from cognite.client._sync_api.streams import SyncStreamsAPI
 from cognite.client._sync_api.three_d import Sync3DAPI
 from cognite.client._sync_api.time_series import SyncTimeSeriesAPI
 from cognite.client._sync_api.transformations import SyncTransformationsAPI
@@ -86,7 +85,6 @@ class CogniteClient:
         self.relationships = SyncRelationshipsAPI(async_client)
         self.sequences = SyncSequencesAPI(async_client)
         self.simulators = SyncSimulatorsAPI(async_client)
-        self.streams = SyncStreamsAPI(async_client)
         self.three_d = Sync3DAPI(async_client)
         self.time_series = SyncTimeSeriesAPI(async_client)
         self.transformations = SyncTransformationsAPI(async_client)
