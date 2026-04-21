@@ -1,6 +1,6 @@
 """
 ===============================================================================
-2c1f6e3e450525f8ad90976d6b56fdc8
+776e29ac071cd1fd4a9af3a984a5e4c0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -429,9 +429,9 @@ class SyncDatapointsAPI(SyncAPIClient):
         `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes/>`_
 
         Args:
-            id (None | int | DatapointsQuery | Iterable[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | DatapointsQuery | Iterable[str | DatapointsQuery]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | NodeId | DatapointsQuery | Iterable[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
+            id (None | int | DatapointsQuery | Iterable[int | DatapointsQuery]): Id, DatapointsQuery or (mixed) iterable of these. If a dict is passed, its keys will be used as ids. See examples below.
+            external_id (None | str | DatapointsQuery | Iterable[str | DatapointsQuery]): External id, DatapointsQuery or (mixed) iterable of these. If a dict is passed, its keys will be used as external_ids. See examples below.
+            instance_id (None | NodeId | DatapointsQuery | Iterable[NodeId | DatapointsQuery]): Instance id, DatapointsQuery or (mixed) iterable of these. If a dict is passed, its keys will be used as instance_ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
@@ -784,9 +784,9 @@ class SyncDatapointsAPI(SyncAPIClient):
         `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes/>`_
 
         Args:
-            id (None | int | DatapointsQuery | Iterable[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | DatapointsQuery | Iterable[str | DatapointsQuery]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | NodeId | DatapointsQuery | Iterable[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
+            id (None | int | DatapointsQuery | Iterable[int | DatapointsQuery]): Id, DatapointsQuery or (mixed) iterable of these. If a dict is passed, its keys will be used as ids. See examples below.
+            external_id (None | str | DatapointsQuery | Iterable[str | DatapointsQuery]): External id, DatapointsQuery or (mixed) iterable of these. If a dict is passed, its keys will be used as external_ids. See examples below.
+            instance_id (None | NodeId | DatapointsQuery | Iterable[NodeId | DatapointsQuery]): Instance id, DatapointsQuery or (mixed) iterable of these. If a dict is passed, its keys will be used as instance_ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
@@ -909,9 +909,9 @@ class SyncDatapointsAPI(SyncAPIClient):
             For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
 
         Args:
-            id (None | int | DatapointsQuery | Iterable[int | DatapointsQuery]): Id, DatapointsQuery or (mixed) sequence of these. See examples.
-            external_id (None | str | DatapointsQuery | Iterable[str | DatapointsQuery]): External id, DatapointsQuery or (mixed) sequence of these. See examples.
-            instance_id (None | NodeId | DatapointsQuery | Iterable[NodeId | DatapointsQuery]): Instance id, DatapointsQuery or (mixed) sequence of these. See examples.
+            id (None | int | DatapointsQuery | Iterable[int | DatapointsQuery]): Id, DatapointsQuery or (mixed) iterable of these. If a dict is passed, its keys will be used as ids. See examples.
+            external_id (None | str | DatapointsQuery | Iterable[str | DatapointsQuery]): External id, DatapointsQuery or (mixed) iterable of these. If a dict is passed, its keys will be used as external_ids. See examples.
+            instance_id (None | NodeId | DatapointsQuery | Iterable[NodeId | DatapointsQuery]): Instance id, DatapointsQuery or (mixed) iterable of these. If a dict is passed, its keys will be used as instance_ids. See examples.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)

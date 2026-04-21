@@ -159,7 +159,7 @@ class _FullDatapointsQuery:
             user_queries = identifier
         elif isinstance(identifier, (DatapointsQuery, exp_type)):
             # Lazy - we postpone evaluation:
-            # mypy 1.19.1 thinks identifier can be an iterable that is not a string
+            # mypy 1.19.1 thinks identifier can be an iterable that is not a string here
             user_queries = [identifier]  # type: ignore[list-item]
         else:
             self._raise_on_wrong_ts_identifier_type(identifier, arg_name, exp_type)
