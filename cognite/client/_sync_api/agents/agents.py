@@ -1,6 +1,6 @@
 """
 ===============================================================================
-37b63c7d3241f9eda9fbe5a76220e6c9
+178ce7222985b04d03174af7b7e0f525
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -75,7 +75,7 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...     labels=["published"],
                 ...     tools=[find_assets_tool],
                 ... )
-                >>> client.agents.upsert(agents=[agent])
+                >>> client.agents.upsert(agent)
 
             Create an agent with the query tool:
 
@@ -107,7 +107,7 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...     runtime_version="1.1.2-preview",
                 ...     tools=[query_tool],
                 ... )
-                >>> client.agents.upsert(agents=[agent])
+                >>> client.agents.upsert(agent)
 
             Create an agent with multiple different tools:
 
@@ -189,7 +189,7 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...         ts_tool,
                 ...     ],
                 ... )
-                >>> client.agents.upsert(agents=[agent])
+                >>> client.agents.upsert(agent)
         """
         return run_sync(self.__async_client.agents.upsert(agents=agents))
 

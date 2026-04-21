@@ -77,7 +77,7 @@ class AgentsAPI(APIClient):
                 ...     labels=["published"],
                 ...     tools=[find_assets_tool],
                 ... )
-                >>> client.agents.upsert(agents=[agent])
+                >>> client.agents.upsert(agent)
 
             Create an agent with the query tool:
 
@@ -109,7 +109,7 @@ class AgentsAPI(APIClient):
                 ...     runtime_version="1.1.2-preview",
                 ...     tools=[query_tool],
                 ... )
-                >>> client.agents.upsert(agents=[agent])
+                >>> client.agents.upsert(agent)
 
             Create an agent with multiple different tools:
 
@@ -191,7 +191,7 @@ class AgentsAPI(APIClient):
                 ...         ts_tool,
                 ...     ],
                 ... )
-                >>> client.agents.upsert(agents=[agent])
+                >>> client.agents.upsert(agent)
 
 
         """
