@@ -5,7 +5,7 @@ import math
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from functools import cached_property
 from itertools import pairwise
@@ -62,7 +62,7 @@ from cognite.client.utils._time import (
     time_shift_to_ms,
     timestamp_to_ms,
 )
-from cognite.client.utils.useful_types import is_sequence_not_str
+from cognite.client.utils.useful_types import is_iterable_not_str
 
 if NUMPY_IS_AVAILABLE:
     import numpy as np
@@ -110,11 +110,11 @@ class _FullDatapointsQuery:
     def is_single_identifier(self) -> bool:
         # Exactly one of the identifiers given...
         if exactly_one_is_not_none(self.external_id, self.id, self.instance_id):
-            # ...and that one is not a sequence:
+            # ...and that one is not a iterable:
             return not (
-                isinstance(self.id, Sequence)
-                or is_sequence_not_str(self.external_id)
-                or isinstance(self.instance_id, Sequence)
+                isinstance(self.id, Iterable)
+                or is_iterable_not_str(self.external_id)
+                or isinstance(self.instance_id, Iterable)
             )
         return False
 

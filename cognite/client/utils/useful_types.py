@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from typing import Any, Protocol, SupportsIndex, TypeGuard, TypeVar, overload, runtime_checkable
+
+from typing_extensions import TypeIs
 
 _T_co = TypeVar("_T_co", covariant=True)
 
@@ -31,6 +33,10 @@ class SequenceNotStr(Protocol[_T_co]):
 
 def is_sequence_not_str(obj: Any) -> TypeGuard[SequenceNotStr]:
     return isinstance(obj, Sequence) and not isinstance(obj, str)
+
+
+def is_iterable_not_str(obj: Any) -> TypeIs[SequenceNotStr]:
+    return isinstance(obj, Iterable) and not isinstance(obj, str)
 
 
 class SupportsRead(Protocol[_T_co]):
