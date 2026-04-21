@@ -338,8 +338,6 @@ class TestOAuthDeviceCode:
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_refresh_token_from_cache(self, mock_public_client: MagicMock) -> None:
-        # MSAL's SerializableTokenCache does not persist `expires_on` for refresh tokens, so the
-        # mock intentionally omits it to match the real on-disk shape.
         mock_refresh_token = {"secret": "refresh_token_secret"}
 
         mock_public_client().token_cache.search.return_value = [mock_refresh_token]
@@ -351,15 +349,12 @@ class TestOAuthDeviceCode:
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
 
-        # Verify refresh token was used and the device code flow was NOT triggered.
         mock_public_client().client.obtain_token_by_refresh_token.assert_called_once_with("refresh_token_secret")
         mock_public_client().http_client.post.assert_not_called()
         assert "Authorization", "Bearer new_access_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_refresh_token_invalid_falls_back_to_device_flow(self, mock_public_client: MagicMock) -> None:
-        # A refresh token is present but no longer valid (e.g. revoked). The IdP responds without an
-        # access_token, and we should fall through to the device code flow instead of raising.
         mock_public_client().token_cache.search.side_effect = [
             [{"secret": "stale_refresh_token"}],  # Refresh tokens
             [],  # Access tokens
@@ -389,20 +384,16 @@ class TestOAuthDeviceCode:
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_cached_access_token_expiry_is_seconds_not_bool(self, mock_public_client: MagicMock) -> None:
-        # Regression test for a walrus-operator precedence bug: `x := a - b > 0` made `expires_in`
-        # a bool (True/False) rather than the remaining seconds, which caused the access token to be
-        # treated as expiring in ~1 second.
         expires_on = int(time.time() + 3600)
         mock_public_client().token_cache.search.side_effect = [
-            [],  # No refresh tokens
+            [],
             [{"secret": "cached_access_token", "expires_on": str(expires_on)}],
         ]
 
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
         _, expires_at = creds._refresh_access_token()
 
-        # The returned expires_at must be close to the original expires_on timestamp, not ~now+1s.
-        assert expires_at > time.time() + 60, "Cached access token expiry should reflect the actual remaining seconds"
+        assert expires_at > time.time() + 60
         assert abs(expires_at - expires_on) < 5
 
     @patch("cognite.client.credentials.PublicClientApplication")
