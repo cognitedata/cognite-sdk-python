@@ -24,15 +24,10 @@ TEST_SOURCE_PREFIXES = (HUB_SOURCE_PREFIX, MQTT_SOURCE_PREFIX, UPDATE_SOURCE_PRE
 
 _SKIP_UNTIL = date(2026, 5, 4)
 
-
-def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
-    if date.today() >= _SKIP_UNTIL:
-        return
-    skip_marker = pytest.mark.skip(
-        reason=f"Hosted extractor integration tests are flaky; skip until {_SKIP_UNTIL.isoformat()}"
-    )
-    for item in items:
-        item.add_marker(skip_marker)
+pytestmark = pytest.mark.skipif(
+    date.today() < SKIP_UNTIL,
+    reason=f"Hosted extractor integration tests are flaky; skip until {SKIP_UNTIL.isoformat()}"
+)
 
 
 @pytest.fixture(scope="session", autouse=True)
