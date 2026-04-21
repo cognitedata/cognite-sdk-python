@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 from collections.abc import Iterator
-from datetime import date
 
 import pytest
 
@@ -21,13 +20,6 @@ HUB_SOURCE_PREFIX = "myNewHub-"
 MQTT_SOURCE_PREFIX = "myMqttSource-"
 UPDATE_SOURCE_PREFIX = "to-update-"
 TEST_SOURCE_PREFIXES = (HUB_SOURCE_PREFIX, MQTT_SOURCE_PREFIX, UPDATE_SOURCE_PREFIX)
-
-_SKIP_UNTIL = date(2026, 5, 4)
-
-pytestmark = pytest.mark.skipif(
-    date.today() < SKIP_UNTIL,
-    reason=f"Hosted extractor integration tests are flaky; skip until {SKIP_UNTIL.isoformat()}"
-)
 
 
 @pytest.fixture(scope="session", autouse=True)
