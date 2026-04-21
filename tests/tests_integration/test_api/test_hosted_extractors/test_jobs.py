@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from datetime import date
 
 import pytest
 
@@ -19,11 +18,6 @@ from cognite.client.data_classes.hosted_extractors import (
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
-
-pytestmark = pytest.mark.skipif(
-    date.today() < date(2026, 5, 4),
-    reason="Hosted extractor jobs tests are flaky; skip until tests are fixed",
-)
 
 
 @pytest.fixture
