@@ -467,11 +467,6 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         # - A valid access token.
         # - A valid refresh token, and if so, use it automatically to redeem a new access token.
         credentials = None
-        # MSAL's SerializableTokenCache does NOT store `expires_on` on refresh token entries, so
-        # guarding the RT lookup with `expires_on > now` makes the condition always False and the
-        # cached refresh token is silently skipped. Instead, try any RT we find; MSAL / the IdP will
-        # tell us via `invalid_grant` if it's no longer valid, at which point we fall through to the
-        # device code flow below.
         for token in self.__app.token_cache.search(self.__app.token_cache.CredentialType.REFRESH_TOKEN):
             result = self.__app.client.obtain_token_by_refresh_token(token.get("secret", ""))
             if "access_token" in result:
@@ -479,10 +474,6 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             break
         if credentials is None:
             for token in self.__app.token_cache.search(self.__app.token_cache.CredentialType.ACCESS_TOKEN):
-                # NB: split the walrus out of the comparison — `x := a - b > 0` binds `x` to the bool
-                # result of the comparison (operator precedence), not to the remaining seconds, which
-                # caused `expires_in` to be set to True/False and the token to be treated as expiring
-                # in ~1 second.
                 remaining = int(token.get("expires_on", 0)) - time.time()
                 if remaining > 0:
                     credentials = {
