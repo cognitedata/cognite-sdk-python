@@ -351,14 +351,16 @@ class TestOAuthDeviceCode:
 
         mock_public_client().client.obtain_token_by_refresh_token.assert_called_once_with("refresh_token_secret")
         mock_public_client().http_client.post.assert_not_called()
-        assert "Authorization", "Bearer new_access_token" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer new_access_token")
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_refresh_token_invalid_falls_back_to_device_flow(self, mock_public_client: MagicMock) -> None:
-        mock_public_client().token_cache.search.side_effect = [
-            [{"secret": "stale_refresh_token"}],  # Refresh tokens
-            [],  # Access tokens
-        ]
+        def search_side_effect(credential_type: Any, **kwargs: Any) -> list[dict[str, Any]]:
+            if credential_type == mock_public_client().token_cache.CredentialType.REFRESH_TOKEN:
+                return [{"secret": "stale_refresh_token"}]
+            return []
+
+        mock_public_client().token_cache.search.side_effect = search_side_effect
         mock_public_client().client.obtain_token_by_refresh_token.return_value = {
             "error": "invalid_grant",
             "error_description": "Refresh token revoked",
@@ -380,7 +382,7 @@ class TestOAuthDeviceCode:
 
         mock_public_client().client.obtain_token_by_refresh_token.assert_called_once_with("stale_refresh_token")
         mock_public_client().http_client.post.assert_called_once()
-        assert "Authorization", "Bearer fresh_access_token" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer fresh_access_token")
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_cached_access_token_expiry_is_seconds_not_bool(self, mock_public_client: MagicMock) -> None:
