@@ -106,6 +106,7 @@ class AgentsAPI(APIClient):
                 ...     external_id="my_agent",
                 ...     name="My Agent",
                 ...     labels=["published"],
+                ...     runtime_version="1.1.3-preview",
                 ...     tools=[query_tool],
                 ... )
                 >>> client.agents.upsert(agents=[agent])
