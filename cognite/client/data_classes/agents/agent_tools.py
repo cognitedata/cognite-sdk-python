@@ -219,6 +219,8 @@ class QueryAgentToolConfiguration(WriteableCogniteResource):
         result: dict[str, Any] = {}
         key = "dataModels" if camel_case else "data_models"
         result[key] = {
+            # TODO(ks93): Clarify whether "type" can take other values (cf. InstanceSpaces.type);
+            # if so, make it a real field
             "type": "manual",
             key: [dm.dump(camel_case=camel_case) for dm in self.data_models],
         }
