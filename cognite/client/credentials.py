@@ -467,13 +467,19 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         # - A valid access token.
         # - A valid refresh token, and if so, use it automatically to redeem a new access token.
         credentials = None
-        for token in self.__app.token_cache.search(self.__app.token_cache.CredentialType.REFRESH_TOKEN):
+        for token in self.__app.token_cache.search(
+            self.__app.token_cache.CredentialType.REFRESH_TOKEN,
+            query={"client_id": self.client_id},
+        ):
             result = self.__app.client.obtain_token_by_refresh_token(token.get("secret", ""))
             if "access_token" in result:
                 credentials = result
-            break
+                break
         if credentials is None:
-            for token in self.__app.token_cache.search(self.__app.token_cache.CredentialType.ACCESS_TOKEN):
+            for token in self.__app.token_cache.search(
+                self.__app.token_cache.CredentialType.ACCESS_TOKEN,
+                query={"client_id": self.client_id, "target": self.scope_string()},
+            ):
                 remaining = int(token.get("expires_on", 0)) - time.time()
                 if remaining > 0:
                     credentials = {
