@@ -1,6 +1,6 @@
 """
 ===============================================================================
-83ebe251b32d1a7ce1ba064499beebf5
+57cfb4e7d78e02413a52b09b2c269427
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -104,6 +104,7 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...     external_id="my_agent",
                 ...     name="My Agent",
                 ...     labels=["published"],
+                ...     runtime_version="1.1.3-preview",
                 ...     tools=[query_tool],
                 ... )
                 >>> client.agents.upsert(agents=[agent])
