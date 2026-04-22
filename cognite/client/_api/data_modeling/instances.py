@@ -1829,6 +1829,170 @@ class InstancesAPI(APIClient):
             debug=json_payload.get("debug"),
         )
 
+    async def _resolve_data_set_id(self, cache_config: FileCacheConfig) -> int | None:
+        """Resolve data_set_external_id to data_set_id if needed."""
+        if cache_config.data_set_id is not None:
+            return cache_config.data_set_id
+
+        if cache_config.data_set_external_id is None:
+            return None
+
+        data_set = await self._cognite_client.data_sets.retrieve(external_id=cache_config.data_set_external_id)
+        if data_set is None:
+            raise ValueError(f"Data set with external_id '{cache_config.data_set_external_id}' not found")
+        return data_set.id
+
+    async def _resolve_security_category_ids(self, cache_config: FileCacheConfig) -> list[int] | None:
+        """Resolve security_category_name to security_category ID if needed."""
+        if cache_config.security_category is not None:
+            return [cache_config.security_category]
+
+        if cache_config.security_category_name is None:
+            return None
+
+        security_categories = await self._cognite_client.iam.security_categories.list(limit=-1)
+        for sc in security_categories:
+            if sc.name == cache_config.security_category_name:
+                return [sc.id]
+
+        raise ValueError(f"Security category with name '{cache_config.security_category_name}' not found")
+
+    async def _load_cached_data(
+        self, cache_external_id: str, query_hash: str, query: QuerySync
+    ) -> dict[str, list[dict[str, Any]]]:
+        """Load cached cursors and instances from file.
+
+        Returns cached instances dict (may be empty if no cache or hash mismatch).
+        Also updates query.cursors if valid cached cursors are found.
+        """
+        try:
+            cached_bytes = await self._cognite_client.files.download_bytes(external_id=cache_external_id)
+            cached_data = json_loads(cached_bytes.decode("utf-8"))
+
+            if cached_data.get("hash") != query_hash:
+                logger.debug("Cache hash mismatch, ignoring cached data")
+                return {}
+
+            query.cursors = cached_data.get("cursors", {})
+            logger.debug(f"Loaded cached data from file {cache_external_id}")
+            return cached_data.get("instances", {})
+
+        except CogniteNotFoundError:
+            logger.debug(f"No cached data found at {cache_external_id}")
+            return {}
+        except Exception as e:
+            logger.warning(f"Failed to load cached data: {e}")
+            return {}
+
+    def _merge_sync_result_with_cache(
+        self,
+        sync_result: QueryResult,
+        cached_instances: dict[str, list[dict[str, Any]]],
+        default_by_reference: dict[str, type[NodeListWithCursor] | type[EdgeListWithCursor]],
+    ) -> QueryResult:
+        """Merge cached instances with sync result.
+
+        Adds/updates instances from sync result, removes deleted instances.
+        Returns a new QueryResult with merged data.
+        """
+        merged_result = QueryResult()
+        merged_result._debug = sync_result._debug
+
+        for key, sync_list in sync_result.items():
+            cached_by_id = self._build_cached_instance_dict(cached_instances.get(key, []))
+            self._apply_sync_changes(sync_list, cached_by_id)
+            merged_items = list(cached_by_id.values())
+
+            merged_result[key] = self._create_merged_list(key, merged_items, sync_list, default_by_reference)
+
+        return merged_result
+
+    @staticmethod
+    def _build_cached_instance_dict(
+        cached_items: list[dict[str, Any]],
+    ) -> dict[tuple[str, str], dict[str, Any]]:
+        """Build a dict of cached instances keyed by (space, external_id)."""
+        return {(item_dict["space"], item_dict["externalId"]): item_dict for item_dict in cached_items}
+
+    @staticmethod
+    def _apply_sync_changes(
+        sync_list: NodeListWithCursor | EdgeListWithCursor,
+        cached_by_id: dict[tuple[str, str], dict[str, Any]],
+    ) -> None:
+        """Apply sync changes to the cached instances dict in place.
+
+        Adds/updates instances from sync result and removes deleted instances.
+        """
+        for item in sync_list:
+            instance_id = (item.space, item.external_id)
+            if item.deleted_time is not None:
+                cached_by_id.pop(instance_id, None)
+            else:
+                cached_by_id[instance_id] = item.dump(camel_case=True)
+
+    @staticmethod
+    def _create_merged_list(
+        key: str,
+        merged_items: list[dict[str, Any]],
+        sync_list: NodeListWithCursor | EdgeListWithCursor,
+        default_by_reference: dict[str, type[NodeListWithCursor] | type[EdgeListWithCursor]],
+    ) -> NodeListWithCursor | EdgeListWithCursor:
+        """Create the appropriate list type (nodes or edges) for the merged result."""
+        instance_lst_cls = default_by_reference.get(key, NodeListWithCursor)
+        is_node_list = instance_lst_cls is NodeListWithCursor or (
+            not merged_items and isinstance(sync_list, NodeListWithCursor)
+        )
+
+        if is_node_list:
+            return NodeListWithCursor(
+                [Node._load(item) for item in merged_items],
+                cursor=sync_list.cursor,
+                typing=sync_list.typing,
+                debug=sync_list.debug,
+            )
+        return EdgeListWithCursor(
+            [Edge._load(item) for item in merged_items],
+            cursor=sync_list.cursor,
+            typing=sync_list.typing,
+            debug=sync_list.debug,
+        )
+
+    async def _save_cache_data(
+        self,
+        merged_result: QueryResult,
+        query_hash: str,
+        cache_external_id: str,
+        data_set_id: int | None,
+        security_category_ids: list[int] | None,
+        directory: str | None,
+    ) -> None:
+        """Save merged data (cursors and instances) to cache file."""
+        try:
+            instances_to_cache: dict[str, list[dict[str, Any]]] = {
+                key: [item.dump(camel_case=True) for item in item_list] for key, item_list in merged_result.items()
+            }
+
+            cache_data = {
+                "hash": query_hash,
+                "cursors": merged_result.cursors,
+                "instances": instances_to_cache,
+            }
+            cache_content = json_dumps(cache_data).encode("utf-8")
+
+            await self._cognite_client.files.upload_bytes(
+                content=cache_content,
+                name=f"{cache_external_id}.json",
+                external_id=cache_external_id,
+                data_set_id=data_set_id,
+                security_categories=security_category_ids,
+                directory=directory,
+                mime_type="application/json",
+                overwrite=True,
+            )
+            logger.debug(f"Saved data to cache file {cache_external_id}")
+        except Exception as e:
+            logger.warning(f"Failed to save data to cache file: {e}")
+
     async def sync_with_file_cache(
         self,
         query: QuerySync,
@@ -1917,125 +2081,33 @@ class InstancesAPI(APIClient):
         """
         # Compute query hash for cache key
         query_hash = _compute_query_hash(query)
-        if cache_config.external_id_prefix:
-            cache_external_id = f"{cache_config.external_id_prefix}_{query_hash}"
-        else:
-            cache_external_id = query_hash
+        cache_external_id = (
+            f"{cache_config.external_id_prefix}_{query_hash}" if cache_config.external_id_prefix else query_hash
+        )
 
-        # Resolve data_set_external_id to data_set_id if needed
-        data_set_id = cache_config.data_set_id
-        if data_set_id is None and cache_config.data_set_external_id is not None:
-            data_set = await self._cognite_client.data_sets.retrieve(external_id=cache_config.data_set_external_id)
-            if data_set is None:
-                raise ValueError(f"Data set with external_id '{cache_config.data_set_external_id}' not found")
-            data_set_id = data_set.id
+        # Resolve config values
+        data_set_id = await self._resolve_data_set_id(cache_config)
+        security_category_ids = await self._resolve_security_category_ids(cache_config)
 
-        # Resolve security_category_name to security_category ID if needed
-        security_category_ids: list[int] | None = None
-        if cache_config.security_category is not None:
-            security_category_ids = [cache_config.security_category]
-        elif cache_config.security_category_name is not None:
-            security_categories = await self._cognite_client.iam.security_categories.list(limit=-1)
-            for sc in security_categories:
-                if sc.name == cache_config.security_category_name:
-                    security_category_ids = [sc.id]
-                    break
-            if security_category_ids is None:
-                raise ValueError(f"Security category with name '{cache_config.security_category_name}' not found")
-
-        # Try to load cached data (cursors and instances)
-        cached_instances: dict[str, list[dict[str, Any]]] = {}
-        try:
-            cached_bytes = await self._cognite_client.files.download_bytes(external_id=cache_external_id)
-            cached_data = json_loads(cached_bytes.decode("utf-8"))
-            # Verify hash matches (cache busting)
-            if cached_data.get("hash") == query_hash:
-                query.cursors = cached_data.get("cursors", {})
-                cached_instances = cached_data.get("instances", {})
-                logger.debug(f"Loaded cached data from file {cache_external_id}")
-            else:
-                logger.debug("Cache hash mismatch, ignoring cached data")
-        except CogniteNotFoundError:
-            logger.debug(f"No cached data found at {cache_external_id}")
-        except Exception as e:
-            logger.warning(f"Failed to load cached data: {e}")
+        # Load cached data (updates query.cursors if valid cache exists)
+        cached_instances = await self._load_cached_data(cache_external_id, query_hash, query)
 
         # Perform the sync
         sync_result = await self.sync(query, include_typing=include_typing, debug=debug)
 
         # Merge cached instances with sync result
         default_by_reference = query.instance_type_by_result_expression()
-        merged_result = QueryResult()
-        merged_result._debug = sync_result._debug
+        merged_result = self._merge_sync_result_with_cache(sync_result, cached_instances, default_by_reference)
 
-        for key, sync_list in sync_result.items():
-            # Build a dict of cached instances by (space, external_id) for this key
-            cached_by_id: dict[tuple[str, str], dict[str, Any]] = {}
-            for item_dict in cached_instances.get(key, []):
-                instance_id = (item_dict["space"], item_dict["externalId"])
-                cached_by_id[instance_id] = item_dict
-
-            # Process sync results: add/update instances, track deletions
-            deleted_ids: set[tuple[str, str]] = set()
-            for item in sync_list:
-                instance_id = (item.space, item.external_id)
-                if item.deleted_time is not None:
-                    # Mark for deletion
-                    deleted_ids.add(instance_id)
-                    # Remove from cache if present
-                    cached_by_id.pop(instance_id, None)
-                else:
-                    # Add/update in cache
-                    cached_by_id[instance_id] = item.dump(camel_case=True)
-
-            # Build merged list from the updated cache
-            merged_items = list(cached_by_id.values())
-
-            # Determine the list type (nodes or edges)
-            instance_lst_cls = default_by_reference.get(key, NodeListWithCursor)
-            if instance_lst_cls is NodeListWithCursor or (
-                not merged_items and isinstance(sync_list, NodeListWithCursor)
-            ):
-                merged_result[key] = NodeListWithCursor(
-                    [Node._load(item) for item in merged_items],
-                    cursor=sync_list.cursor,
-                    typing=sync_list.typing,
-                    debug=sync_list.debug,
-                )
-            else:
-                merged_result[key] = EdgeListWithCursor(
-                    [Edge._load(item) for item in merged_items],
-                    cursor=sync_list.cursor,
-                    typing=sync_list.typing,
-                    debug=sync_list.debug,
-                )
-
-        # Save updated data (cursors and instances) to cache
-        try:
-            # Serialize instances for caching
-            instances_to_cache: dict[str, list[dict[str, Any]]] = {}
-            for key, item_list in merged_result.items():
-                instances_to_cache[key] = [item.dump(camel_case=True) for item in item_list]
-
-            cache_data = {
-                "hash": query_hash,
-                "cursors": merged_result.cursors,
-                "instances": instances_to_cache,
-            }
-            cache_content = json_dumps(cache_data).encode("utf-8")
-            await self._cognite_client.files.upload_bytes(
-                content=cache_content,
-                name=f"{cache_external_id}.json",
-                external_id=cache_external_id,
-                data_set_id=data_set_id,
-                security_categories=security_category_ids,
-                directory=cache_config.directory,
-                mime_type="application/json",
-                overwrite=True,
-            )
-            logger.debug(f"Saved data to cache file {cache_external_id}")
-        except Exception as e:
-            logger.warning(f"Failed to save data to cache file: {e}")
+        # Save updated data to cache
+        await self._save_cache_data(
+            merged_result,
+            query_hash,
+            cache_external_id,
+            data_set_id,
+            security_category_ids,
+            cache_config.directory,
+        )
 
         return merged_result
 
