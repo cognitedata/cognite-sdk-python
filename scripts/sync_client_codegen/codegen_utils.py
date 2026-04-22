@@ -64,7 +64,7 @@ def is_md5_hash(s: str) -> bool:
 
 
 def read_hash_from_file(path: Path) -> tuple[bool, str]:
-    with path.open("r") as f:
+    with path.open("r", encoding="utf-8") as f:
         f.readline()
         f.readline()
         maybe_hash = f.readline().strip()
@@ -260,7 +260,7 @@ def ensure_parent_dir(file: Path) -> None:
 
 @cache
 def get_source_code(file: Path) -> str:
-    return file.read_text()
+    return file.read_text(encoding="utf-8")
 
 
 def filter_base_apis_and_sort_alphabetically(dct: dict[str, str]) -> list[tuple[str, str]]:
