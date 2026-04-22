@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import inspect
 import logging
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Sequence
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
@@ -71,9 +73,12 @@ from cognite.client.data_classes.data_modeling.query import (
 from cognite.client.data_classes.data_modeling.sync import SubscriptionContext
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
+from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, load_yaml_or_json, unpack_items
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
+from cognite.client.utils._json_extended import dumps as json_dumps
+from cognite.client.utils._json_extended import loads as json_loads
 from cognite.client.utils._retry import Backoff
 from cognite.client.utils._text import random_string
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -87,6 +92,45 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class FileCacheConfig:
+    """Configuration for caching sync cursors in a CDF file.
+
+    The file external_id will be generated as: `{external_id_prefix}_{query_hash}` where
+    query_hash is a hash of the query structure (excluding cursors). This ensures cache
+    invalidation when the query changes.
+
+    Args:
+        external_id_prefix: Prefix for the cache file external_id. The final external_id
+            will be `{external_id_prefix}_{query_hash}`.
+        data_set_id: The data set ID for the cache file. Either this or data_set_external_id
+            should be provided for access control.
+        data_set_external_id: The data set external ID for the cache file. Will be resolved
+            to data_set_id. Either this or data_set_id should be provided for access control.
+        security_categories: Security categories to attach to the cache file.
+        directory: Directory associated with the cache file. Must be an absolute, unix-style path.
+    """
+
+    external_id_prefix: str
+    data_set_id: int | None = None
+    data_set_external_id: str | None = None
+    security_categories: Sequence[int] | None = None
+    directory: str | None = None
+
+
+def _compute_query_hash(query: QuerySync) -> str:
+    """Compute a hash of the query structure, excluding cursors.
+
+    This is used to generate a cache key that invalidates when the query changes.
+    """
+    query_dict = query.dump(camel_case=True)
+    # Remove cursors as they change between sync calls
+    query_dict.pop("cursors", None)
+    # Use sort_keys for deterministic hashing
+    serialized = json_dumps(query_dict, sort_keys=True)
+    return hashlib.sha256(serialized.encode()).hexdigest()[:16]
 
 
 Source: TypeAlias = SourceSelector | View | ViewId | tuple[str, str] | tuple[str, str, str]
@@ -1745,6 +1789,125 @@ class InstancesAPI(APIClient):
             typing=json_payload.get("typing"),
             debug=json_payload.get("debug"),
         )
+
+    async def sync_with_file_cache(
+        self,
+        query: QuerySync,
+        *,
+        cache_config: FileCacheConfig,
+        include_typing: bool = False,
+        debug: DebugParameters | None = None,
+    ) -> QueryResult:
+        """Sync instances with cursor state cached in a CDF file.
+
+        This is a utility method that combines the sync endpoint with persistent cursor
+        storage in CDF Files. The cursor state is automatically saved after each successful
+        sync and restored on subsequent calls, enabling incremental syncs across sessions.
+
+        The cache file external_id is generated as `{cache_config.external_id_prefix}_{query_hash}`
+        where query_hash is derived from the query structure. This ensures cache invalidation
+        when the query changes.
+
+        Note:
+            This method relies on the `allow_expired_cursors_and_accept_missed_deletes` flag
+            on QuerySync for handling cursor expiration (cursors expire after 3 days).
+
+        Args:
+            query (QuerySync): The sync query. Cursors will be loaded from cache if available.
+            cache_config (FileCacheConfig): Configuration for the cache file including
+                external_id_prefix, data_set_id/data_set_external_id, security_categories,
+                and directory.
+            include_typing (bool): Whether to return property type information as part of
+                the result.
+            debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
+
+        Returns:
+            QueryResult: The resulting nodes and/or edges from the sync query.
+
+        Examples:
+
+            Sync pumps with cursor state cached in a file:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.query import (
+                ...     QuerySync,
+                ...     SelectSync,
+                ...     NodeResultSetExpressionSync,
+                ... )
+                >>> from cognite.client._api.data_modeling.instances import FileCacheConfig
+                >>> from cognite.client.data_classes.data_modeling.ids import ViewId
+                >>> client = CogniteClient()
+                >>> pump_view = ViewId("mySpace", "Pump", "v1")
+                >>> query = QuerySync(
+                ...     with_={"pumps": NodeResultSetExpressionSync()},
+                ...     select={"pumps": SelectSync()},
+                ... )
+                >>> cache_config = FileCacheConfig(
+                ...     external_id_prefix="pump_sync_cache",
+                ...     data_set_external_id="my_data_set",
+                ... )
+                >>> # First call: syncs all pumps and saves cursor to file
+                >>> result = client.data_modeling.instances.sync_with_file_cache(
+                ...     query, cache_config=cache_config
+                ... )
+                >>> # Subsequent calls: loads cursor from file and syncs only changes
+                >>> result2 = client.data_modeling.instances.sync_with_file_cache(
+                ...     query, cache_config=cache_config
+                ... )
+        """
+        # Compute query hash for cache key
+        query_hash = _compute_query_hash(query)
+        cache_external_id = f"{cache_config.external_id_prefix}_{query_hash}"
+
+        # Resolve data_set_external_id to data_set_id if needed
+        data_set_id = cache_config.data_set_id
+        if data_set_id is None and cache_config.data_set_external_id is not None:
+            data_set = await self._cognite_client.data_sets.retrieve(external_id=cache_config.data_set_external_id)
+            if data_set is not None:
+                data_set_id = data_set.id
+
+        # Try to load cached cursors
+        try:
+            cached_bytes = await self._cognite_client.files.download_bytes(external_id=cache_external_id)
+            cached_data = json_loads(cached_bytes.decode("utf-8"))
+            # Verify hash matches (cache busting)
+            if cached_data.get("hash") == query_hash:
+                query.cursors = cached_data.get("cursors", {})
+                logger.debug(f"Loaded cached cursors from file {cache_external_id}")
+            else:
+                logger.debug("Cache hash mismatch, ignoring cached cursors")
+        except CogniteNotFoundError:
+            logger.debug(f"No cached cursors found at {cache_external_id}")
+        except Exception as e:
+            logger.warning(f"Failed to load cached cursors: {e}")
+
+        # Perform the sync
+        result = await self.sync(query, include_typing=include_typing, debug=debug)
+
+        # Save updated cursors to cache
+        try:
+            cache_data = {
+                "hash": query_hash,
+                "cursors": result.cursors,
+            }
+            cache_content = json_dumps(cache_data).encode("utf-8")
+            await self._cognite_client.files.upload_bytes(
+                content=cache_content,
+                name=f"{cache_external_id}.json",
+                external_id=cache_external_id,
+                data_set_id=data_set_id,
+                security_categories=list(cache_config.security_categories)
+                if cache_config.security_categories
+                else None,
+                directory=cache_config.directory,
+                mime_type="application/json",
+                overwrite=True,
+            )
+            logger.debug(f"Saved cursors to cache file {cache_external_id}")
+        except Exception as e:
+            logger.warning(f"Failed to save cursors to cache file: {e}")
+
+        return result
 
     @overload
     async def list(
