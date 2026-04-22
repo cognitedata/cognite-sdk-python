@@ -1894,7 +1894,6 @@ class InstancesAPI(APIClient):
         self,
         sync_result: QueryResult,
         cached_instances: dict[str, list[dict[str, Any]]],
-        default_by_reference: dict[str, type[NodeListWithCursor] | type[EdgeListWithCursor]],
     ) -> QueryResult:
         """Merge cached instances with sync result.
 
@@ -1909,7 +1908,7 @@ class InstancesAPI(APIClient):
             self._apply_sync_changes(sync_list, cached_by_id)
             merged_items = list(cached_by_id.values())
 
-            merged_result[key] = self._create_merged_list(key, merged_items, sync_list, default_by_reference)
+            merged_result[key] = self._create_merged_list(merged_items, sync_list)
 
         return merged_result
 
@@ -1938,18 +1937,11 @@ class InstancesAPI(APIClient):
 
     @staticmethod
     def _create_merged_list(
-        key: str,
         merged_items: list[dict[str, Any]],
         sync_list: NodeListWithCursor | EdgeListWithCursor,
-        default_by_reference: dict[str, type[NodeListWithCursor] | type[EdgeListWithCursor]],
     ) -> NodeListWithCursor | EdgeListWithCursor:
         """Create the appropriate list type (nodes or edges) for the merged result."""
-        instance_lst_cls = default_by_reference.get(key, NodeListWithCursor)
-        is_node_list = instance_lst_cls is NodeListWithCursor or (
-            not merged_items and isinstance(sync_list, NodeListWithCursor)
-        )
-
-        if is_node_list:
+        if isinstance(sync_list, NodeListWithCursor):
             return NodeListWithCursor(
                 [Node._load(item) for item in merged_items],
                 cursor=sync_list.cursor,
@@ -2103,8 +2095,7 @@ class InstancesAPI(APIClient):
         sync_result = await self.sync(query, include_typing=include_typing, debug=debug)
 
         # Merge cached instances with sync result
-        default_by_reference = query.instance_type_by_result_expression()
-        merged_result = self._merge_sync_result_with_cache(sync_result, cached_instances, default_by_reference)
+        merged_result = self._merge_sync_result_with_cache(sync_result, cached_instances)
 
         # Save updated data to cache
         await self._save_cache_data(
