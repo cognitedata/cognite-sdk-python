@@ -35,7 +35,7 @@ def cleanup_stale_test_sources(cognite_client: CogniteClient) -> None:
         and now_ms - s.created_time >= 3 * 60 * 60 * 1000  # type: ignore [attr-defined]
     ]
     if stale:
-        cognite_client.hosted_extractors.sources.delete(stale, ignore_unknown_ids=True)
+        cognite_client.hosted_extractors.sources.delete(stale, force=True, ignore_unknown_ids=True)
 
 
 @pytest.fixture
