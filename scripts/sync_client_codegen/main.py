@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import sys
 from argparse import ArgumentParser, Namespace
 
 # NOTE: There should only be built-in imports (or third-party) here!
+
+# On Windows, stdout may not support Unicode characters by default (cp1252 encoding).
+# Reconfigure stdout to use UTF-8 to properly display emoji characters.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
 def parse_arguments() -> Namespace:
@@ -19,8 +25,17 @@ def parse_arguments() -> Namespace:
     group = run_mode.add_mutually_exclusive_group(required=True)
     group.add_argument("--all-files", action="store_true")
     group.add_argument("--files", nargs="+", metavar="FILE")
+    # On Windows, the command line has a character limit (~8191 chars). When pre-commit
+    # runs with --all-files and passes many filenames, this limit can be exceeded.
+    # To work around this, we support reading file paths from stdin.
+    group.add_argument("--files-stdin", action="store_true", help="Read file paths from stdin (newline-separated)")
 
     return parser.parse_args()
+
+
+def _read_files_from_stdin() -> list[str]:
+    """Read file paths from stdin (newline-separated)."""
+    return [line.strip() for line in sys.stdin if line.strip()]
 
 
 def handle_missing_api_import_errors(verify: bool = False) -> None:
@@ -68,6 +83,13 @@ if __name__ == "__main__":
             from scripts.sync_client_codegen.create_sync_api import run_all_files
 
             run_all_files(args)
+
+        case Namespace(command="run", files_stdin=True):
+            handle_missing_api_import_errors()
+            from scripts.sync_client_codegen.create_sync_api import run_specific_files
+
+            files = _read_files_from_stdin()
+            run_specific_files(args, files)
 
         case Namespace(command="run", files=files):
             handle_missing_api_import_errors()

@@ -19,8 +19,22 @@ def run_checks(files: tuple[Path, ...]) -> list[str | None]:
     ]
 
 
+def _get_files_from_args_or_discover() -> tuple[Path, ...]:
+    """Get file paths from command line arguments or discover them.
+
+    When pre-commit runs with pass_filenames: false (used to avoid Windows
+    command line length limits), we need to discover files ourselves.
+    """
+    args = sys.argv[1:]
+    if args:
+        return tuple(map(Path, args))
+    else:
+        # Discover all Python files in cognite/ directory
+        return tuple(Path("cognite").rglob("*.py"))
+
+
 if __name__ == "__main__":
-    files = tuple(map(Path, sys.argv[1:]))
+    files = _get_files_from_args_or_discover()
     if failed := list(filter(None, run_checks(files))):
         print(f"\nCustom repo checks failures:\n{'#' * 80}\n" + "\n\n".join(failed))
         raise SystemExit(1)
