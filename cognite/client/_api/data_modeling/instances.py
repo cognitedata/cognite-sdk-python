@@ -104,18 +104,12 @@ class FileCacheConfig:
     will just be the query_hash.
 
     Args:
-        external_id_prefix: Prefix for the cache file external_id. The final external_id
-            will be `{external_id_prefix}_{query_hash}` (or just `{query_hash}` if empty).
-            Defaults to empty string.
-        data_set_id: The data set ID for the cache file. Mutually exclusive with
-            data_set_external_id.
-        data_set_external_id: The data set external ID for the cache file. Will be resolved
-            to data_set_id. Mutually exclusive with data_set_id.
-        security_category: Security category ID to attach to the cache file. Mutually
-            exclusive with security_category_name.
-        security_category_name: Security category name to attach to the cache file. Will be
-            resolved to security_category ID. Mutually exclusive with security_category.
-        directory: Directory associated with the cache file. Must be an absolute, unix-style path.
+        external_id_prefix (str): Prefix for the cache file external_id. The final external_id will be `{external_id_prefix}_{query_hash}` (or just `{query_hash}` if empty). Defaults to empty string.
+        data_set_id (int | None): The data set ID for the cache file. Mutually exclusive with data_set_external_id.
+        data_set_external_id (str | None): The data set external ID for the cache file. Will be resolved to data_set_id. Mutually exclusive with data_set_id.
+        security_category (int | None): Security category ID to attach to the cache file. Mutually exclusive with security_category_name.
+        security_category_name (str | None): Security category name to attach to the cache file. Will be resolved to security_category ID. Mutually exclusive with security_category.
+        directory (str | None): Directory associated with the cache file. Must be an absolute, unix-style path.
 
     Raises:
         ValueError: If both data_set_id and data_set_external_id are set.
@@ -127,14 +121,14 @@ class FileCacheConfig:
         with access to the cache file. This includes the cursor state which can be used
         to retrieve incremental changes.
 
-        **Security considerations:**
+        Security considerations:
 
-        - **Security category** is the safest way to restrict access. Only users who have
-          been granted access to the specified security category can read or write the
-          cache file.
-        - **Data set** alone does NOT limit access for users who have ``files:read`` or
-          ``files:write`` with ``scope: all`` (AllScope). Data sets are primarily for
-          organizing data, not for access control.
+        - Security category is the safest way to restrict access. Only users who have
+            been granted access to the specified security category can read or write the
+            cache file.
+        - Data set alone does NOT limit access for users who have files:read or
+            files:write with scope: all (AllScope). Data sets are primarily for
+            organizing data, not for access control.
 
         For sensitive data, always use a security category to ensure proper access control.
     """
@@ -1860,13 +1854,13 @@ class InstancesAPI(APIClient):
             with access to the cache file. This includes the cursor state which can be used
             to retrieve incremental changes.
 
-            **Security considerations:**
+            Security considerations:
 
-            - **Security category** is the safest way to restrict access. Only users who have
-              been granted access to the specified security category can read or write the
-              cache file.
-            - **Data set** alone does NOT limit access for users who have ``files:read`` or
-              ``files:write`` with ``scope: all`` (AllScope).
+            - Security category is the safest way to restrict access. Only users who have
+                been granted access to the specified security category can read or write the
+                cache file.
+            - Data set alone does NOT limit access for users who have files:read or
+                files:write with scope: all (AllScope).
 
             For sensitive data, always use a security category to ensure proper access control.
 
@@ -1924,8 +1918,9 @@ class InstancesAPI(APIClient):
         data_set_id = cache_config.data_set_id
         if data_set_id is None and cache_config.data_set_external_id is not None:
             data_set = await self._cognite_client.data_sets.retrieve(external_id=cache_config.data_set_external_id)
-            if data_set is not None:
-                data_set_id = data_set.id
+            if data_set is None:
+                raise ValueError(f"Data set with external_id '{cache_config.data_set_external_id}' not found")
+            data_set_id = data_set.id
 
         # Resolve security_category_name to security_category ID if needed
         security_category_ids: list[int] | None = None
@@ -1938,10 +1933,7 @@ class InstancesAPI(APIClient):
                     security_category_ids = [sc.id]
                     break
             if security_category_ids is None:
-                logger.warning(
-                    f"Security category with name '{cache_config.security_category_name}' not found, "
-                    "file will be created without security category"
-                )
+                raise ValueError(f"Security category with name '{cache_config.security_category_name}' not found")
 
         # Try to load cached cursors
         try:
