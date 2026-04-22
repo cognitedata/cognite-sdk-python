@@ -1864,12 +1864,12 @@ class InstancesAPI(APIClient):
         raise ValueError(f"Security category with name '{cache_config.security_category_name}' not found")
 
     async def _load_cached_data(
-        self, cache_external_id: str, query_hash: str, query: QuerySync
-    ) -> dict[str, list[dict[str, Any]]]:
+        self, cache_external_id: str, query_hash: str
+    ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, str | None]]:
         """Load cached cursors and instances from file.
 
-        Returns cached instances dict (may be empty if no cache or hash mismatch).
-        Also updates query.cursors if valid cached cursors are found.
+        Returns a tuple of (cached_instances, cached_cursors).
+        Both may be empty dicts if no cache exists or hash mismatch.
         """
         try:
             cached_bytes = await self._cognite_client.files.download_bytes(external_id=cache_external_id)
@@ -1877,18 +1877,17 @@ class InstancesAPI(APIClient):
 
             if cached_data.get("hash") != query_hash:
                 logger.debug("Cache hash mismatch, ignoring cached data")
-                return {}
+                return {}, {}
 
-            query.cursors = cached_data.get("cursors", {})
             logger.debug(f"Loaded cached data from file {cache_external_id}")
-            return cached_data.get("instances", {})
+            return cached_data.get("instances", {}), cached_data.get("cursors", {})
 
         except CogniteNotFoundError:
             logger.debug(f"No cached data found at {cache_external_id}")
-            return {}
+            return {}, {}
         except Exception as e:
             logger.warning(f"Failed to load cached data: {e}")
-            return {}
+            return {}, {}
 
     def _merge_sync_result_with_cache(
         self,
@@ -2088,8 +2087,12 @@ class InstancesAPI(APIClient):
         data_set_id = await self._resolve_data_set_id(cache_config)
         security_category_ids = await self._resolve_security_category_ids(cache_config)
 
-        # Load cached data (updates query.cursors if valid cache exists)
-        cached_instances = await self._load_cached_data(cache_external_id, query_hash, query)
+        # Load cached data
+        cached_instances, cached_cursors = await self._load_cached_data(cache_external_id, query_hash)
+
+        # Apply cached cursors to query for incremental sync
+        if cached_cursors:
+            query.cursors = cached_cursors
 
         # Perform the sync
         sync_result = await self.sync(query, include_typing=include_typing, debug=debug)
