@@ -1244,11 +1244,16 @@ class SyncInstancesAPI(SyncAPIClient):
         include_typing: bool = False,
         debug: DebugParameters | None = None,
     ) -> QueryResult:
-        """Sync instances with cursor state cached in a CDF file.
+        """Sync instances with cursor state and instances cached in a CDF file.
 
-        This is a utility method that combines the sync endpoint with persistent cursor
-        storage in CDF Files. The cursor state is automatically saved after each successful
-        sync and restored on subsequent calls, enabling incremental syncs across sessions.
+        This is a utility method that combines the sync endpoint with persistent
+        storage of both cursor state and instance data in CDF Files. The method:
+        1. Loads cached cursors and instances from the file (if available)
+        2. Performs an incremental sync using the cached cursors
+        3. Merges the sync result with cached instances (adding/updating new items,
+           removing items with deleted_time set)
+        4. Saves the merged data and updated cursors back to the cache file
+        5. Returns the full merged result (all instances, not just incremental changes)
 
         The cache file external_id is generated as `{cache_config.external_id_prefix}_{query_hash}`
         where query_hash is derived from the query structure (or just `{query_hash}` if the
@@ -1283,7 +1288,8 @@ class SyncInstancesAPI(SyncAPIClient):
             debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
 
         Returns:
-            QueryResult: The resulting nodes and/or edges from the sync query.
+            QueryResult: The full set of nodes and/or edges (cached + new from sync,
+                minus deleted items). This is a merged result, not just incremental changes.
 
         Examples:
 
@@ -1307,11 +1313,11 @@ class SyncInstancesAPI(SyncAPIClient):
                 ...     external_id_prefix="pump_sync_cache",
                 ...     security_category_name="my_security_category",
                 ... )
-                >>> # First call: syncs all pumps and saves cursor to file
+                >>> # First call: syncs all pumps and saves data to file
                 >>> result = client.data_modeling.instances.sync_with_file_cache(
                 ...     query, cache_config=cache_config
                 ... )
-                >>> # Subsequent calls: loads cursor from file and syncs only changes
+                >>> # Subsequent calls: returns all instances (cached + new changes)
                 >>> result2 = client.data_modeling.instances.sync_with_file_cache(
                 ...     query, cache_config=cache_config
                 ... )

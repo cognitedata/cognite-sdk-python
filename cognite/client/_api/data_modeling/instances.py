@@ -41,6 +41,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeApplyResult,
     EdgeApplyResultList,
     EdgeList,
+    EdgeListWithCursor,
     InstanceAggregationResultList,
     InstanceInspectResultList,
     InstanceInspectResults,
@@ -55,6 +56,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResult,
     NodeApplyResultList,
     NodeList,
+    NodeListWithCursor,
     T_Edge,
     T_Node,
     TargetUnit,
@@ -1835,11 +1837,16 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         debug: DebugParameters | None = None,
     ) -> QueryResult:
-        """Sync instances with cursor state cached in a CDF file.
+        """Sync instances with cursor state and instances cached in a CDF file.
 
-        This is a utility method that combines the sync endpoint with persistent cursor
-        storage in CDF Files. The cursor state is automatically saved after each successful
-        sync and restored on subsequent calls, enabling incremental syncs across sessions.
+        This is a utility method that combines the sync endpoint with persistent
+        storage of both cursor state and instance data in CDF Files. The method:
+        1. Loads cached cursors and instances from the file (if available)
+        2. Performs an incremental sync using the cached cursors
+        3. Merges the sync result with cached instances (adding/updating new items,
+           removing items with deleted_time set)
+        4. Saves the merged data and updated cursors back to the cache file
+        5. Returns the full merged result (all instances, not just incremental changes)
 
         The cache file external_id is generated as `{cache_config.external_id_prefix}_{query_hash}`
         where query_hash is derived from the query structure (or just `{query_hash}` if the
@@ -1874,7 +1881,8 @@ class InstancesAPI(APIClient):
             debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
 
         Returns:
-            QueryResult: The resulting nodes and/or edges from the sync query.
+            QueryResult: The full set of nodes and/or edges (cached + new from sync,
+                minus deleted items). This is a merged result, not just incremental changes.
 
         Examples:
 
@@ -1898,11 +1906,11 @@ class InstancesAPI(APIClient):
                 ...     external_id_prefix="pump_sync_cache",
                 ...     security_category_name="my_security_category",
                 ... )
-                >>> # First call: syncs all pumps and saves cursor to file
+                >>> # First call: syncs all pumps and saves data to file
                 >>> result = client.data_modeling.instances.sync_with_file_cache(
                 ...     query, cache_config=cache_config
                 ... )
-                >>> # Subsequent calls: loads cursor from file and syncs only changes
+                >>> # Subsequent calls: returns all instances (cached + new changes)
                 >>> result2 = client.data_modeling.instances.sync_with_file_cache(
                 ...     query, cache_config=cache_config
                 ... )
@@ -1935,29 +1943,84 @@ class InstancesAPI(APIClient):
             if security_category_ids is None:
                 raise ValueError(f"Security category with name '{cache_config.security_category_name}' not found")
 
-        # Try to load cached cursors
+        # Try to load cached data (cursors and instances)
+        cached_instances: dict[str, list[dict[str, Any]]] = {}
         try:
             cached_bytes = await self._cognite_client.files.download_bytes(external_id=cache_external_id)
             cached_data = json_loads(cached_bytes.decode("utf-8"))
             # Verify hash matches (cache busting)
             if cached_data.get("hash") == query_hash:
                 query.cursors = cached_data.get("cursors", {})
-                logger.debug(f"Loaded cached cursors from file {cache_external_id}")
+                cached_instances = cached_data.get("instances", {})
+                logger.debug(f"Loaded cached data from file {cache_external_id}")
             else:
-                logger.debug("Cache hash mismatch, ignoring cached cursors")
+                logger.debug("Cache hash mismatch, ignoring cached data")
         except CogniteNotFoundError:
-            logger.debug(f"No cached cursors found at {cache_external_id}")
+            logger.debug(f"No cached data found at {cache_external_id}")
         except Exception as e:
-            logger.warning(f"Failed to load cached cursors: {e}")
+            logger.warning(f"Failed to load cached data: {e}")
 
         # Perform the sync
-        result = await self.sync(query, include_typing=include_typing, debug=debug)
+        sync_result = await self.sync(query, include_typing=include_typing, debug=debug)
 
-        # Save updated cursors to cache
+        # Merge cached instances with sync result
+        default_by_reference = query.instance_type_by_result_expression()
+        merged_result = QueryResult()
+        merged_result._debug = sync_result._debug
+
+        for key, sync_list in sync_result.items():
+            # Build a dict of cached instances by (space, external_id) for this key
+            cached_by_id: dict[tuple[str, str], dict[str, Any]] = {}
+            for item_dict in cached_instances.get(key, []):
+                instance_id = (item_dict["space"], item_dict["externalId"])
+                cached_by_id[instance_id] = item_dict
+
+            # Process sync results: add/update instances, track deletions
+            deleted_ids: set[tuple[str, str]] = set()
+            for item in sync_list:
+                instance_id = (item.space, item.external_id)
+                if item.deleted_time is not None:
+                    # Mark for deletion
+                    deleted_ids.add(instance_id)
+                    # Remove from cache if present
+                    cached_by_id.pop(instance_id, None)
+                else:
+                    # Add/update in cache
+                    cached_by_id[instance_id] = item.dump(camel_case=True)
+
+            # Build merged list from the updated cache
+            merged_items = list(cached_by_id.values())
+
+            # Determine the list type (nodes or edges)
+            instance_lst_cls = default_by_reference.get(key, NodeListWithCursor)
+            if instance_lst_cls is NodeListWithCursor or (
+                not merged_items and isinstance(sync_list, NodeListWithCursor)
+            ):
+                merged_result[key] = NodeListWithCursor(
+                    [Node._load(item) for item in merged_items],
+                    cursor=sync_list.cursor,
+                    typing=sync_list.typing,
+                    debug=sync_list.debug,
+                )
+            else:
+                merged_result[key] = EdgeListWithCursor(
+                    [Edge._load(item) for item in merged_items],
+                    cursor=sync_list.cursor,
+                    typing=sync_list.typing,
+                    debug=sync_list.debug,
+                )
+
+        # Save updated data (cursors and instances) to cache
         try:
+            # Serialize instances for caching
+            instances_to_cache: dict[str, list[dict[str, Any]]] = {}
+            for key, item_list in merged_result.items():
+                instances_to_cache[key] = [item.dump(camel_case=True) for item in item_list]
+
             cache_data = {
                 "hash": query_hash,
-                "cursors": result.cursors,
+                "cursors": merged_result.cursors,
+                "instances": instances_to_cache,
             }
             cache_content = json_dumps(cache_data).encode("utf-8")
             await self._cognite_client.files.upload_bytes(
@@ -1970,11 +2033,11 @@ class InstancesAPI(APIClient):
                 mime_type="application/json",
                 overwrite=True,
             )
-            logger.debug(f"Saved cursors to cache file {cache_external_id}")
+            logger.debug(f"Saved data to cache file {cache_external_id}")
         except Exception as e:
-            logger.warning(f"Failed to save cursors to cache file: {e}")
+            logger.warning(f"Failed to save data to cache file: {e}")
 
-        return result
+        return merged_result
 
     @overload
     async def list(
