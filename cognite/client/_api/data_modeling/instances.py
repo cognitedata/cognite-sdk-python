@@ -100,24 +100,67 @@ class FileCacheConfig:
 
     The file external_id will be generated as: `{external_id_prefix}_{query_hash}` where
     query_hash is a hash of the query structure (excluding cursors). This ensures cache
-    invalidation when the query changes.
+    invalidation when the query changes. If external_id_prefix is empty, the external_id
+    will just be the query_hash.
 
     Args:
         external_id_prefix: Prefix for the cache file external_id. The final external_id
-            will be `{external_id_prefix}_{query_hash}`.
-        data_set_id: The data set ID for the cache file. Either this or data_set_external_id
-            should be provided for access control.
+            will be `{external_id_prefix}_{query_hash}` (or just `{query_hash}` if empty).
+            Defaults to empty string.
+        data_set_id: The data set ID for the cache file. Mutually exclusive with
+            data_set_external_id.
         data_set_external_id: The data set external ID for the cache file. Will be resolved
-            to data_set_id. Either this or data_set_id should be provided for access control.
-        security_categories: Security categories to attach to the cache file.
+            to data_set_id. Mutually exclusive with data_set_id.
+        security_category: Security category ID to attach to the cache file. Mutually
+            exclusive with security_category_name.
+        security_category_name: Security category name to attach to the cache file. Will be
+            resolved to security_category ID. Mutually exclusive with security_category.
         directory: Directory associated with the cache file. Must be an absolute, unix-style path.
+
+    Raises:
+        ValueError: If both data_set_id and data_set_external_id are set.
+        ValueError: If both security_category and security_category_name are set.
+        ValueError: If neither data set nor security category is specified.
+
+    Caveat:
+        By using this function, you make the data from data modeling available to anyone
+        with access to the cache file. This includes the cursor state which can be used
+        to retrieve incremental changes.
+
+        **Security considerations:**
+
+        - **Security category** is the safest way to restrict access. Only users who have
+          been granted access to the specified security category can read or write the
+          cache file.
+        - **Data set** alone does NOT limit access for users who have ``files:read`` or
+          ``files:write`` with ``scope: all`` (AllScope). Data sets are primarily for
+          organizing data, not for access control.
+
+        For sensitive data, always use a security category to ensure proper access control.
     """
 
-    external_id_prefix: str
+    external_id_prefix: str = ""
     data_set_id: int | None = None
     data_set_external_id: str | None = None
-    security_categories: Sequence[int] | None = None
+    security_category: int | None = None
+    security_category_name: str | None = None
     directory: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.data_set_id is not None and self.data_set_external_id is not None:
+            raise ValueError("Cannot specify both data_set_id and data_set_external_id")
+        if self.security_category is not None and self.security_category_name is not None:
+            raise ValueError("Cannot specify both security_category and security_category_name")
+        if (
+            self.data_set_id is None
+            and self.data_set_external_id is None
+            and self.security_category is None
+            and self.security_category_name is None
+        ):
+            raise ValueError(
+                "At least one of data_set_id, data_set_external_id, security_category, "
+                "or security_category_name must be specified for access control"
+            )
 
 
 def _compute_query_hash(query: QuerySync) -> str:
@@ -1805,18 +1848,33 @@ class InstancesAPI(APIClient):
         sync and restored on subsequent calls, enabling incremental syncs across sessions.
 
         The cache file external_id is generated as `{cache_config.external_id_prefix}_{query_hash}`
-        where query_hash is derived from the query structure. This ensures cache invalidation
-        when the query changes.
+        where query_hash is derived from the query structure (or just `{query_hash}` if the
+        prefix is empty). This ensures cache invalidation when the query changes.
 
         Note:
             This method relies on the `allow_expired_cursors_and_accept_missed_deletes` flag
             on QuerySync for handling cursor expiration (cursors expire after 3 days).
 
+        Caveat:
+            By using this function, you make the data from data modeling available to anyone
+            with access to the cache file. This includes the cursor state which can be used
+            to retrieve incremental changes.
+
+            **Security considerations:**
+
+            - **Security category** is the safest way to restrict access. Only users who have
+              been granted access to the specified security category can read or write the
+              cache file.
+            - **Data set** alone does NOT limit access for users who have ``files:read`` or
+              ``files:write`` with ``scope: all`` (AllScope).
+
+            For sensitive data, always use a security category to ensure proper access control.
+
         Args:
             query (QuerySync): The sync query. Cursors will be loaded from cache if available.
             cache_config (FileCacheConfig): Configuration for the cache file including
-                external_id_prefix, data_set_id/data_set_external_id, security_categories,
-                and directory.
+                external_id_prefix, data_set_id/data_set_external_id,
+                security_category/security_category_name, and directory.
             include_typing (bool): Whether to return property type information as part of
                 the result.
             debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
@@ -1826,7 +1884,7 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Sync pumps with cursor state cached in a file:
+            Sync pumps with cursor state cached in a file (using security category for access control):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.query import (
@@ -1844,7 +1902,7 @@ class InstancesAPI(APIClient):
                 ... )
                 >>> cache_config = FileCacheConfig(
                 ...     external_id_prefix="pump_sync_cache",
-                ...     data_set_external_id="my_data_set",
+                ...     security_category_name="my_security_category",
                 ... )
                 >>> # First call: syncs all pumps and saves cursor to file
                 >>> result = client.data_modeling.instances.sync_with_file_cache(
@@ -1857,7 +1915,10 @@ class InstancesAPI(APIClient):
         """
         # Compute query hash for cache key
         query_hash = _compute_query_hash(query)
-        cache_external_id = f"{cache_config.external_id_prefix}_{query_hash}"
+        if cache_config.external_id_prefix:
+            cache_external_id = f"{cache_config.external_id_prefix}_{query_hash}"
+        else:
+            cache_external_id = query_hash
 
         # Resolve data_set_external_id to data_set_id if needed
         data_set_id = cache_config.data_set_id
@@ -1865,6 +1926,22 @@ class InstancesAPI(APIClient):
             data_set = await self._cognite_client.data_sets.retrieve(external_id=cache_config.data_set_external_id)
             if data_set is not None:
                 data_set_id = data_set.id
+
+        # Resolve security_category_name to security_category ID if needed
+        security_category_ids: list[int] | None = None
+        if cache_config.security_category is not None:
+            security_category_ids = [cache_config.security_category]
+        elif cache_config.security_category_name is not None:
+            security_categories = await self._cognite_client.iam.security_categories.list(limit=-1)
+            for sc in security_categories:
+                if sc.name == cache_config.security_category_name:
+                    security_category_ids = [sc.id]
+                    break
+            if security_category_ids is None:
+                logger.warning(
+                    f"Security category with name '{cache_config.security_category_name}' not found, "
+                    "file will be created without security category"
+                )
 
         # Try to load cached cursors
         try:
@@ -1896,9 +1973,7 @@ class InstancesAPI(APIClient):
                 name=f"{cache_external_id}.json",
                 external_id=cache_external_id,
                 data_set_id=data_set_id,
-                security_categories=list(cache_config.security_categories)
-                if cache_config.security_categories
-                else None,
+                security_categories=security_category_ids,
                 directory=cache_config.directory,
                 mime_type="application/json",
                 overwrite=True,
