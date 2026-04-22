@@ -85,7 +85,7 @@ def main() -> int:
         return 0
 
     # Write filenames to a temp file to avoid command line length issues
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as f:
         f.write("\n".join(filenames))
         temp_path = f.name
 
@@ -94,7 +94,7 @@ def main() -> int:
         cmd = ["poetry", "run", "--", "python", *script_args]
 
         # Run the target script with filenames read from temp file via stdin
-        with open(temp_path) as stdin_file:
+        with open(temp_path, encoding="utf-8") as stdin_file:
             process = subprocess.run(cmd, stdin=stdin_file)
         return process.returncode
     finally:

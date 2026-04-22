@@ -5,11 +5,6 @@ from argparse import ArgumentParser, Namespace
 
 # NOTE: There should only be built-in imports (or third-party) here!
 
-# On Windows, stdout may not support Unicode characters by default (cp1252 encoding).
-# Reconfigure stdout to use UTF-8 to properly display emoji characters.
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-
 
 def parse_arguments() -> Namespace:
     parser = ArgumentParser()
