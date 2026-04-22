@@ -259,6 +259,12 @@ class InstancesAPI(APIClient):
             feature_name="Data modeling debug parameters 'includeTranslatedQuery' and 'includePlan'",
             pluralize=True,
         )
+        self._warn_on_sync_with_file_cache = FeaturePreviewWarning(
+            api_maturity="General Availability",
+            sdk_maturity="alpha",
+            feature_name="Using file caching for sync queries in the Instances API",
+            pluralize=False,
+        )
 
     def _get_semaphore(self, operation: Literal["read", "write", "delete", "search"]) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
@@ -2079,6 +2085,7 @@ class InstancesAPI(APIClient):
                 ...     query, cache_config=cache_config
                 ... )
         """
+        self._warn_on_sync_with_file_cache.warn()
         # Compute query hash for cache key
         query_hash = _compute_query_hash(query)
         cache_external_id = (
