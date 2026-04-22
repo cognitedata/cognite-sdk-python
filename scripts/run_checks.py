@@ -30,7 +30,7 @@ def _get_files_from_args_or_discover() -> tuple[Path, ...]:
         return tuple(map(Path, args))
     else:
         # Discover all Python files in cognite/ directory
-        return tuple(Path("cognite").rglob("*.py"))
+        return tuple(p for p in Path("cognite").rglob("*") if p.is_file() and p.suffix in (".py", ".pyi"))
 
 
 if __name__ == "__main__":
