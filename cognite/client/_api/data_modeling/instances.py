@@ -2014,7 +2014,7 @@ class InstancesAPI(APIClient):
         1. Loads cached cursors and instances from the file (if available)
         2. Performs an incremental sync using the cached cursors
         3. Merges the sync result with cached instances (adding/updating new items,
-            removing items with deleted_time set)
+        removing items with deleted_time set)
         4. Saves the merged data and updated cursors back to the cache file
         5. Returns the full merged result (all instances, not just incremental changes)
 

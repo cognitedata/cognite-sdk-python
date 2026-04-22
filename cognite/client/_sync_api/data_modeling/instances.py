@@ -1,6 +1,6 @@
 """
 ===============================================================================
-75e6b2be19cef62f568f6c9938b3126a
+8d082dcee502b46e55dd65c99fcce5f4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -142,7 +142,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
         Yields:
             Edge | EdgeList | Node | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.data_modeling.instances(
                 chunk_size=chunk_size,
@@ -186,7 +186,7 @@ class SyncInstancesAPI(SyncAPIClient):
     def retrieve_edges(
         self,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
-        edge_cls: type[T_Edge] = Edge,  # type: ignore [assignment]
+        edge_cls: type[T_Edge] = Edge,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> EdgeList[T_Edge] | T_Edge | Edge | None:
@@ -264,7 +264,7 @@ class SyncInstancesAPI(SyncAPIClient):
         return run_sync(
             self.__async_client.data_modeling.instances.retrieve_edges(
                 edges=edges, edge_cls=edge_cls, sources=sources, include_typing=include_typing
-            )  # type: ignore [call-overload]
+            )
         )
 
     @overload
@@ -291,12 +291,12 @@ class SyncInstancesAPI(SyncAPIClient):
         *,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-    ) -> NodeList[Node]: ...
+    ) -> NodeList[Node]: ...  # type: ignore[assignment]
 
     def retrieve_nodes(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
-        node_cls: type[T_Node] = Node,  # type: ignore [assignment]
+        node_cls: type[T_Node] = Node,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> NodeList[T_Node] | T_Node | Node | None:
@@ -371,7 +371,7 @@ class SyncInstancesAPI(SyncAPIClient):
         return run_sync(
             self.__async_client.data_modeling.instances.retrieve_nodes(
                 nodes=nodes, node_cls=node_cls, sources=sources, include_typing=include_typing
-            )  # type: ignore [call-overload]
+            )
         )
 
     def retrieve(
@@ -1244,14 +1244,15 @@ class SyncInstancesAPI(SyncAPIClient):
         include_typing: bool = False,
         debug: DebugParameters | None = None,
     ) -> QueryResult:
-        """Sync instances with cursor state and instances cached in a CDF file.
+        """
+        Sync instances with cursor state and instances cached in a CDF file.
 
         This is a utility method that combines the sync endpoint with persistent
         storage of both cursor state and instance data in CDF Files. The method:
         1. Loads cached cursors and instances from the file (if available)
         2. Performs an incremental sync using the cached cursors
         3. Merges the sync result with cached instances (adding/updating new items,
-            removing items with deleted_time set)
+        removing items with deleted_time set)
         4. Saves the merged data and updated cursors back to the cache file
         5. Returns the full merged result (all instances, not just incremental changes)
 
@@ -1469,7 +1470,7 @@ class SyncInstancesAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.instances.list(
-                instance_type=instance_type,  # type: ignore [arg-type]
+                instance_type=instance_type,
                 include_typing=include_typing,
                 sources=sources,
                 space=space,
@@ -1477,5 +1478,5 @@ class SyncInstancesAPI(SyncAPIClient):
                 sort=sort,
                 filter=filter,
                 debug=debug,
-            )  # type: ignore [misc]
+            )
         )
