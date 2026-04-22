@@ -186,7 +186,7 @@ class SyncInstancesAPI(SyncAPIClient):
     def retrieve_edges(
         self,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
-        edge_cls: type[T_Edge] = Edge,
+        edge_cls: type[T_Edge] = Edge,  # type: ignore [assignment]
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> EdgeList[T_Edge] | T_Edge | Edge | None:
@@ -264,7 +264,7 @@ class SyncInstancesAPI(SyncAPIClient):
         return run_sync(
             self.__async_client.data_modeling.instances.retrieve_edges(
                 edges=edges, edge_cls=edge_cls, sources=sources, include_typing=include_typing
-            )
+            )  # type: ignore [call-overload]
         )
 
     @overload
@@ -291,12 +291,12 @@ class SyncInstancesAPI(SyncAPIClient):
         *,
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
-    ) -> NodeList[Node]: ...  # type: ignore[assignment]
+    ) -> NodeList[Node]: ...
 
     def retrieve_nodes(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
-        node_cls: type[T_Node] = Node,
+        node_cls: type[T_Node] = Node,  # type: ignore [assignment]
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> NodeList[T_Node] | T_Node | Node | None:
@@ -371,7 +371,7 @@ class SyncInstancesAPI(SyncAPIClient):
         return run_sync(
             self.__async_client.data_modeling.instances.retrieve_nodes(
                 nodes=nodes, node_cls=node_cls, sources=sources, include_typing=include_typing
-            )
+            )  # type: ignore [call-overload]
         )
 
     def retrieve(
@@ -1470,7 +1470,7 @@ class SyncInstancesAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.instances.list(
-                instance_type=instance_type,
+                instance_type=instance_type,  # type: ignore [arg-type]
                 include_typing=include_typing,
                 sources=sources,
                 space=space,
@@ -1478,5 +1478,5 @@ class SyncInstancesAPI(SyncAPIClient):
                 sort=sort,
                 filter=filter,
                 debug=debug,
-            )
+            )  # type: ignore [misc]
         )
