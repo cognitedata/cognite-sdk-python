@@ -40,7 +40,7 @@ repos:
 
       - id: custom-checks
         name: custom repo checks
-        entry: poetry run python scripts/run_checks.py
+        entry: python scripts/precommit_wrapper.py scripts/run_checks.py --stdin ---
         files: ^cognite/.*.(py|pyi)$
         language: system
         pass_filenames: true
@@ -48,7 +48,7 @@ repos:
 
       - id: sync-client-codegen
         name: run sync codegen on changed files
-        entry: poetry run python scripts/sync_client_codegen/main.py run --files
+        entry: python scripts/precommit_wrapper.py scripts/sync_client_codegen/main.py run --files-stdin ---
         files: ^cognite/.*.(py|pyi)$
         language: system
         pass_filenames: true
