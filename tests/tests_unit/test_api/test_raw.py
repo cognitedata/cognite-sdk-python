@@ -429,6 +429,35 @@ class TestRawRows:
         with pytest.raises(TypeError):
             cognite_client.raw.rows.list(db_name="db1", table_name="table1", columns="a,b")  # type: ignore[arg-type]
 
+    @pytest.mark.parametrize("limit", [None, -1, math.inf])
+    def test_list_unlimited_sentinels_return_all_rows(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        httpx_mock: HTTPXMock,
+        limit: int | float | None,
+    ) -> None:
+        # Bug in 8.0.0 to 8.0.7: limit=-1 was not normalised to None in _list_generator_concurrent,
+        # causing chunk[:-1] to silently drop the last row and quit early.
+        rows_data = [
+            {"key": "row1", "columns": {"c1": 1}, "lastUpdatedTime": 0},
+            {"key": "row2", "columns": {"c1": 2}, "lastUpdatedTime": 1},
+        ]
+        base = get_url(async_client.raw) + "/raw/dbs/db1/tables/table1"
+        httpx_mock.add_response(
+            method="GET",
+            url=re.compile(re.escape(base) + r"/cursors"),
+            json={"items": ["cursor-abc"]},
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=re.compile(re.escape(base) + r"/rows"),
+            json={"items": rows_data},
+        )
+        res = cognite_client.raw.rows.list("db1", "table1", limit=limit, partitions=1)  # type: ignore[arg-type]
+        assert isinstance(res, RowList)
+        assert [r.key for r in res] == ["row1", "row2"]
+
     def test_iter_chunk(
         self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
     ) -> None:
