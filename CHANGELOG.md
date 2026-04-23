@@ -13,6 +13,24 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.1.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.0.7...cognite-sdk-python-v8.1.0) (2026-04-23)
+
+
+### Features
+
+* **agents:** add QueryAgentTool (in preview) for the new data modeling query tool type ([#2569](https://github.com/cognitedata/cognite-sdk-python/issues/2569)) ([31549a4](https://github.com/cognitedata/cognite-sdk-python/commit/31549a426769555ac90e38c05a51665875e9eda3))
+
+
+### Bug Fixes
+
+* **agents:** expose runtime version on agent models ([#2568](https://github.com/cognitedata/cognite-sdk-python/issues/2568)) ([2219c53](https://github.com/cognitedata/cognite-sdk-python/commit/2219c53e7d2a288eeb2c32d6c54e09326c790ccb))
+* **raw:** limit=-1 silently returned only the first chunk of rows ([#2588](https://github.com/cognitedata/cognite-sdk-python/issues/2588)) ([72bf48f](https://github.com/cognitedata/cognite-sdk-python/commit/72bf48fccf8f4c76aa2911a571eafda022e5deb3))
+
+
+### Documentation
+
+* Show correct accessors in the documentation ([#2563](https://github.com/cognitedata/cognite-sdk-python/issues/2563)) ([46babc5](https://github.com/cognitedata/cognite-sdk-python/commit/46babc58ff0175652a2c196e54262ef4f87b6acc))
+
 ## [8.0.7](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.0.6...cognite-sdk-python-v8.0.7) (2026-04-10)
 
 

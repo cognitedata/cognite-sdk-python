@@ -368,7 +368,7 @@ def mock_functions_limit_response(
         "cpuCores": {"min": 0.1, "max": 0.6, "default": 0.25},
         "memoryGb": {"min": 0.1, "max": 2.5, "default": 1.0},
         "responseSizeMb": 1,
-        "runtimes": ["py310", "py311", "py312"],
+        "runtimes": ["py310", "py311", "py312", "py313"],
     }
     url = get_url(async_client.functions, "/functions/limits")
     httpx_mock.add_response(method="GET", url=url, status_code=200, json=response_body)
