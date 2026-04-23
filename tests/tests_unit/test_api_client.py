@@ -1834,6 +1834,15 @@ class TestRetryableEndpoints:
                 ("GET", "https://api.cognitedata.com/api/v1/projects/bla/limits/values", True),
                 ("GET", "https://api.cognitedata.com/api/v1/projects/bla/limits/values/streams.streams", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/limits/values/list", True),
+                # ILA streams (CRUD + record ingest/upsert/delete; filter/aggregate/sync are retryable)
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/delete", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/my-stream/records", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/my-stream/records/upsert", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/my-stream/records/delete", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/my-stream/records/filter", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/my-stream/records/aggregate", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/my-stream/records/sync", True),
             ]
         ),
     )

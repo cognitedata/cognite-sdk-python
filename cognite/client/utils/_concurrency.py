@@ -533,7 +533,7 @@ class EventLoopThreadExecutor(threading.Thread):
 
         if loop is None:
             try:
-                import nest_asyncio  # type: ignore [import-not-found]
+                import nest_asyncio  # type: ignore [import-untyped]
             except ImportError:
                 raise CogniteImportError(
                     module="nest_asyncio",
