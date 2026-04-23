@@ -8,7 +8,7 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
-from cognite.client.data_classes.streams import (
+from cognite.client.data_classes.data_modeling.streams import (
     RecordsAggregateResponse,
     RecordsDeleteResponse,
     RecordsFilterResponse,
@@ -19,7 +19,7 @@ from cognite.client.data_classes.streams import (
 
 @pytest.fixture
 def streams_base_url(async_client: AsyncCogniteClient) -> str:
-    return async_client.streams._base_url_with_base_path + "/streams"
+    return async_client.data_modeling.streams._base_url_with_base_path + "/streams"
 
 
 class TestIngest:
@@ -34,7 +34,7 @@ class TestIngest:
             url=re.compile(re.escape(streams_base_url) + r"/my-stream/records$"),
             json={},
         )
-        out = cognite_client.streams.records.ingest("my-stream", {"items": []})
+        out = cognite_client.data_modeling.streams.records.ingest("my-stream", {"items": []})
         assert isinstance(out, RecordsIngestResponse)
 
 
@@ -51,13 +51,13 @@ class TestIngestItems:
             json={},
         )
         row = {"space": "sp", "externalId": "r1", "sources": []}
-        cognite_client.streams.records.ingest_items("s1", [row])
+        cognite_client.data_modeling.streams.records.ingest_items("s1", [row])
         req = httpx_mock.get_requests()[0]
         assert req.url.path.endswith("/streams/s1/records")
 
     def test_empty_items_raises(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError, match="at least one record"):
-            cognite_client.streams.records.ingest_items("s1", [])
+            cognite_client.data_modeling.streams.records.ingest_items("s1", [])
 
 
 class TestUpsertAndUpsertItems:
@@ -72,11 +72,11 @@ class TestUpsertAndUpsertItems:
             url=re.compile(re.escape(streams_base_url) + r"/st/records/upsert$"),
             json={},
         )
-        cognite_client.streams.records.upsert("st", {"items": [{"x": 1}]})
+        cognite_client.data_modeling.streams.records.upsert("st", {"items": [{"x": 1}]})
 
     def test_upsert_items_requires_non_empty(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError, match="at least one record"):
-            cognite_client.streams.records.upsert_items("st", [])
+            cognite_client.data_modeling.streams.records.upsert_items("st", [])
 
 
 class TestDeleteAndDeleteItems:
@@ -91,7 +91,7 @@ class TestDeleteAndDeleteItems:
             url=re.compile(re.escape(streams_base_url) + r"/st/records/delete$"),
             json={},
         )
-        out = cognite_client.streams.records.delete("st", {"items": [{"space": "sp", "externalId": "a"}]})
+        out = cognite_client.data_modeling.streams.records.delete("st", {"items": [{"space": "sp", "externalId": "a"}]})
         assert isinstance(out, RecordsDeleteResponse)
 
     def test_delete_items_wraps_identifiers(
@@ -105,11 +105,11 @@ class TestDeleteAndDeleteItems:
             url=re.compile(re.escape(streams_base_url) + r"/st/records/delete$"),
             json={},
         )
-        cognite_client.streams.records.delete_items("st", [{"space": "sp", "externalId": "a"}])
+        cognite_client.data_modeling.streams.records.delete_items("st", [{"space": "sp", "externalId": "a"}])
 
     def test_delete_items_empty_raises(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError, match="at least one"):
-            cognite_client.streams.records.delete_items("st", [])
+            cognite_client.data_modeling.streams.records.delete_items("st", [])
 
 
 class TestFilter:
@@ -135,7 +135,7 @@ class TestFilter:
             url=re.compile(re.escape(streams_base_url) + r"/st/records/filter$"),
             json=payload,
         )
-        out = cognite_client.streams.records.filter("st", {"filter": {"matchAll": {}}})
+        out = cognite_client.data_modeling.streams.records.filter("st", {"filter": {"matchAll": {}}})
         assert isinstance(out, RecordsFilterResponse)
         assert len(out.items) == 1
         assert out.items[0].external_id == "r1"
@@ -153,7 +153,7 @@ class TestAggregate:
             url=re.compile(re.escape(streams_base_url) + r"/st/records/aggregate$"),
             json={"aggregates": {"cnt": 3}, "typing": {}},
         )
-        out = cognite_client.streams.records.aggregate("st", {"aggregate": []})
+        out = cognite_client.data_modeling.streams.records.aggregate("st", {"aggregate": []})
         assert isinstance(out, RecordsAggregateResponse)
         assert out.aggregates == {"cnt": 3}
 
@@ -183,7 +183,7 @@ class TestSync:
             url=re.compile(re.escape(streams_base_url) + r"/st/records/sync$"),
             json=payload,
         )
-        out = cognite_client.streams.records.sync("st", {"sources": [], "limit": 10})
+        out = cognite_client.data_modeling.streams.records.sync("st", {"sources": [], "limit": 10})
         assert isinstance(out, RecordsSyncResponse)
         assert out.next_cursor == "next"
         assert not out.has_next
