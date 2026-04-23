@@ -15,6 +15,7 @@ MAYBE_IMPORTS = (
     "WorkflowIdentifier: TypeAlias",
     "WorkflowVersionIdentifier: TypeAlias",
     "ComparableCapability: TypeAlias",
+    "FileCacheConfig",
 )
 ASYNC_API_DIR = Path("cognite/client/_api")
 SYNC_API_DIR = Path("cognite/client/_sync_api")

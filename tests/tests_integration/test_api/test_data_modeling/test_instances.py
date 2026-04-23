@@ -9,6 +9,8 @@ from typing import Any, ClassVar, Literal, cast
 import pytest
 
 from cognite.client import AsyncCogniteClient, CogniteClient
+from cognite.client._api.data_modeling.instances import FileCacheConfig
+from cognite.client.data_classes import DataSet
 from cognite.client.data_classes.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling import (
     Container,
@@ -1653,3 +1655,87 @@ class TestInstancesSync:
                 return
         else:
             assert not context.is_alive()
+
+    def test_sync_with_file_cache(
+        self, cognite_client: CogniteClient, movie_view: View, ts_test_dataset: DataSet
+    ) -> None:
+        """Test that sync_with_file_cache correctly caches cursors and returns incremental changes."""
+        movie_id = movie_view.as_id()
+        test_prefix = f"sync_cache_test_{random_string(6)}"
+
+        # Create first movie with the test prefix
+        first_movie = NodeApply(
+            space=movie_view.space,
+            external_id=f"{test_prefix}_movie_1",
+            sources=[
+                NodeOrEdgeData(
+                    source=movie_id,
+                    properties={
+                        "title": "First Test Movie",
+                        "releaseYear": 2020,
+                        "runTimeMinutes": 120,
+                    },
+                )
+            ],
+        )
+
+        # Create sync query that filters on the test prefix
+        movies_with_prefix = NodeResultSetExpressionSync(
+            filter=Prefix(["node", "externalId"], test_prefix),
+        )
+        sync_query = QuerySync(
+            with_={"movies": movies_with_prefix},
+            select={"movies": SelectSync([SourceSelector(movie_id, ["title", "releaseYear"])])},
+        )
+
+        cache_config = FileCacheConfig(
+            external_id_prefix=f"test_sync_cache_{test_prefix}",
+            data_set_id=ts_test_dataset.id,
+        )
+
+        try:
+            # Apply first movie
+            cognite_client.data_modeling.instances.apply(nodes=first_movie)
+
+            # First sync - should return the first movie
+            result1 = cognite_client.data_modeling.instances.sync_with_file_cache(sync_query, cache_config=cache_config)
+
+            movie_external_ids_1 = [node.external_id for node in result1["movies"]]
+            assert first_movie.external_id in movie_external_ids_1
+
+            # Create second movie with the same prefix
+            second_movie = NodeApply(
+                space=movie_view.space,
+                external_id=f"{test_prefix}_movie_2",
+                sources=[
+                    NodeOrEdgeData(
+                        source=movie_id,
+                        properties={
+                            "title": "Second Test Movie",
+                            "releaseYear": 2021,
+                            "runTimeMinutes": 90,
+                        },
+                    )
+                ],
+            )
+            cognite_client.data_modeling.instances.apply(nodes=second_movie)
+
+            # Second sync - should return both movies
+            result2 = cognite_client.data_modeling.instances.sync_with_file_cache(sync_query, cache_config=cache_config)
+
+            movie_external_ids_2 = [node.external_id for node in result2["movies"]]
+            assert first_movie.external_id in movie_external_ids_2
+            assert second_movie.external_id in movie_external_ids_2
+
+        finally:
+            # Cleanup: delete test movies and cache file
+            cognite_client.data_modeling.instances.delete(
+                nodes=[first_movie.as_id(), NodeId(movie_view.space, f"{test_prefix}_movie_2")]
+            )
+            # Delete the cache file(s) - find files with matching prefix
+            try:
+                cache_files = cognite_client.files.list(external_id_prefix=f"test_sync_cache_{test_prefix}", limit=10)
+                if cache_files:
+                    cognite_client.files.delete(external_id=[f.external_id for f in cache_files])
+            except Exception:
+                pass  # Cache file cleanup failed, ignore

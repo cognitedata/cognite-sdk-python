@@ -1,6 +1,6 @@
 """
 ===============================================================================
-75e6b2be19cef62f568f6c9938b3126a
+e52dde9d2ecdefa5e55a5d04c29f4906
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -11,7 +11,7 @@ from collections.abc import Awaitable, Callable, Iterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.data_modeling.instances import Source
+from cognite.client._api.data_modeling.instances import FileCacheConfig, Source
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.aggregations import (
@@ -142,7 +142,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
         Yields:
             Edge | EdgeList | Node | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.data_modeling.instances(
                 chunk_size=chunk_size,
@@ -1234,6 +1234,99 @@ class SyncInstancesAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.instances.sync(query=query, include_typing=include_typing, debug=debug)
+        )
+
+    def sync_with_file_cache(
+        self,
+        query: QuerySync,
+        *,
+        cache_config: FileCacheConfig,
+        include_typing: bool = False,
+        debug: DebugParameters | None = None,
+    ) -> QueryResult:
+        """
+        Sync instances with cursor state and instances cached in a CDF file.
+
+        This is a utility method that combines the sync endpoint with persistent
+        storage of both cursor state and instance data in CDF Files. The method:
+        1. Loads cached cursors and instances from the file (if available)
+        2. Performs an incremental sync using the cached cursors
+        3. Merges the sync result with cached instances (adding/updating new items,
+        removing items with deleted_time set)
+        4. Saves the merged data and updated cursors back to the cache file
+        5. Returns the full merged result (all instances, not just incremental changes)
+
+        The cache file external_id is generated as `{cache_config.external_id_prefix}_{query_hash}`
+        where query_hash is derived from the query structure (or just `{query_hash}` if the
+        prefix is empty). This ensures cache invalidation when the query changes.
+
+        Note:
+            This method relies on the `allow_expired_cursors_and_accept_missed_deletes` flag
+            on QuerySync for handling cursor expiration (cursors expire after 3 days).
+
+        Caveat:
+            By using this function, you make the data from data modeling available to anyone
+            with access to the cache file. This includes the cursor state which can be used
+            to retrieve incremental changes.
+
+            Security considerations:
+
+            - Security category is the safest way to restrict access. Only users who have
+                been granted access to the specified security category can read or write the
+                cache file.
+            - Data set alone does NOT limit access for users who have files:read or
+                files:write with scope: all (AllScope).
+
+            For sensitive data, always use a security category to ensure proper access control.
+
+        Args:
+            query (QuerySync): The sync query. Cursors will be loaded from cache if available.
+            cache_config (FileCacheConfig): Configuration for the cache file including
+                external_id_prefix, data_set_id/data_set_external_id,
+                security_category/security_category_name, and directory.
+            include_typing (bool): Whether to return property type information as part of
+                the result.
+            debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
+
+        Returns:
+            QueryResult: The full set of nodes and/or edges (cached + new from sync,
+                minus deleted items). This is a merged result, not just incremental changes.
+
+        Examples:
+
+            Sync pumps with cursor state cached in a file (using security category for access control):
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.query import (
+                ...     QuerySync,
+                ...     SelectSync,
+                ...     NodeResultSetExpressionSync,
+                ... )
+                >>> from cognite.client._api.data_modeling.instances import FileCacheConfig
+                >>> from cognite.client.data_classes.data_modeling.ids import ViewId
+                >>> client = CogniteClient()
+                >>> pump_view = ViewId("mySpace", "Pump", "v1")
+                >>> query = QuerySync(
+                ...     with_={"pumps": NodeResultSetExpressionSync()},
+                ...     select={"pumps": SelectSync()},
+                ... )
+                >>> cache_config = FileCacheConfig(
+                ...     external_id_prefix="pump_sync_cache",
+                ...     security_category_name="my_security_category",
+                ... )
+                >>> # First call: syncs all pumps and saves data to file
+                >>> result = client.data_modeling.instances.sync_with_file_cache(
+                ...     query, cache_config=cache_config
+                ... )
+                >>> # Subsequent calls: returns all instances (cached + new changes)
+                >>> result2 = client.data_modeling.instances.sync_with_file_cache(
+                ...     query, cache_config=cache_config
+                ... )
+        """
+        return run_sync(
+            self.__async_client.data_modeling.instances.sync_with_file_cache(
+                query=query, cache_config=cache_config, include_typing=include_typing, debug=debug
+            )
         )
 
     @overload

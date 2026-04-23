@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import inspect
 import logging
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Sequence
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
@@ -39,6 +41,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeApplyResult,
     EdgeApplyResultList,
     EdgeList,
+    EdgeListWithCursor,
     InstanceAggregationResultList,
     InstanceInspectResultList,
     InstanceInspectResults,
@@ -53,6 +56,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResult,
     NodeApplyResultList,
     NodeList,
+    NodeListWithCursor,
     T_Edge,
     T_Node,
     TargetUnit,
@@ -71,9 +75,12 @@ from cognite.client.data_classes.data_modeling.query import (
 from cognite.client.data_classes.data_modeling.sync import SubscriptionContext
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
+from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, load_yaml_or_json, unpack_items
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
+from cognite.client.utils._json_extended import dumps as json_dumps
+from cognite.client.utils._json_extended import loads as json_loads
 from cognite.client.utils._retry import Backoff
 from cognite.client.utils._text import random_string
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -87,6 +94,82 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class FileCacheConfig:
+    """Configuration for caching sync cursors in a CDF file.
+
+    The file external_id will be generated as: `{external_id_prefix}_{query_hash}` where
+    query_hash is a hash of the query structure (excluding cursors). This ensures cache
+    invalidation when the query changes. If external_id_prefix is empty, the external_id
+    will just be the query_hash.
+
+    Args:
+        external_id_prefix (str): Prefix for the cache file external_id. The final external_id will be `{external_id_prefix}_{query_hash}` (or just `{query_hash}` if empty). Defaults to empty string.
+        data_set_id (int | None): The data set ID for the cache file. Mutually exclusive with data_set_external_id.
+        data_set_external_id (str | None): The data set external ID for the cache file. Will be resolved to data_set_id. Mutually exclusive with data_set_id.
+        security_category (int | None): Security category ID to attach to the cache file. Mutually exclusive with security_category_name.
+        security_category_name (str | None): Security category name to attach to the cache file. Will be resolved to security_category ID. Mutually exclusive with security_category.
+        directory (str | None): Directory associated with the cache file. Must be an absolute, unix-style path.
+
+    Raises:
+        ValueError: If both data_set_id and data_set_external_id are set.
+        ValueError: If both security_category and security_category_name are set.
+        ValueError: If neither data set nor security category is specified.
+
+    Caveat:
+        By using this function, you make the data from data modeling available to anyone
+        with access to the cache file. This includes the cursor state which can be used
+        to retrieve incremental changes.
+
+        Security considerations:
+
+        - Security category is the safest way to restrict access. Only users who have
+            been granted access to the specified security category can read or write the
+            cache file.
+        - Data set alone does NOT limit access for users who have files:read or
+            files:write with scope: all (AllScope). Data sets are primarily for
+            organizing data, not for access control.
+
+        For sensitive data, always use a security category to ensure proper access control.
+    """
+
+    external_id_prefix: str = ""
+    data_set_id: int | None = None
+    data_set_external_id: str | None = None
+    security_category: int | None = None
+    security_category_name: str | None = None
+    directory: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.data_set_id is not None and self.data_set_external_id is not None:
+            raise ValueError("Cannot specify both data_set_id and data_set_external_id")
+        if self.security_category is not None and self.security_category_name is not None:
+            raise ValueError("Cannot specify both security_category and security_category_name")
+        if (
+            self.data_set_id is None
+            and self.data_set_external_id is None
+            and self.security_category is None
+            and self.security_category_name is None
+        ):
+            raise ValueError(
+                "At least one of data_set_id, data_set_external_id, security_category, "
+                "or security_category_name must be specified for access control"
+            )
+
+
+def _compute_query_hash(query: QuerySync) -> str:
+    """Compute a hash of the query structure, excluding cursors.
+
+    This is used to generate a cache key that invalidates when the query changes.
+    """
+    query_dict = query.dump(camel_case=True)
+    # Remove cursors as they change between sync calls
+    query_dict.pop("cursors", None)
+    # Use sort_keys for deterministic hashing
+    serialized = json_dumps(query_dict, sort_keys=True)
+    return hashlib.sha256(serialized.encode()).hexdigest()[:16]
 
 
 Source: TypeAlias = SourceSelector | View | ViewId | tuple[str, str] | tuple[str, str, str]
@@ -175,6 +258,12 @@ class InstancesAPI(APIClient):
             sdk_maturity="alpha",
             feature_name="Data modeling debug parameters 'includeTranslatedQuery' and 'includePlan'",
             pluralize=True,
+        )
+        self._warn_on_sync_with_file_cache = FeaturePreviewWarning(
+            api_maturity="General Availability",
+            sdk_maturity="alpha",
+            feature_name="Using file caching for sync queries in the Instances API",
+            pluralize=False,
         )
 
     def _get_semaphore(self, operation: Literal["read", "write", "delete", "search"]) -> asyncio.BoundedSemaphore:
@@ -1745,6 +1834,283 @@ class InstancesAPI(APIClient):
             typing=json_payload.get("typing"),
             debug=json_payload.get("debug"),
         )
+
+    async def _resolve_data_set_id(self, cache_config: FileCacheConfig) -> int | None:
+        """Resolve data_set_external_id to data_set_id if needed."""
+        if cache_config.data_set_id is not None:
+            return cache_config.data_set_id
+
+        if cache_config.data_set_external_id is None:
+            return None
+
+        data_set = await self._cognite_client.data_sets.retrieve(external_id=cache_config.data_set_external_id)
+        if data_set is None:
+            raise ValueError(f"Data set with external_id '{cache_config.data_set_external_id}' not found")
+        return data_set.id
+
+    async def _resolve_security_category_ids(self, cache_config: FileCacheConfig) -> list[int] | None:
+        """Resolve security_category_name to security_category ID if needed."""
+        if cache_config.security_category is not None:
+            return [cache_config.security_category]
+
+        if cache_config.security_category_name is None:
+            return None
+
+        security_categories = await self._cognite_client.iam.security_categories.list(limit=-1)
+        for sc in security_categories:
+            if sc.name == cache_config.security_category_name:
+                return [sc.id]
+
+        raise ValueError(f"Security category with name '{cache_config.security_category_name}' not found")
+
+    async def _load_cached_data(
+        self, cache_external_id: str, query_hash: str
+    ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, str | None]]:
+        """Load cached cursors and instances from file.
+
+        Returns a tuple of (cached_instances, cached_cursors).
+        Both may be empty dicts if no cache exists or hash mismatch.
+        """
+        try:
+            cached_bytes = await self._cognite_client.files.download_bytes(external_id=cache_external_id)
+            cached_data = json_loads(cached_bytes.decode("utf-8"))
+
+            if cached_data.get("hash") != query_hash:
+                logger.debug("Cache hash mismatch, ignoring cached data")
+                return {}, {}
+
+            logger.debug(f"Loaded cached data from file {cache_external_id}")
+            return cached_data.get("instances", {}), cached_data.get("cursors", {})
+
+        except CogniteNotFoundError:
+            logger.debug(f"No cached data found at {cache_external_id}")
+            return {}, {}
+        except Exception as e:
+            logger.warning(f"Failed to load cached data: {e}")
+            return {}, {}
+
+    def _merge_sync_result_with_cache(
+        self,
+        sync_result: QueryResult,
+        cached_instances: dict[str, list[dict[str, Any]]],
+    ) -> QueryResult:
+        """Merge cached instances with sync result.
+
+        Adds/updates instances from sync result, removes deleted instances.
+        Returns a new QueryResult with merged data.
+        """
+        merged_result = QueryResult()
+        merged_result._debug = sync_result._debug
+
+        for key, sync_list in sync_result.items():
+            cached_by_id = self._build_cached_instance_dict(cached_instances.get(key, []))
+            self._apply_sync_changes(sync_list, cached_by_id)
+            merged_items = list(cached_by_id.values())
+
+            merged_result[key] = self._create_merged_list(merged_items, sync_list)
+
+        return merged_result
+
+    @staticmethod
+    def _build_cached_instance_dict(
+        cached_items: list[dict[str, Any]],
+    ) -> dict[tuple[str, str], dict[str, Any]]:
+        """Build a dict of cached instances keyed by (space, external_id)."""
+        return {(item_dict["space"], item_dict["externalId"]): item_dict for item_dict in cached_items}
+
+    @staticmethod
+    def _apply_sync_changes(
+        sync_list: NodeListWithCursor | EdgeListWithCursor,
+        cached_by_id: dict[tuple[str, str], dict[str, Any]],
+    ) -> None:
+        """Apply sync changes to the cached instances dict in place.
+
+        Adds/updates instances from sync result and removes deleted instances.
+        """
+        for item in sync_list:
+            instance_id = (item.space, item.external_id)
+            if item.deleted_time is not None:
+                cached_by_id.pop(instance_id, None)
+            else:
+                cached_by_id[instance_id] = item.dump(camel_case=True)
+
+    @staticmethod
+    def _create_merged_list(
+        merged_items: list[dict[str, Any]],
+        sync_list: NodeListWithCursor | EdgeListWithCursor,
+    ) -> NodeListWithCursor | EdgeListWithCursor:
+        """Create the appropriate list type (nodes or edges) for the merged result."""
+        if isinstance(sync_list, NodeListWithCursor):
+            return NodeListWithCursor(
+                [Node._load(item) for item in merged_items],
+                cursor=sync_list.cursor,
+                typing=sync_list.typing,
+                debug=sync_list.debug,
+            )
+        return EdgeListWithCursor(
+            [Edge._load(item) for item in merged_items],
+            cursor=sync_list.cursor,
+            typing=sync_list.typing,
+            debug=sync_list.debug,
+        )
+
+    async def _save_cache_data(
+        self,
+        merged_result: QueryResult,
+        query_hash: str,
+        cache_external_id: str,
+        data_set_id: int | None,
+        security_category_ids: list[int] | None,
+        directory: str | None,
+    ) -> None:
+        """Save merged data (cursors and instances) to cache file."""
+        try:
+            instances_to_cache: dict[str, list[dict[str, Any]]] = {
+                key: [item.dump(camel_case=True) for item in item_list] for key, item_list in merged_result.items()
+            }
+
+            cache_data = {
+                "hash": query_hash,
+                "cursors": merged_result.cursors,
+                "instances": instances_to_cache,
+            }
+            cache_content = json_dumps(cache_data).encode("utf-8")
+
+            await self._cognite_client.files.upload_bytes(
+                content=cache_content,
+                name=f"{cache_external_id}.json",
+                external_id=cache_external_id,
+                data_set_id=data_set_id,
+                security_categories=security_category_ids,
+                directory=directory,
+                mime_type="application/json",
+                overwrite=True,
+            )
+            logger.debug(f"Saved data to cache file {cache_external_id}")
+        except Exception as e:
+            logger.warning(f"Failed to save data to cache file: {e}")
+
+    async def sync_with_file_cache(
+        self,
+        query: QuerySync,
+        *,
+        cache_config: FileCacheConfig,
+        include_typing: bool = False,
+        debug: DebugParameters | None = None,
+    ) -> QueryResult:
+        """Sync instances with cursor state and instances cached in a CDF file.
+
+        This is a utility method that combines the sync endpoint with persistent
+        storage of both cursor state and instance data in CDF Files. The method:
+        1. Loads cached cursors and instances from the file (if available)
+        2. Performs an incremental sync using the cached cursors
+        3. Merges the sync result with cached instances (adding/updating new items,
+        removing items with deleted_time set)
+        4. Saves the merged data and updated cursors back to the cache file
+        5. Returns the full merged result (all instances, not just incremental changes)
+
+        The cache file external_id is generated as `{cache_config.external_id_prefix}_{query_hash}`
+        where query_hash is derived from the query structure (or just `{query_hash}` if the
+        prefix is empty). This ensures cache invalidation when the query changes.
+
+        Note:
+            This method relies on the `allow_expired_cursors_and_accept_missed_deletes` flag
+            on QuerySync for handling cursor expiration (cursors expire after 3 days).
+
+        Caveat:
+            By using this function, you make the data from data modeling available to anyone
+            with access to the cache file. This includes the cursor state which can be used
+            to retrieve incremental changes.
+
+            Security considerations:
+
+            - Security category is the safest way to restrict access. Only users who have
+                been granted access to the specified security category can read or write the
+                cache file.
+            - Data set alone does NOT limit access for users who have files:read or
+                files:write with scope: all (AllScope).
+
+            For sensitive data, always use a security category to ensure proper access control.
+
+        Args:
+            query (QuerySync): The sync query. Cursors will be loaded from cache if available.
+            cache_config (FileCacheConfig): Configuration for the cache file including
+                external_id_prefix, data_set_id/data_set_external_id,
+                security_category/security_category_name, and directory.
+            include_typing (bool): Whether to return property type information as part of
+                the result.
+            debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
+
+        Returns:
+            QueryResult: The full set of nodes and/or edges (cached + new from sync,
+                minus deleted items). This is a merged result, not just incremental changes.
+
+        Examples:
+
+            Sync pumps with cursor state cached in a file (using security category for access control):
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.query import (
+                ...     QuerySync,
+                ...     SelectSync,
+                ...     NodeResultSetExpressionSync,
+                ... )
+                >>> from cognite.client._api.data_modeling.instances import FileCacheConfig
+                >>> from cognite.client.data_classes.data_modeling.ids import ViewId
+                >>> client = CogniteClient()
+                >>> pump_view = ViewId("mySpace", "Pump", "v1")
+                >>> query = QuerySync(
+                ...     with_={"pumps": NodeResultSetExpressionSync()},
+                ...     select={"pumps": SelectSync()},
+                ... )
+                >>> cache_config = FileCacheConfig(
+                ...     external_id_prefix="pump_sync_cache",
+                ...     security_category_name="my_security_category",
+                ... )
+                >>> # First call: syncs all pumps and saves data to file
+                >>> result = client.data_modeling.instances.sync_with_file_cache(
+                ...     query, cache_config=cache_config
+                ... )
+                >>> # Subsequent calls: returns all instances (cached + new changes)
+                >>> result2 = client.data_modeling.instances.sync_with_file_cache(
+                ...     query, cache_config=cache_config
+                ... )
+        """
+        self._warn_on_sync_with_file_cache.warn()
+        # Compute query hash for cache key
+        query_hash = _compute_query_hash(query)
+        cache_external_id = (
+            f"{cache_config.external_id_prefix}_{query_hash}" if cache_config.external_id_prefix else query_hash
+        )
+
+        # Resolve config values
+        data_set_id = await self._resolve_data_set_id(cache_config)
+        security_category_ids = await self._resolve_security_category_ids(cache_config)
+
+        # Load cached data
+        cached_instances, cached_cursors = await self._load_cached_data(cache_external_id, query_hash)
+
+        # Apply cached cursors to query for incremental sync
+        if cached_cursors:
+            query.cursors = cached_cursors
+
+        # Perform the sync
+        sync_result = await self.sync(query, include_typing=include_typing, debug=debug)
+
+        # Merge cached instances with sync result
+        merged_result = self._merge_sync_result_with_cache(sync_result, cached_instances)
+
+        # Save updated data to cache
+        await self._save_cache_data(
+            merged_result,
+            query_hash,
+            cache_external_id,
+            data_set_id,
+            security_category_ids,
+            cache_config.directory,
+        )
+
+        return merged_result
 
     @overload
     async def list(
