@@ -34,7 +34,7 @@ class StreamLimit(CogniteResource):
 
 
 class StreamLifecycleSettings(CogniteResource):
-    """Lifecycle metadata for a stream (human-readable)."""
+    """Lifecycle metadata for a stream."""
 
     def __init__(
         self,
@@ -111,7 +111,7 @@ class StreamSettings(CogniteResource):
 
 
 class Stream(CogniteResource):
-    """A stream (ILA ``StreamResponseItem``)."""
+    """A stream."""
 
     def __init__(
         self,
@@ -149,13 +149,13 @@ class Stream(CogniteResource):
 
 
 class StreamList(CogniteResourceList[Stream], ExternalIDTransformerMixin):
-    """List of streams (``StreamResponse.items``)."""
+    """List of streams."""
 
     _RESOURCE = Stream
 
 
 class StreamWrite(CogniteResource):
-    """Request item for creating a stream (``StreamRequestItem``)."""
+    """Request item for creating a stream."""
 
     def __init__(self, external_id: str, settings: dict[str, Any]) -> None:
         self.external_id = external_id

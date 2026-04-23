@@ -35,7 +35,7 @@ class StreamLimit(CogniteResource):
 
 
 class StreamLifecycleSettings(CogniteResource):
-    """Lifecycle metadata for a stream (human-readable)."""
+    """Lifecycle metadata for a stream."""
 
     def __init__(
         self,
@@ -112,7 +112,7 @@ class StreamSettings(CogniteResource):
 
 
 class Stream(WriteableCogniteResource["StreamWrite"]):
-    """A stream (``StreamResponseItem``)."""
+    """A stream."""
 
     def __init__(
         self,
@@ -157,31 +157,28 @@ class Stream(WriteableCogniteResource["StreamWrite"]):
 
 
 class StreamList(CogniteResourceList[Stream], ExternalIDTransformerMixin):
-    """List of streams (``StreamResponse.items``)."""
+    """List of streams."""
 
     _RESOURCE = Stream
 
 
 class StreamTemplate(CogniteResource):
-    """Reference to an stream template (``StreamRequestItem.settings.template``)."""
+    """Reference to a stream template."""
 
-    def __init__(self, name: str, version: str | None = None) -> None:
+    def __init__(self, name: str) -> None:
         self.name = name
-        self.version = version
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(name=resource["name"], version=resource.get("version"))
+        return cls(name=resource["name"])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         out: dict[str, Any] = {"name": self.name}
-        if self.version is not None:
-            out["version"] = self.version
         return convert_all_keys_to_camel_case(out) if camel_case else out
 
 
 class StreamTemplateWriteSettings(CogniteResource):
-    """Write-side settings for creating a stream from a template (``{"template": {...}}``)."""
+    """Write-side settings for creating a stream from a template."""
 
     def __init__(self, template: StreamTemplate) -> None:
         self.template = template
@@ -201,7 +198,7 @@ def _parse_stream_write_settings(raw: dict[str, Any]) -> StreamTemplateWriteSett
 
 
 class StreamWrite(WriteableCogniteResource["StreamWrite"]):
-    """Request item for creating a stream (``StreamRequestItem``)."""
+    """Request item for creating a stream."""
 
     def __init__(
         self,
@@ -231,7 +228,7 @@ class StreamWrite(WriteableCogniteResource["StreamWrite"]):
 
 
 class Record(CogniteResource):
-    """A record returned from filter (ILA ``Record``)."""
+    """A record returned from filter."""
 
     def __init__(
         self,
@@ -273,7 +270,7 @@ class RecordList(CogniteResourceList[Record], ExternalIDTransformerMixin):
 
 
 class SyncRecord(CogniteResource):
-    """Record entry from sync (ILA ``SyncRecord``)."""
+    """Record entry from sync."""
 
     def __init__(
         self,
@@ -320,7 +317,7 @@ class SyncRecordList(CogniteResourceList[SyncRecord], ExternalIDTransformerMixin
 
 
 class RecordsFilterResponse(CogniteResource):
-    """``POST .../records/filter`` response."""
+    """Records filter response."""
 
     def __init__(self, items: RecordList, typing: dict[str, Any] | None = None) -> None:
         self.items = items
@@ -339,7 +336,7 @@ class RecordsFilterResponse(CogniteResource):
 
 
 class RecordsSyncResponse(CogniteResource):
-    """``POST .../records/sync`` response."""
+    """Records sync response."""
 
     def __init__(
         self,
@@ -375,7 +372,7 @@ class RecordsSyncResponse(CogniteResource):
 
 
 class RecordsAggregateResponse(CogniteResource):
-    """``POST .../records/aggregate`` response."""
+    """Records aggregate response."""
 
     def __init__(self, aggregates: dict[str, Any], typing: dict[str, Any] | None = None) -> None:
         self.aggregates = aggregates
@@ -393,7 +390,7 @@ class RecordsAggregateResponse(CogniteResource):
 
 
 class RecordsDeleteResponse(CogniteResource):
-    """``POST .../records/delete`` — empty object means full success."""
+    """Records delete response."""
 
     def __init__(self, data: dict[str, Any]) -> None:
         self._data = data
@@ -407,7 +404,7 @@ class RecordsDeleteResponse(CogniteResource):
 
 
 class RecordsIngestResponse(CogniteResource):
-    """``POST .../records`` (ingest/upsert) JSON body — often ``{}`` on success."""
+    """Records ingest response."""
 
     def __init__(self, data: dict[str, Any]) -> None:
         self._data = data

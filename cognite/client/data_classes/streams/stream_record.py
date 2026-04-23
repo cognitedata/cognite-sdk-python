@@ -13,7 +13,7 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 
 class Record(CogniteResource):
-    """A record returned from filter (ILA ``Record``)."""
+    """A record returned from filter."""
 
     def __init__(
         self,
@@ -55,7 +55,7 @@ class RecordList(CogniteResourceList[Record], ExternalIDTransformerMixin):
 
 
 class SyncRecord(CogniteResource):
-    """Record entry from sync (ILA ``SyncRecord``)."""
+    """Record entry from sync."""
 
     def __init__(
         self,
@@ -102,7 +102,7 @@ class SyncRecordList(CogniteResourceList[SyncRecord], ExternalIDTransformerMixin
 
 
 class RecordsFilterResponse(CogniteResource):
-    """``POST .../records/filter`` response."""
+    """Records filter response."""
 
     def __init__(self, items: RecordList, typing: dict[str, Any] | None = None) -> None:
         self.items = items
@@ -121,7 +121,7 @@ class RecordsFilterResponse(CogniteResource):
 
 
 class RecordsSyncResponse(CogniteResource):
-    """``POST .../records/sync`` response."""
+    """Records sync response."""
 
     def __init__(
         self,
@@ -157,7 +157,7 @@ class RecordsSyncResponse(CogniteResource):
 
 
 class RecordsAggregateResponse(CogniteResource):
-    """``POST .../records/aggregate`` response."""
+    """Records aggregate response."""
 
     def __init__(self, aggregates: dict[str, Any], typing: dict[str, Any] | None = None) -> None:
         self.aggregates = aggregates
@@ -175,7 +175,7 @@ class RecordsAggregateResponse(CogniteResource):
 
 
 class RecordsDeleteResponse(CogniteResource):
-    """``POST .../records/delete`` — empty object means full success."""
+    """Records delete response."""
 
     def __init__(self, data: dict[str, Any]) -> None:
         self._data = data
@@ -189,7 +189,7 @@ class RecordsDeleteResponse(CogniteResource):
 
 
 class RecordsIngestResponse(CogniteResource):
-    """``POST .../records`` (ingest/upsert) JSON body — often ``{}`` on success."""
+    """Records ingest response."""
 
     def __init__(self, data: dict[str, Any]) -> None:
         self._data = data
