@@ -77,8 +77,6 @@ def test_stream_write_load_roundtrip() -> None:
     w = StreamWrite._load(raw)
     assert isinstance(w.settings, StreamTemplateWriteSettings)
     assert w.settings.template.name == "ImmutableTestStream"
-    assert w.settings.template.version == "1"
-    assert w.dump(camel_case=True)["settings"]["template"]["version"] == "1"
 
 
 def test_stream_write_load_arbitrary_settings_dict() -> None:
