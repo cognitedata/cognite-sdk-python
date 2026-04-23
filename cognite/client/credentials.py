@@ -467,18 +467,24 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         # - A valid access token.
         # - A valid refresh token, and if so, use it automatically to redeem a new access token.
         credentials = None
-        for token in self.__app.token_cache.search(self.__app.token_cache.CredentialType.REFRESH_TOKEN):
-            if "expires_on" in token and token["expires_on"] > time.time():
-                credentials = token
+        for token in self.__app.token_cache.search(
+            self.__app.token_cache.CredentialType.REFRESH_TOKEN,
+            query={"client_id": self.client_id},
+        ):
+            result = self.__app.client.obtain_token_by_refresh_token(token.get("secret", ""))
+            if "access_token" in result:
+                credentials = result
                 break
-        if credentials is not None:
-            credentials = self.__app.client.obtain_token_by_refresh_token(credentials.get("secret", ""))
-        else:
-            for token in self.__app.token_cache.search(self.__app.token_cache.CredentialType.ACCESS_TOKEN):
-                if expiry := int(token.get("expires_on", 0)) - time.time() > 0:
+        if credentials is None:
+            for token in self.__app.token_cache.search(
+                self.__app.token_cache.CredentialType.ACCESS_TOKEN,
+                query={"client_id": self.client_id, "target": self.scope_string()},
+            ):
+                remaining = int(token.get("expires_on", 0)) - time.time()
+                if remaining > 0:
                     credentials = {
                         "access_token": token.get("secret"),
-                        "expires_in": expiry,
+                        "expires_in": remaining,
                     }
                     break
         # If we're unable to find (or acquire a new) access token, we initiate the device code auth flow.

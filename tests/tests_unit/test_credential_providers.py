@@ -338,11 +338,7 @@ class TestOAuthDeviceCode:
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_refresh_token_from_cache(self, mock_public_client: MagicMock) -> None:
-        # Mock a valid refresh token in cache
-        mock_refresh_token = {
-            "secret": "refresh_token_secret",
-            "expires_on": time.time() + 3600,  # Valid for 1 hour
-        }
+        mock_refresh_token = {"secret": "refresh_token_secret"}
 
         mock_public_client().token_cache.search.return_value = [mock_refresh_token]
         mock_public_client().client.obtain_token_by_refresh_token.return_value = {
@@ -353,9 +349,54 @@ class TestOAuthDeviceCode:
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
 
-        # Verify refresh token was used
         mock_public_client().client.obtain_token_by_refresh_token.assert_called_once_with("refresh_token_secret")
-        assert "Authorization", "Bearer new_access_token" == creds.authorization_header()
+        mock_public_client().http_client.post.assert_not_called()
+        assert creds.authorization_header() == ("Authorization", "Bearer new_access_token")
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_refresh_token_invalid_falls_back_to_device_flow(self, mock_public_client: MagicMock) -> None:
+        def search_side_effect(credential_type: Any, **kwargs: Any) -> list[dict[str, Any]]:
+            if credential_type == mock_public_client().token_cache.CredentialType.REFRESH_TOKEN:
+                return [{"secret": "stale_refresh_token"}]
+            return []
+
+        mock_public_client().token_cache.search.side_effect = search_side_effect
+        mock_public_client().client.obtain_token_by_refresh_token.return_value = {
+            "error": "invalid_grant",
+            "error_description": "Refresh token revoked",
+        }
+
+        mock_device_response = Mock()
+        mock_device_response.json.return_value = {
+            "user_code": "ABCDEF",
+            "message": "Follow the link and enter the code",
+        }
+        mock_public_client().http_client.post.return_value = mock_device_response
+        mock_public_client().client.obtain_token_by_device_flow.return_value = {
+            "access_token": "fresh_access_token",
+            "expires_in": 3600,
+        }
+
+        creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
+        creds._refresh_access_token()
+
+        mock_public_client().client.obtain_token_by_refresh_token.assert_called_once_with("stale_refresh_token")
+        mock_public_client().http_client.post.assert_called_once()
+        assert creds.authorization_header() == ("Authorization", "Bearer fresh_access_token")
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_cached_access_token_expiry_is_seconds_not_bool(self, mock_public_client: MagicMock) -> None:
+        expires_on = int(time.time() + 3600)
+        mock_public_client().token_cache.search.side_effect = [
+            [],
+            [{"secret": "cached_access_token", "expires_on": str(expires_on)}],
+        ]
+
+        creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
+        _, expires_at = creds._refresh_access_token()
+
+        assert expires_at > time.time() + 60
+        assert abs(expires_at - expires_on) < 5
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_access_token_from_cache(self, mock_public_client: MagicMock) -> None:
