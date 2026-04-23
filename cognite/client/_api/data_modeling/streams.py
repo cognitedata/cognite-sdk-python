@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, overload
 
-from cognite.client._api_client import APIClient
 from cognite.client._api.data_modeling.records import StreamsRecordsAPI
+from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.streams import (
     Stream,
     StreamList,
