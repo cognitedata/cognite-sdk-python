@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import getpass
+import os
 import pprint
 import re
 import warnings
@@ -21,7 +22,8 @@ class GlobalConfig:
             by the AsyncCogniteClient or CogniteClient constructor if no config is passed directly. Defaults to None.
         disable_gzip (bool): Whether or not to disable gzipping of json bodies. Defaults to False.
         disable_pypi_version_check (bool): Whether or not to check for newer SDK versions when instantiating a new client.
-            Defaults to False.
+            Defaults to False. You can also set the environment variable ``COGNITE_DISABLE_PYPI_VERSION_CHECK`` to a truthy
+            value (``1``, ``true``, ``yes``, ``on``, case-insensitive) to disable the check without changing this attribute.
         status_forcelist (Set[int]): HTTP status codes to retry. Defaults to {429, 502, 503, 504}
         max_retries (int): Max number of retries on a given http request. Defaults to 10.
         max_retries_connect (int): Max number of retries on connection errors. Defaults to 3.
@@ -151,6 +153,17 @@ class GlobalConfig:
 global_config = GlobalConfig()
 
 
+def _env_truthy(name: str) -> bool:
+    val = os.environ.get(name)
+    if val is None:
+        return False
+    return val.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _pypi_version_check_disabled() -> bool:
+    return global_config.disable_pypi_version_check or _env_truthy("COGNITE_DISABLE_PYPI_VERSION_CHECK")
+
+
 class ClientConfig:
     """Configuration object for the client
 
@@ -196,7 +209,7 @@ class ClientConfig:
             self.debug = True
         self._validate_config()
 
-        if not global_config.disable_pypi_version_check:
+        if not _pypi_version_check_disabled():
             from cognite.client.utils._version_checker import check_client_is_running_latest_version
 
             check_client_is_running_latest_version()
