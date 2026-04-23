@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.2.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.1.0...cognite-sdk-python-v8.2.0) (2026-04-23)
+
+
+### Features
+
+* **functions:** Add py313 to RunTime for Cognite Functions ([#2582](https://github.com/cognitedata/cognite-sdk-python/issues/2582)) ([43efd75](https://github.com/cognitedata/cognite-sdk-python/commit/43efd75ccbce57d616207199f85c4d2205644eeb))
+
 ## [8.1.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.0.7...cognite-sdk-python-v8.1.0) (2026-04-23)
 
 
