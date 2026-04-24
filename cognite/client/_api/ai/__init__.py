@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from cognite.client._api.ai.python_schema import ErrorResult, SchemaResult, extract_function_schema
 from cognite.client._api.ai.tools import AIToolsAPI
 from cognite.client._api_client import APIClient
 
