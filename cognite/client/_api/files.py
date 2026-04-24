@@ -479,11 +479,6 @@ class FilesAPI(APIClient):
         if not path.is_file():
             raise FileNotFoundError(path)
 
-        # Use a semaphore to limit the number of open files at the same time,
-        # since each multipart upload will open the file for the duration of the upload,
-        # and having too many open files can cause issues on some operating systems.
-        open_files_semaphore = asyncio.Semaphore(global_config.concurrency_settings.general.write)
-
         file_size = path.stat().st_size
         part_size, num_parts = self.calculate_part_size_and_count(file_size)
         session = await self.multipart_upload_content_session(
@@ -491,6 +486,7 @@ class FilesAPI(APIClient):
         )
 
         async with session:
+            open_files_semaphore = global_config.concurrency_settings._get_max_open_files_semaphore()
 
             async def upload_part(part_no: int) -> None:
                 async with open_files_semaphore:
@@ -607,12 +603,11 @@ class FilesAPI(APIClient):
             security_categories=security_categories,
         )
 
-        open_files_semaphore = asyncio.Semaphore(global_config.concurrency_settings.general.write)
         path = Path(path)
         if path.is_file():
             if not name:
                 file_metadata.name = path.name
-            return await self._upload_file_from_path(file_metadata, path, overwrite, open_files_semaphore)
+            return await self._upload_file_from_path(file_metadata, path, overwrite)
 
         elif not path.is_dir():
             raise FileNotFoundError(path)
@@ -622,16 +617,14 @@ class FilesAPI(APIClient):
             if file.is_file():
                 file_metadata = copy.copy(file_metadata)
                 file_metadata.name = file.name
-                tasks.append(
-                    AsyncSDKTask(self._upload_file_from_path, file_metadata, file, overwrite, open_files_semaphore)
-                )
+                tasks.append(AsyncSDKTask(self._upload_file_from_path, file_metadata, file, overwrite))
 
         tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda task: task[0].name)
         return FileMetadataList(tasks_summary.results)
 
     async def _upload_file_from_path(
-        self, file_metadata: FileMetadataWrite, path: Path, overwrite: bool, open_files_semaphore: asyncio.Semaphore
+        self, file_metadata: FileMetadataWrite, path: Path, overwrite: bool
     ) -> FileMetadata:
         file_size = path.stat().st_size
         part_size, num_parts = self.calculate_part_size_and_count(file_size)
@@ -642,6 +635,7 @@ class FilesAPI(APIClient):
         )
 
         async with session:
+            open_files_semaphore = global_config.concurrency_settings._get_max_open_files_semaphore()
 
             async def upload_part(part_no: int) -> None:
                 async with open_files_semaphore:

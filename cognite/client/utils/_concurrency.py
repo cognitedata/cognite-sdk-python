@@ -228,8 +228,10 @@ class ConcurrencySettings:
     See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
 
     Note:
-        The settings apply on a per-project level, thus if you have multiple clients
+        Most settings apply on a per-project level, thus if you have multiple clients
         pointing to different CDF projects, each client will have its budget to consume from.
+        The exception is ``max_open_files``, which is process-global because open file
+        descriptors are an OS-level resource shared by the whole process.
 
     Warning:
         Once any semaphore is initialized (i.e., after the first API request is made),
@@ -262,6 +264,12 @@ class ConcurrencySettings:
             write_schema=1,
         )
 
+        # Process-global limit on concurrently open file descriptors.
+        # Unlike the per-project API semaphores above, this is keyed only on the event loop because
+        # file descriptors are an OS resource shared by the whole process, not per CDF project.
+        self._max_open_files: int = 32
+        self._max_open_files_semaphore_cache: dict[asyncio.AbstractEventLoop, asyncio.BoundedSemaphore] = {}
+
     def _check_frozen(self, name: str, api_name: str) -> None:
         if self.__frozen:
             raise RuntimeError(
@@ -269,6 +277,26 @@ class ConcurrencySettings:
                 "Concurrency settings must be configured before sending any API requests. "
                 "See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings"
             )
+
+    @property
+    def max_open_files(self) -> int:
+        return self._max_open_files
+
+    @max_open_files.setter
+    def max_open_files(self, value: int) -> None:
+        self._check_frozen("max_open_files", api_name="global")
+        self._max_open_files = value
+
+    def _get_max_open_files_semaphore(self) -> asyncio.BoundedSemaphore:
+        # Keyed only on the event loop — not on project — because open file descriptors
+        # are an OS resource shared by the whole process.
+        key = asyncio.get_running_loop()
+        if key in self._max_open_files_semaphore_cache:
+            return self._max_open_files_semaphore_cache[key]
+        self._freeze()
+        sem = asyncio.BoundedSemaphore(self._max_open_files)
+        self._max_open_files_semaphore_cache[key] = sem
+        return sem
 
     def _freeze(self) -> None:
         """Called internally when settings are consumed to create semaphores."""
@@ -303,6 +331,7 @@ class ConcurrencySettings:
             f"  raw={self._raw},\n"
             f"  datapoints={self._datapoints},\n"
             f"  data_modeling={self._data_modeling},\n"
+            f"  max_open_files={self._max_open_files},\n"
             f"){frozen_str}"
         )
 

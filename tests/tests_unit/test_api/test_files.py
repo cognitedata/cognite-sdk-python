@@ -1143,7 +1143,7 @@ class TestFilesAPI:
         tmp_path: Path,
     ) -> None:
         """Peak concurrent _upload_file_part calls must not exceed the semaphore capacity."""
-        concurrency_limit = global_config.concurrency_settings.general.write
+        concurrency_limit = global_config.concurrency_settings.max_open_files
         test_file = tmp_path / "test.bin"
         test_file.write_bytes(b"x")
 
@@ -1161,7 +1161,7 @@ class TestFilesAPI:
         [["test.bin"], ["file_0.bin", "file_1.bin"]],
         ids=["single_file", "directory"],
     )
-    def test_upload_semaphore_limits_concurrent_parts(
+    def test_upload_open_files_semaphore_limits_concurrent_parts(
         self,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
@@ -1170,7 +1170,7 @@ class TestFilesAPI:
     ) -> None:
         """Peak concurrent _upload_file_part calls must not exceed the semaphore capacity.
         For a directory upload the semaphore is shared across all files."""
-        concurrency_limit = global_config.concurrency_settings.general.write
+        concurrency_limit = global_config.concurrency_settings.max_open_files
         for filename in files_to_create:
             (tmp_path / filename).write_bytes(b"x")
         path = tmp_path / files_to_create[0] if len(files_to_create) == 1 else tmp_path
