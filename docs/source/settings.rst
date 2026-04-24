@@ -54,8 +54,9 @@ Concurrency Settings
 The SDK allows you to control how many concurrent API requests are made for different categories of APIs
 and operation types. This is managed through the ``concurrency_settings`` attribute on ``global_config``.
 
-All concurrency settings apply *per project*, so if you have multiple clients pointing to different CDF projects,
+Most concurrency settings apply *per project*, so if you have multiple clients pointing to different CDF projects,
 each project gets its own independent concurrency budget. See `Per-project concurrency`_ for more details.
+The exception is ``max_open_files``, which is process-global (see `Max open files`_).
 
 For backend services expected to serve a high volume of requests, you may want to increase the ``max_connection_pool_size``
 (default is 20). This is the "global concurrency limiter". See `Connection pooling`_ for more details.
@@ -124,11 +125,29 @@ You can check whether settings have been frozen:
 
     global_config.concurrency_settings.is_frozen
 
+Max open files
+^^^^^^^^^^^^^^
+``max_open_files`` (default: ``32``) caps the number of file descriptors that the SDK holds open simultaneously
+during file uploads. Each in-flight upload holds the source file open, so this setting prevents
+excessive OS file-descriptor pressure when uploading many large files concurrently.
+
+Unlike every other concurrency setting, ``max_open_files`` is **process-global** — it is *not* split per CDF project.
+Open file descriptors are an OS resource shared by the whole process, so multiplying the budget per project would
+defeat the purpose of the limit.
+
+.. code:: python
+
+    from cognite.client import global_config
+
+    # Must be set before any API request is made
+    global_config.concurrency_settings.max_open_files = 64
+
 Per-project concurrency
 ^^^^^^^^^^^^^^^^^^^^^^^
-The concurrency limits apply **per CDF project**. If you have multiple clients pointing to different CDF projects,
+The API concurrency limits apply **per CDF project**. If you have multiple clients pointing to different CDF projects,
 each project gets its own independent concurrency budget. This means that if you set ``general.read = 5``, you can have
 up to 5 concurrent general read requests *per project*, not 5 total across all projects.
+(``max_open_files`` is the one exception — see `Max open files`_ above.)
 
 Connection pooling
 ------------------

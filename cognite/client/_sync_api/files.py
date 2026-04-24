@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9775a0ca6d02913bc835831ac35662df
+8205a3ce091cd7e896a062920830ea19
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,7 +12,9 @@ from pathlib import Path
 from typing import Any, BinaryIO, Literal, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._constants import (
+    DEFAULT_LIMIT_READ,
+)
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes import (
     FileMetadata,
@@ -425,12 +427,17 @@ class SyncFilesAPI(SyncAPIClient):
         self, path: Path | str, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> FileMetadata:
         """
-        `Upload a file content <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_.
+        `Upload file content <https://api-docs.cognite.com/20230101/tag/Files/operation/getMultiPartUploadLink>`_
+
+        Upload file content from a local file path to a file previously created (initiated) with only metadata.
+        For files created with FilesAPI.create(), use `external_id`.
+        For files created with data modeling API using CogniteFileApply, use `instance_id`.
+        Supports upload of large files (>5 GB), using multipart upload.
 
         Args:
-            path (Path | str): Path to the file you wish to upload.
+            path (Path | str): Local file path.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            instance_id (NodeId | None): Instance ID of the file (CogniteFile).
         Returns:
             FileMetadata: No description.
         """
@@ -458,7 +465,14 @@ class SyncFilesAPI(SyncAPIClient):
         overwrite: bool = False,
     ) -> FileMetadata | FileMetadataList:
         """
-        `Upload a file <https://api-docs.cognite.com/20230101/tag/Files/operation/initFileUpload>`_.
+        `Upload a file or directory <https://api-docs.cognite.com/20230101/tag/Files/operation/initMultiPartUpload>`_.
+
+        Creates files in files API with metadata and uploads file content.
+
+        Note:
+            If path is a directory, this method will upload all files in that directory. Use `recursive=True` for subdirectories as well.
+
+        Supports upload of large files (>5 GB), using multipart upload.
 
         Args:
             path (Path | str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.

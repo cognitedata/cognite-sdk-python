@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import copy
+import math
 import warnings
 from collections import defaultdict
 from collections.abc import AsyncIterator, Sequence
@@ -9,7 +11,14 @@ from typing import Any, BinaryIO, Literal, overload
 from urllib.parse import urlparse
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._constants import (
+    DEFAULT_LIMIT_READ,
+    FILE_DEFAULT_MULTIPART_SIZE,
+    FILE_MAX_MULTIPART_COUNT,
+    FILE_MAX_MULTIPART_SIZE,
+    FILE_MIN_MULTIPART_SIZE,
+)
+from cognite.client.config import global_config
 from cognite.client.data_classes import (
     FileMetadata,
     FileMetadataFilter,
@@ -28,7 +37,7 @@ from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
 from cognite.client.utils._auxiliary import append_url_path, find_duplicates, unpack_items
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
-from cognite.client.utils._uploading import prepare_content_for_upload
+from cognite.client.utils._uploading import AsyncFileChunker, prepare_content_for_upload
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -450,22 +459,42 @@ class FilesAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> FileMetadata:
-        """`Upload a file content <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_.
+        """`Upload file content <https://api-docs.cognite.com/20230101/tag/Files/operation/getMultiPartUploadLink>`_
+
+        Upload file content from a local file path to a file previously created (initiated) with only metadata.
+        For files created with FilesAPI.create(), use `external_id`.
+        For files created with data modeling API using CogniteFileApply, use `instance_id`.
+        Supports upload of large files (>5 GB), using multipart upload.
 
         Args:
-            path (Path | str): Path to the file you wish to upload.
+            path (Path | str): Local file path.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            instance_id (NodeId | None): Instance ID of the file (CogniteFile).
         Returns:
             FileMetadata: No description.
         """
         path = Path(path)
-        if path.is_file():
-            with path.open("rb") as fh:
-                return await self.upload_content_bytes(fh, external_id=external_id, instance_id=instance_id)
-        elif path.is_dir():
+        if path.is_dir():
             raise IsADirectoryError(path)
-        raise FileNotFoundError(path)
+        if not path.is_file():
+            raise FileNotFoundError(path)
+
+        file_size = path.stat().st_size
+        part_size, num_parts = self.calculate_part_size_and_count(file_size)
+        session = await self.multipart_upload_content_session(
+            parts=num_parts, external_id=external_id, instance_id=instance_id
+        )
+
+        async with session:
+            open_files_semaphore = global_config.concurrency_settings._get_max_open_files_semaphore()
+
+            async def upload_part(part_no: int) -> None:
+                async with open_files_semaphore:
+                    await self._upload_file_part(session, path, part_no, part_size, file_size)
+
+            await asyncio.gather(*(upload_part(i) for i in range(num_parts)))
+
+        return session.file_metadata
 
     async def upload(
         self,
@@ -486,7 +515,14 @@ class FilesAPI(APIClient):
         recursive: bool = False,
         overwrite: bool = False,
     ) -> FileMetadata | FileMetadataList:
-        """`Upload a file <https://api-docs.cognite.com/20230101/tag/Files/operation/initFileUpload>`_.
+        """`Upload a file or directory <https://api-docs.cognite.com/20230101/tag/Files/operation/initMultiPartUpload>`_.
+
+        Creates files in files API with metadata and uploads file content.
+
+        Note:
+            If path is a directory, this method will upload all files in that directory. Use `recursive=True` for subdirectories as well.
+
+        Supports upload of large files (>5 GB), using multipart upload.
 
         Args:
             path (Path | str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
@@ -566,6 +602,7 @@ class FilesAPI(APIClient):
             source_modified_time=source_modified_time,
             security_categories=security_categories,
         )
+
         path = Path(path)
         if path.is_file():
             if not name:
@@ -574,7 +611,6 @@ class FilesAPI(APIClient):
 
         elif not path.is_dir():
             raise FileNotFoundError(path)
-
         tasks: list[AsyncSDKTask] = []
         file_iter = path.rglob("*") if recursive else path.iterdir()
         for file in file_iter:
@@ -590,8 +626,60 @@ class FilesAPI(APIClient):
     async def _upload_file_from_path(
         self, file_metadata: FileMetadataWrite, path: Path, overwrite: bool
     ) -> FileMetadata:
+        file_size = path.stat().st_size
+        part_size, num_parts = self.calculate_part_size_and_count(file_size)
+        session = await self.multipart_upload_session(
+            parts=num_parts,
+            overwrite=overwrite,
+            **file_metadata.dump(camel_case=False),
+        )
+
+        async with session:
+            open_files_semaphore = global_config.concurrency_settings._get_max_open_files_semaphore()
+
+            async def upload_part(part_no: int) -> None:
+                async with open_files_semaphore:
+                    await self._upload_file_part(session, path, part_no, part_size, file_size)
+
+            await asyncio.gather(*(upload_part(i) for i in range(num_parts)))
+
+        return session.file_metadata
+
+    def calculate_part_size_and_count(self, file_size: int) -> tuple[int, int]:
+        """Calculate part size and count for a multipart upload, for a given file size.
+
+        See <https://api-docs.cognite.com/20230101/tag/Files/operation/initMultiPartUpload>
+        for more details on multipart upload and the constraints on part size and count.
+
+        Args:
+            file_size (int): The total file size in bytes.
+
+        Returns:
+            tuple[int, int]: A tuple of (part_size, num_parts).
+        """
+        if file_size > FILE_MAX_MULTIPART_COUNT * FILE_MAX_MULTIPART_SIZE:
+            raise ValueError(
+                f"File size {file_size} exceeds the maximum supported size of {FILE_MAX_MULTIPART_COUNT * FILE_MAX_MULTIPART_SIZE} bytes for multipart upload."
+            )
+        if file_size < FILE_MIN_MULTIPART_SIZE:
+            return FILE_MIN_MULTIPART_SIZE, 1
+        uncapped_part_size = max(FILE_DEFAULT_MULTIPART_SIZE, math.ceil(file_size / FILE_MAX_MULTIPART_COUNT))
+        part_size = min(uncapped_part_size, FILE_MAX_MULTIPART_SIZE)
+        num_parts = math.ceil(file_size / part_size)
+        return part_size, num_parts
+
+    async def _upload_file_part(
+        self,
+        session: FileMultipartUploadSession,
+        path: Path,
+        part_no: int,
+        part_size: int,
+        file_size: int,
+    ) -> None:
+        offset = part_no * part_size
+        read_size = min(part_size, file_size - offset)
         with path.open("rb") as fh:
-            return await self.upload_bytes(fh, overwrite=overwrite, **file_metadata.dump(camel_case=False))
+            await session.upload_part_async(part_no, AsyncFileChunker(fh, offset=offset, size=read_size))
 
     async def upload_content_bytes(
         self,
@@ -940,7 +1028,9 @@ class FilesAPI(APIClient):
             FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
         )
 
-    async def _upload_multipart_part(self, upload_url: str, content: str | bytes | BinaryIO) -> None:
+    async def _upload_multipart_part(
+        self, upload_url: str, content: str | bytes | BinaryIO | AsyncIterator[bytes]
+    ) -> None:
         """Upload part of a file to an upload URL returned from `multipart_upload_session`.
 
         Note:
@@ -948,7 +1038,7 @@ class FilesAPI(APIClient):
 
         Args:
             upload_url (str): URL to upload file chunk to.
-            content (str | bytes | BinaryIO): The content to upload.
+            content (str | bytes | BinaryIO | AsyncIterator[bytes]): The content to upload.
         """
         headers = {"accept": "*/*"}
         file_size, file_content = prepare_content_for_upload(content)
