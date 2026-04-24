@@ -3,10 +3,9 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-
-from cognite.client._api.ai.python_schema import ErrorResult, SchemaResult, extract_function_schema
 from jsonschema.exceptions import SchemaError
 
+from cognite.client._api.ai.python_schema import ErrorResult, SchemaResult, extract_function_schema
 
 # ---------------------------------------------------------------------------
 # US1 — Core Schema Extraction + Primitive Types
@@ -120,3 +119,119 @@ def test_draft7_validation_failure():
         result = extract_function_schema("def handle(name: str): pass")
     assert isinstance(result, ErrorResult)
     assert len(result.errors) > 0
+
+
+# ---------------------------------------------------------------------------
+# US2 — Extended Type Support
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.us2
+def test_nodeid_scalar_and_list():
+    code = "def handle(node: NodeId, node_list: list[NodeId]) -> None: pass"
+    result = extract_function_schema(code)
+    assert isinstance(result, SchemaResult)
+
+    expected_scalar = {
+        "type": "object",
+        "properties": {"space": {"type": "string"}, "externalId": {"type": "string"}},
+        "required": ["externalId", "space"],
+    }
+    assert result.properties["node"] == expected_scalar
+
+    expected_list = {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {"space": {"type": "string"}, "externalId": {"type": "string"}},
+            "required": ["externalId", "space"],
+        },
+    }
+    assert result.properties["node_list"] == expected_list
+    assert "properties" not in result.properties["node_list"]
+    assert "required" not in result.properties["node_list"]
+
+
+@pytest.mark.us2
+def test_datetime_scalar_and_list():
+    code = "def handle(date: datetime, date_list: list[datetime]) -> None: pass"
+    result = extract_function_schema(code)
+    assert isinstance(result, SchemaResult)
+    assert result.properties["date"] == {"type": "string", "format": "date-time"}
+    assert result.properties["date_list"] == {"type": "array", "items": {"type": "string", "format": "date-time"}}
+
+
+@pytest.mark.us2
+def test_datetime_fully_qualified():
+    code = "def handle(date: datetime.datetime) -> None: pass"
+    result = extract_function_schema(code)
+    assert isinstance(result, SchemaResult)
+    assert result.properties["date"] == {"type": "string", "format": "date-time"}
+
+
+@pytest.mark.us2
+def test_pd_dataframe():
+    code = "def handle(x: int, assets: pd.DataFrame) -> None: pass"
+    result = extract_function_schema(code)
+    assert isinstance(result, SchemaResult)
+    assert result.properties["assets"]["type"] == "string"
+    assert result.properties["assets"]["format"] == "cognite-query-id"
+
+
+@pytest.mark.us2
+def test_dataframe_bare():
+    code = "def handle(assets: DataFrame) -> None: pass"
+    result = extract_function_schema(code)
+    assert isinstance(result, SchemaResult)
+    assert result.properties["assets"]["type"] == "string"
+    assert result.properties["assets"]["format"] == "cognite-query-id"
+
+
+@pytest.mark.us2
+def test_list_dataframe_unsupported():
+    result = extract_function_schema("def handle(dfs: list[pd.DataFrame]) -> None: pass")
+    assert isinstance(result, ErrorResult)
+    assert any("list[pd.DataFrame]" in e for e in result.errors)
+
+
+@pytest.mark.us2
+@pytest.mark.parametrize(
+    "annotation",
+    ["dict", "any", "MyCustomNodeId"],
+)
+def test_unsupported_scalar_type(annotation: str):
+    code = f"def handle(param: {annotation}) -> None: pass"
+    result = extract_function_schema(code)
+    assert isinstance(result, ErrorResult)
+    assert any(annotation.lower() in e.lower() for e in result.errors)
+
+
+@pytest.mark.us2
+@pytest.mark.parametrize(
+    "annotation",
+    ["list[list[str]]", "list[set]", "list[tuple]", "list[complex]"],
+)
+def test_unsupported_list_type(annotation: str):
+    code = f"def handle(param: {annotation}) -> None: pass"
+    result = extract_function_schema(code)
+    assert isinstance(result, ErrorResult)
+    assert len(result.errors) > 0
+
+
+@pytest.mark.us2
+@pytest.mark.parametrize(
+    "annotation",
+    ["dict", "any", "MyCustomNodeId", "list[list[str]]", "list[set]", "list[tuple]", "list[complex]"],
+)
+def test_unsupported_type_with_docstring(annotation: str):
+    code = f'''
+def handle(param: {annotation}) -> None:
+    """Summary.
+
+    Args:
+        param: some description
+    """
+    pass
+'''
+    result = extract_function_schema(code)
+    assert isinstance(result, ErrorResult)

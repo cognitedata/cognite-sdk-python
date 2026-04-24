@@ -12,9 +12,7 @@ FunctionDef: TypeAlias = ast.FunctionDef | ast.AsyncFunctionDef
 
 COGNITE_QUERY_ID_FORMAT = "cognite-query-id"
 DATAFRAME_PARAMETER_TYPES = {"pd.DataFrame", "DataFrame"}
-QUERY_ID_DESCRIPTION_SUFFIX = (
-    "**THIS FIELD IS POPULATED BY PROVIDING A query_id FROM THE MEMORY TABLE**"
-)
+QUERY_ID_DESCRIPTION_SUFFIX = "**THIS FIELD IS POPULATED BY PROVIDING A query_id FROM THE MEMORY TABLE**"
 
 
 @dataclass
@@ -32,8 +30,7 @@ class ErrorResult:
 def _extract_argument_details(func_def: FunctionDef) -> tuple[list[str], dict[str, str | None]]:
     argument_names = [arg.arg for arg in func_def.args.args]
     argument_annotations: dict[str, str | None] = {
-        arg.arg: (ast.unparse(arg.annotation) if arg.annotation is not None else None)
-        for arg in func_def.args.args
+        arg.arg: (ast.unparse(arg.annotation) if arg.annotation is not None else None) for arg in func_def.args.args
     }
     return argument_names, argument_annotations
 
@@ -87,6 +84,18 @@ def _scalar_to_schema(name: str, base_type: str, in_list: bool) -> tuple[dict | 
     }
     if base_type in primitive_map:
         return dict(primitive_map[base_type]), None
+    if base_type == "NodeId":
+        return {
+            "type": "object",
+            "properties": {"space": {"type": "string"}, "externalId": {"type": "string"}},
+            "required": ["externalId", "space"],
+        }, None
+    if base_type in ("datetime", "datetime.datetime"):
+        return {"type": "string", "format": "date-time"}, None
+    if base_type in DATAFRAME_PARAMETER_TYPES:
+        if in_list:
+            return None, f"Unsupported type for parameter '{name}': list[{base_type}]"
+        return {"type": "string", "format": COGNITE_QUERY_ID_FORMAT}, None
     if in_list:
         return None, f"Unsupported type for parameter '{name}': list[{base_type}]"
     return None, f"Unsupported type for parameter '{name}': {base_type}"
