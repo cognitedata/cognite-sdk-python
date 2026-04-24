@@ -54,6 +54,8 @@ pandas = { version = ">=2.1", optional = true }
 geopandas = { version = ">=0.14", optional = true }
 shapely = { version = ">=1.7.0", optional = true }
 PyYAML = { version = "^6.0", optional = true }
+griffe = { version = ">=1.0,<2", optional = true }
+jsonschema = { version = ">=4.0,<5", optional = true }
 
 [tool.poetry.extras]
 pandas = ["pandas"]
@@ -62,6 +64,7 @@ geo = ["geopandas", "shapely"]
 sympy = ["sympy"]
 functions = ["pip"]
 yaml = ["PyYAML"]
+schema = ["griffe", "jsonschema"]
 pyodide = ["tzdata", "anyio"]  # keep pyodide related dependencies outside of 'all'
 all = ["numpy", "pandas", "geopandas", "shapely", "sympy", "pip", "PyYAML"]
 
