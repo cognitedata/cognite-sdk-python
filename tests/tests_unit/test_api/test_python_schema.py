@@ -235,3 +235,160 @@ def handle(param: {annotation}) -> None:
 '''
     result = extract_function_schema(code)
     assert isinstance(result, ErrorResult)
+
+
+# ---------------------------------------------------------------------------
+# US3 — Docstring Enrichment + Default Values
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.us3
+def test_full_docstring():
+    code = '''
+def handle(name: str, age: int, height: float) -> None:
+    """Summary.
+
+    Args:
+        name: The person's name.
+        age: The person's age.
+        height: The person's height.
+    """
+    pass
+'''
+    result = extract_function_schema(code)
+    assert isinstance(result, SchemaResult)
+    assert result.properties["name"]["description"] == "The person's name."
+    assert result.properties["age"]["description"] == "The person's age."
+    assert result.properties["height"]["description"] == "The person's height."
+
+
+@pytest.mark.us3
+def test_partial_docstring():
+    code = '''
+def handle(name: str, age: int, height: float) -> None:
+    """Summary.
+
+    Args:
+        name: The person's name.
+        age: The person's age.
+    """
+    pass
+'''
+    result = extract_function_schema(code)
+    assert isinstance(result, SchemaResult)
+    assert result.properties["name"]["description"] == "The person's name."
+    assert result.properties["age"]["description"] == "The person's age."
+    assert "description" not in result.properties["height"]
+
+
+@pytest.mark.us3
+def test_no_docstring_no_description():
+    code = "def handle(name: str, age: int) -> None: pass"
+    result = extract_function_schema(code)
+    assert isinstance(result, SchemaResult)
+    assert "description" not in result.properties["name"]
+    assert "description" not in result.properties["age"]
+
+
+@pytest.mark.us3
+def test_docstring_unknown_param():
+    code = '''
+def handle(name: str) -> None:
+    """Summary.
+
+    Args:
+        name: The person's name.
+        extra_param: This param doesn't exist.
+    """
+    pass
+'''
+    result = extract_function_schema(code)
+    assert isinstance(result, ErrorResult)
+
+
+@pytest.mark.us3
+def test_dataframe_with_docstring_gets_suffix():
+    code = '''
+def handle(x: int, assets: pd.DataFrame) -> None:
+    """Summary.
+
+    Args:
+        assets: test assets
+    """
+    pass
+'''
+    result = extract_function_schema(code)
+    assert isinstance(result, SchemaResult)
+    expected = "test assets. **THIS FIELD IS POPULATED BY PROVIDING A query_id FROM THE MEMORY TABLE**"
+    assert result.properties["assets"]["description"] == expected
+
+
+@pytest.mark.us3
+def test_dataframe_without_docstring_gets_suffix():
+    code = "def handle(assets: pd.DataFrame) -> None: pass"
+    result = extract_function_schema(code)
+    assert isinstance(result, SchemaResult)
+    expected = "**THIS FIELD IS POPULATED BY PROVIDING A query_id FROM THE MEMORY TABLE**"
+    assert result.properties["assets"]["description"] == expected
+
+
+@pytest.mark.us3
+@pytest.mark.parametrize(
+    ("py_type", "default_val", "json_type", "expected_default"),
+    [
+        ("str", '"Joe"', "string", "Joe"),
+        ("int", "1337", "integer", 1337),
+        ("float", "4.2", "number", 4.2),
+        ("bool", "True", "boolean", True),
+    ],
+)
+def test_primitive_defaults(py_type: str, default_val: str, json_type: str, expected_default: object):
+    code = f"def handle(param: {py_type} = {default_val}) -> None: pass"
+    result = extract_function_schema(code)
+    assert isinstance(result, SchemaResult)
+    assert result.properties["param"]["type"] == json_type
+    assert result.properties["param"]["default"] == expected_default
+    assert "param" not in result.required
+
+
+@pytest.mark.us3
+def test_defaults_with_docstring():
+    code = '''
+def handle(name: str, age: int = 30, is_active: bool = True) -> None:
+    """Summary.
+
+    Args:
+        name: The person's name.
+        age: The person's age.
+        is_active: Whether the person is active.
+    """
+    pass
+'''
+    result = extract_function_schema(code)
+    assert isinstance(result, SchemaResult)
+    assert result.properties["age"]["description"] == "The person's age."
+    assert result.properties["age"]["default"] == 30
+    assert "name" in result.required
+    assert "age" not in result.required
+    assert "is_active" not in result.required
+
+
+@pytest.mark.us3
+def test_list_default_unsupported():
+    result = extract_function_schema('def handle(names: list[str] = ["a", "b"]) -> None: pass')
+    assert isinstance(result, ErrorResult)
+    assert any("default values are not supported for lists" in e for e in result.errors)
+
+
+@pytest.mark.us3
+def test_nodeid_default_unsupported():
+    result = extract_function_schema('def handle(node: NodeId = NodeId("space", "id")) -> None: pass')
+    assert isinstance(result, ErrorResult)
+    assert any("only primitive types (str, int, float, bool) support default values" in e for e in result.errors)
+
+
+@pytest.mark.us3
+def test_datetime_default_unsupported():
+    result = extract_function_schema("def handle(date: datetime = datetime.now()) -> None: pass")
+    assert isinstance(result, ErrorResult)
+    assert any("only primitive types (str, int, float, bool) support default values" in e for e in result.errors)

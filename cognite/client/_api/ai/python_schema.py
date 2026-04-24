@@ -101,6 +101,27 @@ def _scalar_to_schema(name: str, base_type: str, in_list: bool) -> tuple[dict | 
     return None, f"Unsupported type for parameter '{name}': {base_type}"
 
 
+def _apply_default_value(prop: dict, name: str, annotation: str, default_value: DefaultValue) -> None:
+    if "list" in annotation:
+        raise ValueError(
+            f"Default value for parameter '{name}' was provided, but default values are not supported for lists."
+        )
+    str_default = str(default_value)
+    if annotation == "float":
+        prop["default"] = float(str_default)
+    elif annotation == "int":
+        prop["default"] = int(str_default)
+    elif annotation == "bool":
+        prop["default"] = str_default == "True"
+    elif annotation == "str":
+        prop["default"] = ast.literal_eval(str_default)
+    else:
+        raise ValueError(
+            f"Default value for parameter '{name}' was provided, but only primitive types"
+            " (str, int, float, bool) support default values."
+        )
+
+
 def _parse_single_annotation(
     name: str, annotation: str, default_value: DefaultValue | None
 ) -> tuple[dict | None, str | None]:
@@ -113,11 +134,23 @@ def _parse_single_annotation(
         items_schema, err = _scalar_to_schema(name, inner_type or "", in_list=True)
         if err:
             return None, err
-        return {"type": "array", "items": items_schema}, None
+        prop: dict = {"type": "array", "items": items_schema}
+        if default_value is not None:
+            try:
+                _apply_default_value(prop, name, annotation, default_value)
+            except ValueError as e:
+                return None, str(e)
+        return prop, None
 
     scalar_prop, err = _scalar_to_schema(name, annotation, in_list=False)
     if err or scalar_prop is None:
         return None, err
+
+    if default_value is not None:
+        try:
+            _apply_default_value(scalar_prop, name, annotation, default_value)
+        except ValueError as e:
+            return None, str(e)
 
     return scalar_prop, None
 
@@ -150,6 +183,31 @@ def _parse_type_annotations(func_def: FunctionDef) -> SchemaResult | ErrorResult
 
 
 def _parse_docstring(func_def: FunctionDef, schema: SchemaResult) -> SchemaResult:
+    from griffe import Docstring
+    from griffe import parse as griffe_parse
+
+    docstring_text = ast.get_docstring(func_def)
+    if docstring_text is not None:
+        doc_obj = Docstring(docstring_text, lineno=1)
+        sections = griffe_parse(doc_obj, parser="google")
+        for section in sections:
+            if section.kind.value == "parameters":
+                for param in section.value:
+                    if param.name in schema.properties:
+                        schema.properties[param.name]["description"] = param.description
+                    else:
+                        raise ValueError(
+                            f"Docstring parameter '{param.name}' does not match any function arguments."
+                        )
+
+    for _, prop in schema.properties.items():
+        if prop.get("format") == COGNITE_QUERY_ID_FORMAT:
+            existing_desc = prop.get("description", "").rstrip(".")
+            if existing_desc:
+                prop["description"] = f"{existing_desc}. {QUERY_ID_DESCRIPTION_SUFFIX}"
+            else:
+                prop["description"] = QUERY_ID_DESCRIPTION_SUFFIX
+
     return schema
 
 
