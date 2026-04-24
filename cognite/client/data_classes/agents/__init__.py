@@ -45,6 +45,7 @@ from cognite.client.data_classes.agents.chat import (
     UnknownActionCall,
     UnknownContent,
 )
+from cognite.client.data_classes.agents.session import AgentSession
 
 __all__ = [
     "Action",
@@ -57,6 +58,7 @@ __all__ = [
     "AgentMessage",
     "AgentMessageList",
     "AgentReasoningItem",
+    "AgentSession",
     "AgentTool",
     "AgentToolList",
     "AgentToolUpsert",

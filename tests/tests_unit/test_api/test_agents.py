@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from unittest.mock import MagicMock
 
@@ -7,13 +8,24 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
-from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
+from cognite.client.data_classes.agents import (
+    Agent,
+    AgentList,
+    AgentSession,
+    AgentUpsert,
+    ClientToolAction,
+    ClientToolResult,
+    Message,
+    ToolConfirmationCall,
+    ToolConfirmationResult,
+)
 from cognite.client.data_classes.agents.agent_tools import (
     DataModelInfo,
     InstanceSpaces,
     QueryKnowledgeGraphAgentToolConfiguration,
     QueryKnowledgeGraphAgentToolUpsert,
 )
+from cognite.client.exceptions import CogniteAPIError
 from tests.utils import get_url, jsgz_load
 
 
@@ -247,3 +259,345 @@ class TestAgentsAPI:
         assert isinstance(retrieved_agent, Agent)
         assert retrieved_agent.external_id == "agent_1"
         assert retrieved_agent.labels == ["published"]
+
+
+class TestAgentSession:
+    @pytest.fixture
+    def chat_url(self, async_client: AsyncCogniteClient) -> str:
+        return get_url(async_client.agents, async_client.agents._RESOURCE_PATH + "/chat")
+
+    @staticmethod
+    def _text_response(cursor: str | None = None, text: str = "ok") -> dict:
+        return {
+            "agentExternalId": "agent_1",
+            "response": {
+                "cursor": cursor,
+                "type": "result",
+                "messages": [
+                    {
+                        "role": "agent",
+                        "content": {"type": "text", "text": text},
+                    }
+                ],
+            },
+        }
+
+    @staticmethod
+    def _client_tool_call_response(cursor: str, action_id: str, name: str = "add") -> dict:
+        return {
+            "agentExternalId": "agent_1",
+            "response": {
+                "cursor": cursor,
+                "type": "result",
+                "messages": [
+                    {
+                        "role": "agent",
+                        "actions": [
+                            {
+                                "type": "clientTool",
+                                "actionId": action_id,
+                                "clientTool": {
+                                    "name": name,
+                                    "arguments": json.dumps({"a": 1, "b": 2}),
+                                },
+                            }
+                        ],
+                    }
+                ],
+            },
+        }
+
+    @staticmethod
+    def _tool_confirmation_response(cursor: str, action_id: str) -> dict:
+        return {
+            "agentExternalId": "agent_1",
+            "response": {
+                "cursor": cursor,
+                "type": "result",
+                "messages": [
+                    {
+                        "role": "agent",
+                        "actions": [
+                            {
+                                "type": "toolConfirmation",
+                                "actionId": action_id,
+                                "toolConfirmation": {
+                                    "content": {"type": "text", "text": "Run this tool?"},
+                                    "toolName": "run_func",
+                                    "toolArguments": {"x": 1},
+                                    "toolDescription": "Runs a function",
+                                    "toolType": "callFunction",
+                                },
+                            }
+                        ],
+                    }
+                ],
+            },
+        }
+
+    # T008 [US2]
+    def test_create_session_stores_config(self, async_client: AsyncCogniteClient) -> None:
+        add = ClientToolAction(
+            name="add",
+            description="Add",
+            parameters={"type": "object"},
+        )
+        session = async_client.agents.create_session(
+            agent_external_id="my_agent",
+            actions=[add],
+            cursor="resume_cursor",
+        )
+        assert isinstance(session, AgentSession)
+        assert session.agent_external_id == "my_agent"
+        assert session.cursor == "resume_cursor"
+        assert session.actions == [add]
+
+    # T008 (companion): defaults when actions/cursor omitted
+    def test_create_session_defaults(self, async_client: AsyncCogniteClient) -> None:
+        session = async_client.agents.create_session(agent_external_id="x")
+        assert session.agent_external_id == "x"
+        assert session.cursor is None
+        assert session.actions is None
+
+    # T011 [US2]
+    def test_create_session_ignores_unknown_kwargs(self, async_client: AsyncCogniteClient) -> None:
+        session = async_client.agents.create_session(
+            agent_external_id="x",
+            bogus=True,
+            dangerously_skip_user_confirmation=True,
+        )
+        assert isinstance(session, AgentSession)
+        assert session.agent_external_id == "x"
+
+    # T015
+    def test_cursor_is_read_only(self, async_client: AsyncCogniteClient) -> None:
+        session = async_client.agents.create_session(agent_external_id="x")
+        with pytest.raises(AttributeError):
+            session.cursor = "new"  # type: ignore[misc]
+
+    # T016
+    def test_sync_client_does_not_have_create_session(self, cognite_client: CogniteClient) -> None:
+        assert not hasattr(cognite_client.agents, "create_session")
+
+    # T020
+    def test_session_has_no_reset_method(self, async_client: AsyncCogniteClient) -> None:
+        session = async_client.agents.create_session(agent_external_id="x")
+        assert not hasattr(session, "reset")
+
+    # T005 [US1]
+    async def test_chat_threads_cursor(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock, chat_url: str
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST", url=chat_url, status_code=200, json=self._text_response(cursor="c1", text="r1")
+        )
+        httpx_mock.add_response(
+            method="POST", url=chat_url, status_code=200, json=self._text_response(cursor="c2", text="r2")
+        )
+
+        session = async_client.agents.create_session(agent_external_id="agent_1")
+
+        r1 = await session.chat(Message("hi"))
+        assert r1.text == "r1"
+        assert session.cursor == "c1"
+
+        r2 = await session.chat(Message("more"))
+        assert r2.text == "r2"
+        assert session.cursor == "c2"
+
+        requests = httpx_mock.get_requests()
+        assert len(requests) == 2
+        body_1 = jsgz_load(requests[0].content)
+        body_2 = jsgz_load(requests[1].content)
+        assert "cursor" not in body_1
+        assert body_2["cursor"] == "c1"
+
+    # T009 [US2]
+    async def test_first_request_no_cursor_when_cursor_none(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock, chat_url: str
+    ) -> None:
+        httpx_mock.add_response(method="POST", url=chat_url, status_code=200, json=self._text_response(cursor="c1"))
+        session = async_client.agents.create_session(agent_external_id="agent_1", cursor=None)
+        await session.chat(Message("hi"))
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert "cursor" not in body
+
+    # T010 [US2]
+    async def test_first_request_uses_resume_cursor(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock, chat_url: str
+    ) -> None:
+        httpx_mock.add_response(method="POST", url=chat_url, status_code=200, json=self._text_response(cursor="c2"))
+        session = async_client.agents.create_session(agent_external_id="agent_1", cursor="resume_me")
+        await session.chat(Message("continue"))
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body["cursor"] == "resume_me"
+
+    # T007 [US1]
+    async def test_null_response_cursor_retains_prior(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock, chat_url: str
+    ) -> None:
+        httpx_mock.add_response(method="POST", url=chat_url, status_code=200, json=self._text_response(cursor="c1"))
+        httpx_mock.add_response(method="POST", url=chat_url, status_code=200, json=self._text_response(cursor=None))
+        session = async_client.agents.create_session(agent_external_id="agent_1")
+        await session.chat(Message("one"))
+        assert session.cursor == "c1"
+        await session.chat(Message("two"))
+        assert session.cursor == "c1"
+
+    # T006 [US1]
+    async def test_cursor_not_advanced_on_failure(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock, chat_url: str
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST", url=chat_url, status_code=200, json=self._text_response(cursor="good_cursor")
+        )
+        httpx_mock.add_response(method="POST", url=chat_url, status_code=500, json={"error": {"message": "boom"}})
+
+        session = async_client.agents.create_session(agent_external_id="agent_1")
+        await session.chat(Message("hi"))
+        assert session.cursor == "good_cursor"
+
+        with pytest.raises(CogniteAPIError):
+            await session.chat(Message("boom"))
+
+        assert session.cursor == "good_cursor"
+
+    # T012 [US2]
+    async def test_actions_forwarded_to_every_chat(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock, chat_url: str
+    ) -> None:
+        httpx_mock.add_response(method="POST", url=chat_url, status_code=200, json=self._text_response(cursor="c1"))
+        httpx_mock.add_response(method="POST", url=chat_url, status_code=200, json=self._text_response(cursor="c2"))
+
+        add = ClientToolAction(
+            name="add",
+            description="Add",
+            parameters={
+                "type": "object",
+                "properties": {"a": {"type": "number"}, "b": {"type": "number"}},
+                "required": ["a", "b"],
+            },
+        )
+        session = async_client.agents.create_session(agent_external_id="agent_1", actions=[add])
+
+        await session.chat(Message("one"))
+        await session.chat(Message("two"))
+
+        reqs = httpx_mock.get_requests()
+        assert len(reqs) == 2
+        expected_actions = [add.dump(camel_case=True)]
+        for req in reqs:
+            body = jsgz_load(req.content)
+            assert body["actions"] == expected_actions
+
+    # T013 [US3]
+    async def test_action_result_threads_cursor(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock, chat_url: str
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=chat_url,
+            status_code=200,
+            json=self._client_tool_call_response(cursor="conv_1", action_id="a1"),
+        )
+        httpx_mock.add_response(
+            method="POST", url=chat_url, status_code=200, json=self._text_response(cursor="conv_2", text="done")
+        )
+
+        session = async_client.agents.create_session(agent_external_id="agent_1")
+        r = await session.chat(Message("calc"))
+        assert r.action_calls is not None
+        assert session.cursor == "conv_1"
+
+        call = r.action_calls[0]
+        await session.chat(ClientToolResult(action_id=call.action_id, content="3"))
+
+        reqs = httpx_mock.get_requests()
+        assert len(reqs) == 2
+        assert jsgz_load(reqs[1].content)["cursor"] == "conv_1"
+
+    # T014 [US3]
+    async def test_multiple_action_results_in_one_call(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock, chat_url: str
+    ) -> None:
+        httpx_mock.add_response(method="POST", url=chat_url, status_code=200, json=self._text_response(cursor="final"))
+
+        session = async_client.agents.create_session(agent_external_id="agent_1", cursor="after_calls")
+        await session.chat(
+            [
+                ClientToolResult(action_id="a1", content="res1"),
+                ClientToolResult(action_id="a2", content="res2"),
+            ]
+        )
+
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body["cursor"] == "after_calls"
+        assert len(body["messages"]) == 2
+
+    # T019 [US3]
+    async def test_tool_confirmation_pass_through_and_response(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock, chat_url: str
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=chat_url,
+            status_code=200,
+            json=self._tool_confirmation_response(cursor="confirm_c", action_id="conf_1"),
+        )
+        httpx_mock.add_response(
+            method="POST", url=chat_url, status_code=200, json=self._text_response(cursor="after", text="executed")
+        )
+
+        session = async_client.agents.create_session(agent_external_id="agent_1")
+        r = await session.chat(Message("run"))
+
+        assert r.action_calls is not None
+        assert len(r.action_calls) == 1
+        assert isinstance(r.action_calls[0], ToolConfirmationCall)
+        assert r.action_calls[0].action_id == "conf_1"
+        assert len(httpx_mock.get_requests()) == 1  # no auto-confirmation
+
+        await session.chat(ToolConfirmationResult(action_id="conf_1", status="ALLOW"))
+
+        reqs = httpx_mock.get_requests()
+        assert len(reqs) == 2
+        assert jsgz_load(reqs[1].content)["cursor"] == "confirm_c"
+
+    # T021 [US3]
+    async def test_three_action_rounds_thread_cursor(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock, chat_url: str
+    ) -> None:
+        for i in range(3):
+            httpx_mock.add_response(
+                method="POST",
+                url=chat_url,
+                status_code=200,
+                json=self._client_tool_call_response(cursor=f"c{i + 1}", action_id=f"call_{i + 1}"),
+            )
+        httpx_mock.add_response(
+            method="POST", url=chat_url, status_code=200, json=self._text_response(cursor="c_final", text="done")
+        )
+
+        session = async_client.agents.create_session(agent_external_id="agent_1")
+
+        r = await session.chat(Message("step_1"))
+        assert r.action_calls is not None
+        assert session.cursor == "c1"
+
+        r = await session.chat(ClientToolResult(action_id=r.action_calls[0].action_id, content="ok"))
+        assert r.action_calls is not None
+        assert session.cursor == "c2"
+
+        r = await session.chat(ClientToolResult(action_id=r.action_calls[0].action_id, content="ok"))
+        assert r.action_calls is not None
+        assert session.cursor == "c3"
+
+        r = await session.chat(ClientToolResult(action_id=r.action_calls[0].action_id, content="ok"))
+        assert session.cursor == "c_final"
+
+        reqs = httpx_mock.get_requests()
+        assert len(reqs) == 4
+        assert "cursor" not in jsgz_load(reqs[0].content)
+        assert jsgz_load(reqs[1].content)["cursor"] == "c1"
+        assert jsgz_load(reqs[2].content)["cursor"] == "c2"
+        assert jsgz_load(reqs[3].content)["cursor"] == "c3"
