@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9b9fbad96c1ec94edcba6d76b9513457
+7b69747bfc56119cf6a66311bdeee69f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -1169,6 +1169,13 @@ class SyncInstancesAPI(SyncAPIClient):
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
+        Note:
+            Each result set expression accepts a ``sync_mode`` controlling how the initial data is loaded. The default,
+            ``"two_phase"``, runs a backfill phase followed by live updates and is recommended for queries with custom
+            filters; the backfill phase's filters and sort must be backed by a cursorable index. Use ``"one_phase"`` when
+            fetching all instances (or all in specific spaces) for better throughput, or ``"no_backfill"`` to skip the
+            initial load and only receive live updates.
+
         Args:
             query (QuerySync): Query.
             include_typing (bool): Should we return property type information as part of the result?
@@ -1184,10 +1191,10 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.instances import InstanceSort
                 >>> from cognite.client.data_classes.data_modeling.query import (
-                ...     Query,
-                ...     Select,
-                ...     NodeResultSetExpression,
-                ...     EdgeResultSetExpression,
+                ...     QuerySync,
+                ...     SelectSync,
+                ...     NodeResultSetExpressionSync,
+                ...     EdgeResultSetExpressionSync,
                 ...     SourceSelector,
                 ... )
                 >>> from cognite.client.data_classes.filters import Range, Equals
@@ -1196,22 +1203,26 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> work_order_id = ViewId("mySpace", "WorkOrderView", "v1")
                 >>> pump_id = ViewId("mySpace", "PumpView", "v1")
-                >>> query = Query(
+                >>> query = QuerySync(
                 ...     with_={
-                ...         "work_orders": NodeResultSetExpression(
-                ...             filter=Range(work_order_id.as_property_ref("createdYear"), lt=2023)
+                ...         "work_orders": NodeResultSetExpressionSync(
+                ...             filter=Range(work_order_id.as_property_ref("createdYear"), lt=2023),
+                ...             sync_mode="two_phase",
                 ...         ),
-                ...         "work_orders_to_pumps": EdgeResultSetExpression(
+                ...         "work_orders_to_pumps": EdgeResultSetExpressionSync(
                 ...             from_="work_orders",
                 ...             filter=Equals(
                 ...                 ["edge", "type"],
                 ...                 {"space": work_order_id.space, "externalId": "WorkOrder.asset"},
                 ...             ),
+                ...             sync_mode="two_phase",
                 ...         ),
-                ...         "pumps": NodeResultSetExpression(from_="work_orders_to_pumps"),
+                ...         "pumps": NodeResultSetExpressionSync(
+                ...             from_="work_orders_to_pumps", sync_mode="two_phase"
+                ...         ),
                 ...     },
                 ...     select={
-                ...         "pumps": Select(
+                ...         "pumps": SelectSync(
                 ...             [SourceSelector(pump_id, ["name"])],
                 ...             sort=[InstanceSort(pump_id.as_property_ref("name"))],
                 ...         ),
