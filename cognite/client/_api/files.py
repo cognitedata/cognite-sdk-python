@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any, BinaryIO, Literal, overload
 from urllib.parse import urlparse
 
+from typing_extensions import assert_never
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import (
     DEFAULT_LIMIT_READ,
@@ -18,7 +20,6 @@ from cognite.client._constants import (
     FILE_MAX_MULTIPART_SIZE,
     FILE_MIN_MULTIPART_SIZE,
 )
-from cognite.client.config import global_config
 from cognite.client.data_classes import (
     FileMetadata,
     FileMetadataFilter,
@@ -44,6 +45,29 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"
+
+    def _get_semaphore(
+        self, operation: Literal["read", "write", "delete", "upload", "download", "open_files"]
+    ) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        project = self._cognite_client.config.project
+        files = global_config.concurrency_settings.files
+        match operation:
+            case "read":
+                return files._semaphore_factory("read", project)
+            case "write":
+                return files._semaphore_factory("write", project)
+            case "upload":
+                return files._semaphore_factory("upload", project)
+            case "download":
+                return files._semaphore_factory("download", project)
+            case "delete":
+                return files._semaphore_factory("delete", project)
+            case "open_files":
+                return files._semaphore_factory("open_files", "")
+            case _:
+                assert_never(operation)
 
     @overload
     def __call__(
@@ -219,7 +243,7 @@ class FilesAPI(APIClient):
             url_path=self._RESOURCE_PATH,
             json=file_metadata.dump(camel_case=True),
             params={"overwrite": overwrite},
-            semaphore=self._get_semaphore("write"),
+            semaphore=self._get_semaphore("upload"),
         )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
@@ -727,7 +751,7 @@ class FilesAPI(APIClient):
             res = await self._post(
                 url_path=f"{self._RESOURCE_PATH}/uploadlink",
                 json={"items": identifiers.as_dicts()},
-                semaphore=self._get_semaphore("write"),
+                semaphore=self._get_semaphore("upload"),
             )
         except CogniteAPIError as e:
             if e.code == 403:
@@ -766,7 +790,7 @@ class FilesAPI(APIClient):
             content=file_content,
             headers=headers,
             timeout=self._config.file_transfer_timeout,
-            semaphore=self._get_semaphore("write"),
+            semaphore=self._get_semaphore("upload"),
         )
         if not upload_response.is_success:
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
@@ -845,7 +869,7 @@ class FilesAPI(APIClient):
                 url_path=self._RESOURCE_PATH,
                 json=file_metadata.dump(camel_case=True),
                 params={"overwrite": overwrite},
-                semaphore=self._get_semaphore("write"),
+                semaphore=self._get_semaphore("upload"),
             )
         except CogniteAPIError as e:
             if e.code == 403 and "insufficient access rights" in e.message:
@@ -944,7 +968,7 @@ class FilesAPI(APIClient):
                 url_path=self._RESOURCE_PATH + "/initmultipartupload",
                 json=file_metadata.dump(camel_case=True),
                 params={"overwrite": overwrite, "parts": parts},
-                semaphore=self._get_semaphore("write"),
+                semaphore=self._get_semaphore("upload"),
             )
         except CogniteAPIError as e:
             if e.code == 403 and "insufficient access rights" in e.message:
@@ -1013,7 +1037,7 @@ class FilesAPI(APIClient):
                 url_path=f"{self._RESOURCE_PATH}/multiuploadlink",
                 json={"items": identifiers.as_dicts()},
                 params={"parts": parts},
-                semaphore=self._get_semaphore("write"),
+                semaphore=self._get_semaphore("upload"),
             )
         except CogniteAPIError as e:
             if e.code == 403:
@@ -1057,7 +1081,7 @@ class FilesAPI(APIClient):
             content=file_content,
             headers=headers,
             timeout=self._config.file_transfer_timeout,
-            semaphore=self._get_semaphore("write"),
+            semaphore=self._get_semaphore("upload"),
         )
         if not upload_response.is_success:
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
@@ -1071,7 +1095,7 @@ class FilesAPI(APIClient):
         await self._post(
             self._RESOURCE_PATH + "/completemultipartupload",
             json={"id": session.file_metadata.id, "uploadId": session._upload_id},
-            semaphore=self._get_semaphore("write"),
+            semaphore=self._get_semaphore("upload"),
         )
 
     async def retrieve_download_urls(
@@ -1297,7 +1321,7 @@ class FilesAPI(APIClient):
             full_url=download_link,
             full_headers={"accept": "*/*"},
             timeout=self._config.file_transfer_timeout,
-            semaphore=self._get_semaphore("read"),
+            semaphore=self._get_semaphore("download"),
         )
         with path.open("wb") as file:
             async with stream as response:
@@ -1363,7 +1387,7 @@ class FilesAPI(APIClient):
             full_url=download_link,
             headers={"accept": "*/*"},
             timeout=self._config.file_transfer_timeout,
-            semaphore=self._get_semaphore("read"),
+            semaphore=self._get_semaphore("download"),
         )
         return response.content
 
