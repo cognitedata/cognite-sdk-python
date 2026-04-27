@@ -1111,11 +1111,11 @@ class TestFilesAPI:
         session_method: str,
         num_parts: int,
     ) -> int:
-        """Run upload_fn with _upload_file_part mocked and return the peak number of concurrent calls."""
+        """Run upload_fn with upload_part_async mocked and measure the peak number of concurrent calls."""
         active = 0
         peak = 0
 
-        async def fake_upload_file_part(*args: Any, **kwargs: Any) -> None:
+        async def fake_upload_part_async(*args: Any, **kwargs: Any) -> None:
             nonlocal active, peak
             active += 1
             peak = max(peak, active)
@@ -1126,9 +1126,9 @@ class TestFilesAPI:
         mock_session.file_metadata = FileMetadata(
             id=1, name="test.bin", uploaded=True, created_time=0, last_updated_time=0
         )
+        mock_session.upload_part_async.side_effect = fake_upload_part_async
 
         with (
-            patch.object(async_client.files, "_upload_file_part", side_effect=fake_upload_file_part),
             patch.object(async_client.files, "calculate_part_size_and_count", return_value=(1, num_parts)),
             patch.object(async_client.files, session_method, new=AsyncMock(return_value=mock_session)),
         ):
@@ -1142,8 +1142,8 @@ class TestFilesAPI:
         async_client: AsyncCogniteClient,
         tmp_path: Path,
     ) -> None:
-        """Peak concurrent _upload_file_part calls must not exceed the semaphore capacity."""
-        concurrency_limit = global_config.concurrency_settings.general.write
+        """Peak concurrent part uploads must not exceed the open_files semaphore capacity."""
+        concurrency_limit = global_config.concurrency_settings.files.open_files
         test_file = tmp_path / "test.bin"
         test_file.write_bytes(b"x")
 
@@ -1168,9 +1168,9 @@ class TestFilesAPI:
         tmp_path: Path,
         files_to_create: list[str],
     ) -> None:
-        """Peak concurrent _upload_file_part calls must not exceed the semaphore capacity.
+        """Peak concurrent part uploads must not exceed the open_files semaphore capacity.
         For a directory upload the semaphore is shared across all files."""
-        concurrency_limit = global_config.concurrency_settings.general.write
+        concurrency_limit = global_config.concurrency_settings.files.open_files
         for filename in files_to_create:
             (tmp_path / filename).write_bytes(b"x")
         path = tmp_path / files_to_create[0] if len(files_to_create) == 1 else tmp_path
