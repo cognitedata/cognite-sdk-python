@@ -2419,17 +2419,18 @@ class DatapointsPoster:
             yield payload
 
     async def _insert_datapoints(self, payload: list[dict[str, Any]]) -> None:
-        # Convert to memory intensive format as late as possible (and clean up after insert)
-        for dct in payload:
-            dct["datapoints"] = [dp.dump() for dp in dct["datapoints"]]
-        headers: dict[str, str] | None = None
-
-        await self.dps_client._post(
-            url_path=self.dps_client._RESOURCE_PATH,
-            json={"items": payload},
-            headers=headers,
-            semaphore=self.dps_client._get_semaphore("write"),
-        )
+        # Acquire the semaphore before converting to memory-intensive format:
+        async with self.dps_client._get_semaphore("write"):
+            for dct in payload:
+                dct["datapoints"] = [dp.dump() for dp in dct["datapoints"]]
+            await self.dps_client._post(
+                url_path=self.dps_client._RESOURCE_PATH,
+                json={"items": payload},
+                headers=None,
+                semaphore=None,  # Already holding the semaphore above
+            )
+        # ...and clean up after insert
+        # (needed because a ref preventing gc is held to these until the whole job is done):
         for dct in payload:
             dct["datapoints"].clear()
 
