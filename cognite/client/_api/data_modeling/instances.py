@@ -1581,26 +1581,26 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> work_order_id = ViewId("mySpace", "WorkOrderView", "v1")
-                >>> pump_id = ViewId("mySpace", "PumpView", "v1")
+                >>> work_order_view = ViewId("mySpace", "myWorkOrder", "v1")
+                >>> pump_view = ViewId("mySpace", "myPump", "v1")
                 >>> query = Query(
                 ...     with_={
                 ...         "work_orders": NodeResultSetExpression(
-                ...             filter=Range(work_order_id.as_property_ref("createdYear"), lt=2023)
+                ...             filter=Range(work_order_view.as_property_ref("createdYear"), lt=2023)
                 ...         ),
                 ...         "work_orders_to_pumps": EdgeResultSetExpression(
                 ...             from_="work_orders",
                 ...             filter=Equals(
                 ...                 ["edge", "type"],
-                ...                 {"space": work_order_id.space, "externalId": "WorkOrder.asset"},
+                ...                 {"space": work_order_view.space, "externalId": "WorkOrder.pump"},
                 ...             ),
                 ...         ),
                 ...         "pumps": NodeResultSetExpression(from_="work_orders_to_pumps"),
                 ...     },
                 ...     select={
                 ...         "pumps": Select(
-                ...             [SourceSelector(pump_id, ["name"])],
-                ...             sort=[InstanceSort(pump_id.as_property_ref("name"))],
+                ...             [SourceSelector(pump_view, properties=["name"])],
+                ...             sort=[InstanceSort(pump_view.as_property_ref("name"))],
                 ...         ),
                 ...     },
                 ... )
@@ -1657,64 +1657,79 @@ class InstancesAPI(APIClient):
             fetching all instances (or all in specific spaces) for better throughput, or ``"no_backfill"`` to skip the
             initial load and only receive live updates.
 
+            When using ``"two_phase"``, the backfill phase is over when the number of instances returned is smaller than
+            the limit (including 0).
+
         Args:
-            query (QuerySync): Query.
-            include_typing (bool): Should we return property type information as part of the result?
+            query (QuerySync): The query for instances.
+            include_typing (bool): Return property type information as part of the result.
             debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
 
         Returns:
-            QueryResult: The resulting nodes and/or edges from the query.
+            QueryResult: The resulting instances from the query.
 
         Examples:
 
-            Query all pumps connected to work orders created before 2023, sorted by name:
+            Sync all assets in a given space using one-phase mode (recommended for full fetches):
 
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling.instances import InstanceSort
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> from cognite.client.data_classes.data_modeling.query import (
                 ...     QuerySync,
                 ...     SelectSync,
                 ...     NodeResultSetExpressionSync,
-                ...     EdgeResultSetExpressionSync,
                 ...     SourceSelector,
                 ... )
-                >>> from cognite.client.data_classes.filters import Range, Equals
+                >>> from cognite.client.data_classes.filters import SpaceFilter
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> work_order_id = ViewId("mySpace", "WorkOrderView", "v1")
-                >>> pump_id = ViewId("mySpace", "PumpView", "v1")
+                >>> asset_view = ViewId("mySpace", "myAssets", "v1")
+                >>> query = QuerySync(
+                ...     with_={
+                ...         "pumps": NodeResultSetExpressionSync(
+                ...             filter=SpaceFilter("mySpace"),
+                ...             sync_mode="one_phase",
+                ...         ),
+                ...     },
+                ...     select={"pumps": SelectSync([SourceSelector(asset_view, ["*"])])},
+                ... )
+                >>> res = client.data_modeling.instances.sync(query)
+                >>> # Later: keep up with changes by following the cursor:
+                >>> query.cursors = res.cursors
+                >>> res_new = client.data_modeling.instances.sync(query)
+
+            Sync all pumps connected to open work orders:
+
+                >>> from cognite.client.data_classes.data_modeling.query import (
+                ...     EdgeResultSetExpressionSync,
+                ... )
+                >>> from cognite.client.data_classes.filters import Equals
+                >>> work_order_view = ViewId("mySpace", "myWorkOrder", "v1")
+                >>> pump_view = ViewId("mySpace", "myPump", "v1")
                 >>> query = QuerySync(
                 ...     with_={
                 ...         "work_orders": NodeResultSetExpressionSync(
-                ...             filter=Range(work_order_id.as_property_ref("createdYear"), lt=2023),
+                ...             filter=Equals(work_order_view.as_property_ref("status"), "open"),
                 ...             sync_mode="two_phase",
                 ...         ),
                 ...         "work_orders_to_pumps": EdgeResultSetExpressionSync(
                 ...             from_="work_orders",
                 ...             filter=Equals(
                 ...                 ["edge", "type"],
-                ...                 {"space": work_order_id.space, "externalId": "WorkOrder.asset"},
+                ...                 {"space": work_order_view.space, "externalId": "WorkOrder.pump"},
                 ...             ),
                 ...             sync_mode="two_phase",
                 ...         ),
                 ...         "pumps": NodeResultSetExpressionSync(
-                ...             from_="work_orders_to_pumps", sync_mode="two_phase"
+                ...             from_="work_orders_to_pumps",
+                ...             sync_mode="two_phase",
                 ...         ),
                 ...     },
                 ...     select={
-                ...         "pumps": SelectSync(
-                ...             [SourceSelector(pump_id, ["name"])],
-                ...             sort=[InstanceSort(pump_id.as_property_ref("name"))],
-                ...         ),
+                ...         "pumps": SelectSync([SourceSelector(pump_view, ["*"])]),
                 ...     },
                 ... )
                 >>> res = client.data_modeling.instances.sync(query)
-                >>> # Added a new work order with pumps created before 2023
-                >>> query.cursors = res.cursors
-                >>> res_new = client.data_modeling.instances.sync(query)
-
-            In the last example, the res_new will only contain the pumps that have been added with the new work order.
 
             To debug and/or profile your query, you can use the debug parameter:
 
