@@ -441,7 +441,7 @@ class ResultSetExpressionSync(ResultSetExpressionBase, ABC):
     direction: Literal["outwards", "inwards"] = "outwards"
     chain_to: Literal["destination", "source"] = "destination"
     skip_already_deleted: bool = True
-    sync_mode: SyncMode | None = None
+    sync_mode: SyncMode = "two_phase"
     backfill_sort: list[InstanceSort] = field(default_factory=list)
 
     def __eq__(self, other: object) -> bool:
@@ -459,14 +459,12 @@ class ResultSetExpressionSync(ResultSetExpressionBase, ABC):
             return UnknownCogniteResource.load(resource)  # type: ignore[return-value]
 
     @staticmethod
-    def _load_sync_mode(sync_mode: str | None) -> SyncMode | None:
+    def _load_sync_mode(sync_mode: str | None) -> SyncMode:
         match sync_mode:
-            case None:
-                return None
+            case None | "twoPhase":
+                return "two_phase"
             case "onePhase":
                 return "one_phase"
-            case "twoPhase":
-                return "two_phase"
             case "noBackfill":
                 return "no_backfill"
             case _:
@@ -497,7 +495,7 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
         direction (Literal['outwards', 'inwards']): The direction to use when traversing direct relations. Only applicable when through is specified.
         chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
         skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
-        sync_mode (Literal['one_phase', 'two_phase', 'no_backfill'] | None): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
+        sync_mode (Literal['one_phase', 'two_phase', 'no_backfill']): Specify whether to sync instances in a single phase (slow); in a backfill phase followed by live updates (fast), or without any backfill. Defaults to "two_phase".
         backfill_sort (list[InstanceSort] | None): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
     """
 
@@ -513,7 +511,7 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
         direction: Literal["outwards", "inwards"] = "outwards",
         chain_to: Literal["destination", "source"] = "destination",
         skip_already_deleted: bool = True,
-        sync_mode: Literal["one_phase", "two_phase", "no_backfill"] | None = None,
+        sync_mode: Literal["one_phase", "two_phase", "no_backfill"] = "two_phase",
         backfill_sort: list[InstanceSort] | None = None,
     ) -> None:
         super().__init__(
@@ -562,8 +560,7 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
             output["limit"] = self.limit
         if not self.skip_already_deleted:
             output["skipAlreadyDeleted" if camel_case else "skip_already_deleted"] = self.skip_already_deleted
-        if self.sync_mode:
-            output["mode"] = self._dump_sync_mode(self.sync_mode, camel_case=camel_case)
+        output["mode"] = self._dump_sync_mode(self.sync_mode, camel_case=camel_case)
         if self.backfill_sort:
             output["backfillSort" if camel_case else "backfill_sort"] = [
                 s.dump(camel_case=camel_case) for s in self.backfill_sort
@@ -583,7 +580,7 @@ class EdgeResultSetExpressionSync(ResultSetExpressionSync):
         direction (Literal['outwards', 'inwards']): The direction to use when traversing.
         chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
         skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
-        sync_mode (SyncMode | None): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
+        sync_mode (SyncMode): Specify whether to sync instances in a single phase (slow); in a backfill phase followed by live updates (fast), or without any backfill. Defaults to "two_phase".
         backfill_sort (list[InstanceSort]): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
         max_distance (int | None): The largest - max - number of levels to traverse.
         node_filter (Filter | None): Filter the result set based on this filter.
@@ -633,8 +630,7 @@ class EdgeResultSetExpressionSync(ResultSetExpressionSync):
             output["limit"] = self.limit
         if not self.skip_already_deleted:
             output["skipAlreadyDeleted" if camel_case else "skip_already_deleted"] = self.skip_already_deleted
-        if self.sync_mode:
-            output["mode"] = self._dump_sync_mode(self.sync_mode, camel_case=camel_case)
+        output["mode"] = self._dump_sync_mode(self.sync_mode, camel_case=camel_case)
         if self.backfill_sort:
             output["backfillSort" if camel_case else "backfill_sort"] = [
                 s.dump(camel_case=camel_case) for s in self.backfill_sort

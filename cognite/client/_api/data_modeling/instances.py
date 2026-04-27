@@ -874,7 +874,11 @@ class InstancesAPI(APIClient):
                 >>> view_id = ViewId("someSpace", "someView", "v1")
                 >>> filter = Equals(view_id.as_property_ref("myAsset"), "Il-Tempo-Gigante")
                 >>> query = QuerySync(
-                ...     with_={"work_orders": NodeResultSetExpressionSync(filter=filter)},
+                ...     with_={
+                ...         "work_orders": NodeResultSetExpressionSync(
+                ...             filter=filter, sync_mode="two_phase"
+                ...         )
+                ...     },
                 ...     select={"work_orders": SelectSync([SourceSelector(view_id, ["*"])])},
                 ... )
                 >>> subscription_context = client.data_modeling.instances.subscribe(

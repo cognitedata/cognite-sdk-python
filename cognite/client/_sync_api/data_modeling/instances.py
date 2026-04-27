@@ -1,6 +1,6 @@
 """
 ===============================================================================
-75e6b2be19cef62f568f6c9938b3126a
+9b9fbad96c1ec94edcba6d76b9513457
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -571,7 +571,11 @@ class SyncInstancesAPI(SyncAPIClient):
                 >>> view_id = ViewId("someSpace", "someView", "v1")
                 >>> filter = Equals(view_id.as_property_ref("myAsset"), "Il-Tempo-Gigante")
                 >>> query = QuerySync(
-                ...     with_={"work_orders": NodeResultSetExpressionSync(filter=filter)},
+                ...     with_={
+                ...         "work_orders": NodeResultSetExpressionSync(
+                ...             filter=filter, sync_mode="two_phase"
+                ...         )
+                ...     },
                 ...     select={"work_orders": SelectSync([SourceSelector(view_id, ["*"])])},
                 ... )
                 >>> subscription_context = client.data_modeling.instances.subscribe(
