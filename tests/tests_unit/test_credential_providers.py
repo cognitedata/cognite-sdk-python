@@ -413,7 +413,7 @@ class TestOAuthDeviceCode:
 
         assert creds.authorization_header() == ("Authorization", "Bearer fresh_access_token")
         assert mock_public_client().client.obtain_token_by_refresh_token.call_count == 2
-        mock_public_client().token_cache.remove_rt.assert_called_once_with(broken_token)
+        mock_public_client().token_cache.remove_rt.assert_not_called()
         mock_public_client().http_client.post.assert_not_called()
 
     @patch("cognite.client.credentials.PublicClientApplication")

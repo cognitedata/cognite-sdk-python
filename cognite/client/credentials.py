@@ -474,7 +474,6 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             try:
                 result = self.__app.client.obtain_token_by_refresh_token(token.get("secret", ""))
             except Exception:
-                self.__app.token_cache.remove_rt(token)
                 continue
             if "access_token" in result:
                 credentials = result
