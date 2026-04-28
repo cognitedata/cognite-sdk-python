@@ -262,6 +262,13 @@ class ConcurrencySettings:
             write_schema=1,
         )
 
+    @functools.cached_property
+    def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:
+        """Helper method primarily used in testing to handle the 'annoying' state of concurrency settings"""
+        configs = [name for name, val in vars(type(self)).items() if isinstance(val, property)]
+        configs.remove("is_frozen")
+        return [getattr(self, name) for name in configs]
+
     def _check_frozen(self, name: str, api_name: str) -> None:
         if self.__frozen:
             raise RuntimeError(
@@ -557,21 +564,29 @@ class _PyodideEventLoopExecutor:
 
 # We need this in order to support a synchronous Cognite client.
 _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON: EventLoopThreadExecutor
+_EXECUTOR_INIT_LOCK = threading.Lock()
 
 
 def _get_event_loop_executor() -> EventLoopThreadExecutor:
     global _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
+    # Fast path: singleton already initialized — no lock needed.
     try:
         return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
     except NameError:
-        # First time we need to initialize:
-        ex_cls = EventLoopThreadExecutor
-        if _RUNNING_IN_BROWSER:
-            ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
-
-        executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls()
-        executor.start()
-        return executor
+        pass
+    # Slow path: serialize initialization. Without this, multiple threads racing on the first
+    # call (e.g. a ThreadPoolExecutor of sync clients) can each construct their own executor
+    # and end up using different background loops, breaking the per-loop semaphore cache key.
+    with _EXECUTOR_INIT_LOCK:
+        try:
+            return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
+        except NameError:
+            ex_cls = EventLoopThreadExecutor
+            if _RUNNING_IN_BROWSER:
+                ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
+            executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls()
+            executor.start()
+            return executor
 
 
 async def execute_async_tasks_with_fail_fast(tasks: list[AsyncSDKTask]) -> TasksSummary:

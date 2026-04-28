@@ -302,6 +302,7 @@ class TestDatapointSubscriptions:
             assert {a.external_id for a in batch.subscription_changes.removed} == {first_ts}
             assert len(batch.updates) == 0
 
+    @pytest.mark.allow_no_semaphore("Part of the tests hits DatapointsAPI._insert_datapoints")
     def test_iterate_data_subscription_datapoints_added(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ) -> None:
@@ -384,6 +385,7 @@ class TestDatapointSubscriptions:
             "you run these tests, please wait 1 minute and try again.",
         )
 
+    @pytest.mark.allow_no_semaphore("Part of the tests hits DatapointsAPI._insert_datapoints")
     def test_iterate_data__using_status_codes(
         self, cognite_client: CogniteClient, sub_for_status_codes: DatapointSubscription
     ) -> None:
