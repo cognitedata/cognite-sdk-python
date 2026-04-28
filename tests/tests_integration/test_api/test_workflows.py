@@ -463,6 +463,10 @@ class TestWorkflows:
 
 
 class TestWorkflowVersions:
+    @pytest.mark.allow_no_semaphore(
+        "Test setup uses simulator fixtures that exercise worker-facing endpoints "
+        "(/simulators/integrations/update) via direct _post(..., semaphore=None)."
+    )
     def test_upsert_run_delete_with_simulation_task(
         self,
         cognite_client: CogniteClient,

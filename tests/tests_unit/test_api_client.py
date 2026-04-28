@@ -77,6 +77,10 @@ def api_client_with_token(async_client: AsyncCogniteClient) -> APIClient:
 RequestCase = namedtuple("RequestCase", ["name", "method", "kwargs"])
 
 
+@pytest.mark.allow_no_semaphore(
+    "These tests exercise the transport layer (_post/_get/_put with explicit semaphore=None) to "
+    "verify gzip, headers, retries and payload validation. Concurrency limiting is unrelated."
+)
 class TestBasicRequests:
     @pytest.fixture
     def mock_all_requests_ok(self, httpx_mock: HTTPXMock) -> Iterator[HTTPXMock]:

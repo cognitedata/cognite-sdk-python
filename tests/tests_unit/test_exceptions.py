@@ -25,6 +25,10 @@ def mock_get_400_error(httpx_mock: HTTPXMock, cognite_client: CogniteClient, asy
     )
 
 
+@pytest.mark.allow_no_semaphore(
+    "These tests use the top-level cognite_client.get(...) nullcontext path to verify "
+    "error parsing and cluster info; concurrency limiting is unrelated."
+)
 class TestAPIError:
     def test_api_error(self) -> None:
         e = CogniteAPIError(

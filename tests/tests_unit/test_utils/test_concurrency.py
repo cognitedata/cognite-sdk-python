@@ -2,16 +2,131 @@ from __future__ import annotations
 
 import asyncio
 import random
+from collections.abc import Iterator
+from typing import ClassVar
 
 import pytest
 
+from cognite.client import global_config
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._concurrency import (
     AsyncSDKTask,
+    ConcurrencySettings,
     EventLoopThreadExecutor,
     _get_event_loop_executor,
     execute_async_tasks,
 )
+from tests.utils import fresh_concurrency_state
+
+
+@pytest.fixture
+def fresh_unfrozen_global_concurrency() -> Iterator[None]:
+    with fresh_concurrency_state():
+        yield
+
+
+class TestConcurrencySettingsConfig:
+    def test_setters_work_before_freeze(self) -> None:
+        cs = ConcurrencySettings()
+        cs.general.read = 10
+        cs.general.delete = 3
+        assert cs.general.read == 10
+        assert cs.general.delete == 3
+
+    def test_data_modeling_extra_setters_work_before_freeze(self) -> None:
+        cs = ConcurrencySettings()
+        cs.data_modeling.search = 5
+        cs.data_modeling.read_schema = 6
+        cs.data_modeling.write_schema = 3
+        assert cs.data_modeling.search == 5
+        assert cs.data_modeling.read_schema == 6
+        assert cs.data_modeling.write_schema == 3
+
+    def test_is_frozen_starts_false(self) -> None:
+        cs = ConcurrencySettings()
+        assert cs.is_frozen is False
+
+    def test_freeze_sets_is_frozen(self) -> None:
+        cs = ConcurrencySettings()
+        cs._freeze()
+        assert cs.is_frozen is True
+
+    @pytest.mark.parametrize(
+        "sub_config_name, attr",
+        [
+            ("general", "delete"),
+            ("raw", "delete"),
+            ("datapoints", "write"),
+            ("data_modeling", "search"),
+        ],
+    )
+    def test_setter_raises_after_freeze(self, sub_config_name: str, attr: str) -> None:
+        cs = ConcurrencySettings()
+        cs._freeze()
+        sub = getattr(cs, sub_config_name)
+        with pytest.raises(RuntimeError, match="Cannot modify"):
+            setattr(sub, attr, 99)
+
+    def test_repr_unfrozen(self) -> None:
+        cs = ConcurrencySettings()
+        r = repr(cs)
+        assert "ConcurrencySettings(" in r
+        assert "general=" in r
+        assert "frozen" not in r
+
+    def test_repr_frozen(self) -> None:
+        cs = ConcurrencySettings()
+        cs._freeze()
+        r = repr(cs)
+        assert "(frozen)" in r
+
+    def test_error_message_names_api_and_attribute(self) -> None:
+        cs = ConcurrencySettings()
+        cs._freeze()
+        with pytest.raises(RuntimeError, match=r"general\.read"):
+            cs.general.read = 1
+        with pytest.raises(RuntimeError, match=r"data_modeling\.search"):
+            cs.data_modeling.search = 1
+
+
+@pytest.mark.usefixtures("fresh_unfrozen_global_concurrency")
+class TestSemaphoreFactory:
+    cs: ClassVar[ConcurrencySettings] = global_config.concurrency_settings
+
+    async def test_returns_bounded_semaphore_with_correct_value(self) -> None:
+        sem = self.cs.general._semaphore_factory("read", "proj-a")
+        assert isinstance(sem, asyncio.BoundedSemaphore)
+        assert sem._value == self.cs.general.read
+
+    async def test_cache_hit_returns_same_object(self) -> None:
+        sem1 = self.cs.general._semaphore_factory("read", "proj-a")
+        sem2 = self.cs.general._semaphore_factory("read", "proj-a")
+        assert sem1 is sem2
+
+    async def test_different_project_returns_different_semaphore(self) -> None:
+        sem_a = self.cs.general._semaphore_factory("read", "proj-a")
+        sem_b = self.cs.general._semaphore_factory("read", "proj-b")
+        assert sem_a is not sem_b
+
+    async def test_different_operation_returns_different_semaphore(self) -> None:
+        sem_r = self.cs.general._semaphore_factory("read", "proj-a")
+        sem_w = self.cs.general._semaphore_factory("write", "proj-a")
+        sem_d = self.cs.general._semaphore_factory("delete", "proj-a")
+        assert len({sem_r, sem_w, sem_d}) == 3
+
+    async def test_semaphore_value_reflects_configured_limit(self) -> None:
+        self.cs.general.read = 7
+        sem = self.cs.general._semaphore_factory("read", "proj-x")
+        assert sem._value == 7
+
+    async def test_factory_call_freezes_global_config(self) -> None:
+        assert not self.cs.is_frozen
+        self.cs.general._semaphore_factory("read", "proj-a")
+        assert self.cs.is_frozen
+
+    async def test_invalid_operation_hits_assert_never(self) -> None:
+        with pytest.raises(AssertionError):
+            self.cs.general._semaphore_factory("totally_invalid", "proj-a")  # type: ignore[arg-type]
 
 
 async def i_dont_like_5(i: int) -> int:
@@ -28,6 +143,14 @@ class TestExecutor:
     def test_get_event_loop_executor(self) -> None:
         executor = _get_event_loop_executor()
         assert isinstance(executor, EventLoopThreadExecutor)
+
+    def test_get_event_loop_executor_is_singleton(self) -> None:
+        assert _get_event_loop_executor() is _get_event_loop_executor()
+
+    def test_executor_thread_is_alive_and_daemon(self) -> None:
+        executor = _get_event_loop_executor()
+        assert executor.is_alive()
+        assert executor.daemon
 
     async def test_async_tasks__results_ordering_match_tasks(self) -> None:
         async def async_task(i: int) -> int:

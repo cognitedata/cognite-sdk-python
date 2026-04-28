@@ -6,26 +6,23 @@ Ensures connections and semaphores aren't cross-contaminated between event loops
 from __future__ import annotations
 
 import random
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
 
-from cognite.client import AsyncCogniteClient, CogniteClient, global_config
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._http_client import _global_async_httpx_clients
+from tests.utils import fresh_concurrency_state
 
 
 @pytest.fixture(autouse=True)
-def _clear_loop_caches() -> None:
+def _clear_loop_caches() -> Iterator[None]:
     """Reset per-loop caches so each test starts with a clean slate (...and state lol)."""
     _global_async_httpx_clients.clear()
-    for config in (
-        global_config.concurrency_settings.general,
-        global_config.concurrency_settings.datapoints,
-        global_config.concurrency_settings.raw,
-        global_config.concurrency_settings.data_modeling,
-    ):
-        config._semaphore_cache.clear()
+    with fresh_concurrency_state():
+        yield
 
 
 def make_sync_api_call(client: CogniteClient) -> Any:

@@ -501,6 +501,10 @@ def ts_create_in_dms(
 
 
 class TestTimeSeriesCreatedInDMS:
+    @pytest.mark.allow_no_semaphore(
+        "Test inserts datapoints; DatapointsAPI._insert_datapoints holds the semaphore via outer "
+        "'async with' and passes None to _post to avoid double-acquiring."
+    )
     def test_insert_read_delete_dps(self, cognite_client: CogniteClient, ts_create_in_dms: NodeApplyResult) -> None:
         # Ensure the DMS time series is retrievable from normal TS API:
         inst_id = ts_create_in_dms.as_id()
@@ -2855,6 +2859,11 @@ class TestRetrieveLatestDatapointsAPI:
             cognite_client.time_series.data.retrieve_latest(instance_id=missing, ignore_unknown_ids=False)
 
 
+@pytest.mark.allow_no_semaphore(
+    "Insert paths go through DatapointsAPI._insert_datapoints, which holds the semaphore via "
+    "outer 'async with' for memory backpressure and passes None to _post. Delete paths in this "
+    "class use the regular semaphore route and are still checked against the broader suite."
+)
 class TestInsertDatapointsAPI:
     @pytest.mark.usefixtures("post_spy")
     def test_insert(

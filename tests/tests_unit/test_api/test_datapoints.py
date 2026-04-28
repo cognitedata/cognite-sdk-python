@@ -227,6 +227,10 @@ def mock_post_datapoints_400(httpx_mock: HTTPXMock, async_client: AsyncCogniteCl
     return httpx_mock
 
 
+@pytest.mark.allow_no_semaphore(
+    "DatapointsAPI._insert_datapoints holds the semaphore via outer 'async with' for memory "
+    "backpressure, then passes None to _post to avoid double-acquiring."
+)
 class TestInsertDatapoints:
     def test_insert_tuples(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
         dps = [(i * 1e11, i) for i in range(1, 11)]
@@ -762,6 +766,7 @@ class TestPandasIntegration:
         dps_list = DatapointsList([])
         assert dps_list.to_pandas().empty
 
+    @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_id_and_xid(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
         import pandas as pd
 
@@ -786,6 +791,7 @@ class TestPandasIntegration:
             ]
         } == request_body
 
+    @pytest.mark.allow_no_semaphore
     @pytest.mark.parametrize(
         "instance_ids", [(NodeId("space", "123"), NodeId("space", "456")), (("space", "123"), ("space", "456"))]
     )
@@ -816,6 +822,7 @@ class TestPandasIntegration:
         }
         assert expected_body == request_body
 
+    @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_all_identifier_types(
         self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock
     ) -> None:
@@ -868,6 +875,7 @@ class TestPandasIntegration:
         with pytest.raises(ValueError, match="contains one or more NaNs"):
             cognite_client.time_series.data.insert_dataframe(df, dropna=False)
 
+    @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_with_dropna(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
         import pandas as pd
 
@@ -894,6 +902,7 @@ class TestPandasIntegration:
             ]
         } == request_body
 
+    @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_single_dp(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
         import pandas as pd
 
@@ -913,6 +922,7 @@ class TestPandasIntegration:
         with pytest.raises(ValueError, match=re.escape("contains one or more (+/-) Infinity")):
             cognite_client.time_series.data.insert_dataframe(df)
 
+    @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_with_strings(
         self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock
     ) -> None:
