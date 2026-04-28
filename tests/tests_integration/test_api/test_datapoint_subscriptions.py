@@ -2,18 +2,16 @@ from __future__ import annotations
 
 import math
 import random
-import time
 import unittest
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import TimeSeries, TimeSeriesWrite, filters
+from cognite.client.data_classes import TimeSeriesWrite, filters
 from cognite.client.data_classes.data_modeling import NodeId, SpaceApply
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.datapoints_subscriptions import (
@@ -431,63 +429,3 @@ class TestDatapointSubscriptions:
         assert bad_upsert_value[0] is None
         assert all(isinstance(v, float) for v in bad_upsert_value[1:])
         assert no_bad[0].upserts.status_symbol == ["Uncertain", "Good", "Good", "Good"]
-
-    @pytest.mark.skip(reason="Using a filter (as opposed to specific identifiers) is eventually consistent")
-    def test_update_filter_subscription_added_times_series(
-        self, cognite_client: CogniteClient, time_series_external_ids: list[str]
-    ) -> None:
-        f = filters
-        p = DatapointSubscriptionProperty
-        numerical_timeseries = f.And(
-            f.Equals(p.is_string, False), f.Prefix(p.external_id, "PYSDK DataPoint Subscription Test")
-        )
-        new_subscription = DataPointSubscriptionWrite(
-            external_id=f"PYSDKDataPointSubscriptionUpdateFilterTest-{random_string(10)}",
-            name="PYSDKDataPointSubscriptionUpdateFilterTest",
-            filter=numerical_timeseries,
-            partition_count=1,
-        )
-        created_timeseries: TimeSeries | None = None
-        with create_subscription_with_cleanup(cognite_client, new_subscription) as created:
-            assert created.created_time
-
-            initial_added_count = 0
-            for batch in cognite_client.time_series.subscriptions.iterate_data(
-                new_subscription.external_id,
-                poll_timeout=0,
-            ):
-                initial_added_count += len(batch.subscription_changes.added)
-                if not batch.has_next:
-                    break
-
-            assert initial_added_count > 0, "There should be at least one numerical timeseries added"
-
-            new_numerical_timeseries = TimeSeriesWrite(
-                external_id=f"PYSDK DataPoint Subscription Test 42 ({random_string(10)})",
-                name="PYSDK DataPoint Subscription Test 42",
-                is_string=False,
-            )
-            try:
-                created_timeseries = cognite_client.time_series.create(new_numerical_timeseries)
-                cognite_client.time_series.data.insert(
-                    [(datetime.now(), 42)], external_id=new_numerical_timeseries.external_id
-                )
-                # Ensure that the subscription has been updated
-                time.sleep(10)
-
-                updated_added_count = 0
-                for batch in cognite_client.time_series.subscriptions.iterate_data(
-                    new_subscription.external_id,
-                    poll_timeout=0,
-                ):
-                    updated_added_count += len(batch.subscription_changes.added)
-                    if not batch.has_next:
-                        break
-
-                assert initial_added_count + 1 == updated_added_count, (
-                    "The new timeseries should be added. This is most likely because using a filter with "
-                    "datapoint subscriptions is eventually consistent."
-                )
-            finally:
-                if created_timeseries:
-                    cognite_client.time_series.delete(created_timeseries.id)
