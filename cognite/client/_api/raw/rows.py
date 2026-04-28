@@ -226,7 +226,7 @@ class RawRowsAPI(APIClient):
                     await asyncio.sleep(0.5)
                     continue
 
-                if limit is None:
+                if not is_finite(limit):
                     yield chunk
                     continue
 
