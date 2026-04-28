@@ -355,9 +355,11 @@ class TestOAuthDeviceCode:
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_refresh_token_invalid_falls_back_to_device_flow(self, mock_public_client: MagicMock) -> None:
+        stale_token = {"secret": "stale_refresh_token"}
+
         def search_side_effect(credential_type: Any, **kwargs: Any) -> list[dict[str, Any]]:
             if credential_type == mock_public_client().token_cache.CredentialType.REFRESH_TOKEN:
-                return [{"secret": "stale_refresh_token"}]
+                return [stale_token]
             return []
 
         mock_public_client().token_cache.search.side_effect = search_side_effect
@@ -383,6 +385,7 @@ class TestOAuthDeviceCode:
         creds._refresh_access_token()
 
         mock_public_client().client.obtain_token_by_refresh_token.assert_called_once_with("stale_refresh_token")
+        mock_public_client().token_cache.remove_rt.assert_called_once_with(stale_token)
         mock_public_client().http_client.post.assert_called_once_with(
             expected_device_auth_url,
             data={"scope": "https://greenfield.cognitedata.com/.default", "client_id": "azure-client-id"},
@@ -392,9 +395,12 @@ class TestOAuthDeviceCode:
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_refresh_token_exception_tries_next_token(self, mock_public_client: MagicMock) -> None:
+        broken_token = {"secret": "broken_token"}
+        good_token = {"secret": "good_token"}
+
         def search_side_effect(credential_type: Any, **kwargs: Any) -> list[dict[str, Any]]:
             if credential_type == mock_public_client().token_cache.CredentialType.REFRESH_TOKEN:
-                return [{"secret": "broken_token"}, {"secret": "good_token"}]
+                return [broken_token, good_token]
             return []
 
         mock_public_client().token_cache.search.side_effect = search_side_effect
@@ -407,6 +413,7 @@ class TestOAuthDeviceCode:
 
         assert creds.authorization_header() == ("Authorization", "Bearer fresh_access_token")
         assert mock_public_client().client.obtain_token_by_refresh_token.call_count == 2
+        mock_public_client().token_cache.remove_rt.assert_called_once_with(broken_token)
         mock_public_client().http_client.post.assert_not_called()
 
     @patch("cognite.client.credentials.PublicClientApplication")
