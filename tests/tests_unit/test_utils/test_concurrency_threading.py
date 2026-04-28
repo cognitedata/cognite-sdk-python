@@ -173,9 +173,9 @@ class TestEventLoopThreadExecutorLifecycle:
         call did not get the same instance (thread), leading to e.g. broken concurrency limits."""
         import cognite.client.utils._concurrency as conc
 
-        # Force the lazy-init branch by removing any pre-existing singleton:
-        executor_attribute = "_INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON"
-        monkeypatch.delattr(conc, executor_attribute, raising=False)
+        # Force the lazy-init branch by clearing any pre-existing singleton:
+        if conc._INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON is not None:
+            monkeypatch.setattr(conc, "_INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON", None)
 
         results: list[Any] = []
         barrier = threading.Barrier(10)
@@ -191,11 +191,7 @@ class TestEventLoopThreadExecutorLifecycle:
             t.join()
 
         assert len(set(results)) == 1, "init race produced multiple executor instances"
-
-        # Make sure that if someone renames executor_attribute, we fail here,
-        # getattr will raise when not given a default. So - DO NOT rewrite this to
-        # conc._INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON:
-        assert getattr(conc, executor_attribute) is results[0]
+        assert conc._INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON is results[0]
 
 
 class TestFreezeRaceUnderThreads:

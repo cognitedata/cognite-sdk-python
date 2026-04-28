@@ -563,30 +563,28 @@ class _PyodideEventLoopExecutor:
 
 
 # We need this in order to support a synchronous Cognite client.
-_INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON: EventLoopThreadExecutor
+_INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON: EventLoopThreadExecutor | None = None
 _EXECUTOR_INIT_LOCK = threading.Lock()
 
 
 def _get_event_loop_executor() -> EventLoopThreadExecutor:
     global _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
+
     # Fast path: singleton already initialized — no lock needed.
-    try:
+    if _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON is not None:
         return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
-    except NameError:
-        pass
+
     # Slow path: serialize initialization. Without this, multiple threads racing on the first
     # call (e.g. a ThreadPoolExecutor of sync clients) can each construct their own executor
     # and end up using different background loops, breaking the per-loop semaphore cache key.
     with _EXECUTOR_INIT_LOCK:
-        try:
-            return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
-        except NameError:
+        if _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON is None:
             ex_cls = EventLoopThreadExecutor
             if _RUNNING_IN_BROWSER:
                 ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
-            executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls()
-            executor.start()
-            return executor
+            _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls()
+            _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON.start()
+        return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
 
 
 async def execute_async_tasks_with_fail_fast(tasks: list[AsyncSDKTask]) -> TasksSummary:
