@@ -371,6 +371,8 @@ class TestOAuthDeviceCode:
             "user_code": "ABCDEF",
             "message": "Follow the link and enter the code",
         }
+        expected_device_auth_url = "https://login.microsoftonline.com/xyz/oauth2/v2.0/devicecode"
+        mock_public_client().authority.device_authorization_endpoint = expected_device_auth_url
         mock_public_client().http_client.post.return_value = mock_device_response
         mock_public_client().client.obtain_token_by_device_flow.return_value = {
             "access_token": "fresh_access_token",
@@ -381,8 +383,31 @@ class TestOAuthDeviceCode:
         creds._refresh_access_token()
 
         mock_public_client().client.obtain_token_by_refresh_token.assert_called_once_with("stale_refresh_token")
-        mock_public_client().http_client.post.assert_called_once()
+        mock_public_client().http_client.post.assert_called_once_with(
+            expected_device_auth_url,
+            data={"scope": "https://greenfield.cognitedata.com/.default", "client_id": "azure-client-id"},
+            headers={"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"},
+        )
         assert creds.authorization_header() == ("Authorization", "Bearer fresh_access_token")
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_refresh_token_exception_tries_next_token(self, mock_public_client: MagicMock) -> None:
+        def search_side_effect(credential_type: Any, **kwargs: Any) -> list[dict[str, Any]]:
+            if credential_type == mock_public_client().token_cache.CredentialType.REFRESH_TOKEN:
+                return [{"secret": "broken_token"}, {"secret": "good_token"}]
+            return []
+
+        mock_public_client().token_cache.search.side_effect = search_side_effect
+        mock_public_client().client.obtain_token_by_refresh_token.side_effect = [
+            Exception("network error"),
+            {"access_token": "fresh_access_token", "expires_in": 3600},
+        ]
+
+        creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
+
+        assert creds.authorization_header() == ("Authorization", "Bearer fresh_access_token")
+        assert mock_public_client().client.obtain_token_by_refresh_token.call_count == 2
+        mock_public_client().http_client.post.assert_not_called()
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_cached_access_token_expiry_is_seconds_not_bool(self, mock_public_client: MagicMock) -> None:
