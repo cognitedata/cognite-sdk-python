@@ -1,6 +1,6 @@
 """
 ===============================================================================
-063c42ab744021733ccbdc455b150b2c
+178ce7222985b04d03174af7b7e0f525
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -75,7 +75,39 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...     labels=["published"],
                 ...     tools=[find_assets_tool],
                 ... )
-                >>> client.agents.upsert(agents=[agent])
+                >>> client.agents.upsert(agent)
+
+            Create an agent with the query tool:
+
+                >>> from cognite.client.data_classes.agents import (
+                ...     AgentUpsert,
+                ...     QueryAgentToolUpsert,
+                ...     QueryAgentToolConfiguration,
+                ...     DataModelInfo,
+                ...     InstanceSpaces,
+                ... )
+                >>> query_tool = QueryAgentToolUpsert(
+                ...     name="explore data",
+                ...     description="Run flexible queries against your data model",
+                ...     configuration=QueryAgentToolConfiguration(
+                ...         data_models=[
+                ...             DataModelInfo(
+                ...                 space="cdf_idm",
+                ...                 external_id="CogniteProcessIndustries",
+                ...                 version="v1",
+                ...             )
+                ...         ],
+                ...         instance_spaces=InstanceSpaces(type="all"),
+                ...     ),
+                ... )
+                >>> agent = AgentUpsert(
+                ...     external_id="my_agent",
+                ...     name="My Agent",
+                ...     labels=["published"],
+                ...     runtime_version="1.1.2-preview",
+                ...     tools=[query_tool],
+                ... )
+                >>> client.agents.upsert(agent)
 
             Create an agent with multiple different tools:
 
@@ -157,7 +189,7 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...         ts_tool,
                 ...     ],
                 ... )
-                >>> client.agents.upsert(agents=[agent])
+                >>> client.agents.upsert(agent)
         """
         return run_sync(self.__async_client.agents.upsert(agents=agents))
 

@@ -41,7 +41,7 @@ from scripts.sync_client_codegen.create_sync_client import (
     verify_cognite_client_is_up_to_date,
 )
 
-SYNC_API_TEMPLATE = Path("scripts/sync_client_codegen/sync_api_template.txt").read_text()
+SYNC_API_TEMPLATE = Path("scripts/sync_client_codegen/sync_api_template.txt").read_text(encoding="utf-8")
 
 
 def _generate_code_for_single_sync_api(
@@ -258,7 +258,7 @@ def _compare_normalized_files_and_maybe_update_hash_only(files_to_update: set[Si
         for f in files_to_update:
             f.temp_filepath = tmp_dir / f.filepath
             ensure_parent_dir(f.temp_filepath)
-            f.temp_filepath.write_text(f.get_new_source)
+            f.temp_filepath.write_text(f.get_new_source, encoding="utf-8")
 
         # Before compare, we need to run ruff (large overhead, so we do it once for all files):
         run_ruff([f.temp_filepath for f in files_to_update], verbose=False)
@@ -295,7 +295,7 @@ def _compare_normalized_files_and_maybe_update_hash_only(files_to_update: set[Si
             # Note: DO NOT use normalized_src here, the reason we do all of this is precisely to preserve
             # e.g. type-ignore comments that would otherwise be lost on regeneration.
             current_source = get_source_code(write_file)
-            write_file.write_text(current_source.replace(existing_hash, f.get_new_hash))
+            write_file.write_text(current_source.replace(existing_hash, f.get_new_hash), encoding="utf-8")
 
 
 def _report_after_verification(
@@ -335,7 +335,7 @@ def _report_after_verification(
 def _write_updated_sync_api_files(files_to_update: set[SingleAPIFile]) -> None:
     for f in files_to_update:
         ensure_parent_dir(f.filepath)
-        f.filepath.write_text(f.get_new_source)
+        f.filepath.write_text(f.get_new_source, encoding="utf-8")
         if f.class_name:
             print(f"- Generated/updated sync API code for {f.class_name} from '{f.read_filepath}' ✅")
         else:
@@ -391,7 +391,7 @@ def _run_files(
 
     if client_has_changed:
         to_be_linted.append(SYNC_CLIENT_PATH)
-        SYNC_CLIENT_PATH.write_text(new_client_source_code)
+        SYNC_CLIENT_PATH.write_text(new_client_source_code, encoding="utf-8")
         print(f"- Regenerated (sync) CogniteClient: '{SYNC_CLIENT_PATH}' ✅")
     elif args.verbose:
         print(f"- Skipped (sync) CogniteClient, is up to date: '{SYNC_CLIENT_PATH}' ⏭️")

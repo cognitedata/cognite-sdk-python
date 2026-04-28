@@ -1,5 +1,5 @@
 from pathlib import Path
-from tempfile import NamedTemporaryFile
+from tempfile import TemporaryDirectory
 
 from scripts.sync_client_codegen.codegen_utils import (
     filter_base_apis_and_sort_alphabetically,
@@ -14,7 +14,7 @@ from scripts.sync_client_codegen.constants import (
     SYNC_CLIENT_PATH,
 )
 
-COGNITE_CLIENT_TEMPLATE = Path("scripts/sync_client_codegen/sync_client_template.txt").read_text()
+COGNITE_CLIENT_TEMPLATE = Path("scripts/sync_client_codegen/sync_client_template.txt").read_text(encoding="utf-8")
 
 
 def create_sync_cognite_client(
@@ -39,10 +39,9 @@ def create_sync_cognite_client(
 
 
 def verify_cognite_client_is_up_to_date(new_source: str) -> bool:
-    with NamedTemporaryFile(mode="w+", suffix=".py") as f:
-        f.write(new_source)
-        f.flush()  # Ensure content is written before ruff reads it
-        path = Path(f.name)
+    with TemporaryDirectory() as tmp_dir:
+        path = Path(tmp_dir) / "sync_client.py"
+        path.write_text(new_source, encoding="utf-8")
         run_ruff_direct(path)
         new_file_ast = get_canonical_source(path)
 

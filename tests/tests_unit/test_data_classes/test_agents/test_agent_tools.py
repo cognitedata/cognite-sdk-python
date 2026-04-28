@@ -5,6 +5,8 @@ import pytest
 from cognite.client.data_classes.agents.agent_tools import (
     AgentTool,
     AskDocumentAgentTool,
+    QueryAgentTool,
+    QueryAgentToolConfiguration,
     QueryKnowledgeGraphAgentTool,
     QueryKnowledgeGraphAgentToolConfiguration,
     QueryTimeSeriesDatapointsAgentTool,
@@ -42,6 +44,32 @@ query_time_series_datapoints_example = {
     "description": "Query the time series datapoints",
 }
 
+query_example = {
+    "name": "queryExample",
+    "type": "query",
+    "description": "Run flexible queries against your data model",
+    "configuration": {
+        "dataModels": {
+            "type": "manual",
+            "dataModels": [
+                {
+                    "space": "cdf_idm",
+                    "externalId": "CogniteProcessIndustries",
+                    "version": "v1",
+                    "viewExternalIds": ["CogniteAsset"],
+                }
+            ],
+        },
+        "instanceSpaces": {"type": "manual", "spaces": ["my_space"]},
+    },
+}
+
+query_no_config_example = {
+    "name": "queryNoConfigExample",
+    "type": "query",
+    "description": "Run flexible queries against your data model",
+}
+
 unknown_example = {
     "name": "unknownExample",
     "type": "yolo",  # This is not a known tool type
@@ -58,9 +86,19 @@ class TestAgentToolLoad:
             (ask_document_example, AskDocumentAgentTool),
             (summarize_document_example, SummarizeDocumentAgentTool),
             (query_time_series_datapoints_example, QueryTimeSeriesDatapointsAgentTool),
+            (query_example, QueryAgentTool),
+            (query_no_config_example, QueryAgentTool),
             (unknown_example, UnknownAgentTool),
         ],
-        ids=["queryKnowledgeGraph", "askDocument", "summarizeDocument", "queryTimeSeriesDatapoints", "somethingElse"],
+        ids=[
+            "queryKnowledgeGraph",
+            "askDocument",
+            "summarizeDocument",
+            "queryTimeSeriesDatapoints",
+            "query",
+            "queryNoConfig",
+            "somethingElse",
+        ],
     )
     def test_agent_tool_load_returns_correct_subtype(self, tool_data: dict, expected_type: type[AgentTool]) -> None:
         """Test that AgentTool._load() returns the correct subtype based on the tool type."""
@@ -80,6 +118,10 @@ class TestAgentToolLoad:
             if expected_type is QueryKnowledgeGraphAgentTool:
                 assert isinstance(loaded_tool, QueryKnowledgeGraphAgentTool)
                 assert isinstance(loaded_tool.configuration, QueryKnowledgeGraphAgentToolConfiguration)
+                assert loaded_tool.configuration.dump(camel_case=True) == tool_data["configuration"]
+            elif expected_type is QueryAgentTool:
+                assert isinstance(loaded_tool, QueryAgentTool)
+                assert isinstance(loaded_tool.configuration, QueryAgentToolConfiguration)
                 assert loaded_tool.configuration.dump(camel_case=True) == tool_data["configuration"]
             elif expected_type is UnknownAgentTool:
                 assert isinstance(loaded_tool, UnknownAgentTool)
@@ -104,6 +146,7 @@ class TestAgentToolDump:
             (ask_document_example, AskDocumentAgentTool),
             (summarize_document_example, SummarizeDocumentAgentTool),
             (query_time_series_datapoints_example, QueryTimeSeriesDatapointsAgentTool),
+            (query_example, QueryAgentTool),
             (unknown_example, UnknownAgentTool),
         ],
     )
@@ -150,6 +193,7 @@ class TestAgentToolUpsert:
             (ask_document_example, AskDocumentAgentTool),
             (summarize_document_example, SummarizeDocumentAgentTool),
             (query_time_series_datapoints_example, QueryTimeSeriesDatapointsAgentTool),
+            (query_example, QueryAgentTool),
             (unknown_example, UnknownAgentTool),
         ],
     )
@@ -166,3 +210,10 @@ class TestAgentToolUpsert:
 
         assert dumped_tool["name"] == tool_data["name"]
         assert dumped_tool["description"] == tool_data["description"]
+
+
+class TestQueryAgentTool:
+    def test_load_without_configuration(self) -> None:
+        loaded = AgentTool._load(query_no_config_example)
+        assert isinstance(loaded, QueryAgentTool)
+        assert loaded.configuration is None
