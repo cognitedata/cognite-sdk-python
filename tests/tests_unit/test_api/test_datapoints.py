@@ -353,6 +353,46 @@ class TestInsertDatapoints:
         cognite_client.time_series.data.insert_multiple(dps_objects)
         assert 2 == len(mock_post_datapoints.get_requests())
 
+    def test_insert_multiple_dump_only_called_within_semaphore(
+        self,
+        cognite_client: CogniteClient,
+        mock_post_datapoints: HTTPXMock,
+        monkeypatch: MonkeyPatch,
+        async_client: AsyncCogniteClient,
+    ) -> None:
+        # Bug in 8.0.0 to 8.1.0: all asyncio tasks were created at once and dp.dump() (synchronous,
+        # no await) ran in every task before any of them reached the semaphore, causing all payloads
+        # to be materialised in memory simultaneously (memory regression vs v7).
+        sem_held = False
+        dump_sem_held: list[bool] = []
+
+        class _MockSemaphore:
+            async def __aenter__(self) -> _MockSemaphore:
+                nonlocal sem_held
+                sem_held = True
+                return self
+
+            async def __aexit__(self, *_: Any) -> None:
+                nonlocal sem_held
+                sem_held = False
+
+        monkeypatch.setattr(async_client.time_series.data, "_get_semaphore", lambda _op: _MockSemaphore())
+
+        original_dump = _InsertDatapoint.dump
+
+        def tracking_dump(self: _InsertDatapoint) -> dict:
+            dump_sem_held.append(sem_held)
+            return original_dump(self)
+
+        monkeypatch.setattr(_InsertDatapoint, "dump", tracking_dump)
+
+        monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 5)
+        dps = [(i * 1e11, i) for i in range(50)]
+        cognite_client.time_series.data.insert(dps, id=1)
+
+        assert len(dump_sem_held) == 50
+        assert all(dump_sem_held), "dp.dump() was called outside the semaphore context"
+
 
 @pytest.fixture
 def mock_delete_datapoints(
