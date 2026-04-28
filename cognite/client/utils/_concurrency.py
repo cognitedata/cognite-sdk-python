@@ -221,7 +221,7 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         )
 
 
-class FileConcurrencyConfig:
+class FileConcurrencyConfig(ConcurrencyConfig):
     """
     Concurrency settings for the Files API.
 
@@ -252,38 +252,14 @@ class FileConcurrencyConfig:
         delete: int,
         open_files: int,
     ) -> None:
-        self._check_frozen: Callable[[str], None] = functools.partial(
-            concurrency_settings._check_frozen, api_name="files"
-        )
-        self._read = read
-        self._write = write
+        super().__init__(concurrency_settings, "files", read, write, delete)
         self._upload = upload
         self._download = download
-        self._delete = delete
         self._open_files = open_files
-        self._semaphore_cache: dict[tuple[str, str, asyncio.AbstractEventLoop], asyncio.BoundedSemaphore] = {}
         # open_files key is only the event loop — project is intentionally excluded. It is a bit unfortunate
         # that we cant remove the loop from the key as well, but semaphores are bound to the loop they are
         # first used on, one of the httpx.Clients would break if we did that. We intentionally use a limit << OS fd limit.
         self._open_files_cache: dict[asyncio.AbstractEventLoop, asyncio.BoundedSemaphore] = {}
-
-    @property
-    def read(self) -> int:
-        return self._read
-
-    @read.setter
-    def read(self, value: int) -> None:
-        self._check_frozen("read")
-        self._read = value
-
-    @property
-    def write(self) -> int:
-        return self._write
-
-    @write.setter
-    def write(self, value: int) -> None:
-        self._check_frozen("write")
-        self._write = value
 
     @property
     def upload(self) -> int:
@@ -302,15 +278,6 @@ class FileConcurrencyConfig:
     def download(self, value: int) -> None:
         self._check_frozen("download")
         self._download = value
-
-    @property
-    def delete(self) -> int:
-        return self._delete
-
-    @delete.setter
-    def delete(self, value: int) -> None:
-        self._check_frozen("delete")
-        self._delete = value
 
     @property
     def open_files(self) -> int:

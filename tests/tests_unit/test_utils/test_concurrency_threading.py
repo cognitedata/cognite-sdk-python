@@ -135,7 +135,7 @@ class TestSyncClientMultiThreadedEnv:
                 futures = (
                     [pool.submit(cognite_client.assets.retrieve, id=i) for i in range(3)]
                     + [pool.submit(cognite_client.events.retrieve, id=i) for i in range(4)]
-                    + [pool.submit(cognite_client.files.retrieve, id=i) for i in range(3)]
+                    + [pool.submit(cognite_client.time_series.retrieve, id=i) for i in range(3)]
                 )
                 for f in futures:
                     f.result()
