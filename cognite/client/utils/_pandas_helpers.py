@@ -228,7 +228,17 @@ class _DpsColumnInfo:
     """
 
     column_id: NodeId | str | int
-    data: list[float] | list[str] | list[int] | NumpyUInt32Array | NumpyInt64Array | NumpyFloat64Array | NumpyObjArray
+    data: (
+        list[float]
+        | list[str]
+        | list[int]
+        | list[int | None]
+        | list[str | None]
+        | NumpyUInt32Array
+        | NumpyInt64Array
+        | NumpyFloat64Array
+        | NumpyObjArray
+    )
     is_string: bool | None = None
     is_array: bool = False
     aggregate: str | None = None
@@ -258,6 +268,9 @@ class _DpsColumnInfo:
         self,
     ) -> npt.NDArray[np.object_] | npt.NDArray[np.float64] | npt.NDArray[np.uint32]:
         import numpy as np
+
+        if self.aggregate in ("numeric_value", "string_value"):
+            return np.array(self.data, dtype=np.object_)
 
         match self.is_string, self.status_info:
             case True, None:
@@ -297,6 +310,41 @@ def _extract_raw_column_info(
     is_array: bool,
     include_status: bool,
 ) -> list[_DpsColumnInfo]:
+    if dps.type == "state":
+        columns: list[_DpsColumnInfo] = []
+        if dps.numeric_value is not None:
+            columns.append(
+                _DpsColumnInfo(
+                    identifier,
+                    data=dps.numeric_value,
+                    is_string=False,
+                    is_array=is_array,
+                    aggregate="numeric_value",
+                    unit_xid=dps.unit_external_id or None,
+                )
+            )
+        if dps.string_value is not None:
+            columns.append(
+                _DpsColumnInfo(
+                    identifier,
+                    data=dps.string_value,
+                    is_string=True,
+                    is_array=is_array,
+                    aggregate="string_value",
+                    unit_xid=dps.unit_external_id or None,
+                )
+            )
+        if not columns:
+            raise ValueError("State time series datapoints must have numeric_value and/or string_value arrays set")
+        if include_status:
+            if dps.status_code is not None:
+                columns.append(_DpsColumnInfo(identifier, data=dps.status_code, is_array=is_array, status_info="code"))
+            if dps.status_symbol is not None:
+                columns.append(
+                    _DpsColumnInfo(identifier, data=dps.status_symbol, is_array=is_array, status_info="symbol")
+                )
+        return columns
+
     assert dps.value is not None
     columns = [
         _DpsColumnInfo(
@@ -342,6 +390,8 @@ def _extract_column_info_from_dps_for_dataframe(
 
     identifier = _resolve_ts_identifier_as_df_column_name(dps)
     is_array = isinstance(dps, DatapointsArray)
+    if dps.type == "state":
+        return _extract_raw_column_info(dps, identifier, is_array, include_status)
     if dps.value is not None:
         return _extract_raw_column_info(dps, identifier, is_array, include_status)
     return _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
