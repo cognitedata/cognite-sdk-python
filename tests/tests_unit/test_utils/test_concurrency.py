@@ -11,6 +11,7 @@ from cognite.client import global_config
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._concurrency import (
     AsyncSDKTask,
+    ConcurrencyConfig,
     ConcurrencySettings,
     EventLoopThreadExecutor,
     _get_event_loop_executor,
@@ -87,6 +88,12 @@ class TestConcurrencySettingsConfig:
             cs.general.read = 1
         with pytest.raises(RuntimeError, match=r"data_modeling\.search"):
             cs.data_modeling.search = 1
+
+    def test_all_sub_configs_inherit_from_concurrency_config(self) -> None:
+        cs = ConcurrencySettings()
+        assert cs._all_concurrency_configs, "expected at least one sub-config"
+        for sub in cs._all_concurrency_configs:
+            assert isinstance(sub, ConcurrencyConfig)
 
 
 @pytest.mark.usefixtures("fresh_unfrozen_global_concurrency")

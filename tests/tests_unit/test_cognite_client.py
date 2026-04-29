@@ -11,7 +11,7 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, ClientConfig, CogniteClient, global_config
-from cognite.client._http_client import get_global_async_httpx_client
+from cognite.client._http_client import _global_async_httpx_clients, get_global_async_httpx_client
 from cognite.client.credentials import OAuthClientCredentials, Token
 from cognite.client.utils._logging import DebugLogFormatter
 
@@ -114,6 +114,11 @@ class TestCogniteClient:
         assert httpx_mock.get_requests()[0].headers["cdf-version"] == async_client.config.api_subversion
 
     async def test_verify_ssl_enabled_by_default(self, async_client: AsyncCogniteClient) -> None:
+        # Clear the per-loop httpx client cache so we observe a freshly-built client reflecting
+        # the current global_config (disable_ssl=False); without this, a leftover client cached
+        # by an earlier test on the same loop could carry stale TLS settings (seen flaking once).
+        _global_async_httpx_clients.clear()
+
         httpx_client = get_global_async_httpx_client()
         assert ssl.CERT_REQUIRED is httpx_client._transport._pool._ssl_context.verify_mode  # type: ignore[attr-defined]
 
