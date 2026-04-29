@@ -482,8 +482,11 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             # Don't filter by `target` here: AAD normalizes scopes (e.g. uppercases them and may
             # add scopes like ADMIN), so an exact match against `self.scope_string()` is rarely
             # true even for a perfectly valid cached token. Match scopes case-insensitively as a
-            # superset check, the way MSAL's own `acquire_token_silent` does.
-            requested_scopes = {scope.lower() for scope in self.__scopes}
+            # superset check, the way MSAL's own `acquire_token_silent` does. OIDC reserved
+            # scopes (openid/profile/offline_access/email) never appear on the resource AT's
+            # `target`, so exclude them from the comparison.
+            _OIDC_RESERVED = {"openid", "profile", "offline_access", "email"}
+            requested_scopes = {s.lower() for s in self.__scopes if s.lower() not in _OIDC_RESERVED}
             for token in self.__app.token_cache.search(
                 self.__app.token_cache.CredentialType.ACCESS_TOKEN,
                 query={"client_id": self.client_id},
