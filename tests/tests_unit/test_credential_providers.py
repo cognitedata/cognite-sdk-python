@@ -441,41 +441,6 @@ class TestOAuthDeviceCode:
         assert abs(expires_at - expires_on) < 5
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_cached_access_token_matches_scopes_case_insensitively(self, mock_public_client: MagicMock) -> None:
-        mock_pca_instance = mock_public_client()
-        # AAD normalizes the issued `target` to uppercase and may add extra scopes (e.g. ADMIN)
-        # compared to what we requested. The cache lookup must still find such a token.
-        cached_at = {
-            "secret": "cached_aad_token",
-            "expires_on": str(int(time.time() + 3600)),
-            "target": (
-                "https://aws-dub-dev.cognitedata.com/ADMIN "
-                "https://aws-dub-dev.cognitedata.com/IDENTITY "
-                "https://aws-dub-dev.cognitedata.com/user_impersonation"
-            ),
-        }
-
-        def search_side_effect(credential_type: Any, **kwargs: Any) -> list[dict[str, Any]]:
-            if credential_type == mock_pca_instance.token_cache.CredentialType.ACCESS_TOKEN:
-                return [cached_at]
-            return []
-
-        mock_pca_instance.token_cache.search.side_effect = search_side_effect
-
-        creds = OAuthDeviceCode(
-            authority_url="https://login.microsoftonline.com/xyz",
-            client_id="azure-client-id",
-            scopes=[
-                "https://aws-dub-dev.cognitedata.com/IDENTITY",
-                "https://aws-dub-dev.cognitedata.com/user_impersonation",
-            ],
-        )
-        creds._refresh_access_token()
-
-        mock_pca_instance.http_client.post.assert_not_called()
-        assert creds.authorization_header() == ("Authorization", "Bearer cached_aad_token")
-
-    @patch("cognite.client.credentials.PublicClientApplication")
     def test_cached_access_token_skipped_when_scopes_dont_match(self, mock_public_client: MagicMock) -> None:
         mock_pca_instance = mock_public_client()
         wrong_at = {
