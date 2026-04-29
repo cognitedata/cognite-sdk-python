@@ -425,7 +425,13 @@ class TestOAuthDeviceCode:
         expires_on = int(time.time() + 3600)
         mock_pca_instance.token_cache.search.side_effect = [
             [],
-            [{"secret": "cached_access_token", "expires_on": str(expires_on)}],
+            [
+                {
+                    "secret": "cached_access_token",
+                    "expires_on": str(expires_on),
+                    "target": "https://greenfield.cognitedata.com/.default",
+                }
+            ],
         ]
 
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
@@ -433,6 +439,73 @@ class TestOAuthDeviceCode:
 
         assert expires_at > time.time() + 60
         assert abs(expires_at - expires_on) < 5
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_cached_access_token_matches_scopes_case_insensitively(self, mock_public_client: MagicMock) -> None:
+        mock_pca_instance = mock_public_client()
+        # AAD normalizes the issued `target` to uppercase and may add extra scopes (e.g. ADMIN)
+        # compared to what we requested. The cache lookup must still find such a token.
+        cached_at = {
+            "secret": "cached_aad_token",
+            "expires_on": str(int(time.time() + 3600)),
+            "target": (
+                "https://aws-dub-dev.cognitedata.com/ADMIN "
+                "https://aws-dub-dev.cognitedata.com/IDENTITY "
+                "https://aws-dub-dev.cognitedata.com/user_impersonation"
+            ),
+        }
+
+        def search_side_effect(credential_type: Any, **kwargs: Any) -> list[dict[str, Any]]:
+            if credential_type == mock_pca_instance.token_cache.CredentialType.ACCESS_TOKEN:
+                return [cached_at]
+            return []
+
+        mock_pca_instance.token_cache.search.side_effect = search_side_effect
+
+        creds = OAuthDeviceCode(
+            authority_url="https://login.microsoftonline.com/xyz",
+            client_id="azure-client-id",
+            scopes=[
+                "https://aws-dub-dev.cognitedata.com/IDENTITY",
+                "https://aws-dub-dev.cognitedata.com/user_impersonation",
+            ],
+        )
+        creds._refresh_access_token()
+
+        mock_pca_instance.http_client.post.assert_not_called()
+        assert creds.authorization_header() == ("Authorization", "Bearer cached_aad_token")
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_cached_access_token_skipped_when_scopes_dont_match(self, mock_public_client: MagicMock) -> None:
+        mock_pca_instance = mock_public_client()
+        wrong_at = {
+            "secret": "wrong_scope_token",
+            "expires_on": str(int(time.time() + 3600)),
+            "target": "https://other-cluster.cognitedata.com/IDENTITY",
+        }
+
+        def search_side_effect(credential_type: Any, **kwargs: Any) -> list[dict[str, Any]]:
+            if credential_type == mock_pca_instance.token_cache.CredentialType.ACCESS_TOKEN:
+                return [wrong_at]
+            return []
+
+        mock_pca_instance.token_cache.search.side_effect = search_side_effect
+        mock_device_response = Mock()
+        mock_device_response.json.return_value = {
+            "user_code": "ABCDEF",
+            "message": "Follow the link and enter the code",
+        }
+        mock_pca_instance.http_client.post.return_value = mock_device_response
+        mock_pca_instance.client.obtain_token_by_device_flow.return_value = {
+            "access_token": "fresh_access_token",
+            "expires_in": 3600,
+        }
+
+        creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
+        creds._refresh_access_token()
+
+        mock_pca_instance.http_client.post.assert_called_once()
+        assert creds.authorization_header() == ("Authorization", "Bearer fresh_access_token")
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_access_token_from_cache(self, mock_public_client: MagicMock) -> None:
@@ -443,6 +516,7 @@ class TestOAuthDeviceCode:
                 {
                     "secret": "cached_access_token",
                     "expires_on": str(int(time.time() + 3600)),  # Valid for 1 hour
+                    "target": "https://greenfield.cognitedata.com/.default",
                 }
             ],
         ]

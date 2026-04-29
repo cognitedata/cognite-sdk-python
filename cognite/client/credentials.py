@@ -479,10 +479,18 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                 break
             self.__app.token_cache.remove_rt(token)
         if credentials is None:
+            # Don't filter by `target` here: AAD normalizes scopes (e.g. uppercases them and may
+            # add scopes like ADMIN), so an exact match against `self.scope_string()` is rarely
+            # true even for a perfectly valid cached token. Match scopes case-insensitively as a
+            # superset check, the way MSAL's own `acquire_token_silent` does.
+            requested_scopes = {scope.lower() for scope in self.__scopes}
             for token in self.__app.token_cache.search(
                 self.__app.token_cache.CredentialType.ACCESS_TOKEN,
-                query={"client_id": self.client_id, "target": self.scope_string()},
+                query={"client_id": self.client_id},
             ):
+                cached_scopes = {scope.lower() for scope in token.get("target", "").split()}
+                if not requested_scopes.issubset(cached_scopes):
+                    continue
                 remaining = int(token.get("expires_on", 0)) - time.time()
                 if remaining > 0:
                     credentials = {
