@@ -463,9 +463,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         return token
 
     def _refresh_access_token(self) -> tuple[str, float]:
-        # First check if a token cache exists on disk. If yes, find and use:
-        # - A valid access token.
-        # - A valid refresh token, and if so, use it automatically to redeem a new access token.
+        # Try cached refresh tokens first (redeem for a new access token), then any still-valid
+        # cached access token, and finally fall back to the device code flow.
         credentials = None
         for token in self.__app.token_cache.search(
             self.__app.token_cache.CredentialType.REFRESH_TOKEN,
