@@ -79,7 +79,6 @@ class TransformationNotification(TransformationNotificationCore):
         return TransformationNotificationWrite(
             destination=self.destination,
             transformation_id=self.transformation_id,
-            transformation_external_id=self.transformation_external_id,
         )
 
 
