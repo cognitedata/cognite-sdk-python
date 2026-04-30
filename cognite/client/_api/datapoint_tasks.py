@@ -707,14 +707,17 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
     def __init__(self, **kwargs: Any) -> None:
         self.dp_outside_start: tuple[int, float | str | tuple[int | None, str | None] | None] | None = None
         self.dp_outside_end: tuple[int, float | str | tuple[int | None, str | None] | None] | None = None
+        # Initialise state containers BEFORE super().__init__ because that call chains into
+        # _store_ts_info -> _store_first_batch -> _unpack_and_store, which reads these attrs.
+        # _store_ts_info will swap them to defaultdict(list) for state-typed series.
+        self.state_numeric_data: _DataContainer | None = None
+        self.state_string_data: _DataContainer | None = None
         super().__init__(**kwargs)
 
         self.dp_outside_status_code_start: int | None = None
         self.dp_outside_status_code_end: int | None = None
         self.dp_outside_status_symbol_start: str | None = None
         self.dp_outside_status_symbol_end: str | None = None
-        self.state_numeric_data: _DataContainer | None = None
-        self.state_string_data: _DataContainer | None = None
 
     def _store_ts_info(self, res: DataPointListItem) -> None:
         super()._store_ts_info(res)
