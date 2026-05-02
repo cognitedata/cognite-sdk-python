@@ -106,16 +106,19 @@ class SelectSync(SelectBase):
 
     Examples:
 
-        All properties from a view::
+        All properties from a view:
 
-            >>> from cognite.client.data_classes.data_modeling.query import SelectSync, SourceSelector
-            >>> from cognite.client.data_classes.data_modeling import ViewId
+            >>> from cognite.client.data_classes.data_modeling import (
+            ...     SelectSync,
+            ...     SourceSelector,
+            ...     ViewId,
+            ... )
             >>> view_id = ViewId("mySpace", "myView", "v1")
-            >>> select_all = SelectSync(sources=[SourceSelector(view_id, ["*"])])
+            >>> select_all = SelectSync([SourceSelector(view_id, ["*"])])
 
-        Only specific properties::
+        Only specific properties:
 
-            >>> select_some = SelectSync(sources=[SourceSelector(view_id, ["name", "description"])])
+            >>> select_some = SelectSync([SourceSelector(view_id, ["name", "description"])])
     """
 
     @classmethod
@@ -235,14 +238,14 @@ class QuerySync(QueryBase["ResultSetExpressionSync", SelectSync]):
 
         Import and instantiate:
 
-            >>> from cognite.client.data_classes.data_modeling.query import (
+            >>> from cognite.client.data_classes.data_modeling import (
             ...     QuerySync,
             ...     NodeResultSetExpressionSync,
             ...     SelectSync,
             ...     SourceSelector,
+            ...     ViewId,
             ... )
             >>> from cognite.client.data_classes.filters import SpaceFilter
-            >>> from cognite.client.data_classes.data_modeling import ViewId
             >>> view_id = ViewId("mySpace", "myView", "v1")
             >>> sync_query = QuerySync(
             ...     with_={"assets": NodeResultSetExpressionSync(filter=SpaceFilter("mySpace"))},
@@ -544,7 +547,7 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
 
         Import and instantiate:
 
-            >>> from cognite.client.data_classes.data_modeling.query import (
+            >>> from cognite.client.data_classes.data_modeling import (
             ...     NodeResultSetExpressionSync,
             ... )
             >>> from cognite.client.data_classes.filters import SpaceFilter
@@ -645,7 +648,7 @@ class EdgeResultSetExpressionSync(ResultSetExpressionSync):
 
         Import and instantiate:
 
-            >>> from cognite.client.data_classes.data_modeling.query import (
+            >>> from cognite.client.data_classes.data_modeling import (
             ...     EdgeResultSetExpressionSync,
             ... )
             >>> from cognite.client.data_classes.filters import Equals
