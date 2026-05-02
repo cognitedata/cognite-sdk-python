@@ -94,6 +94,30 @@ class SelectBase(CogniteResource, ABC):
 
 @dataclass
 class SelectSync(SelectBase):
+    """Select expression for a sync query, specifying which view properties to include.
+
+    The ``properties`` list on each :class:`SourceSelector` controls which view properties are
+    returned for matching instances:
+
+    - ``["*"]`` — wildcard; returns **all** properties defined in the view. Convenient but
+        transfers more data per instance.
+    - An explicit list such as ``["name", "description"]`` — returns **only** those named
+        properties. Reduces payload size when only a subset is needed.
+
+    Examples:
+
+        All properties from a view::
+
+            >>> from cognite.client.data_classes.data_modeling.query import SelectSync, SourceSelector
+            >>> from cognite.client.data_classes.data_modeling import ViewId
+            >>> view_id = ViewId("mySpace", "myView", "v1")
+            >>> select_all = SelectSync(sources=[SourceSelector(view_id, ["*"])])
+
+        Only specific properties::
+
+            >>> select_some = SelectSync(sources=[SourceSelector(view_id, ["name", "description"])])
+    """
+
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
@@ -206,6 +230,24 @@ class QuerySync(QueryBase["ResultSetExpressionSync", SelectSync]):
         parameters (Mapping[str, PropertyValue]): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
         cursors (Mapping[str, str | None]): A dictionary of cursors to use in the query. These allow for pagination.
         allow_expired_cursors_and_accept_missed_deletes (bool): Sync cursors expire after 3 days because soft-deleted instances are cleaned up after this grace period, so a client using a cursor older than that risks missing deletes. If set to True, the API will allow the use of expired cursors.
+
+    Examples:
+
+        Import and instantiate:
+
+            >>> from cognite.client.data_classes.data_modeling.query import (
+            ...     QuerySync,
+            ...     NodeResultSetExpressionSync,
+            ...     SelectSync,
+            ...     SourceSelector,
+            ... )
+            >>> from cognite.client.data_classes.filters import SpaceFilter
+            >>> from cognite.client.data_classes.data_modeling import ViewId
+            >>> view_id = ViewId("mySpace", "myView", "v1")
+            >>> sync_query = QuerySync(
+            ...     with_={"assets": NodeResultSetExpressionSync(filter=SpaceFilter("mySpace"))},
+            ...     select={"assets": SelectSync([SourceSelector(view_id, ["*"])])},
+            ... )
     """
 
     allow_expired_cursors_and_accept_missed_deletes: bool = False
@@ -497,6 +539,19 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
         skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
         sync_mode (Literal['one_phase', 'two_phase', 'no_backfill']): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Defaults to "two_phase", which is recommended for queries with custom filters. Note that the backfill phase's filters and sort must be backed by a cursorable index. Use "one_phase" when fetching all instances (or all in specific spaces) for better throughput.
         backfill_sort (list[InstanceSort] | None): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
+
+    Examples:
+
+        Import and instantiate:
+
+            >>> from cognite.client.data_classes.data_modeling.query import (
+            ...     NodeResultSetExpressionSync,
+            ... )
+            >>> from cognite.client.data_classes.filters import SpaceFilter
+            >>> expr = NodeResultSetExpressionSync(
+            ...     filter=SpaceFilter("mySpace"),
+            ...     sync_mode="two_phase",
+            ... )
     """
 
     through: PropertyId | None = None
@@ -585,6 +640,22 @@ class EdgeResultSetExpressionSync(ResultSetExpressionSync):
         max_distance (int | None): The largest - max - number of levels to traverse.
         node_filter (Filter | None): Filter the result set based on this filter.
         termination_filter (Filter | None): Filter the result set based on this filter.
+
+    Examples:
+
+        Import and instantiate:
+
+            >>> from cognite.client.data_classes.data_modeling.query import (
+            ...     EdgeResultSetExpressionSync,
+            ... )
+            >>> from cognite.client.data_classes.filters import Equals
+            >>> expr = EdgeResultSetExpressionSync(
+            ...     from_="work_orders",
+            ...     filter=Equals(
+            ...         ["edge", "type"], {"space": "mySpace", "externalId": "WorkOrder.pump"}
+            ...     ),
+            ...     sync_mode="two_phase",
+            ... )
     """
 
     max_distance: int | None = None
