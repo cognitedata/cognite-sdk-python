@@ -63,8 +63,8 @@ def allow_crs_transformation(request: FixtureRequest) -> Iterator[bool]:
 
 
 pytestmark = pytest.mark.skipif(
-    date.today() < date(2026, 4, 30),
-    reason="Geospatial service is unavailable",
+    date.today() < date(2026, 6, 1),
+    reason="Geospatial service is unavailable, skipping until 2026-06-01",
 )
 
 
