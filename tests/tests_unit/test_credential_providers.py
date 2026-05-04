@@ -336,13 +336,16 @@ class TestOAuthDeviceCode:
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_refresh_token_from_cache(self, mock_public_client):
-        # Mock a valid refresh token in cache
         mock_refresh_token = {
             "secret": "refresh_token_secret",
-            "expires_on": time.time() + 3600,  # Valid for 1 hour
+            "client_id": "test-client-id",
         }
 
-        mock_public_client().token_cache.search.return_value = [mock_refresh_token]
+        # AT search returns nothing; RT search returns the entry
+        mock_public_client().token_cache.search.side_effect = [
+            [],  # No valid access tokens
+            [mock_refresh_token],  # Refresh token found
+        ]
         mock_public_client().client.obtain_token_by_refresh_token.return_value = {
             "access_token": "new_access_token",
             "expires_in": 3600,
@@ -351,16 +354,16 @@ class TestOAuthDeviceCode:
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
 
-        # Verify refresh token was used
-        mock_public_client().client.obtain_token_by_refresh_token.assert_called_once_with("refresh_token_secret")
-        assert "Authorization", "Bearer new_access_token" == creds.authorization_header()
+        # Verify refresh token was used (full entry + rt_getter kwarg)
+        call_args = mock_public_client().client.obtain_token_by_refresh_token.call_args
+        assert call_args.args[0] == mock_refresh_token
+        assert call_args.kwargs["rt_getter"](mock_refresh_token) == "refresh_token_secret"
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_access_token_from_cache(self, mock_public_client):
-        # Mock no refresh token, but valid access token
+        # Valid access token in cache — RT search should never be reached
         mock_public_client().token_cache.search.side_effect = [
-            [],  # No refresh tokens
-            [  # Access tokens
+            [  # Access token found on first search
                 {
                     "secret": "cached_access_token",
                     "expires_on": str(int(time.time() + 3600)),  # Valid for 1 hour
