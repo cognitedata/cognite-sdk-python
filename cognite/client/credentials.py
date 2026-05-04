@@ -3,6 +3,7 @@ from __future__ import annotations
 import atexit
 import inspect
 import json
+import operator
 import tempfile
 import threading
 import time
@@ -467,20 +468,46 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         # - A valid access token.
         # - A valid refresh token, and if so, use it automatically to redeem a new access token.
         credentials = None
-        for token in self.__app.token_cache.search(self.__app.token_cache.CredentialType.REFRESH_TOKEN):
-            if "expires_on" in token and token["expires_on"] > time.time():
-                credentials = token
+
+        # 1. Check for a still-valid access token. search() does NOT filter by expiry,
+        #    so we check manually and respect the leeway to avoid handing out a near-expired token.
+        for token in self.__app.token_cache.search(
+            self.__app.token_cache.CredentialType.ACCESS_TOKEN,
+            query={"client_id": self.client_id},
+        ):
+            expiry = int(token.get("expires_on", 0)) - time.time() - self.token_expiry_leeway_seconds
+            if expiry > 0:
+                credentials = {
+                    "access_token": token["secret"],
+                    "expires_in": expiry,
+                }
                 break
-        if credentials is not None:
-            credentials = self.__app.client.obtain_token_by_refresh_token(credentials.get("secret", ""))
-        else:
-            for token in self.__app.token_cache.search(self.__app.token_cache.CredentialType.ACCESS_TOKEN):
-                if expiry := int(token.get("expires_on", 0)) - time.time() > 0:
-                    credentials = {
-                        "access_token": token.get("secret"),
-                        "expires_in": expiry,
-                    }
-                    break
+
+        # 2. No valid AT — try to silently redeem a refresh token.
+        if credentials is None:
+            rt_entry = None
+            for token in self.__app.token_cache.search(
+                self.__app.token_cache.CredentialType.REFRESH_TOKEN,
+                query={"client_id": self.client_id},
+            ):
+                rt_entry = token
+                break  # MSAL RTs have no 'expires_on'; use the first found
+
+            if rt_entry is not None:
+                # Pass the full RT cache entry (not just the secret string) so MSAL's
+                # on_removing_rt callback can properly remove it on invalid_grant.
+                # Exclude OIDC meta-scopes that are not valid in token-endpoint requests.
+                oidc_scopes = frozenset({"openid", "profile", "email", "offline_access"})
+                rt_scope = " ".join(s for s in self.__scopes if s not in oidc_scopes)
+                resp = self.__app.client.obtain_token_by_refresh_token(
+                    rt_entry,
+                    rt_getter=operator.itemgetter("secret"),
+                    scope=rt_scope,
+                )
+                if isinstance(resp, dict) and "error" not in resp:
+                    credentials = resp
+                # else: RT rejected by server, fall through to device code flow
+
         # If we're unable to find (or acquire a new) access token, we initiate the device code auth flow.
         # The msal device_code flow does not support setting the audience, so we need to handle it manually.
         # We use the http client instantiated as part of the msal client, as well as the details found
