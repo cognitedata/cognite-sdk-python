@@ -605,6 +605,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                 f"https://{cdf_cluster}.cognitedata.com/user_impersonation",
                 "profile",
                 "openid",
+                "offline_access",  # required for Azure to issue a refresh token
             ],
             token_cache_path=token_cache_path,
             token_expiry_leeway_seconds=token_expiry_leeway_seconds,
