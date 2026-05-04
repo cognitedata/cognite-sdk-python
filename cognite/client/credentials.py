@@ -464,9 +464,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         return token
 
     def _refresh_access_token(self) -> tuple[str, float]:
-        # First check if a token cache exists on disk. If yes, find and use:
-        # - A valid access token.
-        # - A valid refresh token, and if so, use it automatically to redeem a new access token.
+        # Token resolution order (cheapest option first):
+        #   1. Valid access token in cache → use directly, no network call
+        #   2. Refresh token in cache      → exchange for new AT, one network call
+        #   3. Device code flow            → interactive, requires user action
         credentials = None
 
         # 1. Check for a still-valid access token. search() does NOT filter by expiry,
@@ -707,9 +708,8 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         return self.__scopes
 
     def _refresh_access_token(self) -> tuple[str, float]:
-        # First check if a token cache exists on disk. If yes, find and use:
-        # - A valid access token.
-        # - A valid refresh token, and if so, use it automatically to redeem a new access token.
+        # Try the in-memory token cache silently (MSAL checks AT first, then RT automatically).
+        # Falls through to interactive flow if nothing usable is found.
         credentials = None
         if accounts := self.__app.get_accounts():
             credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
