@@ -478,10 +478,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         ):
             expiry = int(token.get("expires_on", 0)) - time.time() - self.token_expiry_leeway_seconds
             if expiry > 0:
-                credentials = {
-                    "access_token": token["secret"],
-                    "expires_in": expiry,
-                }
+                credentials = {"access_token": token["secret"], "expires_in": expiry}
                 break
 
         # 2. No valid AT — try to silently redeem a refresh token.
@@ -499,11 +496,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                 # on_removing_rt callback can properly remove it on invalid_grant.
                 # Exclude OIDC meta-scopes that are not valid in token-endpoint requests.
                 oidc_scopes = frozenset({"openid", "profile", "email", "offline_access"})
-                rt_scope = " ".join(s for s in self.__scopes if s not in oidc_scopes)
                 resp = self.__app.client.obtain_token_by_refresh_token(
                     rt_entry,
                     rt_getter=operator.itemgetter("secret"),
-                    scope=rt_scope,
+                    scope=" ".join(s for s in self.__scopes if s not in oidc_scopes),
                 )
                 if isinstance(resp, dict) and "error" not in resp:
                     credentials = resp
@@ -517,42 +513,27 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         # The msal device_code flow does not support setting the audience, so we need to handle it manually.
         # We use the http client instantiated as part of the msal client, as well as the details found
         # in oauth discovery.
-        data = {
-            "scope": self.scope_string(),
-            "client_id": self.client_id,
-        }
-        for key, value in self.__token_custom_args.items():
-            data[key] = value
-
+        data = {"scope": self.scope_string(), "client_id": self.client_id, **self.__token_custom_args}
         device_flow_endpoint = self._get_device_authorization_endpoint()
-        device_flow_response = self._get_device_code_response(device_flow_endpoint, data)
-        if "verification_uri" in device_flow_response:
-            print(  # noqa: T201
-                f"Visit {device_flow_response['verification_uri']} and enter the code: {device_flow_response.get('user_code', 'ERROR')}"
-            )
-        elif "message" in device_flow_response:
-            print(  # noqa: T201
-                f"Device code: {device_flow_response.get('message', device_flow_response.get('user_code', 'ERROR'))}"
-            )
+        response = self._get_device_code_response(device_flow_endpoint, data)
+        if "verification_uri" in response:
+            print(f"Visit {response['verification_uri']} and enter the code: {response.get('user_code', 'ERROR')}")  # noqa: T201
+        elif "message" in response:
+            print(f"Device code: {response.get('message', response.get('user_code', 'ERROR'))}")  # noqa: T201
         else:
             raise CogniteAuthError(
-                f"Error initiating device flow: {device_flow_response.get('error')} - {device_flow_response.get('error_description')}"
+                f"Error initiating device flow: {response.get('error')} - {response.get('error_description')}"
             )
-        if "interval" not in device_flow_response:
-            # Set default interval according to standard
-            device_flow_response["interval"] = 5
-        if "expires_in" in device_flow_response:
+        if "interval" not in response:
+            response["interval"] = 5  # Set default interval according to standard
+        if "expires_in" in response:
             # msal library uses expires_at instead of the standard expires_in
-            device_flow_response["expires_at"] = device_flow_response["expires_in"] + time.time()
-        # Poll for token
+            response["expires_at"] = float(response["expires_in"]) + time.time()
+
         credentials = self.__app.client.obtain_token_by_device_flow(
-            flow=device_flow_response,
-            data=dict(
-                data,
-                code=device_flow_response.get(
-                    "device_code"
-                ),  # Hack from msal library to get the code from the device flow, not standard
-            ),
+            flow=response,
+            # Hack from msal library to get the code from the device flow, not standard:
+            data=dict(data, code=response.get("device_code")),
         )
         self._verify_credentials(credentials)
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
