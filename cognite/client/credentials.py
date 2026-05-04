@@ -555,9 +555,6 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             ),
         )
         self._verify_credentials(credentials)
-        self.__app.token_cache.add(
-            dict(credentials, environment=self.__app.authority.instance),
-        )
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
     @classmethod
