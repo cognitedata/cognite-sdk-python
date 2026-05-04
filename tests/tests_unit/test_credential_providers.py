@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from json import JSONDecodeError
+from pathlib import Path
 from types import MappingProxyType
 from typing import Any, ClassVar
 from unittest.mock import MagicMock, Mock, patch
@@ -9,6 +10,8 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 import requests
 from authlib.integrations.httpx_client import OAuthError
+from msal import SerializableTokenCache
+from msal.oauth2cli import Client as MsalOAuthClient
 
 from cognite.client.credentials import (
     CredentialProvider,
@@ -339,9 +342,15 @@ class TestOAuthDeviceCode:
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_refresh_token_from_cache(self, mock_public_client: MagicMock) -> None:
         mock_pca_instance = mock_public_client()
-        mock_refresh_token = {"secret": "refresh_token_secret"}
+        mock_pca_instance.get_accounts.return_value = []
+        mock_refresh_token = {"credential_type": "RefreshToken", "secret": "refresh_token_secret"}
 
-        mock_pca_instance.token_cache.search.return_value = [mock_refresh_token]
+        def search_side_effect(credential_type: Any, **kwargs: Any) -> list[dict[str, Any]]:
+            if credential_type == mock_pca_instance.token_cache.CredentialType.REFRESH_TOKEN:
+                return [mock_refresh_token]
+            return []
+
+        mock_pca_instance.token_cache.search.side_effect = search_side_effect
         mock_pca_instance.client.obtain_token_by_refresh_token.return_value = {
             "access_token": "new_access_token",
             "expires_in": 3600,
@@ -350,14 +359,20 @@ class TestOAuthDeviceCode:
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
 
-        mock_pca_instance.client.obtain_token_by_refresh_token.assert_called_once_with("refresh_token_secret")
+        token_arg = mock_pca_instance.client.obtain_token_by_refresh_token.call_args.args[0]
+        kwargs = mock_pca_instance.client.obtain_token_by_refresh_token.call_args.kwargs
+        assert token_arg == mock_refresh_token
+        assert kwargs["scope"] == ["https://greenfield.cognitedata.com/.default"]
+        assert kwargs["rt_getter"](mock_refresh_token) == "refresh_token_secret"
+        assert kwargs["data"] == {}
         mock_pca_instance.http_client.post.assert_not_called()
         assert creds.authorization_header() == ("Authorization", "Bearer new_access_token")
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_refresh_token_invalid_falls_back_to_device_flow(self, mock_public_client: MagicMock) -> None:
         mock_pca_instance = mock_public_client()
-        stale_token = {"secret": "stale_refresh_token"}
+        mock_pca_instance.get_accounts.return_value = []
+        stale_token = {"credential_type": "RefreshToken", "secret": "stale_refresh_token"}
 
         def search_side_effect(credential_type: Any, **kwargs: Any) -> list[dict[str, Any]]:
             if credential_type == mock_pca_instance.token_cache.CredentialType.REFRESH_TOKEN:
@@ -386,8 +401,12 @@ class TestOAuthDeviceCode:
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
 
-        mock_pca_instance.client.obtain_token_by_refresh_token.assert_called_once_with("stale_refresh_token")
-        mock_pca_instance.token_cache.remove_rt.assert_called_once_with(stale_token)
+        token_arg = mock_pca_instance.client.obtain_token_by_refresh_token.call_args.args[0]
+        kwargs = mock_pca_instance.client.obtain_token_by_refresh_token.call_args.kwargs
+        assert token_arg == stale_token
+        assert kwargs["scope"] == ["https://greenfield.cognitedata.com/.default"]
+        assert kwargs["rt_getter"](stale_token) == "stale_refresh_token"
+        assert kwargs["data"] == {}
         mock_pca_instance.http_client.post.assert_called_once_with(
             expected_device_auth_url,
             data={"scope": "https://greenfield.cognitedata.com/.default", "client_id": "azure-client-id"},
@@ -398,8 +417,9 @@ class TestOAuthDeviceCode:
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_refresh_token_exception_tries_next_token(self, mock_public_client: MagicMock) -> None:
         mock_pca_instance = mock_public_client()
-        broken_token = {"secret": "broken_token"}
-        good_token = {"secret": "good_token"}
+        mock_pca_instance.get_accounts.return_value = []
+        broken_token = {"credential_type": "RefreshToken", "secret": "broken_token"}
+        good_token = {"credential_type": "RefreshToken", "secret": "good_token"}
 
         def search_side_effect(credential_type: Any, **kwargs: Any) -> list[dict[str, Any]]:
             if credential_type == mock_pca_instance.token_cache.CredentialType.REFRESH_TOKEN:
@@ -416,15 +436,14 @@ class TestOAuthDeviceCode:
 
         assert creds.authorization_header() == ("Authorization", "Bearer fresh_access_token")
         assert mock_pca_instance.client.obtain_token_by_refresh_token.call_count == 2
-        mock_pca_instance.token_cache.remove_rt.assert_not_called()
         mock_pca_instance.http_client.post.assert_not_called()
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_cached_access_token_expiry_is_seconds_not_bool(self, mock_public_client: MagicMock) -> None:
         mock_pca_instance = mock_public_client()
+        mock_pca_instance.get_accounts.return_value = []
         expires_on = int(time.time() + 3600)
         mock_pca_instance.token_cache.search.side_effect = [
-            [],
             [
                 {
                     "secret": "cached_access_token",
@@ -446,12 +465,12 @@ class TestOAuthDeviceCode:
         # superset check must ignore those reserved OIDC scopes when matching. This is the exact
         # default-for-entra-id scope shape (IDENTITY + user_impersonation + openid + profile).
         mock_pca_instance = mock_public_client()
+        mock_pca_instance.get_accounts.return_value = []
         cached_at = {
             "secret": "cached_aad_token",
             "expires_on": str(int(time.time() + 3600)),
             "target": (
-                "https://greenfield.cognitedata.com/IDENTITY "
-                "https://greenfield.cognitedata.com/user_impersonation"
+                "https://greenfield.cognitedata.com/IDENTITY https://greenfield.cognitedata.com/user_impersonation"
             ),
         }
 
@@ -477,9 +496,105 @@ class TestOAuthDeviceCode:
         mock_pca_instance.http_client.post.assert_not_called()
         assert creds.authorization_header() == ("Authorization", "Bearer cached_aad_token")
 
+    def test_serialized_msal_cache_reused_by_fresh_provider_instances(self, tmp_path: Path) -> None:
+        cache_path = tmp_path / "token-cache.bin"
+        cache = SerializableTokenCache()
+        cache.add(
+            {
+                "client_id": "azure-client-id",
+                "environment": "login.microsoftonline.com",
+                "scope": [
+                    "https://greenfield.cognitedata.com/IDENTITY",
+                    "https://greenfield.cognitedata.com/USER_IMPERSONATION",
+                ],
+                "token_endpoint": "https://login.microsoftonline.com/xyz/oauth2/v2.0/token",
+                "grant_type": MsalOAuthClient.DEVICE_FLOW["GRANT_TYPE"],
+                "response": {
+                    "access_token": "cached_aad_token",
+                    "expires_in": 3600,
+                    "refresh_token": "cached_refresh_token",
+                    "id_token_claims": {"oid": "oid", "sub": "sub", "preferred_username": "user@example.com"},
+                },
+                "data": {},
+            }
+        )
+        cache_path.write_text(cache.serialize())
+
+        class CacheBackedPublicClientApplication:
+            def __init__(self, token_cache: SerializableTokenCache) -> None:
+                self.token_cache = token_cache
+                self.authority = Mock(
+                    instance="login.microsoftonline.com",
+                    tenant="xyz",
+                    device_authorization_endpoint="https://login.microsoftonline.com/xyz/oauth2/v2.0/devicecode",
+                )
+                self.http_client = Mock()
+                self.http_client.post.side_effect = AssertionError("device flow should not be started")
+                self.client = Mock()
+
+            def get_accounts(self) -> list[dict[str, Any]]:
+                return list(self.token_cache.search(self.token_cache.CredentialType.ACCOUNT))
+
+            def acquire_token_silent(
+                self, scopes: list[str], account: dict[str, Any], **kwargs: Any
+            ) -> dict[str, Any] | None:
+                for token in self.token_cache.search(
+                    self.token_cache.CredentialType.ACCESS_TOKEN,
+                    target=scopes,
+                    query={
+                        "client_id": "azure-client-id",
+                        "environment": "login.microsoftonline.com",
+                        "home_account_id": account["home_account_id"],
+                        "realm": "xyz",
+                    },
+                ):
+                    return {
+                        "access_token": token["secret"],
+                        "expires_in": int(token["expires_on"]) - time.time(),
+                    }
+                return None
+
+        apps: list[CacheBackedPublicClientApplication] = []
+
+        def create_client_app(
+            self: OAuthDeviceCode,
+            token_cache_path: Path,
+            client_id: str,
+            authority_url: str | None = None,
+            oauth_discovery_url: str | None = None,
+            clear_cache: bool = False,
+            mem_cache_only: bool = False,
+        ) -> CacheBackedPublicClientApplication:
+            token_cache = self._create_serializable_token_cache(token_cache_path, clear_cache)
+            app = CacheBackedPublicClientApplication(token_cache)
+            apps.append(app)
+            return app
+
+        with patch.object(OAuthDeviceCode, "_create_client_app", create_client_app):
+            for _ in range(2):
+                creds = OAuthDeviceCode(
+                    authority_url="https://login.microsoftonline.com/xyz",
+                    client_id="azure-client-id",
+                    scopes=[
+                        "https://greenfield.cognitedata.com/IDENTITY",
+                        "https://greenfield.cognitedata.com/user_impersonation",
+                        "openid",
+                        "profile",
+                    ],
+                    token_cache_path=cache_path,
+                )
+
+                assert creds.authorization_header() == ("Authorization", "Bearer cached_aad_token")
+
+        assert len(apps) == 2
+        for app in apps:
+            app.http_client.post.assert_not_called()
+            app.client.obtain_token_by_refresh_token.assert_not_called()
+
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_cached_access_token_skipped_when_scopes_dont_match(self, mock_public_client: MagicMock) -> None:
         mock_pca_instance = mock_public_client()
+        mock_pca_instance.get_accounts.return_value = []
         wrong_at = {
             "secret": "wrong_scope_token",
             "expires_on": str(int(time.time() + 3600)),
@@ -511,9 +626,9 @@ class TestOAuthDeviceCode:
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_access_token_from_cache(self, mock_public_client: MagicMock) -> None:
+        mock_public_client().get_accounts.return_value = []
         # Mock no refresh token, but valid access token
         mock_public_client().token_cache.search.side_effect = [
-            [],  # No refresh tokens
             [  # Access tokens
                 {
                     "secret": "cached_access_token",

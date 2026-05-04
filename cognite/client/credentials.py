@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
 
 _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
+_OIDC_RESERVED_SCOPES = frozenset({"openid", "profile", "offline_access", "email"})
 
 
 @runtime_checkable
@@ -463,30 +464,21 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         return token
 
     def _refresh_access_token(self) -> tuple[str, float]:
-        # Try cached refresh tokens first (redeem for a new access token), then any still-valid
-        # cached access token, and finally fall back to the device code flow.
+        # Prefer MSAL's high-level acquire_token_silent for account-backed caches, then fall back
+        # to direct cache lookups for serialized caches whose token target differs only by casing
+        # or by OIDC scopes that are absent from resource access tokens.
         credentials = None
-        for token in self.__app.token_cache.search(
-            self.__app.token_cache.CredentialType.REFRESH_TOKEN,
-            query={"client_id": self.client_id},
-        ):
-            try:
-                result = self.__app.client.obtain_token_by_refresh_token(token.get("secret", ""))
-            except Exception:
-                continue
-            if "access_token" in result:
-                credentials = result
-                break
-            self.__app.token_cache.remove_rt(token)
-        if credentials is None:
-            # Don't filter by `target` here: AAD normalizes scopes (e.g. uppercases them and may
-            # add scopes like ADMIN), so an exact match against `self.scope_string()` is rarely
-            # true even for a perfectly valid cached token. Match scopes case-insensitively as a
-            # superset check, the way MSAL's own `acquire_token_silent` does. OIDC reserved
-            # scopes (openid/profile/offline_access/email) never appear on the resource AT's
-            # `target`, so exclude them from the comparison.
-            _OIDC_RESERVED = {"openid", "profile", "offline_access", "email"}
-            requested_scopes = {s.lower() for s in self.__scopes if s.lower() not in _OIDC_RESERVED}
+        silent_scopes = [scope for scope in self.__scopes if scope.lower() not in _OIDC_RESERVED_SCOPES]
+        if accounts := self.__app.get_accounts():
+            credentials = self.__app.acquire_token_silent(
+                scopes=silent_scopes,
+                account=accounts[0],
+                data=dict(self.__token_custom_args),
+            )
+
+        if credentials is None or "access_token" not in credentials:
+            credentials = None
+            requested_scopes = {scope.lower() for scope in silent_scopes}
             for token in self.__app.token_cache.search(
                 self.__app.token_cache.CredentialType.ACCESS_TOKEN,
                 query={"client_id": self.client_id},
@@ -495,11 +487,29 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                 if not requested_scopes.issubset(cached_scopes):
                     continue
                 remaining = int(token.get("expires_on", 0)) - time.time()
-                if remaining > 0:
+                if remaining > self.token_expiry_leeway_seconds and (access_token := token.get("secret")):
                     credentials = {
-                        "access_token": token.get("secret"),
+                        "access_token": access_token,
                         "expires_in": remaining,
                     }
+                    break
+
+        if credentials is None:
+            for token in self.__app.token_cache.search(
+                self.__app.token_cache.CredentialType.REFRESH_TOKEN,
+                query={"client_id": self.client_id},
+            ):
+                try:
+                    result = self.__app.client.obtain_token_by_refresh_token(
+                        token,
+                        scope=silent_scopes,
+                        rt_getter=lambda token_item: token_item.get("secret", ""),
+                        data=dict(self.__token_custom_args),
+                    )
+                except Exception:
+                    continue
+                if "access_token" in result:
+                    credentials = result
                     break
         # If we're unable to find (or acquire a new) access token, we initiate the device code auth flow.
         # The msal device_code flow does not support setting the audience, so we need to handle it manually.
