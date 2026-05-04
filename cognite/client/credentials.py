@@ -639,7 +639,6 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             token_expiry_leeway_seconds=token_expiry_leeway_seconds,
             clear_cache=clear_cache,
             mem_cache_only=mem_cache_only,
-            audience=f"https://{cdf_cluster}.cognitedata.com",
         )
 
 
