@@ -579,18 +579,16 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         mem_cache_only: bool = False,
     ) -> OAuthDeviceCode:
         """
-        Create an OAuthDeviceCode instance for Azure with default URLs and scopes. It uses the pre-configured Cognite
-        app registration for device code flow. If you need device code flow with another app registration, instantiate
-        OAuthDeviceCode directly.
+        Create an OAuthDeviceCode instance for Azure with default URLs and scopes.
 
         The default configuration creates the URLs based on the tenant id and cluster:
 
         * Authority URL: "https://login.microsoftonline.com/{tenant_id}"
-        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
+        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/IDENTITY", f"https://{cdf_cluster}.cognitedata.com/user_impersonation", "profile", "openid", "offline_access"]
 
         Args:
             tenant_id (str): The Azure tenant id
-            client_id (str): An app registration that allows device code flow.
+            client_id (str): Your app registration client id. Must have device code flow enabled.
             cdf_cluster (str): The CDF cluster where the CDF project is located.
             token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
             token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
@@ -601,7 +599,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         """
         return cls(
             authority_url=f"https://login.microsoftonline.com/{tenant_id}",
-            client_id=client_id,  # Default application for CDF API for device code flow
+            client_id=client_id,
             scopes=[
                 f"https://{cdf_cluster}.cognitedata.com/IDENTITY",
                 f"https://{cdf_cluster}.cognitedata.com/user_impersonation",
