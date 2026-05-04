@@ -352,10 +352,10 @@ def _create_multi_index_from_columns(
     include_aggregate: bool,
     include_granularity: bool,
     include_unit: bool,
-) -> pd.MultiIndex:
+) -> pd.Index:
     import pandas as pd
 
-    column_ids_df = pd.DataFrame(
+    column_ids = pd.DataFrame(
         [
             col.as_multi_index_tuple(
                 include_aggregate=include_aggregate,
@@ -368,9 +368,13 @@ def _create_multi_index_from_columns(
     )
     # Key operation is to drop all-nan columns, which in the multi-index translates to dropping
     # the corresponding levels:
-    non_id_levels = column_ids_df.iloc[:, 1:].dropna(axis="columns", how="all").fillna("")
+    non_id_levels = column_ids.iloc[:, 1:].dropna(axis="columns", how="all").fillna("")
+    # When none of the extra levels survive (status/agg./gran./unit), return a plain Index so
+    # columns are the bare identifiers rather than 1-tuples:
+    if non_id_levels.columns.empty:
+        return pd.Index(column_ids["identifier"])
     # ...but we always keep the identifier column:
-    return pd.MultiIndex.from_frame(pd.concat((column_ids_df.iloc[:, [0]], non_id_levels), axis=1, copy=False))
+    return pd.MultiIndex.from_frame(pd.concat((column_ids[["identifier"]], non_id_levels), axis=1, copy=False))
 
 
 def _create_timestamp_index(
