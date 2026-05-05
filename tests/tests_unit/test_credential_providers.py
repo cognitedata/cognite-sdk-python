@@ -48,11 +48,11 @@ class TestCredentialProvider:
 class TestToken:
     def test_token_auth_header(self) -> None:
         creds = Token("abc")
-        assert "Authorization", "Bearer abc" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer abc")
 
     def test_token_factory_auth_header(self) -> None:
         creds = Token(lambda: "abc")
-        assert "Authorization", "Bearer abc" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer abc")
 
     def test_token_non_string(self) -> None:
         with pytest.raises(
@@ -71,7 +71,7 @@ class TestToken:
     def test_load(self, config: dict) -> None:
         creds = Token.load(config)
         assert isinstance(creds, Token)
-        assert "Authorization", "Bearer abc" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer abc")
 
     @pytest.mark.parametrize(
         "config",
@@ -87,7 +87,7 @@ class TestToken:
     def test_create_from_credential_provider(self, config: dict) -> None:
         creds = CredentialProvider.load(config)
         assert isinstance(creds, Token)
-        assert "Authorization", "Bearer abc" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer abc")
 
 
 class TestOAuthDeviceCode:
@@ -114,7 +114,7 @@ class TestOAuthDeviceCode:
         }
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
-        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer azure_token")
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_entra_id_uses_authority_endpoint(self, mock_public_client: MagicMock) -> None:
@@ -145,20 +145,18 @@ class TestOAuthDeviceCode:
         call_args = mock_public_client().http_client.post.call_args
         assert call_args[0][0] == "https://login.microsoftonline.com/xyz/oauth2/v2.0/devicecode"
 
-        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer azure_token")
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_load(self, mock_public_client: MagicMock) -> None:
         creds = OAuthDeviceCode.load(dict(self.DEFAULT_PROVIDER_ARGS))
         assert isinstance(creds, OAuthDeviceCode)
-        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_create_from_credential_provider(self, mock_public_client: MagicMock) -> None:
         config = {"device_code": dict(self.DEFAULT_PROVIDER_ARGS)}
         creds = CredentialProvider.load(config)
         assert isinstance(creds, OAuthDeviceCode)
-        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_oauth_discovery_url_device_flow(self, mock_public_client: MagicMock) -> None:
@@ -215,7 +213,7 @@ class TestOAuthDeviceCode:
         call_args = mock_public_client().http_client.post.call_args
         assert call_args[0][0] == "https://auth0.example.com/oauth/device/code"
 
-        assert "Authorization", "Bearer auth0_token" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer auth0_token")
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_device_code_msal_response(self, mock_public_client: MagicMock) -> None:
@@ -244,7 +242,7 @@ class TestOAuthDeviceCode:
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
 
-        assert "Authorization", "Bearer token" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer token")
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_oidc_discovery_url_failure_error(self, mock_public_client: MagicMock) -> None:
@@ -333,7 +331,7 @@ class TestOAuthDeviceCode:
 
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
 
-        with pytest.raises(CogniteAuthError, match=r"Error generating access token: 'invalid_client'"):
+        with pytest.raises(CogniteAuthError, match=r"Error initiating device flow: invalid_client"):
             creds._refresh_access_token()
 
     @patch("cognite.client.credentials.PublicClientApplication")
@@ -341,10 +339,14 @@ class TestOAuthDeviceCode:
         # Mock a valid refresh token in cache
         mock_refresh_token = {
             "secret": "refresh_token_secret",
-            "expires_on": time.time() + 3600,  # Valid for 1 hour
+            "client_id": "test-client-id",
         }
 
-        mock_public_client().token_cache.search.return_value = [mock_refresh_token]
+        # AT search returns nothing; RT search returns the entry
+        mock_public_client().token_cache.search.side_effect = [
+            [],  # No valid access tokens
+            [mock_refresh_token],  # Refresh token found
+        ]
         mock_public_client().client.obtain_token_by_refresh_token.return_value = {
             "access_token": "new_access_token",
             "expires_in": 3600,
@@ -353,16 +355,16 @@ class TestOAuthDeviceCode:
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
 
-        # Verify refresh token was used
-        mock_public_client().client.obtain_token_by_refresh_token.assert_called_once_with("refresh_token_secret")
-        assert "Authorization", "Bearer new_access_token" == creds.authorization_header()
+        # Verify refresh token was used (full entry + rt_getter kwarg)
+        call_args = mock_public_client().client.obtain_token_by_refresh_token.call_args
+        assert call_args.args[0] == mock_refresh_token
+        assert call_args.kwargs["rt_getter"](mock_refresh_token) == "refresh_token_secret"
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_access_token_from_cache(self, mock_public_client: MagicMock) -> None:
         # Mock no refresh token, but valid access token
         mock_public_client().token_cache.search.side_effect = [
-            [],  # No refresh tokens
-            [  # Access tokens
+            [  # Access token found on first search
                 {
                     "secret": "cached_access_token",
                     "expires_on": str(int(time.time() + 3600)),  # Valid for 1 hour
@@ -371,11 +373,10 @@ class TestOAuthDeviceCode:
         ]
 
         creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
-        creds._refresh_access_token()
 
         # Verify device flow was NOT triggered
+        assert creds.authorization_header() == ("Authorization", "Bearer cached_access_token")
         mock_public_client().http_client.post.assert_not_called()
-        assert "Authorization", "Bearer cached_access_token" == creds.authorization_header()
 
 
 class TestOAuthInteractive:
@@ -396,20 +397,18 @@ class TestOAuthInteractive:
         }
         creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
-        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer azure_token")
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_load(self, mock_public_client: MagicMock) -> None:
         creds = OAuthInteractive.load(dict(self.DEFAULT_PROVIDER_ARGS))
         assert isinstance(creds, OAuthInteractive)
-        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_create_from_credential_provider(self, mock_public_client: MagicMock) -> None:
         config = {"interactive": dict(self.DEFAULT_PROVIDER_ARGS)}
         creds = CredentialProvider.load(config)
         assert isinstance(creds, OAuthInteractive)
-        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
 
 class TestOauthClientCredentials:
@@ -429,7 +428,7 @@ class TestOauthClientCredentials:
         mock_oauth_client().fetch_token.return_value = {"access_token": "azure_token", "expires_in": expires_in}
         creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
-        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer azure_token")
 
     @patch("authlib.integrations.httpx_client.OAuth2Client")
     def test_access_token_not_generated_due_to_error(self, mock_oauth_client: MagicMock) -> None:
@@ -448,8 +447,8 @@ class TestOauthClientCredentials:
             {"access_token": "azure_token_refreshed", "expires_in": 1000},
         ]
         creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
-        assert "Authorization", "Bearer azure_token_expired" == creds.authorization_header()
-        assert "Authorization", "Bearer azure_token_refreshed" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer azure_token_expired")
+        assert creds.authorization_header() == ("Authorization", "Bearer azure_token_refreshed")
 
     def test_load(self) -> None:
         creds = OAuthClientCredentials.load(dict(self.DEFAULT_PROVIDER_ARGS))
@@ -483,7 +482,7 @@ class TestOAuthClientCertificate:
             "expires_in": 1000,
         }
         creds = OAuthClientCertificate(**self.DEFAULT_PROVIDER_ARGS)
-        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+        assert creds.authorization_header() == ("Authorization", "Bearer azure_token")
 
     @patch("cognite.client.credentials.ConfidentialClientApplication")
     def test_load(self, mock_msal_app: MagicMock) -> None:
