@@ -13,6 +13,28 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.93.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.92.0...cognite-sdk-python-v7.93.0) (2026-05-05)
+
+
+### Features
+
+* Add deprecation warning for Vision API ([#2469](https://github.com/cognitedata/cognite-sdk-python/issues/2469)) ([ea1b662](https://github.com/cognitedata/cognite-sdk-python/commit/ea1b662b1d252381dfc99d8737539e9119f91f11))
+* **signals:** Add support for subscribeSignals ACL ([#2500](https://github.com/cognitedata/cognite-sdk-python/issues/2500)) ([3b7d0e8](https://github.com/cognitedata/cognite-sdk-python/commit/3b7d0e84d54811fd82bdc061bd719b788152c0cb))
+
+
+### Bug Fixes
+
+* add last_called to TIME_ATTRIBUTES for datetime rendering ([#2487](https://github.com/cognitedata/cognite-sdk-python/issues/2487)) ([8afd420](https://github.com/cognitedata/cognite-sdk-python/commit/8afd420272a71b14e0f70442fdb18b9addc78e0a))
+* avoid RuntimeWarning from run_sync on tzdata install in pyodide ([#2574](https://github.com/cognitedata/cognite-sdk-python/issues/2574)) ([2b8c6ef](https://github.com/cognitedata/cognite-sdk-python/commit/2b8c6ef77c72abf99a7e39f146c83c751d81a516))
+* **credentials:** token cache reuse issue for OAuthDeviceCode ([#2602](https://github.com/cognitedata/cognite-sdk-python/issues/2602)) ([9046d32](https://github.com/cognitedata/cognite-sdk-python/commit/9046d32fcce4ef452d7caae20ea2b966aa587b1b))
+* handle invalid geo locations better ([#2529](https://github.com/cognitedata/cognite-sdk-python/issues/2529)) ([581086e](https://github.com/cognitedata/cognite-sdk-python/commit/581086ea44d6de6c1aaeef211fdbf70e973f318d))
+
+
+### Documentation
+
+* Fix sqlite syncing example ([#2463](https://github.com/cognitedata/cognite-sdk-python/issues/2463)) ([08da799](https://github.com/cognitedata/cognite-sdk-python/commit/08da7993d39e64be26f79fba41bc3d8b04472680))
+* reorder top-level doc sections, separate DM from legacy (DM-3572) ([#2481](https://github.com/cognitedata/cognite-sdk-python/issues/2481)) ([3db85d7](https://github.com/cognitedata/cognite-sdk-python/commit/3db85d76917137d12fb30bcf99efb16ae2de5575))
+
 ## [7.92.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.91.2...cognite-sdk-python-v7.92.0) (2026-02-18)
 
 
