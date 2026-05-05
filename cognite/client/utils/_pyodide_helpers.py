@@ -72,7 +72,7 @@ def patch_sdk_for_pyodide() -> None:
         import micropip  # type: ignore [import-not-found]
 
         global _TASK_REF_TZDATA  # keep the gc at bay
-        _TASK_REF_TZDATA = asyncio.ensure_future(micropip.install("tzdata"))
+        _TASK_REF_TZDATA = asyncio.create_task(micropip.install("tzdata"))
     except Exception:
         logger.debug(
             "Could not load 'tzdata' package automatically in pyodide. You may need to do this manually:"
