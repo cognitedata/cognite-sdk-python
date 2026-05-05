@@ -13,6 +13,21 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.3.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.2.0...cognite-sdk-python-v8.3.0) (2026-05-05)
+
+
+### Features
+
+* **Data Modeling:** change data modeling /sync default mode to two_phase ([#2595](https://github.com/cognitedata/cognite-sdk-python/issues/2595)) ([642b9bb](https://github.com/cognitedata/cognite-sdk-python/commit/642b9bbb88e56a1ab9df1e0cdc418592ab0ed013))
+* **files:** Support automatic upload of files larger than 5GB ([#2566](https://github.com/cognitedata/cognite-sdk-python/issues/2566)) ([dd4bbb7](https://github.com/cognitedata/cognite-sdk-python/commit/dd4bbb780c6d5067ac73f934791e9cf071ea6117))
+
+
+### Bug Fixes
+
+* **Data Modeling:** Add missing imports + add code examples ([#2601](https://github.com/cognitedata/cognite-sdk-python/issues/2601)) ([d13b22a](https://github.com/cognitedata/cognite-sdk-python/commit/d13b22a718862723648938d5ad8a763ec765bd3f))
+* **Datapoints:** restore plain identifier column names in returned dataframes ([#2603](https://github.com/cognitedata/cognite-sdk-python/issues/2603)) ([9e1e910](https://github.com/cognitedata/cognite-sdk-python/commit/9e1e9103fdf7d0c3eb582714a76c6659c32d4135))
+* Transformation notification response class ([#2600](https://github.com/cognitedata/cognite-sdk-python/issues/2600)) ([2633e59](https://github.com/cognitedata/cognite-sdk-python/commit/2633e598c9ab46110e8cdfcf82d4615946ea5c3c))
+
 ## [8.2.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.1.0...cognite-sdk-python-v8.2.0) (2026-04-27)
 
 
