@@ -25,7 +25,6 @@ As of 2025-08-29, changes are grouped as follows
 ### Bug Fixes
 
 * add last_called to TIME_ATTRIBUTES for datetime rendering ([#2487](https://github.com/cognitedata/cognite-sdk-python/issues/2487)) ([8afd420](https://github.com/cognitedata/cognite-sdk-python/commit/8afd420272a71b14e0f70442fdb18b9addc78e0a))
-* avoid flaky workflow execution list test by comparing IDs ([#2488](https://github.com/cognitedata/cognite-sdk-python/issues/2488)) ([8fb5f58](https://github.com/cognitedata/cognite-sdk-python/commit/8fb5f588c99662a734757ef9b8a82fd57c929897))
 * avoid RuntimeWarning from run_sync on tzdata install in pyodide ([#2574](https://github.com/cognitedata/cognite-sdk-python/issues/2574)) ([2b8c6ef](https://github.com/cognitedata/cognite-sdk-python/commit/2b8c6ef77c72abf99a7e39f146c83c751d81a516))
 * **credentials:** token cache reuse issue for OAuthDeviceCode ([#2602](https://github.com/cognitedata/cognite-sdk-python/issues/2602)) ([9046d32](https://github.com/cognitedata/cognite-sdk-python/commit/9046d32fcce4ef452d7caae20ea2b966aa587b1b))
 * handle invalid geo locations better ([#2529](https://github.com/cognitedata/cognite-sdk-python/issues/2529)) ([581086e](https://github.com/cognitedata/cognite-sdk-python/commit/581086ea44d6de6c1aaeef211fdbf70e973f318d))
