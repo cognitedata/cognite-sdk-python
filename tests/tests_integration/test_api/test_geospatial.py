@@ -4,6 +4,7 @@ import re
 import time
 import uuid
 from collections.abc import Iterator
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -29,6 +30,11 @@ from tests.utils import set_request_limit
 FIXED_SRID = 121111 + random.randint(0, 1_000)
 
 GEOSPATIAL_TEST_RESOURCES = Path(__file__).parent / "geospatial_test_resources"
+
+pytestmark = pytest.mark.skipif(
+    date.today() < date(2026, 6, 1),
+    reason="Geospatial service is unavailable, skipping until 2026-06-01",
+)
 
 
 @pytest.fixture(scope="session")

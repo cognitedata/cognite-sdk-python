@@ -770,6 +770,7 @@ class TestWorkflowTriggers:
         assert permanent_scheduled_trigger.external_id in external_ids
         assert permanent_data_modeling_trigger.external_id in external_ids
 
+    @pytest.mark.skip(reason="too flaky, ignoring on v7 branch (kept on master, v8+)")
     def test_trigger_run_history(
         self,
         cognite_client: CogniteClient,
