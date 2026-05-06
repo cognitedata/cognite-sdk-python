@@ -16,6 +16,7 @@ from cognite.client.data_classes.workflows import (
     SimulationTaskParameters,
     TransformationTaskOutput,
     TransformationTaskParameters,
+    UnknownWorkflowTaskOutput,
     WorkflowDefinition,
     WorkflowDefinitionUpsert,
     WorkflowExecutionDetailed,
@@ -245,8 +246,35 @@ class TestWorkflowTask:
                     },
                 },
             ),
+            (
+                {
+                    "externalId": "taskFuture",
+                    "type": "futureWorkflowTaskType",
+                    "parameters": {"futureWorkflowTaskType": {"alpha": 1}},
+                },
+            ),
         ],
     )
     def test_serialization(self, raw: dict[str, Any]) -> None:
         loaded = WorkflowTask._load(raw)
         assert loaded.dump() == raw
+
+
+class TestWorkflowTaskOutputDispatch:
+    def test_load_output_unknown_task_type(self) -> None:
+        data: dict[str, Any] = {"taskType": "customWorkflowOutput", "output": {"customField": 99}}
+        loaded = WorkflowTaskOutput.load_output(data)
+        assert isinstance(loaded, UnknownWorkflowTaskOutput)
+
+    @pytest.mark.parametrize(
+        "output_payload",
+        [
+            {"customField": 99},
+            {"otherKey": "value"},
+        ],
+    )
+    def test_unknown_output_dump_returns_stored_payload(self, output_payload: dict[str, Any]) -> None:
+        data: dict[str, Any] = {"taskType": "customWorkflowOutput", "output": output_payload}
+        loaded = WorkflowTaskOutput.load_output(data)
+        assert isinstance(loaded, UnknownWorkflowTaskOutput)
+        assert loaded.dump() == output_payload

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, ClassVar, Literal, TypeAlias, cast, final
 from zoneinfo import ZoneInfo
@@ -148,7 +150,14 @@ class WorkflowList(WriteableCogniteResourceList[WorkflowUpsert, Workflow], Exter
         return WorkflowUpsertList([workflow.as_write() for workflow in self.data])
 
 
-ValidTaskType = Literal["function", "transformation", "cdf", "dynamic", "subworkflow", "simulation"]
+ValidTaskType = Literal[
+    "function",
+    "transformation",
+    "cdf",
+    "dynamic",
+    "subworkflow",
+    "simulation",
+]
 
 
 class WorkflowTaskParameters(CogniteResource, ABC):
@@ -179,7 +188,7 @@ class WorkflowTaskParameters(CogniteResource, ABC):
         elif type_ == "simulation":
             return SimulationTaskParameters._load(parameters)
         else:
-            raise ValueError(f"Unknown task type: {type_}. Expected {ValidTaskType}")
+            return UnknownWorkflowTaskParameters(type_, deepcopy(parameters))
 
 
 class FunctionTaskParameters(WorkflowTaskParameters):
@@ -255,6 +264,42 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         if self.is_async_complete is not None:
             output["isAsyncComplete" if camel_case else "is_async_complete"] = self.is_async_complete
         return output
+
+
+class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
+    # CogniteResource.load parses strings to a dict before _load; a bare scalar from dump()
+    # would still parse to a non-dict and fail. Wrapping non-dict payloads keeps JSON/YAML
+    # round-trips (e.g. test_base) valid while still storing the original value in _parameters.
+    _OPAQUE_WRAPPER_KEY: ClassVar[str] = "__cogniteSdkUnknownWorkflowTaskParametersOpaque__"
+
+    def __init__(self, dynamic_task_type: str | None, parameters: Any) -> None:
+        self.dynamic_task_type = dynamic_task_type
+        self._parameters = parameters
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        # dump() wraps non-dict _parameters in a one-key dict so load() always receives a dict;
+        # here we reverse that and store the inner value again (no task type on that path).
+        if len(resource) == 1 and next(iter(resource), None) == cls._OPAQUE_WRAPPER_KEY:
+            return cls(None, deepcopy(resource[cls._OPAQUE_WRAPPER_KEY]))
+        t = resource.get("type", resource.get("taskType"))
+        return cls(t, deepcopy(resource))
+
+    @property
+    def task_type(self) -> ValidTaskType:  # type: ignore[override]
+        return cast(ValidTaskType, self.dynamic_task_type)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        if not camel_case:
+            warnings.warn(
+                "camel_case=False is ignored for UnknownWorkflowTaskParameters.dump(); API payloads use camelCase keys.",
+                UserWarning,
+                stacklevel=2,
+            )
+        p = deepcopy(self._parameters)
+        if isinstance(p, dict):
+            return p
+        return {self._OPAQUE_WRAPPER_KEY: p}
 
 
 _SIMULATORS_WARNING = FeaturePreviewWarning(
@@ -626,7 +671,7 @@ class WorkflowTaskOutput(ABC):
         elif task_type == "simulation":
             return SimulationTaskOutput.load(data)
         else:
-            raise ValueError(f"Unknown task type: {task_type}")
+            return UnknownWorkflowTaskOutput.load(data)
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -662,6 +707,28 @@ class FunctionTaskOutput(WorkflowTaskOutput):
             "functionId" if camel_case else "function_id": self.function_id,
             "response": self.response,
         }
+
+
+class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
+    def __init__(self, output: Any) -> None:
+        self._output = output
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> Self:
+        return cls(data.get("output", {}))
+
+    @property
+    def task_type(self) -> ValidTaskType:  # type: ignore[override]
+        return cast(ValidTaskType, "unknown")
+
+    def dump(self, camel_case: bool = True) -> Any:
+        if not camel_case:
+            warnings.warn(
+                "camel_case=False is ignored for UnknownWorkflowTaskOutput.dump(); API payloads use camelCase keys.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return deepcopy(self._output)
 
 
 class SimulationTaskOutput(WorkflowTaskOutput):
