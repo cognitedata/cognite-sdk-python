@@ -321,9 +321,10 @@ class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
         return self.dynamic_task_type
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        if not isinstance(self._parameters, dict):
-            return self._parameters
-        return convert_all_keys_recursive(self._parameters, camel_case=camel_case)
+        return convert_all_keys_recursive(
+            self._parameters if isinstance(self._parameters, dict) else {},
+            camel_case=camel_case,
+        )
 
 
 _SIMULATORS_WARNING = FeaturePreviewWarning(
@@ -772,9 +773,10 @@ class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
         return self.dynamic_task_type
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        if not isinstance(self._output, dict):
-            return self._output
-        return convert_all_keys_recursive(self._output, camel_case=camel_case)
+        return convert_all_keys_recursive(
+            self._output if isinstance(self._output, dict) else {},
+            camel_case=camel_case,
+        )
 
 
 class SimulationTaskOutput(WorkflowTaskOutput):
@@ -964,7 +966,7 @@ class WorkflowTaskExecution(CogniteResource):
         output["status"] = self.status.upper()
         output[("taskType" if camel_case else "task_type")] = self.task_type
         # API uses isAsyncComplete and asyncComplete inconsistently:
-        if self.task_type in ("function", "functionApp"):
+        if self.task_type == "function":
             if (is_async_complete := output["input"].get("isAsyncComplete")) is not None:
                 output["input"]["asyncComplete"] = is_async_complete
                 del output["input"]["isAsyncComplete"]
