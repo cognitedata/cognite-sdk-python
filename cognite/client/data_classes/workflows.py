@@ -322,7 +322,7 @@ class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if not isinstance(self._parameters, dict):
-            return self._parameters  # type: ignore[return-value]
+            return self._parameters
         return convert_all_keys_recursive(self._parameters, camel_case=camel_case)
 
 
@@ -757,17 +757,23 @@ class FunctionAppTaskOutput(WorkflowTaskOutput):
 
 
 class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
-    task_type: ClassVar[str] = ""
-
-    def __init__(self, output: dict[str, Any]) -> None:
+    def __init__(self, task_type: str, output: Any) -> None:
+        self.dynamic_task_type = task_type
         self._output = output
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> Self:
-        raw = data.get("output")
-        return cls(raw if isinstance(raw, dict) else {})
+        task_type = data.get("taskType", "unknown")
+        output = data.get("output")
+        return cls(task_type, output if isinstance(output, dict) else {})
+
+    @property
+    def task_type(self) -> str:  # type: ignore[override]
+        return self.dynamic_task_type
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        if not isinstance(self._output, dict):
+            return self._output
         return convert_all_keys_recursive(self._output, camel_case=camel_case)
 
 
