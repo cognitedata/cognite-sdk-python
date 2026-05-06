@@ -11,11 +11,13 @@ from cognite.client.data_classes.workflows import (
     CDFTaskOutput,
     DynamicTaskOutput,
     DynamicTaskParameters,
+    FunctionAppTaskOutput,
     FunctionTaskOutput,
     FunctionTaskParameters,
     SimulationTaskParameters,
     TransformationTaskOutput,
     TransformationTaskParameters,
+    UnknownWorkflowTaskOutput,
     WorkflowDefinition,
     WorkflowDefinitionUpsert,
     WorkflowExecutionDetailed,
@@ -245,8 +247,41 @@ class TestWorkflowTask:
                     },
                 },
             ),
+            (
+                {
+                    "externalId": "taskApp",
+                    "type": "functionApp",
+                    "parameters": {"functionApp": {"externalId": "myApp"}},
+                },
+            ),
+            (
+                {
+                    "externalId": "taskFuture",
+                    "type": "futureWorkflowTaskType",
+                    "parameters": {"futureWorkflowTaskType": {"alpha": 1}},
+                },
+            ),
         ],
     )
     def test_serialization(self, raw: dict[str, Any]) -> None:
         loaded = WorkflowTask._load(raw)
         assert loaded.dump() == raw
+
+
+class TestWorkflowTaskOutputDispatch:
+    @pytest.mark.parametrize(
+        ["data", "expected_type"],
+        [
+            (
+                {"taskType": "functionApp", "output": {"callId": 1, "functionId": 2, "response": {"k": "v"}}},
+                FunctionAppTaskOutput,
+            ),
+            (
+                {"taskType": "customWorkflowOutput", "output": {"customField": 99}},
+                UnknownWorkflowTaskOutput,
+            ),
+        ],
+    )
+    def test_load_output(self, data: dict[str, Any], expected_type: type[WorkflowTaskOutput]) -> None:
+        loaded = WorkflowTaskOutput.load_output(data)
+        assert isinstance(loaded, expected_type)

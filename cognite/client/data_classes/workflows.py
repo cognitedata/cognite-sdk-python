@@ -23,7 +23,7 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationInputOverride,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_camel_case, to_snake_case
 
 TaskStatus: TypeAlias = Literal[
     "in_progress",
@@ -148,7 +148,15 @@ class WorkflowList(WriteableCogniteResourceList[WorkflowUpsert, Workflow], Exter
         return WorkflowUpsertList([workflow.as_write() for workflow in self.data])
 
 
-ValidTaskType = Literal["function", "transformation", "cdf", "dynamic", "subworkflow", "simulation"]
+ValidTaskType = Literal[
+    "function",
+    "transformation",
+    "cdf",
+    "dynamic",
+    "subworkflow",
+    "simulation",
+    "functionApp",
+]
 
 
 class WorkflowTaskParameters(CogniteResource, ABC):
@@ -166,6 +174,8 @@ class WorkflowTaskParameters(CogniteResource, ABC):
 
         if type_ == "function":
             return FunctionTaskParameters._load(parameters)
+        elif type_ == "functionApp":
+            return FunctionAppTaskParameters._load(parameters)
         elif type_ == "transformation":
             return TransformationTaskParameters._load(parameters)
         elif type_ == "cdf":
@@ -179,7 +189,7 @@ class WorkflowTaskParameters(CogniteResource, ABC):
         elif type_ == "simulation":
             return SimulationTaskParameters._load(parameters)
         else:
-            raise ValueError(f"Unknown task type: {type_}. Expected {ValidTaskType}")
+            return UnknownWorkflowTaskParameters(type_ if isinstance(type_, str) else "unknown", parameters)
 
 
 class FunctionTaskParameters(WorkflowTaskParameters):
@@ -255,6 +265,63 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         if self.is_async_complete is not None:
             output["isAsyncComplete" if camel_case else "is_async_complete"] = self.is_async_complete
         return output
+
+
+class FunctionAppTaskParameters(WorkflowTaskParameters):
+    task_type = "functionApp"
+
+    def __init__(
+        self,
+        external_id: str,
+        data: dict | str | None = None,
+        is_async_complete: bool | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.data = data
+        self.is_async_complete = is_async_complete
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> FunctionAppTaskParameters:
+        function_app: dict[str, Any] = resource["functionApp"]
+
+        return cls(
+            external_id=function_app["externalId"],
+            data=function_app.get("data"),
+            is_async_complete=resource.get("isAsyncComplete", resource.get("asyncComplete")),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        function_app: dict[str, Any] = {
+            ("externalId" if camel_case else "external_id"): self.external_id,
+        }
+        if self.data:
+            function_app["data"] = self.data
+
+        output: dict[str, Any] = {
+            "functionApp": function_app,
+        }
+        if self.is_async_complete is not None:
+            output["isAsyncComplete" if camel_case else "is_async_complete"] = self.is_async_complete
+        return output
+
+
+class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
+    def __init__(self, dynamic_task_type: str, parameters: dict[str, Any]) -> None:
+        self.dynamic_task_type = dynamic_task_type
+        self._parameters = parameters
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        type_ = resource.get("type", resource.get("taskType"))
+        inner = resource.get("parameters", resource.get("input")) or {}
+        return cls(type_ if isinstance(type_, str) else "unknown", inner)
+
+    @property
+    def task_type(self) -> str:  # type: ignore[override]
+        return self.dynamic_task_type
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return convert_all_keys_recursive(self._parameters, camel_case=camel_case)
 
 
 _SIMULATORS_WARNING = FeaturePreviewWarning(
@@ -562,8 +629,8 @@ class WorkflowTask(CogniteResource):
         self.depends_on = depends_on
 
     @property
-    def type(self) -> ValidTaskType:
-        return self.parameters.task_type
+    def type(self) -> str:
+        return cast(str, self.parameters.task_type)
 
     @classmethod
     def _load(cls, resource: dict) -> WorkflowTask:
@@ -625,8 +692,10 @@ class WorkflowTaskOutput(ABC):
             return SubworkflowTaskOutput.load(data)
         elif task_type == "simulation":
             return SimulationTaskOutput.load(data)
+        elif task_type == "functionApp":
+            return FunctionAppTaskOutput.load(data)
         else:
-            raise ValueError(f"Unknown task type: {task_type}")
+            return UnknownWorkflowTaskOutput.load(data)
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -662,6 +731,42 @@ class FunctionTaskOutput(WorkflowTaskOutput):
             "functionId" if camel_case else "function_id": self.function_id,
             "response": self.response,
         }
+
+
+class FunctionAppTaskOutput(WorkflowTaskOutput):
+    task_type: ClassVar[str] = "functionApp"
+
+    def __init__(self, call_id: int | None, function_id: int | None, response: dict | None) -> None:
+        self.call_id = call_id
+        self.function_id = function_id
+        self.response = response
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> FunctionAppTaskOutput:
+        output = data["output"]
+        return cls(output.get("callId"), output.get("functionId"), output.get("response"))
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "callId" if camel_case else "call_id": self.call_id,
+            "functionId" if camel_case else "function_id": self.function_id,
+            "response": self.response,
+        }
+
+
+class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
+    task_type: ClassVar[str] = ""
+
+    def __init__(self, output: dict[str, Any]) -> None:
+        self._output = output
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> Self:
+        raw = data.get("output")
+        return cls(raw if isinstance(raw, dict) else {})
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return convert_all_keys_recursive(self._output, camel_case=camel_case)
 
 
 class SimulationTaskOutput(WorkflowTaskOutput):
@@ -828,8 +933,8 @@ class WorkflowTaskExecution(CogniteResource):
         self.reason_for_incompletion = reason_for_incompletion
 
     @property
-    def task_type(self) -> ValidTaskType:
-        return self.input.task_type
+    def task_type(self) -> str:
+        return cast(str, self.input.task_type)
 
     @classmethod
     def _load(cls, resource: dict) -> WorkflowTaskExecution:
@@ -851,7 +956,7 @@ class WorkflowTaskExecution(CogniteResource):
         output["status"] = self.status.upper()
         output[("taskType" if camel_case else "task_type")] = self.task_type
         # API uses isAsyncComplete and asyncComplete inconsistently:
-        if self.task_type == "function":
+        if self.task_type in ("function", "functionApp"):
             if (is_async_complete := output["input"].get("isAsyncComplete")) is not None:
                 output["input"]["asyncComplete"] = is_async_complete
                 del output["input"]["isAsyncComplete"]
