@@ -27,7 +27,8 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
     Args:
         external_id (str): External id of the simulator routine
         model_external_id (str): External id of the associated simulator model
-        simulator_integration_external_id (str | None): External id of the associated simulator integration
+        simulator_integration_external_id (str | None): External id of the associated simulator integration.
+            Optional when simulation run load balancing is enabled.
         name (str): The name of the simulator routine
         description (str | None): The description of the simulator routine
         kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
@@ -74,7 +75,8 @@ class SimulatorRoutineWrite(SimulatorRoutineCore):
     Args:
         external_id (str): External id of the simulator routine
         model_external_id (str): External id of the associated simulator model
-        simulator_integration_external_id (str): External id of the associated simulator integration
+        simulator_integration_external_id (str | None): External id of the associated simulator integration.
+            Optional when simulation run load balancing is enabled.
         name (str): The name of the simulator routine
         description (str | None): The description of the simulator routine
         kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
@@ -99,7 +101,8 @@ class SimulatorRoutine(SimulatorRoutineCore):
         id (int): A unique id of a simulator routine
         external_id (str): External id of the simulator routine
         model_external_id (str): External id of the associated simulator model
-        simulator_integration_external_id (str | None): External id of the associated simulator integration
+        simulator_integration_external_id (str | None): External id of the associated simulator integration.
+            Optional when simulation run load balancing is enabled.
         name (str): The name of the simulator routine
         data_set_id (int): The id of the dataset associated with the simulator routine
         simulator_external_id (str): External id of the associated simulator

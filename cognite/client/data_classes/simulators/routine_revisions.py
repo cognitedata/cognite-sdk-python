@@ -588,6 +588,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         simulator_external_id (str): The external ID of the simulator.
         simulator_integration_external_id (str | None): The external ID of the simulator integration.
+            Optional when simulation run load balancing is enabled.
         routine_external_id (str): The external ID of the simulator routine.
         model_external_id (str): The external ID of the simulator model.
         version_number (int): The version number of the simulator routine revision. Unique for each simulator routine.
