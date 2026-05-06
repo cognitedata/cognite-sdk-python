@@ -306,7 +306,7 @@ class FunctionAppTaskParameters(WorkflowTaskParameters):
 
 
 class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
-    def __init__(self, dynamic_task_type: str, parameters: dict[str, Any]) -> None:
+    def __init__(self, dynamic_task_type: str, parameters: Any) -> None:
         self.dynamic_task_type = dynamic_task_type
         self._parameters = parameters
 
@@ -321,6 +321,8 @@ class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
         return self.dynamic_task_type
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        if not isinstance(self._parameters, dict):
+            return self._parameters  # type: ignore[return-value]
         return convert_all_keys_recursive(self._parameters, camel_case=camel_case)
 
 
