@@ -194,7 +194,7 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
     Args:
         id (int): The id of the simulation run
         simulator_external_id (str): External id of the associated simulator
-        simulator_integration_external_id (str | None): External id of the associated simulator integration. Optional when simulation run load balancing is enabled.
+        simulator_integration_external_id (str | None): External id of the associated simulator integration. None when simulation run load balancing is enabled for its associated routine.
         model_external_id (str): External id of the associated simulator model
         model_revision_external_id (str): External id of the associated simulator model revision
         routine_revision_external_id (str): External id of the associated simulator routine revision
