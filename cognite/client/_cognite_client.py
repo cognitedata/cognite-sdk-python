@@ -52,6 +52,7 @@ if _should_build_docs := os.getenv("BUILD_COGNITE_SDK_DOCS") == "true":
     from cognite.client._api.data_modeling.space_statistics import SpaceStatisticsAPI
     from cognite.client._api.data_modeling.spaces import SpacesAPI
     from cognite.client._api.data_modeling.statistics import StatisticsAPI
+    from cognite.client._api.data_modeling.streams import StreamsAPI
     from cognite.client._api.data_modeling.views import ViewsAPI
     from cognite.client._api.datapoints import DatapointsAPI
     from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
@@ -425,6 +426,7 @@ def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.data_modeling.graphql = DataModelingGraphQLAPI  # type: ignore
     AsyncCogniteClient.data_modeling.statistics = StatisticsAPI  # type: ignore
     AsyncCogniteClient.data_modeling.statistics.spaces = SpaceStatisticsAPI  # type: ignore
+    AsyncCogniteClient.data_modeling.streams = StreamsAPI  # type: ignore
     AsyncCogniteClient.documents = DocumentsAPI  # type: ignore
     AsyncCogniteClient.documents.previews = DocumentPreviewAPI  # type: ignore
     AsyncCogniteClient.workflows = WorkflowAPI  # type: ignore
