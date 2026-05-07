@@ -27,8 +27,8 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
     Args:
         external_id (str): External id of the simulator routine
         model_external_id (str): External id of the associated simulator model
-        simulator_integration_external_id (str | None): External id of the associated simulator integration. Optional when simulation run load balancing is enabled.
         name (str): The name of the simulator routine
+        simulator_integration_external_id (str | None): External id of the associated simulator integration. Optional when simulation run load balancing is enabled.
         description (str | None): The description of the simulator routine
         kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
@@ -37,8 +37,8 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
         self,
         external_id: str,
         model_external_id: str,
-        simulator_integration_external_id: str | None,
         name: str,
+        simulator_integration_external_id: str | None = None,
         description: str | None = None,
         kind: Literal["long"] | None = None,
     ) -> None:
@@ -69,13 +69,13 @@ class SimulatorRoutineWrite(SimulatorRoutineCore):
     Each model can have multiple routines, each performing different objectives such as calculating optimal
     operation setpoints, forecasting production, benchmarking asset performance, and more.
 
-    This is the read/response format of a simulator routine.
+    This is the write/request format of a simulator routine.
 
     Args:
         external_id (str): External id of the simulator routine
         model_external_id (str): External id of the associated simulator model
-        simulator_integration_external_id (str | None): External id of the associated simulator integration. Optional when simulation run load balancing is enabled.
         name (str): The name of the simulator routine
+        simulator_integration_external_id (str | None): External id of the associated simulator integration. Optional when simulation run load balancing is enabled.
         description (str | None): The description of the simulator routine
         kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
