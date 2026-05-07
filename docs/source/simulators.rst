@@ -3,20 +3,6 @@ Simulators
 
 .. currentmodule:: cognite.client
 
-Simulation Run Load Balancing
-------------------------------
-
-When enabled on your CDF project, simulation run load balancing distributes simulation runs
-across all available connectors automatically. This means:
-
-- ``simulatorIntegrationExternalId`` is optional when creating routines and runs.
-  If omitted, any available connector for that simulator can pick up the run.
-- Runs start with status ``queued`` instead of ``ready``.
-  A connector claims the run and transitions it to ``ready``.
-
-Without load balancing (default), ``simulatorIntegrationExternalId`` is required
-and each run is tied to a specific connector.
-
 SimulatorsAPI
 -------------
 .. autosummary::
