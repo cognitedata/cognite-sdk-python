@@ -289,7 +289,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 ... )
         """
         return run_sync(
-            self.__async_client.simulators.routines.run(
+            self.__async_client.simulators.routines.run(  # type: ignore [call-overload, misc]
                 routine_external_id=routine_external_id,
                 routine_revision_external_id=routine_revision_external_id,
                 model_revision_external_id=model_revision_external_id,
