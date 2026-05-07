@@ -227,6 +227,10 @@ def mock_post_datapoints_400(httpx_mock: HTTPXMock, async_client: AsyncCogniteCl
     return httpx_mock
 
 
+@pytest.mark.allow_no_semaphore(
+    "DatapointsAPI._insert_datapoints holds the semaphore via outer 'async with' for memory "
+    "backpressure, then passes None to _post to avoid double-acquiring."
+)
 class TestInsertDatapoints:
     def test_insert_tuples(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
         dps = [(i * 1e11, i) for i in range(1, 11)]
@@ -352,6 +356,46 @@ class TestInsertDatapoints:
         dps_objects: list[dict] = [{"id": i, "datapoints": dps} for i in range(1, 11)]
         cognite_client.time_series.data.insert_multiple(dps_objects)
         assert 2 == len(mock_post_datapoints.get_requests())
+
+    def test_insert_multiple_dump_only_called_within_semaphore(
+        self,
+        cognite_client: CogniteClient,
+        mock_post_datapoints: HTTPXMock,
+        monkeypatch: MonkeyPatch,
+        async_client: AsyncCogniteClient,
+    ) -> None:
+        # Bug in 8.0.0 to 8.1.0: all asyncio tasks were created at once and dp.dump() (synchronous,
+        # no await) ran in every task before any of them reached the semaphore, causing all payloads
+        # to be materialised in memory simultaneously (memory regression vs v7).
+        sem_held = False
+        dump_sem_held: list[bool] = []
+
+        class _MockSemaphore:
+            async def __aenter__(self) -> _MockSemaphore:
+                nonlocal sem_held
+                sem_held = True
+                return self
+
+            async def __aexit__(self, *_: Any) -> None:
+                nonlocal sem_held
+                sem_held = False
+
+        monkeypatch.setattr(async_client.time_series.data, "_get_semaphore", lambda _op: _MockSemaphore())
+
+        original_dump = _InsertDatapoint.dump
+
+        def tracking_dump(self: _InsertDatapoint) -> dict:
+            dump_sem_held.append(sem_held)
+            return original_dump(self)
+
+        monkeypatch.setattr(_InsertDatapoint, "dump", tracking_dump)
+
+        monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 5)
+        dps = [(i * 1e11, i) for i in range(50)]
+        cognite_client.time_series.data.insert(dps, id=1)
+
+        assert len(dump_sem_held) == 50
+        assert all(dump_sem_held), "dp.dump() was called outside the semaphore context"
 
 
 @pytest.fixture
@@ -602,7 +646,7 @@ class TestPandasIntegration:
 
         d = Datapoints(id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], average=[2, 3, 4])
         expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
-        expected_df.columns = pd.MultiIndex.from_tuples([(1,)], names=["identifier"])
+        expected_df.columns = pd.Index([1], name="identifier")
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=False))
 
         expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
@@ -631,6 +675,40 @@ class TestPandasIntegration:
             names=["identifier", "aggregate"],
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
+
+    def test_raw_datapoints_external_id_gives_plain_index(self) -> None:
+        import pandas as pd
+
+        d = Datapoints(
+            id=1,
+            external_id="my-ts",
+            is_string=False,
+            is_step=False,
+            type="numeric",
+            timestamp=[1, 2],
+            value=[3.0, 4.0],
+        )
+        df = d.to_pandas()
+        assert isinstance(df.columns, pd.Index) and not isinstance(df.columns, pd.MultiIndex)
+        assert list(df.columns) == ["my-ts"]
+
+    def test_raw_datapoints_with_status_codes_gives_multi_index(self) -> None:
+        import pandas as pd
+
+        d = Datapoints(
+            id=1,
+            external_id="my-ts",
+            is_string=False,
+            is_step=False,
+            type="numeric",
+            timestamp=[1, 2],
+            value=[3.0, 4.0],
+            status_code=[0, 0],
+            status_symbol=["Good", "Good"],
+        )
+        df = d.to_pandas()
+        assert isinstance(df.columns, pd.MultiIndex)
+        assert df.columns.names == ["identifier", "status"]
 
     def test_datapoints_empty(self) -> None:
         d = Datapoints(id=0, is_string=False, is_step=False, type="numeric", external_id="1", timestamp=[], value=[])
@@ -685,7 +763,7 @@ class TestPandasIntegration:
         expected_df = pd.DataFrame({1: [2, 3, 4.0], 2: [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms"))
         expected_df.columns = pd.MultiIndex.from_tuples([(2, "max"), (3, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
-        expected_df.columns = pd.MultiIndex.from_tuples([(2,), (3,)], names=["identifier"])
+        expected_df.columns = pd.Index([2, 3], name="identifier")
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(include_aggregate_name=False), check_freq=False)
 
     def test_datapoints_list_names_dup(self) -> None:
@@ -715,13 +793,14 @@ class TestPandasIntegration:
             {1: [1, 2, 3, None, None], 2: [None, None, 3, 4, 5]},
             index=pd.to_datetime(range(1, 6), unit="ms"),
         )
-        expected_df.columns = pd.MultiIndex.from_tuples([(1,), (2,)], names=["identifier"])
+        expected_df.columns = pd.Index([1, 2], name="identifier")
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
 
     def test_datapoints_list_empty(self) -> None:
         dps_list = DatapointsList([])
         assert dps_list.to_pandas().empty
 
+    @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_id_and_xid(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
         import pandas as pd
 
@@ -746,6 +825,7 @@ class TestPandasIntegration:
             ]
         } == request_body
 
+    @pytest.mark.allow_no_semaphore
     @pytest.mark.parametrize(
         "instance_ids", [(NodeId("space", "123"), NodeId("space", "456")), (("space", "123"), ("space", "456"))]
     )
@@ -776,6 +856,7 @@ class TestPandasIntegration:
         }
         assert expected_body == request_body
 
+    @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_all_identifier_types(
         self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock
     ) -> None:
@@ -828,6 +909,7 @@ class TestPandasIntegration:
         with pytest.raises(ValueError, match="contains one or more NaNs"):
             cognite_client.time_series.data.insert_dataframe(df, dropna=False)
 
+    @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_with_dropna(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
         import pandas as pd
 
@@ -854,6 +936,7 @@ class TestPandasIntegration:
             ]
         } == request_body
 
+    @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_single_dp(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
         import pandas as pd
 
@@ -873,6 +956,7 @@ class TestPandasIntegration:
         with pytest.raises(ValueError, match=re.escape("contains one or more (+/-) Infinity")):
             cognite_client.time_series.data.insert_dataframe(df)
 
+    @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_with_strings(
         self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock
     ) -> None:

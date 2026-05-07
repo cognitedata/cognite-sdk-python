@@ -94,6 +94,33 @@ class SelectBase(CogniteResource, ABC):
 
 @dataclass
 class SelectSync(SelectBase):
+    """Select expression for a sync query, specifying which view properties to include.
+
+    The ``properties`` list on each :class:`SourceSelector` controls which view properties are
+    returned for matching instances:
+
+    - ``["*"]`` — wildcard; returns **all** properties defined in the view. Convenient but
+        transfers more data per instance.
+    - An explicit list such as ``["name", "description"]`` — returns **only** those named
+        properties. Reduces payload size when only a subset is needed.
+
+    Examples:
+
+        All properties from a view:
+
+            >>> from cognite.client.data_classes.data_modeling import (
+            ...     SelectSync,
+            ...     SourceSelector,
+            ...     ViewId,
+            ... )
+            >>> view_id = ViewId("mySpace", "myView", "v1")
+            >>> select_all = SelectSync([SourceSelector(view_id, ["*"])])
+
+        Only specific properties:
+
+            >>> select_some = SelectSync([SourceSelector(view_id, ["name", "description"])])
+    """
+
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
@@ -206,6 +233,24 @@ class QuerySync(QueryBase["ResultSetExpressionSync", SelectSync]):
         parameters (Mapping[str, PropertyValue]): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
         cursors (Mapping[str, str | None]): A dictionary of cursors to use in the query. These allow for pagination.
         allow_expired_cursors_and_accept_missed_deletes (bool): Sync cursors expire after 3 days because soft-deleted instances are cleaned up after this grace period, so a client using a cursor older than that risks missing deletes. If set to True, the API will allow the use of expired cursors.
+
+    Examples:
+
+        Import and instantiate:
+
+            >>> from cognite.client.data_classes.data_modeling import (
+            ...     QuerySync,
+            ...     NodeResultSetExpressionSync,
+            ...     SelectSync,
+            ...     SourceSelector,
+            ...     ViewId,
+            ... )
+            >>> from cognite.client.data_classes.filters import SpaceFilter
+            >>> view_id = ViewId("mySpace", "myView", "v1")
+            >>> sync_query = QuerySync(
+            ...     with_={"assets": NodeResultSetExpressionSync(filter=SpaceFilter("mySpace"))},
+            ...     select={"assets": SelectSync([SourceSelector(view_id, ["*"])])},
+            ... )
     """
 
     allow_expired_cursors_and_accept_missed_deletes: bool = False
@@ -441,7 +486,7 @@ class ResultSetExpressionSync(ResultSetExpressionBase, ABC):
     direction: Literal["outwards", "inwards"] = "outwards"
     chain_to: Literal["destination", "source"] = "destination"
     skip_already_deleted: bool = True
-    sync_mode: SyncMode | None = None
+    sync_mode: SyncMode = "two_phase"
     backfill_sort: list[InstanceSort] = field(default_factory=list)
 
     def __eq__(self, other: object) -> bool:
@@ -459,14 +504,12 @@ class ResultSetExpressionSync(ResultSetExpressionBase, ABC):
             return UnknownCogniteResource.load(resource)  # type: ignore[return-value]
 
     @staticmethod
-    def _load_sync_mode(sync_mode: str | None) -> SyncMode | None:
+    def _load_sync_mode(sync_mode: str | None) -> SyncMode:
         match sync_mode:
-            case None:
-                return None
+            case None | "twoPhase":
+                return "two_phase"
             case "onePhase":
                 return "one_phase"
-            case "twoPhase":
-                return "two_phase"
             case "noBackfill":
                 return "no_backfill"
             case _:
@@ -497,8 +540,21 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
         direction (Literal['outwards', 'inwards']): The direction to use when traversing direct relations. Only applicable when through is specified.
         chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
         skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
-        sync_mode (Literal['one_phase', 'two_phase', 'no_backfill'] | None): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
+        sync_mode (Literal['one_phase', 'two_phase', 'no_backfill']): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Defaults to "two_phase", which is recommended for queries with custom filters. Note that the backfill phase's filters and sort must be backed by a cursorable index. Use "one_phase" when fetching all instances (or all in specific spaces) for better throughput.
         backfill_sort (list[InstanceSort] | None): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
+
+    Examples:
+
+        Import and instantiate:
+
+            >>> from cognite.client.data_classes.data_modeling import (
+            ...     NodeResultSetExpressionSync,
+            ... )
+            >>> from cognite.client.data_classes.filters import SpaceFilter
+            >>> expr = NodeResultSetExpressionSync(
+            ...     filter=SpaceFilter("mySpace"),
+            ...     sync_mode="two_phase",
+            ... )
     """
 
     through: PropertyId | None = None
@@ -513,7 +569,7 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
         direction: Literal["outwards", "inwards"] = "outwards",
         chain_to: Literal["destination", "source"] = "destination",
         skip_already_deleted: bool = True,
-        sync_mode: Literal["one_phase", "two_phase", "no_backfill"] | None = None,
+        sync_mode: Literal["one_phase", "two_phase", "no_backfill"] = "two_phase",
         backfill_sort: list[InstanceSort] | None = None,
     ) -> None:
         super().__init__(
@@ -562,8 +618,7 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
             output["limit"] = self.limit
         if not self.skip_already_deleted:
             output["skipAlreadyDeleted" if camel_case else "skip_already_deleted"] = self.skip_already_deleted
-        if self.sync_mode:
-            output["mode"] = self._dump_sync_mode(self.sync_mode, camel_case=camel_case)
+        output["mode"] = self._dump_sync_mode(self.sync_mode, camel_case=camel_case)
         if self.backfill_sort:
             output["backfillSort" if camel_case else "backfill_sort"] = [
                 s.dump(camel_case=camel_case) for s in self.backfill_sort
@@ -583,11 +638,27 @@ class EdgeResultSetExpressionSync(ResultSetExpressionSync):
         direction (Literal['outwards', 'inwards']): The direction to use when traversing.
         chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
         skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
-        sync_mode (SyncMode | None): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
+        sync_mode (SyncMode): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Defaults to "two_phase", which is recommended for queries with custom filters. Note that the backfill phase's filters and sort must be backed by a cursorable index. Use "one_phase" when fetching all instances (or all in specific spaces) for better throughput.
         backfill_sort (list[InstanceSort]): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
         max_distance (int | None): The largest - max - number of levels to traverse.
         node_filter (Filter | None): Filter the result set based on this filter.
         termination_filter (Filter | None): Filter the result set based on this filter.
+
+    Examples:
+
+        Import and instantiate:
+
+            >>> from cognite.client.data_classes.data_modeling import (
+            ...     EdgeResultSetExpressionSync,
+            ... )
+            >>> from cognite.client.data_classes.filters import Equals
+            >>> expr = EdgeResultSetExpressionSync(
+            ...     from_="work_orders",
+            ...     filter=Equals(
+            ...         ["edge", "type"], {"space": "mySpace", "externalId": "WorkOrder.pump"}
+            ...     ),
+            ...     sync_mode="two_phase",
+            ... )
     """
 
     max_distance: int | None = None
@@ -633,8 +704,7 @@ class EdgeResultSetExpressionSync(ResultSetExpressionSync):
             output["limit"] = self.limit
         if not self.skip_already_deleted:
             output["skipAlreadyDeleted" if camel_case else "skip_already_deleted"] = self.skip_already_deleted
-        if self.sync_mode:
-            output["mode"] = self._dump_sync_mode(self.sync_mode, camel_case=camel_case)
+        output["mode"] = self._dump_sync_mode(self.sync_mode, camel_case=camel_case)
         if self.backfill_sort:
             output["backfillSort" if camel_case else "backfill_sort"] = [
                 s.dump(camel_case=camel_case) for s in self.backfill_sort

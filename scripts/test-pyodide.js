@@ -46,7 +46,7 @@ server.listen(PORT, () => {
     // stlite bumps to a Pyodide release that ships cryptography>=45.0.1
     // (Pyodide 0.29.0 already does). After the expiry date, the workaround is
     // skipped — if it's still needed the install will fail loudly.
-    if (new Date() < new Date("2026-05-03")) {
+    if (new Date() < new Date("2026-07-04")) {
       await pyodide.loadPackage(["cryptography", "ssl"]);
       await micropip.install("authlib<1.7");
     }

@@ -13,6 +13,51 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.3.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.2.0...cognite-sdk-python-v8.3.0) (2026-05-05)
+
+
+### Features
+
+* **Data Modeling:** change data modeling /sync default mode to two_phase ([#2595](https://github.com/cognitedata/cognite-sdk-python/issues/2595)) ([642b9bb](https://github.com/cognitedata/cognite-sdk-python/commit/642b9bbb88e56a1ab9df1e0cdc418592ab0ed013))
+* **files:** Support automatic upload of files larger than 5GB ([#2566](https://github.com/cognitedata/cognite-sdk-python/issues/2566)) ([dd4bbb7](https://github.com/cognitedata/cognite-sdk-python/commit/dd4bbb780c6d5067ac73f934791e9cf071ea6117))
+
+
+### Bug Fixes
+
+* **Data Modeling:** Add missing imports + add code examples ([#2601](https://github.com/cognitedata/cognite-sdk-python/issues/2601)) ([d13b22a](https://github.com/cognitedata/cognite-sdk-python/commit/d13b22a718862723648938d5ad8a763ec765bd3f))
+* **Datapoints:** restore plain identifier column names in returned dataframes ([#2603](https://github.com/cognitedata/cognite-sdk-python/issues/2603)) ([9e1e910](https://github.com/cognitedata/cognite-sdk-python/commit/9e1e9103fdf7d0c3eb582714a76c6659c32d4135))
+* Transformation notification response class ([#2600](https://github.com/cognitedata/cognite-sdk-python/issues/2600)) ([2633e59](https://github.com/cognitedata/cognite-sdk-python/commit/2633e598c9ab46110e8cdfcf82d4615946ea5c3c))
+
+## [8.2.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.1.0...cognite-sdk-python-v8.2.0) (2026-04-27)
+
+
+### Features
+
+* **functions:** Add py313 to RunTime for Cognite Functions ([#2582](https://github.com/cognitedata/cognite-sdk-python/issues/2582)) ([43efd75](https://github.com/cognitedata/cognite-sdk-python/commit/43efd75ccbce57d616207199f85c4d2205644eeb))
+
+
+### Bug Fixes
+
+* **datapoints:** restore backpressure in insert_multiple to fix memory regression vs v7 ([#2594](https://github.com/cognitedata/cognite-sdk-python/issues/2594)) ([73b28fc](https://github.com/cognitedata/cognite-sdk-python/commit/73b28fcc0bb571f87caa23c34789bd435c23689d))
+
+## [8.1.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.0.7...cognite-sdk-python-v8.1.0) (2026-04-23)
+
+
+### Features
+
+* **agents:** add QueryAgentTool (in preview) for the new data modeling query tool type ([#2569](https://github.com/cognitedata/cognite-sdk-python/issues/2569)) ([31549a4](https://github.com/cognitedata/cognite-sdk-python/commit/31549a426769555ac90e38c05a51665875e9eda3))
+
+
+### Bug Fixes
+
+* **agents:** expose runtime version on agent models ([#2568](https://github.com/cognitedata/cognite-sdk-python/issues/2568)) ([2219c53](https://github.com/cognitedata/cognite-sdk-python/commit/2219c53e7d2a288eeb2c32d6c54e09326c790ccb))
+* **raw:** limit=-1 silently returned only the first chunk of rows ([#2588](https://github.com/cognitedata/cognite-sdk-python/issues/2588)) ([72bf48f](https://github.com/cognitedata/cognite-sdk-python/commit/72bf48fccf8f4c76aa2911a571eafda022e5deb3))
+
+
+### Documentation
+
+* Show correct accessors in the documentation ([#2563](https://github.com/cognitedata/cognite-sdk-python/issues/2563)) ([46babc5](https://github.com/cognitedata/cognite-sdk-python/commit/46babc58ff0175652a2c196e54262ef4f87b6acc))
+
 ## [8.0.7](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.0.6...cognite-sdk-python-v8.0.7) (2026-04-10)
 
 

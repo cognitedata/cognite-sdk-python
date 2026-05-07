@@ -106,6 +106,7 @@ class CRUDConcurrency(ConcurrencyConfig):
         key = (operation, project, asyncio.get_running_loop())
         if key in self._semaphore_cache:
             return self._semaphore_cache[key]
+
         from cognite.client import global_config
 
         global_config.concurrency_settings._freeze()  # Disallow any further changes
@@ -190,6 +191,7 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         key = (operation, project, asyncio.get_running_loop())
         if key in self._semaphore_cache:
             return self._semaphore_cache[key]
+
         from cognite.client import global_config
 
         global_config.concurrency_settings._freeze()  # Disallow any further changes
@@ -219,6 +221,123 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         )
 
 
+class FileConcurrencyConfig(ConcurrencyConfig):
+    """
+    Concurrency settings for the Files API.
+
+    ``read``, ``write``, ``upload``, ``download``, and ``delete`` are **per-project** limits,
+    consistent with all other API concurrency settings.
+
+    ``open_files`` is the exception: it is a **global** (process-wide) limit on how many file
+    handles may be open simultaneously during uploads, because OS file-descriptor limits are
+    not scoped to a CDF project.
+
+    Args:
+        concurrency_settings (ConcurrencySettings): Reference to the parent settings object.
+        read (int): Maximum concurrent metadata read requests (retrieve, list, search, etc.).
+        write (int): Maximum concurrent metadata write requests (create, update).
+        upload (int): Maximum concurrent file content upload requests.
+        download (int): Maximum concurrent file content download requests.
+        delete (int): Maximum concurrent delete requests.
+        open_files (int): Global cap on simultaneously open file handles during upload (not per-project).
+    """
+
+    def __init__(
+        self,
+        concurrency_settings: ConcurrencySettings,
+        read: int,
+        write: int,
+        upload: int,
+        download: int,
+        delete: int,
+        open_files: int,
+    ) -> None:
+        super().__init__(concurrency_settings, "files", read, write, delete)
+        self._upload = upload
+        self._download = download
+        self._open_files = open_files
+        # open_files key is only the event loop — project is intentionally excluded. It is a bit unfortunate
+        # that we cant remove the loop from the key as well, but semaphores are bound to the loop they are
+        # first used on, one of the httpx.Clients would break if we did that. We intentionally use a limit << OS fd limit.
+        self._open_files_cache: dict[asyncio.AbstractEventLoop, asyncio.BoundedSemaphore] = {}
+
+    @property
+    def upload(self) -> int:
+        return self._upload
+
+    @upload.setter
+    def upload(self, value: int) -> None:
+        self._check_frozen("upload")
+        self._upload = value
+
+    @property
+    def download(self) -> int:
+        return self._download
+
+    @download.setter
+    def download(self, value: int) -> None:
+        self._check_frozen("download")
+        self._download = value
+
+    @property
+    def open_files(self) -> int:
+        return self._open_files
+
+    @open_files.setter
+    def open_files(self, value: int) -> None:
+        self._check_frozen("open_files")
+        self._open_files = value
+
+    def _semaphore_factory(
+        self, operation: Literal["read", "write", "upload", "download", "delete", "open_files"], project: str
+    ) -> asyncio.BoundedSemaphore:
+        # This one is special - global due to OS file descriptor limits::
+        if operation == "open_files":
+            return self._get_open_files_semaphore()
+
+        key = (operation, project, asyncio.get_running_loop())
+        if key in self._semaphore_cache:
+            return self._semaphore_cache[key]
+
+        from cognite.client import global_config
+
+        global_config.concurrency_settings._freeze()
+        match operation:
+            case "read":
+                sem = asyncio.BoundedSemaphore(self._read)
+            case "write":
+                sem = asyncio.BoundedSemaphore(self._write)
+            case "upload":
+                sem = asyncio.BoundedSemaphore(self._upload)
+            case "download":
+                sem = asyncio.BoundedSemaphore(self._download)
+            case "delete":
+                sem = asyncio.BoundedSemaphore(self._delete)
+            case _:
+                assert_never(operation)
+        self._semaphore_cache[key] = sem
+        return sem
+
+    def _get_open_files_semaphore(self) -> asyncio.BoundedSemaphore:
+        key = asyncio.get_running_loop()
+        if key in self._open_files_cache:
+            return self._open_files_cache[key]
+
+        from cognite.client import global_config
+
+        global_config.concurrency_settings._freeze()
+        sem = asyncio.BoundedSemaphore(self._open_files)
+        self._open_files_cache[key] = sem
+        return sem
+
+    def __repr__(self) -> str:
+        return (
+            f"Concurrency[files]("
+            f"read={self._read}, write={self._write}, upload={self._upload}, download={self._download}, "
+            f"delete={self._delete}, open_files={self._open_files})"
+        )
+
+
 class ConcurrencySettings:
     """
     Utility class for managing concurrency settings, controlled by semaphores.
@@ -228,8 +347,10 @@ class ConcurrencySettings:
     See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
 
     Note:
-        The settings apply on a per-project level, thus if you have multiple clients
+        Most settings apply on a per-project level, thus if you have multiple clients
         pointing to different CDF projects, each client will have its budget to consume from.
+        The exception is ``files.open_files``, which is a global process-wide limit because
+        OS file-descriptor limits are not scoped to a CDF project.
 
     Warning:
         Once any semaphore is initialized (i.e., after the first API request is made),
@@ -261,6 +382,14 @@ class ConcurrencySettings:
             read_schema=2,
             write_schema=1,
         )
+        self._files = FileConcurrencyConfig(self, read=4, write=2, upload=5, download=5, delete=2, open_files=15)
+
+    @functools.cached_property
+    def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:
+        """Helper method primarily used in testing to handle the 'annoying' state of concurrency settings"""
+        configs = [name for name, val in vars(type(self)).items() if isinstance(val, property)]
+        configs.remove("is_frozen")
+        return [getattr(self, name) for name in configs]
 
     def _check_frozen(self, name: str, api_name: str) -> None:
         if self.__frozen:
@@ -295,6 +424,10 @@ class ConcurrencySettings:
     def raw(self) -> CRUDConcurrency:
         return self._raw
 
+    @property
+    def files(self) -> FileConcurrencyConfig:
+        return self._files
+
     def __repr__(self) -> str:
         frozen_str = " (frozen)" if self.__frozen else ""
         return (
@@ -303,6 +436,7 @@ class ConcurrencySettings:
             f"  raw={self._raw},\n"
             f"  datapoints={self._datapoints},\n"
             f"  data_modeling={self._data_modeling},\n"
+            f"  files={self._files},\n"
             f"){frozen_str}"
         )
 
@@ -556,22 +690,28 @@ class _PyodideEventLoopExecutor:
 
 
 # We need this in order to support a synchronous Cognite client.
-_INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON: EventLoopThreadExecutor
+_INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON: EventLoopThreadExecutor | None = None
+_EXECUTOR_INIT_LOCK = threading.Lock()
 
 
 def _get_event_loop_executor() -> EventLoopThreadExecutor:
     global _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
-    try:
-        return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
-    except NameError:
-        # First time we need to initialize:
-        ex_cls = EventLoopThreadExecutor
-        if _RUNNING_IN_BROWSER:
-            ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
 
-        executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls()
-        executor.start()
-        return executor
+    # Fast path: singleton already initialized — no lock needed.
+    if _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON is not None:
+        return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
+
+    # Slow path: serialize initialization. Without this, multiple threads racing on the first
+    # call (e.g. a ThreadPoolExecutor of sync clients) can each construct their own executor
+    # and end up using different background loops, breaking the per-loop semaphore cache key.
+    with _EXECUTOR_INIT_LOCK:
+        if _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON is None:
+            ex_cls = EventLoopThreadExecutor
+            if _RUNNING_IN_BROWSER:
+                ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
+            _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls()
+            _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON.start()
+        return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
 
 
 async def execute_async_tasks_with_fail_fast(tasks: list[AsyncSDKTask]) -> TasksSummary:

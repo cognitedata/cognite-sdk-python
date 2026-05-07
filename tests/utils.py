@@ -240,6 +240,30 @@ def random_gamma_dist_integer(inclusive_max: int, max_tries: int = 100) -> int:
 
 
 @contextmanager
+def fresh_concurrency_state() -> typing.Iterator[Any]:
+    """Clears all per-loop/-project semaphore caches and unfreezes ``global_config.concurrency_settings``
+    for the duration of the block, then restores the original frozen state.
+
+    Use this when a test needs to mutate concurrency settings or observe semaphore creation
+    on a clean slate. Yields the (singleton) ``ConcurrencySettings`` for convenience.
+    """
+    from cognite.client import global_config
+
+    cs = global_config.concurrency_settings
+    orig_frozen = cs.is_frozen
+    cs._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
+    for sub in cs._all_concurrency_configs:
+        sub._semaphore_cache.clear()
+    try:
+        yield cs
+    finally:
+        cs._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
+        for sub in cs._all_concurrency_configs:
+            sub._semaphore_cache.clear()
+        cs._ConcurrencySettings__frozen = orig_frozen  # type: ignore[attr-defined]
+
+
+@contextmanager
 def override_semaphore(
     new: int,
     target: Literal["general", "datapoints", "raw"],

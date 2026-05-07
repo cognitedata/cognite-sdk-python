@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal, TypeVar
@@ -586,7 +586,7 @@ class FileMultipartUploadSession(
         self._cognite_client = cognite_client
         self._upload_is_finalized = False
 
-    async def upload_part_async(self, part_no: int, content: str | bytes | BinaryIO) -> None:
+    async def upload_part_async(self, part_no: int, content: str | bytes | BinaryIO | AsyncIterator[bytes]) -> None:
         """Upload part of a file.
 
         Note:
@@ -594,7 +594,7 @@ class FileMultipartUploadSession(
 
         Args:
             part_no (int): Which part number this is, must be between 0 and `parts` given to `multipart_upload_session`
-            content (str | bytes | BinaryIO): The content to upload.
+            content (str | bytes | BinaryIO | AsyncIterator[bytes]): The content to upload.
         """
         if part_no < 0 or part_no > len(self._uploaded_urls):
             raise IndexError(f"Index out of range: {part_no}, must be between 0 and {len(self._uploaded_urls)}")
@@ -605,7 +605,7 @@ class FileMultipartUploadSession(
         self._uploaded_urls[part_no] = True
 
     @copy_doc_from_async(upload_part_async)
-    def upload_part(self, part_no: int, content: str | bytes | BinaryIO) -> None:
+    def upload_part(self, part_no: int, content: str | bytes | BinaryIO | AsyncIterator[bytes]) -> None:
         return run_sync(self.upload_part_async(part_no, content))
 
     def _check_errors_before_completing(self, exc_type: type[BaseException] | None) -> None:
