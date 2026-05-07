@@ -93,3 +93,7 @@ def dumps_no_nan_or_inf(obj: Any) -> str:
                 e.__traceback__
             ) from None
         raise
+
+
+def dumps_deterministic(obj: Any) -> str:
+    return dumps(obj, indent=None, allow_nan=False, sort_keys=True)
