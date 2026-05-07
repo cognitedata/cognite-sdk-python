@@ -190,38 +190,26 @@ class StreamWrite(WriteableCogniteResource["StreamWrite"]):
 
     Args:
         external_id (str): External ID of the stream, must be unique within the project.
-        settings (StreamTemplateWriteSettings | dict[str, Any]): Settings specifying which template
-            to create the stream from. Pass a :class:`StreamTemplateWriteSettings` instance,
-            or a raw dict for custom/future template formats.
+        settings (StreamTemplateWriteSettings): Settings specifying which template to create the stream from.
     """
 
     def __init__(
         self,
         external_id: str,
-        settings: StreamTemplateWriteSettings | dict[str, Any],
+        settings: StreamTemplateWriteSettings,
     ) -> None:
         self.external_id = external_id
         self.settings = settings
 
     @classmethod
-    def _parse_settings(cls, raw: dict[str, Any]) -> StreamTemplateWriteSettings | dict[str, Any]:
-        if set(raw.keys()) == {"template"} and isinstance(raw["template"], dict) and "name" in raw["template"]:
-            return StreamTemplateWriteSettings._load(raw)
-        return raw
-
-    @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
-            settings=cls._parse_settings(resource["settings"]),
+            settings=StreamTemplateWriteSettings._load(resource["settings"]),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        if isinstance(self.settings, CogniteResource):
-            settings_dumped = self.settings.dump(camel_case=camel_case)
-        else:
-            settings_dumped = self.settings
-        out = {"external_id": self.external_id, "settings": settings_dumped}
+        out = {"external_id": self.external_id, "settings": self.settings.dump(camel_case=camel_case)}
         return convert_all_keys_to_camel_case(out) if camel_case else out
 
     def as_write(self) -> StreamWrite:
