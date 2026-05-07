@@ -93,8 +93,7 @@ class StreamsAPI(APIClient):
                 >>> res = client.data_modeling.streams.list()
         """
         self._warning.warn()
-        res = await self._get(url_path=self._RESOURCE_PATH, semaphore=self._get_semaphore("read"))
-        return StreamList._load(res.json()["items"])
+        return await self._list(method="GET", list_cls=StreamList, resource_cls=Stream)
 
     async def retrieve(self, external_id: str, include_statistics: bool | None = None) -> Stream | None:
         """`Retrieve a stream <https://api-docs.cognite.com/20230101/tag/Streams/operation/getStream>`_.
