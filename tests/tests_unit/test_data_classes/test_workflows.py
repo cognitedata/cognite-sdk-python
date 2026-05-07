@@ -11,7 +11,6 @@ from cognite.client.data_classes.workflows import (
     CDFTaskOutput,
     DynamicTaskOutput,
     DynamicTaskParameters,
-    FunctionAppTaskOutput,
     FunctionTaskOutput,
     FunctionTaskParameters,
     SimulationTaskParameters,
@@ -249,13 +248,6 @@ class TestWorkflowTask:
             ),
             (
                 {
-                    "externalId": "taskApp",
-                    "type": "functionApp",
-                    "parameters": {"functionApp": {"externalId": "myApp"}},
-                },
-            ),
-            (
-                {
                     "externalId": "taskFuture",
                     "type": "futureWorkflowTaskType",
                     "parameters": {"futureWorkflowTaskType": {"alpha": 1}},
@@ -269,19 +261,7 @@ class TestWorkflowTask:
 
 
 class TestWorkflowTaskOutputDispatch:
-    @pytest.mark.parametrize(
-        ["data", "expected_type"],
-        [
-            (
-                {"taskType": "functionApp", "output": {"callId": 1, "functionId": 2, "response": {"k": "v"}}},
-                FunctionAppTaskOutput,
-            ),
-            (
-                {"taskType": "customWorkflowOutput", "output": {"customField": 99}},
-                UnknownWorkflowTaskOutput,
-            ),
-        ],
-    )
-    def test_load_output(self, data: dict[str, Any], expected_type: type[WorkflowTaskOutput]) -> None:
+    def test_load_output_unknown_task_type(self) -> None:
+        data: dict[str, Any] = {"taskType": "customWorkflowOutput", "output": {"customField": 99}}
         loaded = WorkflowTaskOutput.load_output(data)
-        assert isinstance(loaded, expected_type)
+        assert isinstance(loaded, UnknownWorkflowTaskOutput)

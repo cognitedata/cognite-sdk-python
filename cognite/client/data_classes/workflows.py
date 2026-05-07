@@ -174,8 +174,6 @@ class WorkflowTaskParameters(CogniteResource, ABC):
 
         if type_ == "function":
             return FunctionTaskParameters._load(parameters)
-        elif type_ == "functionApp":
-            return FunctionAppTaskParameters._load(parameters)
         elif type_ == "transformation":
             return TransformationTaskParameters._load(parameters)
         elif type_ == "cdf":
@@ -261,44 +259,6 @@ class FunctionTaskParameters(WorkflowTaskParameters):
 
         output: dict[str, Any] = {
             "function": function,
-        }
-        if self.is_async_complete is not None:
-            output["isAsyncComplete" if camel_case else "is_async_complete"] = self.is_async_complete
-        return output
-
-
-class FunctionAppTaskParameters(WorkflowTaskParameters):
-    task_type = "functionApp"
-
-    def __init__(
-        self,
-        external_id: str,
-        data: dict | str | None = None,
-        is_async_complete: bool | None = None,
-    ) -> None:
-        self.external_id = external_id
-        self.data = data
-        self.is_async_complete = is_async_complete
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any]) -> FunctionAppTaskParameters:
-        function_app: dict[str, Any] = resource["functionApp"]
-
-        return cls(
-            external_id=function_app["externalId"],
-            data=function_app.get("data"),
-            is_async_complete=resource.get("isAsyncComplete", resource.get("asyncComplete")),
-        )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        function_app: dict[str, Any] = {
-            ("externalId" if camel_case else "external_id"): self.external_id,
-        }
-        if self.data:
-            function_app["data"] = self.data
-
-        output: dict[str, Any] = {
-            "functionApp": function_app,
         }
         if self.is_async_complete is not None:
             output["isAsyncComplete" if camel_case else "is_async_complete"] = self.is_async_complete
@@ -695,8 +655,6 @@ class WorkflowTaskOutput(ABC):
             return SubworkflowTaskOutput.load(data)
         elif task_type == "simulation":
             return SimulationTaskOutput.load(data)
-        elif task_type == "functionApp":
-            return FunctionAppTaskOutput.load(data)
         else:
             return UnknownWorkflowTaskOutput.load(data)
 
@@ -725,27 +683,6 @@ class FunctionTaskOutput(WorkflowTaskOutput):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> FunctionTaskOutput:
-        output = data["output"]
-        return cls(output.get("callId"), output.get("functionId"), output.get("response"))
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "callId" if camel_case else "call_id": self.call_id,
-            "functionId" if camel_case else "function_id": self.function_id,
-            "response": self.response,
-        }
-
-
-class FunctionAppTaskOutput(WorkflowTaskOutput):
-    task_type: ClassVar[str] = "functionApp"
-
-    def __init__(self, call_id: int | None, function_id: int | None, response: dict | None) -> None:
-        self.call_id = call_id
-        self.function_id = function_id
-        self.response = response
-
-    @classmethod
-    def load(cls, data: dict[str, Any]) -> FunctionAppTaskOutput:
         output = data["output"]
         return cls(output.get("callId"), output.get("functionId"), output.get("response"))
 
