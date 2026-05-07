@@ -61,7 +61,7 @@ class TestStreamsAPI:
         stream_list_response: dict,
     ) -> None:
         httpx_mock.add_response(
-            method="GET", url=re.compile(re.escape(streams_base_url) + r"$"), json=stream_list_response
+            method="GET", url=re.compile(re.escape(streams_base_url) + r"(?:\?.+)?$"), json=stream_list_response
         )
         out = cognite_client.data_modeling.streams.list()
         assert isinstance(out, StreamList)
