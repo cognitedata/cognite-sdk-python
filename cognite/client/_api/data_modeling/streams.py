@@ -9,8 +9,8 @@ from cognite.client.data_classes.data_modeling.streams import (
     StreamList,
     StreamWrite,
 )
-from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._url import interpolate_and_url_encode
+from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -19,14 +19,15 @@ if TYPE_CHECKING:
 
 
 class StreamsAPI(APIClient):
-    """Streams API (``/streams``)."""
-
     _RESOURCE_PATH = "/streams"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 1
+        self._warning = FeaturePreviewWarning(
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Streams"
+        )
 
     @overload
     async def create(self, items: StreamWrite) -> Stream: ...
@@ -42,7 +43,29 @@ class StreamsAPI(APIClient):
 
         Returns:
             Stream | StreamList: The created stream or streams.
+
+        Examples:
+
+            Create a single stream from a template:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.streams import (
+                ...     StreamWrite,
+                ...     StreamTemplate,
+                ...     StreamTemplateWriteSettings,
+                ... )
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.data_modeling.streams.create(
+                ...     StreamWrite(
+                ...         external_id="my-stream",
+                ...         settings=StreamTemplateWriteSettings(
+                ...             template=StreamTemplate(name="ImmutableTestStream"),
+                ...         ),
+                ...     )
+                ... )
         """
+        self._warning.warn()
         return await self._create_multiple(
             items=items,
             list_cls=StreamList,
@@ -51,7 +74,7 @@ class StreamsAPI(APIClient):
         )
 
     async def list(self) -> StreamList:
-        """`List streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/listStreams>`_ in the project.
+        """`List streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/listStreams>`_.
 
         Note:
             There is no paging limit parameter: the endpoint returns all streams in the project
@@ -59,37 +82,79 @@ class StreamsAPI(APIClient):
 
         Returns:
             StreamList: The streams in the project.
+
+        Examples:
+
+            List all streams in the project:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.data_modeling.streams.list()
         """
+        self._warning.warn()
         res = await self._get(url_path=self._RESOURCE_PATH, semaphore=self._get_semaphore("read"))
         return StreamList._load(res.json()["items"])
 
-    async def retrieve(self, stream_external_id: str, include_statistics: bool | None = None) -> Stream:
+    async def retrieve(self, external_id: str, include_statistics: bool | None = None) -> Stream | None:
         """`Retrieve a stream <https://api-docs.cognite.com/20230101/tag/Streams/operation/getStream>`_.
 
         Args:
-            stream_external_id (str): Stream external id.
-            include_statistics (bool | None): When ``True``, the response may include **statistics**. Computing
-                statistics can be expensive.
+            external_id (str): External ID of the stream to retrieve.
+            include_statistics (bool | None): When ``True``, usage statistics will be returned together
+                with stream settings. Computing statistics can be expensive.
 
         Returns:
-            Stream: The stream metadata (and optionally statistics).
+            Stream | None: The stream metadata (and optionally statistics), or ``None`` if not found.
+
+        Examples:
+
+            Retrieve a stream by external ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.data_modeling.streams.retrieve("my-stream")
+
+            Retrieve a stream with usage statistics:
+
+                >>> res = client.data_modeling.streams.retrieve(
+                ...     "my-stream",
+                ...     include_statistics=True,
+                ... )
         """
-        path = interpolate_and_url_encode(f"{self._RESOURCE_PATH}/{{}}", stream_external_id)
-        params: dict[str, bool] | None = None
-        if include_statistics is not None:
-            params = {"includeStatistics": include_statistics}
-        res = await self._get(url_path=path, params=params, semaphore=self._get_semaphore("read"))
-        return Stream._load(res.json())
+        self._warning.warn()
+        return await self._retrieve(
+            cls=Stream,
+            identifier=Identifier(external_id),
+            params={"includeStatistics": include_statistics} if include_statistics is not None else None,
+        )
 
     async def delete(self, external_id: str | SequenceNotStr[str]) -> None:
         """`Delete streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/deleteStreams>`_.
 
-        Deletion is a soft delete that retains capacity for an extended period; prefer deleting only
-        when necessary.
+        Note:
+            Deletion is a soft delete that retains capacity for an extended period;
+            prefer deleting only when necessary.
 
         Args:
-            external_id (str | SequenceNotStr[str]): External ID or list of external IDs.
+            external_id (str | SequenceNotStr[str]): External ID or list of external IDs of
+                streams to delete.
+
+        Examples:
+
+            Delete a single stream:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> client.data_modeling.streams.delete("my-stream")
+
+            Delete multiple streams:
+
+                >>> client.data_modeling.streams.delete(["stream-a", "stream-b"])
         """
+        self._warning.warn()
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -21,44 +22,12 @@ def streams_base_url(async_client: AsyncCogniteClient) -> str:
     return async_client.data_modeling.streams._base_url_with_base_path + "/streams"
 
 
-class TestStreamsAPI:
-    def test_list_parses_items(
-        self,
-        cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
-        streams_base_url: str,
-    ) -> None:
-        sample = {
-            "items": [
-                {
-                    "externalId": "st1",
-                    "createdTime": 10,
-                    "createdFromTemplate": "ImmutableTestStream",
-                    "type": "Immutable",
-                    "settings": {
-                        "lifecycle": {"retainedAfterSoftDelete": "P1D"},
-                        "limits": {
-                            "maxRecordsTotal": {"provisioned": 1000.0},
-                            "maxGigaBytesTotal": {"provisioned": 1.0},
-                        },
-                    },
-                }
-            ]
-        }
-        httpx_mock.add_response(method="GET", url=re.compile(re.escape(streams_base_url) + r"$"), json=sample)
-        out = cognite_client.data_modeling.streams.list()
-        assert isinstance(out, StreamList)
-        assert out[0].external_id == "st1"
-
-    def test_retrieve_include_statistics_query(
-        self,
-        cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
-        streams_base_url: str,
-    ) -> None:
-        sample = {
-            "externalId": "st1",
-            "createdTime": 10,
+@pytest.fixture
+def make_stream_response() -> Callable[..., dict]:
+    def _make(external_id: str = "st1", created_time: int = 10) -> dict:
+        return {
+            "externalId": external_id,
+            "createdTime": created_time,
             "createdFromTemplate": "ImmutableTestStream",
             "type": "Immutable",
             "settings": {
@@ -69,10 +38,46 @@ class TestStreamsAPI:
                 },
             },
         }
+
+    return _make
+
+
+@pytest.fixture
+def stream_response(make_stream_response: Callable[..., dict]) -> dict:
+    return make_stream_response()
+
+
+@pytest.fixture
+def stream_list_response(stream_response: dict) -> dict:
+    return {"items": [stream_response]}
+
+
+class TestStreamsAPI:
+    def test_list_parses_items(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        streams_base_url: str,
+        stream_list_response: dict,
+    ) -> None:
+        httpx_mock.add_response(
+            method="GET", url=re.compile(re.escape(streams_base_url) + r"$"), json=stream_list_response
+        )
+        out = cognite_client.data_modeling.streams.list()
+        assert isinstance(out, StreamList)
+        assert out[0].external_id == "st1"
+
+    def test_retrieve_include_statistics_query(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        streams_base_url: str,
+        stream_response: dict,
+    ) -> None:
         httpx_mock.add_response(
             method="GET",
             url=re.compile(re.escape(streams_base_url) + r"/st1(?:\?.+)?$"),
-            json=sample,
+            json=stream_response,
         )
         cognite_client.data_modeling.streams.retrieve("st1", include_statistics=True)
         requests = httpx_mock.get_requests()
@@ -84,25 +89,11 @@ class TestStreamsAPI:
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
         streams_base_url: str,
+        stream_list_response: dict,
     ) -> None:
-        sample = {
-            "items": [
-                {
-                    "externalId": "st1",
-                    "createdTime": 10,
-                    "createdFromTemplate": "ImmutableTestStream",
-                    "type": "Immutable",
-                    "settings": {
-                        "lifecycle": {"retainedAfterSoftDelete": "P1D"},
-                        "limits": {
-                            "maxRecordsTotal": {"provisioned": 1000.0},
-                            "maxGigaBytesTotal": {"provisioned": 1.0},
-                        },
-                    },
-                }
-            ]
-        }
-        httpx_mock.add_response(method="POST", url=re.compile(re.escape(streams_base_url) + r"$"), json=sample)
+        httpx_mock.add_response(
+            method="POST", url=re.compile(re.escape(streams_base_url) + r"$"), json=stream_list_response
+        )
         w = StreamWrite(
             "st1",
             StreamTemplateWriteSettings(StreamTemplate("ImmutableTestStream")),
@@ -121,49 +112,11 @@ class TestStreamsAPI:
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
         streams_base_url: str,
+        make_stream_response: Callable[..., dict],
     ) -> None:
-        httpx_mock.add_response(
-            method="POST",
-            url=re.compile(re.escape(streams_base_url) + r"$"),
-            json={
-                "items": [
-                    {
-                        "externalId": "a",
-                        "createdTime": 1,
-                        "createdFromTemplate": "ImmutableTestStream",
-                        "type": "Immutable",
-                        "settings": {
-                            "lifecycle": {"retainedAfterSoftDelete": "P1D"},
-                            "limits": {
-                                "maxRecordsTotal": {"provisioned": 1000.0},
-                                "maxGigaBytesTotal": {"provisioned": 1.0},
-                            },
-                        },
-                    }
-                ]
-            },
-        )
-        httpx_mock.add_response(
-            method="POST",
-            url=re.compile(re.escape(streams_base_url) + r"$"),
-            json={
-                "items": [
-                    {
-                        "externalId": "b",
-                        "createdTime": 2,
-                        "createdFromTemplate": "ImmutableTestStream",
-                        "type": "Immutable",
-                        "settings": {
-                            "lifecycle": {"retainedAfterSoftDelete": "P1D"},
-                            "limits": {
-                                "maxRecordsTotal": {"provisioned": 1000.0},
-                                "maxGigaBytesTotal": {"provisioned": 1.0},
-                            },
-                        },
-                    }
-                ]
-            },
-        )
+        url_pattern = re.compile(re.escape(streams_base_url) + r"$")
+        httpx_mock.add_response(method="POST", url=url_pattern, json={"items": [make_stream_response("a", 1)]})
+        httpx_mock.add_response(method="POST", url=url_pattern, json={"items": [make_stream_response("b", 2)]})
         tpl = StreamTemplateWriteSettings(StreamTemplate("ImmutableTestStream"))
         a = StreamWrite("a", tpl)
         b = StreamWrite("b", tpl)
@@ -183,8 +136,9 @@ class TestStreamsAPI:
         httpx_mock: HTTPXMock,
         streams_base_url: str,
     ) -> None:
-        httpx_mock.add_response(method="POST", url=re.compile(re.escape(streams_base_url) + r"/delete$"), json={})
-        httpx_mock.add_response(method="POST", url=re.compile(re.escape(streams_base_url) + r"/delete$"), json={})
+        url_pattern = re.compile(re.escape(streams_base_url) + r"/delete$")
+        httpx_mock.add_response(method="POST", url=url_pattern, json={})
+        httpx_mock.add_response(method="POST", url=url_pattern, json={})
         cognite_client.data_modeling.streams.delete(["a", "b"])
         requests = httpx_mock.get_requests()
         assert len(requests) == 2

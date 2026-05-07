@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from typing_extensions import Self
 
@@ -27,12 +27,6 @@ class StreamLimit(CogniteResource):
             consumed=resource.get("consumed"),
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        out: dict[str, Any] = {"provisioned": self.provisioned}
-        if self.consumed is not None:
-            out["consumed"] = self.consumed
-        return convert_all_keys_to_camel_case(out) if camel_case else out
-
 
 class StreamLifecycleSettings(CogniteResource):
     """Lifecycle metadata for a stream."""
@@ -51,12 +45,6 @@ class StreamLifecycleSettings(CogniteResource):
             retained_after_soft_delete=resource["retainedAfterSoftDelete"],
             data_deleted_after=resource.get("dataDeletedAfter"),
         )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        out: dict[str, Any] = {"retained_after_soft_delete": self.retained_after_soft_delete}
-        if self.data_deleted_after is not None:
-            out["data_deleted_after"] = self.data_deleted_after
-        return convert_all_keys_to_camel_case(out) if camel_case else out
 
 
 class StreamLimitSettings(CogniteResource):
@@ -112,14 +100,17 @@ class StreamSettings(CogniteResource):
 
 
 class Stream(WriteableCogniteResource["StreamWrite"]):
-    """A stream."""
+    """A stream instance returned from the streams API.
+
+    This is the read version of :class:`StreamWrite`.
+    """
 
     def __init__(
         self,
         external_id: str,
         created_time: int,
         created_from_template: str,
-        type: str,
+        type: Literal["Immutable", "Mutable"],
         settings: StreamSettings,
     ) -> None:
         self.external_id = external_id
@@ -149,7 +140,6 @@ class Stream(WriteableCogniteResource["StreamWrite"]):
         return convert_all_keys_to_camel_case(out) if camel_case else out
 
     def as_write(self) -> StreamWrite:
-        """Returns a write version."""
         return StreamWrite(
             external_id=self.external_id,
             settings=StreamTemplateWriteSettings(template=StreamTemplate(name=self.created_from_template)),
@@ -157,13 +147,15 @@ class Stream(WriteableCogniteResource["StreamWrite"]):
 
 
 class StreamList(CogniteResourceList[Stream], ExternalIDTransformerMixin):
-    """List of streams."""
-
     _RESOURCE = Stream
 
 
 class StreamTemplate(CogniteResource):
-    """Reference to a stream template."""
+    """Reference to a stream template by name.
+
+    Args:
+        name (str): Name of the stream template to create the stream from.
+    """
 
     def __init__(self, name: str) -> None:
         self.name = name
@@ -172,13 +164,13 @@ class StreamTemplate(CogniteResource):
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(name=resource["name"])
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        out: dict[str, Any] = {"name": self.name}
-        return convert_all_keys_to_camel_case(out) if camel_case else out
-
 
 class StreamTemplateWriteSettings(CogniteResource):
-    """Write-side settings for creating a stream from a template."""
+    """Write-side settings that specify which template to create the stream from.
+
+    Args:
+        template (StreamTemplate): The template to create the stream from.
+    """
 
     def __init__(self, template: StreamTemplate) -> None:
         self.template = template
@@ -191,14 +183,17 @@ class StreamTemplateWriteSettings(CogniteResource):
         return {"template": self.template.dump(camel_case=camel_case)}
 
 
-def _parse_stream_write_settings(raw: dict[str, Any]) -> StreamTemplateWriteSettings | dict[str, Any]:
-    if set(raw.keys()) == {"template"} and isinstance(raw["template"], dict) and "name" in raw["template"]:
-        return StreamTemplateWriteSettings._load(raw)
-    return raw
-
-
 class StreamWrite(WriteableCogniteResource["StreamWrite"]):
-    """Request item for creating a stream."""
+    """Write representation of a stream, used when creating a new stream.
+
+    This is the write version of :class:`Stream`.
+
+    Args:
+        external_id (str): External ID of the stream, must be unique within the project.
+        settings (StreamTemplateWriteSettings | dict[str, Any]): Settings specifying which template
+            to create the stream from. Pass a :class:`StreamTemplateWriteSettings` instance,
+            or a raw dict for custom/future template formats.
+    """
 
     def __init__(
         self,
@@ -209,10 +204,16 @@ class StreamWrite(WriteableCogniteResource["StreamWrite"]):
         self.settings = settings
 
     @classmethod
+    def _parse_settings(cls, raw: dict[str, Any]) -> StreamTemplateWriteSettings | dict[str, Any]:
+        if set(raw.keys()) == {"template"} and isinstance(raw["template"], dict) and "name" in raw["template"]:
+            return StreamTemplateWriteSettings._load(raw)
+        return raw
+
+    @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
-            settings=_parse_stream_write_settings(resource["settings"]),
+            settings=cls._parse_settings(resource["settings"]),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

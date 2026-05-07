@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a7401471d6732b6938b33711d64a19b4
+e9f8107403fdebf35c0af3100888423b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -41,12 +41,33 @@ class SyncStreamsAPI(SyncAPIClient):
 
         Returns:
             Stream | StreamList: The created stream or streams.
+
+        Examples:
+
+            Create a single stream from a template:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.streams import (
+                ...     StreamWrite,
+                ...     StreamTemplate,
+                ...     StreamTemplateWriteSettings,
+                ... )
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.data_modeling.streams.create(
+                ...     StreamWrite(
+                ...         external_id="my-stream",
+                ...         settings=StreamTemplateWriteSettings(
+                ...             template=StreamTemplate(name="ImmutableTestStream"),
+                ...         ),
+                ...     )
+                ... )
         """
         return run_sync(self.__async_client.data_modeling.streams.create(items=items))
 
     def list(self) -> StreamList:
         """
-        `List streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/listStreams>`_ in the project.
+        `List streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/listStreams>`_.
 
         Note:
             There is no paging limit parameter: the endpoint returns all streams in the project
@@ -54,24 +75,49 @@ class SyncStreamsAPI(SyncAPIClient):
 
         Returns:
             StreamList: The streams in the project.
+
+        Examples:
+
+            List all streams in the project:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.data_modeling.streams.list()
         """
         return run_sync(self.__async_client.data_modeling.streams.list())
 
-    def retrieve(self, stream_external_id: str, include_statistics: bool | None = None) -> Stream:
+    def retrieve(self, external_id: str, include_statistics: bool | None = None) -> Stream | None:
         """
         `Retrieve a stream <https://api-docs.cognite.com/20230101/tag/Streams/operation/getStream>`_.
 
         Args:
-            stream_external_id (str): Stream external id.
-            include_statistics (bool | None): When ``True``, the response may include **statistics**. Computing
-                statistics can be expensive.
+            external_id (str): External ID of the stream to retrieve.
+            include_statistics (bool | None): When ``True``, usage statistics will be returned together
+                with stream settings. Computing statistics can be expensive.
 
         Returns:
-            Stream: The stream metadata (and optionally statistics).
+            Stream | None: The stream metadata (and optionally statistics), or ``None`` if not found.
+
+        Examples:
+
+            Retrieve a stream by external ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.data_modeling.streams.retrieve("my-stream")
+
+            Retrieve a stream with usage statistics:
+
+                >>> res = client.data_modeling.streams.retrieve(
+                ...     "my-stream",
+                ...     include_statistics=True,
+                ... )
         """
         return run_sync(
             self.__async_client.data_modeling.streams.retrieve(
-                stream_external_id=stream_external_id, include_statistics=include_statistics
+                external_id=external_id, include_statistics=include_statistics
             )
         )
 
@@ -79,10 +125,25 @@ class SyncStreamsAPI(SyncAPIClient):
         """
         `Delete streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/deleteStreams>`_.
 
-        Deletion is a soft delete that retains capacity for an extended period; prefer deleting only
-        when necessary.
+        Note:
+            Deletion is a soft delete that retains capacity for an extended period;
+            prefer deleting only when necessary.
 
         Args:
-            external_id (str | SequenceNotStr[str]): External ID or list of external IDs.
+            external_id (str | SequenceNotStr[str]): External ID or list of external IDs of
+                streams to delete.
+
+        Examples:
+
+            Delete a single stream:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> client.data_modeling.streams.delete("my-stream")
+
+            Delete multiple streams:
+
+                >>> client.data_modeling.streams.delete(["stream-a", "stream-b"])
         """
         return run_sync(self.__async_client.data_modeling.streams.delete(external_id=external_id))
