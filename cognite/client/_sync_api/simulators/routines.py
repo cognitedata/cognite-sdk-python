@@ -1,6 +1,6 @@
 """
 ===============================================================================
-345500090bb8c4decb359c8c6937844d
+ed6d6d90b4df699fd5db015a0177cdcd
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -252,9 +252,9 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
         1. By routine external ID only
         2. By routine revision external ID + model revision external ID
 
-        When simulation run load balancing is enabled, the created run starts with status ``queued``
-        and a connector claims it automatically. Without load balancing, the run starts with status ``ready``
-        and is tied to the connector specified on the routine.
+        When simulation run load balancing is enabled and routine is not assigned to any particular integration, the run initiates with status ``queued``
+        and any active integration can claim it automatically. Without load balancing, the run initiates with status ``ready``
+        and is tied to the integration specified on the routine.
 
         Args:
             routine_external_id (str | None): External id of the simulator routine to run.

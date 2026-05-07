@@ -28,7 +28,7 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
         external_id (str): External id of the simulator routine
         model_external_id (str): External id of the associated simulator model
         name (str): The name of the simulator routine
-        simulator_integration_external_id (str | None): External id of the associated simulator integration. Optional when simulation run load balancing is enabled.
+        simulator_integration_external_id (str | None): External id of the associated simulator integration. None when simulation run load balancing is enabled for the given routine.
         description (str | None): The description of the simulator routine
         kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
@@ -69,7 +69,7 @@ class SimulatorRoutineWrite(SimulatorRoutineCore):
     Each model can have multiple routines, each performing different objectives such as calculating optimal
     operation setpoints, forecasting production, benchmarking asset performance, and more.
 
-    This is the write/request format of a simulator routine.
+    This is the writeable version of a simulator routine.
 
     Args:
         external_id (str): External id of the simulator routine
@@ -99,7 +99,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
         id (int): A unique id of a simulator routine
         external_id (str): External id of the simulator routine
         model_external_id (str): External id of the associated simulator model
-        simulator_integration_external_id (str | None): External id of the associated simulator integration. Optional when simulation run load balancing is enabled.
+        simulator_integration_external_id (str | None): External id of the associated simulator integration. None when simulation run load balancing is enabled for the given routine.
         name (str): The name of the simulator routine
         data_set_id (int): The id of the dataset associated with the simulator routine
         simulator_external_id (str): External id of the associated simulator

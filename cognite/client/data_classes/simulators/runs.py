@@ -87,9 +87,9 @@ class SimulationRunWrite(WriteableCogniteResource["SimulationRunWrite"]):
     1. By routine external ID only
     2. By routine revision external ID + model revision external ID
 
-    When simulation run load balancing is enabled, the created run starts with status ``queued``
-    and a connector claims it automatically. Without load balancing, the run starts with status ``ready``
-    and is tied to the connector specified on the routine.
+    When simulation run load balancing is enabled and routine is not assigned to any particular integration, the run initiates with status ``queued``
+    and any active integration can claim it automatically. Without load balancing, the run initiates with status ``ready``
+    and is tied to the integration specified on the routine.
 
     Args:
         routine_external_id (str | None): External id of the associated simulator routine.
@@ -200,7 +200,7 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
         routine_revision_external_id (str): External id of the associated simulator routine revision
         routine_external_id (str): External id of the associated simulator routine
         run_type (Literal['external', 'manual', 'scheduled']): The type of the simulation run
-        status (Literal['queued', 'ready', 'running', 'success', 'failure']): The status of the simulation run. When simulation run load balancing is enabled, runs start in a ``queued`` status before a connector is assigned.
+        status (Literal['queued', 'ready', 'running', 'success', 'failure']): The status of the simulation run. When simulation run load balancing is enabled, runs initiate with ``queued`` status before an integration is assigned to them.
         data_set_id (int): The id of the dataset associated with the simulation run
         user_id (str): The id of the user who executed the simulation run
         log_id (int): The id of the log associated with the simulation run
