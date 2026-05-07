@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
+from cognite.client.data_classes.agents import Agent, AgentList, AgentSession, AgentUpsert
 from cognite.client.data_classes.agents.chat import (
     Action,
     ActionResult,
@@ -423,3 +423,98 @@ class AgentsAPI(APIClient):
             url_path=self._RESOURCE_PATH + "/chat", json=body, semaphore=self._get_semaphore("write")
         )
         return AgentChatResponse._load(response.json())
+
+    def create_session(
+        self,
+        agent_external_id: str,
+        actions: Sequence[Action] | None = None,
+        cursor: str | None = None,
+        **kwargs: Any,
+    ) -> AgentSession:
+        """Create a stateful agent session for multi-turn conversations.
+
+        The returned :class:`~cognite.client.data_classes.agents.AgentSession` stores
+        ``agent_external_id``, ``actions``, and the current conversation cursor. Each
+        call to ``await session.chat(...)`` automatically threads the cursor from the
+        previous response into the next request, so callers do not have to manage
+        cursor state manually.
+
+        This method is available only on the async client
+        (:class:`~cognite.client.AsyncCogniteClient`). Sync users who need multi-turn
+        conversations should call :meth:`chat` directly and manage the cursor themselves.
+
+        Unknown keyword arguments are silently accepted for forward compatibility with
+        future parameters.
+
+        Args:
+            agent_external_id (str): External ID of the agent to chat with.
+            actions (Sequence[Action] | None): Client-side actions available to the agent
+                during the conversation. Passed unchanged to every ``chat()`` call.
+                Defaults to ``None`` (no client actions).
+            cursor (str | None): Resume an existing conversation from this cursor.
+                Defaults to ``None`` (fresh conversation).
+            **kwargs (Any): Reserved for future parameters; silently ignored in v1.
+
+        Returns:
+            AgentSession: A stateful session bound to the given agent.
+
+        Examples:
+
+            Simple multi-turn conversation:
+
+                >>> from cognite.client import AsyncCogniteClient
+                >>> from cognite.client.data_classes.agents import Message
+                >>> async def main():
+                ...     client = AsyncCogniteClient()
+                ...     session = client.agents.create_session(agent_external_id="my_agent")
+                ...     response = await session.chat(Message("Hello"))
+                ...     print(response.text)
+                ...     response = await session.chat(Message("Tell me more"))
+                ...     print(response.text)
+
+            Resume a prior conversation using a saved cursor:
+
+                >>> async def resume(saved_cursor: str):
+                ...     client = AsyncCogniteClient()
+                ...     session = client.agents.create_session(
+                ...         agent_external_id="my_agent",
+                ...         cursor=saved_cursor,
+                ...     )
+                ...     response = await session.chat(Message("Continue where we left off"))
+
+            With client-side actions:
+
+                >>> from cognite.client.data_classes.agents import ClientToolAction, ClientToolResult
+                >>> async def with_actions():
+                ...     client = AsyncCogniteClient()
+                ...     add = ClientToolAction(
+                ...         name="add",
+                ...         description="Add two numbers",
+                ...         parameters={
+                ...             "type": "object",
+                ...             "properties": {
+                ...                 "a": {"type": "number"},
+                ...                 "b": {"type": "number"},
+                ...             },
+                ...             "required": ["a", "b"],
+                ...         },
+                ...     )
+                ...     session = client.agents.create_session(
+                ...         agent_external_id="my_agent",
+                ...         actions=[add],
+                ...     )
+                ...     response = await session.chat(Message("What is 42 + 58?"))
+                ...     if response.action_calls:
+                ...         for call in response.action_calls:
+                ...             result = call.arguments["a"] + call.arguments["b"]
+                ...             response = await session.chat(
+                ...                 ClientToolResult(action_id=call.action_id, content=str(result))
+                ...             )
+        """
+        self._warnings.warn()
+        return AgentSession(
+            agents_api=self,
+            agent_external_id=agent_external_id,
+            actions=actions,
+            cursor=cursor,
+        )
