@@ -13,6 +13,14 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.4.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.3.0...cognite-sdk-python-v8.4.0) (2026-05-07)
+
+
+### Features
+
+* **Data Modeling:** add alpha `instances.sync_with_file_cache` for /sync jobs with file cache (DM-3759) ([#2599](https://github.com/cognitedata/cognite-sdk-python/issues/2599)) ([df273dc](https://github.com/cognitedata/cognite-sdk-python/commit/df273dc2a1315b289794b49626f723c3f6eb5551))
+* **streams:** Streams API ([#2534](https://github.com/cognitedata/cognite-sdk-python/issues/2534)) ([1979253](https://github.com/cognitedata/cognite-sdk-python/commit/19792538e2a7ab3c2e7543ae46a948e02aa67f35))
+
 ## [8.3.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.2.0...cognite-sdk-python-v8.3.0) (2026-05-05)
 
 
