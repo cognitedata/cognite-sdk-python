@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, ClassVar, Literal, TypeAlias, cast, final
 from zoneinfo import ZoneInfo
@@ -23,7 +25,7 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationInputOverride,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 TaskStatus: TypeAlias = Literal[
     "in_progress",
@@ -187,7 +189,7 @@ class WorkflowTaskParameters(CogniteResource, ABC):
         elif type_ == "simulation":
             return SimulationTaskParameters._load(parameters)
         else:
-            return UnknownWorkflowTaskParameters(type_ if isinstance(type_, str) else "unknown", parameters)
+            return UnknownWorkflowTaskParameters._load(data)
 
 
 class FunctionTaskParameters(WorkflowTaskParameters):
@@ -277,14 +279,18 @@ class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
         return cls(type_ if isinstance(type_, str) else "unknown", inner)
 
     @property
-    def task_type(self) -> str:  # type: ignore[override]
-        return self.dynamic_task_type
+    def task_type(self) -> ValidTaskType:  # type: ignore[override]
+        return cast(ValidTaskType, self.dynamic_task_type)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return convert_all_keys_recursive(
-            self._parameters if isinstance(self._parameters, dict) else {},
-            camel_case=camel_case,
-        )
+        if not camel_case:
+            warnings.warn(
+                "camel_case=False is ignored for UnknownWorkflowTaskParameters.dump(); API payloads use camelCase keys.",
+                UserWarning,
+                stacklevel=2,
+            )
+        params = self._parameters if isinstance(self._parameters, dict) else {}
+        return deepcopy(params)
 
 
 _SIMULATORS_WARNING = FeaturePreviewWarning(
@@ -706,14 +712,18 @@ class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
         return cls(task_type, output if isinstance(output, dict) else {})
 
     @property
-    def task_type(self) -> str:  # type: ignore[override]
-        return self.dynamic_task_type
+    def task_type(self) -> ValidTaskType:  # type: ignore[override]
+        return cast(ValidTaskType, self.dynamic_task_type)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return convert_all_keys_recursive(
-            self._output if isinstance(self._output, dict) else {},
-            camel_case=camel_case,
-        )
+        if not camel_case:
+            warnings.warn(
+                "camel_case=False is ignored for UnknownWorkflowTaskOutput.dump(); API payloads use camelCase keys.",
+                UserWarning,
+                stacklevel=2,
+            )
+        out = self._output if isinstance(self._output, dict) else {}
+        return deepcopy(out)
 
 
 class SimulationTaskOutput(WorkflowTaskOutput):
@@ -881,7 +891,7 @@ class WorkflowTaskExecution(CogniteResource):
 
     @property
     def task_type(self) -> str:
-        return cast(str, self.input.task_type)
+        return self.input.task_type
 
     @classmethod
     def _load(cls, resource: dict) -> WorkflowTaskExecution:
