@@ -35,11 +35,7 @@ def session_cleanup(cognite_client: CogniteClient) -> None:
     resource_age = timestamp_to_ms("30m-ago")
 
     active_sessions = cognite_client.iam.sessions.list(status="ACTIVE", limit=-1)
-    sessions_to_revoke = [
-        session.id
-        for session in active_sessions
-        if session.creation_time is not None and session.creation_time < resource_age
-    ]
+    sessions_to_revoke = [session.id for session in active_sessions if session.creation_time < resource_age]
 
     if sessions_to_revoke:
         cognite_client.iam.sessions.revoke(sessions_to_revoke)

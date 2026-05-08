@@ -147,6 +147,8 @@ from cognite.client.data_classes.iam import (
     SecurityCategoryList,
     SecurityCategoryWrite,
     SecurityCategoryWriteList,
+    RevokedSession,
+    RevokedSessionList,
     Session,
     SessionList,
 )
@@ -481,6 +483,8 @@ __all__ = [
     "SequenceUpdate",
     "SequenceWrite",
     "SequenceWriteList",
+    "RevokedSession",
+    "RevokedSessionList",
     "Session",
     "SessionList",
     "SimulationTaskOutput",
