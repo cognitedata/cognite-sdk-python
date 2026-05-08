@@ -1407,7 +1407,7 @@ class InstanceSort(DataModelingSort):
         if normalized not in ("ascending", "descending"):
             raise ValueError(f"direction must be 'ascending' or 'descending', got {direction!r}")
 
-        super().__init__(property, normalized, nulls_first)
+        super().__init__(property, normalized, nulls_first)  # type: ignore [arg-type]
 
     # We override _load to get the more strict __init__ validation on 'direction' because we need it to
     # be valid for the possible later automatic choice of nulls_first:
