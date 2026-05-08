@@ -484,20 +484,20 @@ class Session(CogniteResource):
 
     Args:
         id (int): ID of the session.
-        type (SessionType): Credentials kind used to create the session.
-        status (SessionStatus): Current status of the session.
-        creation_time (int): Session creation time, in milliseconds since 1970
-        expiration_time (int): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
+        type (SessionType | None): Credentials kind used to create the session. Absent when the caller lacks sessionsAcl:LIST.
+        status (SessionStatus | None): Current status of the session. Absent when the caller lacks sessionsAcl:LIST.
+        creation_time (int | None): Session creation time, in milliseconds since 1970. Absent when the caller lacks sessionsAcl:LIST.
+        expiration_time (int | None): Session expiry time, in milliseconds since 1970. Absent when the caller lacks sessionsAcl:LIST.
         client_id (str | None): Client ID in identity provider. Returned only if the session was created using client credentials
     """
 
     def __init__(
         self,
         id: int,
-        type: SessionType,
-        status: SessionStatus,
-        creation_time: int,
-        expiration_time: int,
+        type: SessionType | None = None,
+        status: SessionStatus | None = None,
+        creation_time: int | None = None,
+        expiration_time: int | None = None,
         client_id: str | None = None,
     ) -> None:
         self.id = id
@@ -509,12 +509,13 @@ class Session(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
+        # When the caller lacks sessionsAcl:LIST, the API returns only the session ID.
         return cls(
             id=resource["id"],
-            type=resource["type"],
-            status=resource["status"],
-            creation_time=resource["creationTime"],
-            expiration_time=resource["expirationTime"],
+            type=resource.get("type"),
+            status=resource.get("status"),
+            creation_time=resource.get("creationTime"),
+            expiration_time=resource.get("expirationTime"),
             client_id=resource.get("clientId"),
         )
 
