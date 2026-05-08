@@ -87,6 +87,10 @@ class SimulationRunWrite(WriteableCogniteResource["SimulationRunWrite"]):
     1. By routine external ID only
     2. By routine revision external ID + model revision external ID
 
+    When simulation run load balancing is enabled and routine is not assigned to any particular integration, the run initiates with status ``queued``
+    and any active integration can claim it automatically. Without load balancing, the run initiates with status ``ready``
+    and is tied to the integration specified on the routine.
+
     Args:
         routine_external_id (str | None): External id of the associated simulator routine.
             Cannot be specified together with routine_revision_external_id and model_revision_external_id.
@@ -190,13 +194,13 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
     Args:
         id (int): The id of the simulation run
         simulator_external_id (str): External id of the associated simulator
-        simulator_integration_external_id (str | None): External id of the associated simulator integration
+        simulator_integration_external_id (str | None): External id of the associated simulator integration. None when simulation run load balancing is enabled for its associated routine.
         model_external_id (str): External id of the associated simulator model
         model_revision_external_id (str): External id of the associated simulator model revision
         routine_revision_external_id (str): External id of the associated simulator routine revision
         routine_external_id (str): External id of the associated simulator routine
         run_type (Literal['external', 'manual', 'scheduled']): The type of the simulation run
-        status (Literal['ready', 'running', 'success', 'failure']): The status of the simulation run
+        status (Literal['queued', 'ready', 'running', 'success', 'failure']): The status of the simulation run. When simulation run load balancing is enabled, runs initiate with ``queued`` status before an integration is assigned to them.
         data_set_id (int): The id of the dataset associated with the simulation run
         user_id (str): The id of the user who executed the simulation run
         log_id (int): The id of the log associated with the simulation run
@@ -218,7 +222,7 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
         routine_revision_external_id: str,
         routine_external_id: str,
         run_type: Literal["external", "manual", "scheduled"],
-        status: Literal["ready", "running", "success", "failure"],
+        status: Literal["queued", "ready", "running", "success", "failure"],
         data_set_id: int,
         user_id: str,
         log_id: int,
