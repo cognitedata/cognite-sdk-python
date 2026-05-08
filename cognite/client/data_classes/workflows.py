@@ -268,14 +268,20 @@ class FunctionTaskParameters(WorkflowTaskParameters):
 
 
 class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
-    def __init__(self, dynamic_task_type: str, parameters: Any) -> None:
+    def __init__(self, dynamic_task_type: str, parameters: dict[str, Any]) -> None:
         self.dynamic_task_type = dynamic_task_type
         self._parameters = parameters
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type", resource.get("taskType"))
-        inner = resource.get("parameters", resource.get("input")) or {}
+        raw_inner = resource.get("parameters", resource.get("input"))
+        if raw_inner is None:
+            inner: dict[str, Any] = {}
+        elif isinstance(raw_inner, dict):
+            inner = raw_inner
+        else:
+            inner = {}
         return cls(type_ if isinstance(type_, str) else "unknown", inner)
 
     @property
@@ -289,8 +295,7 @@ class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
                 UserWarning,
                 stacklevel=2,
             )
-        params = self._parameters if isinstance(self._parameters, dict) else {}
-        return deepcopy(params)
+        return deepcopy(self._parameters)
 
 
 _SIMULATORS_WARNING = FeaturePreviewWarning(
@@ -708,22 +713,21 @@ class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
     @classmethod
     def load(cls, data: dict[str, Any]) -> Self:
         task_type = data.get("taskType", "unknown")
-        output = data.get("output")
-        return cls(task_type, output if isinstance(output, dict) else {})
+        raw_output = data.get("output")
+        return cls(task_type, {} if raw_output is None else raw_output)
 
     @property
     def task_type(self) -> ValidTaskType:  # type: ignore[override]
         return cast(ValidTaskType, self.dynamic_task_type)
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> Any:
         if not camel_case:
             warnings.warn(
                 "camel_case=False is ignored for UnknownWorkflowTaskOutput.dump(); API payloads use camelCase keys.",
                 UserWarning,
                 stacklevel=2,
             )
-        out = self._output if isinstance(self._output, dict) else {}
-        return deepcopy(out)
+        return deepcopy(self._output)
 
 
 class SimulationTaskOutput(WorkflowTaskOutput):

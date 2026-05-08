@@ -265,3 +265,16 @@ class TestWorkflowTaskOutputDispatch:
         data: dict[str, Any] = {"taskType": "customWorkflowOutput", "output": {"customField": 99}}
         loaded = WorkflowTaskOutput.load_output(data)
         assert isinstance(loaded, UnknownWorkflowTaskOutput)
+
+    @pytest.mark.parametrize(
+        "output_payload",
+        [
+            {"customField": 99},
+            [1, 2, 3],
+        ],
+    )
+    def test_unknown_output_dump_returns_stored_payload(self, output_payload: dict[str, Any] | list[int]) -> None:
+        data: dict[str, Any] = {"taskType": "customWorkflowOutput", "output": output_payload}
+        loaded = WorkflowTaskOutput.load_output(data)
+        assert isinstance(loaded, UnknownWorkflowTaskOutput)
+        assert loaded.dump() == output_payload
