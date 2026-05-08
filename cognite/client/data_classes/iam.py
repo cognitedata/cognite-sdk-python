@@ -484,10 +484,13 @@ class Session(CogniteResource):
 
     Args:
         id (int): ID of the session.
-        type (SessionType | None): Credentials kind used to create the session. Absent when the caller lacks sessionsAcl:LIST.
+        type (SessionType | None): Credentials kind used to create the session. Absent when the caller lacks
+            sessionsAcl:LIST.
         status (SessionStatus | None): Current status of the session. Absent when the caller lacks sessionsAcl:LIST.
-        creation_time (int | None): Session creation time, in milliseconds since 1970. Absent when the caller lacks sessionsAcl:LIST.
-        expiration_time (int | None): Session expiry time, in milliseconds since 1970. Absent when the caller lacks sessionsAcl:LIST.
+        creation_time (int | None): Session creation time, in milliseconds since 1970. Absent when the caller lacks
+            sessionsAcl:LIST.
+        expiration_time (int | None): Session expiry time, in milliseconds since 1970. This value is updated on
+            refreshing a token. Absent when the caller lacks sessionsAcl:LIST.
         client_id (str | None): Client ID in identity provider. Returned only if the session was created using client credentials
     """
 
