@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import math
 import time
@@ -1653,3 +1654,214 @@ class TestInstancesSync:
                 return
         else:
             assert not context.is_alive()
+
+
+class TestSyncSessionWithCache:
+    """
+    Integration test for SyncSessionWithCache (the new sync_with_file_cache API).
+
+    One large test that exercises the full lifecycle:
+      1. Fresh session: sync_until_live loads all matching nodes into the snapshot.
+      2. Backup is written to CDF on exit.
+      3. Second session restores from backup and picks up only new changes.
+      4. Delete + re-sync removes the deleted node from the snapshot.
+      5. invalidate() clears state so the third session does a full backfill again.
+    """
+
+    @pytest.fixture(scope="class")
+    def sync_security_category(self, cognite_client: CogniteClient) -> int:
+        from cognite.client.data_classes.iam import SecurityCategoryWrite
+
+        existing = cognite_client.iam.security_categories.list(limit=1)
+        if existing:
+            return existing[0].id
+        created = cognite_client.iam.security_categories.create(SecurityCategoryWrite(name="sdk_sync_integration_test"))
+        return created.id
+
+    @staticmethod
+    def _make_movie(space: str, movie_id: ViewId, prefix: str, suffix: str, year: int = 2020) -> NodeApply:
+        return NodeApply(
+            space=space,
+            external_id=f"{prefix}_{suffix}",
+            sources=[
+                NodeOrEdgeData(source=movie_id, properties={"title": suffix, "releaseYear": year, "runTimeMinutes": 90})
+            ],
+        )
+
+    @staticmethod
+    def _make_query(movie_id: ViewId, prefix: str) -> QuerySync:
+        return QuerySync(
+            with_={
+                "movies": NodeResultSetExpressionSync(
+                    filter=filters.Prefix(["node", "externalId"], prefix), sync_mode="two_phase", limit=100
+                )
+            },
+            select={"movies": SelectSync([SourceSelector(movie_id, ["title", "releaseYear"])])},
+        )
+
+    async def test_sync_with_file_cache_full_lifecycle(
+        self,
+        async_client: AsyncCogniteClient,
+        movie_view: View,
+        sync_security_category: int,
+    ) -> None:
+        movie_id = movie_view.as_id()
+        prefix = f"sswc_{random_string(6)}"
+        file_external_id = f"{prefix}_cache_file"
+
+        movie_a = self._make_movie(movie_view.space, movie_id, prefix, "movie_a", 2020)
+        movie_b = self._make_movie(movie_view.space, movie_id, prefix, "movie_b", 2021)
+        sync_query = self._make_query(movie_id, prefix)
+
+        try:
+            # --- Phase 1: seed data and do first session ---
+            await async_client.data_modeling.instances.apply(nodes=movie_a)
+
+            async with await async_client.data_modeling.instances.sync_with_file_cache(
+                sync_query,
+                file_external_id=file_external_id,
+                security_category=sync_security_category,
+                backup_every=None,
+                backup_on_exit=True,
+            ) as sess:
+                await sess.sync_until_live()
+                nodes_after_first = sess.get_nodes("movies")
+
+            assert any(n.external_id == movie_a.external_id for n in nodes_after_first), (
+                "movie_a should be in snapshot after first session"
+            )
+
+            # --- Phase 2: add movie_b, new session should restore cursors from backup ---
+            await async_client.data_modeling.instances.apply(nodes=movie_b)
+            sync_query.cursors = {}
+
+            async with await async_client.data_modeling.instances.sync_with_file_cache(
+                sync_query,
+                file_external_id=file_external_id,
+                security_category=sync_security_category,
+                backup_every=None,
+                backup_on_exit=True,
+            ) as sess:
+                await sess.sync_until_live()
+                nodes_after_second = sess.get_nodes("movies")
+
+            ext_ids_second = {n.external_id for n in nodes_after_second}
+            assert movie_a.external_id in ext_ids_second, "movie_a should still be present in second session"
+            assert movie_b.external_id in ext_ids_second, "movie_b should appear in second session"
+
+            # --- Phase 3: delete movie_a, verify it's removed from snapshot ---
+            await async_client.data_modeling.instances.delete(nodes=[movie_a.as_id()])
+            sync_query.cursors = {}
+
+            async with await async_client.data_modeling.instances.sync_with_file_cache(
+                sync_query,
+                file_external_id=file_external_id,
+                security_category=sync_security_category,
+                backup_every=None,
+                backup_on_exit=True,
+            ) as sess:
+                await sess.sync_until_live()
+                nodes_after_delete = sess.get_nodes("movies")
+
+            ext_ids_delete = {n.external_id for n in nodes_after_delete}
+            assert movie_a.external_id not in ext_ids_delete, "deleted movie_a should be gone from snapshot"
+            assert movie_b.external_id in ext_ids_delete, "movie_b should still be present after delete phase"
+
+            # --- Phase 4: invalidate forces full backfill from scratch ---
+            sync_query.cursors = {}
+
+            async with await async_client.data_modeling.instances.sync_with_file_cache(
+                sync_query,
+                file_external_id=file_external_id,
+                security_category=sync_security_category,
+                backup_every=None,
+                backup_on_exit=False,
+            ) as sess:
+                await sess.invalidate()
+                await sess.sync_until_live()
+                nodes_after_invalidate = sess.get_nodes("movies")
+
+            ext_ids_invalidate = {n.external_id for n in nodes_after_invalidate}
+            assert movie_a.external_id not in ext_ids_invalidate, "movie_a was deleted; should not reappear"
+            assert movie_b.external_id in ext_ids_invalidate, "movie_b should be present after invalidate+backfill"
+
+        finally:
+            with contextlib.suppress(Exception):
+                await async_client.data_modeling.instances.delete(nodes=[movie_a.as_id(), movie_b.as_id()])
+            with contextlib.suppress(Exception):
+                await async_client.files.delete(external_id=file_external_id)
+
+    async def test_hash_mismatch_discards_cache(
+        self,
+        async_client: AsyncCogniteClient,
+        movie_view: View,
+        sync_security_category: int,
+    ) -> None:
+        movie_id = movie_view.as_id()
+        prefix_a = f"hma_{random_string(6)}"
+        prefix_b = f"hmb_{random_string(6)}"
+        file_external_id = f"{prefix_a}_cache"
+
+        movie_a = self._make_movie(movie_view.space, movie_id, prefix_a, "movie_a")
+        try:
+            await async_client.data_modeling.instances.apply(nodes=movie_a)
+
+            # Session 1: backfill with query for prefix_a, saves cache containing movie_a
+            async with await async_client.data_modeling.instances.sync_with_file_cache(
+                self._make_query(movie_id, prefix_a),
+                file_external_id=file_external_id,
+                security_category=sync_security_category,
+                backup_every=None,
+                backup_on_exit=True,
+            ) as sess:
+                await sess.sync_until_live()
+                assert any(n.external_id == movie_a.external_id for n in sess.get_nodes("movies"))
+
+            # Session 2: different query → hash mismatch → cache discarded, fresh backfill
+            # movie_a should NOT appear because the new query filters on prefix_b
+            async with await async_client.data_modeling.instances.sync_with_file_cache(
+                self._make_query(movie_id, prefix_b),
+                file_external_id=file_external_id,
+                security_category=sync_security_category,
+                backup_every=None,
+                backup_on_exit=False,
+            ) as sess:
+                await sess.sync_until_live()
+                nodes = sess.get_nodes("movies")
+
+            assert not any(n.external_id == movie_a.external_id for n in nodes), (
+                "Hash mismatch should discard cached instances from the previous query"
+            )
+        finally:
+            with contextlib.suppress(Exception):
+                await async_client.data_modeling.instances.delete(nodes=[movie_a.as_id()])
+            with contextlib.suppress(Exception):
+                await async_client.files.delete(external_id=file_external_id)
+
+    async def test_backup_on_exit_false_does_not_write_cache(
+        self,
+        async_client: AsyncCogniteClient,
+        movie_view: View,
+        sync_security_category: int,
+    ) -> None:
+        movie_id = movie_view.as_id()
+        prefix = f"bof_{random_string(6)}"
+        file_external_id = f"{prefix}_cache"
+
+        try:
+            async with await async_client.data_modeling.instances.sync_with_file_cache(
+                self._make_query(movie_id, prefix),
+                file_external_id=file_external_id,
+                security_category=sync_security_category,
+                backup_every=None,
+                backup_on_exit=False,
+            ) as sess:
+                await sess.sync_until_live()
+
+            from cognite.client.exceptions import CogniteNotFoundError
+
+            with pytest.raises(CogniteNotFoundError):
+                await async_client.files.download_bytes(external_id=file_external_id)
+        finally:
+            with contextlib.suppress(Exception):
+                await async_client.files.delete(external_id=file_external_id)
