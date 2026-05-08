@@ -894,6 +894,7 @@ class InstancesAPI(APIClient):
                 >>> subscription_context.cancel()
 
         """
+        query._prepare_sorts()
         subscription_context = SubscriptionContext()
 
         async def _poll_loop() -> None:
@@ -968,10 +969,11 @@ class InstancesAPI(APIClient):
                     f"Received in `sources` argument for views: {with_properties}."
                 )
         if sort:
-            if isinstance(sort, (InstanceSort, dict)):
-                other_params["sort"] = [cls._dump_instance_sort(sort)]
-            else:
-                other_params["sort"] = [cls._dump_instance_sort(s) for s in sort]
+            sorts_seq = [sort] if isinstance(sort, (InstanceSort, dict)) else list(sort)
+            for s in sorts_seq:
+                if isinstance(s, InstanceSort):
+                    s._apply_postgres_defaults_or_maybe_warn()
+            other_params["sort"] = [cls._dump_instance_sort(s) for s in sorts_seq]
         if instance_type:
             other_params["instanceType"] = instance_type
         if debug:
@@ -1647,6 +1649,7 @@ class InstancesAPI(APIClient):
                 >>> res = client.data_modeling.instances.query(query, debug=debug_params)
                 >>> print(res.debug)
         """
+        query._prepare_sorts()
         return await self._query_or_sync(query, "query", include_typing=include_typing, debug=debug)
 
     async def sync(
@@ -1749,6 +1752,7 @@ class InstancesAPI(APIClient):
                 >>> res = client.data_modeling.instances.sync(query, debug=debug_params)
                 >>> print(res.debug)
         """
+        query._prepare_sorts()
         return await self._query_or_sync(query, "sync", include_typing=include_typing, debug=debug)
 
     async def _query_or_sync(
