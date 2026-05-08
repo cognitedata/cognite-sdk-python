@@ -1344,6 +1344,59 @@ class InstancesApply:
 
 
 class InstanceSort(DataModelingSort):
+    """Sort order for an instance query.
+
+    Args:
+        property (list[str] | tuple[str, str] | tuple[str, str, str]): The property to sort by, given as a path, e.g.
+            ``("mySpace", "myView/v1", "myProperty")`` or ``["node", "externalId"]``.
+        direction (Literal['ascending', 'descending']): Sort direction. Case-insensitive. Defaults to ``"ascending"``.
+        nulls_first (bool | None): Where to place ``null`` values. Defaults to ``None`` (auto). See tip below.
+
+    Tip:
+        For the backend database to use an index when sorting nullable properties, the ``nulls_first`` setting
+        must match the sort direction:
+
+        - ``ascending`` → nulls last (``nulls_first=False``)
+        - ``descending`` → nulls first (``nulls_first=True``)
+
+        When ``nulls_first=None`` (the default), the correct value is chosen automatically. Passing the
+        opposite combination is still accepted and sent to the API as-is, but may trigger a warning
+        for API endpoints that support index utilization if an unsupported combination is used.
+
+    Examples:
+
+        Sort by a view property ascending (default):
+
+            >>> from cognite.client.data_classes.data_modeling import InstanceSort
+            >>> sort = InstanceSort(("mySpace", "myView/v1", "myProperty"))
+
+        Can also use a ViewId to simplify the property path:
+
+            >>> from cognite.client.data_classes.data_modeling import ViewId
+            >>> view_id = ViewId("mySpace", "myView", "v1")
+            >>> sort = InstanceSort(view_id.as_property_ref("myProperty"))
+
+        Sort descending:
+
+            >>> sort = InstanceSort(
+            ...     view_id.as_property_ref("myProperty"),
+            ...     direction="descending",
+            ... )
+
+        Sort by a base property:
+
+            >>> sort = InstanceSort(["node", "externalId"], direction="ascending")
+
+        Force a specific null placement (first/last). A UserWarning will fire at relevant API call
+        sites when this conflicts with index alignment:
+
+            >>> sort = InstanceSort(
+            ...     ("mySpace", "myView/v1", "myProperty"),
+            ...     direction="descending",
+            ...     nulls_first=True,
+            ... )
+    """
+
     def __init__(
         self,
         property: list[str] | tuple[str, str] | tuple[str, str, str],
