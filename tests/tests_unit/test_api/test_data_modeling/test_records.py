@@ -16,7 +16,6 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordSourceReference,
     RecordWrite,
     SyncRecord,
-    SyncRecordList,
     TimeRange,
 )
 from tests.utils import jsgz_load
@@ -102,10 +101,7 @@ class TestRecordsAPIIngest:
         url_pattern = re.compile(re.escape(records_base_url) + r"$")
         httpx_mock.add_response(method="POST", url=url_pattern, status_code=202)
         httpx_mock.add_response(method="POST", url=url_pattern, status_code=202)
-        items = [
-            RecordWrite(space="sp", external_id=f"r-{i}", sources=[])
-            for i in range(1001)
-        ]
+        items = [RecordWrite(space="sp", external_id=f"r-{i}", sources=[]) for i in range(1001)]
         cognite_client.data_modeling.records.ingest("my-stream", items)
         requests = httpx_mock.get_requests()
         assert len(requests) == 2
