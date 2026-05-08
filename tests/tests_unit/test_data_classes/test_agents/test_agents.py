@@ -22,7 +22,7 @@ def agent_upsert_dump() -> dict[str, Any]:
         "description": "A test agent",
         "instructions": "Test instructions",
         "model": "gpt-4",
-        "runtimeVersion": "1.1.1",
+        "runtimeVersion": "1.2.0",
         "tools": [
             {  # Valid queryKnowledgeGraph tool
                 "name": "test_tool",
@@ -59,7 +59,7 @@ def agent_minimal_dump() -> dict[str, Any]:
     return {
         "externalId": "test_agent",
         "name": "Test Agent",
-        "runtimeVersion": "1.1.1",
+        "runtimeVersion": "1.2.0",
         "createdTime": 667008000000,
         "lastUpdatedTime": 667008000001,
         "ownerId": "owner_minimal",
@@ -75,7 +75,7 @@ class TestAgentUpsert:
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
-        assert agent.runtime_version == "1.1.1"
+        assert agent.runtime_version == "1.2.0"
         assert agent.tools
         assert len(agent.tools) == 1
         assert isinstance(agent.tools[0], AgentToolUpsert)
@@ -135,7 +135,7 @@ class TestAgent:
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
-        assert agent.runtime_version == "1.1.1"
+        assert agent.runtime_version == "1.2.0"
         assert agent.tools
         assert len(agent.tools) == 1
         assert isinstance(agent.tools[0], AgentTool)
@@ -164,7 +164,7 @@ class TestAgent:
         agent_data = {
             "externalId": "test_agent",
             "name": "Test Agent",
-            "runtimeVersion": "1.1.1",
+            "runtimeVersion": "1.2.0",
             "unknownProperty": "unknown_value",
             "createdTime": 123,
             "lastUpdatedTime": 123,
