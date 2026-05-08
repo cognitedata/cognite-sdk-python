@@ -800,6 +800,7 @@ class FunctionsAcl(Capability):
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
         Write = "WRITE"
+        Run = "RUN"
 
     class Scope:
         All = AllScope
