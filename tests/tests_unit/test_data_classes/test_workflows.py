@@ -270,10 +270,10 @@ class TestWorkflowTaskOutputDispatch:
         "output_payload",
         [
             {"customField": 99},
-            [1, 2, 3],
+            {"otherKey": "value"},
         ],
     )
-    def test_unknown_output_dump_returns_stored_payload(self, output_payload: dict[str, Any] | list[int]) -> None:
+    def test_unknown_output_dump_returns_stored_payload(self, output_payload: dict[str, Any]) -> None:
         data: dict[str, Any] = {"taskType": "customWorkflowOutput", "output": output_payload}
         loaded = WorkflowTaskOutput.load_output(data)
         assert isinstance(loaded, UnknownWorkflowTaskOutput)

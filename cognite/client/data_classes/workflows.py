@@ -706,7 +706,7 @@ class FunctionTaskOutput(WorkflowTaskOutput):
 
 
 class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
-    def __init__(self, task_type: str, output: Any) -> None:
+    def __init__(self, task_type: str, output: dict[str, Any]) -> None:
         self.dynamic_task_type = task_type
         self._output = output
 
@@ -720,7 +720,7 @@ class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
     def task_type(self) -> ValidTaskType:  # type: ignore[override]
         return cast(ValidTaskType, self.dynamic_task_type)
 
-    def dump(self, camel_case: bool = True) -> Any:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if not camel_case:
             warnings.warn(
                 "camel_case=False is ignored for UnknownWorkflowTaskOutput.dump(); API payloads use camelCase keys.",
