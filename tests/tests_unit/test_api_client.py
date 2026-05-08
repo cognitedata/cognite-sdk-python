@@ -1841,6 +1841,13 @@ class TestRetryableEndpoints:
                 # Streams API
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/delete", False),
+                # Records API
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/my-stream/records", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/my-stream/records/upsert", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/my-stream/records/delete", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/my-stream/records/filter", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/my-stream/records/sync", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/my-stream/records/aggregate", True),
             ]
         ),
     )
