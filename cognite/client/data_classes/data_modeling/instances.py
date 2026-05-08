@@ -30,7 +30,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client._constants import OMITTED, Omitted
 from cognite.client.data_classes._base import (
@@ -1346,11 +1346,56 @@ class InstancesApply:
 class InstanceSort(DataModelingSort):
     def __init__(
         self,
-        property: list[str] | tuple[str, ...],
+        property: list[str] | tuple[str, str] | tuple[str, str, str],
         direction: Literal["ascending", "descending"] = "ascending",
         nulls_first: bool | None = None,
     ) -> None:
-        super().__init__(property, direction, nulls_first)
+        normalized = direction.casefold()
+        if normalized not in ("ascending", "descending"):
+            raise ValueError(f"direction must be 'ascending' or 'descending', got {direction!r}")
+
+        super().__init__(property, normalized, nulls_first)
+
+    # We override _load to get the more strict __init__ validation on 'direction' because we need it to
+    # be valid for the possible later automatic choice of nulls_first:
+    @override
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        if not isinstance(resource, dict):
+            raise TypeError(f"Resource must be mapping, not {type(resource)}")
+
+        return cls(
+            property=resource["property"],
+            direction=resource.get("direction", "ascending"),
+            nulls_first=resource.get("nullsFirst"),
+        )
+
+    @property
+    def is_index_aligned(self) -> bool:
+        """True when nulls_first matches the direction for PostgreSQL index utilization (None counts as aligned)."""
+        if self.nulls_first is None:
+            return True
+        return self.nulls_first is (self.direction == "descending")
+
+    def _apply_postgres_defaults_or_maybe_warn(self) -> None:
+        """Resolve nulls_first for PostgreSQL index alignment, warning if the explicit value is misaligned.
+
+        When nulls_first is None, sets it to the index-compatible value. When explicitly set but
+        misaligned, emits a UserWarning.
+        """
+        if self.nulls_first is None:
+            self.nulls_first = self.direction == "descending"
+
+        elif not self.is_index_aligned:
+            import warnings
+
+            warnings.warn(
+                f"InstanceSort: direction={self.direction!r} with nulls_first={self.nulls_first} is not "
+                f"index-aligned and will likely prevent database index utilization. "
+                f"Use nulls_first={self.direction == 'descending'} (or omit it) for optimal performance.",
+                UserWarning,
+                stacklevel=3,
+            )
 
 
 @dataclass
