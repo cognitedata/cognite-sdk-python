@@ -598,8 +598,8 @@ class WorkflowTask(CogniteResource):
         self.depends_on = depends_on
 
     @property
-    def type(self) -> str:
-        return cast(str, self.parameters.task_type)
+    def type(self) -> ValidTaskType:
+        return self.parameters.task_type
 
     @classmethod
     def _load(cls, resource: dict) -> WorkflowTask:
