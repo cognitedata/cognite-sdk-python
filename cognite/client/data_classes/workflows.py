@@ -890,7 +890,7 @@ class WorkflowTaskExecution(CogniteResource):
         self.reason_for_incompletion = reason_for_incompletion
 
     @property
-    def task_type(self) -> str:
+    def task_type(self) -> ValidTaskType:
         return self.input.task_type
 
     @classmethod
