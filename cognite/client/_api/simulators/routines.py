@@ -279,6 +279,10 @@ class SimulatorRoutinesAPI(APIClient):
         1. By routine external ID only
         2. By routine revision external ID + model revision external ID
 
+        When simulation run load balancing is enabled and routine is not assigned to any particular integration, the run initiates with status ``queued``
+        and any active integration can claim it automatically. Without load balancing, the run initiates with status ``ready``
+        and is tied to the integration specified on the routine.
+
         Args:
             routine_external_id (str | None): External id of the simulator routine to run.
                 Cannot be specified together with routine_revision_external_id and model_revision_external_id.

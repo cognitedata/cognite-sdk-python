@@ -26,7 +26,7 @@ def get_api_class_by_attribute(cls_: object, parent_name: tuple[str, ...] = ()) 
     return available_apis
 
 
-def find_api_class_name(source_code: str, file: Path, raise_on_missing: bool = True) -> str | None:
+def find_api_class_name(source_code: str, file: Path) -> str | None:
     match re.findall(r"class (\w+API)\((?:Org)?APIClient\):", source_code):
         case []:
             return None

@@ -72,6 +72,7 @@ if TYPE_CHECKING:
 
     from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
+
 PropertyValue: TypeAlias = (
     str | int | float | bool | dict | list[str] | list[int] | list[float] | list[bool] | list[dict]
 )
