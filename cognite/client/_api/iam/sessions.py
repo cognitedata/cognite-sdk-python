@@ -7,7 +7,14 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import OAuthClientCredentials
-from cognite.client.data_classes import ClientCredentials, CreatedSession, RevokedSession, RevokedSessionList, Session, SessionList
+from cognite.client.data_classes import (
+    ClientCredentials,
+    CreatedSession,
+    RevokedSession,
+    RevokedSessionList,
+    Session,
+    SessionList,
+)
 from cognite.client.data_classes.iam import SessionStatus, SessionType
 from cognite.client.utils._identifier import IdentifierSequence
 
