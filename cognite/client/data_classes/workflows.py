@@ -189,7 +189,7 @@ class WorkflowTaskParameters(CogniteResource, ABC):
         elif type_ == "simulation":
             return SimulationTaskParameters._load(parameters)
         else:
-            return UnknownWorkflowTaskParameters._load(data)
+            return UnknownWorkflowTaskParameters(type_, deepcopy(parameters))
 
 
 class FunctionTaskParameters(WorkflowTaskParameters):
@@ -268,12 +268,21 @@ class FunctionTaskParameters(WorkflowTaskParameters):
 
 
 class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
-    def __init__(self, dynamic_task_type: Any, parameters: Any) -> None:
+    # CogniteResource.load parses strings to a dict before _load; a bare scalar from dump()
+    # would still parse to a non-dict and fail. Wrapping non-dict payloads keeps JSON/YAML
+    # round-trips (e.g. test_base) valid while still storing the original value in _parameters.
+    _OPAQUE_WRAPPER_KEY: ClassVar[str] = "__cogniteSdkUnknownWorkflowTaskParametersOpaque__"
+
+    def __init__(self, dynamic_task_type: str | None, parameters: Any) -> None:
         self.dynamic_task_type = dynamic_task_type
         self._parameters = parameters
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
+        # dump() wraps non-dict _parameters in a one-key dict so load() always receives a dict;
+        # here we reverse that and store the inner value again (no task type on that path).
+        if len(resource) == 1 and next(iter(resource), None) == cls._OPAQUE_WRAPPER_KEY:
+            return cls(None, deepcopy(resource[cls._OPAQUE_WRAPPER_KEY]))
         t = resource.get("type", resource.get("taskType"))
         return cls(t, deepcopy(resource))
 
@@ -288,7 +297,10 @@ class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
                 UserWarning,
                 stacklevel=2,
             )
-        return deepcopy(self._parameters)
+        p = deepcopy(self._parameters)
+        if isinstance(p, dict):
+            return p
+        return {self._OPAQUE_WRAPPER_KEY: p}
 
 
 _SIMULATORS_WARNING = FeaturePreviewWarning(
