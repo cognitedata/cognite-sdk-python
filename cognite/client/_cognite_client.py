@@ -49,10 +49,10 @@ if _should_build_docs := os.getenv("BUILD_COGNITE_SDK_DOCS") == "true":
     from cognite.client._api.data_modeling.data_models import DataModelsAPI
     from cognite.client._api.data_modeling.graphql import DataModelingGraphQLAPI
     from cognite.client._api.data_modeling.instances import InstancesAPI
+    from cognite.client._api.data_modeling.records import RecordsAPI
     from cognite.client._api.data_modeling.space_statistics import SpaceStatisticsAPI
     from cognite.client._api.data_modeling.spaces import SpacesAPI
     from cognite.client._api.data_modeling.statistics import StatisticsAPI
-    from cognite.client._api.data_modeling.records import RecordsAPI
     from cognite.client._api.data_modeling.streams import StreamsAPI
     from cognite.client._api.data_modeling.views import ViewsAPI
     from cognite.client._api.datapoints import DatapointsAPI
