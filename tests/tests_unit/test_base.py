@@ -170,10 +170,6 @@ def cognite_mock_client() -> CogniteClientMock:
     return CogniteClientMock()
 
 
-# UnknownWorkflowTaskParameters is excluded from several parametrized CogniteResource tests below
-# because dump() returns only the inner "parameters" blob while CogniteResource.load() for that
-# class is exercised with a full {"type", "parameters"} envelope (see
-# tests.tests_unit.test_data_classes.test_workflows.TestUnknownWorkflowTaskParametersCogniteResourceParity).
 class TestCogniteResource:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
@@ -208,7 +204,7 @@ class TestCogniteResource:
             # minimal-args round-trip therefore can't satisfy both contracts.
             for cls in all_concrete_subclasses(
                 CogniteResource,
-                exclude={SubscriptionDatapoints, Agent, UnknownWorkflowTaskParameters},
+                exclude={SubscriptionDatapoints, Agent},
             )
         ],
     )
@@ -306,9 +302,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(
-                CogniteResource, exclude={SubscriptionDatapoints, UnknownWorkflowTaskParameters}
-            )
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
         ],
     )
     def test_load_has_no_side_effects(
@@ -338,9 +332,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(
-                CogniteResource, exclude={SubscriptionDatapoints, UnknownWorkflowTaskParameters}
-            )
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
         ],
     )
     def test_handle_unknown_arguments_when_loading(
@@ -383,9 +375,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(
-                CogniteResource, exclude={SubscriptionDatapoints, UnknownWorkflowTaskParameters}
-            )
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
         ],
     )
     def test_yaml_serialize(

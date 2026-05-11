@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
-from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 import pytest
-import yaml
 
 from cognite.client.data_classes.simulators.runs import SimulationInputOverride
 from cognite.client.data_classes.workflows import (
@@ -20,7 +17,6 @@ from cognite.client.data_classes.workflows import (
     TransformationTaskOutput,
     TransformationTaskParameters,
     UnknownWorkflowTaskOutput,
-    UnknownWorkflowTaskParameters,
     WorkflowDefinition,
     WorkflowDefinitionUpsert,
     WorkflowExecutionDetailed,
@@ -262,73 +258,6 @@ class TestWorkflowTask:
     def test_serialization(self, raw: dict[str, Any]) -> None:
         loaded = WorkflowTask._load(raw)
         assert loaded.dump() == raw
-
-
-class TestUnknownWorkflowTaskParametersCogniteResourceParity:
-    @staticmethod
-    def _envelope(instance: UnknownWorkflowTaskParameters) -> dict[str, Any]:
-        return {"type": instance.dynamic_task_type, "parameters": instance.dump(camel_case=True)}
-
-    @staticmethod
-    def _for_all_nested_dicts(obj: dict[str, Any], func: Callable[[dict[str, Any]], None]) -> None:
-        to_check: list[Any] = [obj]
-        while to_check:
-            case = to_check.pop()
-            if isinstance(case, dict):
-                to_check.extend(case.values())
-                func(case)
-            elif isinstance(case, list):
-                to_check.extend(case)
-
-    @pytest.mark.dsl
-    def test_json_serialize(self) -> None:
-        instance = UnknownWorkflowTaskParameters("customWorkflowTaskType", {"k": 1, "nested": {"x": 2}})
-        envelope = self._envelope(instance)
-        loaded = UnknownWorkflowTaskParameters.load(json.dumps(envelope))
-        assert loaded.dump(camel_case=True) == instance.dump(camel_case=True)
-        assert loaded.dynamic_task_type == instance.dynamic_task_type
-
-    @pytest.mark.dsl
-    def test_dump_load_dict(self) -> None:
-        instance = UnknownWorkflowTaskParameters("customWorkflowTaskType", {"k": 1})
-        envelope = self._envelope(instance)
-        loaded = UnknownWorkflowTaskParameters.load(envelope)
-        assert loaded.dump() == instance.dump()
-        assert loaded.dynamic_task_type == instance.dynamic_task_type
-
-    @pytest.mark.dsl
-    def test_load_has_no_side_effects(self) -> None:
-        instance = UnknownWorkflowTaskParameters("customWorkflowTaskType", {"a": 1})
-        dumped = self._envelope(instance)
-        original_dumped = deepcopy(dumped)
-        _ = UnknownWorkflowTaskParameters.load(dumped)
-        assert dumped == original_dumped
-
-    @pytest.mark.dsl
-    def test_handle_unknown_arguments_when_loading(self) -> None:
-        instance = UnknownWorkflowTaskParameters("customWorkflowTaskType", {"a": 1, "b": {"c": 2}})
-        dumped = self._envelope(instance)
-
-        def _add_unknown_key(obj: dict[str, Any]) -> None:
-            other_value = next(iter(obj.values())) if len(obj) > 0 else None
-            obj["some-new-unknown-key"] = other_value
-
-        def _remove_unknown_key(obj: dict[str, Any]) -> None:
-            obj.pop("some-new-unknown-key", None)
-
-        self._for_all_nested_dicts(dumped, _add_unknown_key)
-        loaded = UnknownWorkflowTaskParameters.load(dumped)
-        loaded_dump = loaded.dump(camel_case=True)
-        self._for_all_nested_dicts(loaded_dump, _remove_unknown_key)
-        assert loaded_dump == instance.dump(camel_case=True)
-
-    @pytest.mark.dsl
-    def test_yaml_serialize(self) -> None:
-        instance = UnknownWorkflowTaskParameters("customWorkflowTaskType", {"y": 3})
-        envelope = self._envelope(instance)
-        yaml_serialised = yaml.safe_dump(envelope, sort_keys=False)
-        loaded = UnknownWorkflowTaskParameters.load(yaml_serialised)
-        assert loaded.dump(camel_case=True) == instance.dump(camel_case=True)
 
 
 class TestWorkflowTaskOutputDispatch:

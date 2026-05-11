@@ -268,16 +268,14 @@ class FunctionTaskParameters(WorkflowTaskParameters):
 
 
 class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
-    def __init__(self, dynamic_task_type: str, parameters: dict[str, Any]) -> None:
+    def __init__(self, dynamic_task_type: Any, parameters: Any) -> None:
         self.dynamic_task_type = dynamic_task_type
         self._parameters = parameters
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        type_ = resource.get("type", resource.get("taskType"))
-        raw_inner = resource.get("parameters", resource.get("input"))
-        inner = raw_inner if isinstance(raw_inner, dict) else {}
-        return cls(type_ if isinstance(type_, str) else "unknown", inner)
+        t = resource.get("type", resource.get("taskType"))
+        return cls(t, deepcopy(resource))
 
     @property
     def task_type(self) -> ValidTaskType:  # type: ignore[override]
@@ -706,7 +704,7 @@ class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> Self:
-        return cls(data.get("output"))
+        return cls(data.get("output", {}))
 
     @property
     def task_type(self) -> ValidTaskType:  # type: ignore[override]
