@@ -79,8 +79,8 @@ class RecordWrite(WriteableCogniteResource["RecordWrite"]):
 
     Args:
         space (str): Space the record belongs to.
-        external_id (str): External ID of the record (1–256 chars, no null bytes).
-        sources (list[RecordSource]): Container property values to write (1–100 sources).
+        external_id (str): External ID of the record (1-256 chars, no null bytes).
+        sources (list[RecordSource]): Container property values to write (1-100 sources).
 
     Examples:
 
@@ -222,7 +222,7 @@ class SyncRecord(Record):
         external_id (str): External ID of the record.
         created_time (int): Creation time in milliseconds since epoch.
         last_updated_time (int): Last updated time in milliseconds since epoch.
-        status (Literal["created", "updated", "deleted"]): Change status.
+        status (Literal['created', 'updated', 'deleted']): Change status.
         properties (dict[str, dict[str, dict[str, Any]]] | None): Property values (absent for deleted tombstones).
     """
 
@@ -348,10 +348,8 @@ class RecordSortSpec(CogniteResource):
     """Sort specification for record list requests.
 
     Args:
-        property (list[str]): Property path. Use 3 segments for container properties
-            (``[space, container_external_id, property_id]``), or a single segment for
-            top-level fields (``["space"]``, ``["externalId"]``, etc.).
-        direction (Literal["ascending", "descending"]): Sort direction (default ``"ascending"``).
+        property (list[str]): Property path. Use 3 segments for container properties (``[space, container_external_id, property_id]``), or a single segment for top-level fields (``["space"]``, ``["externalId"]``, etc.).
+        direction (Literal['ascending', 'descending']): Sort direction (default ``"ascending"``).
     """
 
     def __init__(self, property: list[str], direction: Literal["ascending", "descending"] = "ascending") -> None:
@@ -542,7 +540,7 @@ class UniqueValuesAggregate(CogniteResource):
     """Bucket aggregate grouping records by unique property values.
 
     Args:
-        property (list[str]): Property path (1–3 segments).
+        property (list[str]): Property path (1-3 segments).
         aggregates (dict[str, AggregateSpec] | None): Optional nested aggregates computed per bucket.
     """
 
@@ -573,7 +571,7 @@ class TimeHistogramAggregate(CogniteResource):
 
     Args:
         property (list[str]): 3-segment path to a timestamp-type property.
-        calendar_interval (Literal["1s", "1m", "1h", "1d", "1w", "1M", "1q", "1y"] | None): Calendar-aligned bucket width.
+        calendar_interval (Literal['1s', '1m', '1h', '1d', '1w', '1M', '1q', '1y'] | None): Calendar-aligned bucket width.
         fixed_interval (str | None): Fixed bucket width in duration format (e.g. ``"12h"``).
         hard_bounds (NumberHistogramHardBounds | None): Limits the range of emitted bucket keys.
         aggregates (dict[str, AggregateSpec] | None): Optional nested aggregates computed per bucket.
@@ -666,7 +664,7 @@ class FiltersAggregate(CogniteResource):
     """Bucket aggregate that creates one bucket per filter expression.
 
     Args:
-        filters (list[Filter]): One bucket per filter (1–10 filters; max 30 filter
+        filters (list[Filter]): One bucket per filter (1-10 filters; max 30 filter
             buckets total across all :class:`FiltersAggregate` instances in a request).
         aggregates (dict[str, AggregateSpec] | None): Optional nested aggregates computed per bucket.
     """

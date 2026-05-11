@@ -274,7 +274,7 @@ class SyncRecordsAPI(SyncAPIClient):
                 target_units=target_units,
                 include_typing=include_typing,
             )
-        )  # type: ignore [misc]
+        )
 
     def aggregate(
         self,
