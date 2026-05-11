@@ -276,12 +276,7 @@ class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
     def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type", resource.get("taskType"))
         raw_inner = resource.get("parameters", resource.get("input"))
-        if raw_inner is None:
-            inner: dict[str, Any] = {}
-        elif isinstance(raw_inner, dict):
-            inner = raw_inner
-        else:
-            inner = {}
+        inner = raw_inner if isinstance(raw_inner, dict) else {}
         return cls(type_ if isinstance(type_, str) else "unknown", inner)
 
     @property
@@ -706,21 +701,18 @@ class FunctionTaskOutput(WorkflowTaskOutput):
 
 
 class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
-    def __init__(self, task_type: str, output: dict[str, Any]) -> None:
-        self.dynamic_task_type = task_type
+    def __init__(self, output: Any) -> None:
         self._output = output
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> Self:
-        task_type = data.get("taskType", "unknown")
-        raw_output = data.get("output")
-        return cls(task_type, {} if raw_output is None else raw_output)
+        return cls(data.get("output"))
 
     @property
     def task_type(self) -> ValidTaskType:  # type: ignore[override]
-        return cast(ValidTaskType, self.dynamic_task_type)
+        return cast(ValidTaskType, "unknown")
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> Any:
         if not camel_case:
             warnings.warn(
                 "camel_case=False is ignored for UnknownWorkflowTaskOutput.dump(); API payloads use camelCase keys.",
