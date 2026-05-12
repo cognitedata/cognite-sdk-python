@@ -9,6 +9,7 @@ from cognite.client.data_classes import Function, FunctionList, FunctionSchedule
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 
 
+# TODO: This fails redeployment, NameError: name 'CogniteClient' is not defined because of the type annotations...
 def handle(
     *,
     client: CogniteClient | None = None,
