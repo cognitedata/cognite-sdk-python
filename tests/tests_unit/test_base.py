@@ -175,10 +175,7 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(
-                CogniteResource,
-                exclude={SyntheticDatapoints, SubscriptionDatapoints},
-            )
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SyntheticDatapoints, SubscriptionDatapoints})
         ],
     )
     def test_json_serialize(
@@ -201,10 +198,7 @@ class TestCogniteResource:
             # Agent._load requires runtimeVersion/ownerId (always sent by the API),
             # but Agent.__init__ keeps them optional for SDK back-compat. The
             # minimal-args round-trip therefore can't satisfy both contracts.
-            for cls in all_concrete_subclasses(
-                CogniteResource,
-                exclude={SubscriptionDatapoints, Agent},
-            )
+            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints, Agent})
         ],
     )
     def test_dump_load_only_required(
