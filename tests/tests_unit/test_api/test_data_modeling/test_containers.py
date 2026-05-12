@@ -163,7 +163,7 @@ class TestContainersApi:
 
         req = httpx_mock.get_requests()[0]
         qs = parse_qs(urlparse(str(req.url)).query)
-        assert qs.get("usedFor") == ["all", "record"]
+        assert qs.get("usedFor") == ["node", "edge", "record", "all"]
 
     def test_container_filter_rejects_invalid_used_for(self) -> None:
         with pytest.raises(TypeError, match="Invalid value for 'used_for'"):

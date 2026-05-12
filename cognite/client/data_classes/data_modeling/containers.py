@@ -31,7 +31,7 @@ _T_Constraint = TypeVar("_T_Constraint", bound="ConstraintCore")
 _T_Index = TypeVar("_T_Index", bound="IndexCore")
 
 ContainerUsedFor = Literal["node", "edge", "record", "all"]
-_ALL_CONTAINER_USED_FOR: tuple[ContainerUsedFor, ...] = ("all", "record")
+_ALL_CONTAINER_USED_FOR: tuple[ContainerUsedFor, ...] = ("node", "edge", "record", "all")
 
 
 @dataclass
