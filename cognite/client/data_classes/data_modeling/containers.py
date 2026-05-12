@@ -31,6 +31,7 @@ _T_Constraint = TypeVar("_T_Constraint", bound="ConstraintCore")
 _T_Index = TypeVar("_T_Index", bound="IndexCore")
 
 ContainerUsedFor = Literal["node", "edge", "record", "all"]
+_ALL_CONTAINER_USED_FOR: tuple[ContainerUsedFor, ...] = ("all", "record")
 
 
 @dataclass
@@ -236,12 +237,15 @@ class _ContainerFilter(CogniteFilter):
     ) -> None:
         self.space = space
         self.include_global = include_global
+        self.used_for: Sequence[ContainerUsedFor]
         if used_for is None:
-            self.used_for: list[ContainerUsedFor] | None = None
+            self.used_for = list(_ALL_CONTAINER_USED_FOR)
         elif isinstance(used_for, str):
             self.used_for = [used_for]
+        elif isinstance(used_for, Sequence):
+            self.used_for = cast("Sequence[ContainerUsedFor]", used_for)
         else:
-            self.used_for = list(used_for)
+            raise TypeError(f"Invalid value for 'used_for': {used_for!r}")
 
 
 @dataclass(frozen=True)

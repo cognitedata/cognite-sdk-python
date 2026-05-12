@@ -79,7 +79,7 @@ class ContainersAPI(APIClient):
             chunk_size (int | None): Number of containers to return in each chunk. Defaults to yielding one container a time.
             space (str | None): The space to query.
             include_global (bool): Whether the global containers should be returned.
-            used_for (ContainerUsedFor | Sequence[ContainerUsedFor] | None): Only include containers marked for these purposes (e.g. ``"record"`` for record containers). If omitted, the API default applies (typically node, edge, and all — not records).
+            used_for (ContainerUsedFor | Sequence[ContainerUsedFor] | None): Only include containers marked for these purposes. If omitted, containers of every kind (nodes, edges, and records) are returned.
             limit (int | None): Maximum number of containers to return. Defaults to returning all items.
 
         Yields:
@@ -239,7 +239,7 @@ class ContainersAPI(APIClient):
             space (str | None): The space to query
             limit (int | None): Maximum number of containers to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
             include_global (bool): Whether the global containers should be returned.
-            used_for (ContainerUsedFor | Sequence[ContainerUsedFor] | None): Only include containers marked for these purposes (e.g. ``"record"`` for record containers). If omitted, the API default applies (typically node, edge, and all — not records).
+            used_for (ContainerUsedFor | Sequence[ContainerUsedFor] | None): Only include containers marked for these purposes. If omitted, containers of every kind (nodes, edges, and records) are returned.
 
         Returns:
             ContainerList: List of requested containers

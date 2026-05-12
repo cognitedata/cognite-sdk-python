@@ -9,7 +9,11 @@ from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import ContainerApply, ContainerId, ContainerPropertyApply, Text
-from cognite.client.data_classes.data_modeling.containers import BTreeIndexApply, RequiresConstraintApply
+from cognite.client.data_classes.data_modeling.containers import (
+    BTreeIndexApply,
+    RequiresConstraintApply,
+    _ContainerFilter,
+)
 from tests.utils import get_url
 
 if TYPE_CHECKING:
@@ -146,3 +150,21 @@ class TestContainersApi:
         req = httpx_mock.get_requests()[0]
         qs = parse_qs(urlparse(str(req.url)).query)
         assert qs.get("usedFor") == ["record"]
+
+    def test_list_request_default_returns_all_kinds(
+        self, httpx_mock: Any, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    ) -> None:
+        # When the caller does not specify `used_for`, the SDK should request all container kinds,
+        # including records, rather than rely on the server's default of `all` which excludes records.
+        base = get_url(async_client.data_modeling.containers) + "/models/containers"
+        httpx_mock.add_response(url=re.compile("^" + re.escape(base)), json={"items": []})
+
+        cognite_client.data_modeling.containers.list()
+
+        req = httpx_mock.get_requests()[0]
+        qs = parse_qs(urlparse(str(req.url)).query)
+        assert qs.get("usedFor") == ["all", "record"]
+
+    def test_container_filter_rejects_invalid_used_for(self) -> None:
+        with pytest.raises(TypeError, match="Invalid value for 'used_for'"):
+            _ContainerFilter(used_for=123)  # type: ignore[arg-type]
