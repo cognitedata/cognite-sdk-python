@@ -35,7 +35,7 @@ class DirectRelationReference:
                 return cls(space, xid)
             case (space, xid):
                 return cls(space, xid)
-            case cls() | NodeId():  # type: ignore [misc]
+            case cls() | NodeId():
                 return cls(data.space, data.external_id)
             case _:
                 raise ValueError("Invalid data provided to load method. Must be dict or tuple with two elements.")
