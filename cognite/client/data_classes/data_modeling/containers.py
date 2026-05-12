@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from builtins import type as type_
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal, TypeVar, cast
 
@@ -29,6 +29,8 @@ _T_ContainerPropertyCore = TypeVar("_T_ContainerPropertyCore", bound="ContainerP
 _T_Property = TypeVar("_T_Property", bound="ContainerPropertyCore")
 _T_Constraint = TypeVar("_T_Constraint", bound="ConstraintCore")
 _T_Index = TypeVar("_T_Index", bound="IndexCore")
+
+ContainerUsedFor = Literal["node", "edge", "record", "all"]
 
 
 @dataclass
@@ -107,13 +109,13 @@ class ContainerApply(ContainerCore):
         name (str | None): Human readable name for the container.
         constraints (Mapping[str, ConstraintApply]): Set of constraints to apply to the container
         indexes (Mapping[str, IndexApply]): Set of indexes to apply to the container.
-        used_for (Literal['node', 'edge', 'all'] | None): Should this operation apply to nodes, edges or both.
+        used_for (ContainerUsedFor | None): Whether the container is for nodes, edges, records, or both nodes and edges (``all``).
     """
 
     properties: Mapping[str, ContainerPropertyApply]
     constraints: Mapping[str, ConstraintApply] = field(default_factory=dict)
     indexes: Mapping[str, IndexApply] = field(default_factory=dict)
-    used_for: Literal["node", "edge", "all"] | None = None
+    used_for: ContainerUsedFor | None = None
 
     def __post_init__(self) -> None:
         validate_data_modeling_identifier(self.space, self.external_id)
@@ -149,14 +151,14 @@ class Container(ContainerCore):
         is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
+        used_for (ContainerUsedFor): Whether the container is for nodes, edges, records, or both nodes and edges (``all``).
     """
 
     properties: Mapping[str, ContainerProperty]
     is_global: bool
     last_updated_time: int
     created_time: int
-    used_for: Literal["node", "edge", "all"]
+    used_for: ContainerUsedFor
     constraints: Mapping[str, Constraint] = field(default_factory=dict)
     indexes: Mapping[str, Index] = field(default_factory=dict)
 
@@ -226,9 +228,20 @@ class ContainerList(WriteableCogniteResourceList[ContainerApply, Container]):
 
 
 class _ContainerFilter(CogniteFilter):
-    def __init__(self, space: str | None = None, include_global: bool = False) -> None:
+    def __init__(
+        self,
+        space: str | None = None,
+        include_global: bool = False,
+        used_for: ContainerUsedFor | Sequence[ContainerUsedFor] | None = None,
+    ) -> None:
         self.space = space
         self.include_global = include_global
+        if used_for is None:
+            self.used_for: list[ContainerUsedFor] | None = None
+        elif isinstance(used_for, str):
+            self.used_for = [used_for]
+        else:
+            self.used_for = list(used_for)
 
 
 @dataclass(frozen=True)
