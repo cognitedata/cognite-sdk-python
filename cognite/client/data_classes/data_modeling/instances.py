@@ -1430,7 +1430,7 @@ class InstanceSort(DataModelingSort):
             return True
         return self.nulls_first is (self.direction == "descending")
 
-    def _apply_defaults_or_maybe_warn(self) -> None:
+    def _apply_defaults_or_maybe_warn(self) -> Self:
         """Resolve nulls_first for database index alignment, warning if the explicit value is misaligned.
 
         When nulls_first is None, sets it to the index-compatible value. When explicitly set but
@@ -1449,6 +1449,7 @@ class InstanceSort(DataModelingSort):
                 UserWarning,
                 stacklevel=3,
             )
+        return self
 
 
 @dataclass

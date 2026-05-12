@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections import UserDict
 from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
@@ -191,9 +192,13 @@ class QueryBase(CogniteResource, ABC, Generic[_T_ResultSetExpression, _T_Select]
         for sel in self.select.values():
             yield from sel._iter_sorts()
 
-    def _prepare_sorts(self) -> None:
-        for sort in self._iter_sorts():
+    def _get_query_with_defaults_applied(self) -> Self:
+        """TODO: We could verify (or just warn), when Query and Sync-versions are mixed or used in the wrong setting."""
+        # We don't want to mutate the user's original query, so we make a deepcopy and apply defaults to that:
+        query = deepcopy(self)
+        for sort in query._iter_sorts():
             sort._apply_defaults_or_maybe_warn()
+        return query
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {

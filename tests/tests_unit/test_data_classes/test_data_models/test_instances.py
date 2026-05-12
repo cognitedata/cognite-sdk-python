@@ -782,3 +782,35 @@ class TestQueryIterSorts:
         result = list(query._iter_sorts())
         assert sort in result
         assert len(result) == 1
+
+    def test_get_query_with_defaults_applied_does_not_mutate_original(self) -> None:
+        from cognite.client.data_classes.data_modeling import ViewId
+        from cognite.client.data_classes.data_modeling.query import (
+            NodeResultSetExpression,
+            Query,
+            Select,
+            SourceSelector,
+        )
+
+        view = ViewId("s", "v", "1")
+        sort_a = InstanceSort(view.as_property_ref("a"))
+        sort_b = InstanceSort(view.as_property_ref("b"))
+        query = Query(
+            with_={"nodes": NodeResultSetExpression(sort=[sort_a])},
+            select={"nodes": Select([SourceSelector(view, ["a"])], sort=[sort_b])},
+        )
+
+        prepared = query._get_query_with_defaults_applied()
+
+        # Original sorts untouched
+        assert sort_a.nulls_first is None
+        assert sort_b.nulls_first is None
+        # Prepared copy has resolved values
+        assert all(s.nulls_first is not None for s in prepared._iter_sorts())
+
+    def test_list_sort_does_not_mutate_original(self) -> None:
+        from cognite.client._api.data_modeling.instances import InstancesAPI
+
+        sort = InstanceSort(["node", "externalId"], direction="ascending")
+        InstancesAPI._create_other_params(include_typing=False, sort=sort, sources=None, instance_type=None)
+        assert sort.nulls_first is None
