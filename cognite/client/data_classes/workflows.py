@@ -157,7 +157,6 @@ ValidTaskType = Literal[
     "dynamic",
     "subworkflow",
     "simulation",
-    "functionApp",
 ]
 
 
