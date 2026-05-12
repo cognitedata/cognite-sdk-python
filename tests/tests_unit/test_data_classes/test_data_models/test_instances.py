@@ -698,12 +698,12 @@ class TestInstanceSort:
         sort = InstanceSort(["node", "externalId"], direction=direction, nulls_first=nulls_first)  # type: ignore[arg-type]
         assert sort.is_index_aligned is expected
 
-    def test__apply_postgres_defaults_or_maybe_warn_resolves_none(self) -> None:
+    def test__apply_defaults_or_maybe_warn_resolves_none(self) -> None:
         sort = InstanceSort(["node", "externalId"], direction="ascending")
-        sort._apply_postgres_defaults_or_maybe_warn()
+        sort._apply_defaults_or_maybe_warn()
         assert sort.nulls_first is False
         sort = InstanceSort(["node", "externalId"], direction="descending")
-        sort._apply_postgres_defaults_or_maybe_warn()
+        sort._apply_defaults_or_maybe_warn()
         assert sort.nulls_first is True
 
     @pytest.mark.parametrize("bad_direction", ["asc", "desc", "random"])
@@ -726,7 +726,7 @@ class TestInstanceSort:
         sort = InstanceSort(["node", "externalId"], direction=direction, nulls_first=nulls_first)  # type: ignore[arg-type]
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            sort._apply_postgres_defaults_or_maybe_warn()
+            sort._apply_defaults_or_maybe_warn()
         assert len(w) == 1
         assert issubclass(w[0].category, UserWarning)
         assert "not index-aligned" in str(w[0].message)
@@ -745,7 +745,7 @@ class TestInstanceSort:
         sort = InstanceSort(["node", "externalId"], direction=direction, nulls_first=nulls_first)  # type: ignore[arg-type]
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            sort._apply_postgres_defaults_or_maybe_warn()
+            sort._apply_defaults_or_maybe_warn()
         assert len(w) == 0
 
 

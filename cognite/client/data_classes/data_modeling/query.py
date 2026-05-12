@@ -193,7 +193,7 @@ class QueryBase(CogniteResource, ABC, Generic[_T_ResultSetExpression, _T_Select]
 
     def _prepare_sorts(self) -> None:
         for sort in self._iter_sorts():
-            sort._apply_postgres_defaults_or_maybe_warn()
+            sort._apply_defaults_or_maybe_warn()
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {

@@ -1430,8 +1430,8 @@ class InstanceSort(DataModelingSort):
             return True
         return self.nulls_first is (self.direction == "descending")
 
-    def _apply_postgres_defaults_or_maybe_warn(self) -> None:
-        """Resolve nulls_first for PostgreSQL index alignment, warning if the explicit value is misaligned.
+    def _apply_defaults_or_maybe_warn(self) -> None:
+        """Resolve nulls_first for database index alignment, warning if the explicit value is misaligned.
 
         When nulls_first is None, sets it to the index-compatible value. When explicitly set but
         misaligned, emits a UserWarning.

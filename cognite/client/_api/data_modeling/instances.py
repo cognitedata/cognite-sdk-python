@@ -972,7 +972,7 @@ class InstancesAPI(APIClient):
             sorts_seq = [sort] if isinstance(sort, (InstanceSort, dict)) else list(sort)
             for s in sorts_seq:
                 if isinstance(s, InstanceSort):
-                    s._apply_postgres_defaults_or_maybe_warn()
+                    s._apply_defaults_or_maybe_warn()
             other_params["sort"] = [cls._dump_instance_sort(s) for s in sorts_seq]
         if instance_type:
             other_params["instanceType"] = instance_type
