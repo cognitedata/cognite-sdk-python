@@ -867,7 +867,7 @@ class SubworkflowTaskOutput(WorkflowTaskOutput):
     def _load(cls, data: dict[str, Any]) -> SubworkflowTaskOutput:
         return cls()
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {}
 
 
