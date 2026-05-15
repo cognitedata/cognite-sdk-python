@@ -718,25 +718,34 @@ class FunctionTaskOutput(WorkflowTaskOutput):
 
 
 class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
-    def __init__(self, output: Any) -> None:
-        self._output = output
+    """Fallback for output types not yet added to the SDK for forward-compatibility with the API
 
-    @classmethod
-    def load(cls, data: dict[str, Any]) -> Self:
-        return cls(data.get("output", {}))
+    We don't know what the task_type will be, so we use a property instead of the class variable.
+    """
+
+    def __init__(self, task_type: str, output: dict[str, Any]) -> None:
+        self._task_type = task_type
+        self.output = output
 
     @property
-    def task_type(self) -> ValidTaskType:  # type: ignore[override]
-        return cast(ValidTaskType, "unknown")
+    def task_type(self) -> str:  # type: ignore [override]
+        return self._task_type
 
-    def dump(self, camel_case: bool = True) -> Any:
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> Self:
+        return cls(data["taskType"], data.get("output") or {})
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if not camel_case:
+            # We can not automatically convert to snake case, as we don't know if there is user data
+            # in the output that should be left untouched (this has caused issues in the past):
             warnings.warn(
-                "camel_case=False is ignored for UnknownWorkflowTaskOutput.dump(); API payloads use camelCase keys.",
+                "Dumping with snake case is not supported as this task output class is unknown. "
+                "Please update the SDK to the latest version, or file an issue on Github.",
                 UserWarning,
                 stacklevel=2,
             )
-        return deepcopy(self._output)
+        return self.output
 
 
 class SimulationTaskOutput(WorkflowTaskOutput):
