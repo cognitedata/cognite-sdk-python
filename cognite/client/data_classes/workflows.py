@@ -4,7 +4,6 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Sequence
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, ClassVar, Literal, TypeAlias, cast, final
 from zoneinfo import ZoneInfo
@@ -278,39 +277,34 @@ class FunctionTaskParameters(WorkflowTaskParameters):
 
 
 class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
-    # CogniteResource.load parses strings to a dict before _load; a bare scalar from dump()
-    # would still parse to a non-dict and fail. Wrapping non-dict payloads keeps JSON/YAML
-    # round-trips (e.g. test_base) valid while still storing the original value in _parameters.
-    _OPAQUE_WRAPPER_KEY: ClassVar[str] = "__cogniteSdkUnknownWorkflowTaskParametersOpaque__"
+    """Fallback for task types not yet added to the SDK for forward-compatibility with the API
 
-    def __init__(self, dynamic_task_type: str | None, parameters: Any) -> None:
-        self.dynamic_task_type = dynamic_task_type
-        self._parameters = parameters
+    We don't know what the task_type will be, so we use a property instead of the class variable.
+    """
 
-    @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Self:
-        # dump() wraps non-dict _parameters in a one-key dict so load() always receives a dict;
-        # here we reverse that and store the inner value again (no task type on that path).
-        if len(resource) == 1 and next(iter(resource), None) == cls._OPAQUE_WRAPPER_KEY:
-            return cls(None, deepcopy(resource[cls._OPAQUE_WRAPPER_KEY]))
-        t = resource.get("type", resource.get("taskType"))
-        return cls(t, deepcopy(resource))
+    def __init__(self, task_type: str, data: dict[str, Any]) -> None:
+        self._task_type = task_type
+        self.data = data
 
     @property
-    def task_type(self) -> ValidTaskType:  # type: ignore[override]
-        return cast(ValidTaskType, self.dynamic_task_type)
+    def task_type(self) -> str:  # type: ignore [override]
+        return self._task_type
+
+    @classmethod
+    def _load(cls, task_type: str, parameters: dict[str, Any]) -> Self:  # type: ignore [override]
+        return cls(task_type, parameters)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if not camel_case:
+            # We can not automatically convert to snake case, as we don't know if there is user data
+            # in the output that should be left untouched (this has caused issues in the past):
             warnings.warn(
-                "camel_case=False is ignored for UnknownWorkflowTaskParameters.dump(); API payloads use camelCase keys.",
+                "Dumping with snake case is not supported as this task output class is unknown. "
+                "Please update the SDK to the latest version, or file an issue on Github.",
                 UserWarning,
                 stacklevel=2,
             )
-        p = deepcopy(self._parameters)
-        if isinstance(p, dict):
-            return p
-        return {self._OPAQUE_WRAPPER_KEY: p}
+        return self.data
 
 
 _SIMULATORS_WARNING = FeaturePreviewWarning(
