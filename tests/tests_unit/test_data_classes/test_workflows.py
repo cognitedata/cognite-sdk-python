@@ -13,10 +13,13 @@ from cognite.client.data_classes.workflows import (
     DynamicTaskParameters,
     FunctionTaskOutput,
     FunctionTaskParameters,
+    SimulationTaskOutput,
     SimulationTaskParameters,
+    SubworkflowTaskOutput,
     TransformationTaskOutput,
     TransformationTaskParameters,
     UnknownWorkflowTaskOutput,
+    UnknownWorkflowTaskParameters,
     WorkflowDefinition,
     WorkflowDefinitionUpsert,
     WorkflowExecutionDetailed,
@@ -34,23 +37,6 @@ class TestWorkFlowDefinitions:
 
         with pytest.raises(TypeError, match=r"unexpected keyword argument 'hash_'$"):
             WorkflowDefinitionUpsert(tasks=[task], description="desc", hash_="very-random")  # type: ignore[call-arg]
-
-
-class TestWorkflowTaskOutput:
-    @pytest.mark.parametrize(
-        ["output", "expected"],
-        [
-            (
-                FunctionTaskOutput(call_id=123, function_id=3456, response={"test": 1}),
-                {"callId": 123, "functionId": 3456, "response": {"test": 1}},
-            ),
-            (DynamicTaskOutput(), {}),
-            (CDFTaskOutput(response={"test": 1}, status_code=200), {"response": {"test": 1}, "statusCode": 200}),
-            (TransformationTaskOutput(job_id=789), {"jobId": 789}),
-        ],
-    )
-    def test_serialization(self, output: WorkflowTaskOutput, expected: dict[str, Any]) -> None:
-        assert output.dump(camel_case=True) == expected
 
 
 class TestWorkflowId:
@@ -241,21 +227,124 @@ class TestWorkflowTask:
         assert loaded.dump() == raw
 
 
-class TestWorkflowTaskOutputDispatch:
-    def test_load_output_unknown_task_type(self) -> None:
-        data: dict[str, Any] = {"taskType": "customWorkflowOutput", "output": {"customField": 99}}
-        loaded = WorkflowTaskOutput.load_output(data)
-        assert isinstance(loaded, UnknownWorkflowTaskOutput)
+class TestWorkflowTaskOutput:
+    """Note: WorkflowTaskOutput subclasses does not work with our automatic test setup because their _load need the
+    full API payload (from parent object), where the payload typically contains a taskType + output wrapper.
+    However, their dump() returns just the flat attributes, so the auto-test (dump -> load -> dump) cannot
+    round-trip them correctly. We test them manually here instead."""
 
     @pytest.mark.parametrize(
-        "output_payload",
+        ["output", "expected"],
         [
-            {"customField": 99},
-            {"otherKey": "value"},
+            (
+                FunctionTaskOutput(call_id=123, function_id=3456, response={"test": 1}),
+                {"callId": 123, "functionId": 3456, "response": {"test": 1}},
+            ),
+            (DynamicTaskOutput(), {}),
+            (CDFTaskOutput(response={"test": 1}, status_code=200), {"response": {"test": 1}, "statusCode": 200}),
+            (TransformationTaskOutput(job_id=789), {"jobId": 789}),
         ],
     )
-    def test_unknown_output_dump_returns_stored_payload(self, output_payload: dict[str, Any]) -> None:
-        data: dict[str, Any] = {"taskType": "customWorkflowOutput", "output": output_payload}
-        loaded = WorkflowTaskOutput.load_output(data)
+    def test_serialization(self, output: WorkflowTaskOutput, expected: dict[str, Any]) -> None:
+        assert output.dump(camel_case=True) == expected
+
+    @pytest.mark.parametrize(
+        ["payload", "expected_type", "expected_dump"],
+        [
+            (
+                {"taskType": "function", "output": {"callId": 123, "functionId": 456, "response": {"result": "ok"}}},
+                FunctionTaskOutput,
+                {"callId": 123, "functionId": 456, "response": {"result": "ok"}},
+            ),
+            (
+                {"taskType": "transformation", "output": {"jobId": 789}},
+                TransformationTaskOutput,
+                {"jobId": 789},
+            ),
+            (
+                {"taskType": "cdf", "output": {"response": {"key": "val"}, "statusCode": 200}},
+                CDFTaskOutput,
+                {"response": {"key": "val"}, "statusCode": 200},
+            ),
+            (
+                {"taskType": "dynamic"},
+                DynamicTaskOutput,
+                {},
+            ),
+            (
+                {"taskType": "subworkflow"},
+                SubworkflowTaskOutput,
+                {},
+            ),
+            (
+                {"taskType": "simulation", "output": {"runId": 1, "logId": 2, "statusMessage": "done"}},
+                SimulationTaskOutput,
+                {"runId": 1, "logId": 2, "statusMessage": "done"},
+            ),
+            (
+                {"taskType": "novelFutureType", "output": {"customKey": "customVal"}},
+                UnknownWorkflowTaskOutput,
+                {"customKey": "customVal"},
+            ),
+            (
+                {"taskType": "novelFutureType"},
+                UnknownWorkflowTaskOutput,
+                {},
+            ),
+        ],
+        ids=[
+            "function",
+            "transformation",
+            "cdf",
+            "dynamic",
+            "subworkflow",
+            "simulation",
+            "unknown",
+            "unknown-no-output",
+        ],
+    )
+    def test_load_output_and_dump(
+        self,
+        payload: dict[str, Any],
+        expected_type: type[WorkflowTaskOutput],
+        expected_dump: dict[str, Any],
+    ) -> None:
+        loaded = WorkflowTaskOutput.load_output(payload)
+        assert isinstance(loaded, expected_type)
+        assert loaded.dump(camel_case=True) == expected_dump
+
+    def test_unknown_output_dump_camel_case_false_warns_and_preserves_keys(self) -> None:
+        payload = {"taskType": "novelType", "output": {"someUserKey": "val"}}
+        loaded = WorkflowTaskOutput.load_output(payload)
         assert isinstance(loaded, UnknownWorkflowTaskOutput)
-        assert loaded.dump() == output_payload
+        with pytest.warns(UserWarning, match="snake case is not supported"):
+            result = loaded.dump(camel_case=False)
+        # The user key should be preserved:
+        assert result == {"someUserKey": "val"}
+
+
+class TestUnknownWorkflowTaskParameters:
+    """UnknownWorkflowTaskParameters._load requires task_type from the parent WorkflowTask payload.
+    Thus, it cannot be constructed from its own dump() output alone. Round-trip is tested via WorkflowTask."""
+
+    def test_load_and_dump_via_workflow_task(self) -> None:
+        raw: dict[str, Any] = {
+            "externalId": "myTask",
+            "type": "novelFutureType",
+            "parameters": {"novelFutureType": {"alpha": 1, "beta": "two"}},
+        }
+        task = WorkflowTask._load(raw)
+        assert isinstance(task.parameters, UnknownWorkflowTaskParameters)
+        assert task.parameters.task_type == "novelFutureType"
+        assert task.dump() == raw
+
+    def test_dump_camel_case_false_warns_and_preserves_keys(self) -> None:
+        params = UnknownWorkflowTaskParameters("myType", {"someUserKey": "someValue"})
+        with pytest.warns(UserWarning, match="snake case is not supported"):
+            result = params.dump(camel_case=False)
+        assert result == {"someUserKey": "someValue"}
+
+    def test_dump_camel_case_true_returns_stored_data(self) -> None:
+        data = {"someUserKey": 42, "nested": {"a": 1}}
+        params = UnknownWorkflowTaskParameters("futureType", data)
+        assert params.dump(camel_case=True) == data
