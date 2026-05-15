@@ -168,31 +168,38 @@ class WorkflowTaskParameters(CogniteResource, ABC):
     task_type: ClassVar[ValidTaskType]
 
     @classmethod
-    def load_parameters(cls, data: dict) -> WorkflowTaskParameters:
-        type_ = data.get("type", data.get("taskType"))
-        parameters = data.get("parameters", data.get("input"))
-        if parameters is None:
+    def load_parameters(cls, data: dict[str, Any]) -> WorkflowTaskParameters:
+        if (type_ := data.get("type", data.get("taskType"))) is None:
             raise ValueError(
-                "You must provide parameter data either with key "
-                "'parameter' or 'input', with parameter taking precedence."
+                "Missing task type. The task type must be specified with the key 'type' or 'taskType', "
+                "'type' taking precedence."
             )
+        if (parameters := data.get("parameters", data.get("input"))) is None:
+            raise ValueError(
+                "Missing parameter data. The parameter data must be specified with the key 'parameters' or 'input', "
+                "'parameters' taking precedence."
+            )
+        match type_:
+            case "function":
+                return FunctionTaskParameters._load(parameters)
+            case "transformation":
+                return TransformationTaskParameters._load(parameters)
+            case "cdf":
+                return CDFTaskParameters._load(parameters)
+            case "dynamic":
+                return DynamicTaskParameters._load(parameters)
 
-        if type_ == "function":
-            return FunctionTaskParameters._load(parameters)
-        elif type_ == "transformation":
-            return TransformationTaskParameters._load(parameters)
-        elif type_ == "cdf":
-            return CDFTaskParameters._load(parameters)
-        elif type_ == "dynamic":
-            return DynamicTaskParameters._load(parameters)
-        elif type_ == "subworkflow" and "tasks" in parameters["subworkflow"]:
-            return SubworkflowTaskParameters._load(parameters)
-        elif type_ == "subworkflow" and "workflowExternalId" in parameters["subworkflow"]:
-            return SubworkflowReferenceParameters._load(parameters)
-        elif type_ == "simulation":
-            return SimulationTaskParameters._load(parameters)
-        else:
-            return UnknownWorkflowTaskParameters(type_, deepcopy(parameters))
+            case "subworkflow" if "tasks" in parameters["subworkflow"]:
+                return SubworkflowTaskParameters._load(parameters)
+
+            case "subworkflow" if "workflowExternalId" in parameters["subworkflow"]:
+                return SubworkflowReferenceParameters._load(parameters)
+            case "simulation":
+                return SimulationTaskParameters._load(parameters)
+            case str():
+                return UnknownWorkflowTaskParameters._load(type_, parameters)
+            case _:
+                raise ValueError(f"Invalid (task) type: {type_!r}, must be string")
 
 
 class FunctionTaskParameters(WorkflowTaskParameters):
