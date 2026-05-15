@@ -5,6 +5,7 @@ from typing import Any, Literal, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteSort
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.data_classes.simulators.runs import SimulatorRunStatus
 from cognite.client.utils._text import to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -56,7 +57,7 @@ class SimulatorModelRevisionsFilter(CogniteFilter):
 class SimulatorRunsFilter(CogniteFilter):
     def __init__(
         self,
-        status: str | None = None,
+        status: SimulatorRunStatus | None = None,
         run_type: Literal["external", "manual", "scheduled"] | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: str | SequenceNotStr[str] | None = None,

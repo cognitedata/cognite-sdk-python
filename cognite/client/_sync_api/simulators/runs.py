@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0d094e36b260cdd4aee8930d6122e636
+49bafacf5fe639ebcf5da0fc6ca1f9f0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -20,6 +20,7 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationRunDataList,
     SimulationRunList,
     SimulationRunWrite,
+    SimulatorRunStatus,
 )
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -39,7 +40,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         self,
         chunk_size: int,
         limit: int | None = None,
-        status: Literal["queued", "ready", "running", "success", "failure"] | None = None,
+        status: SimulatorRunStatus | None = None,
         run_type: Literal["external", "manual", "scheduled"] | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
@@ -57,7 +58,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         self,
         chunk_size: None = None,
         limit: int | None = None,
-        status: Literal["queued", "ready", "running", "success", "failure"] | None = None,
+        status: SimulatorRunStatus | None = None,
         run_type: Literal["external", "manual", "scheduled"] | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
@@ -74,7 +75,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-        status: Literal["queued", "ready", "running", "success", "failure"] | None = None,
+        status: SimulatorRunStatus | None = None,
         run_type: Literal["external", "manual", "scheduled"] | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
@@ -94,7 +95,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         Args:
             chunk_size (int | None): Number of simulation runs to return in each chunk. Defaults to yielding one simulation run a time.
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (Literal['queued', 'ready', 'running', 'success', 'failure'] | None): Filter by simulation run status
+            status (SimulatorRunStatus | None): Filter by simulation run status
             run_type (Literal['external', 'manual', 'scheduled'] | None): Filter by simulation run type
             model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
@@ -130,7 +131,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
     def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
-        status: Literal["queued", "ready", "running", "success", "failure"] | None = None,
+        status: SimulatorRunStatus | None = None,
         run_type: Literal["external", "manual", "scheduled"] | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
@@ -149,7 +150,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
         Args:
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (Literal['queued', 'ready', 'running', 'success', 'failure'] | None): Filter by simulation run status
+            status (SimulatorRunStatus | None): Filter by simulation run status
             run_type (Literal['external', 'manual', 'scheduled'] | None): Filter by simulation run type
             model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
