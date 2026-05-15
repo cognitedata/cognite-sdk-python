@@ -150,14 +150,18 @@ class WorkflowList(WriteableCogniteResourceList[WorkflowUpsert, Workflow], Exter
         return WorkflowUpsertList([workflow.as_write() for workflow in self.data])
 
 
-ValidTaskType = Literal[
-    "function",
-    "transformation",
-    "cdf",
-    "dynamic",
-    "subworkflow",
-    "simulation",
-]
+# Note on 'str': forward compatibility when new task types are added in the API that the SDK does not yet know about
+ValidTaskType = (
+    Literal[
+        "function",
+        "transformation",
+        "cdf",
+        "dynamic",
+        "subworkflow",
+        "simulation",
+    ]
+    | str
+)
 
 
 class WorkflowTaskParameters(CogniteResource, ABC):
