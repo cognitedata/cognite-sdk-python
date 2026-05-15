@@ -1,6 +1,6 @@
 """
 ===============================================================================
-3fb2bb1e260073e2d54317794dab4d4d
+0d094e36b260cdd4aee8930d6122e636
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +8,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -39,8 +39,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         self,
         chunk_size: int,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: Literal["queued", "ready", "running", "success", "failure"] | None = None,
+        run_type: Literal["external", "manual", "scheduled"] | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -57,8 +57,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         self,
         chunk_size: None = None,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: Literal["queued", "ready", "running", "success", "failure"] | None = None,
+        run_type: Literal["external", "manual", "scheduled"] | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -74,8 +74,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: Literal["queued", "ready", "running", "success", "failure"] | None = None,
+        run_type: Literal["external", "manual", "scheduled"] | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -94,8 +94,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         Args:
             chunk_size (int | None): Number of simulation runs to return in each chunk. Defaults to yielding one simulation run a time.
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (str | None): Filter by simulation run status
-            run_type (str | None): Filter by simulation run type
+            status (Literal['queued', 'ready', 'running', 'success', 'failure'] | None): Filter by simulation run status
+            run_type (Literal['external', 'manual', 'scheduled'] | None): Filter by simulation run type
             model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
             simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids
@@ -130,8 +130,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
     def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: Literal["queued", "ready", "running", "success", "failure"] | None = None,
+        run_type: Literal["external", "manual", "scheduled"] | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -149,8 +149,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
         Args:
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (str | None): Filter by simulation run status
-            run_type (str | None): Filter by simulation run type
+            status (Literal['queued', 'ready', 'running', 'success', 'failure'] | None): Filter by simulation run status
+            run_type (Literal['external', 'manual', 'scheduled'] | None): Filter by simulation run type
             model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
             simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids

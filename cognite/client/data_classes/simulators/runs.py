@@ -92,16 +92,13 @@ class SimulationRunWrite(WriteableCogniteResource["SimulationRunWrite"]):
     and is tied to the integration specified on the routine.
 
     Args:
-        routine_external_id (str | None): External id of the associated simulator routine.
-            Cannot be specified together with routine_revision_external_id and model_revision_external_id.
-        routine_revision_external_id (str | None): External id of the associated simulator routine revision.
-            Must be specified together with model_revision_external_id.
-        model_revision_external_id (str | None): External id of the associated simulator model revision.
-            Must be specified together with routine_revision_external_id.
-        run_type (str | None): The type of the simulation run
+        routine_external_id (str | None): External id of the associated simulator routine. Cannot be specified together with routine_revision_external_id and model_revision_external_id.
+        routine_revision_external_id (str | None): External id of the associated simulator routine revision. Must be specified together with model_revision_external_id.
+        model_revision_external_id (str | None): External id of the associated simulator model revision. Must be specified together with routine_revision_external_id.
+        run_type (Literal['external', 'manual', 'scheduled'] | None): The type of the simulation run
         run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
-        queue (bool | None): Queue the simulation run when connector is down.
-        log_severity (str | None): Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
+        queue (bool): Queue the simulation run when connector is down. Defaults to False.
+        log_severity (Literal['Debug', 'Information', 'Warning', 'Error'] | None): Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
         inputs (list[SimulationInputOverride] | None): List of input overrides
     """
 
@@ -110,10 +107,10 @@ class SimulationRunWrite(WriteableCogniteResource["SimulationRunWrite"]):
         routine_external_id: str | None = None,
         routine_revision_external_id: str | None = None,
         model_revision_external_id: str | None = None,
-        run_type: str | None = None,
+        run_type: Literal["external", "manual", "scheduled"] | None = None,
         run_time: int | None = None,
-        queue: bool | None = None,
-        log_severity: str | None = None,
+        queue: bool = False,
+        log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
         inputs: list[SimulationInputOverride] | None = None,
     ) -> None:
         is_routine_mode = routine_external_id and not routine_revision_external_id and not model_revision_external_id
@@ -149,7 +146,7 @@ class SimulationRunWrite(WriteableCogniteResource["SimulationRunWrite"]):
         return cls(
             run_type=resource.get("runType"),
             run_time=resource.get("runTime"),
-            queue=resource.get("queue"),
+            queue=resource.get("queue", False),
             log_severity=resource.get("logSeverity"),
             inputs=[SimulationInputOverride._load(_input) for _input in inputs] if inputs else None,
             routine_external_id=routine_external_id,

@@ -57,7 +57,7 @@ class SimulatorRunsFilter(CogniteFilter):
     def __init__(
         self,
         status: str | None = None,
-        run_type: str | None = None,
+        run_type: Literal["external", "manual", "scheduled"] | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: str | SequenceNotStr[str] | None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
