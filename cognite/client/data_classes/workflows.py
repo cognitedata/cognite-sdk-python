@@ -662,22 +662,24 @@ class WorkflowTaskOutput(CogniteResource, ABC):
         raise NotImplementedError
 
     @classmethod
-    def load_output(cls, data: dict) -> WorkflowTaskOutput:
-        task_type = data["taskType"]
-        if task_type == "function":
-            return FunctionTaskOutput.load(data)
-        elif task_type == "transformation":
-            return TransformationTaskOutput.load(data)
-        elif task_type == "cdf":
-            return CDFTaskOutput.load(data)
-        elif task_type == "dynamic":
-            return DynamicTaskOutput.load(data)
-        elif task_type == "subworkflow":
-            return SubworkflowTaskOutput.load(data)
-        elif task_type == "simulation":
-            return SimulationTaskOutput.load(data)
-        else:
-            return UnknownWorkflowTaskOutput.load(data)
+    def load_output(cls, data: dict[str, Any]) -> WorkflowTaskOutput:
+        match data["taskType"]:
+            case "function":
+                return FunctionTaskOutput._load(data)
+            case "transformation":
+                return TransformationTaskOutput._load(data)
+            case "cdf":
+                return CDFTaskOutput._load(data)
+            case "dynamic":
+                return DynamicTaskOutput._load(data)
+            case "subworkflow":
+                return SubworkflowTaskOutput._load(data)
+            case "simulation":
+                return SimulationTaskOutput._load(data)
+            case str():
+                return UnknownWorkflowTaskOutput._load(data)
+            case task_type:
+                raise ValueError(f"Invalid taskType: {task_type!r}, must be str")
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
