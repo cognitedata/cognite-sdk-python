@@ -26,6 +26,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowIds,
     WorkflowTask,
     WorkflowTaskOutput,
+    WorkflowTaskParameters,
     WorkflowVersionId,
 )
 
@@ -313,6 +314,10 @@ class TestWorkflowTaskOutput:
         assert isinstance(loaded, expected_type)
         assert loaded.dump(camel_case=True) == expected_dump
 
+    def test_load_output_raises_on_non_string_task_type(self) -> None:
+        with pytest.raises(ValueError, match="Invalid taskType"):
+            WorkflowTaskOutput.load_output({"taskType": 123})
+
     def test_unknown_output_dump_camel_case_false_warns_and_preserves_keys(self) -> None:
         payload = {"taskType": "novelType", "output": {"someUserKey": "val"}}
         loaded = WorkflowTaskOutput.load_output(payload)
@@ -326,6 +331,10 @@ class TestWorkflowTaskOutput:
 class TestUnknownWorkflowTaskParameters:
     """UnknownWorkflowTaskParameters._load requires task_type from the parent WorkflowTask payload.
     Thus, it cannot be constructed from its own dump() output alone. Round-trip is tested via WorkflowTask."""
+
+    def test_load_parameters_raises_on_non_string_task_type(self) -> None:
+        with pytest.raises(ValueError, match=r"Invalid \(task\) type"):
+            WorkflowTaskParameters.load_parameters({"type": 123, "parameters": {}})
 
     def test_load_and_dump_via_workflow_task(self) -> None:
         raw: dict[str, Any] = {
