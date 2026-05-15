@@ -268,9 +268,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         if self.data:
             function["data"] = self.data
 
-        output: dict[str, Any] = {
-            "function": function,
-        }
+        output: dict[str, Any] = {"function": function}
         if self.is_async_complete is not None:
             output["isAsyncComplete" if camel_case else "is_async_complete"] = self.is_async_complete
         return output
@@ -385,10 +383,11 @@ class TransformationTaskParameters(WorkflowTaskParameters):
 
     @classmethod
     def _load(cls, resource: dict) -> TransformationTaskParameters:
+        data = resource[cls.task_type]
         return cls(
-            resource[cls.task_type]["externalId"],
-            resource[cls.task_type].get("concurrencyPolicy", "fail"),
-            resource[cls.task_type].get("useTransformationCredentials", False),
+            data["externalId"],
+            data.get("concurrencyPolicy", "fail"),
+            data.get("useTransformationCredentials", False),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -647,9 +646,8 @@ class WorkflowTask(CogniteResource):
         if self.description:
             output["description"] = self.description
         if self.depends_on:
-            output[("dependsOn" if camel_case else "depends_on")] = [
-                {("externalId" if camel_case else "external_id"): dependency} for dependency in self.depends_on
-            ]
+            xid = "externalId" if camel_case else "external_id"
+            output["dependsOn" if camel_case else "depends_on"] = [{xid: dependency} for dependency in self.depends_on]
         return output
 
 
@@ -804,12 +802,12 @@ class TransformationTaskOutput(WorkflowTaskOutput):
         self.job_id = job_id
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> TransformationTaskOutput:
+    def _load(cls, data: dict[str, Any]) -> TransformationTaskOutput:
         output = data["output"]
         return cls(output.get("jobId"))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {("jobId" if camel_case else "job_id"): self.job_id}
+        return {"jobId" if camel_case else "job_id": self.job_id}
 
 
 class CDFTaskOutput(WorkflowTaskOutput):
@@ -817,25 +815,25 @@ class CDFTaskOutput(WorkflowTaskOutput):
     The CDF Request output is used to specify the output of a CDF Request.
 
     Args:
-        response (str | dict | None): The response of the CDF Request. Will be a JSON object if content-type is application/json, otherwise will be a string.
+        response (str | dict[str, Any] | None): The response of the CDF Request. Will be a JSON object if content-type is application/json, otherwise will be a string.
         status_code (int | None): The status code of the CDF Request.
     """
 
     task_type: ClassVar[str] = "cdf"
 
-    def __init__(self, response: str | dict | None, status_code: int | None) -> None:
+    def __init__(self, response: str | dict[str, Any] | None, status_code: int | None) -> None:
         self.response = response
         self.status_code = status_code
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> CDFTaskOutput:
+    def _load(cls, data: dict[str, Any]) -> CDFTaskOutput:
         output = data["output"]
         return cls(output.get("response"), output.get("statusCode"))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "response": self.response,
-            ("statusCode" if camel_case else "status_code"): self.status_code,
+            "statusCode" if camel_case else "status_code": self.status_code,
         }
 
 
@@ -933,7 +931,7 @@ class WorkflowTaskExecution(CogniteResource):
         output: dict[str, Any] = super().dump(camel_case)
         output["input"] = self.input.dump(camel_case)
         output["status"] = self.status.upper()
-        output[("taskType" if camel_case else "task_type")] = self.task_type
+        output["taskType" if camel_case else "task_type"] = self.task_type
         # API uses isAsyncComplete and asyncComplete inconsistently:
         if self.task_type == "function":
             if (is_async_complete := output["input"].get("isAsyncComplete")) is not None:
@@ -1325,10 +1323,10 @@ class WorkflowExecutionDetailed(WorkflowExecution):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        output[("workflowDefinition" if camel_case else "workflow_definition")] = self.workflow_definition.dump(
+        output["workflowDefinition" if camel_case else "workflow_definition"] = self.workflow_definition.dump(
             camel_case
         )
-        output[("executedTasks" if camel_case else "executed_tasks")] = [
+        output["executedTasks" if camel_case else "executed_tasks"] = [
             task.dump(camel_case) for task in self.executed_tasks
         ]
         if self.input:
@@ -1457,7 +1455,7 @@ class WorkflowTriggerRule(CogniteResource, ABC):
 
     @classmethod
     @abstractmethod
-    def _load_trigger(cls, data: dict) -> Self:
+    def _load_trigger(cls, data: dict[str, Any]) -> Self:
         raise NotImplementedError
 
 
@@ -1513,7 +1511,7 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
         return item
 
     @classmethod
-    def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
+    def _load_trigger(cls, data: dict[str, Any]) -> WorkflowScheduledTriggerRule:
         # Convert timezone to ZoneInfo
         timezone = ZoneInfo(data["timezone"]) if "timezone" in data else None
         return cls(cron_expression=data["cronExpression"], timezone=timezone)
@@ -1542,7 +1540,7 @@ class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
         self.batch_timeout = batch_timeout
 
     @classmethod
-    def _load_trigger(cls, data: dict) -> WorkflowDataModelingTriggerRule:
+    def _load_trigger(cls, data: dict[str, Any]) -> WorkflowDataModelingTriggerRule:
         return cls(
             data_modeling_query=WorkflowTriggerDataModelingQuery.load(data["dataModelingQuery"]),
             batch_size=data.get("batchSize"),
