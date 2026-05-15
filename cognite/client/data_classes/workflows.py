@@ -617,6 +617,7 @@ class WorkflowTask(CogniteResource):
             parameters=WorkflowTaskParameters.load_parameters(resource),
             name=resource.get("name"),
             description=resource.get("description"),
+            # TODO: Either these are required in the response, or we should update typing to Optional
             # Allow default to come from the API.
             retries=resource.get("retries"),  # type: ignore[arg-type]
             timeout=resource.get("timeout"),  # type: ignore[arg-type]

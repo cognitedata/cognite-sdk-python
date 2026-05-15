@@ -35,20 +35,20 @@ class WorkflowTaskAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.workflows.tasks.update(
-                ...     "000560bc-9080-4286-b242-a27bb4819253", "completed"
+                ...     "000560bc-9080-4286-b242-a27bb4819253", status="completed"
                 ... )
 
             Update task with id '000560bc-9080-4286-b242-a27bb4819253' to status 'failed' with output '{"a": 1, "b": 2}':
 
                 >>> res = client.workflows.tasks.update(
-                ...     "000560bc-9080-4286-b242-a27bb4819253", "failed", output={"a": 1, "b": 2}
+                ...     "000560bc-9080-4286-b242-a27bb4819253", status="failed", output={"a": 1, "b": 2}
                 ... )
 
             Trigger workflow, retrieve detailed task execution and update status of the second task (assumed to be async) to 'completed':
 
                 >>> res = client.workflows.executions.run("my workflow", "1")
                 >>> res = client.workflows.executions.retrieve_detailed(res.id)
-                >>> res = client.workflows.tasks.update(res.tasks[1].id, "completed")
+                >>> res = client.workflows.tasks.update(res.tasks[1].id, status="completed")
 
         """
         body: dict[str, Any] = {"status": status.upper()}
