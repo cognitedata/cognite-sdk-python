@@ -653,12 +653,12 @@ class WorkflowTask(CogniteResource):
         return output
 
 
-class WorkflowTaskOutput(ABC):
+class WorkflowTaskOutput(CogniteResource, ABC):
     task_type: ClassVar[str]
 
     @classmethod
     @abstractmethod
-    def load(cls, data: dict) -> Self:
+    def _load(cls, data: dict[str, Any]) -> Self:
         raise NotImplementedError
 
     @classmethod
@@ -703,7 +703,7 @@ class FunctionTaskOutput(WorkflowTaskOutput):
         self.response = response
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> FunctionTaskOutput:
+    def _load(cls, data: dict[str, Any]) -> FunctionTaskOutput:
         output = data["output"]
         return cls(output.get("callId"), output.get("functionId"), output.get("response"))
 
@@ -763,7 +763,7 @@ class SimulationTaskOutput(WorkflowTaskOutput):
         self.status_message = status_message
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> SimulationTaskOutput:
+    def _load(cls, data: dict[str, Any]) -> SimulationTaskOutput:
         output = data["output"]
         return cls(
             run_id=output.get("runId"),
@@ -838,7 +838,7 @@ class DynamicTaskOutput(WorkflowTaskOutput):
     def __init__(self) -> None: ...
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> DynamicTaskOutput:
+    def _load(cls, data: dict[str, Any]) -> DynamicTaskOutput:
         return cls()
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -855,7 +855,7 @@ class SubworkflowTaskOutput(WorkflowTaskOutput):
     def __init__(self) -> None: ...
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> SubworkflowTaskOutput:
+    def _load(cls, data: dict[str, Any]) -> SubworkflowTaskOutput:
         return cls()
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
