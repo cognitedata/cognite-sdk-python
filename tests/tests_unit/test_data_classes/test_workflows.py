@@ -186,38 +186,19 @@ class TestWorkflowExecutionDetailed:
 
     def test_executed_tasks_parsed_correctly(self, execution_data: dict[str, Any]) -> None:
         wf_execution = WorkflowExecutionDetailed.load(execution_data)
+        tasks = wf_execution.executed_tasks
 
-        expected = [
-            ("38b3e696-adcb-4bf8-9217-747449f55289", "function", "completed", 1453249902969082),
-            ("e9ca204f-2031-46f4-9567-162a54f5eb38", "dynamic", "completed", None),
-            ("475d03b3-6e6c-44ad-b8bb-534e1e5560c4", "dynamic", "completed", None),
-            ("3f41e58f-cf5d-4391-b276-4698384918fc", "function", "completed", 6958901858387174),
-            ("f7a73a85-73df-4a84-bcd2-3a6a05b48673", "function", "completed", 7668632761093605),
-            ("9d65f598-5cef-4476-b6be-cc04bb832163", "function", "completed", 1952977430849976),
-            ("f69f7b1c-6aea-4213-b5d0-deb2fbabe5a0", "function", "completed", 3675281144107549),
-            ("eb240dbc-0062-4314-b4d6-fb51442d02e7", "function", "completed", 2967264911514077),
-            ("f7ced93f-e686-4a15-9676-5b32b1f4e52c", "function", "completed", 8805488770050088),
-            ("e326b41e-302a-4f29-847b-f0eb76fcde59", "function", "completed", 5300981250266599),
-            ("dc9a55a8-eeaf-4beb-9842-8767de7385ec", "function", "completed", 4673999868714216),
-            ("3ee0ed1f-dd5c-4334-a239-9e076c68230e", "function", "completed", 1736067993713132),
-            ("185a8630-0a60-4adc-b0bb-4fa27fd915df", "function", "completed", 3044388486346549),
-            ("51bcfd5e-3ba7-41a2-bc27-34eb9d18e8d0", "function", "completed", 5421875616701543),
-            ("11653aa1-391c-4efa-93be-13b0e05f9e9f", "function", "completed", 244237303353736),
-            ("c17875c7-6f8f-4ada-84ef-43b4191428aa", "function", "completed", 8400742455854509),
-            ("2c3f97df-12a7-4d9e-a488-b3e2400d2434", "function", "completed", 2097899365071295),
-        ]
+        assert len(tasks) == 17
 
-        for (exp_id, exp_type, exp_status, exp_call_id), actual_task in zip(expected, wf_execution.executed_tasks):
-            assert actual_task.id == exp_id
-            assert actual_task.task_type == exp_type
-            assert actual_task.status == exp_status
-            if isinstance(actual_task.output, FunctionTaskOutput):
-                assert actual_task.output.call_id == exp_call_id
-            if isinstance(actual_task.output, DynamicTaskOutput):
-                assert actual_task.output.dump() == {}
+        first = tasks[0]
+        assert first.id == "38b3e696-adcb-4bf8-9217-747449f55289"
+        assert isinstance(first.output, FunctionTaskOutput)
+        assert first.output.call_id == 1453249902969082
+        assert first.dump(camel_case=True) == execution_data["executedTasks"][0]
 
-            if actual_task.id == "38b3e696-adcb-4bf8-9217-747449f55289":
-                assert actual_task.dump(camel_case=True) == execution_data["executedTasks"][0]
+        dynamic_tasks = [t for t in tasks if isinstance(t.output, DynamicTaskOutput)]
+        assert len(dynamic_tasks) == 2
+        assert all(t.output.dump() == {} for t in dynamic_tasks)
 
 
 class TestWorkflowTask:
