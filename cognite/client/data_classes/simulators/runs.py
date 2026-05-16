@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 _WARNING = FeaturePreviewWarning(api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators")
 
 SimulatorRunStatus = Literal["queued", "ready", "running", "success", "failure"]
+SimulatorRunType = Literal["external", "manual", "scheduled"]
 
 
 @dataclass
@@ -97,7 +98,7 @@ class SimulationRunWrite(WriteableCogniteResource["SimulationRunWrite"]):
         routine_external_id (str | None): External id of the associated simulator routine. Cannot be specified together with routine_revision_external_id and model_revision_external_id.
         routine_revision_external_id (str | None): External id of the associated simulator routine revision. Must be specified together with model_revision_external_id.
         model_revision_external_id (str | None): External id of the associated simulator model revision. Must be specified together with routine_revision_external_id.
-        run_type (Literal['external', 'manual', 'scheduled'] | None): The type of the simulation run
+        run_type (SimulatorRunType | None): The type of the simulation run
         run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
         queue (bool): Queue the simulation run when connector is down. Defaults to False.
         log_severity (Literal['Debug', 'Information', 'Warning', 'Error'] | None): Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
@@ -109,7 +110,7 @@ class SimulationRunWrite(WriteableCogniteResource["SimulationRunWrite"]):
         routine_external_id: str | None = None,
         routine_revision_external_id: str | None = None,
         model_revision_external_id: str | None = None,
-        run_type: Literal["external", "manual", "scheduled"] | None = None,
+        run_type: SimulatorRunType | None = None,
         run_time: int | None = None,
         queue: bool = False,
         log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
@@ -198,7 +199,7 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
         model_revision_external_id (str): External id of the associated simulator model revision
         routine_revision_external_id (str): External id of the associated simulator routine revision
         routine_external_id (str): External id of the associated simulator routine
-        run_type (Literal['external', 'manual', 'scheduled']): The type of the simulation run
+        run_type (SimulatorRunType): The type of the simulation run
         status (SimulatorRunStatus): The status of the simulation run. When simulation run load balancing is enabled, runs initiate with ``queued`` status before an integration is assigned to them.
         data_set_id (int): The id of the dataset associated with the simulation run
         user_id (str): The id of the user who executed the simulation run
@@ -220,7 +221,7 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
         model_revision_external_id: str,
         routine_revision_external_id: str,
         routine_external_id: str,
-        run_type: Literal["external", "manual", "scheduled"],
+        run_type: SimulatorRunType,
         status: SimulatorRunStatus,
         data_set_id: int,
         user_id: str,
