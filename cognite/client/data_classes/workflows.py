@@ -661,7 +661,9 @@ class WorkflowTaskOutput(CogniteResource, ABC):
 
     @classmethod
     def load_output(cls, data: dict[str, Any]) -> WorkflowTaskOutput:
-        match data["taskType"]:
+        if (task_type := data.get("taskType")) is None:
+            raise ValueError("Missing taskType key in output data")
+        match task_type:
             case "function":
                 return FunctionTaskOutput._load(data)
             case "transformation":

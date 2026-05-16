@@ -314,6 +314,10 @@ class TestWorkflowTaskOutput:
         assert isinstance(loaded, expected_type)
         assert loaded.dump(camel_case=True) == expected_dump
 
+    def test_load_output_raises_on_missing_task_type(self) -> None:
+        with pytest.raises(ValueError, match="Missing taskType"):
+            WorkflowTaskOutput.load_output({})
+
     def test_load_output_raises_on_non_string_task_type(self) -> None:
         with pytest.raises(ValueError, match="Invalid taskType"):
             WorkflowTaskOutput.load_output({"taskType": 123})
