@@ -7,14 +7,12 @@ on:
       - master
 
 jobs:
-  test_full_build_and_release:
-    runs-on: windows-latest
+  build_and_release:
+    runs-on: ubuntu-latest
     environment: CD
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - uses: ./.github/actions/setup
-        with:
-          extras: '-E all'
 
       - name: Build package
         run: poetry build
