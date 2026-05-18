@@ -301,7 +301,7 @@ class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
             # We can not automatically convert to snake case, as we don't know if there is user data
             # in the output that should be left untouched (this has caused issues in the past):
             warnings.warn(
-                "Dumping with snake case is not supported as this task output class is unknown. "
+                "Dumping with snake case is not supported as this task parameters class is unknown. "
                 "Please update the SDK to the latest version, or file an issue on Github.",
                 UserWarning,
                 stacklevel=2,
