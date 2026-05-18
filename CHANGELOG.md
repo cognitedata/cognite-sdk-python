@@ -13,6 +13,25 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.5.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.4.0...cognite-sdk-python-v8.5.0) (2026-05-18)
+
+
+### Features
+
+* **Workflows:** Add missing unknown classes for future-compatibility ([#2623](https://github.com/cognitedata/cognite-sdk-python/issues/2623)) ([5c74927](https://github.com/cognitedata/cognite-sdk-python/commit/5c74927b808f77e295bffe76c5c1d5f97e281867))
+
+
+### Bug Fixes
+
+* **capabilities:** add missing RUN action to FunctionsAcl ([#2614](https://github.com/cognitedata/cognite-sdk-python/issues/2614)) ([fd97419](https://github.com/cognitedata/cognite-sdk-python/commit/fd97419a87aade63e796d8bd106a20284aba99ee))
+* deprecate public api_client property. warn on async api_client footgun on sync client ([#2618](https://github.com/cognitedata/cognite-sdk-python/issues/2618)) ([4b38aa0](https://github.com/cognitedata/cognite-sdk-python/commit/4b38aa05007ce7b1bdab9e1038ab032030655f3d))
+* **iam:** tolerate partial Session response when caller lacks sessionsAcl:LIST ([#2617](https://github.com/cognitedata/cognite-sdk-python/issues/2617)) ([754fbc6](https://github.com/cognitedata/cognite-sdk-python/commit/754fbc676766bd3fc31bd87edea6cd5bb873f2e4))
+
+
+### Documentation
+
+* **simulators:** improve type hints and default values for some arguments in the simulator module ([#2624](https://github.com/cognitedata/cognite-sdk-python/issues/2624)) ([b16a310](https://github.com/cognitedata/cognite-sdk-python/commit/b16a31063a68bf072ed6e797d82461036e25519e))
+
 ## [8.4.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.3.0...cognite-sdk-python-v8.4.0) (2026-05-07)
 
 
