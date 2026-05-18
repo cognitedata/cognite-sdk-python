@@ -339,9 +339,9 @@ class RecordsAPI(APIClient):
             data = res.json()
             for item in data["items"]:
                 yield SyncRecord._load(item)
-            body = {"cursor": data["nextCursor"]}
             if not data["hasNext"]:
                 break
+            body["cursor"] = data["nextCursor"]
 
     async def aggregate(
         self,

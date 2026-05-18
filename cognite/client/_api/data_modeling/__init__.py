@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import asyncio
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from cognite.client._api.data_modeling.containers import ContainersAPI
 from cognite.client._api.data_modeling.data_models import DataModelsAPI
@@ -15,6 +14,9 @@ from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api_client import APIClient
 
 if TYPE_CHECKING:
+    import asyncio
+    from typing import Literal
+
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
