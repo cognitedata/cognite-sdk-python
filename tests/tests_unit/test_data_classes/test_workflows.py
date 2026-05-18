@@ -227,6 +227,34 @@ class TestWorkflowTask:
         loaded = WorkflowTask._load(raw)
         assert loaded.dump() == raw
 
+    def test_function_app_task_type_roundtrip(self) -> None:
+        # Note: Whenever task type 'functionApp' is added to the SDK, this test is expected to fail
+        raw: dict[str, Any] = {
+            "externalId": "my_function_app_task",
+            "type": "functionApp",
+            "name": "my_function_app",
+            "description": "Run my function app",
+            "parameters": {
+                "functionApp": {
+                    "externalId": "my_function_app_external_id",
+                    "path": "/process/run",
+                    "method": "POST",
+                    "body": {"dry_run": False},
+                }
+            },
+            "retries": 1,
+            "timeout": 3600,
+            "onFailure": "abortWorkflow",
+            "dependsOn": [{"externalId": "my_upstream_task"}],
+        }
+        task = WorkflowTask._load(raw)
+
+        assert task.type == "functionApp"
+        assert isinstance(task.parameters, UnknownWorkflowTaskParameters)
+        assert task.parameters.task_type == "functionApp"
+        assert task.parameters.data == raw["parameters"]
+        assert task.dump() == raw
+
 
 class TestWorkflowTaskOutput:
     """Note: WorkflowTaskOutput subclasses does not work with our automatic test setup because their _load need the
