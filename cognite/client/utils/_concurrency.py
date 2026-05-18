@@ -7,6 +7,7 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Callable, Coroutine
+from enum import Enum
 from typing import (
     Any,
     Literal,
@@ -221,6 +222,104 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         )
 
 
+class RecordsConcurrencyOperation(Enum):
+    SYNC = "sync"
+    RETRIEVE = "retrieve"
+    AGGREGATE = "aggregate"
+    WRITE = "write"
+    DELETE = "delete"
+
+
+class RecordsConcurrencyConfig(ConcurrencyConfig):
+    """
+    Concurrency settings for the Records API, reflecting its hierarchical rate-limit structure.
+
+    All query endpoints (Sync, Retrieve, Aggregate) share a common Query request budget.
+    Retrieve and Aggregate each have an additional dedicated budget checked first, so they
+    are more constrained than Sync which only checks the shared budget.
+
+    Args:
+        concurrency_settings (ConcurrencySettings): Reference to the parent settings object.
+        sync (int): Maximum concurrent Sync requests (governed only by the shared Query budget).
+        retrieve (int): Maximum concurrent Retrieve/list requests (Retrieve budget + Query budget).
+        aggregate (int): Maximum concurrent Aggregate requests (Aggregate budget + Query budget).
+        write (int): Maximum concurrent write requests (ingest, upsert).
+        delete (int): Maximum concurrent delete requests.
+    """
+
+    def __init__(
+        self,
+        concurrency_settings: ConcurrencySettings,
+        sync: int,
+        retrieve: int,
+        aggregate: int,
+        write: int,
+        delete: int,
+    ) -> None:
+        super().__init__(concurrency_settings, "records", read=sync, write=write, delete=delete)
+        self._sync = sync
+        self._retrieve = retrieve
+        self._aggregate = aggregate
+
+    @property
+    def sync(self) -> int:
+        return self._sync
+
+    @sync.setter
+    def sync(self, value: int) -> None:
+        self._check_frozen("sync")
+        self._sync = value
+
+    @property
+    def retrieve(self) -> int:
+        return self._retrieve
+
+    @retrieve.setter
+    def retrieve(self, value: int) -> None:
+        self._check_frozen("retrieve")
+        self._retrieve = value
+
+    @property
+    def aggregate(self) -> int:
+        return self._aggregate
+
+    @aggregate.setter
+    def aggregate(self, value: int) -> None:
+        self._check_frozen("aggregate")
+        self._aggregate = value
+
+    def _semaphore_factory(self, operation: RecordsConcurrencyOperation, project: str) -> asyncio.BoundedSemaphore:
+        key = (operation.value, project, asyncio.get_running_loop())
+        if key in self._semaphore_cache:
+            return self._semaphore_cache[key]
+
+        from cognite.client import global_config
+
+        global_config.concurrency_settings._freeze()
+        match operation:
+            case RecordsConcurrencyOperation.SYNC:
+                sem = asyncio.BoundedSemaphore(self._sync)
+            case RecordsConcurrencyOperation.RETRIEVE:
+                sem = asyncio.BoundedSemaphore(self._retrieve)
+            case RecordsConcurrencyOperation.AGGREGATE:
+                sem = asyncio.BoundedSemaphore(self._aggregate)
+            case RecordsConcurrencyOperation.WRITE:
+                sem = asyncio.BoundedSemaphore(self._write)
+            case RecordsConcurrencyOperation.DELETE:
+                sem = asyncio.BoundedSemaphore(self._delete)
+            case _:
+                assert_never(operation)
+        self._semaphore_cache[key] = sem
+        return sem
+
+    def __repr__(self) -> str:
+        return (
+            f"Concurrency[records]("
+            f"sync={self._sync}, retrieve={self._retrieve}, aggregate={self._aggregate}, "
+            f"write={self._write}, delete={self._delete})"
+        )
+
+
 class FileConcurrencyConfig(ConcurrencyConfig):
     """
     Concurrency settings for the Files API.
@@ -383,6 +482,7 @@ class ConcurrencySettings:
             write_schema=1,
         )
         self._files = FileConcurrencyConfig(self, read=4, write=2, upload=5, download=5, delete=2, open_files=15)
+        self._records = RecordsConcurrencyConfig(self, sync=5, retrieve=3, aggregate=2, write=4, delete=2)
 
     @functools.cached_property
     def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:
@@ -428,6 +528,10 @@ class ConcurrencySettings:
     def files(self) -> FileConcurrencyConfig:
         return self._files
 
+    @property
+    def records(self) -> RecordsConcurrencyConfig:
+        return self._records
+
     def __repr__(self) -> str:
         frozen_str = " (frozen)" if self.__frozen else ""
         return (
@@ -437,6 +541,7 @@ class ConcurrencySettings:
             f"  datapoints={self._datapoints},\n"
             f"  data_modeling={self._data_modeling},\n"
             f"  files={self._files},\n"
+            f"  records={self._records},\n"
             f"){frozen_str}"
         )
 

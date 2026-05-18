@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any
 
@@ -18,6 +19,7 @@ from cognite.client.data_classes.data_modeling.records import (
 )
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._auxiliary import split_into_chunks
+from cognite.client.utils._concurrency import RecordsConcurrencyOperation
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
 if TYPE_CHECKING:
@@ -38,6 +40,13 @@ class RecordsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Records"
+        )
+
+    def _get_semaphore(self, operation: RecordsConcurrencyOperation) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        return global_config.concurrency_settings.records._semaphore_factory(
+            operation, project=self._cognite_client.config.project
         )
 
     def _records_url(self, stream_id: str, suffix: str = "") -> str:
@@ -86,7 +95,7 @@ class RecordsAPI(APIClient):
         """
         self._warning.warn()
         item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
-        semaphore = self._get_semaphore("write")
+        semaphore = self._get_semaphore(RecordsConcurrencyOperation.WRITE)
         for chunk in split_into_chunks(item_list, _INGEST_LIMIT):
             await self._post(
                 url_path=self._records_url(stream_id),
@@ -136,7 +145,7 @@ class RecordsAPI(APIClient):
         """
         self._warning.warn()
         item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
-        semaphore = self._get_semaphore("write")
+        semaphore = self._get_semaphore(RecordsConcurrencyOperation.WRITE)
         for chunk in split_into_chunks(item_list, _INGEST_LIMIT):
             await self._post(
                 url_path=self._records_url(stream_id, "/upsert"),
@@ -178,7 +187,7 @@ class RecordsAPI(APIClient):
         """
         self._warning.warn()
         item_list: list[Record | RecordWrite] = [items] if isinstance(items, (Record, RecordWrite)) else list(items)
-        semaphore = self._get_semaphore("delete")
+        semaphore = self._get_semaphore(RecordsConcurrencyOperation.DELETE)
         for chunk in split_into_chunks(item_list, _INGEST_LIMIT):
             await self._post(
                 url_path=self._records_url(stream_id, "/delete"),
@@ -253,7 +262,7 @@ class RecordsAPI(APIClient):
         res = await self._post(
             url_path=self._records_url(stream_id, "/filter"),
             json=body,
-            semaphore=self._get_semaphore("read"),
+            semaphore=self._get_semaphore(RecordsConcurrencyOperation.RETRIEVE),
         )
         return RecordList._load(res.json()["items"])
 
@@ -320,7 +329,7 @@ class RecordsAPI(APIClient):
         if include_typing:
             body["includeTyping"] = True
 
-        semaphore = self._get_semaphore("read")
+        semaphore = self._get_semaphore(RecordsConcurrencyOperation.SYNC)
         while True:
             res = await self._post(
                 url_path=self._records_url(stream_id, "/sync"),
@@ -407,6 +416,6 @@ class RecordsAPI(APIClient):
         res = await self._post(
             url_path=self._records_url(stream_id, "/aggregate"),
             json=body,
-            semaphore=self._get_semaphore("read"),
+            semaphore=self._get_semaphore(RecordsConcurrencyOperation.AGGREGATE),
         )
         return res.json()["aggregates"]
