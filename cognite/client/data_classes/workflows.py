@@ -662,7 +662,7 @@ class WorkflowTaskOutput(CogniteResource, ABC):
 
     @classmethod
     @abstractmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         raise NotImplementedError
 
     @classmethod
@@ -711,7 +711,7 @@ class FunctionTaskOutput(WorkflowTaskOutput):
         self.response = response
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> FunctionTaskOutput:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> FunctionTaskOutput:
         output = data["output"]
         return cls(output.get("callId"), output.get("functionId"), output.get("response"))
 
@@ -738,7 +738,7 @@ class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
         return self._task_type
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(data["taskType"], data.get("output") or {})
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -780,7 +780,7 @@ class SimulationTaskOutput(WorkflowTaskOutput):
         self.status_message = status_message
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> SimulationTaskOutput:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationTaskOutput:
         output = data["output"]
         return cls(
             run_id=output.get("runId"),
@@ -810,7 +810,7 @@ class TransformationTaskOutput(WorkflowTaskOutput):
         self.job_id = job_id
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> TransformationTaskOutput:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> TransformationTaskOutput:
         output = data["output"]
         return cls(output.get("jobId"))
 
@@ -834,7 +834,7 @@ class CDFTaskOutput(WorkflowTaskOutput):
         self.status_code = status_code
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> CDFTaskOutput:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> CDFTaskOutput:
         output = data["output"]
         return cls(output.get("response"), output.get("statusCode"))
 
@@ -855,7 +855,7 @@ class DynamicTaskOutput(WorkflowTaskOutput):
     def __init__(self) -> None: ...
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> DynamicTaskOutput:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> DynamicTaskOutput:
         return cls()
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -872,7 +872,7 @@ class SubworkflowTaskOutput(WorkflowTaskOutput):
     def __init__(self) -> None: ...
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> SubworkflowTaskOutput:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> SubworkflowTaskOutput:
         return cls()
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
