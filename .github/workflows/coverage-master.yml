@@ -1,0 +1,35 @@
+---
+name: coverage-master
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  upload_coverage:
+    runs-on: windows-latest
+    environment: CI
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: ./.github/actions/setup
+        with:
+          extras: "-E all"
+
+      - name: Test full
+        env:
+          LOGIN_FLOW: client_credentials
+          COGNITE_CLIENT_SECRET: ${{ secrets.IDP_CLIENT_SECRET_CI }}
+          COGNITE_TOKEN_URL: https://login.microsoftonline.com/cognitepysdk.onmicrosoft.com/oauth2/v2.0/token
+          COGNITE_TOKEN_SCOPES: ${{ vars.CDF_BASE_URL_CI }}/.default
+          COGNITE_CLIENT_ID: ${{ vars.IDP_CLIENT_ID_CI }}
+          COGNITE_PROJECT: ${{ vars.CDF_PROJECT_CI }}
+          COGNITE_BASE_URL: ${{ vars.CDF_BASE_URL_CI }}
+          COGNITE_CLIENT_NAME: python-sdk-integration-tests
+        # Testpaths are defined in the pytest.ini file:
+        run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
+
+      - uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
