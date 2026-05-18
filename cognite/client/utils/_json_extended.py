@@ -62,7 +62,7 @@ _FLOAT_API_MAPPING_REVERSE = MappingProxyType({math.inf: "Infinity", -math.inf: 
 
 def convert_to_float(value: float | str | None) -> float | None:
     if value.__class__ is str:  # like this abomination; faster than float(value)
-        return _FLOAT_API_MAPPING[value]  # type: ignore [index]
+        return _FLOAT_API_MAPPING[value]
     return value  # type: ignore [return-value]
 
 
@@ -93,3 +93,7 @@ def dumps_no_nan_or_inf(obj: Any) -> str:
                 e.__traceback__
             ) from None
         raise
+
+
+def dumps_deterministic(obj: Any) -> str:
+    return dumps(obj, indent=None, allow_nan=False, sort_keys=True)

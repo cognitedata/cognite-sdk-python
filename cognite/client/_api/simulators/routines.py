@@ -240,7 +240,7 @@ class SimulatorRoutinesAPI(APIClient):
         routine_external_id: str,
         inputs: Sequence[SimulationInputOverride] | None = None,
         run_time: int | None = None,
-        queue: bool | None = None,
+        queue: bool = False,
         log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
         wait: bool = True,
         timeout: float = 60,
@@ -254,7 +254,7 @@ class SimulatorRoutinesAPI(APIClient):
         model_revision_external_id: str,
         inputs: Sequence[SimulationInputOverride] | None = None,
         run_time: int | None = None,
-        queue: bool | None = None,
+        queue: bool = False,
         log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
         wait: bool = True,
         timeout: float = 60,
@@ -268,7 +268,7 @@ class SimulatorRoutinesAPI(APIClient):
         model_revision_external_id: str | None = None,
         inputs: Sequence[SimulationInputOverride] | None = None,
         run_time: int | None = None,
-        queue: bool | None = None,
+        queue: bool = False,
         log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
         wait: bool = True,
         timeout: float = 60,
@@ -279,6 +279,10 @@ class SimulatorRoutinesAPI(APIClient):
         1. By routine external ID only
         2. By routine revision external ID + model revision external ID
 
+        When simulation run load balancing is enabled and routine is not assigned to any particular integration, the run initiates with status ``queued``
+        and any active integration can claim it automatically. Without load balancing, the run initiates with status ``ready``
+        and is tied to the integration specified on the routine.
+
         Args:
             routine_external_id (str | None): External id of the simulator routine to run.
                 Cannot be specified together with routine_revision_external_id and model_revision_external_id.
@@ -288,7 +292,7 @@ class SimulatorRoutinesAPI(APIClient):
                 Must be specified together with routine_revision_external_id.
             inputs (Sequence[SimulationInputOverride] | None): List of input overrides
             run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
-            queue (bool | None): Queue the simulation run when connector is down.
+            queue (bool): Queue the simulation run when connector is down.
             log_severity (Literal['Debug', 'Information', 'Warning', 'Error'] | None): Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
             wait (bool): Wait until the simulation run is finished. Defaults to True.
             timeout (float): Timeout in seconds for waiting for the simulation run to finish. Defaults to 60 seconds.

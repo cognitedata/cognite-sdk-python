@@ -523,6 +523,54 @@ class SessionList(CogniteResourceList[Session], IdTransformerMixin):
     _RESOURCE = Session
 
 
+class RevokedSession(CogniteResource):
+    """A session that has been revoked.
+
+    When the caller lacks sessionsAcl:LIST, the revoke API returns only the session ID.
+    All other fields are present only when the caller has sessionsAcl:LIST.
+
+    Args:
+        id (int): ID of the revoked session.
+        type (SessionType | None): Credentials kind used to create the session.
+        status (SessionStatus | None): Current status of the session.
+        creation_time (int | None): Session creation time, in milliseconds since 1970.
+        expiration_time (int | None): Session expiry time, in milliseconds since 1970. This value is updated on
+            refreshing a token.
+        client_id (str | None): Client ID in identity provider.
+    """
+
+    def __init__(
+        self,
+        id: int,
+        type: SessionType | None = None,
+        status: SessionStatus | None = None,
+        creation_time: int | None = None,
+        expiration_time: int | None = None,
+        client_id: str | None = None,
+    ) -> None:
+        self.id = id
+        self.type = type
+        self.status = status
+        self.creation_time = creation_time
+        self.expiration_time = expiration_time
+        self.client_id = client_id
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            id=resource["id"],
+            type=resource.get("type"),
+            status=resource.get("status"),
+            creation_time=resource.get("creationTime"),
+            expiration_time=resource.get("expirationTime"),
+            client_id=resource.get("clientId"),
+        )
+
+
+class RevokedSessionList(CogniteResourceList[RevokedSession], IdTransformerMixin):
+    _RESOURCE = RevokedSession
+
+
 class ClientCredentials(CogniteResource):
     """Client credentials for session creation
 

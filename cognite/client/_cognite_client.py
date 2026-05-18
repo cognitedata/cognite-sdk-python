@@ -172,9 +172,21 @@ class AsyncCogniteClient:
     def api_client(self) -> APIClient:
         """Returns the underlying API client used for HTTP requests.
 
+        .. deprecated:: 8.0
+            Use :meth:`post`, :meth:`get`, or :meth:`put` instead.
+            Will be removed in v9.
+
         Returns:
             APIClient: The API client instance.
         """
+        import warnings
+
+        warnings.warn(
+            "'api_client' is deprecated and will be removed in v9. "
+            "Use client.post(), client.get(), or client.put() instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
         return self._api_client
 
     def get_sync_client(self) -> CogniteClient:

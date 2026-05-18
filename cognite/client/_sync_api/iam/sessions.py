@@ -1,6 +1,6 @@
 """
 ===============================================================================
-6ed1f4c4630f2ef966184b94bd0c2e50
+66ef20c6bf5b2e991efb781b993720f0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -13,7 +13,14 @@ from typing import TYPE_CHECKING, Literal, overload
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes import ClientCredentials, CreatedSession, Session, SessionList
+from cognite.client.data_classes import (
+    ClientCredentials,
+    CreatedSession,
+    RevokedSession,
+    RevokedSessionList,
+    Session,
+    SessionList,
+)
 from cognite.client.data_classes.iam import SessionStatus, SessionType
 from cognite.client.utils._async_helpers import run_sync
 
@@ -58,12 +65,12 @@ class SyncSessionsAPI(SyncAPIClient):
         )
 
     @overload
-    def revoke(self, id: int) -> Session: ...
+    def revoke(self, id: int) -> RevokedSession: ...
 
     @overload
-    def revoke(self, id: Sequence[int]) -> SessionList: ...
+    def revoke(self, id: Sequence[int]) -> RevokedSessionList: ...
 
-    def revoke(self, id: int | Sequence[int]) -> Session | SessionList:
+    def revoke(self, id: int | Sequence[int]) -> RevokedSession | RevokedSessionList:
         """
         `Revoke access to a session <https://api-docs.cognite.com/20230101/tag/Sessions/operation/revokeSessions>`_.
 
@@ -73,7 +80,8 @@ class SyncSessionsAPI(SyncAPIClient):
             id (int | Sequence[int]): Id or list of session ids
 
         Returns:
-            Session | SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
+            RevokedSession | RevokedSessionList: Revoked session(s). If the caller lacks sessionsAcl:LIST, only the
+                session ID will be present; all other fields will be None.
         """
         return run_sync(self.__async_client.iam.sessions.revoke(id=id))
 
