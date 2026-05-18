@@ -38,6 +38,7 @@ from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.data_classes.hosted_extractors import Destination, DestinationList, Source, SourceList
 from cognite.client.data_classes.postgres_gateway import TableList, User, UserCreated, UserCreatedList, UserList
+from cognite.client.data_classes.workflows import UnknownWorkflowTaskParameters, WorkflowTaskOutput
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
@@ -161,7 +162,19 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
+        [
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(
+                CogniteObject,
+                exclude={
+                    # WorkflowTaskOutput subclasses: The load input needs the parent object's full response payload,
+                    # which does not match its own dump output (which is just the object's flat attributes)
+                    *all_concrete_subclasses(WorkflowTaskOutput),
+                    # UnknownWorkflowTaskParameters: Requires task_type from the parent object's payload
+                    UnknownWorkflowTaskParameters,
+                },
+            )
+        ],
     )
     def test_json_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
@@ -176,7 +189,16 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
+        [
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(
+                CogniteObject,
+                exclude={
+                    *all_concrete_subclasses(WorkflowTaskOutput),
+                    UnknownWorkflowTaskParameters,
+                },
+            )
+        ],
     )
     def test_dump_load_only_required(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
@@ -242,7 +264,16 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
+        [
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(
+                CogniteObject,
+                exclude={
+                    *all_concrete_subclasses(WorkflowTaskOutput),
+                    UnknownWorkflowTaskParameters,
+                },
+            )
+        ],
     )
     def test_load_has_no_side_effects(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
@@ -267,7 +298,16 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
+        [
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(
+                CogniteObject,
+                exclude={
+                    *all_concrete_subclasses(WorkflowTaskOutput),
+                    UnknownWorkflowTaskParameters,
+                },
+            )
+        ],
     )
     def test_handle_unknown_arguments_when_loading(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
@@ -307,7 +347,16 @@ class TestCogniteObject:
     @pytest.mark.dsl
     @pytest.mark.parametrize(
         "cognite_object_subclass",
-        [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
+        [
+            pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            for cls in all_concrete_subclasses(
+                CogniteObject,
+                exclude={
+                    *all_concrete_subclasses(WorkflowTaskOutput),
+                    UnknownWorkflowTaskParameters,
+                },
+            )
+        ],
     )
     def test_yaml_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
@@ -419,7 +468,13 @@ class TestCogniteResource:
         "cognite_resource_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource)
+            for cls in all_concrete_subclasses(
+                CogniteResource,
+                exclude={
+                    *all_concrete_subclasses(WorkflowTaskOutput),
+                    UnknownWorkflowTaskParameters,
+                },
+            )
         ],
     )
     def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
@@ -437,7 +492,13 @@ class TestCogniteResource:
         "cognite_resource_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource)
+            for cls in all_concrete_subclasses(
+                CogniteResource,
+                exclude={
+                    *all_concrete_subclasses(WorkflowTaskOutput),
+                    UnknownWorkflowTaskParameters,
+                },
+            )
         ],
     )
     def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
