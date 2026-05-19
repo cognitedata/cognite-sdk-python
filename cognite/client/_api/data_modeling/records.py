@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.records import (
     AggregateResult,
     AggregateSpec,
-    Record,
+    RecordId,
     RecordList,
     RecordSortSpec,
     RecordSourceSelector,
@@ -21,6 +21,7 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._auxiliary import split_into_chunks
 from cognite.client.utils._concurrency import RecordsConcurrencyOperation
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._url import interpolate_and_url_encode
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -31,7 +32,7 @@ class RecordsAPI(APIClient):
     """API for reading and writing records in a stream.
 
     Records are stored in a stream and their schema is defined by the containers
-    referenced as sources. Access this API via ``client.data_modeling.records``.
+    referenced as sources.
     """
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
@@ -48,7 +49,7 @@ class RecordsAPI(APIClient):
         )
 
     def _records_url(self, stream_id: str, suffix: str = "") -> str:
-        return f"/streams/{stream_id}/records{suffix}"
+        return interpolate_and_url_encode("/streams/%s/records%s", stream_id, suffix)
 
     async def ingest(self, stream_id: str, items: RecordWrite | Sequence[RecordWrite]) -> None:
         """`Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_.
@@ -57,8 +58,6 @@ class RecordsAPI(APIClient):
         ``space``, ``externalId``, and all property values) are silently discarded.
         For mutable streams, duplicate ``space + externalId`` within a single batch
         returns a 422.
-
-        Each request accepts up to 1 000 records; larger lists are chunked automatically.
 
         Args:
             stream_id (str): External ID of the stream to ingest into.
@@ -108,8 +107,6 @@ class RecordsAPI(APIClient):
         immutable). Existing records matching ``space + externalId`` are updated at
         the property level.
 
-        Each request accepts up to 1 000 records; larger lists are chunked automatically.
-
         Args:
             stream_id (str): External ID of the stream to upsert into.
             items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
@@ -154,14 +151,13 @@ class RecordsAPI(APIClient):
     async def delete(
         self,
         stream_id: str,
-        items: Record | RecordWrite | Sequence[Record | RecordWrite],
+        items: RecordId | Sequence[RecordId],
+        ignore_unknown_ids: Literal[True] = True,
     ) -> None:
         """`Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_.
 
         Only valid for mutable streams (returns 422 on immutable). Unknown
         ``space + externalId`` pairs are silently ignored.
-
-        Each request accepts up to 1 000 identifiers; larger lists are chunked automatically.
 
         Args:
             stream_id (str): External ID of the stream to delete from.
@@ -184,7 +180,7 @@ class RecordsAPI(APIClient):
                 ... )
         """
         self._warning.warn()
-        item_list: list[Record | RecordWrite] = [items] if isinstance(items, (Record, RecordWrite)) else list(items)
+        item_list = [items] if isinstance(items, RecordId) else list(items)
         semaphore = self._get_semaphore(RecordsConcurrencyOperation.DELETE)
         for chunk in split_into_chunks(item_list, self._CREATE_LIMIT):
             await self._post(

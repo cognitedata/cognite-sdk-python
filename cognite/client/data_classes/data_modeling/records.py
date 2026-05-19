@@ -13,10 +13,18 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.filters import Filter
 
-# ─── Write helpers ─────────────────────────────────────────────────────────────
+
+class RecordId:
+    def __init__(self, space: str, external_id: str) -> None:
+        self.space = space
+        self.external_id = external_id
+
+    @classmethod
+    def from_tuple(cls, v: tuple[str, str]) -> RecordId:
+        return cls(space=v[0], external_id=v[1])
 
 
-class RecordSourceReference(CogniteResource):
+class RecordSourceReference(RecordId, CogniteResource):
     """Container reference used as a source in a record write.
 
     Args:
@@ -26,8 +34,7 @@ class RecordSourceReference(CogniteResource):
     """
 
     def __init__(self, space: str, external_id: str, type: str = "container") -> None:
-        self.space = space
-        self.external_id = external_id
+        RecordId.__init__(self, space, external_id)
         self.type = type
 
     @classmethod
@@ -72,7 +79,7 @@ class RecordSource(CogniteResource):
         }
 
 
-class RecordWrite(WriteableCogniteResource["RecordWrite"]):
+class RecordWrite(RecordId, WriteableCogniteResource["RecordWrite"]):
     """Write representation of a record, used for ingest and upsert.
 
     This is the write version of :class:`Record`.
@@ -106,8 +113,7 @@ class RecordWrite(WriteableCogniteResource["RecordWrite"]):
     """
 
     def __init__(self, space: str, external_id: str, sources: list[RecordSource]) -> None:
-        self.space = space
-        self.external_id = external_id
+        RecordId.__init__(self, space, external_id)
         self.sources = sources
 
     @classmethod
@@ -135,10 +141,7 @@ class RecordWriteList(CogniteResourceList[RecordWrite]):
     _RESOURCE = RecordWrite
 
 
-# ─── Read DTOs ─────────────────────────────────────────────────────────────────
-
-
-class Record(WriteableCogniteResource[RecordWrite]):
+class Record(RecordId, WriteableCogniteResource[RecordWrite]):
     """A record returned from the stream records API.
 
     This is the read version of :class:`RecordWrite`.
@@ -160,8 +163,7 @@ class Record(WriteableCogniteResource[RecordWrite]):
         last_updated_time: int,
         properties: dict[str, dict[str, dict[str, Any]]] | None = None,
     ) -> None:
-        self.space = space
-        self.external_id = external_id
+        RecordId.__init__(self, space, external_id)
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.properties = properties
@@ -207,9 +209,6 @@ class RecordList(WriteableCogniteResourceList[RecordWrite, Record], ExternalIDTr
 
     def as_write(self) -> RecordWriteList:
         return RecordWriteList([r.as_write() for r in self])
-
-
-# ─── Sync DTOs ─────────────────────────────────────────────────────────────────
 
 
 class SyncRecord(Record):
@@ -265,9 +264,6 @@ class SyncRecordList(CogniteResourceList[SyncRecord]):
     """A list of :class:`SyncRecord` objects."""
 
     _RESOURCE = SyncRecord
-
-
-# ─── Request helpers ───────────────────────────────────────────────────────────
 
 
 class TimeRange(CogniteResource):
@@ -420,9 +416,6 @@ class TargetUnits(CogniteResource):
         return {}
 
 
-# ─── Aggregate metric types ────────────────────────────────────────────────────
-
-
 class AvgAggregate(CogniteResource):
     """Average metric aggregate.
 
@@ -511,9 +504,6 @@ class SumAggregate(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"sum": {"property": self.property}}
-
-
-# ─── Aggregate bucket types ────────────────────────────────────────────────────
 
 
 class NumberHistogramHardBounds(CogniteResource):
