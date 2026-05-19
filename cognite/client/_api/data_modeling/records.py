@@ -26,8 +26,6 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
-_INGEST_LIMIT = 1000
-
 
 class RecordsAPI(APIClient):
     """API for reading and writing records in a stream.
@@ -96,7 +94,7 @@ class RecordsAPI(APIClient):
         self._warning.warn()
         item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
         semaphore = self._get_semaphore(RecordsConcurrencyOperation.WRITE)
-        for chunk in split_into_chunks(item_list, _INGEST_LIMIT):
+        for chunk in split_into_chunks(item_list, self._CREATE_LIMIT):
             await self._post(
                 url_path=self._records_url(stream_id),
                 json={"items": [r.dump() for r in chunk]},
@@ -146,7 +144,7 @@ class RecordsAPI(APIClient):
         self._warning.warn()
         item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
         semaphore = self._get_semaphore(RecordsConcurrencyOperation.WRITE)
-        for chunk in split_into_chunks(item_list, _INGEST_LIMIT):
+        for chunk in split_into_chunks(item_list, self._CREATE_LIMIT):
             await self._post(
                 url_path=self._records_url(stream_id, "/upsert"),
                 json={"items": [r.dump() for r in chunk]},
@@ -188,7 +186,7 @@ class RecordsAPI(APIClient):
         self._warning.warn()
         item_list: list[Record | RecordWrite] = [items] if isinstance(items, (Record, RecordWrite)) else list(items)
         semaphore = self._get_semaphore(RecordsConcurrencyOperation.DELETE)
-        for chunk in split_into_chunks(item_list, _INGEST_LIMIT):
+        for chunk in split_into_chunks(item_list, self._CREATE_LIMIT):
             await self._post(
                 url_path=self._records_url(stream_id, "/delete"),
                 json={"items": [{"space": r.space, "externalId": r.external_id} for r in chunk]},
