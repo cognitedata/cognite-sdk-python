@@ -161,8 +161,8 @@ class RecordsAPI(APIClient):
 
         Args:
             stream_id (str): External ID of the stream to delete from.
-            items (Record | RecordWrite | Sequence[Record | RecordWrite]): Records to delete.
-                Only ``space`` and ``external_id`` are used; other fields are ignored.
+            items (RecordId | Sequence[RecordId]): Records to delete.
+            ignore_unknown_ids (Literal[True]): is always true
 
         Examples:
 

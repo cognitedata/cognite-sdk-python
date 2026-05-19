@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8e0c4984b9e28c779ae7d78287f386d9
+45b3dc61c45858616d69c93de6f7d07a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,14 +8,14 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.data_modeling.records import (
     AggregateResult,
     AggregateSpec,
-    Record,
+    RecordId,
     RecordList,
     RecordSortSpec,
     RecordSourceSelector,
@@ -45,8 +45,6 @@ class SyncRecordsAPI(SyncAPIClient):
         ``space``, ``externalId``, and all property values) are silently discarded.
         For mutable streams, duplicate ``space + externalId`` within a single batch
         returns a 422.
-
-        Each request accepts up to 1 000 records; larger lists are chunked automatically.
 
         Args:
             stream_id (str): External ID of the stream to ingest into.
@@ -89,8 +87,6 @@ class SyncRecordsAPI(SyncAPIClient):
         immutable). Existing records matching ``space + externalId`` are updated at
         the property level.
 
-        Each request accepts up to 1 000 records; larger lists are chunked automatically.
-
         Args:
             stream_id (str): External ID of the stream to upsert into.
             items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
@@ -124,19 +120,19 @@ class SyncRecordsAPI(SyncAPIClient):
         """
         return run_sync(self.__async_client.data_modeling.records.upsert(stream_id=stream_id, items=items))
 
-    def delete(self, stream_id: str, items: Record | RecordWrite | Sequence[Record | RecordWrite]) -> None:
+    def delete(
+        self, stream_id: str, items: RecordId | Sequence[RecordId], ignore_unknown_ids: Literal[True] = True
+    ) -> None:
         """
         `Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_.
 
         Only valid for mutable streams (returns 422 on immutable). Unknown
         ``space + externalId`` pairs are silently ignored.
 
-        Each request accepts up to 1 000 identifiers; larger lists are chunked automatically.
-
         Args:
             stream_id (str): External ID of the stream to delete from.
-            items (Record | RecordWrite | Sequence[Record | RecordWrite]): Records to delete.
-                Only ``space`` and ``external_id`` are used; other fields are ignored.
+            items (RecordId | Sequence[RecordId]): Records to delete.
+            ignore_unknown_ids (Literal[True]): is always true
 
         Examples:
 
@@ -153,7 +149,11 @@ class SyncRecordsAPI(SyncAPIClient):
                 ...     ],
                 ... )
         """
-        return run_sync(self.__async_client.data_modeling.records.delete(stream_id=stream_id, items=items))
+        return run_sync(
+            self.__async_client.data_modeling.records.delete(
+                stream_id=stream_id, items=items, ignore_unknown_ids=ignore_unknown_ids
+            )
+        )
 
     def list(
         self,
@@ -274,7 +274,7 @@ class SyncRecordsAPI(SyncAPIClient):
                 target_units=target_units,
                 include_typing=include_typing,
             )
-        )
+        )  # type: ignore [misc]
 
     def aggregate(
         self,
