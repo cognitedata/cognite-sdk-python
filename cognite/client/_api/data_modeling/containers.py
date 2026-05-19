@@ -258,7 +258,9 @@ class ContainersAPI(APIClient):
                 >>> # containers that can be used for records only
                 >>> record_only_containers = client.data_modeling.containers.list(used_for="record")
                 >>> # containers that can be used either for nodes or edges
-                >>> node_or_edge_containers = client.data_modeling.containers.list(used_for=["node", "edge"])
+                >>> node_or_edge_containers = client.data_modeling.containers.list(
+                ...     used_for=["node", "edge"]
+                ... )
                 >>> # containers that can be used for both nodes and edges
                 >>> node_and_edge_containers = client.data_modeling.containers.list(used_for=["all"])
 

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-945df424d0b546e88f29acb8e105cdc0
+5553d54f1414e30d612648965db2065e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -212,7 +212,9 @@ class SyncContainersAPI(SyncAPIClient):
                 >>> # containers that can be used for records only
                 >>> record_only_containers = client.data_modeling.containers.list(used_for="record")
                 >>> # containers that can be used either for nodes or edges
-                >>> node_or_edge_containers = client.data_modeling.containers.list(used_for=["node", "edge"])
+                >>> node_or_edge_containers = client.data_modeling.containers.list(
+                ...     used_for=["node", "edge"]
+                ... )
                 >>> # containers that can be used for both nodes and edges
                 >>> node_and_edge_containers = client.data_modeling.containers.list(used_for=["all"])
 
