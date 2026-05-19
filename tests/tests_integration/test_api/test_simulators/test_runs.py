@@ -31,7 +31,7 @@ class TestSimulatorRuns:
     ) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id
         runs_filtered_by_status = []
-        for current_status in ["running", "success", "failure"]:
+        for current_status in ("running", "success", "failure"):
             created_runs = cognite_client.simulators.runs.create([SimulationRunWrite(routine_external_id)])
 
             run_sync(

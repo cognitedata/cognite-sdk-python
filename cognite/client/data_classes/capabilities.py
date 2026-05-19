@@ -170,7 +170,7 @@ class Capability(ABC):
         elif tpl.scope_extra is None:
             scope = scope_cls([tpl.scope_id])  # type: ignore [call-arg]
         elif scope_cls is TableScope:
-            scope = scope_cls({tpl.database: [tpl.table] if tpl.table else []})  # type: ignore [call-arg]
+            scope = scope_cls({tpl.database: [tpl.table] if tpl.table else []})
         else:
             raise ValueError(f"CapabilityTuple not understood: {tpl}")
 
