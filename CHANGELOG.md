@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.94.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.93.0...cognite-sdk-python-v7.94.0) (2026-05-19)
+
+
+### Features
+
+* **Workflows:** Add missing unknown classes for future-compatibility ([#2627](https://github.com/cognitedata/cognite-sdk-python/issues/2627)) ([6069ae0](https://github.com/cognitedata/cognite-sdk-python/commit/6069ae04805f01e5bc82584af1bbe989e671ae9f))
+
 ## [7.93.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.92.0...cognite-sdk-python-v7.93.0) (2026-05-05)
 
 
