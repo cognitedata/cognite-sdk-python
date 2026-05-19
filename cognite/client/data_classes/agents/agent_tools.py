@@ -138,7 +138,7 @@ class InstanceSpaces(WriteableCogniteResource):
     """Configuration for instance spaces in knowledge graph queries.
 
     Args:
-        type (Literal["manual", "all"]): The type of instance spaces.
+        type (Literal['manual', 'all']): The type of instance spaces.
         spaces (Sequence[str] | None): The spaces of the instance spaces.
     """
 
@@ -163,7 +163,7 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     Args:
         data_models (Sequence[DataModelInfo]): The data models and views to query.
         instance_spaces (InstanceSpaces | None): The instance spaces to query.
-        version (str | None): The version of the query generation strategy to use. A higher number does not necessarily mean a better query. Supported values are "v1" and "v2".
+        version (Literal['v1', 'v2'] | str | None): The version of the query generation strategy to use. A higher number does not necessarily mean a better query. Supported values are "v1" and "v2".
     """
 
     data_models: Sequence[DataModelInfo]
@@ -191,6 +191,45 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
         return result
 
     def as_write(self) -> QueryKnowledgeGraphAgentToolConfiguration:
+        return self
+
+
+@dataclass
+class QueryAgentToolConfiguration(WriteableCogniteResource):
+    """Configuration for query agent tools.
+
+    Args:
+        data_models (Sequence[DataModelInfo]): The data models to query.
+        instance_spaces (InstanceSpaces | None): The instance spaces to query.
+    """
+
+    data_models: Sequence[DataModelInfo]
+    instance_spaces: InstanceSpaces | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> QueryAgentToolConfiguration:
+        dm_config = resource["dataModels"]
+        data_models = [DataModelInfo._load(dm) for dm in dm_config.get("dataModels", [])]
+        return cls(
+            data_models=data_models,
+            instance_spaces=InstanceSpaces._load_if(resource.get("instanceSpaces")),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        key = "dataModels" if camel_case else "data_models"
+        result[key] = {
+            # TODO(ks93): Clarify whether "type" can take other values (cf. InstanceSpaces.type);
+            # if so, make it a real field
+            "type": "manual",
+            key: [dm.dump(camel_case=camel_case) for dm in self.data_models],
+        }
+        if self.instance_spaces:
+            key = "instanceSpaces" if camel_case else "instance_spaces"
+            result[key] = self.instance_spaces.dump(camel_case=camel_case)
+        return result
+
+    def as_write(self) -> QueryAgentToolConfiguration:
         return self
 
 
@@ -390,6 +429,69 @@ class QueryTimeSeriesDatapointsAgentToolUpsert(AgentToolUpsert):
 
 
 @dataclass
+class QueryAgentTool(AgentTool):
+    """Agent tool for running flexible queries against data models.
+
+    Args:
+        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
+        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        configuration (QueryAgentToolConfiguration | None): The configuration of the query agent tool.
+    """
+
+    _type: ClassVar[str] = "query"
+    configuration: QueryAgentToolConfiguration | None = None
+
+    @classmethod
+    def _load_tool(cls, resource: dict[str, Any]) -> QueryAgentTool:
+        return cls(
+            name=resource["name"],
+            description=resource["description"],
+            configuration=QueryAgentToolConfiguration._load_if(resource.get("configuration")),
+        )
+
+    def as_write(self) -> QueryAgentToolUpsert:
+        return QueryAgentToolUpsert(
+            name=self.name,
+            description=self.description,
+            configuration=self.configuration,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case=camel_case)
+        if self.configuration:
+            result["configuration"] = self.configuration.dump(camel_case=camel_case)
+        return result
+
+
+@dataclass
+class QueryAgentToolUpsert(AgentToolUpsert):
+    """Upsert version of query agent tool.
+
+    Args:
+        name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
+        description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        configuration (QueryAgentToolConfiguration | None): The configuration of the query agent tool.
+    """
+
+    _type: ClassVar[str] = "query"
+    configuration: QueryAgentToolConfiguration | None = None
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case=camel_case)
+        if self.configuration:
+            result["configuration"] = self.configuration.dump(camel_case=camel_case)
+        return result
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> QueryAgentToolUpsert:
+        return cls(
+            name=resource["name"],
+            description=resource["description"],
+            configuration=QueryAgentToolConfiguration._load_if(resource.get("configuration")),
+        )
+
+
+@dataclass
 class UnknownAgentTool(AgentTool):
     """Agent tool for unknown/unrecognized tool types.
 
@@ -427,8 +529,8 @@ class UnknownAgentToolUpsert(AgentToolUpsert):
 
     Args:
         name (str): The name of the agent tool. Used by the agent to decide when to use this tool.
-        type (str): The type of the agent tool.
         description (str): The description of the agent tool. Used by the agent to decide when to use this tool.
+        type (str): The type of the agent tool.
         configuration (dict[str, Any] | None): The configuration of the agent tool.
     """
 

@@ -15,7 +15,7 @@ class WorkflowTaskAPI(APIClient):
         status: Literal["completed", "failed", "failed_with_terminal_error"],
         output: dict | None = None,
     ) -> WorkflowTaskExecution:
-        """`Update status of async task. <https://api-docs.cognite.com/20230101/tag/Tasks/operation/UpdateTaskStatus>`_
+        """`Update status of async task <https://api-docs.cognite.com/20230101/tag/Tasks/operation/UpdateTaskStatus>`_.
 
         For tasks that has been marked with 'is_async = True', the status must be updated by calling this endpoint with either 'completed', 'failed' or 'failed_with_terminal_error'.
 
@@ -34,17 +34,21 @@ class WorkflowTaskAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "completed")
+                >>> res = client.workflows.tasks.update(
+                ...     "000560bc-9080-4286-b242-a27bb4819253", status="completed"
+                ... )
 
             Update task with id '000560bc-9080-4286-b242-a27bb4819253' to status 'failed' with output '{"a": 1, "b": 2}':
 
-                >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "failed", output={"a": 1, "b": 2})
+                >>> res = client.workflows.tasks.update(
+                ...     "000560bc-9080-4286-b242-a27bb4819253", status="failed", output={"a": 1, "b": 2}
+                ... )
 
             Trigger workflow, retrieve detailed task execution and update status of the second task (assumed to be async) to 'completed':
 
                 >>> res = client.workflows.executions.run("my workflow", "1")
                 >>> res = client.workflows.executions.retrieve_detailed(res.id)
-                >>> res = client.workflows.tasks.update(res.tasks[1].id, "completed")
+                >>> res = client.workflows.tasks.update(res.tasks[1].id, status="completed")
 
         """
         body: dict[str, Any] = {"status": status.upper()}
@@ -53,4 +57,4 @@ class WorkflowTaskAPI(APIClient):
         response = await self._post(
             url_path=f"{self._RESOURCE_PATH}/{task_id}/update", json=body, semaphore=self._get_semaphore("write")
         )
-        return WorkflowTaskExecution.load(response.json())
+        return WorkflowTaskExecution._load(response.json())

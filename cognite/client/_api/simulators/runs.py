@@ -12,6 +12,8 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationRunDataList,
     SimulationRunList,
     SimulationRunWrite,
+    SimulatorRunStatus,
+    SimulatorRunType,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -47,8 +49,8 @@ class SimulatorRunsAPI(APIClient):
         self,
         chunk_size: int,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -65,8 +67,8 @@ class SimulatorRunsAPI(APIClient):
         self,
         chunk_size: None = None,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -82,8 +84,8 @@ class SimulatorRunsAPI(APIClient):
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -101,8 +103,8 @@ class SimulatorRunsAPI(APIClient):
         Args:
             chunk_size (int | None): Number of simulation runs to return in each chunk. Defaults to yielding one simulation run a time.
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (str | None): Filter by simulation run status
-            run_type (str | None): Filter by simulation run type
+            status (SimulatorRunStatus | None): Filter by simulation run status
+            run_type (SimulatorRunType | None): Filter by simulation run type
             model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
             simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids
@@ -143,8 +145,8 @@ class SimulatorRunsAPI(APIClient):
     async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -155,14 +157,14 @@ class SimulatorRunsAPI(APIClient):
         simulation_time: TimestampRange | None = None,
         sort: SimulationRunsSort | None = None,
     ) -> SimulationRunList:
-        """`Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
+        """`Filter simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
 
         Retrieves a list of simulation runs that match the given criteria.
 
         Args:
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (str | None): Filter by simulation run status
-            run_type (str | None): Filter by simulation run type
+            status (SimulatorRunStatus | None): Filter by simulation run status
+            run_type (SimulatorRunType | None): Filter by simulation run type
             model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
             simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids
@@ -189,8 +191,7 @@ class SimulatorRunsAPI(APIClient):
 
             Filter runs by status and simulator external ids:
                 >>> res = client.simulators.runs.list(
-                ...     simulator_external_ids=["PROSPER", "DWSIM"],
-                ...     status="success"
+                ...     simulator_external_ids=["PROSPER", "DWSIM"], status="success"
                 ... )
 
             Filter runs by time ranges:
@@ -236,7 +237,7 @@ class SimulatorRunsAPI(APIClient):
         self,
         ids: int | Sequence[int],
     ) -> SimulationRun | SimulationRunList | None:
-        """`Retrieve simulation runs by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_by_id_simulators_runs_byids_post>`_
+        """`Retrieve simulation runs by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/retrieve_simulation_run_by_id>`_
 
         Args:
             ids (int | Sequence[int]): The ID(s) of the simulation run(s) to retrieve.
@@ -269,7 +270,7 @@ class SimulatorRunsAPI(APIClient):
     async def create(
         self, items: SimulationRunWrite | Sequence[SimulationRunWrite]
     ) -> SimulationRun | SimulationRunList:
-        """`Create simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
+        """`Create simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
 
         Args:
             items (SimulationRunWrite | Sequence[SimulationRunWrite]): The simulation run(s) to execute.
@@ -306,7 +307,7 @@ class SimulatorRunsAPI(APIClient):
         self,
         run_id: int,
     ) -> SimulationRunDataList:
-        """`Get simulation run data <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
+        """`Get simulation run data <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
 
         Retrieve data associated with a simulation run by ID.
 

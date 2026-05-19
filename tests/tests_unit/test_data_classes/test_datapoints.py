@@ -69,6 +69,9 @@ class TestDatapointsArray:
 
         params: dict = dict(
             id=123,
+            is_string=False,
+            is_step=False,
+            type="numeric",
             timestamp=np.array([1, 2, 3], dtype=np.int64),
             value=np.array([-1, None, 2.5], dtype=np.float64),
         )
@@ -90,9 +93,19 @@ class TestToPandas:
         dps_cls = dps_lst_cls._RESOURCE
         df = dps_lst_cls(
             [
-                dps_cls(timestamp=ts, value=[2.0], id=123, is_string=False),
-                dps_cls(timestamp=ts, value=[4.0], external_id="foo", is_string=False),
-                dps_cls(timestamp=ts, value=[6.0], instance_id=NodeId("s", "x"), is_string=False),
+                dps_cls(timestamp=ts, value=[2.0], id=123, is_string=False, is_step=False, type="numeric"),
+                dps_cls(
+                    timestamp=ts, value=[4.0], id=456, external_id="foo", is_string=False, is_step=False, type="numeric"
+                ),
+                dps_cls(
+                    timestamp=ts,
+                    value=[6.0],
+                    id=789,
+                    instance_id=NodeId("s", "x"),
+                    is_string=False,
+                    is_step=False,
+                    type="numeric",
+                ),
             ]
         ).to_pandas()
 
@@ -100,7 +113,5 @@ class TestToPandas:
             {1: 2.0, 2: 4.0, 3: 6.0},
             index=np.array([1234 * 1_000_000], dtype="datetime64[ns]"),
         )
-        exp_df.columns = pd.MultiIndex.from_tuples(
-            [(123,), ("foo",), (NodeId(space="s", external_id="x"),)], names=["identifier"]
-        )
+        exp_df.columns = pd.Index([123, "foo", NodeId(space="s", external_id="x")], name="identifier")
         pd.testing.assert_frame_equal(df, exp_df)

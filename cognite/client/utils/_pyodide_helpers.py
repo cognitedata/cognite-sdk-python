@@ -9,9 +9,50 @@ from cognite.client.credentials import CredentialProvider
 
 logger = logging.getLogger(__name__)
 
+_TASK_REF_TZDATA: object = None  # We need a global ref
+
+
+def _apply_legacy_pyodide_httpx_patch() -> None:
+    try:
+        import pyodide_httpx  # type: ignore [import-not-found]
+    except ImportError:
+        logger.warning(
+            "The 'pyodide-httpx' package is required for this Pyodide version (<0.29) but was not found. "
+            "HTTP requests may fail."
+        )
+        return
+
+    pyodide_httpx.patch_httpx()
+
+    # Replace CORS-choker 'user-agent' with friendly 'x-user-agent':
+    def get_x_user_agent_header() -> dict[str, str]:
+        from cognite.client._basic_api_client import get_user_agent
+
+        return {"x-user-agent": get_user_agent()}
+
+    cc._basic_api_client.get_user_agent_header = get_x_user_agent_header
+
+    # You would think that was enough, but no, httpx is very helpful and sets 'user-agent' if we
+    # "forgot about it": https://github.com/encode/httpx/discussions/1566#discussioncomment-594451
+    from cognite.client._http_client import get_global_async_httpx_client
+
+    httpx_client = get_global_async_httpx_client()
+    del httpx_client.headers["user-agent"]
+
 
 def patch_sdk_for_pyodide() -> None:
     # Patch Pyodide related issues
+    # -----------------
+    try:
+        import pyodide  # type: ignore [import-not-found]
+
+        # Parse version (e.g., '0.26.2' -> (0, 26)) to conditionally apply the patch
+        version_parts = tuple(map(int, pyodide.__version__.split(".")[:2]))
+        if version_parts < (0, 29):
+            _apply_legacy_pyodide_httpx_patch()
+    except Exception as e:
+        logger.debug(f"Failed to check Pyodide version or apply legacy patch: {e}")
+
     # -----------------
     # Patch Cognite SDK
     # - For good measure ;)
@@ -37,10 +78,13 @@ def patch_sdk_for_pyodide() -> None:
     #   internally for e.g. datapoints and workflows.
     #   Note: This convenience will only work in chromium-based browsers (as of Sept 2025)
     try:
-        import micropip  # type: ignore [import-not-found]
-        from pyodide.ffi import run_sync  # type: ignore [import-not-found]
+        import asyncio
 
-        run_sync(micropip.install("tzdata"))
+        import micropip  # type: ignore [import-not-found]
+
+        global _TASK_REF_TZDATA  # keep the gc at bay
+        _TASK_REF_TZDATA = asyncio.ensure_future(micropip.install("tzdata"))
+
     except Exception:
         logger.debug(
             "Could not load 'tzdata' package automatically in pyodide. You may need to do this manually:"

@@ -361,7 +361,10 @@ class TestFilesAPI:
             assert retrieved is not None
             assert retrieved.instance_id == instance_id
 
-            update_writable = retrieved.as_write()
+            with pytest.raises(ValueError, match=r"cannot be created via the Files API"):
+                retrieved.as_write()
+
+            update_writable = retrieved
             update_writable.metadata = {"a": "b"}
             update_writable.external_id = exernal_id + "updated"
             updated_writable = cognite_client.files.update(update_writable)

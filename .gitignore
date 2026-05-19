@@ -62,3 +62,6 @@ my_file.txt
 *.env
 .envrc
 .ropeproject
+
+# docs
+docs/source/generated/

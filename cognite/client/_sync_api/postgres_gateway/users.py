@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8e339ffece20e9f0685104f8b625f982
+9e343dcd2734f2822251a2f28026bdbe
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -63,7 +63,7 @@ class SyncUsersAPI(SyncAPIClient):
 
     def create(self, user: UserWrite | Sequence[UserWrite]) -> UserCreated | UserCreatedList:
         """
-        `Create Users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/create_users>`_
+        `Create Users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/create_users>`_.
 
         Create postgres users.
 
@@ -79,13 +79,16 @@ class SyncUsersAPI(SyncAPIClient):
 
                 >>> import os
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.postgres_gateway import UserWrite, SessionCredentials
+                >>> from cognite.client.data_classes.postgres_gateway import (
+                ...     UserWrite,
+                ...     SessionCredentials,
+                ... )
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> session = client.iam.sessions.create(
                 ...     ClientCredentials(os.environ["IDP_CLIENT_ID"], os.environ["IDP_CLIENT_SECRET"]),
-                ...     session_type="CLIENT_CREDENTIALS"
+                ...     session_type="CLIENT_CREDENTIALS",
                 ... )
                 >>> user = UserWrite(credentials=SessionCredentials(nonce=session.nonce))
                 >>> res = client.postgres_gateway.users.create(user)
@@ -100,7 +103,7 @@ class SyncUsersAPI(SyncAPIClient):
 
     def update(self, items: UserUpdate | UserWrite | Sequence[UserUpdate | UserWrite]) -> User | UserList:
         """
-        `Update users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/update_users>`_
+        `Update users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/update_users>`_.
 
         Update postgres users
 
@@ -116,22 +119,27 @@ class SyncUsersAPI(SyncAPIClient):
 
                 >>> import os
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.postgres_gateway import UserUpdate, SessionCredentials
+                >>> from cognite.client.data_classes.postgres_gateway import (
+                ...     UserUpdate,
+                ...     SessionCredentials,
+                ... )
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> session = client.iam.sessions.create(
                 ...     ClientCredentials(os.environ["IDP_CLIENT_ID"], os.environ["IDP_CLIENT_SECRET"]),
-                ...     session_type="CLIENT_CREDENTIALS"
+                ...     session_type="CLIENT_CREDENTIALS",
                 ... )
-                >>> update = UserUpdate('myUser').credentials.set(SessionCredentials(nonce=session.nonce))
+                >>> update = UserUpdate("myUser").credentials.set(
+                ...     SessionCredentials(nonce=session.nonce)
+                ... )
                 >>> res = client.postgres_gateway.users.update(update)
         """
         return run_sync(self.__async_client.postgres_gateway.users.update(items=items))
 
     def delete(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """
-        `Delete postgres user(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/delete_users>`_
+        `Delete postgres user(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/delete_users>`_.
 
         Delete postgres users
 
@@ -161,7 +169,7 @@ class SyncUsersAPI(SyncAPIClient):
 
     def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> User | UserList:
         """
-        `Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retreive_users>`_
+        `Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retreive_users>`_.
 
         Retrieve a list of postgres users by their usernames, optionally ignoring unknown usernames
 
@@ -189,7 +197,7 @@ class SyncUsersAPI(SyncAPIClient):
 
     def list(self, limit: int = DEFAULT_LIMIT_READ) -> UserList:
         """
-        `Fetch scoped users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/filter_users>`_
+        `Fetch scoped users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/filter_users>`_.
 
         List all users in a given project.
 
@@ -216,6 +224,6 @@ class SyncUsersAPI(SyncAPIClient):
             Iterate over chunks of users to reduce memory load:
 
                 >>> for user_list in client.postgres_gateway.users(chunk_size=25):
-                ...     user_list # do something with the users
+                ...     user_list  # do something with the users
         """
         return run_sync(self.__async_client.postgres_gateway.users.list(limit=limit))

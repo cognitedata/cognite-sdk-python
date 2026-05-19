@@ -1,6 +1,6 @@
 """
 ===============================================================================
-341c216ca7805041eb8b81051219edd4
+7f8fbb89585e5600a0adc8cbcdab740b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -37,7 +37,7 @@ class SyncUnitAPI(SyncAPIClient):
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Unit | UnitList | None:
         """
-        `Retrieve one or more unit <https://developer.cognite.com/api#tag/Units/operation/byIdsUnits>`_
+        `Retrieve one or more unit <https://api-docs.cognite.com/20230101/tag/Units/operation/byIdsUnits>`_.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external IDs
@@ -53,11 +53,11 @@ class SyncUnitAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.units.retrieve('temperature:deg_c')
+                >>> res = client.units.retrieve("temperature:deg_c")
 
             Retrive units 'temperature:deg_c' and 'pressure:bar':
 
-                >>> res = client.units.retrieve(['temperature:deg_c', 'pressure:bar'])
+                >>> res = client.units.retrieve(["temperature:deg_c", "pressure:bar"])
         """
         return run_sync(
             self.__async_client.units.retrieve(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)
@@ -92,7 +92,9 @@ class SyncUnitAPI(SyncAPIClient):
         return_closest_matches: bool = False,
     ) -> Unit | UnitList:
         """
-        Look up a unit by alias, optionally for a given quantity. Aliases and quantities are case-sensitive.
+        Look up a unit by alias, optionally for a given quantity.
+
+        Aliases and quantities are case-sensitive.
 
         Note:
             When just ``alias`` is given (i.e. ``quantity`` is not specified), some aliases are ambiguous as they are used
@@ -119,11 +121,11 @@ class SyncUnitAPI(SyncAPIClient):
                     >>> from cognite.client import CogniteClient, AsyncCogniteClient
                     >>> client = CogniteClient()
                     >>> # async_client = AsyncCogniteClient()  # another option
-                    >>> unit = client.units.from_alias('cmol / L')
+                    >>> unit = client.units.from_alias("cmol / L")
 
                 Look up ambiguous alias 'F' by passing quantity 'Temperature':
 
-                    >>> unit = client.units.from_alias('F', 'Temperature')
+                    >>> unit = client.units.from_alias("F", "Temperature")
 
                 Search for the closest matching unit of 'kilo watt' (should be 'kilowatt'):
 
@@ -140,7 +142,7 @@ class SyncUnitAPI(SyncAPIClient):
 
     def list(self) -> UnitList:
         """
-        `List all supported units <https://developer.cognite.com/api#tag/Units/operation/listUnits>`_
+        `List all supported units <https://api-docs.cognite.com/20230101/tag/Units/operation/listUnits>`_.
 
         Returns:
             UnitList: List of units

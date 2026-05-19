@@ -107,7 +107,7 @@ class CogniteResource(ABC):
 
     @final
     @classmethod
-    def load(cls, resource: dict | str) -> Self:
+    def load(cls, resource: dict[str, Any] | str) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
         loaded = load_resource_to_dict(resource)
         return cls._load(loaded)
@@ -135,6 +135,14 @@ class CogniteResource(ABC):
         if resource is None:
             return None
         return cls._load(resource)
+
+    @final
+    @classmethod
+    def load_if(cls, resource: dict[str, Any] | str | None) -> Self | None:
+        """Load from a YAML/JSON string or dict, or return None if input is None."""
+        if resource is None:
+            return None
+        return cls.load(resource)
 
     def to_pandas(
         self,
@@ -389,7 +397,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     @final
     @classmethod
     def load(cls, resource: Sequence[dict[str, Any]] | str) -> Self:
-        """Load a resource from a YAML/JSON string or iterable of dict."""
+        """Load a resource from a YAML/JSON string or sequence of dict."""
         if isinstance(resource, str):
             resource = load_yaml_or_json(resource)
 
@@ -408,6 +416,14 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         if resource is None:
             return None
         return cls._load(resource)
+
+    @final
+    @classmethod
+    def load_if(cls, resource: Sequence[dict[str, Any]] | str | None) -> Self | None:
+        """Load a resource from a YAML/JSON string or sequence of dict, or return None if input is None."""
+        if resource is None:
+            return None
+        return cls.load(resource)
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:

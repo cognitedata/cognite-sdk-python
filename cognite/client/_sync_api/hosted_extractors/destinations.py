@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e357a5685b77fbbefe2a7f72f8929ba0
+5a976b1ed38fe4beaab1deffff4c55bf
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -65,7 +65,7 @@ class SyncDestinationsAPI(SyncAPIClient):
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Destination | DestinationList:
         """
-        `Retrieve one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/retrieve_destinations>`_
+        `Retrieve one or more destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/retrieve_destinations>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -80,11 +80,13 @@ class SyncDestinationsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.hosted_extractors.destinations.retrieve('myDestination')
+                >>> res = client.hosted_extractors.destinations.retrieve("myDestination")
 
             Get multiple destinations by id:
 
-                >>> res = client.hosted_extractors.destinations.retrieve(["myDestination", "myDestination2"], ignore_unknown_ids=True)
+                >>> res = client.hosted_extractors.destinations.retrieve(
+                ...     ["myDestination", "myDestination2"], ignore_unknown_ids=True
+                ... )
         """
         return run_sync(
             self.__async_client.hosted_extractors.destinations.retrieve(
@@ -96,7 +98,7 @@ class SyncDestinationsAPI(SyncAPIClient):
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
         """
-        `Delete one or more destsinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/delete_destinations>`_
+        `Delete one or more destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/delete_destinations>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -126,7 +128,7 @@ class SyncDestinationsAPI(SyncAPIClient):
 
     def create(self, items: DestinationWrite | Sequence[DestinationWrite]) -> Destination | DestinationList:
         """
-        `Create one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/create_destinations>`_
+        `Create one or more destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/create_destinations>`_.
 
         Args:
             items (DestinationWrite | Sequence[DestinationWrite]): Destination(s) to create.
@@ -139,10 +141,17 @@ class SyncDestinationsAPI(SyncAPIClient):
             Create new destination:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.hosted_extractors import DestinationWrite, SessionWrite
+                >>> from cognite.client.data_classes.hosted_extractors import (
+                ...     DestinationWrite,
+                ...     SessionWrite,
+                ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> destination = DestinationWrite(external_id='my_dest', credentials=SessionWrite("my_nonce"), target_data_set_id=123)
+                >>> destination = DestinationWrite(
+                ...     external_id="my_dest",
+                ...     credentials=SessionWrite("my_nonce"),
+                ...     target_data_set_id=123,
+                ... )
                 >>> res = client.hosted_extractors.destinations.create(destination)
         """
         return run_sync(self.__async_client.hosted_extractors.destinations.create(items=items))
@@ -167,7 +176,7 @@ class SyncDestinationsAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Destination | DestinationList:
         """
-        `Update one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/update_destinations>`_
+        `Update one or more destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/update_destinations>`_.
 
         Args:
             items (DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]): Destination(s) to update.
@@ -184,14 +193,14 @@ class SyncDestinationsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import DestinationUpdate
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> destination = DestinationUpdate('my_dest').target_data_set_id.set(123)
+                >>> destination = DestinationUpdate("my_dest").target_data_set_id.set(123)
                 >>> res = client.hosted_extractors.destinations.update(destination)
         """
         return run_sync(self.__async_client.hosted_extractors.destinations.update(items=items, mode=mode))
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DestinationList:
         """
-        `List destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/list_destinations>`_
+        `List destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/list_destinations>`_.
 
         Args:
             limit (int | None): Maximum number of destinations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -216,6 +225,6 @@ class SyncDestinationsAPI(SyncAPIClient):
             Iterate over chunks of destinations to reduce memory load:
 
                 >>> for destination_list in client.hosted_extractors.destinations(chunk_size=25):
-                ...     destination_list # do something with the destinationss
+                ...     destination_list  # do something with the destinationss
         """
         return run_sync(self.__async_client.hosted_extractors.destinations.list(limit=limit))

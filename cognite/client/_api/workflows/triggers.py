@@ -33,7 +33,7 @@ class WorkflowTriggerAPI(APIClient):
         workflow_trigger: WorkflowTriggerUpsert,
         client_credentials: ClientCredentials | dict | None = None,
     ) -> WorkflowTrigger:
-        """`Create or update a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_
+        """`Create or update a trigger for a workflow <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_.
 
         Args:
             workflow_trigger (WorkflowTriggerUpsert): The workflow trigger specification.
@@ -47,14 +47,19 @@ class WorkflowTriggerAPI(APIClient):
             Create or update a scheduled trigger for a workflow:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.workflows import WorkflowTriggerUpsert, WorkflowScheduledTriggerRule
+                >>> from cognite.client.data_classes.workflows import (
+                ...     WorkflowTriggerUpsert,
+                ...     WorkflowScheduledTriggerRule,
+                ... )
                 >>> from zoneinfo import ZoneInfo
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.workflows.triggers.upsert(
                 ...     WorkflowTriggerUpsert(
                 ...         external_id="my_trigger",
-                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *", timezone=ZoneInfo("UTC")),
+                ...         trigger_rule=WorkflowScheduledTriggerRule(
+                ...             cron_expression="0 0 * * *", timezone=ZoneInfo("UTC")
+                ...         ),
                 ...         workflow_external_id="my_workflow",
                 ...         workflow_version="1",
                 ...         input={"a": 1, "b": 2},
@@ -64,8 +69,15 @@ class WorkflowTriggerAPI(APIClient):
 
             Create or update a data modeling trigger for a workflow:
 
-                >>> from cognite.client.data_classes.workflows import WorkflowDataModelingTriggerRule, WorkflowTriggerDataModelingQuery
-                >>> from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
+                >>> from cognite.client.data_classes.workflows import (
+                ...     WorkflowDataModelingTriggerRule,
+                ...     WorkflowTriggerDataModelingQuery,
+                ... )
+                >>> from cognite.client.data_classes.data_modeling.query import (
+                ...     NodeResultSetExpression,
+                ...     Select,
+                ...     SourceSelector,
+                ... )
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes.filters import Equals
                 >>> view_id = ViewId("my_space_id", "view_external_id", "v1")
@@ -74,7 +86,13 @@ class WorkflowTriggerAPI(APIClient):
                 ...         external_id="my_trigger",
                 ...         trigger_rule=WorkflowDataModelingTriggerRule(
                 ...             data_modeling_query=WorkflowTriggerDataModelingQuery(
-                ...                 with_={"timeseries": NodeResultSetExpression(filter=Equals(view_id.as_property_ref("name"), value="my_name"))},
+                ...                 with_={
+                ...                     "timeseries": NodeResultSetExpression(
+                ...                         filter=Equals(
+                ...                             view_id.as_property_ref("name"), value="my_name"
+                ...                         )
+                ...                     )
+                ...                 },
                 ...                 select={"timeseries": Select([SourceSelector(view_id, ["name"])])},
                 ...             ),
                 ...             batch_size=500,
@@ -99,7 +117,7 @@ class WorkflowTriggerAPI(APIClient):
         return WorkflowTrigger._load(response.json().get("items")[0])
 
     async def delete(self, external_id: str | SequenceNotStr[str]) -> None:
-        """`Delete one or more triggers for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
+        """`Delete one or more triggers for a workflow <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_.
 
         Args:
             external_id (str | SequenceNotStr[str]): The external id(s) of the trigger(s) to delete.
@@ -123,7 +141,7 @@ class WorkflowTriggerAPI(APIClient):
         )
 
     async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
-        """`List the workflow triggers. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
+        """`List the workflow triggers <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/FetchAllTriggers>`_.
 
         Args:
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -149,7 +167,7 @@ class WorkflowTriggerAPI(APIClient):
         )
 
     async def list_runs(self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerRunList:
-        """`List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggerHistory>`_
+        """`List the history of runs for a trigger <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggerHistory>`_.
 
         Args:
             external_id (str): The external id of the trigger to list runs for.
@@ -176,7 +194,7 @@ class WorkflowTriggerAPI(APIClient):
         )
 
     async def pause(self, external_id: str) -> None:
-        """`Pause a workflow trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/pauseTrigger>`_
+        """`Pause a workflow trigger <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/pauseTrigger>`_.
 
         When a trigger is paused, it will not trigger new workflow executions.
         This operation is idempotent - pausing an already paused trigger has no effect.
@@ -199,7 +217,7 @@ class WorkflowTriggerAPI(APIClient):
         )
 
     async def resume(self, external_id: str) -> None:
-        """`Resume a paused workflow trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/resumeTrigger>`_
+        """`Resume a paused workflow trigger <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/resumeTrigger>`_.
 
         When a trigger is resumed, it will start triggering workflow executions again according to its trigger rule.
         This operation is idempotent - resuming an already active trigger has no effect.

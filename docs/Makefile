@@ -8,6 +8,8 @@ SPHINXPROJ    = cognite-sdk
 SOURCEDIR     = source
 BUILDDIR      = build
 
+export BUILD_COGNITE_SDK_DOCS=true
+
 # Put it first so that "make" without argument is like "make help".
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

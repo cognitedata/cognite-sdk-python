@@ -51,7 +51,7 @@ class UnitAPI(APIClient):
     async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Unit | UnitList | None:
-        """`Retrieve one or more unit <https://developer.cognite.com/api#tag/Units/operation/byIdsUnits>`_
+        """`Retrieve one or more unit <https://api-docs.cognite.com/20230101/tag/Units/operation/byIdsUnits>`_.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external IDs
@@ -67,11 +67,11 @@ class UnitAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.units.retrieve('temperature:deg_c')
+                >>> res = client.units.retrieve("temperature:deg_c")
 
             Retrive units 'temperature:deg_c' and 'pressure:bar':
 
-                >>> res = client.units.retrieve(['temperature:deg_c', 'pressure:bar'])
+                >>> res = client.units.retrieve(["temperature:deg_c", "pressure:bar"])
 
         """
         identifier = IdentifierSequence.load(external_ids=external_id)
@@ -110,7 +110,9 @@ class UnitAPI(APIClient):
         return_ambiguous: bool = False,
         return_closest_matches: bool = False,
     ) -> Unit | UnitList:
-        """Look up a unit by alias, optionally for a given quantity. Aliases and quantities are case-sensitive.
+        """Look up a unit by alias, optionally for a given quantity.
+
+        Aliases and quantities are case-sensitive.
 
         Note:
             When just ``alias`` is given (i.e. ``quantity`` is not specified), some aliases are ambiguous as they are used
@@ -137,11 +139,11 @@ class UnitAPI(APIClient):
                     >>> from cognite.client import CogniteClient, AsyncCogniteClient
                     >>> client = CogniteClient()
                     >>> # async_client = AsyncCogniteClient()  # another option
-                    >>> unit = client.units.from_alias('cmol / L')
+                    >>> unit = client.units.from_alias("cmol / L")
 
                 Look up ambiguous alias 'F' by passing quantity 'Temperature':
 
-                    >>> unit = client.units.from_alias('F', 'Temperature')
+                    >>> unit = client.units.from_alias("F", "Temperature")
 
                 Search for the closest matching unit of 'kilo watt' (should be 'kilowatt'):
 
@@ -202,7 +204,7 @@ class UnitAPI(APIClient):
             raise ValueError(err_msg) from None
 
     async def list(self) -> UnitList:
-        """`List all supported units <https://developer.cognite.com/api#tag/Units/operation/listUnits>`_
+        """`List all supported units <https://api-docs.cognite.com/20230101/tag/Units/operation/listUnits>`_.
 
         Returns:
             UnitList: List of units

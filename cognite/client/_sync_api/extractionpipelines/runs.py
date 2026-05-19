@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c7e0250a7afdf41370a375942043efcf
+7819cebdbaa57d146a973df630ad8d75
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -41,7 +41,7 @@ class SyncExtractionPipelineRunsAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ExtractionPipelineRunList:
         """
-        `List runs for an extraction pipeline with given external_id <https://developer.cognite.com/api#tag/Extraction-Pipelines-Runs/operation/filterRuns>`_
+        `List runs for an extraction pipeline with given external_id <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines-Runs/operation/filterRuns>`_.
 
         Args:
             external_id (str): Extraction pipeline external Id.
@@ -70,12 +70,16 @@ class SyncExtractionPipelineRunsAPI(SyncAPIClient):
 
             Filter extraction pipeline runs on a given status:
 
-                >>> runs_list = client.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], limit=5)
+                >>> runs_list = client.extraction_pipelines.runs.list(
+                ...     external_id="test ext id", statuses=["seen"], limit=5
+                ... )
 
             Get all failed pipeline runs in the last 24 hours for pipeline 'extId':
 
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
-                >>> res = client.extraction_pipelines.runs.list(external_id="extId", statuses="failure", created_time="24h-ago")
+                >>> res = client.extraction_pipelines.runs.list(
+                ...     external_id="extId", statuses="failure", created_time="24h-ago"
+                ... )
         """
         return run_sync(
             self.__async_client.extraction_pipelines.runs.list(
@@ -103,7 +107,7 @@ class SyncExtractionPipelineRunsAPI(SyncAPIClient):
         | Sequence[ExtractionPipelineRunWrite],
     ) -> ExtractionPipelineRun | ExtractionPipelineRunList:
         """
-        `Create one or more extraction pipeline runs. <https://developer.cognite.com/api#tag/Extraction-Pipelines-Runs/operation/createRuns>`_
+        `Create one or more extraction pipeline runs <https://api-docs.cognite.com/20230101/tag/Extraction-Pipelines-Runs/operation/createRuns>`_.
 
         You can create an arbitrary number of extraction pipeline runs, and the SDK will split the request into multiple requests.
 
@@ -121,6 +125,7 @@ class SyncExtractionPipelineRunsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import ExtractionPipelineRunWrite
                 >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.runs.create(
-                ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId"))
+                ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId")
+                ... )
         """
         return run_sync(self.__async_client.extraction_pipelines.runs.create(run=run))

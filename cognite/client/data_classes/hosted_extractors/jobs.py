@@ -39,7 +39,7 @@ class JobFormat(CogniteResource, ABC):
     @classmethod
     @abstractmethod
     def _load_job(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -159,7 +159,7 @@ class JobConfig(CogniteResource, ABC):
     @classmethod
     @abstractmethod
     def _load_config(cls, data: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -199,7 +199,7 @@ class IncrementalLoad(CogniteResource, ABC):
     @classmethod
     @abstractmethod
     def _load_incremental_load(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:

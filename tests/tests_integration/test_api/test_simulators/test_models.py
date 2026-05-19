@@ -31,6 +31,11 @@ from tests.tests_integration.test_api.test_simulators.utils import update_logs
     "seed_resource_names",
     "seed_simulator_model_revisions",
 )
+@pytest.mark.allow_no_semaphore(
+    "Simulator tests use direct _post(..., semaphore=None) calls in fixtures/seed helpers to "
+    "exercise endpoints (logs/update, callback, integrations/update) that aren't exposed via "
+    "public SDK methods — they're worker-facing endpoints used here for test setup only."
+)
 class TestSimulatorModels:
     def test_list_models(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
         models = cognite_client.simulators.models.list(

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-00f698c970d43d29fc5df777446fe4f3
+b0d27c551f334a09fc2c2f207c33f00b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -28,7 +28,7 @@ class SyncWorkflowTaskAPI(SyncAPIClient):
         output: dict | None = None,
     ) -> WorkflowTaskExecution:
         """
-        `Update status of async task. <https://api-docs.cognite.com/20230101/tag/Tasks/operation/UpdateTaskStatus>`_
+        `Update status of async task <https://api-docs.cognite.com/20230101/tag/Tasks/operation/UpdateTaskStatus>`_.
 
         For tasks that has been marked with 'is_async = True', the status must be updated by calling this endpoint with either 'completed', 'failed' or 'failed_with_terminal_error'.
 
@@ -47,16 +47,20 @@ class SyncWorkflowTaskAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "completed")
+                >>> res = client.workflows.tasks.update(
+                ...     "000560bc-9080-4286-b242-a27bb4819253", status="completed"
+                ... )
 
             Update task with id '000560bc-9080-4286-b242-a27bb4819253' to status 'failed' with output '{"a": 1, "b": 2}':
 
-                >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "failed", output={"a": 1, "b": 2})
+                >>> res = client.workflows.tasks.update(
+                ...     "000560bc-9080-4286-b242-a27bb4819253", status="failed", output={"a": 1, "b": 2}
+                ... )
 
             Trigger workflow, retrieve detailed task execution and update status of the second task (assumed to be async) to 'completed':
 
                 >>> res = client.workflows.executions.run("my workflow", "1")
                 >>> res = client.workflows.executions.retrieve_detailed(res.id)
-                >>> res = client.workflows.tasks.update(res.tasks[1].id, "completed")
+                >>> res = client.workflows.tasks.update(res.tasks[1].id, status="completed")
         """
         return run_sync(self.__async_client.workflows.tasks.update(task_id=task_id, status=status, output=output))

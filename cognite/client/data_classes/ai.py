@@ -34,7 +34,7 @@ class Summary:
         summary (str): The textual summary of the document
         id (int | None): The id of the document
         external_id (str | None): The external id of the document
-        instance_id (NodeId| None): The instance id of the document
+        instance_id (NodeId | None): The instance id of the document
     """
 
     summary: str
@@ -136,7 +136,7 @@ class AnswerContent:
 
     Args:
         text (str): The extracted plain text
-        content (list[AnswerReference]): The list of references
+        references (list[AnswerReference]): The list of references.
     """
 
     text: str

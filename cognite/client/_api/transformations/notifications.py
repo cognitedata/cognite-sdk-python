@@ -94,7 +94,7 @@ class TransformationNotificationsAPI(APIClient):
         | Sequence[TransformationNotification]
         | Sequence[TransformationNotificationWrite],
     ) -> TransformationNotification | TransformationNotificationList:
-        """`Subscribe for notifications on the transformation errors. <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/createTransformationNotifications>`_
+        """`Subscribe for notifications on the transformation errors <https://api-docs.cognite.com/20230101/tag/Transformation-Notifications/operation/createTransformationNotifications>`_.
 
         Args:
             notification (TransformationNotification | TransformationNotificationWrite | Sequence[TransformationNotification] | Sequence[TransformationNotificationWrite]): Notification or list of notifications to create.
@@ -128,7 +128,7 @@ class TransformationNotificationsAPI(APIClient):
         destination: str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TransformationNotificationList:
-        """`List notification subscriptions. <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/getTransformationNotifications>`_
+        """`List notification subscriptions <https://api-docs.cognite.com/20230101/tag/Transformation-Notifications/operation/getTransformationNotifications>`_.
 
         Args:
             transformation_id (int | None): Filter by transformation internal numeric ID.
@@ -170,7 +170,9 @@ class TransformationNotificationsAPI(APIClient):
         )
 
     async def delete(self, id: int | Sequence[int] | None = None) -> None:
-        """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/deleteTransformationNotifications>`_
+        """`Deletes the specified notification subscriptions on the transformation <https://api-docs.cognite.com/20230101/tag/Transformation-Notifications/operation/deleteTransformationNotifications>`_.
+
+        Does nothing when the subscriptions already don't exist.
 
         Args:
             id (int | Sequence[int] | None): Id or list of transformation notification ids
@@ -182,6 +184,6 @@ class TransformationNotificationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.transformations.notifications.delete(id=[1,2,3])
+                >>> client.transformations.notifications.delete(id=[1, 2, 3])
         """
         await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)

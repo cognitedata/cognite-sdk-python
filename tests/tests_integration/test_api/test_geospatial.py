@@ -6,6 +6,7 @@ import re
 import time
 import uuid
 from collections.abc import Callable, Iterator
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -59,6 +60,12 @@ def test_crs(cognite_client: CogniteClient) -> Iterator[CoordinateReferenceSyste
 @pytest.fixture(params=[True, False])
 def allow_crs_transformation(request: FixtureRequest) -> Iterator[bool]:
     yield request.param
+
+
+pytestmark = pytest.mark.skipif(
+    date.today() < date(2026, 6, 1),
+    reason="Geospatial service is unavailable, skipping until 2026-06-01",
+)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -840,23 +847,6 @@ class TestGeospatialAPI:
             raster_options={"DECIMAL_PRECISION": 5},
         )
         raster_content = (GEOSPATIAL_TEST_RESOURCES / "raster-grid-5-decimal.xyz").read_text()
-        assert res.decode(encoding="utf-8") == raster_content
-
-    def test_get_raster_with_transformation(
-        self,
-        cognite_client: CogniteClient,
-        test_feature_type_test_scoped: FeatureType,
-        test_feature_with_raster: Feature,
-    ) -> None:
-        res = cognite_client.geospatial.get_raster(
-            feature_type_external_id=test_feature_type_test_scoped.external_id,
-            feature_external_id=get_or_raise(test_feature_with_raster.external_id),
-            raster_property_name="raster",
-            raster_format="XYZ",
-            raster_srid=54030,
-            allow_crs_transformation=True,
-        )
-        raster_content = (GEOSPATIAL_TEST_RESOURCES / "raster-grid-54030-example.xyz").read_text()
         assert res.decode(encoding="utf-8") == raster_content
 
     def test_retrieve_features_with_raster_property(

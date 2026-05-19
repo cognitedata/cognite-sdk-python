@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._api_client import APIClient
 from cognite.client._sync_api.agents.agents import SyncAgentsAPI
 from cognite.client._sync_api.ai import SyncAIAPI
 from cognite.client._sync_api.annotations import SyncAnnotationsAPI
@@ -136,6 +137,47 @@ class CogniteClient:
             ClientConfig: The configuration object.
         """
         return self.__async_client._config
+
+    @property
+    def api_client(self) -> APIClient:
+        """Returns the underlying API client used for HTTP requests.
+
+        .. deprecated:: 8.0
+            Use :meth:`post`, :meth:`get`, or :meth:`put` instead.
+            Will be removed in v9.
+
+        .. warning::
+            This returns the **async** API client. Calling its methods directly
+            requires ``await`` and will not work in a synchronous context.
+            Use :meth:`post`, :meth:`get`, or :meth:`put` instead.
+
+        Returns:
+            APIClient: The async API client instance.
+        """
+        import warnings
+
+        warnings.warn(
+            "'api_client' is deprecated and will be removed in v9. "
+            "Use client.post(), client.get(), or client.put() instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        warnings.warn(
+            "'api_client' returns the underlying async API client. Calling its methods directly requires "
+            "'await' and will not work in a synchronous context. "
+            "Use client.post(), client.get(), or client.put() for synchronous HTTP requests instead.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return self.__async_client._api_client
+
+    def get_async_client(self) -> AsyncCogniteClient:
+        """Returns the underlying async client.
+
+        Returns:
+            AsyncCogniteClient: The async client instance.
+        """
+        return self.__async_client
 
     @classmethod
     def default(

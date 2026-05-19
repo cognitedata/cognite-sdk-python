@@ -28,6 +28,7 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
         description (str | None): The description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        runtime_version (str | None): The runtime version of the agent. Defines the complete execution environment including system prompt, available tools, and core features. Defaults to the latest version if not set. See https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_runtime_versions for available versions.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
     """
 
@@ -36,9 +37,11 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
     description: str | None = None
     instructions: str | None = None
     model: str | None = None
+    runtime_version: str | None = None
     labels: list[str] | None = None
 
 
+@dataclass
 class AgentUpsert(AgentCore):
     """Representation of an AI agent.
     This is the write format of an agent.
@@ -49,12 +52,13 @@ class AgentUpsert(AgentCore):
         description (str | None): The human readable description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        runtime_version (str | None): The runtime version of the agent. Defines the complete execution environment including system prompt, available tools, and core features. Defaults to the latest version if not set. See https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_runtime_versions for available versions.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
-        tools (Sequence[AgentToolUpsert] | None): List of tools for the agent.
+        tools (AgentToolUpsertList | Sequence[AgentToolUpsert] | None): List of tools for the agent.
 
     """
 
-    tools: Sequence[AgentToolUpsert] | None = None
+    tools: AgentToolUpsertList | Sequence[AgentToolUpsert] | None = None
 
     def __init__(
         self,
@@ -63,8 +67,9 @@ class AgentUpsert(AgentCore):
         description: str | None = None,
         instructions: str | None = None,
         model: str | None = None,
+        runtime_version: str | None = None,
         labels: list[str] | None = None,
-        tools: Sequence[AgentToolUpsert] | None = None,
+        tools: AgentToolUpsertList | Sequence[AgentToolUpsert] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -72,9 +77,14 @@ class AgentUpsert(AgentCore):
             description=description,
             instructions=instructions,
             model=model,
+            runtime_version=runtime_version,
             labels=labels,
         )
-        self.tools: AgentToolUpsertList | None = AgentToolUpsertList(tools) if tools is not None else None
+        self.tools = (
+            tools
+            if isinstance(tools, AgentToolUpsertList)
+            else (AgentToolUpsertList(tools) if tools is not None else None)
+        )
         # This stores any unknown properties that are not part of the defined fields.
         # This is useful while the API is evolving and new fields are added.
         self._unknown_properties: dict[str, object] = {}
@@ -104,6 +114,7 @@ class AgentUpsert(AgentCore):
             description=resource.get("description"),
             instructions=resource.get("instructions"),
             model=resource.get("model"),
+            runtime_version=resource.get("runtimeVersion"),
             labels=resource.get("labels"),
             tools=tools,
         )
@@ -112,6 +123,7 @@ class AgentUpsert(AgentCore):
         return instances
 
 
+@dataclass
 class Agent(AgentCore):
     """Representation of an AI agent.
     This is the read format of an agent.
@@ -119,28 +131,30 @@ class Agent(AgentCore):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): The name of the agent, for use in user interfaces.
+        created_time (int): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        last_updated_time (int): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         description (str | None): The human readable description of the agent. Always present in API responses.
         instructions (str | None): Instructions for the agent. Always present in API responses.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
+        runtime_version (str | None): The runtime version of the agent. Defines the complete execution environment including system prompt, available tools, and core features. Always present in API responses (server defaults to the latest version if not provided on upsert). See https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_runtime_versions for available versions.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
-        tools (Sequence[AgentTool] | None): List of tools for the agent.
-        created_time (int): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
-        last_updated_time (int): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
-        owner_id (str | None): The ID of the user who owns the agent.
+        tools (AgentToolList | Sequence[AgentTool] | None): List of tools for the agent.
+        owner_id (str | None): The ID of the user who owns the agent. Always present in API responses.
     """
 
     def __init__(
         self,
         external_id: str,
         name: str,
-        description: str | None,
-        instructions: str | None,
-        model: str | None,
-        labels: list[str] | None,
-        tools: Sequence[AgentTool] | None,
         created_time: int,
         last_updated_time: int,
-        owner_id: str | None,
+        description: str | None = None,
+        instructions: str | None = None,
+        model: str | None = None,
+        runtime_version: str | None = None,
+        labels: list[str] | None = None,
+        tools: AgentToolList | Sequence[AgentTool] | None = None,
+        owner_id: str | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -148,12 +162,18 @@ class Agent(AgentCore):
             description=description,
             instructions=instructions,
             model=model,
+            runtime_version=runtime_version,
             labels=labels,
         )
-        self.tools = AgentToolList(tools if tools is not None else [])
+        self.tools = (
+            tools if isinstance(tools, AgentToolList) else (AgentToolList(tools) if tools is not None else None)
+        )
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.owner_id = owner_id
+        # New required API fields - force correct type annotations.
+        # TODO: In the next major version we can make these properties required.
+        self.runtime_version: str = runtime_version  # type: ignore[assignment]
+        self.owner_id: str = owner_id  # type: ignore[assignment]
         # This stores any unknown properties that are not part of the defined fields.
         # This is useful while the API is evolving and new fields are added.
         self._unknown_properties: dict[str, object] = {}
@@ -174,6 +194,7 @@ class Agent(AgentCore):
             description=self.description,
             instructions=self.instructions,
             model=self.model,
+            runtime_version=self.runtime_version,
             labels=self.labels,
             tools=[tool.as_write() for tool in self.tools] if self.tools else None,
         )
@@ -187,11 +208,12 @@ class Agent(AgentCore):
             description=resource.get("description"),
             instructions=resource.get("instructions"),
             model=resource.get("model"),
+            runtime_version=resource["runtimeVersion"],
             labels=resource.get("labels"),
             tools=[AgentTool._load(item) for item in tools_data] if tools_data else None,
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
-            owner_id=resource.get("ownerId"),
+            owner_id=resource["ownerId"],
         )
         existing = set(instance.dump(camel_case=True).keys())
         instance._unknown_properties = {key: value for key, value in resource.items() if key not in existing}

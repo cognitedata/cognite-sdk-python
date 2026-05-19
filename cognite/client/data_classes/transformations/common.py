@@ -412,6 +412,8 @@ class OidcCredentials:
     def _load_if(cls, data: dict[str, Any] | None) -> Self | None:
         return cls.load(data) if data is not None else None
 
+    load_if = _load_if  # OidcCredentials has no private load method, so these are the same
+
 
 class NonceCredentials:
     def __init__(
@@ -454,6 +456,8 @@ class NonceCredentials:
     def _load_if(cls, data: dict[str, Any] | None) -> NonceCredentials | None:
         return cls.load(data) if data is not None else None
 
+    load_if = _load_if  # NonceCredentials has no private load method, so these are the same
+
 
 class TransformationBlockedInfo:
     """Information about the reason why and when a transformation is blocked.
@@ -474,6 +478,8 @@ class TransformationBlockedInfo:
     @classmethod
     def _load_if(cls, data: dict[str, Any] | None) -> TransformationBlockedInfo | None:
         return cls.load(data) if data is not None else None
+
+    load_if = _load_if  # TransformationBlockedInfo has no private load method, so these are the same
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)

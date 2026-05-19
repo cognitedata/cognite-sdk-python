@@ -14,7 +14,7 @@ import string
 import typing
 from collections.abc import Mapping
 from contextlib import contextmanager
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import UnionType
 from typing import Any, Literal, TypeVar, get_args, get_origin, get_type_hints
@@ -240,6 +240,30 @@ def random_gamma_dist_integer(inclusive_max: int, max_tries: int = 100) -> int:
 
 
 @contextmanager
+def fresh_concurrency_state() -> typing.Iterator[Any]:
+    """Clears all per-loop/-project semaphore caches and unfreezes ``global_config.concurrency_settings``
+    for the duration of the block, then restores the original frozen state.
+
+    Use this when a test needs to mutate concurrency settings or observe semaphore creation
+    on a clean slate. Yields the (singleton) ``ConcurrencySettings`` for convenience.
+    """
+    from cognite.client import global_config
+
+    cs = global_config.concurrency_settings
+    orig_frozen = cs.is_frozen
+    cs._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
+    for sub in cs._all_concurrency_configs:
+        sub._semaphore_cache.clear()
+    try:
+        yield cs
+    finally:
+        cs._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
+        for sub in cs._all_concurrency_configs:
+            sub._semaphore_cache.clear()
+        cs._ConcurrencySettings__frozen = orig_frozen  # type: ignore[attr-defined]
+
+
+@contextmanager
 def override_semaphore(
     new: int,
     target: Literal["general", "datapoints", "raw"],
@@ -254,24 +278,20 @@ def override_semaphore(
     settings: CRUDConcurrency = getattr(conc_settings, target)
     old_read, old_write, old_delete = settings.read, settings.write, settings.delete
 
-    semaphore_get_fn = settings._semaphore_factory
-    semaphore_get_fn.cache_clear()
+    settings._semaphore_cache.clear()
 
     if frozen_status := conc_settings.is_frozen:
         conc_settings._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
 
     settings.read, settings.write, settings.delete = new, new, new
-
-    test_operation: Literal["read", "write", "delete"] = random.choice(("read", "write", "delete"))
-    sem = semaphore_get_fn(test_operation, "whatever-project")  # this also freezes the settings again
-    assert new == sem._value == sem._bound_value, f"Semaphore didn't update according to overridden {new=}"  # type: ignore[attr-defined]
+    assert new == settings.read == settings.write == settings.delete
 
     try:
         yield
     finally:
         conc_settings._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
         settings.read, settings.write, settings.delete = old_read, old_write, old_delete
-        semaphore_get_fn.cache_clear()
+        settings._semaphore_cache.clear()
         conc_settings._ConcurrencySettings__frozen = frozen_status  # type: ignore[attr-defined]
 
 
@@ -416,10 +436,13 @@ class FakeCogniteResourceGenerator:
             keyword_arguments.pop("is_null", None)
         elif resource_cls is Transformation:
             # schedule and jobs must match external id and id
-            keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
-            keyword_arguments["schedule"].id = keyword_arguments["id"]
-            keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
-            keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
+            if "schedule" in keyword_arguments:
+                keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
+                keyword_arguments["schedule"].id = keyword_arguments["id"]
+            if "running_job" in keyword_arguments:
+                keyword_arguments["running_job"].transformation_id = keyword_arguments["id"]
+            if "last_finished_job" in keyword_arguments:
+                keyword_arguments["last_finished_job"].transformation_id = keyword_arguments["id"]
         elif resource_cls is TransformationScheduleWrite:
             # TransformationScheduleWrite requires either id or external_id
             keyword_arguments.pop("id", None)
@@ -442,6 +465,10 @@ class FakeCogniteResourceGenerator:
             keyword_arguments = {"items": [{"start": 1, "count": 1}]}
         elif resource_cls is timezone:
             positional_arguments.append(timedelta(hours=self._random.randint(-3, 3)))
+        elif resource_cls is datetime:
+            random_timestamp = self._random.randint(0, 1924905599)  # [1970, 2030]
+            positional_arguments = list(datetime.fromtimestamp(random_timestamp).timetuple()[:6])
+            keyword_arguments["tzinfo"] = timezone.utc
         elif resource_cls is RestConfig and isinstance(keyword_arguments.get("incremental_load"), NextUrlLoad):
             # RestConfig requires incremental_load to not be a NextUrlLoad object
             keyword_arguments["incremental_load"] = BodyLoad(

@@ -77,6 +77,10 @@ def api_client_with_token(async_client: AsyncCogniteClient) -> APIClient:
 RequestCase = namedtuple("RequestCase", ["name", "method", "kwargs"])
 
 
+@pytest.mark.allow_no_semaphore(
+    "These tests exercise the transport layer (_post/_get/_put with explicit semaphore=None) to "
+    "verify gzip, headers, retries and payload validation. Concurrency limiting is unrelated."
+)
 class TestBasicRequests:
     @pytest.fixture
     def mock_all_requests_ok(self, httpx_mock: HTTPXMock) -> Iterator[HTTPXMock]:
@@ -1834,6 +1838,9 @@ class TestRetryableEndpoints:
                 ("GET", "https://api.cognitedata.com/api/v1/projects/bla/limits/values", True),
                 ("GET", "https://api.cognitedata.com/api/v1/projects/bla/limits/values/streams.streams", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/limits/values/list", True),
+                # Streams API
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/delete", False),
             ]
         ),
     )
@@ -1955,7 +1962,7 @@ async def test_worker_in_backoff_loop_gets_new_token(httpx_mock: HTTPXMock) -> N
         method="POST",
         url=url,
         status_code=200,
-        json={"items": [{"id": 123, "createdTime": 123, "lastUpdatedTime": 123}]},
+        json={"items": [{"id": 123, "createdTime": 123, "lastUpdatedTime": 123, "rootId": 123, "name": "x"}]},
     )
 
     call_count = 0

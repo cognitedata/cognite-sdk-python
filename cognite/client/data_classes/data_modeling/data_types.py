@@ -35,7 +35,7 @@ class DirectRelationReference:
                 return cls(space, xid)
             case (space, xid):
                 return cls(space, xid)
-            case cls() | NodeId():  # type: ignore [misc]
+            case cls() | NodeId():
                 return cls(data.space, data.external_id)
             case _:
                 raise ValueError("Invalid data provided to load method. Must be dict or tuple with two elements.")
@@ -47,6 +47,8 @@ class DirectRelationReference:
         if data is None:
             return None
         return cls.load(data)
+
+    load_if = _load_if  # DirectRelationReference has no private load method, so these are the same
 
     def as_tuple(self) -> tuple[str, str]:
         return self.space, self.external_id

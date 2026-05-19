@@ -56,8 +56,8 @@ class UnknownContent(MessageContent):
     """Unknown content type for forward compatibility.
 
     Args:
-        data (dict[str, Any]): The raw content data.
         type (str): The content type.
+        data (dict[str, Any]): The raw content data.
     """
 
     type: str
@@ -231,13 +231,18 @@ class ClientToolCall(ActionCall):
 class ToolConfirmationCall(ActionCall):
     """A tool confirmation request from the agent.
 
+    Some tools require explicit user confirmation before execution, to prevent unintended or destructive actions.
+    These tools include Call Function, Run Python code, and Call REST API.
+    When an agent wants to run one of these tools, this action is included in the response
+    instead of the final result. Respond with a :class:`ToolConfirmationResult` using ``status="ALLOW"`` to proceed or ``status="DENY"`` to cancel.
+
     Args:
         action_id (str): The unique identifier for this action call.
-        content (MessageContent): The confirmation message content.
+        content (MessageContent): The human-readable confirmation message from the agent.
         tool_name (str): The name of the tool requiring confirmation.
         tool_arguments (dict[str, object]): The arguments for the tool call.
         tool_description (str): Description of what the tool does.
-        tool_type (str): The type of tool (e.g., "runPythonCode", "callRestApi").
+        tool_type (str): The type of tool (e.g., "callFunction", "runPythonCode", "callRestApi").
         details (dict[str, object] | None): Optional additional details about the tool call.
     """
 
@@ -321,9 +326,8 @@ class Message(CogniteResource):
     """A message to send to an agent.
 
     Args:
-        content (str | MessageContent): The message content. If a string is provided,
-            it will be converted to TextContent.
-        role (Literal["user"]): The role of the message sender. Defaults to "user".
+        content (str | MessageContent): The message content. If a string is provided, it will be converted to TextContent.
+        role (Literal['user']): The role of the message sender. Defaults to "user".
     """
 
     content: MessageContent
@@ -404,11 +408,15 @@ class ClientToolResult(ActionResult):
 
 @dataclass(frozen=True, slots=True)
 class ToolConfirmationResult(ActionResult):
-    """Result of a tool confirmation request.
+    """Result of a tool confirmation request, sent back to the agent.
+
+    Use this to respond to a :class:`ToolConfirmationCall` received in the agent response.
+    Pass ``status="ALLOW"`` to let the agent execute the tool, or ``status="DENY"`` to cancel it.
+    Always include the ``cursor`` from the confirmation response when sending this result.
 
     Args:
-        action_id (str): The ID of the action being responded to.
-        status (Literal["ALLOW", "DENY"]): Whether to allow or deny the tool execution.
+        action_id (str): The ID of the :class:`ToolConfirmationCall` being responded to.
+        status (Literal['ALLOW', 'DENY']): Whether to allow or deny the tool execution.
     """
 
     _type: ClassVar[str] = "toolConfirmation"
@@ -486,7 +494,7 @@ class AgentMessage(CogniteResource):
         data (list[AgentDataItem] | None): Data items in the response.
         reasoning (list[AgentReasoningItem] | None): Reasoning items in the response.
         actions (list[ActionCall] | None): Action calls requested by the agent.
-        role (Literal["agent"]): The role of the message sender.
+        role (Literal['agent']): The role of the message sender.
     """
 
     content: MessageContent | None = None

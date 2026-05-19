@@ -70,7 +70,7 @@ class SimulatorRoutineInput(CogniteResource, ABC):
     @classmethod
     @abstractmethod
     def _load_input(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def _load(cls, resource: dict[str, Any] | SimulatorRoutineInput) -> Self:
@@ -103,7 +103,7 @@ class SimulatorRoutineInputTimeseries(SimulatorRoutineInput):
         name (str): The name of the input.
         reference_id (str): The reference ID of the input.
         source_external_id (str): The external ID of the source timeseries.
-        aggregate (Literal["average", "interpolation", "stepInterpolation"] | None): The aggregation method to use for the timeseries.
+        aggregate (Literal['average', 'interpolation', 'stepInterpolation'] | None): The aggregation method to use for the timeseries.
         save_timeseries_external_id (str | None): The external ID of the timeseries to save the input. If not provided, the input is not saved to a timeseries.
         unit (SimulationValueUnitInput | None): The unit of the input.
     """
@@ -144,7 +144,7 @@ class SimulatorRoutineInputConstant(SimulatorRoutineInput):
         name (str): The name of the input.
         reference_id (str): The reference ID of the input.
         value (str | int | float | list[str] | list[int] | list[float]): The value of the input.
-        value_type (Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"]): The value type of the input.
+        value_type (Literal['STRING', 'DOUBLE', 'STRING_ARRAY', 'DOUBLE_ARRAY']): The value type of the input.
         unit (SimulationValueUnitInput | None): The unit of the input.
         save_timeseries_external_id (str | None): The external ID of the timeseries to save the input. If not provided, the input is not saved to a timeseries.
     """
@@ -266,8 +266,8 @@ class SimulatorRoutineLogicalCheck(CogniteResource):
     Learn more about logical checks <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling/#data-validation-methods>.
 
     Args:
-        aggregate (Literal["average", "interpolation", "stepInterpolation"]): The aggregation method to use for the time series.
-        operator (Literal["eq", "ne", "gt", "ge", "lt", "le"]): The operator to use for the logical check.
+        aggregate (Literal['average', 'interpolation', 'stepInterpolation']): The aggregation method to use for the time series.
+        operator (Literal['eq', 'ne', 'gt', 'ge', 'lt', 'le']): The operator to use for the logical check.
         value (float): The value to use for the logical check.
         timeseries_external_id (str | None): The external ID of the time series to check.
     """
@@ -295,7 +295,7 @@ class SimulatorRoutineSteadyStateDetection(CogniteResource):
     Learn more about steady state detection <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling/#data-validation-methods>.
 
     Args:
-        aggregate (Literal["average", "interpolation", "stepInterpolation"]): The aggregation method to use for the time series.
+        aggregate (Literal['average', 'interpolation', 'stepInterpolation']): The aggregation method to use for the time series.
         min_section_size (int): The minimum number of consecutive data points that must meet the steady state criteria.
         var_threshold (float): The maximum variance allowed for the steady state region.
         slope_threshold (float): The maximum slope allowed for the steady state region.
@@ -447,7 +447,7 @@ class SimulatorRoutineStep(CogniteResource):
     The step of the simulator routine revision.
 
     Args:
-        step_type (str): The type of the step. Can be "Get", "Set", or "Command".
+        step_type (Literal['Get', 'Set', 'Command']): The type of the step. Can be "Get", "Set", or "Command".
         arguments (SimulatorRoutineStepArguments): The arguments of the step.
         order (int): Represents the order in which the step is executed compared to other steps in the stage.
         description (str | None): The description of the step.
@@ -587,7 +587,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         id (int): The unique identifier of the simulator routine revision.
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         simulator_external_id (str): The external ID of the simulator.
-        simulator_integration_external_id (str | None): The external ID of the simulator integration.
+        simulator_integration_external_id (str | None): The external ID of the simulator integration. None when simulation run load balancing is enabled for its associated routine.
         routine_external_id (str): The external ID of the simulator routine.
         model_external_id (str): The external ID of the simulator model.
         version_number (int): The version number of the simulator routine revision. Unique for each simulator routine.

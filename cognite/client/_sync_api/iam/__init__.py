@@ -1,6 +1,6 @@
 """
 ===============================================================================
-dee7369c5fe919ffd146a7c16845acea
+f32424b35163317d66e8fca6f331c853
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -76,26 +76,28 @@ class SyncIAMAPI(SyncAPIClient):
                 >>> to_check = [
                 ...     AssetsAcl(
                 ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],
-                ...         scope=AssetsAcl.Scope.All()),
+                ...         scope=AssetsAcl.Scope.All(),
+                ...     ),
                 ...     EventsAcl(
                 ...         actions=[EventsAcl.Action.Write],
                 ...         scope=EventsAcl.Scope.DataSet([123]),
-                ... )]
+                ...     ),
+                ... ]
                 >>> missing = client.iam.compare_capabilities(
-                ...     existing_capabilities=my_groups,
-                ...     desired_capabilities=to_check)
+                ...     existing_capabilities=my_groups, desired_capabilities=to_check
+                ... )
                 >>> if missing:
                 ...     pass  # do something
 
             Capabilities can also be passed as dictionaries:
 
                 >>> to_check = [
-                ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
-                ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
+                ...     {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+                ...     {"eventsAcl": {"actions": ["WRITE"], "scope": {"datasetScope": {"ids": [123]}}}},
                 ... ]
                 >>> missing = client.iam.compare_capabilities(
-                ...     existing_capabilities=my_groups,
-                ...     desired_capabilities=to_check)
+                ...     existing_capabilities=my_groups, desired_capabilities=to_check
+                ... )
 
             You may also load capabilities from a dict-representation directly into ACLs (access-control list)
             by using ``Capability.load``. This will also ensure that the capabilities are valid.
@@ -129,19 +131,21 @@ class SyncIAMAPI(SyncAPIClient):
                 >>> to_check = [
                 ...     AssetsAcl(
                 ...         actions=[AssetsAcl.Action.Read, AssetsAcl.Action.Write],
-                ...         scope=AssetsAcl.Scope.All()),
+                ...         scope=AssetsAcl.Scope.All(),
+                ...     ),
                 ...     EventsAcl(
                 ...         actions=[EventsAcl.Action.Write],
                 ...         scope=EventsAcl.Scope.DataSet([123]),
-                ... )]
+                ...     ),
+                ... ]
                 >>> if missing := client.iam.verify_capabilities(to_check):
                 ...     pass  # do something
 
             Capabilities can also be passed as dictionaries:
 
                 >>> to_check = [
-                ...     {'assetsAcl': {'actions': ['READ', 'WRITE'], 'scope': {'all': {}}}},
-                ...     {'eventsAcl': {'actions': ['WRITE'], 'scope': {'datasetScope': {'ids': [123]}}}},
+                ...     {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+                ...     {"eventsAcl": {"actions": ["WRITE"], "scope": {"datasetScope": {"ids": [123]}}}},
                 ... ]
                 >>> missing = client.iam.verify_capabilities(to_check)
 

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-74ca95fcd30f975d96feaf749e9ebb57
+e25ff4296135886bcbe58f933f5d7da6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -98,7 +98,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
         self, routine: SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]
     ) -> SimulatorRoutine | SimulatorRoutineList:
         """
-        `Create simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
+        `Create simulator routines <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
 
         Args:
             routine (SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]): Simulator routine(s) to create.
@@ -125,7 +125,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 ...         simulator_integration_external_id="integration_ext_id_2",
                 ...         model_external_id="model_ext_id_2",
                 ...         kind="long",
-                ...     )
+                ...     ),
                 ... ]
                 >>> res = client.simulators.routines.create(routines)
         """
@@ -137,7 +137,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
         external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
     ) -> None:
         """
-        `Delete simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
+        `Delete simulator routines <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
 
         Args:
             ids (int | Sequence[int] | None): ids (or sequence of ids) for the routine(s) to delete.
@@ -148,7 +148,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.simulators.routines.delete(ids=[1,2,3], external_ids="foo")
+                >>> client.simulators.routines.delete(ids=[1, 2, 3], external_ids="foo")
         """
         return run_sync(self.__async_client.simulators.routines.delete(ids=ids, external_ids=external_ids))
 
@@ -161,7 +161,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
         sort: PropertySort | None = None,
     ) -> SimulatorRoutineList:
         """
-        `Filter simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_
+        `Filter simulator routines <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_
 
         Retrieves a list of simulator routines that match the given criteria.
 
@@ -190,16 +190,11 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> res = client.simulators.routines.list(
                 ...     simulator_integration_external_ids=["integration_ext_id"],
-                ...     sort=PropertySort(
-                ...         property="createdTime",
-                ...         order="desc"
-                ...     )
+                ...     sort=PropertySort(property="createdTime", order="desc"),
                 ... )
 
             Filter on routine kind:
-                >>> res = client.simulators.routines.list(
-                ...     kind="long"
-                ... )
+                >>> res = client.simulators.routines.list(kind="long")
         """
         return run_sync(
             self.__async_client.simulators.routines.list(
@@ -218,7 +213,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
         routine_external_id: str,
         inputs: Sequence[SimulationInputOverride] | None = None,
         run_time: int | None = None,
-        queue: bool | None = None,
+        queue: bool = False,
         log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
         wait: bool = True,
         timeout: float = 60,
@@ -232,7 +227,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
         model_revision_external_id: str,
         inputs: Sequence[SimulationInputOverride] | None = None,
         run_time: int | None = None,
-        queue: bool | None = None,
+        queue: bool = False,
         log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
         wait: bool = True,
         timeout: float = 60,
@@ -245,17 +240,21 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
         model_revision_external_id: str | None = None,
         inputs: Sequence[SimulationInputOverride] | None = None,
         run_time: int | None = None,
-        queue: bool | None = None,
+        queue: bool = False,
         log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
         wait: bool = True,
         timeout: float = 60,
     ) -> SimulationRun:
         """
-        `Run a simulation <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
+        `Run a simulation <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
 
         Run a simulation for a given simulator routine. Supports two modes:
         1. By routine external ID only
         2. By routine revision external ID + model revision external ID
+
+        When simulation run load balancing is enabled and routine is not assigned to any particular integration, the run initiates with status ``queued``
+        and any active integration can claim it automatically. Without load balancing, the run initiates with status ``ready``
+        and is tied to the integration specified on the routine.
 
         Args:
             routine_external_id (str | None): External id of the simulator routine to run.
@@ -266,7 +265,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 Must be specified together with routine_revision_external_id.
             inputs (Sequence[SimulationInputOverride] | None): List of input overrides
             run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
-            queue (bool | None): Queue the simulation run when connector is down.
+            queue (bool): Queue the simulation run when connector is down.
             log_severity (Literal['Debug', 'Information', 'Warning', 'Error'] | None): Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
             wait (bool): Wait until the simulation run is finished. Defaults to True.
             timeout (float): Timeout in seconds for waiting for the simulation run to finish. Defaults to 60 seconds.
@@ -280,8 +279,7 @@ class SyncSimulatorRoutinesAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> run = client.simulators.routines.run(
-                ...     routine_external_id="routine1",
-                ...     log_severity="Debug"
+                ...     routine_external_id="routine1", log_severity="Debug"
                 ... )
 
             Create new simulation run using routine and model revision external IDs:

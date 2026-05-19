@@ -120,7 +120,7 @@ class TableWrite(_TableCore, ABC):
     @classmethod
     @abstractmethod
     def _load_table(cls, data: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class RawTableWrite(TableWrite):

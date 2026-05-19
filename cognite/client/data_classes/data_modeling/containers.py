@@ -41,8 +41,8 @@ class ContainerCore(DataModelingSchemaResource["ContainerApply"], ABC):
         properties (Mapping[str, ContainerPropertyCore]): We index the property by a local unique identifier.
         description (str | None): Textual description of the container
         name (str | None): Human readable name for the container.
-        constraints (Mapping[str, ConstraintCore] | None): Set of constraints to apply to the container
-        indexes (Mapping[str, IndexCore] | None): Set of indexes to apply to the container.
+        constraints (Mapping[str, ConstraintCore]): Set of constraints to apply to the container
+        indexes (Mapping[str, IndexCore]): Set of indexes to apply to the container.
     """
 
     space: str
@@ -105,9 +105,9 @@ class ContainerApply(ContainerCore):
         properties (Mapping[str, ContainerPropertyApply]): We index the property by a local unique identifier.
         description (str | None): Textual description of the container
         name (str | None): Human readable name for the container.
+        constraints (Mapping[str, ConstraintApply]): Set of constraints to apply to the container
+        indexes (Mapping[str, IndexApply]): Set of indexes to apply to the container.
         used_for (Literal['node', 'edge', 'all'] | None): Should this operation apply to nodes, edges or both.
-        constraints (Mapping[str, ConstraintApply] | None): Set of constraints to apply to the container
-        indexes (Mapping[str, IndexApply] | None): Set of indexes to apply to the container.
     """
 
     properties: Mapping[str, ContainerPropertyApply]
@@ -141,15 +141,15 @@ class Container(ContainerCore):
     Args:
         space (str): The workspace for the container, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the container.
+        description (str | None): Textual description of the container
+        name (str | None): Human readable name for the container.
         properties (Mapping[str, ContainerProperty]): We index the property by a local unique identifier.
+        constraints (Mapping[str, Constraint]): Set of constraints to apply to the container
+        indexes (Mapping[str, Index]): Set of indexes to apply to the container.
         is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        description (str | None): Textual description of the container
-        name (str | None): Human readable name for the container.
         used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
-        constraints (Mapping[str, Constraint] | None): Set of constraints to apply to the container
-        indexes (Mapping[str, Index] | None): Set of indexes to apply to the container.
     """
 
     properties: Mapping[str, ContainerProperty]

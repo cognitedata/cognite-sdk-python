@@ -9,6 +9,7 @@ from cognite.client._api.data_modeling.graphql import DataModelingGraphQLAPI
 from cognite.client._api.data_modeling.instances import InstancesAPI
 from cognite.client._api.data_modeling.spaces import SpacesAPI
 from cognite.client._api.data_modeling.statistics import StatisticsAPI
+from cognite.client._api.data_modeling.streams import StreamsAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api_client import APIClient
 
@@ -27,6 +28,7 @@ class DataModelingAPI(APIClient):
         self.instances = InstancesAPI(config, api_version, cognite_client)
         self.graphql = DataModelingGraphQLAPI(config, api_version, cognite_client)
         self.statistics = StatisticsAPI(config, api_version, cognite_client)
+        self.streams = StreamsAPI(config, api_version, cognite_client)
 
     def _get_semaphore(
         self, operation: Literal["read", "write", "delete", "search", "read_schema", "write_schema"]

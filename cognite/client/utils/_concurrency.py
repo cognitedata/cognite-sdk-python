@@ -7,7 +7,6 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Callable, Coroutine
-from functools import cache
 from typing import (
     Any,
     Literal,
@@ -19,7 +18,7 @@ from typing import (
 from typing_extensions import assert_never
 
 from cognite.client._constants import _RUNNING_IN_BROWSER
-from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteImportError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import no_op
 
 
@@ -50,6 +49,7 @@ class ConcurrencyConfig(ABC):
         self._read = read
         self._write = write
         self._delete = delete
+        self._semaphore_cache: dict[tuple[str, str, asyncio.AbstractEventLoop], asyncio.BoundedSemaphore] = {}
 
     @property
     def read(self) -> int:
@@ -79,7 +79,7 @@ class ConcurrencyConfig(ABC):
         self._delete = value
 
     @abstractmethod
-    def _semaphore_factory(self, operation: str, project: str) -> asyncio.BoundedSemaphore: ...
+    def _semaphore_factory(self, operation: Any, project: str) -> asyncio.BoundedSemaphore: ...
 
     @abstractmethod
     def __repr__(self) -> str: ...
@@ -97,24 +97,31 @@ class CRUDConcurrency(ConcurrencyConfig):
         delete (int): Maximum number of concurrent delete requests.
     """
 
-    @cache
     def _semaphore_factory(
         self, operation: Literal["read", "write", "delete"], project: str
     ) -> asyncio.BoundedSemaphore:
-        # We include 'project' in the cache, since concurrency limits should apply per-project
+        # We include 'project' in the cache key, since concurrency limits should apply per-project.
+        # We include the event loop because semaphores are bound to the loop they're first used on,
+        # so the sync client (background loop) and async client (e.g. Jupyter's loop) need separate instances.
+        key = (operation, project, asyncio.get_running_loop())
+        if key in self._semaphore_cache:
+            return self._semaphore_cache[key]
+
         from cognite.client import global_config
 
         global_config.concurrency_settings._freeze()  # Disallow any further changes
 
         match operation:
             case "read":
-                return asyncio.BoundedSemaphore(self.read)
+                sem = asyncio.BoundedSemaphore(self.read)
             case "write":
-                return asyncio.BoundedSemaphore(self.write)
+                sem = asyncio.BoundedSemaphore(self.write)
             case "delete":
-                return asyncio.BoundedSemaphore(self.delete)
+                sem = asyncio.BoundedSemaphore(self.delete)
             case _:
                 assert_never(operation)
+        self._semaphore_cache[key] = sem
+        return sem
 
     def __repr__(self) -> str:
         return f"Concurrency[{self.api_name}](read={self._read}, write={self._write}, delete={self._delete})"
@@ -178,35 +185,156 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         self._check_frozen("write_schema")
         self._write_schema = value
 
-    @cache
     def _semaphore_factory(
         self, operation: Literal["read", "write", "delete", "search", "read_schema", "write_schema"], project: str
     ) -> asyncio.BoundedSemaphore:
-        # We include 'project' in the cache, since concurrency limits should apply per-project
+        key = (operation, project, asyncio.get_running_loop())
+        if key in self._semaphore_cache:
+            return self._semaphore_cache[key]
+
         from cognite.client import global_config
 
         global_config.concurrency_settings._freeze()  # Disallow any further changes
         match operation:
             case "read":
-                return asyncio.BoundedSemaphore(self.read)
+                sem = asyncio.BoundedSemaphore(self.read)
             case "write":
-                return asyncio.BoundedSemaphore(self.write)
+                sem = asyncio.BoundedSemaphore(self.write)
             case "delete":
-                return asyncio.BoundedSemaphore(self.delete)
+                sem = asyncio.BoundedSemaphore(self.delete)
             case "search":
-                return asyncio.BoundedSemaphore(self.search)
+                sem = asyncio.BoundedSemaphore(self.search)
             case "read_schema":
-                return asyncio.BoundedSemaphore(self.read_schema)
+                sem = asyncio.BoundedSemaphore(self.read_schema)
             case "write_schema":
-                return asyncio.BoundedSemaphore(self.write_schema)
+                sem = asyncio.BoundedSemaphore(self.write_schema)
             case _:
                 assert_never(operation)
+        self._semaphore_cache[key] = sem
+        return sem
 
     def __repr__(self) -> str:
         return (
             f"Concurrency[{self.api_name}]("
             f"read={self._read}, write={self._write}, delete={self._delete}, "
             f"search={self._search}, read_schema={self._read_schema}, write_schema={self._write_schema})"
+        )
+
+
+class FileConcurrencyConfig(ConcurrencyConfig):
+    """
+    Concurrency settings for the Files API.
+
+    ``read``, ``write``, ``upload``, ``download``, and ``delete`` are **per-project** limits,
+    consistent with all other API concurrency settings.
+
+    ``open_files`` is the exception: it is a **global** (process-wide) limit on how many file
+    handles may be open simultaneously during uploads, because OS file-descriptor limits are
+    not scoped to a CDF project.
+
+    Args:
+        concurrency_settings (ConcurrencySettings): Reference to the parent settings object.
+        read (int): Maximum concurrent metadata read requests (retrieve, list, search, etc.).
+        write (int): Maximum concurrent metadata write requests (create, update).
+        upload (int): Maximum concurrent file content upload requests.
+        download (int): Maximum concurrent file content download requests.
+        delete (int): Maximum concurrent delete requests.
+        open_files (int): Global cap on simultaneously open file handles during upload (not per-project).
+    """
+
+    def __init__(
+        self,
+        concurrency_settings: ConcurrencySettings,
+        read: int,
+        write: int,
+        upload: int,
+        download: int,
+        delete: int,
+        open_files: int,
+    ) -> None:
+        super().__init__(concurrency_settings, "files", read, write, delete)
+        self._upload = upload
+        self._download = download
+        self._open_files = open_files
+        # open_files key is only the event loop — project is intentionally excluded. It is a bit unfortunate
+        # that we cant remove the loop from the key as well, but semaphores are bound to the loop they are
+        # first used on, one of the httpx.Clients would break if we did that. We intentionally use a limit << OS fd limit.
+        self._open_files_cache: dict[asyncio.AbstractEventLoop, asyncio.BoundedSemaphore] = {}
+
+    @property
+    def upload(self) -> int:
+        return self._upload
+
+    @upload.setter
+    def upload(self, value: int) -> None:
+        self._check_frozen("upload")
+        self._upload = value
+
+    @property
+    def download(self) -> int:
+        return self._download
+
+    @download.setter
+    def download(self, value: int) -> None:
+        self._check_frozen("download")
+        self._download = value
+
+    @property
+    def open_files(self) -> int:
+        return self._open_files
+
+    @open_files.setter
+    def open_files(self, value: int) -> None:
+        self._check_frozen("open_files")
+        self._open_files = value
+
+    def _semaphore_factory(
+        self, operation: Literal["read", "write", "upload", "download", "delete", "open_files"], project: str
+    ) -> asyncio.BoundedSemaphore:
+        # This one is special - global due to OS file descriptor limits::
+        if operation == "open_files":
+            return self._get_open_files_semaphore()
+
+        key = (operation, project, asyncio.get_running_loop())
+        if key in self._semaphore_cache:
+            return self._semaphore_cache[key]
+
+        from cognite.client import global_config
+
+        global_config.concurrency_settings._freeze()
+        match operation:
+            case "read":
+                sem = asyncio.BoundedSemaphore(self._read)
+            case "write":
+                sem = asyncio.BoundedSemaphore(self._write)
+            case "upload":
+                sem = asyncio.BoundedSemaphore(self._upload)
+            case "download":
+                sem = asyncio.BoundedSemaphore(self._download)
+            case "delete":
+                sem = asyncio.BoundedSemaphore(self._delete)
+            case _:
+                assert_never(operation)
+        self._semaphore_cache[key] = sem
+        return sem
+
+    def _get_open_files_semaphore(self) -> asyncio.BoundedSemaphore:
+        key = asyncio.get_running_loop()
+        if key in self._open_files_cache:
+            return self._open_files_cache[key]
+
+        from cognite.client import global_config
+
+        global_config.concurrency_settings._freeze()
+        sem = asyncio.BoundedSemaphore(self._open_files)
+        self._open_files_cache[key] = sem
+        return sem
+
+    def __repr__(self) -> str:
+        return (
+            f"Concurrency[files]("
+            f"read={self._read}, write={self._write}, upload={self._upload}, download={self._download}, "
+            f"delete={self._delete}, open_files={self._open_files})"
         )
 
 
@@ -219,8 +347,10 @@ class ConcurrencySettings:
     See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
 
     Note:
-        The settings apply on a per-project level, thus if you have multiple clients
+        Most settings apply on a per-project level, thus if you have multiple clients
         pointing to different CDF projects, each client will have its budget to consume from.
+        The exception is ``files.open_files``, which is a global process-wide limit because
+        OS file-descriptor limits are not scoped to a CDF project.
 
     Warning:
         Once any semaphore is initialized (i.e., after the first API request is made),
@@ -252,6 +382,14 @@ class ConcurrencySettings:
             read_schema=2,
             write_schema=1,
         )
+        self._files = FileConcurrencyConfig(self, read=4, write=2, upload=5, download=5, delete=2, open_files=15)
+
+    @functools.cached_property
+    def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:
+        """Helper method primarily used in testing to handle the 'annoying' state of concurrency settings"""
+        configs = [name for name, val in vars(type(self)).items() if isinstance(val, property)]
+        configs.remove("is_frozen")
+        return [getattr(self, name) for name in configs]
 
     def _check_frozen(self, name: str, api_name: str) -> None:
         if self.__frozen:
@@ -286,6 +424,10 @@ class ConcurrencySettings:
     def raw(self) -> CRUDConcurrency:
         return self._raw
 
+    @property
+    def files(self) -> FileConcurrencyConfig:
+        return self._files
+
     def __repr__(self) -> str:
         frozen_str = " (frozen)" if self.__frozen else ""
         return (
@@ -294,6 +436,7 @@ class ConcurrencySettings:
             f"  raw={self._raw},\n"
             f"  datapoints={self._datapoints},\n"
             f"  data_modeling={self._data_modeling},\n"
+            f"  files={self._files},\n"
             f"){frozen_str}"
         )
 
@@ -508,73 +651,20 @@ _T = TypeVar("_T")
 
 
 class EventLoopThreadExecutor(threading.Thread):
-    def __init__(self, loop: asyncio.AbstractEventLoop | None = None, daemon: bool = True) -> None:
+    def __init__(self, daemon: bool = True) -> None:
         super().__init__(name=type(self).__name__, daemon=daemon)
-        self._inside_jupyter = self._detect_jupyter()
-        self._event_loop = self._patch_loop_for_jupyter(loop) or asyncio.new_event_loop()
-
-    @staticmethod
-    def _detect_jupyter() -> bool:
-        try:
-            from IPython import get_ipython  # type: ignore [attr-defined]
-
-            return "IPKernelApp" in get_ipython().config
-        except Exception:
-            return False
-
-    def _patch_loop_for_jupyter(self, loop: asyncio.AbstractEventLoop | None) -> asyncio.AbstractEventLoop | None:
-        """
-        From the 'nest_asyncio' package: By design asyncio does not allow its event loop to be nested. This presents a
-        practical problem: When in an environment where the event loop is already running it's impossible to run
-        tasks and wait for the result.
-        """
-        if not self._inside_jupyter:
-            return loop
-
-        if loop is None:
-            try:
-                import nest_asyncio  # type: ignore [import-not-found]
-            except ImportError:
-                raise CogniteImportError(
-                    module="nest_asyncio",
-                    message="Inside Jupyter notebooks, the 'nest_asyncio' package is required if you want to use the "
-                    '"non-async" CogniteClient. This is because Jupyter already runs an event loop that we need '
-                    "to patch (`pip install nest_asyncio`). Alternatively, you can use the AsyncCogniteClient "
-                    "which does not require any extra packages, but requires the use of 'await', e.g.: "
-                    "`dps = await async_client.time_series.data.retrieve(...)`",
-                ) from None
-            try:
-                # Jupyter: reuse the already running loop but patch it:
-                loop = asyncio.get_running_loop()
-                nest_asyncio.apply(loop)
-                return loop
-            except RuntimeError:
-                return None  # this would be very unexpected
-        else:
-            warnings.warn(
-                RuntimeWarning(
-                    "Overriding the event loop is not recommended inside Jupyter notebooks "
-                    "since Jupyter already runs an event loop. Proceeding with the provided loop anyway, "
-                    "beware of potential issues."
-                )
-            )
-            return loop
+        self._event_loop = asyncio.new_event_loop()
 
     def run(self) -> None:
-        if not self._inside_jupyter:
-            asyncio.set_event_loop(self._event_loop)
-            self._event_loop.run_forever()
+        asyncio.set_event_loop(self._event_loop)
+        self._event_loop.run_forever()
 
     def stop(self) -> None:
-        if not self._inside_jupyter:
-            self._event_loop.call_soon_threadsafe(self._event_loop.stop)
-            self.join()
+        self._event_loop.call_soon_threadsafe(self._event_loop.stop)
+        self.join()
 
-    def run_coro(self, coro: Coroutine[_T, Any, _T], timeout: float | None = None) -> _T:
-        if self._inside_jupyter:
-            return asyncio.get_event_loop().run_until_complete(coro)
-        else:
-            return asyncio.run_coroutine_threadsafe(coro, self._event_loop).result(timeout)
+    def run_coro(self, coro: Coroutine[Any, Any, _T], timeout: float | None = None) -> _T:
+        return asyncio.run_coroutine_threadsafe(coro, self._event_loop).result(timeout)
 
 
 class _PyodideEventLoopExecutor:
@@ -600,24 +690,28 @@ class _PyodideEventLoopExecutor:
 
 
 # We need this in order to support a synchronous Cognite client.
-_INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON: EventLoopThreadExecutor
+_INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON: EventLoopThreadExecutor | None = None
+_EXECUTOR_INIT_LOCK = threading.Lock()
 
 
 def _get_event_loop_executor() -> EventLoopThreadExecutor:
     global _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
-    try:
+
+    # Fast path: singleton already initialized — no lock needed.
+    if _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON is not None:
         return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
-    except NameError:
-        # First time we need to initialize:
-        from cognite.client import global_config
 
-        ex_cls = EventLoopThreadExecutor
-        if _RUNNING_IN_BROWSER:
-            ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
-
-        executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls(global_config.event_loop)
-        executor.start()
-        return executor
+    # Slow path: serialize initialization. Without this, multiple threads racing on the first
+    # call (e.g. a ThreadPoolExecutor of sync clients) can each construct their own executor
+    # and end up using different background loops, breaking the per-loop semaphore cache key.
+    with _EXECUTOR_INIT_LOCK:
+        if _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON is None:
+            ex_cls = EventLoopThreadExecutor
+            if _RUNNING_IN_BROWSER:
+                ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
+            _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls()
+            _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON.start()
+        return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
 
 
 async def execute_async_tasks_with_fail_fast(tasks: list[AsyncSDKTask]) -> TasksSummary:
@@ -627,7 +721,7 @@ async def execute_async_tasks_with_fail_fast(tasks: list[AsyncSDKTask]) -> Tasks
         return_when=asyncio.FIRST_EXCEPTION,
     )
     if all(task.exception() is None for task in done):
-        return TasksSummary([task.result() for task in done], successful_tasks=tasks)
+        return TasksSummary([task.result() for task in tasks], successful_tasks=tasks)
 
     # Something failed, and because of fail-fast, we (attempt to) cancel all pending tasks:
     if pending:  # while we are waiting on 3.11 and asyncio.TaskGroup...

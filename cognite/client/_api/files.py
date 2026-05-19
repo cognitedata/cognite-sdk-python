@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import copy
+import math
 import warnings
 from collections import defaultdict
 from collections.abc import AsyncIterator, Sequence
@@ -8,8 +10,16 @@ from pathlib import Path
 from typing import Any, BinaryIO, Literal, overload
 from urllib.parse import urlparse
 
+from typing_extensions import assert_never
+
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._constants import (
+    DEFAULT_LIMIT_READ,
+    FILE_DEFAULT_MULTIPART_SIZE,
+    FILE_MAX_MULTIPART_COUNT,
+    FILE_MAX_MULTIPART_SIZE,
+    FILE_MIN_MULTIPART_SIZE,
+)
 from cognite.client.data_classes import (
     FileMetadata,
     FileMetadataFilter,
@@ -28,13 +38,36 @@ from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
 from cognite.client.utils._auxiliary import append_url_path, find_duplicates, unpack_items
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
-from cognite.client.utils._uploading import prepare_content_for_upload
+from cognite.client.utils._uploading import AsyncFileChunker, prepare_content_for_upload
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"
+
+    def _get_semaphore(
+        self, operation: Literal["read", "write", "delete", "upload", "download", "open_files"]
+    ) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        project = self._cognite_client.config.project
+        files = global_config.concurrency_settings.files
+        match operation:
+            case "read":
+                return files._semaphore_factory("read", project)
+            case "write":
+                return files._semaphore_factory("write", project)
+            case "upload":
+                return files._semaphore_factory("upload", project)
+            case "download":
+                return files._semaphore_factory("download", project)
+            case "delete":
+                return files._semaphore_factory("delete", project)
+            case "open_files":
+                return files._semaphore_factory("open_files", "")
+            case _:
+                assert_never(operation)
 
     @overload
     def __call__(
@@ -210,7 +243,7 @@ class FilesAPI(APIClient):
             url_path=self._RESOURCE_PATH,
             json=file_metadata.dump(camel_case=True),
             params={"overwrite": overwrite},
-            semaphore=self._get_semaphore("write"),
+            semaphore=self._get_semaphore("upload"),
         )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
@@ -220,7 +253,7 @@ class FilesAPI(APIClient):
     async def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> FileMetadata | None:
-        """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
+        """`Retrieve a single file metadata by id <https://api-docs.cognite.com/20230101/tag/Files/operation/getFileByInternalId>`_.
 
         Args:
             id (int | None): ID
@@ -255,7 +288,7 @@ class FilesAPI(APIClient):
         instance_ids: Sequence[NodeId] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
-        """`Retrieve multiple file metadatas by id. <https://developer.cognite.com/api#tag/Files/operation/byIdsFiles>`_
+        """`Retrieve multiple file metadatas by id <https://api-docs.cognite.com/20230101/tag/Files/operation/byIdsFiles>`_.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -288,7 +321,7 @@ class FilesAPI(APIClient):
         )
 
     async def aggregate_count(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> int:
-        """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
+        """`Aggregate files <https://api-docs.cognite.com/20230101/tag/Files/operation/aggregateFiles>`_.
 
         Args:
             filter (FileMetadataFilter | dict[str, Any] | None): Filter on file metadata filter with exact match
@@ -313,7 +346,7 @@ class FilesAPI(APIClient):
         external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
+        """`Delete files <https://api-docs.cognite.com/20230101/tag/Files/operation/deleteFiles>`_.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -327,7 +360,7 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.files.delete(id=[1,2,3], external_id="3")
+                >>> client.files.delete(id=[1, 2, 3], external_id="3")
         """
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
@@ -357,7 +390,8 @@ class FilesAPI(APIClient):
         | Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> FileMetadata | FileMetadataList:
-        """`Update files <https://developer.cognite.com/api#tag/Files/operation/updateFiles>`_
+        """`Update files <https://api-docs.cognite.com/20230101/tag/Files/operation/updateFiles>`_.
+
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
@@ -381,7 +415,9 @@ class FilesAPI(APIClient):
             Perform a partial update on file metadata, updating the source and adding a new field to metadata:
 
                 >>> from cognite.client.data_classes import FileMetadataUpdate
-                >>> my_update = FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
+                >>> my_update = (
+                ...     FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
+                ... )
                 >>> res = client.files.update(my_update)
 
             Attach labels to a files:
@@ -411,7 +447,8 @@ class FilesAPI(APIClient):
         filter: FileMetadataFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> FileMetadataList:
-        """`Search for files. <https://developer.cognite.com/api#tag/Files/operation/searchFiles>`_
+        """`Search for files <https://api-docs.cognite.com/20230101/tag/Files/operation/searchFiles>`_.
+
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -434,7 +471,9 @@ class FilesAPI(APIClient):
             Search for an asset with an attached label:
 
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
-                >>> res = client.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
+                >>> res = client.assets.search(
+                ...     name="xyz", filter=FileMetadataFilter(labels=my_label_filter)
+                ... )
         """
         return await self._search(list_cls=FileMetadataList, search={"name": name}, filter=filter or {}, limit=limit)
 
@@ -444,22 +483,33 @@ class FilesAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> FileMetadata:
-        """`Upload a file content <https://developer.cognite.com/api#tag/Files/operation/getUploadLink>`_
+        """`Upload file content <https://api-docs.cognite.com/20230101/tag/Files/operation/getMultiPartUploadLink>`_
+
+        Upload file content from a local file path to a file previously created (initiated) with only metadata.
+        For files created with FilesAPI.create(), use `external_id`.
+        For files created with data modeling API using CogniteFileApply, use `instance_id`.
+        Supports upload of large files (>5 GB), using multipart upload.
 
         Args:
-            path (Path | str): Path to the file you wish to upload.
+            path (Path | str): Local file path.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            instance_id (NodeId | None): Instance ID of the file (CogniteFile).
         Returns:
             FileMetadata: No description.
         """
         path = Path(path)
-        if path.is_file():
-            with path.open("rb") as fh:
-                return await self.upload_content_bytes(fh, external_id=external_id, instance_id=instance_id)
-        elif path.is_dir():
+        if path.is_dir():
             raise IsADirectoryError(path)
-        raise FileNotFoundError(path)
+        if not path.is_file():
+            raise FileNotFoundError(path)
+
+        file_size = path.stat().st_size
+        part_size, num_parts = self.calculate_part_size_and_count(file_size)
+        session = await self.multipart_upload_content_session(
+            parts=num_parts, external_id=external_id, instance_id=instance_id
+        )
+        await self._run_multipart_upload(session, path, part_size, file_size, num_parts)
+        return session.file_metadata
 
     async def upload(
         self,
@@ -480,7 +530,14 @@ class FilesAPI(APIClient):
         recursive: bool = False,
         overwrite: bool = False,
     ) -> FileMetadata | FileMetadataList:
-        """`Upload a file <https://developer.cognite.com/api#tag/Files/operation/initFileUpload>`_
+        """`Upload a file or directory <https://api-docs.cognite.com/20230101/tag/Files/operation/initMultiPartUpload>`_
+
+        Creates files in files API with metadata and uploads file content.
+
+        Note:
+            If path is a directory, this method will upload all files in that directory. Use `recursive=True` for subdirectories as well.
+
+        Supports upload of large files (>5 GB), using multipart upload.
 
         Args:
             path (Path | str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
@@ -531,13 +588,17 @@ class FilesAPI(APIClient):
             Upload a file with a label:
 
                 >>> from cognite.client.data_classes import Label
-                >>> res = client.files.upload(my_file, name="my_file", labels=[Label(external_id="WELL LOG")])
+                >>> res = client.files.upload(
+                ...     my_file, name="my_file", labels=[Label(external_id="WELL LOG")]
+                ... )
 
             Upload a file with a geo_location:
 
                 >>> from cognite.client.data_classes import GeoLocation, Geometry
                 >>> geometry = Geometry(type="LineString", coordinates=[[30, 10], [10, 30], [40, 40]])
-                >>> res = client.files.upload(my_file, geo_location=GeoLocation(type="Feature", geometry=geometry))
+                >>> res = client.files.upload(
+                ...     my_file, geo_location=GeoLocation(type="Feature", geometry=geometry)
+                ... )
 
         """
         file_metadata = FileMetadataWrite(
@@ -556,6 +617,7 @@ class FilesAPI(APIClient):
             source_modified_time=source_modified_time,
             security_categories=security_categories,
         )
+
         path = Path(path)
         if path.is_file():
             if not name:
@@ -564,7 +626,6 @@ class FilesAPI(APIClient):
 
         elif not path.is_dir():
             raise FileNotFoundError(path)
-
         tasks: list[AsyncSDKTask] = []
         file_iter = path.rglob("*") if recursive else path.iterdir()
         for file in file_iter:
@@ -580,8 +641,61 @@ class FilesAPI(APIClient):
     async def _upload_file_from_path(
         self, file_metadata: FileMetadataWrite, path: Path, overwrite: bool
     ) -> FileMetadata:
-        with path.open("rb") as fh:
-            return await self.upload_bytes(fh, overwrite=overwrite, **file_metadata.dump(camel_case=False))
+        file_size = path.stat().st_size
+        part_size, num_parts = self.calculate_part_size_and_count(file_size)
+        session = await self.multipart_upload_session(
+            parts=num_parts,
+            overwrite=overwrite,
+            **file_metadata.dump(camel_case=False),
+        )
+        await self._run_multipart_upload(session, path, part_size, file_size, num_parts)
+        return session.file_metadata
+
+    async def _run_multipart_upload(
+        self,
+        session: FileMultipartUploadSession,
+        path: Path,
+        part_size: int,
+        file_size: int,
+        num_parts: int,
+    ) -> None:
+        # Use a semaphore to limit the number of open files at the same time,
+        # since each multipart upload will open the file for the duration of the upload,
+        # and having too many open files can cause issues on some operating systems.
+        open_files_semaphore = self._get_semaphore("open_files")
+
+        async def upload_part(part_no: int) -> None:
+            async with open_files_semaphore:
+                offset = part_no * part_size
+                read_size = min(part_size, file_size - offset)
+                with path.open("rb") as fh:
+                    await session.upload_part_async(part_no, AsyncFileChunker(fh, offset=offset, size=read_size))
+
+        async with session:
+            await asyncio.gather(*(upload_part(i) for i in range(num_parts)))
+
+    def calculate_part_size_and_count(self, file_size: int) -> tuple[int, int]:
+        """Calculate part size and count for a multipart upload, for a given file size.
+
+        See <https://api-docs.cognite.com/20230101/tag/Files/operation/initMultiPartUpload>
+        for more details on multipart upload and the constraints on part size and count.
+
+        Args:
+            file_size (int): The total file size in bytes.
+
+        Returns:
+            tuple[int, int]: A tuple of (part_size, num_parts).
+        """
+        if file_size > FILE_MAX_MULTIPART_COUNT * FILE_MAX_MULTIPART_SIZE:
+            raise ValueError(
+                f"File size {file_size} exceeds the maximum supported size of {FILE_MAX_MULTIPART_COUNT * FILE_MAX_MULTIPART_SIZE} bytes for multipart upload."
+            )
+        if file_size < FILE_MIN_MULTIPART_SIZE:
+            return FILE_MIN_MULTIPART_SIZE, 1
+        uncapped_part_size = max(FILE_DEFAULT_MULTIPART_SIZE, math.ceil(file_size / FILE_MAX_MULTIPART_COUNT))
+        part_size = min(uncapped_part_size, FILE_MAX_MULTIPART_SIZE)
+        num_parts = math.ceil(file_size / part_size)
+        return part_size, num_parts
 
     async def upload_content_bytes(
         self,
@@ -608,14 +722,14 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.files.upload_content_bytes(
-                ...     b"some content", external_id="my_file_xid")
+                >>> res = client.files.upload_content_bytes(b"some content", external_id="my_file_xid")
 
             ...or by using instance_id:
 
                 >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> res = client.files.upload_content_bytes(
-                ...     b"some content", instance_id=NodeId("my-space", "my_file_xid"))
+                ...     b"some content", instance_id=NodeId("my-space", "my_file_xid")
+                ... )
         """
         identifiers = IdentifierSequence.load(external_ids=external_id, instance_ids=instance_id).as_singleton()
 
@@ -623,7 +737,7 @@ class FilesAPI(APIClient):
             res = await self._post(
                 url_path=f"{self._RESOURCE_PATH}/uploadlink",
                 json={"items": identifiers.as_dicts()},
-                semaphore=self._get_semaphore("write"),
+                semaphore=self._get_semaphore("upload"),
             )
         except CogniteAPIError as e:
             if e.code == 403:
@@ -662,7 +776,7 @@ class FilesAPI(APIClient):
             content=file_content,
             headers=headers,
             timeout=self._config.file_transfer_timeout,
-            semaphore=self._get_semaphore("write"),
+            semaphore=self._get_semaphore("upload"),
         )
         if not upload_response.is_success:
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
@@ -719,7 +833,7 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
+                >>> res = client.files.upload_bytes(b"some content", name="my_file", asset_ids=[1, 2, 3])
         """
         file_metadata = FileMetadataWrite(
             name=name,
@@ -741,7 +855,7 @@ class FilesAPI(APIClient):
                 url_path=self._RESOURCE_PATH,
                 json=file_metadata.dump(camel_case=True),
                 params={"overwrite": overwrite},
-                semaphore=self._get_semaphore("write"),
+                semaphore=self._get_semaphore("upload"),
             )
         except CogniteAPIError as e:
             if e.code == 403 and "insufficient access rights" in e.message:
@@ -776,7 +890,9 @@ class FilesAPI(APIClient):
         security_categories: Sequence[int] | None = None,
         overwrite: bool = False,
     ) -> FileMultipartUploadSession:
-        """Begin uploading a file in multiple parts. This allows uploading files larger than 5GiB.
+        """Begin uploading a file in multiple parts.
+
+        This allows uploading files larger than 5GiB.
         Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
         must be greater than 5MiB.
 
@@ -838,7 +954,7 @@ class FilesAPI(APIClient):
                 url_path=self._RESOURCE_PATH + "/initmultipartupload",
                 json=file_metadata.dump(camel_case=True),
                 params={"overwrite": overwrite, "parts": parts},
-                semaphore=self._get_semaphore("write"),
+                semaphore=self._get_semaphore("upload"),
             )
         except CogniteAPIError as e:
             if e.code == 403 and "insufficient access rights" in e.message:
@@ -867,7 +983,9 @@ class FilesAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> FileMultipartUploadSession:
-        """Begin uploading a file in multiple parts whose metadata is already created in CDF. This allows uploading files larger than 5GiB.
+        """Begin uploading a file in multiple parts whose metadata is already created in CDF.
+
+        This allows uploading files larger than 5GiB.
         Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
         must be greater than 5MiB.
 
@@ -892,7 +1010,9 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> with client.files.multipart_upload_content_session(external_id="external-id", parts=2) as session:
+                >>> with client.files.multipart_upload_content_session(
+                ...     external_id="external-id", parts=2
+                ... ) as session:
                 ...     # Note that the minimum chunk size is 5 MiB.
                 ...     session.upload_part(0, "hello" * 1_200_000)
                 ...     session.upload_part(1, " world")
@@ -903,7 +1023,7 @@ class FilesAPI(APIClient):
                 url_path=f"{self._RESOURCE_PATH}/multiuploadlink",
                 json={"items": identifiers.as_dicts()},
                 params={"parts": parts},
-                semaphore=self._get_semaphore("write"),
+                semaphore=self._get_semaphore("upload"),
             )
         except CogniteAPIError as e:
             if e.code == 403:
@@ -924,7 +1044,9 @@ class FilesAPI(APIClient):
             FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
         )
 
-    async def _upload_multipart_part(self, upload_url: str, content: str | bytes | BinaryIO) -> None:
+    async def _upload_multipart_part(
+        self, upload_url: str, content: str | bytes | BinaryIO | AsyncIterator[bytes]
+    ) -> None:
         """Upload part of a file to an upload URL returned from `multipart_upload_session`.
 
         Note:
@@ -932,7 +1054,7 @@ class FilesAPI(APIClient):
 
         Args:
             upload_url (str): URL to upload file chunk to.
-            content (str | bytes | BinaryIO): The content to upload.
+            content (str | bytes | BinaryIO | AsyncIterator[bytes]): The content to upload.
         """
         headers = {"accept": "*/*"}
         file_size, file_content = prepare_content_for_upload(content)
@@ -945,7 +1067,7 @@ class FilesAPI(APIClient):
             content=file_content,
             headers=headers,
             timeout=self._config.file_transfer_timeout,
-            semaphore=self._get_semaphore("write"),
+            semaphore=self._get_semaphore("upload"),
         )
         if not upload_response.is_success:
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
@@ -959,7 +1081,7 @@ class FilesAPI(APIClient):
         await self._post(
             self._RESOURCE_PATH + "/completemultipartupload",
             json={"id": session.file_metadata.id, "uploadId": session._upload_id},
-            semaphore=self._get_semaphore("write"),
+            semaphore=self._get_semaphore("upload"),
         )
 
     async def retrieve_download_urls(
@@ -969,7 +1091,7 @@ class FilesAPI(APIClient):
         instance_id: NodeId | Sequence[NodeId] | None = None,
         extended_expiration: bool = False,
     ) -> dict[int | str | NodeId, str]:
-        """Get download links by id or external id
+        """Get download links by id or external id.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
@@ -1038,7 +1160,7 @@ class FilesAPI(APIClient):
         keep_directory_structure: bool = False,
         resolve_duplicate_file_names: bool = False,
     ) -> None:
-        """`Download files by id or external id. <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_
+        """`Download files by id or external id <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_.
 
         This method will stream all files to disk, never keeping more than 2MB in memory per worker.
         The files will be stored in the provided directory using the file name retrieved from the file metadata in CDF.
@@ -1067,11 +1189,13 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
+                >>> client.files.download(
+                ...     directory="my_directory", id=[1, 2, 3], external_id=["abc", "def"]
+                ... )
 
             Download files by id to the current directory:
 
-                >>> client.files.download(directory=".", id=[1,2,3])
+                >>> client.files.download(directory=".", id=[1, 2, 3])
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id)
 
@@ -1183,7 +1307,7 @@ class FilesAPI(APIClient):
             full_url=download_link,
             full_headers={"accept": "*/*"},
             timeout=self._config.file_transfer_timeout,
-            semaphore=self._get_semaphore("read"),
+            semaphore=self._get_semaphore("download"),
         )
         with path.open("wb") as file:
             async with stream as response:
@@ -1249,7 +1373,7 @@ class FilesAPI(APIClient):
             full_url=download_link,
             headers={"accept": "*/*"},
             timeout=self._config.file_transfer_timeout,
-            semaphore=self._get_semaphore("read"),
+            semaphore=self._get_semaphore("download"),
         )
         return response.content
 
@@ -1278,7 +1402,7 @@ class FilesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         partitions: int | None = None,
     ) -> FileMetadataList:
-        """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
+        """`List files <https://api-docs.cognite.com/20230101/tag/Files/operation/advancedListFiles>`_.
 
         Args:
             name (str | None): Name of the file.
@@ -1324,7 +1448,7 @@ class FilesAPI(APIClient):
             Iterate over chunks of files metadata to reduce memory load:
 
                 >>> for file_list in client.files(chunk_size=2500):
-                ...     file_list # do something with the files
+                ...     file_list  # do something with the files
 
             Filter files based on labels:
 
@@ -1335,7 +1459,9 @@ class FilesAPI(APIClient):
             Filter files based on geoLocation:
 
                 >>> from cognite.client.data_classes import GeoLocationFilter, GeometryFilter
-                >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
+                >>> my_geo_location_filter = GeoLocationFilter(
+                ...     relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35, 10])
+                ... )
                 >>> file_list = client.files.list(geo_location=my_geo_location_filter)
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)

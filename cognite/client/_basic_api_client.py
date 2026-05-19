@@ -176,6 +176,10 @@ def get_user_agent() -> str:
     return f"{USER_AGENT} {sdk_version} {python_version} {operating_system}"
 
 
+def get_user_agent_header() -> dict[str, str]:
+    return {"user-agent": get_user_agent()}
+
+
 class BasicAsyncAPIClient:
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         self._config = config
@@ -424,7 +428,7 @@ class BasicAsyncAPIClient:
             "x-cdp-sdk": "CognitePythonSDK:" + __version__,
             "x-cdp-app": client_name,
             "cdf-version": api_subversion or self._api_subversion,
-            "user-agent": get_user_agent(),
+            **get_user_agent_header(),
             **self._config.headers,
             **(additional_headers or {}),
         }

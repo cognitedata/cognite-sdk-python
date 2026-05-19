@@ -19,6 +19,10 @@ def cognite_client_with_wrong_base_url(
     return cognite_client
 
 
+@pytest.mark.allow_no_semaphore(
+    "Tests exercise top-level client.post/get/put/token-inspect on the (Async)CogniteClient — "
+    "the documented nullcontext path. Concurrency limiting is unrelated."
+)
 class TestCogniteClient:
     def test_wrong_project(
         self, monkeypatch: MonkeyPatch, async_client: AsyncCogniteClient, cognite_client: CogniteClient

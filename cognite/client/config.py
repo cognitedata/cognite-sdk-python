@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import asyncio
 import getpass
 import pprint
 import re
 import warnings
-from typing import Any, NoReturn, overload
+from typing import Any, ClassVar, NoReturn, overload
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
@@ -47,8 +46,9 @@ class GlobalConfig:
             translates to 65536 (64KiB chunks).
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
-        event_loop (asyncio.AbstractEventLoop | None): Override the default event loop used by the SDK.
     """
+
+    _instance: ClassVar[GlobalConfig]
 
     def __new__(cls) -> GlobalConfig:
         if hasattr(cls, "_instance"):
@@ -77,7 +77,6 @@ class GlobalConfig:
         self.file_download_chunk_size: int | None = None
         self.file_upload_chunk_size: int | None = None
         self.silence_feature_preview_warnings: bool = False
-        self.event_loop: asyncio.AbstractEventLoop | None = None
 
     @property
     def max_workers(self) -> int:

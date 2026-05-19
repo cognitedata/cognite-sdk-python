@@ -170,7 +170,7 @@ class Capability(ABC):
         elif tpl.scope_extra is None:
             scope = scope_cls([tpl.scope_id])  # type: ignore [call-arg]
         elif scope_cls is TableScope:
-            scope = scope_cls({tpl.database: [tpl.table] if tpl.table else []})  # type: ignore [call-arg]
+            scope = scope_cls({tpl.database: [tpl.table] if tpl.table else []})
         else:
             raise ValueError(f"CapabilityTuple not understood: {tpl}")
 
@@ -800,6 +800,7 @@ class FunctionsAcl(Capability):
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
         Write = "WRITE"
+        Run = "RUN"
 
     class Scope:
         All = AllScope
@@ -1209,6 +1210,21 @@ class StreamRecordsAcl(Capability):
     class Scope:
         All = AllScope
         SpaceID = SpaceIDScope
+
+
+@dataclass
+class SubscribeSignalsAcl(Capability):
+    _capability_name = "subscribeSignalsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | CurrentUserScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+        CurrentUser = CurrentUserScope
 
 
 @dataclass

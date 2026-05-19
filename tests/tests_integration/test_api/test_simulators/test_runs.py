@@ -20,6 +20,10 @@ from cognite.client.utils._async_helpers import run_sync
 from tests.tests_integration.test_api.test_simulators.seed.data import RESOURCES, ResourceNames
 
 
+@pytest.mark.allow_no_semaphore(
+    "Simulator tests use direct _post(..., semaphore=None) calls (e.g. /simulators/run/callback) "
+    "to exercise worker-facing endpoints not exposed via public SDK methods."
+)
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
 class TestSimulatorRuns:
     def test_list_filtering(
@@ -27,7 +31,7 @@ class TestSimulatorRuns:
     ) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id
         runs_filtered_by_status = []
-        for current_status in ["running", "success", "failure"]:
+        for current_status in ("running", "success", "failure"):
             created_runs = cognite_client.simulators.runs.create([SimulationRunWrite(routine_external_id)])
 
             run_sync(

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-4c797ab98ba8663bd1d57f352855c2ef
+8ac435c2d091d6377fe3bca5728611de
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -69,7 +69,7 @@ class SyncDataModelingGraphQLAPI(SyncAPIClient):
                 ...     id=("mySpaceExternalId", "myModelExternalId", "1"),
                 ...     dml="type MyType { id: String! }",
                 ...     name="My model name",
-                ...     description="My model description"
+                ...     description="My model description",
                 ... )
         """
         return run_sync(

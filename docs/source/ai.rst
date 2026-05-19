@@ -2,10 +2,11 @@ AI
 ===============
 AI API
 ---------------
-Document Summarization
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.ai.tools.documents.AIDocumentsAPI.summarize
+.. currentmodule:: cognite.client
 
-Document Question Answering
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.ai.tools.documents.AIDocumentsAPI.ask_question
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   AsyncCogniteClient.ai.tools.documents

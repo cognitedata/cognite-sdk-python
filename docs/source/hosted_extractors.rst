@@ -1,99 +1,41 @@
 Hosted Extractors
 =================
 
+.. currentmodule:: cognite.client
+
 Sources
 -------
-Create new source
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.SourcesAPI.create
+.. autosummary::
+   :methods:
+   :toctree: generated/ 
+   :template: custom-automethods-template.rst
 
-Delete source
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.SourcesAPI.delete
-
-List sources
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.SourcesAPI.list
-
-Retrieve sources
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.SourcesAPI.retrieve
-
-Update sources
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.SourcesAPI.update
+   AsyncCogniteClient.hosted_extractors.sources
 
 Jobs
 -------
-Create new job
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.JobsAPI.create
+.. autosummary::
+   :methods:
+   :toctree: generated/ 
+   :template: custom-automethods-template.rst
 
-Delete job
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.JobsAPI.delete
-
-List jobs
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.JobsAPI.list
-
-Retrieve jobs
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.JobsAPI.retrieve
-
-Update job
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.JobsAPI.update
-
-List job logs
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.JobsAPI.list_logs
-
-List job metrics
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.JobsAPI.list_metrics
+   AsyncCogniteClient.hosted_extractors.jobs
 
 
 Destinations
 -------------
-Create new destinations
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.DestinationsAPI.create
+.. autosummary::
+   :methods:
+   :toctree: generated/ 
+   :template: custom-automethods-template.rst
 
-Delete destinations
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.DestinationsAPI.delete
-
-List destinations
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.DestinationsAPI.list
-
-Retrieve destinations
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.DestinationsAPI.retrieve
-
-Update destinations
-^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.DestinationsAPI.update
+   AsyncCogniteClient.hosted_extractors.destinations
 
 Mappings
 -------------
-Create new mappings
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.MappingsAPI.create
+.. autosummary::
+   :methods:
+   :toctree: generated/ 
+   :template: custom-automethods-template.rst
 
-Delete mappings
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.MappingsAPI.delete
-
-List mappings
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.MappingsAPI.list
-
-Retrieve mappings
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.MappingsAPI.retrieve
-
-Update mappings
-^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.hosted_extractors.MappingsAPI.update
+   AsyncCogniteClient.hosted_extractors.mappings

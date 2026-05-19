@@ -1,6 +1,6 @@
 """
 ===============================================================================
-65f9b6c08f8e220757db70e1267a74e5
+6f405a44b9af327b96291aa79765b1f2
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -84,7 +84,7 @@ class SyncDiagramsAPI(SyncAPIClient):
         multiple_jobs: bool = False,
     ) -> DiagramDetectResults | tuple[DetectJobBundle, list[dict[str, Any]]]:
         """
-        `Detect annotations in engineering diagrams <https://developer.cognite.com/api#tag/Engineering-diagrams/operation/diagramDetect>`_
+        `Detect annotations in engineering diagrams <https://api-docs.cognite.com/20230101/tag/Engineering-diagrams/operation/diagramDetect>`_.
 
         Note:
             All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
@@ -115,8 +115,9 @@ class SyncDiagramsAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> detect_job = client.diagrams.detect(
                 ...     entities=[
-                ...         {"userDefinedField": "21PT1017","ignoredField": "AA11"},
-                ...         {"userDefinedField": "21PT1018"}],
+                ...         {"userDefinedField": "21PT1017", "ignoredField": "AA11"},
+                ...         {"userDefinedField": "21PT1018"},
+                ...     ],
                 ...     search_field="userDefinedField",
                 ...     partial_match=True,
                 ...     min_tokens=2,
@@ -124,8 +125,9 @@ class SyncDiagramsAPI(SyncAPIClient):
                 ...     file_external_ids=["Test1"],
                 ...     file_references=[
                 ...         FileReference(id=20, first_page=1, last_page=10),
-                ...         FileReference(external_id="ext_20", first_page=11, last_page=20)
-                ...     ])
+                ...         FileReference(external_id="ext_20", first_page=11, last_page=20),
+                ...     ],
+                ... )
                 >>> result = detect_job.get_result()
                 >>> print(result)
                 <code>
@@ -161,13 +163,16 @@ class SyncDiagramsAPI(SyncAPIClient):
 
             To use beta configuration options you can use a dictionary or `DiagramDetectConfig` object for convenience:
 
-                >>> from cognite.client.data_classes.contextualization import ConnectionFlags, DiagramDetectConfig
+                >>> from cognite.client.data_classes.contextualization import (
+                ...     ConnectionFlags,
+                ...     DiagramDetectConfig,
+                ... )
                 >>> config = DiagramDetectConfig(
                 ...     remove_leading_zeros=True,
                 ...     connection_flags=ConnectionFlags(
                 ...         no_text_inbetween=True,
                 ...         natural_reading_order=True,
-                ...     )
+                ...     ),
                 ... )
                 >>> job = client.diagrams.detect(entities=[{"name": "A1"}], file_id=123, config=config)
 

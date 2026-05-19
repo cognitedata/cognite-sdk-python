@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import platform
 from collections.abc import Callable, Iterator
+from typing import Any
 
 import dotenv
 import pytest
@@ -9,10 +10,47 @@ from _pytest.monkeypatch import MonkeyPatch
 
 from cognite.client import global_config
 from cognite.client._api_client import APIClient
+from cognite.client._http_client import AsyncHTTPClientWithRetry
 
 dotenv.load_dotenv()
 
 global_config.disable_pypi_version_check = True
+
+ALLOW_NO_SEMAPHORE_MARKER = "allow_no_semaphore"
+
+
+@pytest.fixture(autouse=True)
+def require_semaphore_on_every_request(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """As a main rule, all API calls in the test suite MUST route through a semaphore.
+
+    Production code falls back to ``nullcontext()`` when ``semaphore is None``; that path
+    exists for users calling top-level ``client.post(...)``/``client.get(...)`` with raw URLs,
+    but no internal API method should ever hit it. Patching here turns a missing semaphore
+    into a hard failure so a regression (forgotten ``semaphore=...`` arg) shows up loudly.
+
+    Tests that legitimately exercise the None path opt out via ``@pytest.mark.allow_no_semaphore("<reason>")``.
+    These are the top-level methods mentioned above plus any method entering the semaphore
+    at a higher level than at the HTTP request level (e.g. datapoints.insert)
+    """
+    if request.node.get_closest_marker(ALLOW_NO_SEMAPHORE_MARKER):
+        return
+
+    original = AsyncHTTPClientWithRetry._with_retry
+
+    async def strict(
+        self: AsyncHTTPClientWithRetry, coro_factory: Any, *, url: str, headers: Any, semaphore: Any
+    ) -> Any:
+        if semaphore is None:
+            pytest.fail(
+                f"Internal API call to {url!r} did not pass a semaphore. "
+                "All endpoints behind client.<api>.<method> must route through a semaphore — "
+                "the nullcontext fallback is reserved for top-level client.post/get calls only. "
+                "If this call legitimately holds the semaphore at a higher level, mark the test "
+                f"with @pytest.mark.{ALLOW_NO_SEMAPHORE_MARKER}('<reason>')."
+            )
+        return await original(self, coro_factory, url=url, headers=headers, semaphore=semaphore)
+
+    monkeypatch.setattr(AsyncHTTPClientWithRetry, "_with_retry", strict)
 
 
 @pytest.fixture(scope="session")
@@ -58,6 +96,14 @@ def disable_gzip(monkeypatch: MonkeyPatch) -> Iterator[None]:
 def os_and_py_version() -> str:
     # Nice to use to create resources that is unique to each test runner
     return f"{platform.system()}-{platform.python_version()}"
+
+
+@pytest.fixture(scope="session")
+def sdk_version() -> tuple[str, str, str]:
+    # Nice to use to create resources that is unique per e.g. major version of the SDK
+    from cognite.client import __version__
+
+    return tuple(__version__.split(".", 2))  # type: ignore [return-value]
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

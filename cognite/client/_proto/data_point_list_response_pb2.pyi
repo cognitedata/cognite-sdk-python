@@ -1,13 +1,23 @@
 import cognite.client._proto.data_points_pb2 as _data_points_pb2
 from google.protobuf.internal import containers as _containers
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
+class TimeSeriesType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    TIMESERIES_TYPE_UNSPECIFIED: _ClassVar[TimeSeriesType]
+    TIMESERIES_TYPE_NUMERIC: _ClassVar[TimeSeriesType]
+    TIMESERIES_TYPE_STRING: _ClassVar[TimeSeriesType]
+TIMESERIES_TYPE_UNSPECIFIED: TimeSeriesType
+TIMESERIES_TYPE_NUMERIC: TimeSeriesType
+TIMESERIES_TYPE_STRING: TimeSeriesType
+
 class DataPointListItem(_message.Message):
-    __slots__ = ("id", "externalId", "instanceId", "isString", "isStep", "unit", "nextCursor", "unitExternalId", "numericDatapoints", "stringDatapoints", "aggregateDatapoints")
+    __slots__ = ("id", "externalId", "instanceId", "isString", "isStep", "unit", "nextCursor", "unitExternalId", "type", "numericDatapoints", "stringDatapoints", "aggregateDatapoints")
     ID_FIELD_NUMBER: _ClassVar[int]
     EXTERNALID_FIELD_NUMBER: _ClassVar[int]
     INSTANCEID_FIELD_NUMBER: _ClassVar[int]
@@ -16,6 +26,7 @@ class DataPointListItem(_message.Message):
     UNIT_FIELD_NUMBER: _ClassVar[int]
     NEXTCURSOR_FIELD_NUMBER: _ClassVar[int]
     UNITEXTERNALID_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
     NUMERICDATAPOINTS_FIELD_NUMBER: _ClassVar[int]
     STRINGDATAPOINTS_FIELD_NUMBER: _ClassVar[int]
     AGGREGATEDATAPOINTS_FIELD_NUMBER: _ClassVar[int]
@@ -27,10 +38,11 @@ class DataPointListItem(_message.Message):
     unit: str
     nextCursor: str
     unitExternalId: str
+    type: TimeSeriesType
     numericDatapoints: _data_points_pb2.NumericDatapoints
     stringDatapoints: _data_points_pb2.StringDatapoints
     aggregateDatapoints: _data_points_pb2.AggregateDatapoints
-    def __init__(self, id: _Optional[int] = ..., externalId: _Optional[str] = ..., instanceId: _Optional[_Union[_data_points_pb2.InstanceId, _Mapping]] = ..., isString: bool = ..., isStep: bool = ..., unit: _Optional[str] = ..., nextCursor: _Optional[str] = ..., unitExternalId: _Optional[str] = ..., numericDatapoints: _Optional[_Union[_data_points_pb2.NumericDatapoints, _Mapping]] = ..., stringDatapoints: _Optional[_Union[_data_points_pb2.StringDatapoints, _Mapping]] = ..., aggregateDatapoints: _Optional[_Union[_data_points_pb2.AggregateDatapoints, _Mapping]] = ...) -> None: ...
+    def __init__(self, id: _Optional[int] = ..., externalId: _Optional[str] = ..., instanceId: _Optional[_Union[_data_points_pb2.InstanceId, _Mapping]] = ..., isString: bool = ..., isStep: bool = ..., unit: _Optional[str] = ..., nextCursor: _Optional[str] = ..., unitExternalId: _Optional[str] = ..., type: _Optional[_Union[TimeSeriesType, str]] = ..., numericDatapoints: _Optional[_Union[_data_points_pb2.NumericDatapoints, _Mapping]] = ..., stringDatapoints: _Optional[_Union[_data_points_pb2.StringDatapoints, _Mapping]] = ..., aggregateDatapoints: _Optional[_Union[_data_points_pb2.AggregateDatapoints, _Mapping]] = ...) -> None: ...
 
 class DataPointListResponse(_message.Message):
     __slots__ = ("items",)

@@ -54,8 +54,9 @@ Concurrency Settings
 The SDK allows you to control how many concurrent API requests are made for different categories of APIs
 and operation types. This is managed through the ``concurrency_settings`` attribute on ``global_config``.
 
-All concurrency settings apply *per project*, so if you have multiple clients pointing to different CDF projects,
+Most concurrency settings apply *per project*, so if you have multiple clients pointing to different CDF projects,
 each project gets its own independent concurrency budget. See `Per-project concurrency`_ for more details.
+The one exception is ``files.open_files``, which is a global process-wide limit (see below).
 
 For backend services expected to serve a high volume of requests, you may want to increase the ``max_connection_pool_size``
 (default is 20). This is the "global concurrency limiter". See `Connection pooling`_ for more details.
@@ -67,14 +68,16 @@ For backend services expected to serve a high volume of requests, you may want t
 
 API categories
 ^^^^^^^^^^^^^^
-Concurrency is configured separately for three API categories, *but more are likely to be added in the future*.
-This happens if specific API endpoints have greatly different performance characteristics (higher- or lower throughput)
-that in turn warrant having their own concurrency settings (to unlock better performance, or for protection):
+Concurrency is configured separately for the following API categories (*but more are likely to be added in the future*):
 
 - **general**: Covers all API endpoints except those covered by other categories
 - **raw**: Covers the Raw API endpoints
 - **datapoints**: Time series datapoints API endpoints
 - **data_modeling**: Data Modeling API endpoints (has additional operation types, see below)
+- **files**: Files API endpoints (has additional operation types and one global limit, see below)
+
+This happens when specific API endpoints have greatly different performance characteristics (higher- or lower throughput)
+that in turn warrant having their own concurrency settings (to unlock better performance, or for protection):
 
 Operation types
 ^^^^^^^^^^^^^^^
@@ -91,6 +94,15 @@ regular instance operations:
 - **read_schema**: Schema read operations (views, data models, containers) and statistics
 - **write_schema**: Schema write operations (views, data models, containers)
 
+The **files** category has additional operation types for file content transfers:
+
+- **upload**: File content upload requests
+- **download**: File content download requests
+- **open_files**: *Global* (not per-project) cap on simultaneously open file handles during upload.
+  OS file-descriptor limits are process-wide, so this limit is shared across all CDF projects. This
+  is needed because each file upload may split large files into several parts in order to speed up
+  file transfers.
+
 The **total concurrency budget** is the sum of all limits across all categories and operation types.
 
 .. code:: python
@@ -98,7 +110,6 @@ The **total concurrency budget** is the sum of all limits across all categories 
     from cognite.client import global_config
 
     # Configure concurrency limits before making any API requests
-    # (In addition to 'general', there's also: settings.raw and settings.datapoints)
     settings = global_config.concurrency_settings
     settings.general.read = 8
     settings.general.write = 4
@@ -108,6 +119,11 @@ The **total concurrency budget** is the sum of all limits across all categories 
     settings.data_modeling.search = 2
     settings.data_modeling.read_schema = 2
     settings.data_modeling.write_schema = 1
+
+    # Files separates metadata writes from content transfers, plus a global open_files limit:
+    settings.files.upload = 4
+    settings.files.download = 4
+    settings.files.open_files = 20  # global: shared across all projects in this process
 
 .. warning::
     Concurrency settings **must be configured before making any API requests**. Once any API request is made,
@@ -129,6 +145,9 @@ Per-project concurrency
 The concurrency limits apply **per CDF project**. If you have multiple clients pointing to different CDF projects,
 each project gets its own independent concurrency budget. This means that if you set ``general.read = 5``, you can have
 up to 5 concurrent general read requests *per project*, not 5 total across all projects.
+
+The only exception is ``files.open_files``, which is enforced globally across all projects because OS
+file-descriptor limits are not scoped to a CDF project.
 
 Connection pooling
 ------------------
@@ -167,6 +186,23 @@ Alternatively, you can toggle debug logging on or off dynamically by setting the
     client.config.debug = True   # enable debug logging again
 
 Note: Large outgoing or incoming payloads will be truncated to 1000 characters in the logs to avoid overwhelming the log output.
+
+Custom event loop (e.g. uvloop)
+-------------------------------
+The SDK automatically creates and manages a background ``asyncio`` event loop for the synchronous ``CogniteClient``.
+By default this uses Python's built-in ``asyncio`` event loop, but you can substitute any compatible implementation
+(such as `uvloop <https://github.com/MagicStack/uvloop>`_) by installing a custom loop *policy* before the first API
+call is made. The background loop is created via ``asyncio.new_event_loop()``, which respects the active policy.
+
+.. code:: python
+
+    import uvloop
+
+    uvloop.install()  # equivalent to asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
+    from cognite.client import CogniteClient
+
+    client = CogniteClient(...)  # background loop will now be a uvloop
 
 HTTP Request logging
 --------------------

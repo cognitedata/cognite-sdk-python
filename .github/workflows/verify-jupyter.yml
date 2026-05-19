@@ -3,7 +3,7 @@ name: build
 
 on:
   pull_request:
-    branches: [master]
+    branches: [master, pysdk-release-v8]
 
 jobs:
   build_and_test_jupyter_pyodide:
@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install dependencies
-        run: npm install pyodide@0.27.6 # JupyterLite currently using pyodide 0.27.6
+        run: npm install pyodide@0.29.0 # JupyterLite currently using pyodide 0.29.0
       - name: Install cognite-sdk in pyodide environment
         run: |
           whl_file=$(find dist -name "*.whl" | sed 's|^dist/||') # Find the built wheel file, remove dist/ prefix

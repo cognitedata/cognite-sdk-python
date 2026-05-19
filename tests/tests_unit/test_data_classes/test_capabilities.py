@@ -79,6 +79,7 @@ def all_acls() -> Iterator[dict[str, Any]]:
         {"filesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"filesAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["2332579", "372"]}}}},
         {"functionsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"functionsAcl": {"actions": ["READ", "WRITE", "RUN"], "scope": {"all": {}}}},
         {"genericsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"groupsAcl": {"actions": ["LIST", "READ", "DELETE", "UPDATE", "CREATE"], "scope": {"all": {}}}},
         {"groupsAcl": {"actions": ["READ", "CREATE", "UPDATE", "DELETE"], "scope": {"currentuserscope": {}}}},
@@ -150,6 +151,8 @@ def all_acls() -> Iterator[dict[str, Any]]:
                 "scope": {"spaceIdScope": {"spaceIds": ["space-1", "space-2", "prod-space"]}},
             }
         },
+        {"subscribeSignalsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"subscribeSignalsAcl": {"actions": ["READ"], "scope": {"currentuserscope": {}}}},
         {"templateGroupsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"templateGroupsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["1", "42"]}}}},
         {"templateInstancesAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["4", "365"]}}}},
@@ -463,6 +466,7 @@ def mock_groups_resp(
             {
                 "name": "my name",
                 "id": 123,
+                "isDeleted": False,
                 "source_id": "something-uuid-like",
                 "capabilities": [unknown],
             }

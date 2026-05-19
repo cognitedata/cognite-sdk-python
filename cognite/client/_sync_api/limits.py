@@ -1,6 +1,6 @@
 """
 ===============================================================================
-6b64355411f69544440ffc5607c18fb1
+fa9b4b13df083257c7593d43dc67181f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -28,7 +28,7 @@ class SyncLimitsAPI(SyncAPIClient):
 
     def retrieve(self, id: str) -> Limit | None:
         """
-        `Retrieve a limit value by its id. <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/fetchLimitById/>`_
+        `Retrieve a limit value by its id <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/fetchLimitById/>`_.
 
         Retrieves a limit value by its `limitId`.
 
@@ -54,7 +54,7 @@ class SyncLimitsAPI(SyncAPIClient):
 
     def list(self, filter: Prefix | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> LimitList:
         """
-        `List all limit values <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/listLimits/>`_
+        `List all limit values <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/listLimits/>`_.
 
         Retrieves all limit values for a specific project. Optionally filter by limit ID prefix using a `Prefix` filter.
 

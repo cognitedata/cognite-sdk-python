@@ -1,6 +1,6 @@
 """
 ===============================================================================
-005b968817547c1aa85158a1cefc7d9d
+a6cd43591b6d369d0813909321a08ce0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -97,7 +97,7 @@ class SyncLabelsAPI(SyncAPIClient):
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> LabelDefinition | LabelDefinitionList | None:
         """
-        `Retrieve one or more label definitions by external id. <https://developer.cognite.com/api#tag/Labels/operation/byIdsLabels>`_
+        `Retrieve one or more label definitions by external id <https://api-docs.cognite.com/20230101/tag/Labels/operation/byIdsLabels>`_.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external ids
@@ -131,7 +131,7 @@ class SyncLabelsAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> LabelDefinitionList:
         """
-        `List Labels <https://developer.cognite.com/api#tag/Labels/operation/listLabels>`_
+        `List Labels <https://api-docs.cognite.com/20230101/tag/Labels/operation/listLabels>`_.
 
         Args:
             name (str | None): returns the label definitions matching that name
@@ -160,7 +160,7 @@ class SyncLabelsAPI(SyncAPIClient):
             Iterate over chunks of label definitions to reduce memory load:
 
                 >>> for label_list in client.labels(chunk_size=2500):
-                ...     label_list # do something with the type definitions
+                ...     label_list  # do something with the type definitions
         """
         return run_sync(
             self.__async_client.labels.list(
@@ -182,7 +182,7 @@ class SyncLabelsAPI(SyncAPIClient):
         self, label: LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]
     ) -> LabelDefinition | LabelDefinitionList:
         """
-        `Create one or more label definitions. <https://developer.cognite.com/api#tag/Labels/operation/createLabelDefinitions>`_
+        `Create one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels/operation/createLabelDefinitions>`_.
 
         Args:
             label (LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]): The label definition(s) to create.
@@ -201,14 +201,19 @@ class SyncLabelsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes import LabelDefinitionWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> labels = [LabelDefinitionWrite(external_id="ROTATING_EQUIPMENT", name="Rotating equipment"), LabelDefinitionWrite(external_id="PUMP", name="pump")]
+                >>> labels = [
+                ...     LabelDefinitionWrite(
+                ...         external_id="ROTATING_EQUIPMENT", name="Rotating equipment"
+                ...     ),
+                ...     LabelDefinitionWrite(external_id="PUMP", name="pump"),
+                ... ]
                 >>> res = client.labels.create(labels)
         """
         return run_sync(self.__async_client.labels.create(label=label))
 
     def delete(self, external_id: str | SequenceNotStr[str] | None = None) -> None:
         """
-        `Delete one or more label definitions <https://developer.cognite.com/api#tag/Labels/operation/deleteLabels>`_
+        `Delete one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels/operation/deleteLabels>`_.
 
         Args:
             external_id (str | SequenceNotStr[str] | None): One or more label external ids

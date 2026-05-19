@@ -99,8 +99,6 @@ class Row(RowCore):
 
     def as_write(self) -> RowWrite:
         """Returns this Row as a RowWrite"""
-        if self.key is None or self.columns is None:
-            raise ValueError("key and columns are required to create a Row")
         return RowWrite(key=self.key, columns=self.columns)
 
 
@@ -112,9 +110,6 @@ class RowWrite(RowCore):
         key (str): Unique row key
         columns (dict[str, Any]): Row data stored as a JSON object.
     """
-
-    def __init__(self, key: str, columns: dict[str, Any]) -> None:
-        super().__init__(key, columns)
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> RowWrite:
@@ -166,7 +161,7 @@ class Table(WriteableCogniteResourceWithClientRef["TableWrite"]):
     def __init__(
         self,
         name: str,
-        created_time: int | None,
+        created_time: int | None = None,
     ) -> None:
         self.name = name
         self.created_time = created_time
@@ -262,7 +257,7 @@ class Database(WriteableCogniteResourceWithClientRef["DatabaseWrite"]):
     def __init__(
         self,
         name: str,
-        created_time: int | None,
+        created_time: int | None = None,
     ) -> None:
         self.name = name
         self.created_time = created_time
@@ -273,8 +268,6 @@ class Database(WriteableCogniteResourceWithClientRef["DatabaseWrite"]):
 
     def as_write(self) -> DatabaseWrite:
         """Returns this Database as a DatabaseWrite"""
-        if self.name is None:
-            raise ValueError("name is required to create a Database")
         return DatabaseWrite(name=self.name)
 
     async def tables_async(self, limit: int | None = None) -> TableList:
@@ -286,8 +279,6 @@ class Database(WriteableCogniteResourceWithClientRef["DatabaseWrite"]):
         Returns:
             TableList: List of tables in this database.
         """
-        if self.name is None:
-            raise ValueError("Unable to list tables, 'name' is not set on instance")
         return await self._cognite_client.raw.tables.list(db_name=self.name, limit=limit)
 
     @copy_doc_from_async(tables_async)

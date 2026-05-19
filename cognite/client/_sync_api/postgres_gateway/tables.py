@@ -1,6 +1,6 @@
 """
 ===============================================================================
-789d58776aa258529e2d0c9453d9e029
+76644d0a1e130c795027e8e205f1d20f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -56,7 +56,7 @@ class SyncTablesAPI(SyncAPIClient):
 
     def create(self, username: str, items: pg.TableWrite | Sequence[pg.TableWrite]) -> pg.Table | pg.TableList:
         """
-        `Create tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/create_tables>`_
+        `Create tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/create_tables>`_.
 
         Args:
             username (str): The name of the username (a.k.a. database) to be managed from the API
@@ -74,8 +74,11 @@ class SyncTablesAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.postgres_gateway import ViewTableWrite
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> table = ViewTableWrite(tablename="myCustom", options=ViewId(space="mySpace", external_id="myExternalId", version="v1"))
-                >>> res = client.postgres_gateway.tables.create("myUserName",table)
+                >>> table = ViewTableWrite(
+                ...     tablename="myCustom",
+                ...     options=ViewId(space="mySpace", external_id="myExternalId", version="v1"),
+                ... )
+                >>> res = client.postgres_gateway.tables.create("myUserName", table)
         """
         return run_sync(self.__async_client.postgres_gateway.tables.create(username=username, items=items))
 
@@ -94,7 +97,7 @@ class SyncTablesAPI(SyncAPIClient):
         self, username: str, tablename: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> pg.Table | pg.TableList | None:
         """
-        `Retrieve a list of tables by their tables names <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/retrieve_tables>`_
+        `Retrieve a list of tables by their tables names <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/retrieve_tables>`_.
 
         Retrieve a list of Postgres tables for a user by their table names, optionally ignoring unknown table names
 
@@ -113,11 +116,13 @@ class SyncTablesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.postgres_gateway.tables.retrieve("myUserName", 'myCustom')
+                >>> res = client.postgres_gateway.tables.retrieve("myUserName", "myCustom")
 
             Get multiple custom tables by id:
 
-                >>> res = client.postgres_gateway.tables.retrieve("myUserName", ["myCustom", "myCustom2"])
+                >>> res = client.postgres_gateway.tables.retrieve(
+                ...     "myUserName", ["myCustom", "myCustom2"]
+                ... )
         """
         return run_sync(
             self.__async_client.postgres_gateway.tables.retrieve(
@@ -129,7 +134,7 @@ class SyncTablesAPI(SyncAPIClient):
 
     def delete(self, username: str, tablename: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """
-        `Delete postgres table(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/delete_tables>`_
+        `Delete postgres table(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/delete_tables>`_.
 
         Args:
             username (str): The name of the username (a.k.a. database) to be managed from the API
@@ -158,7 +163,7 @@ class SyncTablesAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> pg.TableList:
         """
-        `List postgres tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/list_tables>`_
+        `List postgres tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/list_tables>`_.
 
         List all tables in a given project.
 
@@ -187,7 +192,7 @@ class SyncTablesAPI(SyncAPIClient):
             Iterate over chunks of tables to reduce memory load:
 
                 >>> for table_list in client.postgres_gateway.tables(chunk_size=25):
-                ...     table_list # do something with the custom tables
+                ...     table_list  # do something with the custom tables
         """
         return run_sync(
             self.__async_client.postgres_gateway.tables.list(

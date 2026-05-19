@@ -7,7 +7,14 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import OAuthClientCredentials
-from cognite.client.data_classes import ClientCredentials, CreatedSession, Session, SessionList
+from cognite.client.data_classes import (
+    ClientCredentials,
+    CreatedSession,
+    RevokedSession,
+    RevokedSessionList,
+    Session,
+    SessionList,
+)
 from cognite.client.data_classes.iam import SessionStatus, SessionType
 from cognite.client.utils._identifier import IdentifierSequence
 
@@ -30,7 +37,7 @@ class SessionsAPI(APIClient):
         client_credentials: ClientCredentials | None = None,
         session_type: SessionType | Literal["DEFAULT"] = "DEFAULT",
     ) -> CreatedSession:
-        """`Create a session. <https://developer.cognite.com/api#tag/Sessions/operation/createSessions>`_
+        """`Create a session <https://api-docs.cognite.com/20230101/tag/Sessions/operation/createSessions>`_.
 
         Args:
             client_credentials (ClientCredentials | None): The client credentials to create the session. This is required
@@ -77,19 +84,22 @@ class SessionsAPI(APIClient):
         return CreatedSession.load(response.json()["items"][0])
 
     @overload
-    async def revoke(self, id: int) -> Session: ...
+    async def revoke(self, id: int) -> RevokedSession: ...
 
     @overload
-    async def revoke(self, id: Sequence[int]) -> SessionList: ...
+    async def revoke(self, id: Sequence[int]) -> RevokedSessionList: ...
 
-    async def revoke(self, id: int | Sequence[int]) -> Session | SessionList:
-        """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_
+    async def revoke(self, id: int | Sequence[int]) -> RevokedSession | RevokedSessionList:
+        """`Revoke access to a session <https://api-docs.cognite.com/20230101/tag/Sessions/operation/revokeSessions>`_.
+
+        Revocation of a session may in some cases take up to 1 hour to take effect.
 
         Args:
             id (int | Sequence[int]): Id or list of session ids
 
         Returns:
-            Session | SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
+            RevokedSession | RevokedSessionList: Revoked session(s). If the caller lacks sessionsAcl:LIST, only the
+                session ID will be present; all other fields will be None.
         """
 
         ident_sequence = IdentifierSequence.load(ids=id, external_ids=None)
@@ -104,7 +114,7 @@ class SessionsAPI(APIClient):
             ),
         )
 
-        revoked_sessions = SessionList._load(revoked_sessions_res)
+        revoked_sessions = RevokedSessionList._load(revoked_sessions_res)
         return revoked_sessions[0] if ident_sequence.is_singleton() else revoked_sessions
 
     @overload
@@ -114,7 +124,7 @@ class SessionsAPI(APIClient):
     async def retrieve(self, id: Sequence[int]) -> SessionList: ...
 
     async def retrieve(self, id: int | Sequence[int]) -> Session | SessionList:
-        """`Retrieves sessions with given IDs. <https://developer.cognite.com/api#tag/Sessions/operation/getSessionsByIds>`_
+        """`Retrieves sessions with given IDs <https://api-docs.cognite.com/20230101/tag/Sessions/operation/getSessionsByIds>`_.
 
         The request will fail if any of the IDs does not belong to an existing session.
 
@@ -133,7 +143,7 @@ class SessionsAPI(APIClient):
         )
 
     async def list(self, status: SessionStatus | None = None, limit: int = DEFAULT_LIMIT_READ) -> SessionList:
-        """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_
+        """`List all sessions in the current project <https://api-docs.cognite.com/20230101/tag/Sessions/operation/listSessions>`_.
 
         Args:
             status (SessionStatus | None): If given, only sessions with the given status are returned.

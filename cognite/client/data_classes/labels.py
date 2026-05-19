@@ -23,7 +23,7 @@ class LabelDefinitionCore(WriteableCogniteResource["LabelDefinitionWrite"], ABC)
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str | None): Name of the label.
+        name (str): Name of the label.
         description (str | None): Description of the label.
         data_set_id (int | None): The id of the dataset this label belongs to.
     """
@@ -31,7 +31,7 @@ class LabelDefinitionCore(WriteableCogniteResource["LabelDefinitionWrite"], ABC)
     def __init__(
         self,
         external_id: str,
-        name: str | None,
+        name: str,
         description: str | None,
         data_set_id: int | None,
     ) -> None:
@@ -58,8 +58,8 @@ class LabelDefinition(LabelDefinitionCore):
         external_id: str,
         name: str,
         created_time: int,
-        description: str | None,
-        data_set_id: int | None,
+        description: str | None = None,
+        data_set_id: int | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -81,8 +81,6 @@ class LabelDefinition(LabelDefinitionCore):
 
     def as_write(self) -> LabelDefinitionWrite:
         """Returns this LabelDefinition in its write version."""
-        if self.external_id is None or self.name is None:
-            raise ValueError("External ID and name are required for the write version of a label definition.")
         return LabelDefinitionWrite(
             external_id=self.external_id,
             name=self.name,
@@ -185,23 +183,24 @@ class Label(CogniteResource):
         | Sequence[dict | LabelDefinitionCore | Label]
         | None,
     ) -> list[Label] | None:
-        def convert_label(label: Label | str | LabelDefinitionCore | dict) -> Label:
-            if isinstance(label, Label):
-                return label
-            elif isinstance(label, str):
-                return Label(label)
-            elif isinstance(label, LabelDefinitionCore):
-                return Label(label.external_id)
-            elif isinstance(label, dict):
-                if "externalId" in label:
-                    return Label(label["externalId"])
-                if "external_id" in label:
-                    return Label(label["external_id"])
-            raise ValueError(f"Could not parse label: {label}")
-
         if labels is None:
             return None
-        return [convert_label(label) for label in labels]
+        return [cls.convert_label(label) for label in labels]
+
+    @staticmethod
+    def convert_label(lb: Label | str | LabelDefinitionCore | dict) -> Label:
+        if isinstance(lb, Label):
+            return lb
+        elif isinstance(lb, str):
+            return Label(lb)
+        elif isinstance(lb, LabelDefinitionCore):
+            return Label(lb.external_id)
+        elif isinstance(lb, dict):
+            if "externalId" in lb:
+                return Label(lb["externalId"])
+            if "external_id" in lb:
+                return Label(lb["external_id"])
+        raise ValueError(f"Could not parse label: {lb}")
 
 
 class LabelFilter(CogniteFilter):

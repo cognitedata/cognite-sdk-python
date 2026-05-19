@@ -26,7 +26,7 @@ def get_api_class_by_attribute(cls_: object, parent_name: tuple[str, ...] = ()) 
     return available_apis
 
 
-def find_api_class_name(source_code: str, file: Path, raise_on_missing: bool = True) -> str | None:
+def find_api_class_name(source_code: str, file: Path) -> str | None:
     match re.findall(r"class (\w+API)\((?:Org)?APIClient\):", source_code):
         case []:
             return None
@@ -64,7 +64,7 @@ def is_md5_hash(s: str) -> bool:
 
 
 def read_hash_from_file(path: Path) -> tuple[bool, str]:
-    with path.open("r") as f:
+    with path.open("r", encoding="utf-8") as f:
         f.readline()
         f.readline()
         maybe_hash = f.readline().strip()
@@ -235,6 +235,15 @@ def run_ruff(file_paths: list[Path], verbose: bool = False) -> None:
     subprocess.run(command, check=False, capture_output=True)
 
 
+def run_ruff_direct(file_path: Path) -> None:
+    """Run ruff directly on a file, bypassing pre-commit.
+
+    This is needed for temp files outside the repo, where pre-commit hooks don't apply.
+    """
+    subprocess.run(["poetry", "run", "ruff", "check", "--fix", str(file_path)], check=False, capture_output=True)
+    subprocess.run(["poetry", "run", "ruff", "format", str(file_path)], check=False, capture_output=True)
+
+
 def get_dot_path_lookup(async_client: AsyncCogniteClient) -> tuple[dict[str, str], dict[str, str]]:
     api_cls_lookup = get_api_class_by_attribute(async_client)
     dot_path_lookup = {v.__name__: k for k, v in api_cls_lookup.items()}
@@ -251,7 +260,7 @@ def ensure_parent_dir(file: Path) -> None:
 
 @cache
 def get_source_code(file: Path) -> str:
-    return file.read_text()
+    return file.read_text(encoding="utf-8")
 
 
 def filter_base_apis_and_sort_alphabetically(dct: dict[str, str]) -> list[tuple[str, str]]:

@@ -205,14 +205,8 @@ class TestRelationships:
                 last_updated_time=123,
                 source_external_id="source1",
                 source_type="bla",
-                source=None,
                 target_external_id="bla",
                 target_type="bla",
-                target=None,
-                start_time=None,
-                end_time=None,
-                confidence=None,
-                data_set_id=None,
                 labels=[Label(external_id="Pump")],
             )
         )

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f1a19d82e7ff74dfade4b2cf571130e6
+1f615115f322d471c0ae15347e13f8c2
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,7 +12,9 @@ from pathlib import Path
 from typing import Any, BinaryIO, Literal, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._constants import (
+    DEFAULT_LIMIT_READ,
+)
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes import (
     FileMetadata,
@@ -206,7 +208,7 @@ class SyncFilesAPI(SyncAPIClient):
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> FileMetadata | None:
         """
-        `Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
+        `Retrieve a single file metadata by id <https://api-docs.cognite.com/20230101/tag/Files/operation/getFileByInternalId>`_.
 
         Args:
             id (int | None): ID
@@ -239,7 +241,7 @@ class SyncFilesAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
         """
-        `Retrieve multiple file metadatas by id. <https://developer.cognite.com/api#tag/Files/operation/byIdsFiles>`_
+        `Retrieve multiple file metadatas by id <https://api-docs.cognite.com/20230101/tag/Files/operation/byIdsFiles>`_.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -271,7 +273,7 @@ class SyncFilesAPI(SyncAPIClient):
 
     def aggregate_count(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> int:
         """
-        `Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
+        `Aggregate files <https://api-docs.cognite.com/20230101/tag/Files/operation/aggregateFiles>`_.
 
         Args:
             filter (FileMetadataFilter | dict[str, Any] | None): Filter on file metadata filter with exact match
@@ -297,7 +299,7 @@ class SyncFilesAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> None:
         """
-        `Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
+        `Delete files <https://api-docs.cognite.com/20230101/tag/Files/operation/deleteFiles>`_.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -311,7 +313,7 @@ class SyncFilesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.files.delete(id=[1,2,3], external_id="3")
+                >>> client.files.delete(id=[1, 2, 3], external_id="3")
         """
         return run_sync(
             self.__async_client.files.delete(id=id, external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)
@@ -340,7 +342,8 @@ class SyncFilesAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> FileMetadata | FileMetadataList:
         """
-        `Update files <https://developer.cognite.com/api#tag/Files/operation/updateFiles>`_
+        `Update files <https://api-docs.cognite.com/20230101/tag/Files/operation/updateFiles>`_.
+
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
@@ -364,7 +367,9 @@ class SyncFilesAPI(SyncAPIClient):
             Perform a partial update on file metadata, updating the source and adding a new field to metadata:
 
                 >>> from cognite.client.data_classes import FileMetadataUpdate
-                >>> my_update = FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
+                >>> my_update = (
+                ...     FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
+                ... )
                 >>> res = client.files.update(my_update)
 
             Attach labels to a files:
@@ -388,7 +393,8 @@ class SyncFilesAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> FileMetadataList:
         """
-        `Search for files. <https://developer.cognite.com/api#tag/Files/operation/searchFiles>`_
+        `Search for files <https://api-docs.cognite.com/20230101/tag/Files/operation/searchFiles>`_.
+
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -411,7 +417,9 @@ class SyncFilesAPI(SyncAPIClient):
             Search for an asset with an attached label:
 
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
-                >>> res = client.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
+                >>> res = client.assets.search(
+                ...     name="xyz", filter=FileMetadataFilter(labels=my_label_filter)
+                ... )
         """
         return run_sync(self.__async_client.files.search(name=name, filter=filter, limit=limit))
 
@@ -419,12 +427,17 @@ class SyncFilesAPI(SyncAPIClient):
         self, path: Path | str, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> FileMetadata:
         """
-        `Upload a file content <https://developer.cognite.com/api#tag/Files/operation/getUploadLink>`_
+        `Upload file content <https://api-docs.cognite.com/20230101/tag/Files/operation/getMultiPartUploadLink>`_
+
+        Upload file content from a local file path to a file previously created (initiated) with only metadata.
+        For files created with FilesAPI.create(), use `external_id`.
+        For files created with data modeling API using CogniteFileApply, use `instance_id`.
+        Supports upload of large files (>5 GB), using multipart upload.
 
         Args:
-            path (Path | str): Path to the file you wish to upload.
+            path (Path | str): Local file path.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            instance_id (NodeId | None): Instance ID of the file (CogniteFile).
         Returns:
             FileMetadata: No description.
         """
@@ -452,7 +465,14 @@ class SyncFilesAPI(SyncAPIClient):
         overwrite: bool = False,
     ) -> FileMetadata | FileMetadataList:
         """
-        `Upload a file <https://developer.cognite.com/api#tag/Files/operation/initFileUpload>`_
+        `Upload a file or directory <https://api-docs.cognite.com/20230101/tag/Files/operation/initMultiPartUpload>`_
+
+        Creates files in files API with metadata and uploads file content.
+
+        Note:
+            If path is a directory, this method will upload all files in that directory. Use `recursive=True` for subdirectories as well.
+
+        Supports upload of large files (>5 GB), using multipart upload.
 
         Args:
             path (Path | str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
@@ -503,13 +523,17 @@ class SyncFilesAPI(SyncAPIClient):
             Upload a file with a label:
 
                 >>> from cognite.client.data_classes import Label
-                >>> res = client.files.upload(my_file, name="my_file", labels=[Label(external_id="WELL LOG")])
+                >>> res = client.files.upload(
+                ...     my_file, name="my_file", labels=[Label(external_id="WELL LOG")]
+                ... )
 
             Upload a file with a geo_location:
 
                 >>> from cognite.client.data_classes import GeoLocation, Geometry
                 >>> geometry = Geometry(type="LineString", coordinates=[[30, 10], [10, 30], [40, 40]])
-                >>> res = client.files.upload(my_file, geo_location=GeoLocation(type="Feature", geometry=geometry))
+                >>> res = client.files.upload(
+                ...     my_file, geo_location=GeoLocation(type="Feature", geometry=geometry)
+                ... )
         """
         return run_sync(
             self.__async_client.files.upload(
@@ -555,14 +579,14 @@ class SyncFilesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.files.upload_content_bytes(
-                ...     b"some content", external_id="my_file_xid")
+                >>> res = client.files.upload_content_bytes(b"some content", external_id="my_file_xid")
 
             ...or by using instance_id:
 
                 >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> res = client.files.upload_content_bytes(
-                ...     b"some content", instance_id=NodeId("my-space", "my_file_xid"))
+                ...     b"some content", instance_id=NodeId("my-space", "my_file_xid")
+                ... )
         """
         return run_sync(
             self.__async_client.files.upload_content_bytes(
@@ -622,7 +646,7 @@ class SyncFilesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
+                >>> res = client.files.upload_bytes(b"some content", name="my_file", asset_ids=[1, 2, 3])
         """
         return run_sync(
             self.__async_client.files.upload_bytes(
@@ -663,7 +687,9 @@ class SyncFilesAPI(SyncAPIClient):
         overwrite: bool = False,
     ) -> FileMultipartUploadSession:
         """
-        Begin uploading a file in multiple parts. This allows uploading files larger than 5GiB.
+        Begin uploading a file in multiple parts.
+
+        This allows uploading files larger than 5GiB.
         Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
         must be greater than 5MiB.
 
@@ -729,7 +755,9 @@ class SyncFilesAPI(SyncAPIClient):
         self, parts: int, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> FileMultipartUploadSession:
         """
-        Begin uploading a file in multiple parts whose metadata is already created in CDF. This allows uploading files larger than 5GiB.
+        Begin uploading a file in multiple parts whose metadata is already created in CDF.
+
+        This allows uploading files larger than 5GiB.
         Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
         must be greater than 5MiB.
 
@@ -754,7 +782,9 @@ class SyncFilesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> with client.files.multipart_upload_content_session(external_id="external-id", parts=2) as session:
+                >>> with client.files.multipart_upload_content_session(
+                ...     external_id="external-id", parts=2
+                ... ) as session:
                 ...     # Note that the minimum chunk size is 5 MiB.
                 ...     session.upload_part(0, "hello" * 1_200_000)
                 ...     session.upload_part(1, " world")
@@ -773,7 +803,7 @@ class SyncFilesAPI(SyncAPIClient):
         extended_expiration: bool = False,
     ) -> dict[int | str | NodeId, str]:
         """
-        Get download links by id or external id
+        Get download links by id or external id.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
@@ -800,7 +830,7 @@ class SyncFilesAPI(SyncAPIClient):
         resolve_duplicate_file_names: bool = False,
     ) -> None:
         """
-        `Download files by id or external id. <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_
+        `Download files by id or external id <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_.
 
         This method will stream all files to disk, never keeping more than 2MB in memory per worker.
         The files will be stored in the provided directory using the file name retrieved from the file metadata in CDF.
@@ -829,11 +859,13 @@ class SyncFilesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
+                >>> client.files.download(
+                ...     directory="my_directory", id=[1, 2, 3], external_id=["abc", "def"]
+                ... )
 
             Download files by id to the current directory:
 
-                >>> client.files.download(directory=".", id=[1,2,3])
+                >>> client.files.download(directory=".", id=[1, 2, 3])
         """
         return run_sync(
             self.__async_client.files.download(
@@ -925,7 +957,7 @@ class SyncFilesAPI(SyncAPIClient):
         partitions: int | None = None,
     ) -> FileMetadataList:
         """
-        `List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
+        `List files <https://api-docs.cognite.com/20230101/tag/Files/operation/advancedListFiles>`_.
 
         Args:
             name (str | None): Name of the file.
@@ -971,7 +1003,7 @@ class SyncFilesAPI(SyncAPIClient):
             Iterate over chunks of files metadata to reduce memory load:
 
                 >>> for file_list in client.files(chunk_size=2500):
-                ...     file_list # do something with the files
+                ...     file_list  # do something with the files
 
             Filter files based on labels:
 
@@ -982,7 +1014,9 @@ class SyncFilesAPI(SyncAPIClient):
             Filter files based on geoLocation:
 
                 >>> from cognite.client.data_classes import GeoLocationFilter, GeometryFilter
-                >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
+                >>> my_geo_location_filter = GeoLocationFilter(
+                ...     relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35, 10])
+                ... )
                 >>> file_list = client.files.list(geo_location=my_geo_location_filter)
         """
         return run_sync(

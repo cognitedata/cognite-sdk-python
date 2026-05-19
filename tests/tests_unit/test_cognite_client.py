@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import logging
+import os
 import ssl
+import subprocess
+import sys
 from typing import Any
 
 import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, ClientConfig, CogniteClient, global_config
-from cognite.client._http_client import get_global_async_httpx_client
+from cognite.client._http_client import _global_async_httpx_clients, get_global_async_httpx_client
 from cognite.client.credentials import OAuthClientCredentials, Token
 from cognite.client.utils._logging import DebugLogFormatter
 
@@ -110,7 +113,12 @@ class TestCogniteClient:
         await async_client.iam.token.inspect()
         assert httpx_mock.get_requests()[0].headers["cdf-version"] == async_client.config.api_subversion
 
-    def test_verify_ssl_enabled_by_default(self, async_client: AsyncCogniteClient) -> None:
+    async def test_verify_ssl_enabled_by_default(self, async_client: AsyncCogniteClient) -> None:
+        # Clear the per-loop httpx client cache so we observe a freshly-built client reflecting
+        # the current global_config (disable_ssl=False); without this, a leftover client cached
+        # by an earlier test on the same loop could carry stale TLS settings (seen flaking once).
+        _global_async_httpx_clients.clear()
+
         httpx_client = get_global_async_httpx_client()
         assert ssl.CERT_REQUIRED is httpx_client._transport._pool._ssl_context.verify_mode  # type: ignore[attr-defined]
 
@@ -144,3 +152,38 @@ class TestCogniteClient:
         assert creds.token_url == TOKEN_URL
         assert creds.scopes == ["https://test.com/.default", "https://test.com/.admin"]
         assert client.config.debug is False
+
+    def test_sync_client_get_async_client(self, client_config_w_token_factory: ClientConfig) -> None:
+        sync_client = CogniteClient(client_config_w_token_factory)
+        async_client = sync_client.get_async_client()
+
+        assert isinstance(async_client, AsyncCogniteClient)
+        assert async_client.config is sync_client.config
+
+    def test_async_client_to_sync_client(self, client_config_w_token_factory: ClientConfig) -> None:
+        async_client = AsyncCogniteClient(client_config_w_token_factory)
+        sync_client = async_client.get_sync_client()
+
+        assert isinstance(sync_client, CogniteClient)
+        assert sync_client.config is async_client.config
+
+    def test_docs_build_adds_nested_accessors(self) -> None:
+        """When BUILD_COGNITE_SDK_DOCS=true, _cognite_client attaches nested API classes
+        onto AsyncCogniteClient as class attributes so Sphinx can discover and document
+        them. We run the assertion in a subprocess so the import-time side effects don't
+        pollute sys.modules for the rest of the test suite (which would break pickling
+        of AsyncCogniteClient instances via class-identity mismatch).
+        """
+        code = (
+            "from cognite.client import _cognite_client\n"
+            "c = _cognite_client.AsyncCogniteClient\n"
+            "assert c.time_series.data.synthetic is not None\n"
+            "assert c.data_modeling.statistics.spaces is not None\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            env={**os.environ, "BUILD_COGNITE_SDK_DOCS": "true"},
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, result.stderr
