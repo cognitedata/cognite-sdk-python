@@ -12,6 +12,8 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationRunDataList,
     SimulationRunList,
     SimulationRunWrite,
+    SimulatorRunStatus,
+    SimulatorRunType,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -47,8 +49,8 @@ class SimulatorRunsAPI(APIClient):
         self,
         chunk_size: int,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -65,8 +67,8 @@ class SimulatorRunsAPI(APIClient):
         self,
         chunk_size: None = None,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -82,8 +84,8 @@ class SimulatorRunsAPI(APIClient):
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -101,8 +103,8 @@ class SimulatorRunsAPI(APIClient):
         Args:
             chunk_size (int | None): Number of simulation runs to return in each chunk. Defaults to yielding one simulation run a time.
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (str | None): Filter by simulation run status
-            run_type (str | None): Filter by simulation run type
+            status (SimulatorRunStatus | None): Filter by simulation run status
+            run_type (SimulatorRunType | None): Filter by simulation run type
             model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
             simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids
@@ -143,8 +145,8 @@ class SimulatorRunsAPI(APIClient):
     async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -161,8 +163,8 @@ class SimulatorRunsAPI(APIClient):
 
         Args:
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (str | None): Filter by simulation run status
-            run_type (str | None): Filter by simulation run type
+            status (SimulatorRunStatus | None): Filter by simulation run status
+            run_type (SimulatorRunType | None): Filter by simulation run type
             model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
             simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids

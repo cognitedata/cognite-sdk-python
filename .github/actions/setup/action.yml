@@ -22,10 +22,7 @@ runs:
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
       with:
         path: |
-          ~/.cache/pypoetry
-          ~/.poetry
-          !~/.cache/pypoetry/artifacts
-          !~/.cache/pypoetry/repositories
+          ~/.cache/pypoetry/cache
         key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ inputs.python_version }}-${{ inputs.extras }}
 
     - name: Install dependencies

@@ -2377,9 +2377,9 @@ class TestRetrieveMixedRawAndAgg:
             assert len(res_lst) == 3
             assert res_lst.get(external_id=random_xids[0]) is None
             dps_xid = res_lst.get(external_id=ts_str.external_id)
-            assert isinstance(dps_xid, exp_res_lst_type._RESOURCE)  # type: ignore[attr-defined]
+            assert isinstance(dps_xid, exp_res_lst_type._RESOURCE)
             dps_id = res_lst.get(id=ts_num.id)
-            assert isinstance(dps_id, exp_res_lst_type._RESOURCE)  # type: ignore[attr-defined]
+            assert isinstance(dps_id, exp_res_lst_type._RESOURCE)
 
     def test_query_with_duplicates(
         self,
@@ -2404,17 +2404,17 @@ class TestRetrieveMixedRawAndAgg:
             )
             assert isinstance(res_lst, exp_res_lst_type)
             # Check non-duplicated in result:
-            assert isinstance(res_lst.get(id=ms_bursty_ts.id), exp_res_lst_type._RESOURCE)  # type: ignore[attr-defined]
-            assert isinstance(res_lst.get(external_id=ms_bursty_ts.external_id), exp_res_lst_type._RESOURCE)  # type: ignore[attr-defined]
+            assert isinstance(res_lst.get(id=ms_bursty_ts.id), exp_res_lst_type._RESOURCE)
+            assert isinstance(res_lst.get(external_id=ms_bursty_ts.external_id), exp_res_lst_type._RESOURCE)
             # Check duplicated in result:
             assert isinstance(res_lst.get(id=ts_numeric.id), list)
             assert isinstance(res_lst.get(id=ts_string.id), list)
             assert isinstance(res_lst.get(external_id=ts_numeric.external_id), list)
             assert isinstance(res_lst.get(external_id=ts_string.external_id), list)
-            assert len(res_lst.get(id=ts_numeric.id)) == 3  # type: ignore[arg-type]
-            assert len(res_lst.get(id=ts_string.id)) == 2  # type: ignore[arg-type]
-            assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3  # type: ignore[arg-type]
-            assert len(res_lst.get(external_id=ts_string.external_id)) == 2  # type: ignore[arg-type]
+            assert len(res_lst.get(id=ts_numeric.id)) == 3
+            assert len(res_lst.get(id=ts_string.id)) == 2
+            assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
+            assert len(res_lst.get(external_id=ts_string.external_id)) == 2
 
 
 class TestRetrieveDataFrameAPI:

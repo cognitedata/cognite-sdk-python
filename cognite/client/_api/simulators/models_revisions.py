@@ -41,7 +41,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
         sort: PropertySort | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
-        all_versions: bool | None = None,
+        all_versions: bool = False,
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
     ) -> SimulatorModelRevisionList:
@@ -53,7 +53,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             sort (PropertySort | None): The criteria to sort by.
             model_external_ids (str | SequenceNotStr[str] | None): The external ids of the simulator models to filter by.
-            all_versions (bool | None): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
+            all_versions (bool): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
             created_time (TimestampRange | None): Filter by created time.
             last_updated_time (TimestampRange | None): Filter by last updated time.
 
@@ -158,7 +158,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         chunk_size: int,
         sort: PropertySort | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
-        all_versions: bool | None = None,
+        all_versions: bool = False,
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
@@ -170,7 +170,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         chunk_size: None = None,
         sort: PropertySort | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
-        all_versions: bool | None = None,
+        all_versions: bool = False,
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
@@ -181,7 +181,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         chunk_size: int | None = None,
         sort: PropertySort | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
-        all_versions: bool | None = None,
+        all_versions: bool = False,
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
@@ -194,7 +194,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             chunk_size (int | None): Number of simulator model revisions to return in each chunk. Defaults to yielding one simulator model revision a time.
             sort (PropertySort | None): The criteria to sort by.
             model_external_ids (str | SequenceNotStr[str] | None): The external ids of the simulator models to filter by.
-            all_versions (bool | None): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
+            all_versions (bool): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
             created_time (TimestampRange | None): Filter by created time.
             last_updated_time (TimestampRange | None): Filter by last updated time.
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
