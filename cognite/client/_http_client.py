@@ -53,30 +53,17 @@ def get_global_async_httpx_client() -> httpx.AsyncClient:
         return _global_async_httpx_clients[loop]
     except KeyError:
         pass
-    async_transport = httpx.AsyncHTTPTransport(
+
+    client = _global_async_httpx_clients[loop] = httpx.AsyncClient(
         proxy=global_config.proxy,
-        retries=0,  # 'retries': The maximum number of retries when trying to establish a connection.
         verify=not global_config.disable_ssl,
         limits=httpx.Limits(
-            # max_connections: The maximum number of concurrent HTTP connections that
-            #     the pool should allow. Any attempt to send a request on a pool that
-            #     would exceed this amount will block until a connection is available.
-            # max_keepalive_connections: The maximum number of idle HTTP connections
-            #     that will be maintained in the pool.
-            # keepalive_expiry: The duration in seconds that an idle HTTP connection
-            #     may be maintained for before being expired from the pool.
             max_connections=global_config.max_connection_pool_size,
-            max_keepalive_connections=None,  # defaults to match max_connections
-            keepalive_expiry=5,  # copy httpx default
+            max_keepalive_connections=None,
+            keepalive_expiry=5,
         ),
-    )
-    client = _global_async_httpx_clients[loop] = httpx.AsyncClient(
-        transport=async_transport,
         follow_redirects=global_config.follow_redirects,
         cookies=NoCookiesPlease(),
-        # Below should not be needed when we pass transport, but... :)
-        proxy=global_config.proxy,
-        verify=not global_config.disable_ssl,
     )
     return client
 
