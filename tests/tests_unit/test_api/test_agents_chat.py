@@ -69,7 +69,10 @@ def chat_response_body() -> dict:
                                             "return_properties": ["name", "externalId"],
                                         },
                                         "result": {
-                                            "result": {"items": [{"space": "my_space", "externalId": "pump_1"}], "count": 1},
+                                            "result": {
+                                                "items": [{"space": "my_space", "externalId": "pump_1"}],
+                                                "count": 1,
+                                            },
                                             "error": None,
                                         },
                                     },
