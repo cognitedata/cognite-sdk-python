@@ -482,10 +482,6 @@ class ToolCallDetail(CogniteResource):
     input: dict[str, Any] = field(default_factory=dict)
     result: dict[str, Any] = field(default_factory=dict)
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        key = "toolType" if camel_case else "tool_type"
-        return {"id": self.id, "name": self.name, key: self.tool_type, "input": self.input, "result": self.result}
-
     @classmethod
     def _load(cls, data: dict[str, Any]) -> ToolCallDetail:
         return cls(
@@ -502,6 +498,11 @@ class ReasoningDataItem(CogniteResource, ABC):
     """Base class for reasoning data item types."""
 
     _type: ClassVar[str]
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["type"] = self._type
+        return output
 
     @classmethod
     def _load(cls, data: dict[str, Any]) -> ReasoningDataItem:
