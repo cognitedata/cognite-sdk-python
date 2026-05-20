@@ -13,6 +13,18 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.6.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.5.0...cognite-sdk-python-v8.6.0) (2026-05-20)
+
+
+### Features
+
+* Add ability to use datetime objects or time-shift strings in TimestampRange ([#2432](https://github.com/cognitedata/cognite-sdk-python/issues/2432)) ([85debd3](https://github.com/cognitedata/cognite-sdk-python/commit/85debd305d568aed34392a52b61d155bbd3356fa))
+
+
+### Bug Fixes
+
+* respect HTTP(S)_PROXY env vars for httpx client ([#2632](https://github.com/cognitedata/cognite-sdk-python/issues/2632)) ([ac60c0e](https://github.com/cognitedata/cognite-sdk-python/commit/ac60c0e79c00ec3afe2f3f059e4246661bf73705))
+
 ## [8.5.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.4.0...cognite-sdk-python-v8.5.0) (2026-05-18)
 
 
