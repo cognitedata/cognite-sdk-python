@@ -253,16 +253,15 @@ class ContainersAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> container_list = client.data_modeling.containers.list(limit=5)
 
-            Filter containers by `used_for`:
+            Filter containers by `used_for`. Note that "all" refers to containers that stores *both*
+            nodes and edges:
 
-                >>> # containers that can be used for records only
-                >>> record_only_containers = client.data_modeling.containers.list(used_for="record")
-                >>> # containers that can be used either for nodes or edges
-                >>> node_or_edge_containers = client.data_modeling.containers.list(
-                ...     used_for=["node", "edge"]
-                ... )
-                >>> # containers that can be used for both nodes and edges
-                >>> node_and_edge_containers = client.data_modeling.containers.list(used_for=["all"])
+                >>> # High-volume data containers (records)
+                >>> record_containers = client.data_modeling.containers.list(used_for="record")
+                >>> # Containers that store ONLY nodes or ONLY edges (excludes "all"):
+                >>> containers = client.data_modeling.containers.list(used_for=["node", "edge"])
+                >>> # All containers that can store nodes:
+                >>> containers = client.data_modeling.containers.list(used_for=["node", "all"])
 
             Iterate over containers, one-by-one:
 
