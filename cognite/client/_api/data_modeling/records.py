@@ -1,0 +1,78 @@
+from __future__ import annotations
+
+import asyncio
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Literal
+
+from cognite.client._api_client import APIClient
+from cognite.client.data_classes.data_modeling.records import RecordId, RecordIdSequence
+from cognite.client.utils._concurrency import RecordsConcurrencyOperation
+from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._url import interpolate_and_url_encode
+
+if TYPE_CHECKING:
+    from cognite.client import AsyncCogniteClient
+    from cognite.client.config import ClientConfig
+
+
+class RecordsAPI(APIClient):
+    """API for reading and writing records in a stream.
+
+    Records are stored in a stream and their schema is defined by the containers
+    referenced as sources.
+    """
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._warning = FeaturePreviewWarning(
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Records"
+        )
+
+    def _get_semaphore(self, operation: RecordsConcurrencyOperation) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        return global_config.concurrency_settings.records._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
+
+    def _records_url(self, stream_id: str, suffix: str = "") -> str:
+        return interpolate_and_url_encode("/streams/%s/records%s", stream_id, suffix)
+
+    async def delete(
+        self,
+        stream_id: str,
+        items: RecordId | Sequence[RecordId],
+        ignore_unknown_ids: Literal[True] = True,
+    ) -> None:
+        """`Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_.
+
+        Only valid for mutable streams (returns 422 on immutable). Unknown
+        ``space + externalId`` pairs are silently ignored.
+
+        Args:
+            stream_id (str): External ID of the stream to delete from.
+            items (RecordId | Sequence[RecordId]): Records to delete.
+            ignore_unknown_ids (Literal[True]): is always true
+
+        Examples:
+
+            Delete records by external ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.records import RecordId
+                >>> client = CogniteClient()
+                >>> client.data_modeling.records.delete(
+                ...     stream_id="my-stream",
+                ...     items=[
+                ...         RecordId(space="my-space", external_id="rec-1"),
+                ...         RecordId(space="my-space", external_id="rec-2"),
+                ...     ],
+                ... )
+        """
+        self._warning.warn()
+        await self._delete_multiple(
+            identifiers=RecordIdSequence.load(items),
+            wrap_ids=True,
+            resource_path=self._records_url(stream_id),
+            override_semaphore=self._get_semaphore(RecordsConcurrencyOperation.DELETE),
+        )

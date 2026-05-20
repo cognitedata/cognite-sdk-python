@@ -118,6 +118,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Union,
     UnionAll,
 )
+from cognite.client.data_classes.data_modeling.records import RecordId
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
 from cognite.client.data_classes.data_modeling.streams import (
     Stream,
@@ -240,6 +241,7 @@ __all__ = [
     "Query",
     "QueryResult",
     "QuerySync",
+    "RecordId",
     "RequiresConstraint",
     "RequiresConstraintApply",
     "ResultSetExpression",

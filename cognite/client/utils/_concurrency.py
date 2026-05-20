@@ -7,6 +7,7 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Callable, Coroutine
+from enum import Enum
 from typing import (
     Any,
     Literal,
@@ -221,6 +222,46 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         )
 
 
+class RecordsConcurrencyOperation(Enum):
+    DELETE = "delete"
+
+
+class RecordsConcurrencyConfig(ConcurrencyConfig):
+    """
+    Concurrency settings for the Records API.
+
+    Args:
+        concurrency_settings (ConcurrencySettings): Reference to the parent settings object.
+        delete (int): Maximum concurrent delete requests.
+    """
+
+    def __init__(
+        self,
+        concurrency_settings: ConcurrencySettings,
+        delete: int,
+    ) -> None:
+        super().__init__(concurrency_settings, "records", read=0, write=0, delete=delete)
+
+    def _semaphore_factory(self, operation: RecordsConcurrencyOperation, project: str) -> asyncio.BoundedSemaphore:
+        key = (operation.value, project, asyncio.get_running_loop())
+        if key in self._semaphore_cache:
+            return self._semaphore_cache[key]
+
+        from cognite.client import global_config
+
+        global_config.concurrency_settings._freeze()
+        match operation:
+            case RecordsConcurrencyOperation.DELETE:
+                sem = asyncio.BoundedSemaphore(self._delete)
+            case _:
+                assert_never(operation)
+        self._semaphore_cache[key] = sem
+        return sem
+
+    def __repr__(self) -> str:
+        return f"Concurrency[records](delete={self._delete})"
+
+
 class FileConcurrencyConfig(ConcurrencyConfig):
     """
     Concurrency settings for the Files API.
@@ -383,6 +424,7 @@ class ConcurrencySettings:
             write_schema=1,
         )
         self._files = FileConcurrencyConfig(self, read=4, write=2, upload=5, download=5, delete=2, open_files=15)
+        self._records = RecordsConcurrencyConfig(self, delete=20)
 
     @functools.cached_property
     def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:
@@ -428,6 +470,10 @@ class ConcurrencySettings:
     def files(self) -> FileConcurrencyConfig:
         return self._files
 
+    @property
+    def records(self) -> RecordsConcurrencyConfig:
+        return self._records
+
     def __repr__(self) -> str:
         frozen_str = " (frozen)" if self.__frozen else ""
         return (
@@ -437,6 +483,7 @@ class ConcurrencySettings:
             f"  datapoints={self._datapoints},\n"
             f"  data_modeling={self._data_modeling},\n"
             f"  files={self._files},\n"
+            f"  records={self._records},\n"
             f"){frozen_str}"
         )
 
