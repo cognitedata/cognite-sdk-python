@@ -1,5 +1,6 @@
 """
 ===============================================================================
+1427cc2153e4348ba6e66466c52e47c7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -7,12 +8,15 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.data_modeling.records import RecordId
 from cognite.client.utils._async_helpers import run_sync
+
+if TYPE_CHECKING:
+    from cognite.client import AsyncCogniteClient
 
 
 class SyncRecordsAPI(SyncAPIClient):
@@ -22,12 +26,10 @@ class SyncRecordsAPI(SyncAPIClient):
         self.__async_client = async_client
 
     def delete(
-        self,
-        stream_id: str,
-        items: RecordId | Sequence[RecordId],
-        ignore_unknown_ids: Literal[True] = True,
+        self, stream_id: str, items: RecordId | Sequence[RecordId], ignore_unknown_ids: Literal[True] = True
     ) -> None:
-        """`Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_.
+        """
+        `Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_.
 
         Only valid for mutable streams (returns 422 on immutable). Unknown
         ``space + externalId`` pairs are silently ignored.
@@ -52,4 +54,8 @@ class SyncRecordsAPI(SyncAPIClient):
                 ...     ],
                 ... )
         """
-        return run_sync(self.__async_client.data_modeling.records.delete(stream_id, items, ignore_unknown_ids))
+        return run_sync(
+            self.__async_client.data_modeling.records.delete(
+                stream_id=stream_id, items=items, ignore_unknown_ids=ignore_unknown_ids
+            )
+        )
