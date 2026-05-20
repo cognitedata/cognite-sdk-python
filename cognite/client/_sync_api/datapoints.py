@@ -1,6 +1,6 @@
 """
 ===============================================================================
-830266fb5fd8d205e7c1163175ba904e
+7a135c3c2b851240417e3902f71b5222
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -91,7 +91,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         return_arrays: bool = True,
     ) -> Iterator[DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList]:
         """
-        `Iterate through datapoints in chunks, for one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+        `Iterate through datapoints in chunks, for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_.
 
         Note:
             Control memory usage by specifying ``chunk_size_time_series``, how many time series to iterate simultaneously and ``chunk_size_datapoints``,
