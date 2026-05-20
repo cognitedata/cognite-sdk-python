@@ -14,6 +14,7 @@ from cognite.client.data_classes.agents.chat import (
     AgentMessage,
     AgentReasoningItem,
     TextContent,
+    ToolCallReasoningDataItem,
 )
 from tests.utils import get_url, jsgz_load
 
@@ -51,7 +52,29 @@ def chat_response_body() -> dict:
                                     "text": "The user is asking about capabilities",
                                     "type": "text",
                                 }
-                            ]
+                            ],
+                            "data": [
+                                {
+                                    "type": "toolCall",
+                                    "toolCall": {
+                                        "id": "tc_1",
+                                        "name": "search_instances",
+                                        "toolType": "query",
+                                        "input": {
+                                            "view_space": "cdf_cdm",
+                                            "view_external_id": "CogniteAsset",
+                                            "view_version": "v1",
+                                            "query": "pump",
+                                            "operator": "AND",
+                                            "return_properties": ["name", "externalId"],
+                                        },
+                                        "result": {
+                                            "result": {"items": [{"space": "my_space", "externalId": "pump_1"}], "count": 1},
+                                            "error": None,
+                                        },
+                                    },
+                                }
+                            ],
                         }
                     ],
                     "role": "agent",
@@ -113,11 +136,11 @@ class TestAgentChat:
         # Check reasoning
         assert agent_msg.reasoning is not None
         assert len(agent_msg.reasoning) == 1
-        assert isinstance(agent_msg.reasoning[0], AgentReasoningItem)
-        assert len(agent_msg.reasoning[0].content) == 1
-        content = agent_msg.reasoning[0].content[0]
-        assert isinstance(content, TextContent)
-        assert content.text == "The user is asking about capabilities"
+        reasoning_item = agent_msg.reasoning[0]
+        assert isinstance(reasoning_item, AgentReasoningItem)
+        assert isinstance(reasoning_item.content[0], TextContent)
+        assert reasoning_item.data is not None
+        assert isinstance(reasoning_item.data[0], ToolCallReasoningDataItem)
 
         # Test convenience properties
         assert response.text == "I can help you with various tasks related to your industrial data."

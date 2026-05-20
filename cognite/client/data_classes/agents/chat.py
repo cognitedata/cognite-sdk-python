@@ -465,24 +465,129 @@ class AgentDataItem(CogniteResource):
 
 
 @dataclass
+class ToolCallDetail(CogniteResource):
+    """Details of a tool call made during agent reasoning.
+
+    Args:
+        id (str): The id of the tool call.
+        name (str): The name of the tool that was called.
+        tool_type (str): The type of the tool that was called.
+        input (dict[str, Any]): The parameters that were passed to the tool.
+        result (dict[str, Any]): The results that were returned by the tool.
+    """
+
+    id: str
+    name: str
+    tool_type: str
+    input: dict[str, Any] = field(default_factory=dict)
+    result: dict[str, Any] = field(default_factory=dict)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        key = "toolType" if camel_case else "tool_type"
+        return {"id": self.id, "name": self.name, key: self.tool_type, "input": self.input, "result": self.result}
+
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> ToolCallDetail:
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            tool_type=data["toolType"],
+            input=data.get("input", {}),
+            result=data.get("result", {}),
+        )
+
+
+@dataclass
+class ReasoningDataItem(CogniteResource, ABC):
+    """Base class for reasoning data item types."""
+
+    _type: ClassVar[str]
+
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> ReasoningDataItem:
+        item_type = data.get("type", "")
+        klass = _REASONING_DATA_CLS_BY_TYPE.get(item_type, UnknownReasoningDataItem)
+        return klass._load_item(data)
+
+    @classmethod
+    @abstractmethod
+    def _load_item(cls, data: dict[str, Any]) -> ReasoningDataItem: ...
+
+
+@dataclass
+class ToolCallReasoningDataItem(ReasoningDataItem):
+    """Reasoning data item for a tool call.
+
+    Args:
+        tool_call (ToolCallDetail | None): Details of the tool call.
+    """
+
+    _type: ClassVar[str] = "toolCall"
+    tool_call: ToolCallDetail | None = None
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        key = "toolCall" if camel_case else "tool_call"
+        result: dict[str, Any] = {"type": self._type}
+        if self.tool_call is not None:
+            result[key] = self.tool_call.dump(camel_case=camel_case)
+        return result
+
+    @classmethod
+    def _load_item(cls, data: dict[str, Any]) -> ToolCallReasoningDataItem:
+        tool_call_data = data.get("toolCall")
+        return cls(tool_call=ToolCallDetail._load(tool_call_data) if tool_call_data else None)
+
+
+@dataclass
+class UnknownReasoningDataItem(ReasoningDataItem):
+    """Unknown reasoning data item type for forward compatibility.
+
+    Args:
+        type (str): The item type.
+        data (dict[str, Any]): The raw item data.
+    """
+
+    type: str = ""
+    data: dict[str, Any] = field(default_factory=dict)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = self.data.copy()
+        result["type"] = self.type
+        return result
+
+    @classmethod
+    def _load_item(cls, data: dict[str, Any]) -> UnknownReasoningDataItem:
+        return cls(type=data.get("type", ""), data=data)
+
+
+_REASONING_DATA_CLS_BY_TYPE: dict[str, type[ReasoningDataItem]] = {
+    ToolCallReasoningDataItem._type: ToolCallReasoningDataItem,
+}
+
+
+@dataclass
 class AgentReasoningItem(CogniteResource):
     """Reasoning item in agent response.
 
     Args:
         content (list[MessageContent]): The reasoning content.
+        data (list[ReasoningDataItem] | None): The data of the reasoning.
     """
 
     content: list[MessageContent]
+    data: list[ReasoningDataItem] | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "content": [item.dump(camel_case=camel_case) for item in self.content],
-        }
+        result: dict[str, Any] = {"content": [item.dump(camel_case=camel_case) for item in self.content]}
+        if self.data is not None:
+            result["data"] = [item.dump(camel_case=camel_case) for item in self.data]
+        return result
 
     @classmethod
     def _load(cls, data: dict[str, Any]) -> AgentReasoningItem:
         content = [MessageContent._load(item) for item in data.get("content", [])]
-        return cls(content=content)
+        data_items = [ReasoningDataItem._load(item) for item in data.get("data", [])] or None
+        return cls(content=content, data=data_items)
 
 
 @dataclass
