@@ -34,8 +34,9 @@ class RecordsAPI(APIClient):
 
     async def delete(
         self,
-        stream_id: str,
         items: RecordId | Sequence[RecordId],
+        *,
+        stream_id: str,
         ignore_unknown_ids: Literal[True] = True,
     ) -> None:
         """`Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_.
