@@ -47,7 +47,7 @@ class RecordsAPI(APIClient):
         Args:
             stream_id (str): External ID of the stream to delete from.
             items (RecordId | Sequence[RecordId]): Records to delete.
-            ignore_unknown_ids (Literal[True]): is always true
+            ignore_unknown_ids (Literal[True]): currently only True is supported
 
         Examples:
 
