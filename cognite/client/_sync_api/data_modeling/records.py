@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ba066ff9b105bac52f07cb79c0df7ef0
+29c55c2d7ac973daa7a29e8eed9f4869
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -37,11 +37,11 @@ class SyncRecordsAPI(SyncAPIClient):
         Args:
             stream_id (str): External ID of the stream to delete from.
             items (RecordId | Sequence[RecordId]): Records to delete.
-            ignore_unknown_ids (Literal[True]): is always true
+            ignore_unknown_ids (Literal[True]): currently only True is supported
 
         Examples:
 
-            Delete records by external ID:
+            Delete records:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.records import RecordId

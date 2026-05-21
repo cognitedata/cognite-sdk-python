@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
 
 class RecordsAPI(APIClient):
-
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
@@ -69,5 +68,5 @@ class RecordsAPI(APIClient):
             identifiers=RecordIdSequence.load(items),
             wrap_ids=True,
             resource_path=self._records_url(stream_id),
-            override_semaphore=self._get_semaphore(RecordsConcurrencyOperation.DELETE),
+            override_semaphore=self._get_semaphore(RecordsConcurrencyOperation.INGEST),
         )
