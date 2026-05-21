@@ -424,7 +424,7 @@ class ConcurrencySettings:
             write_schema=1,
         )
         self._files = FileConcurrencyConfig(self, read=4, write=2, upload=5, download=5, delete=2, open_files=15)
-        self._records = RecordsConcurrencyConfig(self, delete=20)
+        self._records = RecordsConcurrencyConfig(self, delete=5)
 
     @functools.cached_property
     def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:
