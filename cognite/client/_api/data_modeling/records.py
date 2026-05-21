@@ -36,7 +36,7 @@ class RecordsAPI(APIClient):
         )
 
     def _records_url(self, stream_id: str, suffix: str = "") -> str:
-        return interpolate_and_url_encode("/streams/%s/records%s", stream_id, suffix)
+        return interpolate_and_url_encode("/streams/{}/records{}", stream_id, suffix)
 
     async def delete(
         self,
