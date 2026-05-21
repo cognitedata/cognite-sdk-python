@@ -16,11 +16,6 @@ if TYPE_CHECKING:
 
 
 class RecordsAPI(APIClient):
-    """API for reading and writing records in a stream.
-
-    Records are stored in a stream and their schema is defined by the containers
-    referenced as sources.
-    """
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
