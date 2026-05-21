@@ -51,7 +51,7 @@ class RecordsAPI(APIClient):
 
         Examples:
 
-            Delete records by external ID:
+            Delete records:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.records import RecordId
