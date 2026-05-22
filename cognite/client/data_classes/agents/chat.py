@@ -506,7 +506,7 @@ class ReasoningDataItem(CogniteResource, ABC):
 
     @classmethod
     def _load(cls, data: dict[str, Any]) -> ReasoningDataItem:
-        item_type = data.get("type", "")
+        item_type = data["type"]
         klass = _REASONING_DATA_CLS_BY_TYPE.get(item_type, UnknownReasoningDataItem)
         return klass._load_item(data)
 
@@ -535,8 +535,7 @@ class ToolCallReasoningDataItem(ReasoningDataItem):
 
     @classmethod
     def _load_item(cls, data: dict[str, Any]) -> ToolCallReasoningDataItem:
-        tool_call_data = data.get("toolCall")
-        return cls(tool_call=ToolCallDetail._load(tool_call_data) if tool_call_data else None)
+        return cls(tool_call=ToolCallDetail._load_if(data.get("toolCall")))
 
 
 @dataclass
@@ -548,7 +547,7 @@ class UnknownReasoningDataItem(ReasoningDataItem):
         data (dict[str, Any]): The raw item data.
     """
 
-    type: str = ""
+    type: str
     data: dict[str, Any] = field(default_factory=dict)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -558,7 +557,9 @@ class UnknownReasoningDataItem(ReasoningDataItem):
 
     @classmethod
     def _load_item(cls, data: dict[str, Any]) -> UnknownReasoningDataItem:
-        return cls(type=data.get("type", ""), data=data)
+        data = data.copy()
+        item_type = data.pop("type")
+        return cls(type=item_type, data=data)
 
 
 _REASONING_DATA_CLS_BY_TYPE: dict[str, type[ReasoningDataItem]] = {
