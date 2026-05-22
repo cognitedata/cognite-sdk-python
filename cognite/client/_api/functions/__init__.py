@@ -873,7 +873,15 @@ def _validate_and_parse_requirements(requirements: list[str]) -> list[str]:
     Returns:
         list[str]: The parsed requirements
     """
-    constructors = local_import("pip._internal.req.constructors")
+    from cognite.client.exceptions import CogniteImportError
+
+    try:
+        constructors = local_import("pip._internal.req.constructors")
+    except CogniteImportError:
+        # pip internals unavailable (e.g. WebAssembly/CDF notebook environments);
+        # skip client-side validation and let the server validate instead.
+        return [r for r in requirements if r.strip()]
+
     install_req_from_line = constructors.install_req_from_line
     parsed_reqs: list[str] = []
     for req in requirements:
