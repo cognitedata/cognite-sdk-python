@@ -244,6 +244,11 @@ class FunctionsAPI(APIClient):
             .. note:
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring.
                 The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
+
+            .. note::
+                Only the source code of the handle function itself is deployed. Non-builtin type
+                annotations (e.g. ``client: CogniteClient``) will cause a ``NameError`` at deploy
+                time. Either omit the annotation or use string form (e.g. ``"CogniteClient | None"``).
         """
         if isinstance(name, FunctionWrite):
             function_input = name
