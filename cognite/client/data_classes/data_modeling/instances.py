@@ -32,7 +32,7 @@ from typing import (
 
 from typing_extensions import Self
 
-from cognite.client._constants import OMITTED, Omitted
+from cognite.client.constants import OMITTED, Omitted
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,

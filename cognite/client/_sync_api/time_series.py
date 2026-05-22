@@ -1,6 +1,6 @@
 """
 ===============================================================================
-6019e3c2ccde3aafc9dd27ac6379507a
+2d40db286c31de01930f3e80f0aad9b4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,10 +12,10 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.time_series import SortSpec
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api.datapoints import SyncDatapointsAPI
 from cognite.client._sync_api.datapoints_subscriptions import SyncDatapointsSubscriptionAPI
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.data_modeling import NodeId

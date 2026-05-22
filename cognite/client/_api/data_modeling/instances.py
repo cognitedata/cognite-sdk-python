@@ -17,7 +17,7 @@ from typing import (
 )
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import CogniteResourceList, WriteableCogniteResource
 from cognite.client.data_classes.aggregations import (

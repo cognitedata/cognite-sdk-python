@@ -1,6 +1,6 @@
 """
 ===============================================================================
-804bc9b708b2641457184ca681292d1a
+fb4549febc15c7b49490263fa68bd6b4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -11,8 +11,8 @@ from collections.abc import Sequence
 from typing import Literal
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
     ContextualizationJobList,

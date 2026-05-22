@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn, Protocol, TypeAlias
 
 from typing_extensions import Self
 
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList, UserProfilesConfiguration
 from cognite.client.utils._identifier import UserIdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr

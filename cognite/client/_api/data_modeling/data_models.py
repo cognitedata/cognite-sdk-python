@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
+from cognite.client.constants import DATA_MODELING_DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.data_models import (
     DataModel,
     DataModelApply,

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
 
 from cognite.client._api.sequence_data import SequencesDataAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Sequence,
     SequenceFilter,

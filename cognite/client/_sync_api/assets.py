@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f6ec26190e7bfb4f44c836ffd243fc07
+7d2202764d40e0615680101a713a9ef1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,8 +12,8 @@ from typing import Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.assets import AggregateAssetProperty, SortSpec
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Asset,
     AssetFilter,

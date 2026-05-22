@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceList
 from cognite.client.utils.useful_types import SequenceNotStr

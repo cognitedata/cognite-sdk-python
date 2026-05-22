@@ -4,8 +4,8 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.config import ClientConfig
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import (
     ClientCredentials,

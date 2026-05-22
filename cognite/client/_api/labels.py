@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator, Sequence
 from typing import Literal, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     LabelDefinition,
     LabelDefinitionFilter,

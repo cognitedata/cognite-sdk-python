@@ -19,7 +19,8 @@ from cognite.client._api.functions.calls import FunctionCallsAPI
 from cognite.client._api.functions.schedules import FunctionSchedulesAPI
 from cognite.client._api.functions.utils import _get_function_internal_id
 from cognite.client._api_client import APIClient
-from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
+from cognite.client._constants import _RUNNING_IN_BROWSER
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Function,
     FunctionCall,

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8bca411648596701cde79f2c9e6f2a88
+d1f7f6a2cdc838c811d9137a79890c81
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -11,12 +11,12 @@ from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api.transformations.jobs import SyncTransformationJobsAPI
 from cognite.client._sync_api.transformations.notifications import SyncTransformationNotificationsAPI
 from cognite.client._sync_api.transformations.schedules import SyncTransformationSchedulesAPI
 from cognite.client._sync_api.transformations.schema import SyncTransformationSchemaAPI
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Transformation, TransformationJob, TransformationList
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations import (

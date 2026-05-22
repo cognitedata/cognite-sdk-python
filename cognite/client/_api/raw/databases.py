@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator, Sequence
 from typing import Any, Literal, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.raw import Database, DatabaseList
 from cognite.client.utils._auxiliary import split_into_chunks, unpack_items_in_payload
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks

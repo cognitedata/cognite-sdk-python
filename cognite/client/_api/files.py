@@ -14,12 +14,12 @@ from typing_extensions import assert_never
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import (
-    DEFAULT_LIMIT_READ,
     FILE_DEFAULT_MULTIPART_SIZE,
     FILE_MAX_MULTIPART_COUNT,
     FILE_MAX_MULTIPART_SIZE,
     FILE_MIN_MULTIPART_SIZE,
 )
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     FileMetadata,
     FileMetadataFilter,

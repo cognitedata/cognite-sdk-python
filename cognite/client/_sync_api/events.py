@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8b6c6ae83aaf32dec50a4e3acf4ff5cb
+712906e5d11bfbe20eb928d99373e78e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,8 +12,8 @@ from typing import Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.events import SortSpec
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     EndTimeFilter,
     Event,

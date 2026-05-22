@@ -1,6 +1,6 @@
 """
 ===============================================================================
-fa9b4b13df083257c7593d43dc67181f
+0c47c820db4aebf7ec06e07468978880
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -10,8 +10,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.limits import Limit, LimitList
 from cognite.client.utils._async_helpers import run_sync
 

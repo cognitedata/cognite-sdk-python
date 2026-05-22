@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api.simulators.routine_revisions import SimulatorRoutineRevisionsAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import PropertySort, SimulatorRoutinesFilter
 from cognite.client.data_classes.simulators.routines import (
     SimulatorRoutine,

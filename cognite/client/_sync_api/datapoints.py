@@ -1,6 +1,6 @@
 """
 ===============================================================================
-830266fb5fd8d205e7c1163175ba904e
+6b8f21074977b8dc339f6269b87004ab
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -13,9 +13,9 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 from zoneinfo import ZoneInfo
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_DATAPOINTS_CHUNK_SIZE
 from cognite.client._sync_api.synthetic_time_series import SyncSyntheticDatapointsAPI
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_DATAPOINTS_CHUNK_SIZE
 from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
