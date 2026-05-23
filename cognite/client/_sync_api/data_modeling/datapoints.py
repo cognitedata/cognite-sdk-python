@@ -1,10 +1,18 @@
+"""
+===============================================================================
+0d4c4f70863a81af2b14d434fa684352
+This file is auto-generated from the Async API modules, - do not edit manually!
+===============================================================================
+"""
+
 from __future__ import annotations
 
 import datetime
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from cognite.client._api_client import APIClient
+from cognite.client import AsyncCogniteClient
+from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import (
     Datapoints,
@@ -15,39 +23,21 @@ from cognite.client.data_classes.datapoints import (
     LatestDatapoint,
     LatestDatapointList,
 )
-from cognite.client.utils._identifier import InstanceId
+from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
     import pandas as pd
 
-    from cognite.client import AsyncCogniteClient
-    from cognite.client._api.datapoints import DatapointsAPI
-    from cognite.client.config import ClientConfig
 
+class SyncDataModelingDatapointsAPI(SyncAPIClient):
+    """Auto-generated, do not modify manually."""
 
-def _require_instance_id(query: DatapointsQuery) -> None:
-    if not isinstance(query.identifier.as_primitive(), InstanceId):
-        raise ValueError(
-            f"DatapointsQuery must have instance_id set, got identifier: {query.identifier.as_primitive()!r}"
-        )
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
+        self.__async_client = async_client
 
-
-class DataModelingDatapointsAPI(APIClient):
-    """Access datapoints via Data Modeling instance IDs.
-
-    This API mirrors a subset of client.time_series.data but restricts identifiers to
-    instance_id (NodeId) only, making the DM-native workflow explicit.
-    """
-
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
-        super().__init__(config, api_version, cognite_client)
-        self._dps_api: DatapointsAPI = cognite_client.time_series.data
-
-    async def retrieve(
-        self,
-        query: DatapointsQuery | Sequence[DatapointsQuery],
-    ) -> Datapoints | DatapointsList | None:
-        """`Retrieve datapoints for one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+    def retrieve(self, query: DatapointsQuery | Sequence[DatapointsQuery]) -> Datapoints | DatapointsList | None:
+        """
+        `Retrieve datapoints for one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
         Each :class:`~cognite.client.data_classes.datapoints.DatapointsQuery` must be created with
         an ``instance_id`` — passing ``id`` or ``external_id`` will raise a ``ValueError``.
@@ -88,18 +78,13 @@ class DataModelingDatapointsAPI(APIClient):
                 ...     ]
                 ... )
         """
-        if isinstance(query, DatapointsQuery):
-            _require_instance_id(query)
-        else:
-            for q in query:
-                _require_instance_id(q)
-        return await self._dps_api.retrieve(instance_id=query)
+        return run_sync(self.__async_client.data_modeling.time_series.data.retrieve(query=query))
 
-    async def retrieve_arrays(
-        self,
-        query: DatapointsQuery | Sequence[DatapointsQuery],
+    def retrieve_arrays(
+        self, query: DatapointsQuery | Sequence[DatapointsQuery]
     ) -> DatapointsArray | DatapointsArrayList | None:
-        """`Retrieve datapoints as numpy arrays. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+        """
+        `Retrieve datapoints as numpy arrays. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
         Each :class:`~cognite.client.data_classes.datapoints.DatapointsQuery` must be created with
         an ``instance_id`` — passing ``id`` or ``external_id`` will raise a ``ValueError``.
@@ -125,18 +110,11 @@ class DataModelingDatapointsAPI(APIClient):
                 ...     DatapointsQuery(instance_id=NodeId("my-space", "my-ts"), start="1d-ago")
                 ... )
         """
-        if isinstance(query, DatapointsQuery):
-            _require_instance_id(query)
-        else:
-            for q in query:
-                _require_instance_id(q)
-        return await self._dps_api.retrieve_arrays(instance_id=query)
+        return run_sync(self.__async_client.data_modeling.time_series.data.retrieve_arrays(query=query))
 
-    async def retrieve_dataframe(
-        self,
-        query: DatapointsQuery | Sequence[DatapointsQuery],
-    ) -> pd.DataFrame:
-        """Get datapoints as a pandas DataFrame.
+    def retrieve_dataframe(self, query: DatapointsQuery | Sequence[DatapointsQuery]) -> pd.DataFrame:
+        """
+        Get datapoints as a pandas DataFrame.
 
         Each :class:`~cognite.client.data_classes.datapoints.DatapointsQuery` must be created with
         an ``instance_id`` — passing ``id`` or ``external_id`` will raise a ``ValueError``.
@@ -167,14 +145,9 @@ class DataModelingDatapointsAPI(APIClient):
                 ...     )
                 ... )
         """
-        if isinstance(query, DatapointsQuery):
-            _require_instance_id(query)
-        else:
-            for q in query:
-                _require_instance_id(q)
-        return await self._dps_api.retrieve_dataframe(instance_id=query)
+        return run_sync(self.__async_client.data_modeling.time_series.data.retrieve_dataframe(query=query))
 
-    async def retrieve_latest(
+    def retrieve_latest(
         self,
         instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
         *,
@@ -186,7 +159,8 @@ class DataModelingDatapointsAPI(APIClient):
         treat_uncertain_as_bad: bool = True,
         ignore_unknown_ids: bool = False,
     ) -> LatestDatapoint | LatestDatapointList | None:
-        """`Get the latest datapoint for one or more time series by instance ID. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getLatest>`_
+        """
+        `Get the latest datapoint for one or more time series by instance ID. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getLatest>`_
 
         Args:
             instance_id (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
@@ -212,22 +186,20 @@ class DataModelingDatapointsAPI(APIClient):
                 ...     NodeId("my-space", "my-ts")
                 ... )
         """
-        if isinstance(instance_id, (NodeId, tuple)):
-            node_id_arg: NodeId | list[NodeId] = NodeId.load(instance_id)
-        else:
-            node_id_arg = [NodeId.load(iid) for iid in instance_id]
-        return await self._dps_api.retrieve_latest(
-            instance_id=node_id_arg,
-            before=before,
-            target_unit=target_unit,
-            target_unit_system=target_unit_system,
-            include_status=include_status,
-            ignore_bad_datapoints=ignore_bad_datapoints,
-            treat_uncertain_as_bad=treat_uncertain_as_bad,
-            ignore_unknown_ids=ignore_unknown_ids,
+        return run_sync(
+            self.__async_client.data_modeling.time_series.data.retrieve_latest(
+                instance_id=instance_id,
+                before=before,
+                target_unit=target_unit,
+                target_unit_system=target_unit_system,
+                include_status=include_status,
+                ignore_bad_datapoints=ignore_bad_datapoints,
+                treat_uncertain_as_bad=treat_uncertain_as_bad,
+                ignore_unknown_ids=ignore_unknown_ids,
+            )
         )
 
-    async def insert(
+    def insert(
         self,
         datapoints: Datapoints
         | DatapointsArray
@@ -235,7 +207,8 @@ class DataModelingDatapointsAPI(APIClient):
         | Sequence[tuple[int | float | datetime.datetime, int | float | str]],
         instance_id: NodeId | tuple[str, str],
     ) -> None:
-        """Insert datapoints into a time series by instance ID.
+        """
+        Insert datapoints into a time series by instance ID.
 
         Args:
             datapoints (Datapoints | DatapointsArray | Sequence[dict[str, Any]] | Sequence[tuple[int | float | datetime.datetime, int | float | str]]): Datapoints to insert. Each element is either a ``(timestamp, value)`` tuple, a ``(timestamp, value, status_code)`` tuple, or a dict with ``"timestamp"`` and ``"value"`` keys.
@@ -255,15 +228,18 @@ class DataModelingDatapointsAPI(APIClient):
                 ... ]
                 >>> client.data_modeling.time_series.data.insert(datapoints, NodeId("my-space", "my-ts"))
         """
-        await self._dps_api.insert(datapoints, instance_id=NodeId.load(instance_id))
+        return run_sync(
+            self.__async_client.data_modeling.time_series.data.insert(datapoints=datapoints, instance_id=instance_id)
+        )
 
-    async def delete_range(
+    def delete_range(
         self,
         start: int | str | datetime.datetime,
         end: int | str | datetime.datetime,
         instance_id: NodeId | tuple[str, str],
     ) -> None:
-        """Delete a range of datapoints from a time series by instance ID.
+        """
+        Delete a range of datapoints from a time series by instance ID.
 
         Args:
             start (int | str | datetime.datetime): Inclusive start of the range to delete.
@@ -281,10 +257,15 @@ class DataModelingDatapointsAPI(APIClient):
                 ...     start="1w-ago", end="now", instance_id=NodeId("my-space", "my-ts")
                 ... )
         """
-        await self._dps_api.delete_range(start, end, instance_id=NodeId.load(instance_id))
+        return run_sync(
+            self.__async_client.data_modeling.time_series.data.delete_range(
+                start=start, end=end, instance_id=instance_id
+            )
+        )
 
-    async def insert_dataframe(self, df: pd.DataFrame, dropna: bool = True) -> None:
-        """Insert datapoints from a pandas DataFrame by instance ID.
+    def insert_dataframe(self, df: pd.DataFrame, dropna: bool = True) -> None:
+        """
+        Insert datapoints from a pandas DataFrame by instance ID.
 
         The DataFrame index must be a ``pd.DatetimeIndex``. Each column identifier must be a
         :class:`~cognite.client.data_classes.data_modeling.NodeId` or a ``(space, external_id)`` tuple —
@@ -314,7 +295,4 @@ class DataModelingDatapointsAPI(APIClient):
                 ... )
                 >>> client.data_modeling.time_series.data.insert_dataframe(df)
         """
-        bad_cols = [col for col in df.columns if not isinstance(col, (NodeId, tuple))]
-        if bad_cols:
-            raise ValueError(f"All column identifiers must be NodeId or (space, external_id) tuples, got: {bad_cols!r}")
-        await self._dps_api.insert_dataframe(df, dropna=dropna)
+        return run_sync(self.__async_client.data_modeling.time_series.data.insert_dataframe(df=df, dropna=dropna))
