@@ -4,6 +4,7 @@ import inspect
 import re
 import shlex
 import subprocess
+import tempfile
 from collections.abc import Iterator
 from functools import cache
 from pathlib import Path
@@ -233,6 +234,25 @@ def run_ruff(file_paths: list[Path], verbose: bool = False) -> None:
     if verbose:
         print("Now running command\n", shlex.join(command))
     subprocess.run(command, check=False, capture_output=True)
+
+    for fp in file_paths:
+        if fp.name == "__init__.py":
+            fix_unused_imports_in_init_file(fp)
+
+
+def fix_unused_imports_in_init_file(init_file: Path) -> None:
+    """Ruff won't auto-remove unused imports in __init__.py (treats them as potential
+    re-exports, and even --unsafe-fixes doesn't override this). Trick it by temporarily
+    renaming the file 🧠"""
+    # delete=False so we can close the handle before ruff opens it (just Windows things....):
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", encoding="utf-8", delete=False) as tmp:
+        tmp.write(init_file.read_text(encoding="utf-8"))
+        tmp_path = tmp.name
+    try:
+        run_ruff_direct(Path(tmp_path))
+        init_file.write_text(Path(tmp_path).read_text(encoding="utf-8"), encoding="utf-8")
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
 
 
 def run_ruff_direct(file_path: Path) -> None:
