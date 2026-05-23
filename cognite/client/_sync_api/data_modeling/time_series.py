@@ -1,75 +1,53 @@
+"""
+===============================================================================
+72f1fcfbbaf6d174dae9fe2def8749ce
+This file is auto-generated from the Async API modules, - do not edit manually!
+===============================================================================
+"""
+
 from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, overload
 
-from cognite.client._api.data_modeling.datapoints import DataModelingDatapointsAPI
-from cognite.client._api_client import APIClient
+from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.data_modeling.ids import NodeId, ViewId
+from cognite.client._sync_api.data_modeling.datapoints import SyncDataModelingDatapointsAPI
+from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeList
-from cognite.client.data_classes.data_modeling.query import SourceSelector
 from cognite.client.data_classes.filters import Filter
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
-    from cognite.client._api.data_modeling.instances import Source
-    from cognite.client.config import ClientConfig
-
-_TS_VIEW_ID = ViewId("cdf_cdm", "CogniteTimeSeries", "v1")
+from cognite.client._api.data_modeling.instances import Source
 
 
-class DataModelingTimeSeriesAPI(APIClient):
-    """Access time series via Data Modeling instance IDs.
+class SyncDataModelingTimeSeriesAPI(SyncAPIClient):
+    """Auto-generated, do not modify manually."""
 
-    This API mirrors a subset of client.time_series but restricts identifiers to
-    instance_id (NodeId) only, making the DM-native workflow explicit.
-    """
-
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
-        super().__init__(config, api_version, cognite_client)
-        self.data = DataModelingDatapointsAPI(config, api_version, cognite_client)
-
-    def _normalize_source(self, source: Source | None) -> SourceSelector:
-        if source is None:
-            return SourceSelector._load(_TS_VIEW_ID)
-        return SourceSelector._load(source)
-
-    async def _validate_source(self, source: SourceSelector) -> None:
-        if source.source == _TS_VIEW_ID:
-            return
-        views = await self._cognite_client.data_modeling.views.retrieve(source.source)
-        view = views[0] if views else None
-        if view is None or _TS_VIEW_ID not in view.implements:
-            implements = view.implements if view else "view not found"
-            raise ValueError(
-                f"Source {source.source} must implement CogniteTimeSeries ({_TS_VIEW_ID}), got: {implements}"
-            )
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
+        self.__async_client = async_client
+        self.data = SyncDataModelingDatapointsAPI(async_client)
 
     @overload
-    async def retrieve(
-        self,
-        instance_id: NodeId | tuple[str, str],
-        *,
-        source: Source | None = None,
-    ) -> Node | None: ...
+    def retrieve(self, instance_id: NodeId | tuple[str, str], *, source: Source | None = None) -> Node | None: ...
 
     @overload
-    async def retrieve(
-        self,
-        instance_id: Sequence[NodeId | tuple[str, str]],
-        *,
-        source: Source | None = None,
+    def retrieve(
+        self, instance_id: Sequence[NodeId | tuple[str, str]], *, source: Source | None = None
     ) -> NodeList[Node]: ...
 
-    async def retrieve(
+    def retrieve(
         self,
         instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
         *,
         source: Source | None = None,
     ) -> Node | NodeList[Node] | None:
-        """`Retrieve one or more time series nodes by instance ID. <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
+        """
+        `Retrieve one or more time series nodes by instance ID. <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
 
         Properties are fetched from the given source view. The source must implement CogniteTimeSeries
         (``ViewId("cdf_cdm", "CogniteTimeSeries", "v1")``). Defaults to CogniteTimeSeries itself.
@@ -108,20 +86,9 @@ class DataModelingTimeSeriesAPI(APIClient):
                 ...     source=ViewId("my-space", "MyTimeSeries", "v1"),
                 ... )
         """
-        resolved = self._normalize_source(source)
-        await self._validate_source(resolved)
+        return run_sync(self.__async_client.data_modeling.time_series.retrieve(instance_id=instance_id, source=source))
 
-        if isinstance(instance_id, (NodeId, tuple)):
-            return await self._cognite_client.data_modeling.instances.retrieve_nodes(
-                nodes=NodeId.load(instance_id),  # type: ignore[arg-type]
-                sources=resolved,
-            )
-        return await self._cognite_client.data_modeling.instances.retrieve_nodes(
-            nodes=[NodeId.load(x) for x in instance_id],  # type: ignore[arg-type]
-            sources=resolved,
-        )
-
-    async def list(
+    def list(
         self,
         *,
         source: Source | None = None,
@@ -130,7 +97,8 @@ class DataModelingTimeSeriesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
-        """`List time series nodes from Data Modeling. <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_
+        """
+        `List time series nodes from Data Modeling. <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_
 
         Args:
             source (Source | None): View to retrieve properties from. Must implement CogniteTimeSeries. Defaults to ``ViewId("cdf_cdm", "CogniteTimeSeries", "v1")``.
@@ -163,14 +131,8 @@ class DataModelingTimeSeriesAPI(APIClient):
                 ...     filter=filters.Equals(["cdf_cdm", "CogniteTimeSeries", "v1", "isStep"], True),
                 ... )
         """
-        resolved = self._normalize_source(source)
-        await self._validate_source(resolved)
-
-        return await self._cognite_client.data_modeling.instances.list(  # type: ignore[return-value]
-            instance_type="node",
-            sources=resolved,
-            space=space,
-            sort=sort,
-            filter=filter,
-            limit=limit,
+        return run_sync(
+            self.__async_client.data_modeling.time_series.list(
+                source=source, space=space, sort=sort, filter=filter, limit=limit
+            )
         )
