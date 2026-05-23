@@ -1,69 +1,53 @@
+"""
+===============================================================================
+f9df59e18a97e4f2f253e8e4f1170187
+This file is auto-generated from the Async API modules, - do not edit manually!
+===============================================================================
+"""
+
 from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, overload
 
-from cognite.client._api_client import APIClient
+from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes import FileMetadata
-from cognite.client.data_classes.data_modeling.ids import NodeId, ViewId
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeList
-from cognite.client.data_classes.data_modeling.query import SourceSelector
 from cognite.client.data_classes.filters import Filter
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from typing import BinaryIO
-
-    from cognite.client import AsyncCogniteClient
-    from cognite.client._api.data_modeling.instances import Source
-    from cognite.client._api.files import FilesAPI
-    from cognite.client.config import ClientConfig
-
-_FILE_VIEW_ID = ViewId("cdf_cdm", "CogniteFile", "v1")
+from cognite.client._api.data_modeling.instances import Source
 
 
-class DataModelingFilesAPI(APIClient):
-    """Access files via Data Modeling instance IDs.
+class SyncDataModelingFilesAPI(SyncAPIClient):
+    """Auto-generated, do not modify manually."""
 
-    This API mirrors a subset of client.files but restricts identifiers to
-    instance_id (NodeId) only, making the DM-native workflow explicit.
-    """
-
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
-        super().__init__(config, api_version, cognite_client)
-        self._files_api: FilesAPI = cognite_client.files
-
-    def _normalize_source(self, source: Source | None) -> SourceSelector:
-        if source is None:
-            return SourceSelector._load(_FILE_VIEW_ID)
-        return SourceSelector._load(source)
-
-    async def _validate_source(self, source: SourceSelector) -> None:
-        if source.source == _FILE_VIEW_ID:
-            return
-        views = await self._cognite_client.data_modeling.views.retrieve(source.source)
-        view = views[0] if views else None
-        if view is None or _FILE_VIEW_ID not in view.implements:
-            implements = view.implements if view else "view not found"
-            raise ValueError(f"Source {source.source} must implement CogniteFile ({_FILE_VIEW_ID}), got: {implements}")
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
+        self.__async_client = async_client
 
     @overload
-    async def retrieve(self, instance_id: NodeId | tuple[str, str], *, source: Source | None = None) -> Node | None: ...
+    def retrieve(self, instance_id: NodeId | tuple[str, str], *, source: Source | None = None) -> Node | None: ...
 
     @overload
-    async def retrieve(
+    def retrieve(
         self, instance_id: Sequence[NodeId | tuple[str, str]], *, source: Source | None = None
     ) -> NodeList[Node]: ...
 
-    async def retrieve(
+    def retrieve(
         self,
         instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
         *,
         source: Source | None = None,
     ) -> Node | NodeList[Node] | None:
-        """`Retrieve one or more file nodes by instance ID. <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
+        """
+        `Retrieve one or more file nodes by instance ID. <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
 
         Properties are fetched from the given source view. The source must implement CogniteFile
         (``ViewId("cdf_cdm", "CogniteFile", "v1")``). Defaults to CogniteFile itself.
@@ -102,20 +86,9 @@ class DataModelingFilesAPI(APIClient):
                 ...     source=ViewId("my-space", "MyFile", "v1"),
                 ... )
         """
-        resolved = self._normalize_source(source)
-        await self._validate_source(resolved)
+        return run_sync(self.__async_client.data_modeling.files.retrieve(instance_id=instance_id, source=source))
 
-        if isinstance(instance_id, (NodeId, tuple)):
-            return await self._cognite_client.data_modeling.instances.retrieve_nodes(
-                nodes=NodeId.load(instance_id),  # type: ignore[arg-type]
-                sources=resolved,
-            )
-        return await self._cognite_client.data_modeling.instances.retrieve_nodes(
-            nodes=[NodeId.load(x) for x in instance_id],  # type: ignore[arg-type]
-            sources=resolved,
-        )
-
-    async def list(
+    def list(
         self,
         *,
         source: Source | None = None,
@@ -124,7 +97,8 @@ class DataModelingFilesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
-        """`List file nodes from Data Modeling. <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_
+        """
+        `List file nodes from Data Modeling. <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_
 
         Args:
             source (Source | None): View to retrieve properties from. Must implement CogniteFile. Defaults to ``ViewId("cdf_cdm", "CogniteFile", "v1")``.
@@ -157,25 +131,20 @@ class DataModelingFilesAPI(APIClient):
                 ...     filter=filters.Prefix(["cdf_cdm", "CogniteFile", "v1", "name"], "report"),
                 ... )
         """
-        resolved = self._normalize_source(source)
-        await self._validate_source(resolved)
-
-        return await self._cognite_client.data_modeling.instances.list(  # type: ignore[return-value]
-            instance_type="node",
-            sources=resolved,
-            space=space,
-            sort=sort,
-            filter=filter,
-            limit=limit,
+        return run_sync(
+            self.__async_client.data_modeling.files.list(
+                source=source, space=space, sort=sort, filter=filter, limit=limit
+            )
         )
 
-    async def retrieve_download_urls(
+    def retrieve_download_urls(
         self,
         instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
         *,
         extended_expiration: bool = False,
     ) -> dict[NodeId, str]:
-        """`Get download URLs for one or more files by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
+        """
+        `Get download URLs for one or more files by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
 
         Args:
             instance_id (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
@@ -201,23 +170,21 @@ class DataModelingFilesAPI(APIClient):
                 ...     [NodeId("my-space", "file-1"), ("my-space", "file-2")]
                 ... )
         """
-        if isinstance(instance_id, (NodeId, tuple)):
-            node_ids: NodeId | list[NodeId] = NodeId.load(instance_id)
-        else:
-            node_ids = [NodeId.load(x) for x in instance_id]
-        return await self._files_api.retrieve_download_urls(  # type: ignore[return-value]
-            instance_id=node_ids,
-            extended_expiration=extended_expiration,
+        return run_sync(
+            self.__async_client.data_modeling.files.retrieve_download_urls(
+                instance_id=instance_id, extended_expiration=extended_expiration
+            )
         )
 
-    async def download(
+    def download(
         self,
         directory: str | Path,
         instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
         keep_directory_structure: bool = False,
         resolve_duplicate_file_names: bool = False,
     ) -> None:
-        """`Download files by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
+        """
+        `Download files by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
 
         Streams all files to disk, never keeping more than 2MB in memory per worker.
 
@@ -239,19 +206,18 @@ class DataModelingFilesAPI(APIClient):
                 ...     instance_id=[NodeId("my-space", "file-1"), ("my-space", "file-2")],
                 ... )
         """
-        if isinstance(instance_id, (NodeId, tuple)):
-            node_ids: NodeId | list[NodeId] = NodeId.load(instance_id)
-        else:
-            node_ids = [NodeId.load(x) for x in instance_id]
-        await self._files_api.download(
-            directory=directory,
-            instance_id=node_ids,
-            keep_directory_structure=keep_directory_structure,
-            resolve_duplicate_file_names=resolve_duplicate_file_names,
+        return run_sync(
+            self.__async_client.data_modeling.files.download(
+                directory=directory,
+                instance_id=instance_id,
+                keep_directory_structure=keep_directory_structure,
+                resolve_duplicate_file_names=resolve_duplicate_file_names,
+            )
         )
 
-    async def download_to_path(self, path: Path | str, instance_id: NodeId | tuple[str, str]) -> None:
-        """Download a file to a specific path by instance ID.
+    def download_to_path(self, path: Path | str, instance_id: NodeId | tuple[str, str]) -> None:
+        """
+        Download a file to a specific path by instance ID.
 
         Args:
             path (Path | str): Download to this path.
@@ -268,10 +234,11 @@ class DataModelingFilesAPI(APIClient):
                 ...     "~/mydir/my_file.txt", NodeId("my-space", "my-file")
                 ... )
         """
-        await self._files_api.download_to_path(path=path, instance_id=NodeId.load(instance_id))
+        return run_sync(self.__async_client.data_modeling.files.download_to_path(path=path, instance_id=instance_id))
 
-    async def download_bytes(self, instance_id: NodeId | tuple[str, str]) -> bytes:
-        """Download a file as bytes by instance ID.
+    def download_bytes(self, instance_id: NodeId | tuple[str, str]) -> bytes:
+        """
+        Download a file as bytes by instance ID.
 
         Args:
             instance_id (NodeId | tuple[str, str]): Instance ID of the file.
@@ -288,10 +255,11 @@ class DataModelingFilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> content = client.data_modeling.files.download_bytes(NodeId("my-space", "my-file"))
         """
-        return await self._files_api.download_bytes(instance_id=NodeId.load(instance_id))
+        return run_sync(self.__async_client.data_modeling.files.download_bytes(instance_id=instance_id))
 
-    async def upload_content(self, path: Path | str, instance_id: NodeId | tuple[str, str]) -> FileMetadata:
-        """`Upload content to an existing file node by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_
+    def upload_content(self, path: Path | str, instance_id: NodeId | tuple[str, str]) -> FileMetadata:
+        """
+        `Upload content to an existing file node by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_
 
         Args:
             path (Path | str): Path to the file to upload.
@@ -311,14 +279,13 @@ class DataModelingFilesAPI(APIClient):
                 ...     "/path/to/file.txt", NodeId("my-space", "my-file")
                 ... )
         """
-        return await self._files_api.upload_content(path=path, instance_id=NodeId.load(instance_id))
+        return run_sync(self.__async_client.data_modeling.files.upload_content(path=path, instance_id=instance_id))
 
-    async def upload_content_bytes(
-        self,
-        content: str | bytes | BinaryIO,
-        instance_id: NodeId | tuple[str, str],
+    def upload_content_bytes(
+        self, content: str | bytes | BinaryIO, instance_id: NodeId | tuple[str, str]
     ) -> FileMetadata:
-        """Upload bytes or string content to an existing file node by instance ID.
+        """
+        Upload bytes or string content to an existing file node by instance ID.
 
         Note that the maximum file size is 5GiB.
 
@@ -340,4 +307,6 @@ class DataModelingFilesAPI(APIClient):
                 ...     b"some content", NodeId("my-space", "my-file")
                 ... )
         """
-        return await self._files_api.upload_content_bytes(content=content, instance_id=NodeId.load(instance_id))
+        return run_sync(
+            self.__async_client.data_modeling.files.upload_content_bytes(content=content, instance_id=instance_id)
+        )
