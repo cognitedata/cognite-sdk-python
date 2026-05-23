@@ -21,18 +21,41 @@ MQTT_SOURCE_PREFIX = "myMqttSource-"
 UPDATE_SOURCE_PREFIX = "to-update-"
 TEST_SOURCE_PREFIXES = (HUB_SOURCE_PREFIX, MQTT_SOURCE_PREFIX, UPDATE_SOURCE_PREFIX)
 
+DESTINATION_PREFIX = "myNewDestination-"
+DESTINATION_FOR_TESTING_PREFIX = "myNewDestinationForTesting-"
+UPDATE_DESTINATION_PREFIX = "toupdate-"
+TEST_DESTINATION_PREFIXES = (DESTINATION_PREFIX, DESTINATION_FOR_TESTING_PREFIX, UPDATE_DESTINATION_PREFIX)
+
+# Sources and Destinatinos are repeat offenders for hitting max limits because they are
+# quite low. We add specific cleanup for anything older than...:
+DELETE_THRESHOLD = 1 * 60 * 60 * 1000  # 1 hour in ms
+NOW_MS = int(time.time() * 1000)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_stale_test_destinations(cognite_client: CogniteClient) -> None:
+    # max is low number like e.g. 50 per project, safe to list all:
+    all_destinations = cognite_client.hosted_extractors.destinations.list(limit=None)
+    stale = [
+        d.external_id
+        for d in all_destinations
+        if d.external_id
+        and d.external_id.startswith(TEST_DESTINATION_PREFIXES)
+        and NOW_MS - d.created_time >= DELETE_THRESHOLD  # type: ignore [operator]
+    ]
+    if stale:
+        cognite_client.hosted_extractors.destinations.delete(stale, force=True, ignore_unknown_ids=True)
+
 
 @pytest.fixture(scope="session", autouse=True)
 def cleanup_stale_test_sources(cognite_client: CogniteClient) -> None:
     all_sources = cognite_client.hosted_extractors.sources.list(limit=None)
-    now_ms = int(time.time() * 1000)
-    # Clean up anyting older than 3 hours:
     stale = [
         s.external_id
         for s in all_sources
         if s.external_id
         and s.external_id.startswith(TEST_SOURCE_PREFIXES)
-        and now_ms - s.created_time >= 3 * 60 * 60 * 1000  # type: ignore [attr-defined]
+        and NOW_MS - s.created_time >= DELETE_THRESHOLD  # type: ignore [attr-defined]
     ]
     if stale:
         cognite_client.hosted_extractors.sources.delete(stale, force=True, ignore_unknown_ids=True)
@@ -58,7 +81,7 @@ def a_data_set(cognite_client: CogniteClient) -> DataSet:
 @pytest.fixture
 def one_destination(cognite_client: CogniteClient, fresh_session: SessionWrite) -> Iterator[Destination]:
     my_dest = DestinationWrite(
-        external_id=f"myNewDestination-{random_string(10)}",
+        external_id=f"{DESTINATION_PREFIX}{random_string(10)}",
         credentials=fresh_session,
     )
     created = cognite_client.hosted_extractors.destinations.create(my_dest)
