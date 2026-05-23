@@ -1,6 +1,6 @@
 """
 ===============================================================================
-584030bc5e2a4b8168f54c101f7f521d
+569dccd6231cab0821fac330d45d2360
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -10,11 +10,13 @@ from __future__ import annotations
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api.data_modeling.containers import SyncContainersAPI
 from cognite.client._sync_api.data_modeling.data_models import SyncDataModelsAPI
+from cognite.client._sync_api.data_modeling.files import SyncDataModelingFilesAPI
 from cognite.client._sync_api.data_modeling.graphql import SyncDataModelingGraphQLAPI
 from cognite.client._sync_api.data_modeling.instances import SyncInstancesAPI
 from cognite.client._sync_api.data_modeling.spaces import SyncSpacesAPI
 from cognite.client._sync_api.data_modeling.statistics import SyncStatisticsAPI
 from cognite.client._sync_api.data_modeling.streams import SyncStreamsAPI
+from cognite.client._sync_api.data_modeling.time_series import SyncDataModelingTimeSeriesAPI
 from cognite.client._sync_api.data_modeling.views import SyncViewsAPI
 from cognite.client._sync_api_client import SyncAPIClient
 
@@ -26,6 +28,8 @@ class SyncDataModelingAPI(SyncAPIClient):
         self.__async_client = async_client
         self.containers = SyncContainersAPI(async_client)
         self.data_models = SyncDataModelsAPI(async_client)
+        self.files = SyncDataModelingFilesAPI(async_client)
+        self.time_series = SyncDataModelingTimeSeriesAPI(async_client)
         self.spaces = SyncSpacesAPI(async_client)
         self.views = SyncViewsAPI(async_client)
         self.instances = SyncInstancesAPI(async_client)
