@@ -10,7 +10,7 @@ authors = [
 ]
 license = "Apache-2.0"
 license-files = ["LICENSE"]
-requires-python = ">= 3.10"
+requires-python = ">= 3.10, <4"
 dependencies = [
     "httpx (>=0, <1)",
     "msal (>=1.31, <2)",
@@ -38,12 +38,13 @@ pyodide = [
     "anyio"
 ]  # keep pyodide related dependencies outside of 'all'
 all = [
-    "cognite-sdk[numpy]",
-    "cognite-sdk[sympy]",
-    "cognite-sdk[pandas]",
-    "cognite-sdk[geo]",
-    "cognite-sdk[yaml]",
-    "cognite-sdk[functions]",
+    "numpy >=1.25",
+    "sympy",
+    "pandas >=2.1",
+    "geopandas >=0.14",
+    "shapely >=1.7.0",
+    "PyYAML (>=6, <7)",
+    "pip >=20",
  ]
 
 [dependency-groups]
