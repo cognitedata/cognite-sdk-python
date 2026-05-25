@@ -31,6 +31,6 @@ runs:
     - name: Install dependencies
       shell: bash
       run: poetry install --no-interaction --no-ansi ${{ inputs.extras }}
-      run: eval $(poetry env activate)
+    - run: eval $(poetry env activate)
         # python -m pip install --upgrade pip poetry
         # poetry config virtualenvs.create false
