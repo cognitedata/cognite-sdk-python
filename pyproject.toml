@@ -83,7 +83,7 @@ dev = [
     "ipykernel (>=7.2.0, <8)"
 ]
 docs = [
-    "sphinx >=8.1",
+    "sphinx ==8.1.*",  # Increase when Python 3.10 support is dropped
     "sphinx-rtd-theme >=1",
     "sphinx-copybutton (>=0.5.2, <0.6)",
     "sphinx-autosummary-accessors (>=2025.3.1, <2026)"
