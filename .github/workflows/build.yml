@@ -18,7 +18,7 @@ jobs:
         with:
           extras: "-E pandas"
       - name: Linting and static code checks
-        run: pre-commit run --all-files --show-diff-on-failure
+        run: poetry run pre-commit run --all-files --show-diff-on-failure
 
   verify-sync-codegen:
     runs-on: ubuntu-latest
@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - uses: ./.github/actions/setup
       - name: Test core
-        run: pytest tests/tests_unit -n6 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
+        run: poetry run pytest tests/tests_unit -n6 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
 
   test_full:
     runs-on: ${{ matrix.os }}
@@ -79,7 +79,7 @@ jobs:
           COGNITE_BASE_URL: ${{ vars.CDF_BASE_URL_CI }}
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
         # Testpaths are defined in the pytest.ini file:
-        run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
+        run: poetry run pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
       - uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
         # Report code coverage from windows runner; xdist + ubuntu gives incorrect results
