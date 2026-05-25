@@ -9,7 +9,7 @@ CWD = Path.cwd()
 
 def pyproj_version_matches() -> str | None:
     with (CWD / "pyproject.toml").open() as fh:
-        version_in_pyproject = toml.load(fh)["tool"]["poetry"]["version"]
+        version_in_pyproject = toml.load(fh)["project"]["version"]
 
     if __version__ != version_in_pyproject:
         return (
