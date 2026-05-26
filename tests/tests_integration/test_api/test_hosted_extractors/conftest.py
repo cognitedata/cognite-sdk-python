@@ -41,7 +41,7 @@ def cleanup_stale_test_destinations(cognite_client: CogniteClient) -> None:
         for d in all_destinations
         if d.external_id
         and d.external_id.startswith(TEST_DESTINATION_PREFIXES)
-        and NOW_MS - d.created_time >= DELETE_THRESHOLD  # type: ignore [operator]
+        and NOW_MS - d.created_time >= DELETE_THRESHOLD
     ]
     if stale:
         cognite_client.hosted_extractors.destinations.delete(stale, force=True, ignore_unknown_ids=True)
