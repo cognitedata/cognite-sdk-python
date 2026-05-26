@@ -13,6 +13,3 @@ class RecordIdSequence(IdentifierSequenceCore[RecordId]):
         if isinstance(items, RecordId):
             return cls([items], is_singleton=True)
         return cls(list(items), is_singleton=False)
-
-    def are_unique(self) -> bool:
-        return len(self) == len({(r.space, r.external_id) for r in self._identifiers})

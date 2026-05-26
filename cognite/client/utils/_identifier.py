@@ -82,12 +82,6 @@ class InstanceId:
     def instance_type(self) -> Literal["node", "edge"]:
         return self._instance_type
 
-    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
-        return self.dump(camel_case=camel_case)
-
-    def as_primitive(self) -> str:
-        return self.external_id
-
     def as_tuple(self) -> tuple[str, str]:
         return self.space, self.external_id
 
