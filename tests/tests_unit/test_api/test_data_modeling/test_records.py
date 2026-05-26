@@ -26,7 +26,7 @@ def delete_url_pattern(records_base_url: str) -> re.Pattern:
 
 
 @pytest.fixture
-def mock_delete(self, httpx_mock: HTTPXMock, delete_url_pattern: re.Pattern) -> None:
+def mock_delete(httpx_mock: HTTPXMock, delete_url_pattern: re.Pattern) -> None:
     httpx_mock.add_response(method="POST", url=delete_url_pattern, status_code=200)
 
 
