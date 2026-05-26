@@ -4,7 +4,7 @@ version = "8.6.0"
 description = "Cognite Python SDK"
 readme = "README.md"
 authors = [
-    {name = "Erlend Vollset", email = "erlend.vollset@cognite.com>"},
+    {name = "Erlend Vollset", email = "erlend.vollset@cognite.com"},
     {name = "Håkon Treider", email = "hakon.treider@cognite.com"},
     {name = "Anders Albert", email = "anders.albert@cognite.com"}
 ]
