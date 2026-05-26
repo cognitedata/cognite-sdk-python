@@ -1,98 +1,58 @@
+"""
+===============================================================================
+0a4b1dd057197651203187efe88ef7c4
+This file is auto-generated from the Async API modules, - do not edit manually!
+===============================================================================
+"""
+
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NoReturn, overload
+from typing import TYPE_CHECKING, Any, overload
 
-from cognite.client._api_client import APIClient
+from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFile
 from cognite.client.data_classes.data_modeling.ids import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeList
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
+from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
-    from cognite.client.config import ClientConfig
 
 COGNITE_FILE_VIEW_ID = CogniteFile.get_source()
 
 
-def _resolve_source(source: View | ViewId | tuple[str, str, str]) -> tuple[list[ViewId], bool]:
-    match source:
-        case ViewId():
-            source_as_id = source
-        case View():
-            source_as_id = source.as_id()
-        case [str(), str(), str()]:
-            source_as_id = ViewId(*source)
-        case _:
-            raise TypeError(f"Expected View, ViewId, or a (space, external_id, version) tuple, got {type(source)}")
+class SyncDataModelingFilesAPI(SyncAPIClient):
+    """Auto-generated, do not modify manually."""
 
-    if source_as_id == COGNITE_FILE_VIEW_ID:
-        return [source_as_id], False
-
-    # User has passed a custom source, we include CogniteFile source to guarantee only file nodes
-    # are returned. We will later strip them (hence the 'True' flag) to avoid returning nodes with
-    # properties from multiple sources as they are very annoying to work with in the SDK.
-    return [source_as_id, COGNITE_FILE_VIEW_ID], True
-
-
-class DataModelingFilesAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
-        super().__init__(config, api_version, cognite_client)
-        self._files_api = cognite_client.files
-
-    async def retrieve_download_urls(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
-
-    async def download(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
-
-    async def download_to_path(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
-
-    async def download_bytes(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
-
-    async def upload(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
-
-    async def upload_bytes(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
-
-    async def upload_content(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
-
-    async def upload_content_bytes(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
-
-    async def __call__(self) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+    def __init__(self, async_client: AsyncCogniteClient) -> None:
+        self.__async_client = async_client
 
     @overload
-    async def retrieve(
-        self,
-        nodes: NodeId | tuple[str, str],
-        *,
-        source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
+    def retrieve(
+        self, nodes: NodeId | tuple[str, str], *, source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID
     ) -> Node | None: ...
 
     @overload
-    async def retrieve(
+    def retrieve(
         self,
         nodes: Sequence[NodeId | tuple[str, str]],
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
     ) -> NodeList[Node]: ...
 
-    async def retrieve(
+    def retrieve(
         self,
         nodes: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
     ) -> Node | NodeList[Node] | None:
-        """`Retrieve one or more files by instance ID. <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
+        """
+        `Retrieve one or more files by instance ID. <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
 
         Only nodes that are files (i.e. have data in the CogniteFile view) will be returned.
         If a single instance ID is requested and it is not found, ``None`` is returned.
@@ -131,14 +91,9 @@ class DataModelingFilesAPI(APIClient):
                 ...     source=ViewId("my-space", "MyFileExtension", "v1"),
                 ... )
         """
-        sources, strip = _resolve_source(source)
-        result = await self._cognite_client.data_modeling.instances.retrieve_nodes(nodes=nodes, sources=sources)  # type: ignore[arg-type]
-        if strip and result:
-            for node in [result] if isinstance(result, Node) else result:
-                node.drop_source(COGNITE_FILE_VIEW_ID)
-        return result
+        return run_sync(self.__async_client.data_modeling.files.retrieve(nodes=nodes, source=source))
 
-    async def list(
+    def list(
         self,
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
@@ -147,7 +102,8 @@ class DataModelingFilesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
-        """`List files nodes. <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_
+        """
+        `List files nodes. <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_
 
         Only file nodes will be returned, regardless of the source passed.
 
@@ -185,16 +141,8 @@ class DataModelingFilesAPI(APIClient):
                 ...     limit=None,
                 ... )
         """
-        sources, strip = _resolve_source(source)
-        results = await self._cognite_client.data_modeling.instances.list(  # type: ignore[call-overload]
-            instance_type="node",
-            sources=sources,
-            space=space,
-            sort=sort,
-            filter=filter,
-            limit=limit,
+        return run_sync(
+            self.__async_client.data_modeling.files.list(
+                source=source, space=space, sort=sort, filter=filter, limit=limit
+            )
         )
-        if strip:
-            for node in results:
-                node.drop_source(COGNITE_FILE_VIEW_ID)
-        return results
