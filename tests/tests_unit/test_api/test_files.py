@@ -840,7 +840,6 @@ class TestFilesAPI:
         example_file: dict[str, Any],
         async_client: AsyncCogniteClient,
         httpx_mock: HTTPXMock,
-        tmp_path: Path,
     ) -> None:
         """Bug in 8.0.0 to 8.6.0: a 400 from the blob storage PUT raised CogniteHTTPStatusError instead of CogniteFileUploadError."""
         httpx_mock.add_response(
