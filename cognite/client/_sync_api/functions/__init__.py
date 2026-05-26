@@ -7,33 +7,17 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 
 from __future__ import annotations
 
-import ast
-import asyncio
-import importlib
-import os
-import re
-import sys
-import textwrap
-import warnings
-from collections.abc import AsyncIterator, Callable, Coroutine, Iterator, Sequence
-from inspect import getdoc, getsource, signature
-from multiprocessing import Process, Queue
-from pathlib import Path
-from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Literal, cast, overload
-from zipfile import ZipFile
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.functions.utils import _get_function_internal_id
-from cognite.client._api_client import APIClient
-from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api.functions.calls import SyncFunctionCallsAPI
 from cognite.client._sync_api.functions.schedules import SyncFunctionSchedulesAPI
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes import (
     Function,
     FunctionCall,
-    FunctionFilter,
     FunctionList,
     FunctionsLimits,
     TimestampRange,
@@ -47,19 +31,10 @@ from cognite.client.data_classes.functions import (
     RunTime,
 )
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
-from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
-from cognite.client.utils._concurrency import _get_event_loop_executor
-from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._importing import local_import
-from cognite.client.utils._session import create_session_and_return_nonce
-from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    import pandas as pd
-
     from cognite.client import AsyncCogniteClient
-from cognite.client.config import ClientConfig
 
 
 class SyncFunctionsAPI(SyncAPIClient):
