@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn, overload
+
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFile
-from cognite.client.data_classes.data_modeling.ids import ViewId
+from cognite.client.data_classes.data_modeling.ids import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeList
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
 
 COGNITE_FILE_VIEW_ID = CogniteFile.get_source()
 
+
 def _resolve_source(source: View | ViewId | tuple[str, str, str]) -> tuple[list[ViewId], bool]:
     match source:
         case ViewId():
@@ -26,7 +28,7 @@ def _resolve_source(source: View | ViewId | tuple[str, str, str]) -> tuple[list[
         case [str(), str(), str()]:
             source_as_id = ViewId(*source)
         case _:
-            assert_never(source)
+            raise TypeError(f"Expected View, ViewId, or a (space, external_id, version) tuple, got {type(source)}")
 
     if source_as_id == COGNITE_FILE_VIEW_ID:
         return [source_as_id], False
@@ -69,8 +71,73 @@ class DataModelingFilesAPI(APIClient):
     async def __call__(self) -> NoReturn:
         raise NotImplementedError("This method is not implemented yet!")
 
-    async def retrieve(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+    @overload
+    async def retrieve(
+        self,
+        nodes: NodeId | tuple[str, str],
+        *,
+        source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
+    ) -> Node | None: ...
+
+    @overload
+    async def retrieve(
+        self,
+        nodes: Sequence[NodeId | tuple[str, str]],
+        *,
+        source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
+    ) -> NodeList[Node]: ...
+
+    async def retrieve(
+        self,
+        nodes: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
+        *,
+        source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
+    ) -> Node | NodeList[Node] | None:
+        """`Retrieve one or more files by instance ID. <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
+
+        Only nodes that are files (i.e. have data in the CogniteFile view) will be returned.
+        If a single instance ID is requested and it is not found, ``None`` is returned.
+
+        Args:
+            nodes (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Single instance ID or a list of instance IDs.
+            source (View | ViewId | tuple[str, str, str]): The view to fetch properties from. Defaults to CogniteFile.
+
+        Returns:
+            Node | NodeList[Node] | None: A single ``Node`` (or ``None`` if not found) when given a single identifier, or a ``NodeList`` when given a sequence.
+
+        Examples:
+
+            Retrieve a single file by instance ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.files.retrieve(NodeId("my-space", "my-file"))
+
+            Using a tuple shorthand:
+
+                >>> res = client.data_modeling.files.retrieve(("my-space", "my-file"))
+
+            Retrieve multiple files nodes:
+
+                >>> res = client.data_modeling.files.retrieve(
+                ...     [("my-space", "file-1"), ("my-space", "file-2")]
+                ... )
+
+            Fetch properties from a custom view (note, only files will be returned):
+
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> res = client.data_modeling.files.retrieve(
+                ...     NodeId("my-space", "my-file"),
+                ...     source=ViewId("my-space", "MyFileExtension", "v1"),
+                ... )
+        """
+        sources, strip = _resolve_source(source)
+        result = await self._cognite_client.data_modeling.instances.retrieve_nodes(nodes=nodes, sources=sources)  # type: ignore[arg-type]
+        if strip and result:
+            for node in [result] if isinstance(result, Node) else result:
+                node.drop_source(COGNITE_FILE_VIEW_ID)
+        return result
 
     async def list(
         self,
