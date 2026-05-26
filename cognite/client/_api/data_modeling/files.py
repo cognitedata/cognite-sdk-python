@@ -1,0 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from cognite.client._api_client import APIClient
+
+if TYPE_CHECKING:
+    from cognite.client import AsyncCogniteClient
+    from cognite.client.config import ClientConfig
+
+
+class DataModelingFilesAPI(APIClient):
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._files_api = cognite_client.files
