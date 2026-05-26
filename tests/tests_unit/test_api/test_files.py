@@ -27,7 +27,7 @@ from cognite.client.data_classes.files import (
     FileMetadataWrite,
 )
 from cognite.client.data_classes.labels import Label, LabelFilter
-from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
+from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
 from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_or_raise, get_url, jsgz_load
 
@@ -833,6 +833,56 @@ class TestFilesAPI:
     def test_upload_path_does_not_exist(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(FileNotFoundError):
             cognite_client.files.upload(path=Path("/no/such/path"))
+
+    def test_upload_bytes_400_raises_file_upload_error(
+        self,
+        cognite_client: CogniteClient,
+        example_file: dict[str, Any],
+        async_client: AsyncCogniteClient,
+        httpx_mock: HTTPXMock,
+        tmp_path: Path,
+    ) -> None:
+        """Bug in 8.0.0 to 8.6.0: a 400 from the blob storage PUT raised CogniteHTTPStatusError instead of CogniteFileUploadError."""
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.files) + "/files?overwrite=false",
+            status_code=200,
+            json=example_file,
+        )
+        httpx_mock.add_response(method="PUT", url="https://upload.here", status_code=400, text="Bad Request")
+
+        with pytest.raises(CogniteFileUploadError) as exc_info:
+            cognite_client.files.upload_bytes(content=b"content", name="bla")
+
+        assert exc_info.value.code == 400
+
+    def test_upload_content_part_400_raises_file_upload_error(
+        self,
+        cognite_client: CogniteClient,
+        example_file: dict[str, Any],
+        async_client: AsyncCogniteClient,
+        httpx_mock: HTTPXMock,
+        tmp_path: Path,
+    ) -> None:
+        """Bug in 8.0.0 to 8.6.0: a 400 from the blob storage PUT during multipart upload raised CogniteHTTPStatusError
+        instead of CogniteFileUploadError.
+        """
+        multipart_response = {"items": [{**example_file, "uploadUrls": ["https://upload.here/part0"], "uploadId": "test-id"}]}
+        httpx_mock.add_response(
+            method="POST",
+            url=re.compile(re.escape(get_url(async_client.files) + "/files/multiuploadlink") + r"\?.*"),
+            status_code=200,
+            json=multipart_response,
+        )
+        httpx_mock.add_response(method="PUT", url="https://upload.here/part0", status_code=400, text="Bad Request")
+
+        test_file = tmp_path / "test.bin"
+        test_file.write_bytes(b"x")
+
+        with pytest.raises(CogniteFileUploadError) as exc_info:
+            cognite_client.files.upload_content(path=test_file, instance_id=NodeId("test-space", "test-0001"))
+
+        assert exc_info.value.code == 400
 
     @pytest.mark.parametrize(
         "file_size, expected_parts",
