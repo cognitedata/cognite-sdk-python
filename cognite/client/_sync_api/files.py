@@ -1,6 +1,6 @@
 """
 ===============================================================================
-1f615115f322d471c0ae15347e13f8c2
+fbb9ea33379c01aab6c13703f2d3bb52
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,10 +12,10 @@ from pathlib import Path
 from typing import Any, BinaryIO, Literal, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import (
+from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import (
     DEFAULT_LIMIT_READ,
 )
-from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes import (
     FileMetadata,
     FileMetadataFilter,

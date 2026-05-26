@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c0af4f83cd8ffa0aaed6fa641bde9a98
+604798c61eb8ab518a1d50db5c6f2ed0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -13,8 +13,8 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.data_modeling.instances import Source
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.aggregations import (
     AggregatedNumberedValue,
     Histogram,

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-1862715b947706f15000fe1f49906d00
+4195b1111e4ba9fe1d59ea4100bff062
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -11,10 +11,10 @@ from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api.functions.calls import SyncFunctionCallsAPI
 from cognite.client._sync_api.functions.schedules import SyncFunctionSchedulesAPI
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Function,
     FunctionCall,

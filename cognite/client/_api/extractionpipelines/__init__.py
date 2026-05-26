@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal, TypeAlias, overload
 from cognite.client._api.extractionpipelines.configs import ExtractionPipelineConfigsAPI
 from cognite.client._api.extractionpipelines.runs import ExtractionPipelineRunsAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     ExtractionPipeline,
     ExtractionPipelineList,

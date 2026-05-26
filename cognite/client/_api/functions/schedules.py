@@ -10,7 +10,7 @@ from cognite.client._api.functions.utils import (
     _get_function_internal_id,
 )
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     ClientCredentials,
     FunctionSchedule,

@@ -8,7 +8,7 @@ from typing import Any, cast
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Annotation,
     AnnotationFilter,

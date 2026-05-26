@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8c70e772dd150e100df2bbd39737e065
+5914ba1b29e06964b0777eb2014fb3f5
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
     CoordinateReferenceSystemList,

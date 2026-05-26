@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a236c0e18fb9fb2f240d85c6acf54c8c
+1ff0d7890761d836bbac266218599813
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -11,8 +11,8 @@ from collections.abc import Iterator, Sequence
 from typing import Literal, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     ThreeDModelRevision,
     ThreeDModelRevisionList,

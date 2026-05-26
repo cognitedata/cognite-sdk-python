@@ -1,6 +1,6 @@
 """
 ===============================================================================
-7962fb2e1b2f6aedd8ac425437667a9d
+a021b58a9bf20309876d8e0cce0c2aaf
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -11,19 +11,18 @@ from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api.workflows.executions import SyncWorkflowExecutionAPI
 from cognite.client._sync_api.workflows.tasks import SyncWorkflowTaskAPI
 from cognite.client._sync_api.workflows.triggers import SyncWorkflowTriggerAPI
 from cognite.client._sync_api.workflows.versions import SyncWorkflowVersionAPI
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.workflows import Workflow, WorkflowList, WorkflowUpsert
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
-    from cognite.client import ClientConfig as ClientConfig
 
 
 class SyncWorkflowAPI(SyncAPIClient):

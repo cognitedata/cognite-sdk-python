@@ -1,6 +1,6 @@
 """
 ===============================================================================
-76644d0a1e130c795027e8e205f1d20f
+c1010253ff0e678f04d030f60b44bd6f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING, Literal, overload
 
 import cognite.client.data_classes.postgres_gateway.tables as pg
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 

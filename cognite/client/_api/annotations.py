@@ -5,7 +5,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource, PropertySpec, T_CogniteResource
 from cognite.client.data_classes.annotations import AnnotationCore, AnnotationReverseLookupFilter, AnnotationWrite

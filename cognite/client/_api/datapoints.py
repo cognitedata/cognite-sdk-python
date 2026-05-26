@@ -33,8 +33,8 @@ from cognite.client._api.datapoint_tasks import (
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_DATAPOINTS_CHUNK_SIZE
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
+from cognite.client.constants import DEFAULT_DATAPOINTS_CHUNK_SIZE
 from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,

@@ -7,7 +7,8 @@ from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
+from cognite.client._constants import _RUNNING_IN_BROWSER
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.raw import Row, RowCore, RowList, RowWrite
 from cognite.client.utils._auxiliary import (
     drop_none_values,

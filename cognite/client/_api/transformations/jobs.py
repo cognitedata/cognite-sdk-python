@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     TransformationJob,
     TransformationJobFilter,

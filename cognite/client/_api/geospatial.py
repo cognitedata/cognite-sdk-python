@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
     CoordinateReferenceSystemList,

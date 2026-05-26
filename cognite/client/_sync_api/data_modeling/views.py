@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d8f86e74e224daebaf4d984d88cf1842
+d02ade3fd495aae81b88e5ed3176a309
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -11,8 +11,8 @@ from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DATA_MODELING_DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.ids import ViewId, ViewIdentifier
 from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewList
 from cognite.client.utils._async_helpers import SyncIterator, run_sync

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-5df166262e8c65029e1adcb884de5ec9
+f55c4089bd5540b0687841c2a4d4f52c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -11,8 +11,8 @@ from collections.abc import Sequence
 from typing import overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     BoundingBox3D,
     ThreeDAssetMapping,

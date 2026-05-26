@@ -8,7 +8,7 @@ from cognite.client._api.transformations.notifications import TransformationNoti
 from cognite.client._api.transformations.schedules import TransformationSchedulesAPI
 from cognite.client._api.transformations.schema import TransformationSchemaAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Transformation, TransformationJob, TransformationList
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations import (

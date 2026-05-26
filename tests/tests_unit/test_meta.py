@@ -127,6 +127,6 @@ def test_constants_are_importable() -> None:
     # Extractor utils using extractor_extensions/v1.py has a legit use case for needing the OMITTED singleton.
     # Thus this test is here to ensure we don't accidentally move it or break it.
     # Do not change this test without doing new major version release!!
-    from cognite.client._constants import OMITTED, Omitted
+    from cognite.client.constants import OMITTED, Omitted
 
     assert isinstance(OMITTED, Omitted)

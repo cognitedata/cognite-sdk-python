@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import overload
 
-from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._org_client import OrgAPIClient
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.principals import Principal, PrincipalList
 from cognite.client.utils._auxiliary import append_url_path
 from cognite.client.utils._identifier import PrincipalIdentifierSequence

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, BinaryIO, Literal, overload
 
 from cognite.client._api.document_preview import DocumentPreviewAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import filters
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.data_modeling.ids import NodeId
