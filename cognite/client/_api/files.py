@@ -488,7 +488,7 @@ class FilesAPI(APIClient):
         Upload file content from a local file path to a file previously created (initiated) with only metadata.
         For files created with FilesAPI.create(), use `external_id`.
         For files created with data modeling API using CogniteFileApply, use `instance_id`.
-        Supports upload of large files (>5 GB), using multipart upload.
+        Supports upload of large files (>5 GiB), using multipart upload.
 
         Args:
             path (Path | str): Local file path.
@@ -537,7 +537,7 @@ class FilesAPI(APIClient):
         Note:
             If path is a directory, this method will upload all files in that directory. Use `recursive=True` for subdirectories as well.
 
-        Supports upload of large files (>5 GB), using multipart upload.
+        Supports upload of large files (>5 GiB), using multipart upload.
 
         Args:
             path (Path | str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
