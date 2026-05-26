@@ -1,6 +1,6 @@
 """
 ===============================================================================
-6f405a44b9af327b96291aa79765b1f2
+f3ee463c974a23fb18aed9753a979783
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -98,7 +98,7 @@ class SyncDiagramsAPI(SyncAPIClient):
             file_ids (int | Sequence[int] | None): ID of the files, should already be uploaded in the same tenant.
             file_external_ids (str | SequenceNotStr[str] | None): File external ids, alternative to file_ids and file_references.
             file_instance_ids (NodeId | Sequence[NodeId] | None): Files to detect in, specified by instance id.
-            file_references (list[FileReference] | FileReference | None): File references (id, external_id or instance_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
+            file_references (list[contextualization.FileReference] | contextualization.FileReference | None): File references (id, external_id or instance_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
             pattern_mode (bool | None): If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
             configuration (DiagramDetectConfig | None): Additional configuration for the detect algorithm. See `DiagramDetectConfig` class documentation and `beta API docs <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
@@ -177,7 +177,7 @@ class SyncDiagramsAPI(SyncAPIClient):
                 >>> job = client.diagrams.detect(entities=[{"name": "A1"}], file_id=123, config=config)
 
             Check the documentation for `DiagramDetectConfig` for more information on the available options.
-        """
+        """  # noqa: DOC105
         return run_sync(
             self.__async_client.diagrams.detect(
                 entities=entities,

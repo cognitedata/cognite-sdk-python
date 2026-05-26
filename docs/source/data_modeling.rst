@@ -329,3 +329,9 @@ Debugging Data Classes
 .. automodule:: cognite.client.data_classes.data_modeling.debug
     :members:
     :show-inheritance:
+
+Data Types
+----------
+.. automodule:: cognite.client.data_classes.data_modeling.data_types
+    :members:
+    :show-inheritance:

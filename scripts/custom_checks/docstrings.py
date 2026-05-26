@@ -20,6 +20,8 @@ from pathlib import Path
 
 import numpy as np
 
+from cognite.client._api.diagrams import DiagramsAPI
+from cognite.client._sync_api.diagrams import SyncDiagramsAPI
 from cognite.client.data_classes.data_modeling.query import Query, QuerySync
 from cognite.client.data_classes.functions import FunctionHandle
 from cognite.client.utils._text import shorten
@@ -29,6 +31,8 @@ CLS_METHOD_EXCEPTIONS = {
     (Query, "__init__"),  # Reason (Generics[...]): Avoid showing (bounded) type var instead of actual class
     (QuerySync, "__init__"),  # Reason (Generics[...]): Avoid showing (bounded) type var instead of actual class
     (FunctionHandle, "__init__"),  # Reason: Protocol class doesn't have __init__ with return type
+    (DiagramsAPI, "detect"),  # Reason: References FileReference, which there are two of in the documentation
+    (SyncDiagramsAPI, "detect"),  # Reason: References FileReference, which there are two of in the documentation
 }
 
 # Helper for testing specific class + method/property:

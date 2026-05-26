@@ -144,7 +144,7 @@ class DiagramsAPI(APIClient):
             file_ids (int | Sequence[int] | None): ID of the files, should already be uploaded in the same tenant.
             file_external_ids (str | SequenceNotStr[str] | None): File external ids, alternative to file_ids and file_references.
             file_instance_ids (NodeId | Sequence[NodeId] | None): Files to detect in, specified by instance id.
-            file_references (list[FileReference] | FileReference | None): File references (id, external_id or instance_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
+            file_references (list[contextualization.FileReference] | contextualization.FileReference | None): File references (id, external_id or instance_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
             pattern_mode (bool | None): If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
             configuration (DiagramDetectConfig | None): Additional configuration for the detect algorithm. See `DiagramDetectConfig` class documentation and `beta API docs <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
@@ -223,7 +223,7 @@ class DiagramsAPI(APIClient):
                 >>> job = client.diagrams.detect(entities=[{"name": "A1"}], file_id=123, config=config)
 
             Check the documentation for `DiagramDetectConfig` for more information on the available options.
-        """
+        """  # noqa: DOC105
         items = self._process_file_ids(file_ids, file_external_ids, file_instance_ids, file_references)
         entities_dumped = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
