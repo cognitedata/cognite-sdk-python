@@ -1,6 +1,6 @@
 """
 ===============================================================================
-29c55c2d7ac973daa7a29e8eed9f4869
+de6c6cd3d4d64588be6085f3c4e6dbb5
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -26,7 +26,7 @@ class SyncRecordsAPI(SyncAPIClient):
         self.__async_client = async_client
 
     def delete(
-        self, stream_id: str, items: RecordId | Sequence[RecordId], ignore_unknown_ids: Literal[True] = True
+        self, items: RecordId | Sequence[RecordId], *, stream_id: str, ignore_unknown_ids: Literal[True] = True
     ) -> None:
         """
         `Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_.
@@ -35,8 +35,8 @@ class SyncRecordsAPI(SyncAPIClient):
         ``space + externalId`` pairs are silently ignored.
 
         Args:
-            stream_id (str): External ID of the stream to delete from.
             items (RecordId | Sequence[RecordId]): Records to delete.
+            stream_id (str): External ID of the stream to delete from.
             ignore_unknown_ids (Literal[True]): currently only True is supported
 
         Examples:
@@ -56,6 +56,6 @@ class SyncRecordsAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.records.delete(
-                stream_id=stream_id, items=items, ignore_unknown_ids=ignore_unknown_ids
+                items=items, stream_id=stream_id, ignore_unknown_ids=ignore_unknown_ids
             )
         )

@@ -45,8 +45,8 @@ class RecordsAPI(APIClient):
         ``space + externalId`` pairs are silently ignored.
 
         Args:
-            stream_id (str): External ID of the stream to delete from.
             items (RecordId | Sequence[RecordId]): Records to delete.
+            stream_id (str): External ID of the stream to delete from.
             ignore_unknown_ids (Literal[True]): currently only True is supported
 
         Examples:
