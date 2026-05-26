@@ -65,3 +65,6 @@ my_file.txt
 
 # docs
 docs/source/generated/
+
+# Claude Code per-user settings
+.claude/settings.local.json
