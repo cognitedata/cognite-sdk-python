@@ -67,6 +67,8 @@ class FunctionHandle(Protocol):
         self,
         *,
         # TODO(haakonvt): change to CogniteClient | AsyncCogniteClient when/if functions start supporting it
+        # Note: in user-defined handle functions, only the function source is deployed, so
+        # CogniteClient must be a string annotation or omitted (see FunctionHandle docstring).
         client: CogniteClient | None = None,
         data: dict[str, object] | None = None,
         secrets: dict[str, str] | None = None,
