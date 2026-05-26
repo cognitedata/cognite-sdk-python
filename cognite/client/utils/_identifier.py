@@ -91,7 +91,11 @@ class InstanceId:
 
 @dataclass(frozen=True)
 class RecordId(InstanceId):
-    pass
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return self.dump(camel_case=camel_case)
+
+    def as_primitive(self) -> NoReturn:
+        raise AttributeError(f"Not supported for {type(self).__name__}")
 
 
 T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
