@@ -867,7 +867,9 @@ class TestFilesAPI:
         """Bug in 8.0.0 to 8.6.0: a 400 from the blob storage PUT during multipart upload raised CogniteHTTPStatusError
         instead of CogniteFileUploadError.
         """
-        multipart_response = {"items": [{**example_file, "uploadUrls": ["https://upload.here/part0"], "uploadId": "test-id"}]}
+        multipart_response = {
+            "items": [{**example_file, "uploadUrls": ["https://upload.here/part0"], "uploadId": "test-id"}]
+        }
         httpx_mock.add_response(
             method="POST",
             url=re.compile(re.escape(get_url(async_client.files) + "/files/multiuploadlink") + r"\?.*"),

@@ -34,7 +34,12 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError, CogniteHTTPStatusError
+from cognite.client.exceptions import (
+    CogniteAPIError,
+    CogniteAuthorizationError,
+    CogniteFileUploadError,
+    CogniteHTTPStatusError,
+)
 from cognite.client.utils._auxiliary import append_url_path, find_duplicates, unpack_items
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
