@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import math
+import os
 import warnings
 from collections import defaultdict
 from collections.abc import AsyncIterator, Sequence
@@ -14,6 +15,7 @@ from typing_extensions import assert_never
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import (
+    _RUNNING_IN_BROWSER,
     DEFAULT_LIMIT_READ,
     FILE_DEFAULT_MULTIPART_SIZE,
     FILE_MAX_MULTIPART_COUNT,
@@ -508,7 +510,7 @@ class FilesAPI(APIClient):
         if not path.is_file():
             raise FileNotFoundError(path)
 
-        file_size = path.stat().st_size
+        file_size = self._get_file_size(path)
         part_size, num_parts = self.calculate_part_size_and_count(file_size)
         session = await self.multipart_upload_content_session(
             parts=num_parts, external_id=external_id, instance_id=instance_id
@@ -646,7 +648,7 @@ class FilesAPI(APIClient):
     async def _upload_file_from_path(
         self, file_metadata: FileMetadataWrite, path: Path, overwrite: bool
     ) -> FileMetadata:
-        file_size = path.stat().st_size
+        file_size = self._get_file_size(path)
         part_size, num_parts = self.calculate_part_size_and_count(file_size)
         session = await self.multipart_upload_session(
             parts=num_parts,
@@ -678,6 +680,17 @@ class FilesAPI(APIClient):
 
         async with session:
             await asyncio.gather(*(upload_part(i) for i in range(num_parts)))
+
+    @staticmethod
+    def _get_file_size(path: Path) -> int:
+        size = path.stat().st_size
+        # Pyodide's File System Access API sometimes lies: stat may report st_size=0 even when there's readable
+        # bytes on disk (that can be read normally...) Fall back to seek/tell, which reads the true size:
+        if _RUNNING_IN_BROWSER and size == 0:
+            with path.open("rb") as fh:
+                fh.seek(0, os.SEEK_END)
+                return fh.tell()
+        return size
 
     def calculate_part_size_and_count(self, file_size: int) -> tuple[int, int]:
         """Calculate part size and count for a multipart upload, for a given file size.
