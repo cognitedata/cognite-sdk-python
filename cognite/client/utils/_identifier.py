@@ -89,6 +89,15 @@ class InstanceId:
         return f"{self.__class__.__name__}(space={self.space!r}, external_id={self.external_id!r})"
 
 
+@dataclass(frozen=True)
+class RecordId(InstanceId):
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return self.dump(camel_case=camel_case)
+
+    def as_primitive(self) -> NoReturn:
+        raise AttributeError(f"Not supported for {type(self).__name__}")
+
+
 T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
 
 T_ID = TypeVar("T_ID", int, str, InstanceId)
