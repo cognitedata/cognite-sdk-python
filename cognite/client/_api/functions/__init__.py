@@ -7,6 +7,7 @@ import os
 import re
 import sys
 import textwrap
+import warnings
 from collections.abc import AsyncIterator, Callable, Sequence
 from inspect import getdoc, getsource, signature
 from multiprocessing import Process, Queue
@@ -878,7 +879,16 @@ def _validate_and_parse_requirements(requirements: list[str]) -> list[str]:
     Returns:
         list[str]: The parsed requirements
     """
-    constructors = local_import("pip._internal.req.constructors")
+    if _RUNNING_IN_BROWSER:
+        warnings.warn(
+            "Running in a browser environment, skipping client-side validation of requirements.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return [r for r in requirements if r.strip()]
+    else:
+        constructors = local_import("pip._internal.req.constructors")
+
     install_req_from_line = constructors.install_req_from_line
     parsed_reqs: list[str] = []
     for req in requirements:
