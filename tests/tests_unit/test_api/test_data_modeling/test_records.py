@@ -36,6 +36,16 @@ def mock_delete(httpx_mock: HTTPXMock, delete_url_pattern: re.Pattern) -> None:
 
 
 @pytest.fixture
+def ingest_url_pattern(records_base_url: str) -> re.Pattern:
+    return re.compile(re.escape(records_base_url) + r"$")
+
+
+@pytest.fixture
+def mock_ingest(httpx_mock: HTTPXMock, ingest_url_pattern: re.Pattern) -> None:
+    httpx_mock.add_response(method="POST", url=ingest_url_pattern, status_code=202)
+
+
+@pytest.fixture
 def write_item() -> RecordWrite:
     return RecordWrite(
         space="sp",
@@ -102,11 +112,11 @@ class TestRecordsAPIIngest:
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
-        records_base_url: str,
+        mock_ingest: None,
+        stream_id: str,
         write_item: RecordWrite,
     ) -> None:
-        httpx_mock.add_response(method="POST", url=re.compile(re.escape(records_base_url) + r"$"), status_code=202)
-        cognite_client.data_modeling.records.ingest("my-stream", write_item)
+        cognite_client.data_modeling.records.ingest(stream_id, write_item)
         requests = httpx_mock.get_requests()
         assert len(requests) == 1
         body = jsgz_load(requests[0].content)
@@ -129,13 +139,13 @@ class TestRecordsAPIIngest:
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
-        records_base_url: str,
+        ingest_url_pattern: re.Pattern,
+        stream_id: str,
     ) -> None:
-        url_pattern = re.compile(re.escape(records_base_url) + r"$")
-        httpx_mock.add_response(method="POST", url=url_pattern, status_code=202)
-        httpx_mock.add_response(method="POST", url=url_pattern, status_code=202)
+        httpx_mock.add_response(method="POST", url=ingest_url_pattern, status_code=202)
+        httpx_mock.add_response(method="POST", url=ingest_url_pattern, status_code=202)
         items = [RecordWrite(space="sp", external_id=f"r-{i}", sources=[]) for i in range(1001)]
-        cognite_client.data_modeling.records.ingest("my-stream", items)
+        cognite_client.data_modeling.records.ingest(stream_id, items)
         requests = httpx_mock.get_requests()
         assert len(requests) == 2
         assert len(jsgz_load(requests[0].content)["items"]) == 1000
