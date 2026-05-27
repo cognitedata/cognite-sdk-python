@@ -1,6 +1,11 @@
 [project]
 name = "cognite-sdk"
+<<<<<<< HEAD
 version = "8.6.0"
+=======
+version = "8.7.0"
+
+>>>>>>> master
 description = "Cognite Python SDK"
 readme = "README.md"
 authors = [

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import math
+import os
 import warnings
 from collections import defaultdict
 from collections.abc import AsyncIterator, Sequence
@@ -14,6 +15,7 @@ from typing_extensions import assert_never
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import (
+    _RUNNING_IN_BROWSER,
     DEFAULT_LIMIT_READ,
     FILE_DEFAULT_MULTIPART_SIZE,
     FILE_MAX_MULTIPART_COUNT,
@@ -34,7 +36,12 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
+from cognite.client.exceptions import (
+    CogniteAPIError,
+    CogniteAuthorizationError,
+    CogniteFileUploadError,
+    CogniteHTTPStatusError,
+)
 from cognite.client.utils._auxiliary import append_url_path, find_duplicates, unpack_items
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
@@ -503,7 +510,7 @@ class FilesAPI(APIClient):
         if not path.is_file():
             raise FileNotFoundError(path)
 
-        file_size = path.stat().st_size
+        file_size = self._get_file_size(path)
         part_size, num_parts = self.calculate_part_size_and_count(file_size)
         session = await self.multipart_upload_content_session(
             parts=num_parts, external_id=external_id, instance_id=instance_id
@@ -641,7 +648,7 @@ class FilesAPI(APIClient):
     async def _upload_file_from_path(
         self, file_metadata: FileMetadataWrite, path: Path, overwrite: bool
     ) -> FileMetadata:
-        file_size = path.stat().st_size
+        file_size = self._get_file_size(path)
         part_size, num_parts = self.calculate_part_size_and_count(file_size)
         session = await self.multipart_upload_session(
             parts=num_parts,
@@ -673,6 +680,17 @@ class FilesAPI(APIClient):
 
         async with session:
             await asyncio.gather(*(upload_part(i) for i in range(num_parts)))
+
+    @staticmethod
+    def _get_file_size(path: Path) -> int:
+        size = path.stat().st_size
+        # Pyodide's File System Access API sometimes lies: stat may report st_size=0 even when there's readable
+        # bytes on disk (that can be read normally...) Fall back to seek/tell, which reads the true size:
+        if _RUNNING_IN_BROWSER and size == 0:
+            with path.open("rb") as fh:
+                fh.seek(0, os.SEEK_END)
+                return fh.tell()
+        return size
 
     def calculate_part_size_and_count(self, file_size: int) -> tuple[int, int]:
         """Calculate part size and count for a multipart upload, for a given file size.
@@ -770,16 +788,17 @@ class FilesAPI(APIClient):
         if file_size is not None:
             headers["Content-Length"] = str(file_size)
 
-        upload_response = await self._request(
-            "PUT",
-            full_url=full_upload_url,
-            content=file_content,
-            headers=headers,
-            timeout=self._config.file_transfer_timeout,
-            semaphore=self._get_semaphore("upload"),
-        )
-        if not upload_response.is_success:
-            raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
+        try:
+            await self._request(
+                "PUT",
+                full_url=full_upload_url,
+                content=file_content,
+                headers=headers,
+                timeout=self._config.file_transfer_timeout,
+                semaphore=self._get_semaphore("upload"),
+            )
+        except CogniteHTTPStatusError as err:
+            raise CogniteFileUploadError(message=err.response.text, code=err.status_code) from None
         return file_metadata
 
     async def upload_bytes(
@@ -1061,16 +1080,17 @@ class FilesAPI(APIClient):
         if file_size is not None:
             headers["Content-Length"] = str(file_size)
 
-        upload_response = await self._request(
-            "PUT",
-            full_url=upload_url,
-            content=file_content,
-            headers=headers,
-            timeout=self._config.file_transfer_timeout,
-            semaphore=self._get_semaphore("upload"),
-        )
-        if not upload_response.is_success:
-            raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
+        try:
+            await self._request(
+                "PUT",
+                full_url=upload_url,
+                content=file_content,
+                headers=headers,
+                timeout=self._config.file_transfer_timeout,
+                semaphore=self._get_semaphore("upload"),
+            )
+        except CogniteHTTPStatusError as err:
+            raise CogniteFileUploadError(message=err.response.text, code=err.status_code) from None
 
     async def _complete_multipart_upload(self, session: FileMultipartUploadSession) -> None:
         """Complete a multipart upload. Once this returns the file can be downloaded.
