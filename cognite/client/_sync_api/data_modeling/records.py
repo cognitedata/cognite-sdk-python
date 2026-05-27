@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d79de505c1799cf6ccaa471a4cd6701b
+12a2a2c962cd217e613a9250ce393f4c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Literal
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes.data_modeling.records import RecordId
+from cognite.client.data_classes.data_modeling.records import RecordId, RecordWrite
 from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
@@ -59,3 +59,45 @@ class SyncRecordsAPI(SyncAPIClient):
                 items=items, stream_id=stream_id, ignore_unknown_ids=ignore_unknown_ids
             )
         )
+
+    def ingest(self, stream_id: str, items: RecordWrite | Sequence[RecordWrite]) -> None:
+        """
+        `Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_.
+
+        Creates new records. For immutable streams, duplicate records (identical
+        ``space``, ``externalId``, and all property values) are silently discarded.
+        For mutable streams, duplicate ``space + externalId`` within a single batch
+        returns a 422.
+
+        Args:
+            stream_id (str): External ID of the stream to ingest into.
+            items (RecordWrite | Sequence[RecordWrite]): One or more records to ingest.
+
+        Examples:
+
+            Ingest a single record:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.records import (
+                ...     RecordWrite,
+                ...     RecordSource,
+                ...     RecordSourceReference,
+                ... )
+                >>> client = CogniteClient()
+                >>> client.data_modeling.records.ingest(
+                ...     stream_id="my-stream",
+                ...     items=RecordWrite(
+                ...         space="my-space",
+                ...         external_id="rec-1",
+                ...         sources=[
+                ...             RecordSource(
+                ...                 source=RecordSourceReference(
+                ...                     space="my-space", external_id="my-container"
+                ...                 ),
+                ...                 properties={"temperature": 22.5},
+                ...             )
+                ...         ],
+                ...     ),
+                ... )
+        """
+        return run_sync(self.__async_client.data_modeling.records.ingest(stream_id=stream_id, items=items))

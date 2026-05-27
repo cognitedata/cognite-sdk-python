@@ -731,6 +731,7 @@ class APIClient(BasicAsyncAPIClient):
         input_resource_cls: type[CogniteResource] | None = None,
         api_subversion: str | None = None,
         override_semaphore: asyncio.BoundedSemaphore | None = None,
+        no_response: Literal[False] = False,
     ) -> T_CogniteResourceList: ...
 
     @overload
@@ -747,13 +748,15 @@ class APIClient(BasicAsyncAPIClient):
         input_resource_cls: type[CogniteResource] | None = None,
         api_subversion: str | None = None,
         override_semaphore: asyncio.BoundedSemaphore | None = None,
+        no_response: Literal[False] = False,
     ) -> T_WritableCogniteResource: ...
 
+    @overload
     async def _create_multiple(
         self,
         items: Sequence[SupportsAsWrite] | Sequence[dict[str, Any]] | SupportsAsWrite | dict[str, Any],
-        list_cls: type[T_CogniteResourceList],
-        resource_cls: type[T_WritableCogniteResource],
+        list_cls: None = None,
+        resource_cls: None = None,
         resource_path: str | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
@@ -762,7 +765,24 @@ class APIClient(BasicAsyncAPIClient):
         input_resource_cls: type[CogniteResource] | None = None,
         api_subversion: str | None = None,
         override_semaphore: asyncio.BoundedSemaphore | None = None,
-    ) -> T_CogniteResourceList | T_WritableCogniteResource:
+        no_response: Literal[True] = ...,
+    ) -> None: ...
+
+    async def _create_multiple(
+        self,
+        items: Sequence[SupportsAsWrite] | Sequence[dict[str, Any]] | SupportsAsWrite | dict[str, Any],
+        list_cls: type[T_CogniteResourceList] | None = None,
+        resource_cls: type[T_WritableCogniteResource] | None = None,
+        resource_path: str | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        extra_body_fields: dict[str, Any] | None = None,
+        limit: int | None = None,
+        input_resource_cls: type[CogniteResource] | None = None,
+        api_subversion: str | None = None,
+        override_semaphore: asyncio.BoundedSemaphore | None = None,
+        no_response: bool = False,
+    ) -> T_CogniteResourceList | T_WritableCogniteResource | None:
         resource_path = resource_path or self._RESOURCE_PATH
         input_resource_cls = input_resource_cls or resource_cls
         limit = limit or self._CREATE_LIMIT
@@ -787,6 +807,14 @@ class APIClient(BasicAsyncAPIClient):
             for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
         ]
         summary = await execute_async_tasks(tasks)
+
+        if no_response:
+            summary.raise_compound_exception_if_failed_tasks()
+            return None
+
+        assert list_cls is not None
+        assert resource_cls is not None
+        assert input_resource_cls is not None
 
         def task_unwrap_fn(task: AsyncSDKTask) -> Any:
             return task[1]["items"]
