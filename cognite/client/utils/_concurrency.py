@@ -223,37 +223,25 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
 
 
 class RecordsConcurrencyOperation(Enum):
-    INGEST = "ingest"
+    WRITE = "write"
 
 
-class RecordsConcurrencyConfig(ConcurrencyConfig):
+class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     """
-    Concurrency settings for the Records API.
-
-    The Records API uses a hierarchical budget where ingest (write + delete)
-    and query operations share separate budgets.
+    Global concurrency settings for the Records API. Named "global" to distinguish from
+    future per-endpoint rate limits that may be added later.
 
     Args:
         concurrency_settings (ConcurrencySettings): Reference to the parent settings object.
-        ingest (int): Maximum concurrent ingest requests (write, delete).
+        write (int): Maximum concurrent write requests (ingest, delete).
     """
 
     def __init__(
         self,
         concurrency_settings: ConcurrencySettings,
-        ingest: int,
+        write: int,
     ) -> None:
-        super().__init__(concurrency_settings, "records", read=0, write=0, delete=0)
-        self._ingest = ingest
-
-    @property
-    def ingest(self) -> int:
-        return self._ingest
-
-    @ingest.setter
-    def ingest(self, value: int) -> None:
-        self._check_frozen("ingest")
-        self._ingest = value
+        super().__init__(concurrency_settings, "records", read=0, write=write, delete=0)
 
     def _semaphore_factory(self, operation: RecordsConcurrencyOperation, project: str) -> asyncio.BoundedSemaphore:
         key = (operation.value, project, asyncio.get_running_loop())
@@ -264,15 +252,15 @@ class RecordsConcurrencyConfig(ConcurrencyConfig):
 
         global_config.concurrency_settings._freeze()
         match operation:
-            case RecordsConcurrencyOperation.INGEST:
-                sem = asyncio.BoundedSemaphore(self._ingest)
+            case RecordsConcurrencyOperation.WRITE:
+                sem = asyncio.BoundedSemaphore(self._write)
             case _:
                 assert_never(operation)
         self._semaphore_cache[key] = sem
         return sem
 
     def __repr__(self) -> str:
-        return f"Concurrency[records](ingest={self._ingest})"
+        return f"Concurrency[records](write={self._write})"
 
 
 class FileConcurrencyConfig(ConcurrencyConfig):
@@ -437,7 +425,7 @@ class ConcurrencySettings:
             write_schema=1,
         )
         self._files = FileConcurrencyConfig(self, read=4, write=2, upload=5, download=5, delete=2, open_files=15)
-        self._records = RecordsConcurrencyConfig(self, ingest=20)
+        self._records = RecordsGlobalConcurrencyConfig(self, write=20)
 
     @functools.cached_property
     def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:
@@ -484,7 +472,7 @@ class ConcurrencySettings:
         return self._files
 
     @property
-    def records(self) -> RecordsConcurrencyConfig:
+    def records(self) -> RecordsGlobalConcurrencyConfig:
         return self._records
 
     def __repr__(self) -> str:

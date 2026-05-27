@@ -1,6 +1,6 @@
 """
 ===============================================================================
-de6c6cd3d4d64588be6085f3c4e6dbb5
+d79de505c1799cf6ccaa471a4cd6701b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -37,7 +37,7 @@ class SyncRecordsAPI(SyncAPIClient):
         Args:
             items (RecordId | Sequence[RecordId]): Records to delete.
             stream_id (str): External ID of the stream to delete from.
-            ignore_unknown_ids (Literal[True]): currently only True is supported
+            ignore_unknown_ids (Literal[True]): Currently only True is supported
 
         Examples:
 

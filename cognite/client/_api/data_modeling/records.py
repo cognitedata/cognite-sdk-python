@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.records import RecordId, RecordIdSequence
@@ -22,11 +22,16 @@ class RecordsAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Records"
         )
 
-    def _get_semaphore(self, operation: RecordsConcurrencyOperation) -> asyncio.BoundedSemaphore:
+    _OPERATION_TO_RATE_LIMIT: ClassVar[dict[str, RecordsConcurrencyOperation]] = {
+        "write": RecordsConcurrencyOperation.WRITE,
+        "delete": RecordsConcurrencyOperation.WRITE,
+    }
+
+    def _get_semaphore(self, operation: Literal["write", "delete"]) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
 
         return global_config.concurrency_settings.records._semaphore_factory(
-            operation, project=self._cognite_client.config.project
+            self._OPERATION_TO_RATE_LIMIT[operation], project=self._cognite_client.config.project
         )
 
     def _records_url(self, stream_id: str, suffix: str = "") -> str:
@@ -69,5 +74,4 @@ class RecordsAPI(APIClient):
             identifiers=RecordIdSequence.load(items),
             wrap_ids=True,
             resource_path=self._records_url(stream_id),
-            override_semaphore=self._get_semaphore(RecordsConcurrencyOperation.INGEST),
         )
