@@ -3977,8 +3977,7 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more_it
 type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 
 [extras]
-all = ["PyYAML", "geopandas", "numpy", "pandas", "pip", "shapely", "sympy"]
-functions = ["pip"]
+all = ["PyYAML", "geopandas", "numpy", "pandas", "shapely", "sympy"]
 geo = ["geopandas", "shapely"]
 numpy = ["numpy", "numpy"]
 pandas = ["pandas"]
@@ -3989,4 +3988,4 @@ yaml = ["PyYAML"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">= 3.10, <4"
-content-hash = "125aaea1b64cfe377fc8fd3d3bb1de678a1c2171f91c467e63c47e6f1b8b51d3"
+content-hash = "ff6613a429123b84d7fe069cdf71482814e541c322ac0675a4499b257e679bfd"
