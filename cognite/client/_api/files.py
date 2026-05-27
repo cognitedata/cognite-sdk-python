@@ -36,7 +36,12 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
+from cognite.client.exceptions import (
+    CogniteAPIError,
+    CogniteAuthorizationError,
+    CogniteFileUploadError,
+    CogniteHTTPStatusError,
+)
 from cognite.client.utils._auxiliary import append_url_path, find_duplicates, unpack_items
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
@@ -783,16 +788,17 @@ class FilesAPI(APIClient):
         if file_size is not None:
             headers["Content-Length"] = str(file_size)
 
-        upload_response = await self._request(
-            "PUT",
-            full_url=full_upload_url,
-            content=file_content,
-            headers=headers,
-            timeout=self._config.file_transfer_timeout,
-            semaphore=self._get_semaphore("upload"),
-        )
-        if not upload_response.is_success:
-            raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
+        try:
+            await self._request(
+                "PUT",
+                full_url=full_upload_url,
+                content=file_content,
+                headers=headers,
+                timeout=self._config.file_transfer_timeout,
+                semaphore=self._get_semaphore("upload"),
+            )
+        except CogniteHTTPStatusError as err:
+            raise CogniteFileUploadError(message=err.response.text, code=err.status_code) from None
         return file_metadata
 
     async def upload_bytes(
@@ -1074,16 +1080,17 @@ class FilesAPI(APIClient):
         if file_size is not None:
             headers["Content-Length"] = str(file_size)
 
-        upload_response = await self._request(
-            "PUT",
-            full_url=upload_url,
-            content=file_content,
-            headers=headers,
-            timeout=self._config.file_transfer_timeout,
-            semaphore=self._get_semaphore("upload"),
-        )
-        if not upload_response.is_success:
-            raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
+        try:
+            await self._request(
+                "PUT",
+                full_url=upload_url,
+                content=file_content,
+                headers=headers,
+                timeout=self._config.file_transfer_timeout,
+                semaphore=self._get_semaphore("upload"),
+            )
+        except CogniteHTTPStatusError as err:
+            raise CogniteFileUploadError(message=err.response.text, code=err.status_code) from None
 
     async def _complete_multipart_upload(self, session: FileMultipartUploadSession) -> None:
         """Complete a multipart upload. Once this returns the file can be downloaded.
