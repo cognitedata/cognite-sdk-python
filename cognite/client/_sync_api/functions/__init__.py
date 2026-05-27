@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0847b9549157d6191ae7388090e7a5b3
+5f85a26917ce8cae2c348f622477225c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -218,7 +218,7 @@ class SyncFunctionsAPI(SyncAPIClient):
             .. note:
                 Only the source code of the handle function itself is deployed. Non-builtin type
                 annotations (e.g. ``client: CogniteClient``) will cause a ``NameError`` at deploy
-                time. Either omit the annotation or use string form (e.g. ``"CogniteClient | None"``).
+                time. Either omit the annotation or use string form (e.g. ``client: "CogniteClient"``).
         """
         return run_sync(
             self.__async_client.functions.create(

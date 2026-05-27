@@ -48,7 +48,7 @@ class FunctionHandle(Protocol):
         .. code-block:: python
 
             def handle(
-                client: "CogniteClient | None" = None,
+                client: "CogniteClient",
                 data: dict[str, object] | None = None,
             ) -> object:
                 # Do something with the data
@@ -57,7 +57,7 @@ class FunctionHandle(Protocol):
     Note:
         Only the source code of the handle function itself is deployed. Non-builtin type
         annotations (e.g. ``CogniteClient``) will cause a ``NameError`` at deploy time.
-        Either omit the annotation or use string form (e.g. ``"CogniteClient | None"``).
+        Either omit the annotation or use string form (e.g. ``client: "CogniteClient"``).
 
     Returns:
         object: Return value of the function. Any JSON serializable object is allowed.
@@ -67,8 +67,6 @@ class FunctionHandle(Protocol):
         self,
         *,
         # TODO(haakonvt): change to CogniteClient | AsyncCogniteClient when/if functions start supporting it
-        # Note: in user-defined handle functions, only the function source is deployed, so
-        # CogniteClient must be a string annotation or omitted (see FunctionHandle docstring).
         client: CogniteClient | None = None,
         data: dict[str, object] | None = None,
         secrets: dict[str, str] | None = None,

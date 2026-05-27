@@ -248,7 +248,7 @@ class FunctionsAPI(APIClient):
             .. note:
                 Only the source code of the handle function itself is deployed. Non-builtin type
                 annotations (e.g. ``client: CogniteClient``) will cause a ``NameError`` at deploy
-                time. Either omit the annotation or use string form (e.g. ``"CogniteClient | None"``).
+                time. Either omit the annotation or use string form (e.g. ``client: "CogniteClient"``).
         """
         if isinstance(name, FunctionWrite):
             function_input = name
