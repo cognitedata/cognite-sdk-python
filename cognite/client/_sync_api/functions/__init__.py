@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9a58504453f212b9189304aa9ac90385
+cae4f37f697c159b6c87429edc9005ee
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -214,6 +214,11 @@ class SyncFunctionsAPI(SyncAPIClient):
             .. note:
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring.
                 The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
+
+            .. note:
+                Only the source code of the handle function itself is deployed. Non-builtin type
+                annotations (e.g. ``client: CogniteClient``) will cause a ``NameError`` at deploy
+                time. Either omit the annotation or use string form (e.g. ``client: "CogniteClient"``).
         """
         return run_sync(
             self.__async_client.functions.create(
