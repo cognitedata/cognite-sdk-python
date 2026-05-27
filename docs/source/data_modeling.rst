@@ -330,6 +330,8 @@ Debugging Data Classes
     :members:
     :show-inheritance:
 
+.. currentmodule:: cognite.client
+
 Records
 -------
 .. autosummary::
