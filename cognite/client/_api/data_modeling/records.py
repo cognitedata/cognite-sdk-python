@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, ClassVar, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.records import RecordId, RecordIdSequence, RecordWrite
-from cognite.client.utils._auxiliary import split_into_chunks
 from cognite.client.utils._concurrency import RecordsConcurrencyOperation
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._url import interpolate_and_url_encode
@@ -118,10 +117,8 @@ class RecordsAPI(APIClient):
         """
         self._warning.warn()
         item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
-        semaphore = self._get_semaphore("write")
-        for chunk in split_into_chunks(item_list, self._CREATE_LIMIT):
-            await self._post(
-                url_path=self._records_url(stream_id),
-                json={"items": [r.dump() for r in chunk]},
-                semaphore=semaphore,
-            )
+        await self._create_multiple(
+            items=item_list,
+            resource_path=self._records_url(stream_id),
+            no_response=True,
+        )
