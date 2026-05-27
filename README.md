@@ -62,9 +62,8 @@ The available extras (along with the libraries they include) are:
 - pandas `[pandas]`
 - geo `[geopandas, shapely]`
 - sympy `[sympy]`
-- functions `[pip]`
 - yaml `[PyYAML]`
-- all `[numpy, pandas, geopandas, shapely, sympy, pip, PyYAML]`
+- all `[numpy, pandas, geopandas, shapely, sympy, PyYAML]`
 
 To include optional dependencies:
 

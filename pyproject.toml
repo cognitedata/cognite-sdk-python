@@ -1,11 +1,7 @@
 [project]
 name = "cognite-sdk"
-<<<<<<< HEAD
-version = "8.6.0"
-=======
 version = "8.7.0"
 
->>>>>>> master
 description = "Cognite Python SDK"
 readme = "README.md"
 authors = [
@@ -40,7 +36,6 @@ geo = [
     "shapely >=1.7.0"
 ]
 yaml = ["PyYAML (>=6, <7)"]
-functions = ["pip >=20"]
 pyodide = [
     "tzdata >=2024.1",
     "anyio"
@@ -52,7 +47,6 @@ all = [
     "geopandas >=0.14",
     "shapely >=1.7.0",
     "PyYAML (>=6, <7)",
-    "pip >=20",
  ]
 
 [dependency-groups]
