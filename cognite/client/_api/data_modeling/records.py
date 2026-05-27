@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import TYPE_CHECKING, Literal
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.data_modeling.records import RecordId, RecordIdSequence
+from cognite.client.data_classes.data_modeling.records import RecordId, RecordIdSequence, RecordWrite
+from cognite.client.utils._auxiliary import split_into_chunks
 from cognite.client.utils._concurrency import RecordsConcurrencyOperation
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._url import interpolate_and_url_encode
@@ -22,16 +23,11 @@ class RecordsAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Records"
         )
 
-    _OPERATION_TO_RATE_LIMIT: ClassVar[dict[str, RecordsConcurrencyOperation]] = {
-        "write": RecordsConcurrencyOperation.WRITE,
-        "delete": RecordsConcurrencyOperation.WRITE,
-    }
-
-    def _get_semaphore(self, operation: Literal["write", "delete"]) -> asyncio.BoundedSemaphore:
+    def _get_semaphore(self, operation: RecordsConcurrencyOperation) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
 
         return global_config.concurrency_settings.records._semaphore_factory(
-            self._OPERATION_TO_RATE_LIMIT[operation], project=self._cognite_client.config.project
+            operation, project=self._cognite_client.config.project
         )
 
     def _records_url(self, stream_id: str, suffix: str = "") -> str:
@@ -52,7 +48,7 @@ class RecordsAPI(APIClient):
         Args:
             items (RecordId | Sequence[RecordId]): Records to delete.
             stream_id (str): External ID of the stream to delete from.
-            ignore_unknown_ids (Literal[True]): Currently only True is supported
+            ignore_unknown_ids (Literal[True]): currently only True is supported
 
         Examples:
 
@@ -74,4 +70,54 @@ class RecordsAPI(APIClient):
             identifiers=RecordIdSequence.load(items),
             wrap_ids=True,
             resource_path=self._records_url(stream_id),
+            override_semaphore=self._get_semaphore(RecordsConcurrencyOperation.INGEST),
         )
+
+    async def ingest(self, stream_id: str, items: RecordWrite | Sequence[RecordWrite]) -> None:
+        """`Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_.
+
+        Creates new records. For immutable streams, duplicate records (identical
+        ``space``, ``externalId``, and all property values) are silently discarded.
+        For mutable streams, duplicate ``space + externalId`` within a single batch
+        returns a 422.
+
+        Args:
+            stream_id (str): External ID of the stream to ingest into.
+            items (RecordWrite | Sequence[RecordWrite]): One or more records to ingest.
+
+        Examples:
+
+            Ingest a single record:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.records import (
+                ...     RecordWrite,
+                ...     RecordSource,
+                ...     RecordSourceReference,
+                ... )
+                >>> client = CogniteClient()
+                >>> client.data_modeling.records.ingest(
+                ...     stream_id="my-stream",
+                ...     items=RecordWrite(
+                ...         space="my-space",
+                ...         external_id="rec-1",
+                ...         sources=[
+                ...             RecordSource(
+                ...                 source=RecordSourceReference(
+                ...                     space="my-space", external_id="my-container"
+                ...                 ),
+                ...                 properties={"temperature": 22.5},
+                ...             )
+                ...         ],
+                ...     ),
+                ... )
+        """
+        self._warning.warn()
+        item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
+        semaphore = self._get_semaphore(RecordsConcurrencyOperation.INGEST)
+        for chunk in split_into_chunks(item_list, self._CREATE_LIMIT):
+            await self._post(
+                url_path=self._records_url(stream_id),
+                json={"items": [r.dump() for r in chunk]},
+                semaphore=semaphore,
+            )
