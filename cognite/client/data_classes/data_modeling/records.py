@@ -94,28 +94,6 @@ class RecordWrite(WriteableCogniteResource["RecordWrite"]):
         space (str): Space the record belongs to.
         external_id (str): External ID of the record (1-256 chars, no null bytes).
         sources (list[RecordSource]): Container property values to write (1-100 sources).
-
-    Examples:
-
-        Build a record write object:
-
-            >>> from cognite.client.data_classes.data_modeling.records import (
-            ...     RecordWrite,
-            ...     RecordSource,
-            ...     RecordSourceReference,
-            ... )
-            >>> rec = RecordWrite(
-            ...     space="my-space",
-            ...     external_id="rec-1",
-            ...     sources=[
-            ...         RecordSource(
-            ...             source=RecordSourceReference(
-            ...                 space="my-space", external_id="my-container"
-            ...             ),
-            ...             properties={"temperature": 22.5, "location": "north"},
-            ...         )
-            ...     ],
-            ... )
     """
 
     def __init__(self, space: str, external_id: str, sources: list[RecordSource]) -> None:
