@@ -1403,14 +1403,14 @@ class FilesAPI(APIClient):
         await self._download_file_to_path(download_link, path)
 
     async def download_bytes(
-        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | tuple[str, str] | None = None
     ) -> bytes:
         """Download a file as bytes.
 
         Args:
             id (int | None): Id of the file
             external_id (str | None): External id of the file
-            instance_id (NodeId | None): Instance id of the file
+            instance_id (NodeId | tuple[str, str] | None): Instance id of the file
 
         Examples:
 

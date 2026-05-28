@@ -1,6 +1,6 @@
 """
 ===============================================================================
-67a51cff031fbbf354cec513b25cbdd3
+5240586b60487a967e2b71808698fbb5
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -946,7 +946,7 @@ class SyncFilesAPI(SyncAPIClient):
         )
 
     def download_bytes(
-        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | tuple[str, str] | None = None
     ) -> bytes:
         """
         Download a file as bytes.
@@ -954,7 +954,7 @@ class SyncFilesAPI(SyncAPIClient):
         Args:
             id (int | None): Id of the file
             external_id (str | None): External id of the file
-            instance_id (NodeId | None): Instance id of the file
+            instance_id (NodeId | tuple[str, str] | None): Instance id of the file
 
         Examples:
 
