@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9dd658eb6fd3da1ef600a4082a50ebd5
+05e2d9cb042ef78f99feef3c0077f6d3
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -35,13 +35,16 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
         self.__async_client = async_client
 
     def retrieve_download_urls(
-        self, nodes: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]], *, extended_expiration: bool = False
+        self,
+        node_ids: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
+        *,
+        extended_expiration: bool = False,
     ) -> dict[NodeId, str]:
         """
         `Get download URLs for one or more files by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
 
         Args:
-            nodes (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
+            node_ids (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
             extended_expiration (bool): Extend expiration time of download URL to 1 hour. Defaults to False.
 
         Returns:
@@ -66,14 +69,14 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.files.retrieve_download_urls(
-                nodes=nodes, extended_expiration=extended_expiration
+                node_ids=node_ids, extended_expiration=extended_expiration
             )
         )
 
     def download(
         self,
         directory: Path,
-        nodes: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
+        node_ids: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
         keep_directory_structure: bool = False,
         resolve_duplicate_file_names: bool = False,
     ) -> None:
@@ -84,7 +87,7 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
 
         Args:
             directory (Path): Directory to download the file(s) to.
-            nodes (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
+            node_ids (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
             keep_directory_structure (bool): Whether to keep the directory hierarchy from CDF, creating subdirectories as needed.
             resolve_duplicate_file_names (bool): Whether to resolve duplicate file names by appending a number.
 
@@ -98,13 +101,13 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> client.data_modeling.files.download(
                 ...     directory=Path("my_directory"),
-                ...     nodes=[NodeId("my-space", "file-1"), NodeId("my-space", "file-2")],
+                ...     node_ids=[NodeId("my-space", "file-1"), NodeId("my-space", "file-2")],
                 ... )
         """
         return run_sync(
             self.__async_client.data_modeling.files.download(
                 directory=directory,
-                nodes=nodes,
+                node_ids=node_ids,
                 keep_directory_structure=keep_directory_structure,
                 resolve_duplicate_file_names=resolve_duplicate_file_names,
             )

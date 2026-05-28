@@ -47,14 +47,14 @@ class DataModelingFilesAPI(APIClient):
 
     async def retrieve_download_urls(
         self,
-        nodes: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
+        node_ids: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
         *,
         extended_expiration: bool = False,
     ) -> dict[NodeId, str]:
         """`Get download URLs for one or more files by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
 
         Args:
-            nodes (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
+            node_ids (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
             extended_expiration (bool): Extend expiration time of download URL to 1 hour. Defaults to False.
 
         Returns:
@@ -78,14 +78,14 @@ class DataModelingFilesAPI(APIClient):
                 ... )
         """
         return await self._files_api.retrieve_download_urls(
-            instance_id=nodes,
+            instance_id=node_ids,
             extended_expiration=extended_expiration,
         )
 
     async def download(
         self,
         directory: Path,
-        nodes: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
+        node_ids: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
         keep_directory_structure: bool = False,
         resolve_duplicate_file_names: bool = False,
     ) -> None:
@@ -95,7 +95,7 @@ class DataModelingFilesAPI(APIClient):
 
         Args:
             directory (Path): Directory to download the file(s) to.
-            nodes (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
+            node_ids (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
             keep_directory_structure (bool): Whether to keep the directory hierarchy from CDF, creating subdirectories as needed.
             resolve_duplicate_file_names (bool): Whether to resolve duplicate file names by appending a number.
 
@@ -109,12 +109,12 @@ class DataModelingFilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.data_modeling.files.download(
                 ...     directory=Path("my_directory"),
-                ...     nodes=[NodeId("my-space", "file-1"), NodeId("my-space", "file-2")],
+                ...     node_ids=[NodeId("my-space", "file-1"), NodeId("my-space", "file-2")],
                 ... )
         """
         await self._files_api.download(
             directory=directory,
-            instance_id=nodes,
+            instance_id=node_ids,
             keep_directory_structure=keep_directory_structure,
             resolve_duplicate_file_names=resolve_duplicate_file_names,
         )
