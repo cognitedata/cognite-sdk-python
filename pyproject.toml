@@ -21,7 +21,7 @@ dependencies = [
     "pip >=20", # make optional once poetry doesn't auto-remove it on "simple install"
     "typing_extensions >=4",
     # Windows does not have a ANSI database and need tzdata...:
-    "tzdata >=2024.1; sys_platform == 'win32'"
+    "tzdata >=2024.1; sys_platform == 'win32' or sys_platform=='emscripten'"
 ]
 
 [project.optional-dependencies]
@@ -36,12 +36,10 @@ geo = [
     "shapely >=1.7.0"
 ]
 yaml = ["PyYAML (>=6, <7)"]
-pyodide = [
-    "tzdata >=2024.1",
-    "anyio"
-]  # keep pyodide related dependencies outside of 'all'
+pyodide = ["anyio"]  # keep pyodide related dependencies outside of 'all'
 all = [
-    "numpy >=1.25",
+    "numpy (>=1.25, <2.3); python_version == '3.10'",
+    "numpy >=1.25; python_version > '3.10'",
     "sympy",
     "pandas >=2.1",
     "geopandas >=0.14",
