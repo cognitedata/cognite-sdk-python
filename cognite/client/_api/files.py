@@ -1214,7 +1214,7 @@ class FilesAPI(APIClient):
         directory: str | Path,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
-        instance_id: NodeId | Sequence[NodeId] | None = None,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None = None,
         keep_directory_structure: bool = False,
         resolve_duplicate_file_names: bool = False,
     ) -> None:
@@ -1235,9 +1235,8 @@ class FilesAPI(APIClient):
             directory (str | Path): Directory to download the file(s) to.
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | SequenceNotStr[str] | None): External ID or list of external ids.
-            instance_id (NodeId | Sequence[NodeId] | None): Instance ID or list of instance ids.
-            keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF,
-                creating subdirectories as needed below the given directory.
+            instance_id (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None): Instance ID or list of instance ids.
+            keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF, creating subdirectories as needed below the given directory.
             resolve_duplicate_file_names (bool): Whether or not to resolve duplicate file names by appending a number on duplicate file names
 
         Examples:
