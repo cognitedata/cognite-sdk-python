@@ -119,8 +119,25 @@ class DataModelingFilesAPI(APIClient):
             resolve_duplicate_file_names=resolve_duplicate_file_names,
         )
 
-    async def download_to_path(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+    async def download_to_path(self, path: Path, node_id: NodeId | tuple[str, str]) -> None:
+        """Download a file to a specific path by instance ID.
+
+        Args:
+            path (Path): Download to this path.
+            node_id (NodeId | tuple[str, str]): Instance ID of the file to download.
+
+        Examples:
+
+            Download a file by instance ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> client.data_modeling.files.download_to_path(
+                ...     Path("~/mydir/my_file.txt"), NodeId("my-space", "my-file")
+                ... )
+        """
+        await self._files_api.download_to_path(path=path, instance_id=node_id)
 
     async def download_bytes(self, *args: Any, **kwargs: Any) -> NoReturn:
         raise NotImplementedError("This method is not implemented yet!")

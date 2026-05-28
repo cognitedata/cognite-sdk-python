@@ -1,6 +1,6 @@
 """
 ===============================================================================
-bd88a4609cabbb090ea25a3a4a194aa5
+269c234ad6e308c89164f51e0213a3cd
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -109,6 +109,27 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
                 resolve_duplicate_file_names=resolve_duplicate_file_names,
             )
         )
+
+    def download_to_path(self, path: Path, node_id: NodeId | tuple[str, str]) -> None:
+        """
+        Download a file to a specific path by instance ID.
+
+        Args:
+            path (Path): Download to this path.
+            node_id (NodeId | tuple[str, str]): Instance ID of the file to download.
+
+        Examples:
+
+            Download a file by instance ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> client.data_modeling.files.download_to_path(
+                ...     Path("~/mydir/my_file.txt"), NodeId("my-space", "my-file")
+                ... )
+        """
+        return run_sync(self.__async_client.data_modeling.files.download_to_path(path=path, node_id=node_id))
 
     @overload
     def retrieve(
