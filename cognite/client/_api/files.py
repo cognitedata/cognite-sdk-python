@@ -1372,7 +1372,11 @@ class FilesAPI(APIClient):
                     file.write(chunk)
 
     async def download_to_path(
-        self, path: Path | str, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+        self,
+        path: Path | str,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | tuple[str, str] | None = None,
     ) -> None:
         """Download a file to a specific target.
 
@@ -1380,7 +1384,7 @@ class FilesAPI(APIClient):
             path (Path | str): Download to this path.
             id (int | None): Id of of the file to download.
             external_id (str | None): External id of the file to download.
-            instance_id (NodeId | None): Instance id of the file to download.
+            instance_id (NodeId | tuple[str, str] | None): Instance id of the file to download.
 
         Examples:
 

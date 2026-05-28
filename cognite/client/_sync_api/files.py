@@ -1,6 +1,6 @@
 """
 ===============================================================================
-b8c2e68b2d66bebbbbe7f031453a8aa4
+67a51cff031fbbf354cec513b25cbdd3
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -916,7 +916,11 @@ class SyncFilesAPI(SyncAPIClient):
         )
 
     def download_to_path(
-        self, path: Path | str, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+        self,
+        path: Path | str,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | tuple[str, str] | None = None,
     ) -> None:
         """
         Download a file to a specific target.
@@ -925,7 +929,7 @@ class SyncFilesAPI(SyncAPIClient):
             path (Path | str): Download to this path.
             id (int | None): Id of of the file to download.
             external_id (str | None): External id of the file to download.
-            instance_id (NodeId | None): Instance id of the file to download.
+            instance_id (NodeId | tuple[str, str] | None): Instance id of the file to download.
 
         Examples:
 
