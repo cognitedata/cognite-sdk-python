@@ -3981,11 +3981,10 @@ all = ["PyYAML", "geopandas", "numpy", "numpy", "pandas", "shapely", "sympy"]
 geo = ["geopandas", "shapely"]
 numpy = ["numpy", "numpy"]
 pandas = ["pandas"]
-pyodide = ["anyio"]
 sympy = ["sympy"]
 yaml = ["PyYAML"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">= 3.10, <4"
-content-hash = "a7afe606aadaed2c11e70916ef8d8cec41df499adf80787968a3b4d03e458926"
+content-hash = "079703a7aa8f99364d128e33435771b6437c266262633cd5f6184cdb170ab72c"

@@ -36,7 +36,6 @@ geo = [
     "shapely >=1.7.0"
 ]
 yaml = ["PyYAML (>=6, <7)"]
-pyodide = ["anyio"]  # keep pyodide related dependencies outside of 'all'
 all = [
     "numpy (>=1.25, <2.3); python_version == '3.10'",
     "numpy >=1.25; python_version > '3.10'",
