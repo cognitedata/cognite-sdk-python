@@ -139,8 +139,25 @@ class DataModelingFilesAPI(APIClient):
         """
         await self._files_api.download_to_path(path=path, instance_id=node_id)
 
-    async def download_bytes(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+    async def download_bytes(self, node_id: NodeId | tuple[str, str]) -> bytes:
+        """Download a file as bytes by instance ID.
+
+        Args:
+            node_id (NodeId | tuple[str, str]): Instance ID of the file.
+
+        Returns:
+            bytes: The file content.
+
+        Examples:
+
+            Download a file's content into memory by instance ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> content = client.data_modeling.files.download_bytes(NodeId("my-space", "my-file"))
+        """
+        return await self._files_api.download_bytes(instance_id=node_id)
 
     async def upload(self, *args: Any, **kwargs: Any) -> NoReturn:
         raise NotImplementedError("This method is not implemented yet!")

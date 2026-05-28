@@ -1,6 +1,6 @@
 """
 ===============================================================================
-269c234ad6e308c89164f51e0213a3cd
+9dd658eb6fd3da1ef600a4082a50ebd5
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -130,6 +130,27 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
                 ... )
         """
         return run_sync(self.__async_client.data_modeling.files.download_to_path(path=path, node_id=node_id))
+
+    def download_bytes(self, node_id: NodeId | tuple[str, str]) -> bytes:
+        """
+        Download a file as bytes by instance ID.
+
+        Args:
+            node_id (NodeId | tuple[str, str]): Instance ID of the file.
+
+        Returns:
+            bytes: The file content.
+
+        Examples:
+
+            Download a file's content into memory by instance ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> content = client.data_modeling.files.download_bytes(NodeId("my-space", "my-file"))
+        """
+        return run_sync(self.__async_client.data_modeling.files.download_bytes(node_id=node_id))
 
     @overload
     def retrieve(
