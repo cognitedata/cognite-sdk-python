@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from abc import ABC
 from collections import UserDict
-from collections.abc import Mapping, MutableMapping, Sequence
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
@@ -85,6 +86,9 @@ class SourceSelector(CogniteResource):
 class SelectBase(CogniteResource, ABC):
     sources: list[SourceSelector] = field(default_factory=list)
 
+    def _iter_sorts(self) -> Iterator[InstanceSort]:
+        yield from ()
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.sources:
@@ -133,6 +137,9 @@ class Select(SelectBase):
     sort: list[InstanceSort] = field(default_factory=list)
     limit: int | None = None
 
+    def _iter_sorts(self) -> Iterator[InstanceSort]:
+        yield from self.sort
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.sort:
@@ -178,6 +185,20 @@ class QueryBase(CogniteResource, ABC, Generic[_T_ResultSetExpression, _T_Select]
             else EdgeListWithCursor
             for k, v in self.with_.items()
         }
+
+    def _iter_sorts(self) -> Iterator[InstanceSort]:
+        for expr in self.with_.values():
+            yield from expr._iter_sorts()
+        for sel in self.select.values():
+            yield from sel._iter_sorts()
+
+    def _get_query_with_defaults_applied(self) -> Self:
+        """TODO: We could verify (or just warn), when Query and Sync-versions are mixed or used in the wrong setting."""
+        # We don't want to mutate the user's original query, so we make a deepcopy and apply defaults to that:
+        query = deepcopy(self)
+        for sort in query._iter_sorts():
+            sort._apply_defaults_or_maybe_warn()
+        return query
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
@@ -281,6 +302,9 @@ class ResultSetExpressionBase(CogniteResource, ABC):
     def _load_sort(resource: dict[str, Any], name: str) -> list[InstanceSort]:
         return [InstanceSort.load(sort) for sort in resource.get(name, [])]
 
+    def _iter_sorts(self) -> Iterator[InstanceSort]:
+        yield from ()
+
     @staticmethod
     def _init_through(through: list[str] | tuple[str, str, str] | PropertyId | None) -> PropertyId | None:
         def error() -> Never:
@@ -335,6 +359,9 @@ class NodeOrEdgeResultSetExpression(ResultSetExpression, ABC):
         if not isinstance(other, NodeOrEdgeResultSetExpression):
             return NotImplemented
         return type(self) is type(other) and self.dump() == other.dump()
+
+    def _iter_sorts(self) -> Iterator[InstanceSort]:
+        yield from self.sort
 
 
 @dataclass(eq=False)  # Prevents @dataclass from generating its own __eq__, so the parent's is used
@@ -429,6 +456,10 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
     limit_each: int | None = None
     post_sort: list[InstanceSort] = field(default_factory=list)
 
+    def _iter_sorts(self) -> Iterator[InstanceSort]:
+        yield from self.sort
+        yield from self.post_sort
+
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         query_edge = resource["edges"]
@@ -493,6 +524,9 @@ class ResultSetExpressionSync(ResultSetExpressionBase, ABC):
         if not isinstance(other, ResultSetExpressionSync):
             return NotImplemented
         return type(self) is type(other) and self.dump() == other.dump()
+
+    def _iter_sorts(self) -> Iterator[InstanceSort]:
+        yield from self.backfill_sort
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> ResultSetExpressionSync:

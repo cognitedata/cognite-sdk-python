@@ -5,6 +5,7 @@ import inspect
 import logging
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Sequence
+from copy import copy
 from datetime import datetime, timedelta, timezone
 from typing import (
     TYPE_CHECKING,
@@ -894,6 +895,7 @@ class InstancesAPI(APIClient):
                 >>> subscription_context.cancel()
 
         """
+        query = query._get_query_with_defaults_applied()
         subscription_context = SubscriptionContext()
 
         async def _poll_loop() -> None:
@@ -968,19 +970,19 @@ class InstancesAPI(APIClient):
                     f"Received in `sources` argument for views: {with_properties}."
                 )
         if sort:
-            if isinstance(sort, (InstanceSort, dict)):
-                other_params["sort"] = [cls._dump_instance_sort(sort)]
-            else:
-                other_params["sort"] = [cls._dump_instance_sort(s) for s in sort]
+            sorts_seq = [sort] if isinstance(sort, (InstanceSort, dict)) else list(sort)
+            result = []
+            for s in sorts_seq:
+                if isinstance(s, InstanceSort):
+                    s = copy(s)._apply_defaults_or_maybe_warn().dump(camel_case=True)
+                result.append(s)
+            other_params["sort"] = result
+
         if instance_type:
             other_params["instanceType"] = instance_type
         if debug:
             other_params["debug"] = debug.dump()
         return other_params
-
-    @staticmethod
-    def _dump_instance_sort(sort: InstanceSort | dict) -> dict:
-        return sort.dump(camel_case=True) if isinstance(sort, InstanceSort) else sort
 
     async def apply(
         self,
@@ -1304,11 +1306,14 @@ class InstancesAPI(APIClient):
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
         if sort:
             sorts = sort if isinstance(sort, Sequence) else [sort]
-            for sort_spec in sorts:
-                nulls_first = sort_spec.get("nullsFirst") if isinstance(sort_spec, dict) else sort_spec.nulls_first
-                if nulls_first is not None:
+            result = []
+            for s in sorts:
+                if isinstance(s, InstanceSort):
+                    s = s.dump(camel_case=True)
+                if s.get("nullsFirst") is not None:
                     raise ValueError("nulls_first argument is not supported when sorting on instance search")
-            body["sort"] = [self._dump_instance_sort(s) for s in sorts]
+                result.append(s)
+            body["sort"] = result
 
         semaphore = self._get_semaphore("search")
         res = await self._post(url_path=self._RESOURCE_PATH + "/search", json=body, semaphore=semaphore)
@@ -1758,6 +1763,7 @@ class InstancesAPI(APIClient):
         include_typing: bool,
         debug: DebugParameters | None,
     ) -> QueryResult:
+        query = query._get_query_with_defaults_applied()
         headers: None | dict[str, str] = None
         body = query.dump(camel_case=True)
         if include_typing:

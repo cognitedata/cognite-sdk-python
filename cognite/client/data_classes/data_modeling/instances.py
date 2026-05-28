@@ -30,7 +30,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client._constants import OMITTED, Omitted
 from cognite.client.data_classes._base import (
@@ -1344,13 +1344,112 @@ class InstancesApply:
 
 
 class InstanceSort(DataModelingSort):
+    """Sort order for an instance query.
+
+    Args:
+        property (list[str] | tuple[str, str] | tuple[str, str, str]): The property to sort by, given as a path, e.g.
+            ``("mySpace", "myView/v1", "myProperty")`` or ``["node", "externalId"]``.
+        direction (Literal['ascending', 'descending']): Sort direction. Case-insensitive. Defaults to ``"ascending"``.
+        nulls_first (bool | None): Where to place ``null`` values. Defaults to ``None`` (auto). See tip below.
+
+    Tip:
+        For the backend database to use an index when sorting nullable properties, the ``nulls_first`` setting
+        must match the sort direction:
+
+        - ``ascending`` → nulls last (``nulls_first=False``)
+        - ``descending`` → nulls first (``nulls_first=True``)
+
+        When ``nulls_first=None`` (the default), the correct value is chosen automatically. Passing the
+        opposite combination is still accepted and sent to the API as-is, but may trigger a warning
+        for API endpoints that support index utilization if an unsupported combination is used.
+
+    Examples:
+
+        Sort by a view property ascending (default):
+
+            >>> from cognite.client.data_classes.data_modeling import InstanceSort
+            >>> sort = InstanceSort(("mySpace", "myView/v1", "myProperty"))
+
+        Can also use a ViewId to simplify the property path:
+
+            >>> from cognite.client.data_classes.data_modeling import ViewId
+            >>> view_id = ViewId("mySpace", "myView", "v1")
+            >>> sort = InstanceSort(view_id.as_property_ref("myProperty"))
+
+        Sort descending:
+
+            >>> sort = InstanceSort(
+            ...     view_id.as_property_ref("myProperty"),
+            ...     direction="descending",
+            ... )
+
+        Sort by a base property:
+
+            >>> sort = InstanceSort(["node", "externalId"], direction="ascending")
+
+        Force a specific null placement (first/last). A UserWarning will fire at relevant API call
+        sites when this conflicts with index alignment:
+
+            >>> sort = InstanceSort(
+            ...     ("mySpace", "myView/v1", "myProperty"),
+            ...     direction="descending",
+            ...     nulls_first=True,
+            ... )
+    """
+
     def __init__(
         self,
-        property: list[str] | tuple[str, ...],
+        property: list[str] | tuple[str, str] | tuple[str, str, str],
         direction: Literal["ascending", "descending"] = "ascending",
         nulls_first: bool | None = None,
     ) -> None:
-        super().__init__(property, direction, nulls_first)
+        normalized = direction.casefold()
+        if normalized not in ("ascending", "descending"):
+            raise ValueError(f"direction must be 'ascending' or 'descending', got {direction!r}")
+
+        super().__init__(property, normalized, nulls_first)  # type: ignore [arg-type]
+
+    # We override _load to get the more strict __init__ validation on 'direction' because we need it to
+    # be valid for the possible later automatic choice of nulls_first:
+    @override
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        if not isinstance(resource, dict):
+            raise TypeError(f"Resource must be mapping, not {type(resource)}")
+
+        return cls(
+            property=resource["property"],
+            direction=resource.get("direction", "ascending"),
+            nulls_first=resource.get("nullsFirst"),
+        )
+
+    @property
+    def is_index_aligned(self) -> bool:
+        """True when nulls_first matches the direction for PostgreSQL index utilization (None counts as aligned)."""
+        if self.nulls_first is None:
+            return True
+        return self.nulls_first is (self.direction == "descending")
+
+    def _apply_defaults_or_maybe_warn(self) -> Self:
+        """Resolve nulls_first for database index alignment, warning if the explicit value is misaligned.
+
+        When nulls_first is None, sets it to the index-compatible value. When explicitly set but
+        misaligned, emits a UserWarning.
+        """
+        if self.nulls_first is None:
+            self.nulls_first = self.direction == "descending"
+
+        elif not self.is_index_aligned:
+            import warnings
+
+            warnings.warn(
+                f"InstanceSort: direction={self.direction!r} with nulls_first={self.nulls_first} is not "
+                f"index-aligned and will likely prevent database index utilization. "
+                f"Use nulls_first={self.direction == 'descending'} (or omit it) for optimal performance.",
+                UserWarning,
+                stacklevel=3,
+            )
+        return self
 
 
 @dataclass

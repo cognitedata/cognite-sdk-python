@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from datetime import date, datetime
 from typing import Any, cast
 
@@ -12,6 +13,7 @@ from cognite.client.data_classes.data_modeling import (
     EdgeApply,
     EdgeList,
     Float64,
+    InstanceSort,
     Node,
     NodeApply,
     NodeId,
@@ -638,3 +640,177 @@ class TestTypeInformation:
         df = info.to_pandas()
 
         pd.testing.assert_frame_equal(df, expected)
+
+
+class TestInstanceSort:
+    def test_nulls_first_stays_none_when_omitted(self) -> None:
+        sort = InstanceSort(["node", "externalId"], direction="ascending")
+        assert sort.nulls_first is None
+        sort = InstanceSort(["node", "externalId"], direction="descending")
+        assert sort.nulls_first is None
+
+    def test_no_warning_at_construction_for_any_combination(self) -> None:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            InstanceSort(["node", "externalId"], direction="ascending")
+            InstanceSort(["node", "externalId"], direction="descending")
+            InstanceSort(["node", "externalId"], direction="ascending", nulls_first=False)
+            InstanceSort(["node", "externalId"], direction="ascending", nulls_first=True)
+            InstanceSort(["node", "externalId"], direction="descending", nulls_first=True)
+            InstanceSort(["node", "externalId"], direction="descending", nulls_first=False)
+        assert len(w) == 0
+
+    @pytest.mark.parametrize(
+        "direction, nulls_first",
+        [
+            ("ascending", True),
+            ("descending", False),
+        ],
+    )
+    def test_non_index_aligned_nulls_first_is_stored_as_given(self, direction: str, nulls_first: bool) -> None:
+        sort = InstanceSort(["node", "externalId"], direction=direction, nulls_first=nulls_first)  # type: ignore[arg-type]
+        assert sort.nulls_first is nulls_first
+
+    def test_load_does_not_override_nulls_first(self) -> None:
+        raw = {"property": ["node", "externalId"], "direction": "ascending", "nullsFirst": True}
+        sort = InstanceSort._load(raw)
+        assert sort.direction == "ascending"
+        assert sort.nulls_first is True
+
+    def test_dump_omits_nulls_first_when_none(self) -> None:
+        sort = InstanceSort(["space", "externalId"], direction="descending")
+        dumped = sort.dump(camel_case=True)
+        assert dumped["direction"] == "descending"
+        assert "nullsFirst" not in dumped
+
+    @pytest.mark.parametrize(
+        "direction, nulls_first, expected",
+        [
+            ("ascending", False, True),
+            ("descending", True, True),
+            ("ascending", True, False),
+            ("descending", False, False),
+            ("ascending", None, True),
+            ("descending", None, True),
+        ],
+    )
+    def test_is_index_aligned(self, direction: str, nulls_first: bool | None, expected: bool) -> None:
+        sort = InstanceSort(["node", "externalId"], direction=direction, nulls_first=nulls_first)  # type: ignore[arg-type]
+        assert sort.is_index_aligned is expected
+
+    def test__apply_defaults_or_maybe_warn_resolves_none(self) -> None:
+        sort = InstanceSort(["node", "externalId"], direction="ascending")
+        sort._apply_defaults_or_maybe_warn()
+        assert sort.nulls_first is False
+        sort = InstanceSort(["node", "externalId"], direction="descending")
+        sort._apply_defaults_or_maybe_warn()
+        assert sort.nulls_first is True
+
+    @pytest.mark.parametrize("bad_direction", ["asc", "desc", "random"])
+    def test_invalid_direction_raises(self, bad_direction: str) -> None:
+        with pytest.raises(ValueError, match="direction must be"):
+            InstanceSort(["node", "externalId"], direction=bad_direction)  # type: ignore[arg-type]
+
+    def test_invalid_direction_error_shows_original_value(self) -> None:
+        with pytest.raises(ValueError, match="'Asc'"):
+            InstanceSort(["node", "externalId"], direction="Asc")  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize(
+        "direction, nulls_first",
+        [
+            ("ascending", True),
+            ("descending", False),
+        ],
+    )
+    def test_warn_fires_for_non_index_aligned_sorts(self, direction: str, nulls_first: bool) -> None:
+        sort = InstanceSort(["node", "externalId"], direction=direction, nulls_first=nulls_first)  # type: ignore[arg-type]
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            sort._apply_defaults_or_maybe_warn()
+        assert len(w) == 1
+        assert issubclass(w[0].category, UserWarning)
+        assert "not index-aligned" in str(w[0].message)
+        assert "index utilization" in str(w[0].message)
+
+    @pytest.mark.parametrize(
+        "direction, nulls_first",
+        [
+            ("ascending", False),
+            ("descending", True),
+            ("ascending", None),
+            ("descending", None),
+        ],
+    )
+    def test_no_warn_for_aligned_or_unset_sorts(self, direction: str, nulls_first: bool | None) -> None:
+        sort = InstanceSort(["node", "externalId"], direction=direction, nulls_first=nulls_first)  # type: ignore[arg-type]
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            sort._apply_defaults_or_maybe_warn()
+        assert len(w) == 0
+
+
+class TestQueryIterSorts:
+    def test_collects_sorts_from_with_and_select(self) -> None:
+        from cognite.client.data_classes.data_modeling import ViewId
+        from cognite.client.data_classes.data_modeling.query import (
+            NodeResultSetExpression,
+            Query,
+            Select,
+            SourceSelector,
+        )
+
+        view = ViewId("s", "v", "1")
+        sort_a = InstanceSort(view.as_property_ref("a"))
+        sort_b = InstanceSort(view.as_property_ref("b"))
+        query = Query(
+            with_={"nodes": NodeResultSetExpression(sort=[sort_a])},
+            select={"nodes": Select([SourceSelector(view, ["a"])], sort=[sort_b])},
+        )
+        result = list(query._iter_sorts())
+        assert sort_a in result
+        assert sort_b in result
+        assert len(result) == 2
+
+    def test_collects_backfill_sort_from_sync_query(self) -> None:
+        from cognite.client.data_classes.data_modeling.query import (
+            NodeResultSetExpressionSync,
+            QuerySync,
+        )
+
+        sort = InstanceSort(["node", "externalId"])
+        query = QuerySync(with_={"nodes": NodeResultSetExpressionSync(backfill_sort=[sort])}, select={})
+        result = list(query._iter_sorts())
+        assert sort in result
+        assert len(result) == 1
+
+    def test_get_query_with_defaults_applied_does_not_mutate_original(self) -> None:
+        from cognite.client.data_classes.data_modeling import ViewId
+        from cognite.client.data_classes.data_modeling.query import (
+            NodeResultSetExpression,
+            Query,
+            Select,
+            SourceSelector,
+        )
+
+        view = ViewId("s", "v", "1")
+        sort_a = InstanceSort(view.as_property_ref("a"))
+        sort_b = InstanceSort(view.as_property_ref("b"))
+        query = Query(
+            with_={"nodes": NodeResultSetExpression(sort=[sort_a])},
+            select={"nodes": Select([SourceSelector(view, ["a"])], sort=[sort_b])},
+        )
+
+        prepared = query._get_query_with_defaults_applied()
+
+        # Original sorts untouched
+        assert sort_a.nulls_first is None
+        assert sort_b.nulls_first is None
+        # Prepared copy has resolved values
+        assert all(s.nulls_first is not None for s in prepared._iter_sorts())
+
+    def test_list_sort_does_not_mutate_original(self) -> None:
+        from cognite.client._api.data_modeling.instances import InstancesAPI
+
+        sort = InstanceSort(["node", "externalId"], direction="ascending")
+        InstancesAPI._create_other_params(include_typing=False, sort=sort, sources=None, instance_type=None)
+        assert sort.nulls_first is None
