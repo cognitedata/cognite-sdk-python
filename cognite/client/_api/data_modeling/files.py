@@ -44,8 +44,42 @@ class DataModelingFilesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._files_api = cognite_client.files
 
-    async def retrieve_download_urls(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+    async def retrieve_download_urls(
+        self,
+        nodes: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
+        *,
+        extended_expiration: bool = False,
+    ) -> dict[NodeId, str]:
+        """`Get download URLs for one or more files by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
+
+        Args:
+            nodes (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
+            extended_expiration (bool): Extend expiration time of download URL to 1 hour. Defaults to False.
+
+        Returns:
+            dict[NodeId, str]: Dictionary mapping each instance ID to its download URL.
+
+        Examples:
+
+            Get a download URL for a single file:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> urls = client.data_modeling.files.retrieve_download_urls(
+                ...     NodeId("my-space", "my-file")
+                ... )
+
+            Get download URLs for multiple files:
+
+                >>> urls = client.data_modeling.files.retrieve_download_urls(
+                ...     [("my-space", "file-1"), ("my-space", "file-2")]
+                ... )
+        """
+        return await self._files_api.retrieve_download_urls(
+            instance_id=nodes,
+            extended_expiration=extended_expiration,
+        )
 
     async def download(self, *args: Any, **kwargs: Any) -> NoReturn:
         raise NotImplementedError("This method is not implemented yet!")
