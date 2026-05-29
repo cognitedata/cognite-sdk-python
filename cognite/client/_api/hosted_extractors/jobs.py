@@ -287,7 +287,7 @@ class JobsAPI(APIClient):
 
         Examples:
 
-            Reqests logs for a specific job:
+            Requests logs for a specific job:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
@@ -333,7 +333,7 @@ class JobsAPI(APIClient):
 
         Examples:
 
-            Reqests metrics for a specific job:
+            Requests metrics for a specific job:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()

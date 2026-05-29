@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c7e303354a7fd2a606772c2cd8a6dfc6
+60bdcf4fda462b06f3051f1b4e9af8d4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -240,7 +240,7 @@ class SyncJobsAPI(SyncAPIClient):
 
         Examples:
 
-            Reqests logs for a specific job:
+            Requests logs for a specific job:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
@@ -274,7 +274,7 @@ class SyncJobsAPI(SyncAPIClient):
 
         Examples:
 
-            Reqests metrics for a specific job:
+            Requests metrics for a specific job:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
