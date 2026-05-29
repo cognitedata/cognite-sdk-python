@@ -299,7 +299,7 @@ class FileConcurrencyConfig(ConcurrencyConfig):
         self._download = download
         self._open_files = open_files
         # open_files key is only the event loop — project is intentionally excluded. It is a bit unfortunate
-        # that we cant remove the loop from the key as well, but semaphores are bound to the loop they are
+        # that we can't remove the loop from the key as well, but semaphores are bound to the loop they are
         # first used on, one of the httpx.Clients would break if we did that. We intentionally use a limit << OS fd limit.
         self._open_files_cache: dict[asyncio.AbstractEventLoop, asyncio.BoundedSemaphore] = {}
 
