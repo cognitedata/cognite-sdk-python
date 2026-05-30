@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c2ccaaf731fd07a67787a512a5a9acd2
+5f32300ea692afe9a855bd627447b49c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -266,7 +266,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
     def list_run_data(self, run_id: int) -> SimulationRunDataList:
         """
-        `Get simulation run data <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
+        `Get simulation run data <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/retrieve_simulation_run_data>`_
 
         Retrieve data associated with a simulation run by ID.
 

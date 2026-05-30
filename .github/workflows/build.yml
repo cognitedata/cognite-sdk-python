@@ -35,8 +35,12 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - uses: ./.github/actions/setup
+      - name: Run docs linkcheck
+        working-directory: ./docs
+        run: make linkcheck SPHINXOPTS="-W"
       - name: Build docs
-        run: cd docs && make html SPHINXOPTS="-W --keep-going"
+        working-directory: ./docs
+        run: make html SPHINXOPTS="-W"
 
   build_package:
     runs-on: ubuntu-latest

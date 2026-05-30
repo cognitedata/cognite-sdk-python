@@ -30,8 +30,8 @@ class GlobalConfig:
         max_connection_pool_size (int): The maximum number of connections which will be kept in the SDKs connection pool.
             Defaults to 20.
         disable_ssl (bool): Whether or not to disable SSL. Defaults to False
-        proxy (str | None): Route all traffic (HTTP and HTTPS) via this proxy, e.g. "http://localhost:8030".
-            For proxy authentication, embed credentials in the URL: "http://user:pass@localhost:8030".
+        proxy (str | None): Route all traffic (HTTP and HTTPS) via this proxy, e.g. ``http://localhost:8030``.
+            For proxy authentication, embed credentials in the URL: ``http://user:pass@localhost:8030``.
             Defaults to None (no proxy).
         max_workers (int): DEPRECATED: Use 'concurrency_settings' instead. Maximum number of concurrent API calls. Defaults to 5.
         concurrency_settings (ConcurrencySettings): Settings controlling the maximum number of concurrent API requests
@@ -161,10 +161,10 @@ class ClientConfig:
         project (str): CDF Project name.
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
         api_subversion (str | None): API subversion
-        base_url (str | None): Base url to send requests to. Typically on the form 'https://<cluster>.cognitedata.com'.
+        base_url (str | None): Base url to send requests to. Typically on the form ``https://<cluster>.cognitedata.com``.
             Either base_url or cluster must be provided.
         cluster (str | None): The cluster where the CDF project is located. When passed, it is assumed that the base
-            URL can be constructed as: 'https://<cluster>.cognitedata.com'. Either base_url or cluster must be provided.
+            URL can be constructed as: ``https://<cluster>.cognitedata.com``. Either base_url or cluster must be provided.
         headers (dict[str, str] | None): Additional headers to add to all requests.
         timeout (int | None): Timeout on requests sent to the api. Defaults to 60 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.

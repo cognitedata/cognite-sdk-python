@@ -241,7 +241,7 @@ class Function(FunctionCore):
         )
 
     async def call_async(self, data: dict[str, object] | None = None, wait: bool = True) -> FunctionCall:
-        """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
+        """`Call this particular function. <https://docs.cognite.com/20230101/function-calls/call-a-function-asynchronously>`_
 
         Args:
             data (dict[str, object] | None): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.
@@ -305,7 +305,7 @@ class Function(FunctionCore):
         )
 
     async def list_schedules_async(self, limit: int | None = DEFAULT_LIMIT_READ) -> FunctionSchedulesList:
-        """`List all schedules associated with this function. <https://docs.cognite.com/api/v1/#operation/getFunctionSchedules>`_
+        """`List all schedules associated with this function. <https://docs.cognite.com/20230101/function-schedules/list-schedules>`_
 
         Args:
             limit (int | None): Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
@@ -320,7 +320,7 @@ class Function(FunctionCore):
         return run_sync(self.list_schedules_async(limit=limit))
 
     async def retrieve_call_async(self, id: int) -> FunctionCall | None:
-        """`Retrieve call by id. <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_
+        """`Retrieve call by id. <https://docs.cognite.com/20230101/function-calls/retrieve-a-function-call-by-its-id>`_
 
         Args:
             id (int): ID of the call.
@@ -732,7 +732,7 @@ class FunctionCall(CogniteResourceWithClientRef):
         return run_sync(self.get_response_async())
 
     async def get_logs_async(self) -> FunctionCallLog:
-        """`Retrieve logs for this function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCallLogs>`_
+        """`Retrieve logs for this function call. <https://docs.cognite.com/20230101/function-calls/retrieve-logs-for-function-call>`_
 
         Returns:
             FunctionCallLog: Log for the function call.
