@@ -290,7 +290,7 @@ class AsyncCogniteClient:
 
         * Base URL: ``https://{cdf_cluster}.cognitedata.com/``
         * Token URL: ``https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token``
-        * Scopes: [``https://{cdf_cluster}.cognitedata.com/.default``]
+        * Scopes: ``[f"https://{cdf_cluster}.cognitedata.com/.default"]``
 
         Args:
             project (str): The CDF project.
@@ -322,7 +322,7 @@ class AsyncCogniteClient:
 
         * Base URL: ``https://{cdf_cluster}.cognitedata.com/``
         * Authority URL: ``https://login.microsoftonline.com/{tenant_id}``
-        * Scopes: [``https://{cdf_cluster}.cognitedata.com/.default``]
+        * Scopes: ``[f"https://{cdf_cluster}.cognitedata.com/.default"]``
 
         Args:
             project (str): The CDF project.
