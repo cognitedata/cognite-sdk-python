@@ -74,7 +74,7 @@ class DataModelingFilesAPI(APIClient):
     @overload
     async def retrieve(
         self,
-        nodes: NodeId | tuple[str, str],
+        node_ids: NodeId | tuple[str, str],
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
     ) -> Node | None: ...
@@ -82,14 +82,14 @@ class DataModelingFilesAPI(APIClient):
     @overload
     async def retrieve(
         self,
-        nodes: Sequence[NodeId] | Sequence[tuple[str, str]],
+        node_ids: Sequence[NodeId] | Sequence[tuple[str, str]],
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
     ) -> NodeList[Node]: ...
 
     async def retrieve(
         self,
-        nodes: NodeId | tuple[str, str] | Sequence[NodeId] | Sequence[tuple[str, str]],
+        node_ids: NodeId | tuple[str, str] | Sequence[NodeId] | Sequence[tuple[str, str]],
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
     ) -> Node | NodeList[Node] | None:
@@ -99,7 +99,7 @@ class DataModelingFilesAPI(APIClient):
         If a single instance ID is requested and it is not found, ``None`` is returned.
 
         Args:
-            nodes (NodeId | tuple[str, str] | Sequence[NodeId] | Sequence[tuple[str, str]]): Single instance ID or a list of instance IDs.
+            node_ids (NodeId | tuple[str, str] | Sequence[NodeId] | Sequence[tuple[str, str]]): Single instance ID or a list of instance IDs.
             source (View | ViewId | tuple[str, str, str]): The view to fetch properties from. Defaults to CogniteFile.
 
         Returns:
@@ -118,7 +118,7 @@ class DataModelingFilesAPI(APIClient):
 
                 >>> res = client.data_modeling.files.retrieve(("my-space", "my-file"))
 
-            Retrieve multiple files nodes:
+            Retrieve multiple file nodes:
 
                 >>> res = client.data_modeling.files.retrieve(
                 ...     [("my-space", "file-1"), ("my-space", "file-2")]
@@ -133,7 +133,7 @@ class DataModelingFilesAPI(APIClient):
                 ... )
         """
         sources, strip = _resolve_source(source)
-        result = await self._cognite_client.data_modeling.instances.retrieve_nodes(nodes=nodes, sources=sources)
+        result = await self._cognite_client.data_modeling.instances.retrieve_nodes(nodes=node_ids, sources=sources)
         if strip and result:
             for node in [result] if isinstance(result, Node) else result:
                 node.drop_source(COGNITE_FILE_VIEW_ID)
@@ -148,7 +148,7 @@ class DataModelingFilesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
-        """`List files nodes. <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_
+        """`List file nodes. <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_
 
         Only file nodes will be returned, regardless of the source passed.
 
@@ -187,7 +187,7 @@ class DataModelingFilesAPI(APIClient):
                 ... )
         """
         sources, strip = _resolve_source(source)
-        results = await self._cognite_client.data_modeling.instances.list(  # type: ignore[call-overload]
+        results = await self._cognite_client.data_modeling.instances.list(
             instance_type="node",
             sources=sources,
             space=space,

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-5160cff540cbf53cb44170502a8f6540
+6f893c816a5f91e8b51cd9752fa2cb0f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -35,20 +35,20 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
 
     @overload
     def retrieve(
-        self, nodes: NodeId | tuple[str, str], *, source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID
+        self, node_ids: NodeId | tuple[str, str], *, source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID
     ) -> Node | None: ...
 
     @overload
     def retrieve(
         self,
-        nodes: Sequence[NodeId] | Sequence[tuple[str, str]],
+        node_ids: Sequence[NodeId] | Sequence[tuple[str, str]],
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
     ) -> NodeList[Node]: ...
 
     def retrieve(
         self,
-        nodes: NodeId | tuple[str, str] | Sequence[NodeId] | Sequence[tuple[str, str]],
+        node_ids: NodeId | tuple[str, str] | Sequence[NodeId] | Sequence[tuple[str, str]],
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
     ) -> Node | NodeList[Node] | None:
@@ -59,7 +59,7 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
         If a single instance ID is requested and it is not found, ``None`` is returned.
 
         Args:
-            nodes (NodeId | tuple[str, str] | Sequence[NodeId] | Sequence[tuple[str, str]]): Single instance ID or a list of instance IDs.
+            node_ids (NodeId | tuple[str, str] | Sequence[NodeId] | Sequence[tuple[str, str]]): Single instance ID or a list of instance IDs.
             source (View | ViewId | tuple[str, str, str]): The view to fetch properties from. Defaults to CogniteFile.
 
         Returns:
@@ -78,7 +78,7 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
 
                 >>> res = client.data_modeling.files.retrieve(("my-space", "my-file"))
 
-            Retrieve multiple files nodes:
+            Retrieve multiple file nodes:
 
                 >>> res = client.data_modeling.files.retrieve(
                 ...     [("my-space", "file-1"), ("my-space", "file-2")]
@@ -92,7 +92,7 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
                 ...     source=ViewId("my-space", "MyFileExtension", "v1"),
                 ... )
         """
-        return run_sync(self.__async_client.data_modeling.files.retrieve(nodes=nodes, source=source))
+        return run_sync(self.__async_client.data_modeling.files.retrieve(node_ids=node_ids, source=source))
 
     def list(
         self,
@@ -104,7 +104,7 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
         """
-        `List files nodes. <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_
+        `List file nodes. <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_
 
         Only file nodes will be returned, regardless of the source passed.
 
