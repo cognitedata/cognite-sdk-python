@@ -10,6 +10,7 @@ from cognite.client.data_classes.data_modeling.ids import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeList
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -81,14 +82,14 @@ class DataModelingFilesAPI(APIClient):
     @overload
     async def retrieve(
         self,
-        nodes: Sequence[NodeId | tuple[str, str]],
+        nodes: Sequence[NodeId] | Sequence[tuple[str, str]],
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
     ) -> NodeList[Node]: ...
 
     async def retrieve(
         self,
-        nodes: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
+        nodes: NodeId | tuple[str, str] | Sequence[NodeId] | Sequence[tuple[str, str]],
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
     ) -> Node | NodeList[Node] | None:
@@ -98,7 +99,7 @@ class DataModelingFilesAPI(APIClient):
         If a single instance ID is requested and it is not found, ``None`` is returned.
 
         Args:
-            nodes (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Single instance ID or a list of instance IDs.
+            nodes (NodeId | tuple[str, str] | Sequence[NodeId] | Sequence[tuple[str, str]]): Single instance ID or a list of instance IDs.
             source (View | ViewId | tuple[str, str, str]): The view to fetch properties from. Defaults to CogniteFile.
 
         Returns:
@@ -132,7 +133,7 @@ class DataModelingFilesAPI(APIClient):
                 ... )
         """
         sources, strip = _resolve_source(source)
-        result = await self._cognite_client.data_modeling.instances.retrieve_nodes(nodes=nodes, sources=sources)  # type: ignore[arg-type]
+        result = await self._cognite_client.data_modeling.instances.retrieve_nodes(nodes=nodes, sources=sources)
         if strip and result:
             for node in [result] if isinstance(result, Node) else result:
                 node.drop_source(COGNITE_FILE_VIEW_ID)
@@ -142,7 +143,7 @@ class DataModelingFilesAPI(APIClient):
         self,
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
-        space: str | Sequence[str] | None = None,
+        space: str | SequenceNotStr[str] | None = None,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
@@ -153,7 +154,7 @@ class DataModelingFilesAPI(APIClient):
 
         Args:
             source (View | ViewId | tuple[str, str, str]): The view to fetch properties from. Defaults to CogniteFile.
-            space (str | Sequence[str] | None): Restrict results to this space (or list of spaces).
+            space (str | SequenceNotStr[str] | None): Restrict results to this space (or list of spaces).
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): Sort order for the results.
             filter (Filter | dict[str, Any] | None): Advanced filter to apply. See :class:`~cognite.client.data_classes.filters`.
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
