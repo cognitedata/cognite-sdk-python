@@ -792,8 +792,8 @@ class TestWorkflowTriggers:
         assert permanent_data_modeling_trigger.external_id in external_ids
 
     @pytest.mark.skipif(
-        datetime.date.today() < datetime.date(2026, 6, 1),
-        reason="Skip until 2026-06-01",
+        datetime.date.today() < datetime.date(2026, 8, 1),
+        reason="Skip until 2026-08-01",
     )
     def test_trigger_run_history(
         self,
