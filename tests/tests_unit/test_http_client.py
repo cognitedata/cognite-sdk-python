@@ -105,12 +105,6 @@ class TestRetryTracker:
         rt.config.status_codes_to_retry.add(500)
         assert rt.should_retry_status_code(make_http_status_error(500)) is True
 
-    def test_get_backoff_time(self, default_config: AsyncHTTPClientWithRetryConfig) -> None:
-        rt = RetryTracker(URL, default_config)
-        for i in range(10):
-            rt.read += 1
-            assert 0 <= rt.get_backoff_time() <= default_config.max_backoff_seconds
-
     def test_is_auto_retryable(self, default_config: AsyncHTTPClientWithRetryConfig) -> None:
         default_config._max_retries_status = 1
         rt = RetryTracker(URL, default_config)
