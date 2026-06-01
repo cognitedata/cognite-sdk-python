@@ -118,6 +118,9 @@ class CogniteHTTPResponse:
             self._json_cache = self._response.json()
             return self._json_cache
 
+    def __repr__(self) -> str:
+        return f"<CogniteHTTPResponse [{self.status_code} {self.reason_phrase}]>"
+
     def raise_for_status(self) -> CogniteHTTPResponse:
         """
         Raises a CogniteHTTPStatusError if the response status code is 4xx or 5xx.
