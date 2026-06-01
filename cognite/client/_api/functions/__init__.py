@@ -7,6 +7,7 @@ import os
 import re
 import sys
 import textwrap
+import warnings
 from collections.abc import AsyncIterator, Callable, Sequence
 from inspect import getdoc, getsource, signature
 from multiprocessing import Process, Queue
@@ -244,6 +245,11 @@ class FunctionsAPI(APIClient):
             .. note:
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring.
                 The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
+
+            .. note:
+                Only the source code of the handle function itself is deployed. Non-builtin type
+                annotations (e.g. ``client: CogniteClient``) will cause a ``NameError`` at deploy
+                time. Either omit the annotation or use string form (e.g. ``client: "CogniteClient"``).
         """
         if isinstance(name, FunctionWrite):
             function_input = name
@@ -873,7 +879,16 @@ def _validate_and_parse_requirements(requirements: list[str]) -> list[str]:
     Returns:
         list[str]: The parsed requirements
     """
-    constructors = local_import("pip._internal.req.constructors")
+    if _RUNNING_IN_BROWSER:
+        warnings.warn(
+            "Running in a browser environment, skipping client-side validation of requirements.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return [r for r in requirements if r.strip()]
+    else:
+        constructors = local_import("pip._internal.req.constructors")
+
     install_req_from_line = constructors.install_req_from_line
     parsed_reqs: list[str] = []
     for req in requirements:

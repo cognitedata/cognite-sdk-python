@@ -48,11 +48,16 @@ class FunctionHandle(Protocol):
         .. code-block:: python
 
             def handle(
-                client: CogniteClient | None = None,
+                client: "CogniteClient",
                 data: dict[str, object] | None = None,
             ) -> object:
                 # Do something with the data
                 return {"result": "success"}
+
+    Note:
+        Only the source code of the handle function itself is deployed. Non-builtin type
+        annotations (e.g. ``CogniteClient``) will cause a ``NameError`` at deploy time.
+        Either omit the annotation or use string form (e.g. ``client: "CogniteClient"``).
 
     Returns:
         object: Return value of the function. Any JSON serializable object is allowed.

@@ -8,6 +8,7 @@ from cognite.client._api.data_modeling.data_models import DataModelsAPI
 from cognite.client._api.data_modeling.files import DataModelingFilesAPI
 from cognite.client._api.data_modeling.graphql import DataModelingGraphQLAPI
 from cognite.client._api.data_modeling.instances import InstancesAPI
+from cognite.client._api.data_modeling.records import RecordsAPI
 from cognite.client._api.data_modeling.spaces import SpacesAPI
 from cognite.client._api.data_modeling.statistics import StatisticsAPI
 from cognite.client._api.data_modeling.streams import StreamsAPI
@@ -29,6 +30,7 @@ class DataModelingAPI(APIClient):
         self.views = ViewsAPI(config, api_version, cognite_client)
         self.instances = InstancesAPI(config, api_version, cognite_client)
         self.graphql = DataModelingGraphQLAPI(config, api_version, cognite_client)
+        self.records = RecordsAPI(config, api_version, cognite_client)
         self.statistics = StatisticsAPI(config, api_version, cognite_client)
         self.streams = StreamsAPI(config, api_version, cognite_client)
 

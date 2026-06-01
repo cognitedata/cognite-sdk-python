@@ -14,6 +14,7 @@ from cognite.client._http_client import (
     get_global_async_httpx_client,
 )
 from cognite.client.config import global_config
+from cognite.client.response import CogniteHTTPResponse
 
 
 @pytest.fixture
@@ -171,3 +172,21 @@ class TestGetGlobalAsyncHttpxClient:
         assert pool._keepalive_expiry == 5
         assert pool._ssl_context.verify_mode == ssl.CERT_NONE  # disable_ssl should cause this
         assert pool._ssl_context.check_hostname is False
+
+
+def make_response(status_code: int) -> CogniteHTTPResponse:
+    request = httpx.Request("GET", URL)
+    return CogniteHTTPResponse(httpx.Response(status_code=status_code, request=request))
+
+
+class TestCogniteHTTPResponseRepr:
+    @pytest.mark.parametrize(
+        "status_code, expected",
+        [
+            (200, "<CogniteHTTPResponse [200 OK]>"),
+            (404, "<CogniteHTTPResponse [404 Not Found]>"),
+            (500, "<CogniteHTTPResponse [500 Internal Server Error]>"),
+        ],
+    )
+    def test_repr_format(self, status_code: int, expected: str) -> None:
+        assert repr(make_response(status_code)) == expected

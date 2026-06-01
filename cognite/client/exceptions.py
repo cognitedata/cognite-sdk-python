@@ -41,7 +41,7 @@ class CogniteProjectAccessError(CogniteException):
     @staticmethod
     @async_timed_cache(ttl=5)  # Don't spam requests when using concurrency
     async def _attempt_to_get_projects(client: AsyncCogniteClient, current_project: str) -> list[str] | None:
-        # To avoid an infinte loop, we can't just use client.iam.token.inspect(), but use http_client directly:
+        # To avoid an infinite loop, we can't just use client.iam.token.inspect(), but use http_client directly:
         api_client = client.iam.token
         _, full_url = resolve_url(api_client, "GET", "/api/v1/token/inspect")
         full_headers = api_client._configure_headers(additional_headers=None, api_subversion=api_client._api_version)
