@@ -771,7 +771,7 @@ class InstancesAPI(APIClient):
         involved_views: InvolvedViews | None = None,
         involved_containers: InvolvedContainers | None = None,
     ) -> InstanceInspectResults:
-        """`Reverse lookup for instances <https://docs.cognite.com/20230101/instances/inspect-instances>`_.
+        """`Reverse lookup for instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/instanceInspect>`_.
 
         This method will return the involved views and containers for the given nodes and edges.
 
@@ -1213,7 +1213,7 @@ class InstancesAPI(APIClient):
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         operator: Literal["AND", "OR"] = "AND",
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
-        """`Search instances <https://docs.cognite.com/20230101/instances/search-for-nodesedges>`_.
+        """`Search instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/searchInstances>`_.
 
         Args:
             view (ViewId): View to search in.
@@ -1376,7 +1376,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList:
-        """`Aggregate data across nodes/edges <https://docs.cognite.com/20230101/instances/aggregate-data-across-nodesedges>`_.
+        """`Aggregate data across nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/aggregateInstances>`_.
 
         Args:
             view (ViewId): View to aggregate over.
@@ -1489,7 +1489,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue | list[HistogramValue]:
-        """`Produces histograms for nodes/edges <https://docs.cognite.com/20230101/instances/aggregate-data-across-nodesedges>`_.
+        """`Produces histograms for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/aggregateInstances>`_.
 
         Args:
             view (ViewId): View to to aggregate over.
@@ -1558,7 +1558,7 @@ class InstancesAPI(APIClient):
     async def query(
         self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None
     ) -> QueryResult:
-        """`Advanced query interface for nodes/edges <https://docs.cognite.com/20230101/instances/query-nodesedges>`_.
+        """`Advanced query interface for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/queryContent>`_.
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
         recursive edge traversal, chaining of result sets, and granular property selection.
@@ -1652,7 +1652,7 @@ class InstancesAPI(APIClient):
     async def sync(
         self, query: QuerySync, include_typing: bool = False, debug: DebugParameters | None = None
     ) -> QueryResult:
-        """`Subscription to changes for nodes/edges <https://docs.cognite.com/20230101/instances/sync-nodesedges>`_.
+        """`Subscription to changes for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/syncContent>`_.
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
